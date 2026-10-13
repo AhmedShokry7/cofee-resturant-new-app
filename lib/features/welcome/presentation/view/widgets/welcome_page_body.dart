@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
-import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
+import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_page.dart';
 import 'package:new_coffee/features/welcome/presentation/view/widgets/custom_welcome_images.dart';
 import 'package:new_coffee/features/welcome/presentation/view/widgets/welcome_page_text_body.dart';
 import 'package:new_coffee/features/welcome/presentation/view/widgets/welcome_page_text_title.dart';
@@ -36,7 +36,10 @@ class WelcomePageBody extends StatelessWidget {
                     context,
                     OnBoardingView.routeName,
                   );
-                  SharedPref.setValue(key: AppConstant.routesKey, value: "2");
+                  SharedPref.setValue(
+                    key: AppConstant.routesKey,
+                    value: AppConstant.onBoardingRoute,
+                  );
                 },
               ),
             ),

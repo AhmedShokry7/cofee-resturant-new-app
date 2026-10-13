@@ -5,6 +5,9 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 
 class AppConstant {
   static const String routesKey = "routes";
+  static const String onBoardingRoute = "2";
+  static const String authRoute = "3";
+  static const String homeRoute = "4";
 
   static double horizontalPadding(BuildContext context) => SpacingTokens.xl.w;
 

@@ -2,12 +2,13 @@ import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_bo
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_page_view_data.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-class OnBoardingViewBody extends StatelessWidget {
-  const OnBoardingViewBody({super.key});
+class OnBoardingPageBody extends StatelessWidget {
+  const OnBoardingPageBody({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +25,11 @@ class OnBoardingViewBody extends StatelessWidget {
               onTap: () async {
                 await SharedPref.setValue(
                   key: AppConstant.routesKey,
-                  value: "3",
+                  value: AppConstant.authRoute,
+                );
+                if (!context.mounted) return;
+                Navigator.of(context).pushReplacementNamed(
+                  AuthPage.routeName,
                 );
               },
             ),

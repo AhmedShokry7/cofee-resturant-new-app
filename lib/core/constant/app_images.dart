@@ -1,6 +1,8 @@
 class AppImages {
   // =========== Logo Image ===========
   static const String logo = "assets/images/logo.png";
+  // =========== Banner Image ===========
+  static const String banner = "assets/images/banar.png";
   // =========== Splash Image ===========
       // static const String splashImage = "assets/images/splash_screen.png";
       // // =========== Welcome View Image ===========

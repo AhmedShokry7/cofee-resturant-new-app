@@ -1,0 +1,69 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/checkout/presentation/views/add_card_page.dart';
+import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
+import 'package:new_coffee/features/payment/presentation/views/widgets/saved_card_tile.dart';
+
+class SavedCardsPage extends StatelessWidget {
+  const SavedCardsPage({super.key});
+
+  static const routeName = "savedCardsRoute";
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Payment Method")),
+      body: BlocBuilder<SavedCardsCubit, SavedCardsState>(
+        builder: (context, state) {
+          return ListView(
+            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            children: [
+              if (state.cards.isEmpty)
+                Padding(
+                  padding: EdgeInsets.symmetric(vertical: SpacingTokens.xl.h),
+                  child: Text(
+                    "No saved cards yet",
+                    textAlign: TextAlign.center,
+                    style: AppFonts.regular14(
+                      context,
+                    ).copyWith(color: AppColor.greyColor),
+                  ),
+                ),
+              ...state.cards.map(
+                (card) => SavedCardTile(
+                  card: card,
+                  onDelete: () =>
+                      context.read<SavedCardsCubit>().removeCard(card.id),
+                ),
+              ),
+              SizedBox(height: SpacingTokens.md.h),
+              GestureDetector(
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AddCardPage.routeName),
+                child: Container(
+                  height: 52.h,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: AppColor.primaryColor),
+                    borderRadius: BorderRadius.circular(8.r),
+                  ),
+                  child: Text(
+                    "+ Add new card",
+                    style: AppFonts.medium14(
+                      context,
+                    ).copyWith(color: AppColor.primaryColor),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
