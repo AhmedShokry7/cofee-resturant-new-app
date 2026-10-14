@@ -6,7 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
@@ -487,3 +487,4 @@ class _AssistantSheetState extends State<AssistantSheet> {
     );
   }
 }
+

@@ -11,7 +11,7 @@ import 'package:new_coffee/core/navigation/app_route_observer.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
@@ -273,3 +273,4 @@ class _AssistantFabState extends State<AssistantFab> {
     );
   }
 }
+

@@ -6,9 +6,9 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/profile/data/profile_image_picker.dart';
+import 'package:new_coffee/shared/utils/profile_image_picker.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 
 Future<void> showProfileImagePicker(BuildContext context) async {
@@ -109,3 +109,4 @@ class _SourceTile extends StatelessWidget {
     );
   }
 }
+

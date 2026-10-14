@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -12,6 +12,7 @@ import 'package:new_coffee/features/orders/presentation/views/leave_review_page.
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 
 /// Full order data (big-app pattern): tapping an order opens its details,
 /// and tracking/review branch out from here.
@@ -165,15 +166,17 @@ class _DetailsScaffold extends StatelessWidget {
             ),
           ),
           SizedBox(height: SpacingTokens.lg.h),
-          _DetailRow(
+          LabeledValueRow(
             label: "Items count",
             value: "${order.quantity}",
+            valueSize: 16,
           ),
           SizedBox(height: SpacingTokens.sm.h),
-          _DetailRow(
+          LabeledValueRow(
             label: "Total",
             value: Formatters.price(total),
-            highlighted: true,
+            emphasized: true,
+            valueSize: 16,
           ),
         ],
       ),
@@ -199,37 +202,3 @@ class _DetailsScaffold extends StatelessWidget {
   }
 }
 
-class _DetailRow extends StatelessWidget {
-  const _DetailRow({
-    required this.label,
-    required this.value,
-    this.highlighted = false,
-  });
-
-  final String label;
-  final String value;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppFonts.regular14(
-            context,
-          ).copyWith(color: AppColor.greyColor),
-        ),
-        Text(
-          value,
-          style: AppFonts.semiBold16(context).copyWith(
-            color: highlighted
-                ? AppColor.primaryColor
-                : AppColor.blackColor,
-          ),
-        ),
-      ],
-    );
-  }
-}

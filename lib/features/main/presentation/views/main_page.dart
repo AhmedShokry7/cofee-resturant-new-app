@@ -10,7 +10,7 @@ import 'package:new_coffee/features/categories/presentation/views/categories_pag
 import 'package:new_coffee/features/favorites/presentation/views/favorites_page.dart';
 import 'package:new_coffee/features/home/presentation/views/home_page.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
-import 'package:new_coffee/features/settings/presentation/views/settings_page.dart';
+import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 
 class MainPage extends StatelessWidget {
   const MainPage({super.key});

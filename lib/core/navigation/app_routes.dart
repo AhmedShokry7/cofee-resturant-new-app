@@ -7,7 +7,7 @@ import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart
 import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/add_address_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/add_card_page.dart';
+import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_method_page.dart';

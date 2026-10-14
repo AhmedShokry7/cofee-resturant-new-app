@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_color.dart';
-import 'spacing_toxens.dart';
+import 'spacing_tokens.dart';
 
 class ThemeClass {
   ThemeClass._();
@@ -139,3 +139,4 @@ class ThemeClass {
     );
   }
 }
+

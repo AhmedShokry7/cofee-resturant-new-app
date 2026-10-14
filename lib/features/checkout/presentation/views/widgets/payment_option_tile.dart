@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/payment_method_model.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
@@ -53,3 +53,4 @@ class PaymentOptionTile extends StatelessWidget {
     );
   }
 }
+

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/constant/app_constant.dart';
-import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
@@ -51,10 +50,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
   }
 
   Future<void> _onAuthenticated() async {
-    await SharedPref.setValue(
-      key: AppConstant.routesKey,
-      value: AppConstant.homeRoute,
-    );
+    await const SessionRepository().markAuthenticated();
     if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(MainPage.routeName);
   }
@@ -156,3 +152,4 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
     );
   }
 }
+

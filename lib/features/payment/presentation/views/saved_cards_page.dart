@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/checkout/presentation/views/add_card_page.dart';
+import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/saved_card_tile.dart';
 
@@ -72,3 +72,4 @@ class SavedCardsPage extends StatelessWidget {
     );
   }
 }
+

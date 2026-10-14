@@ -5,7 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
@@ -141,9 +141,10 @@ class _CartSummaryState extends State<_CartSummary> {
         return BlocBuilder<CheckoutCubit, CheckoutState>(
           builder: (context, checkoutState) {
             final checkout = context.read<CheckoutCubit>();
-            final subtotal = cart.total;
-            final discount = checkout.discountFor(subtotal);
-            final total = checkout.finalTotal(subtotal);
+            final summary = checkout.summary(cart.total);
+            final subtotal = summary.subtotal;
+            final discount = summary.discount;
+            final total = summary.total;
             return Container(
               padding: EdgeInsets.all(SpacingTokens.lg.w),
               decoration: BoxDecoration(
@@ -339,3 +340,4 @@ class _SummaryRow extends StatelessWidget {
     );
   }
 }
+

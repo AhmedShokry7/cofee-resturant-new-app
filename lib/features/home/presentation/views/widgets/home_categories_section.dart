@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/categories/data/categories_list.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
@@ -70,3 +70,4 @@ class HomeCategoriesSection extends StatelessWidget {
     );
   }
 }
+

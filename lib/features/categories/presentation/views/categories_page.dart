@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/features/bundles/data/bundles_list.dart';
 import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
 import 'package:new_coffee/features/categories/data/categories_list.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
@@ -84,3 +84,4 @@ class _BundlesList extends StatelessWidget {
     );
   }
 }
+

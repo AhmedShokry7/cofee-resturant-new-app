@@ -83,6 +83,18 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     return subtotal * couponPercent(state.appliedCoupon) / 100;
   }
 
+  /// Single source of truth for the payable breakdown.
+  CheckoutSummary summary(double subtotal) {
+    final discount = discountFor(subtotal);
+    final total = subtotal - discount + AppConstant.deliveryFee;
+    return CheckoutSummary(
+      subtotal: subtotal,
+      discount: discount,
+      deliveryFee: AppConstant.deliveryFee,
+      total: total < 0 ? 0 : total,
+    );
+  }
+
   void placeOrder({required List<CartItem> items, required double total}) {
     final number = DateTime.now().millisecondsSinceEpoch % 1000000;
     emit(

@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
-import 'package:new_coffee/features/checkout/presentation/views/add_card_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/widgets/add_card_tile.dart';
+import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
+import 'package:new_coffee/features/payment/presentation/views/widgets/add_card_tile.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/payment_option_tile.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
@@ -61,6 +61,7 @@ class _PayableTotal extends StatelessWidget {
     return BlocBuilder<CartCubit, CartState>(
       builder: (context, cart) {
         final checkout = context.watch<CheckoutCubit>();
+        final summary = checkout.summary(cart.total);
         return Container(
           padding: EdgeInsets.all(SpacingTokens.md.w),
           decoration: BoxDecoration(
@@ -77,7 +78,7 @@ class _PayableTotal extends StatelessWidget {
                 ).copyWith(color: AppColor.greyColor),
               ),
               Text(
-                Formatters.price(checkout.finalTotal(cart.total)),
+                Formatters.price(summary.total),
                 style: AppFonts.semiBold18(
                   context,
                 ).copyWith(color: AppColor.primaryColor),
@@ -89,3 +90,4 @@ class _PayableTotal extends StatelessWidget {
     );
   }
 }
+

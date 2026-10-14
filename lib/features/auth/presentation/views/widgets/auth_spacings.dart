@@ -1,4 +1,4 @@
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 
 /// Single source of truth for spacing across all auth pages.
 ///
@@ -29,3 +29,4 @@ class AuthSpacings {
   /// Below the last element.
   static const double bottom = SpacingTokens.lg;
 }
+

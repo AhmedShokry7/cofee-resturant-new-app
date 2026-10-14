@@ -5,7 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
@@ -159,3 +159,4 @@ class _NotificationBell extends StatelessWidget {
     );
   }
 }
+

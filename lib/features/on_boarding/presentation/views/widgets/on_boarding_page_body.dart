@@ -1,7 +1,7 @@
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_buttons_and_slider_dots.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_page_view_data.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
-import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
 import 'package:flutter/material.dart';
@@ -23,10 +23,7 @@ class OnBoardingPageBody extends StatelessWidget {
 
             SkipBtn(
               onTap: () async {
-                await SharedPref.setValue(
-                  key: AppConstant.routesKey,
-                  value: AppConstant.authRoute,
-                );
+                await const SessionRepository().markOnboardingSkipped();
                 if (!context.mounted) return;
                 Navigator.of(context).pushReplacementNamed(
                   AuthPage.routeName,

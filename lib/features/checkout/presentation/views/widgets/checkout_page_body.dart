@@ -3,14 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
-import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_address_section.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 
 class CheckoutPageBody extends StatelessWidget {
   const CheckoutPageBody({super.key});
@@ -64,30 +64,34 @@ class _OrderSummary extends StatelessWidget {
         return BlocBuilder<CheckoutCubit, CheckoutState>(
           builder: (context, checkout) {
             final cubit = context.read<CheckoutCubit>();
-            final subtotal = cart.total;
-            final total = cubit.finalTotal(subtotal);
-            final saved = subtotal - (total - AppConstant.deliveryFee);
+            final summary = cubit.summary(cart.total);
+            final subtotal = summary.subtotal;
+            final total = summary.total;
+            final saved = summary.discount;
             return Column(
               children: [
-                _SummaryRow(label: "Subtotal", value: Formatters.price(subtotal)),
+                LabeledValueRow(
+                  label: "Subtotal",
+                  value: Formatters.price(subtotal),
+                ),
                 SizedBox(height: SpacingTokens.xs.h),
-                _SummaryRow(
+                LabeledValueRow(
                   label: "Delivery Fee",
                   value: Formatters.price(AppConstant.deliveryFee),
                 ),
                 if (saved > 0) ...[
                   SizedBox(height: SpacingTokens.xs.h),
-                  _SummaryRow(
+                  LabeledValueRow(
                     label: "Coupon discount",
                     value: "-${Formatters.price(saved)}",
-                    highlight: true,
+                    emphasized: true,
                   ),
                 ],
                 SizedBox(height: SpacingTokens.xs.h),
-                _SummaryRow(
+                LabeledValueRow(
                   label: "Total",
                   value: Formatters.price(total),
-                  highlight: true,
+                  emphasized: true,
                   big: true,
                 ),
               ],
@@ -99,42 +103,3 @@ class _OrderSummary extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({
-    required this.label,
-    required this.value,
-    this.highlight = false,
-    this.big = false,
-  });
-
-  final String label;
-  final String value;
-  final bool highlight;
-  final bool big;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: AppFonts.regular14(
-            context,
-          ).copyWith(color: AppColor.greyColor),
-        ),
-        Text(
-          value,
-          style: (big
-                  ? AppFonts.semiBold18(context)
-                  : AppFonts.semiBold14(context))
-              .copyWith(
-                color: highlight
-                    ? AppColor.primaryColor
-                    : AppColor.blackColor,
-              ),
-        ),
-      ],
-    );
-  }
-}

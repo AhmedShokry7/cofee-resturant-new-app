@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
 class PageTitle extends StatelessWidget {
@@ -26,3 +26,4 @@ class PageTitle extends StatelessWidget {
     );
   }
 }
+

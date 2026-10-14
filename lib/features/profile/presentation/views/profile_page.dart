@@ -3,10 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'package:new_coffee/core/constant/app_constant.dart';
-import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_toxens.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
@@ -20,16 +19,13 @@ import 'package:new_coffee/features/profile/presentation/views/widgets/profile_i
 import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
-import 'package:new_coffee/features/settings/presentation/views/widgets/logout_bottom_sheet.dart';
+import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bottom_sheet.dart';
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   Future<void> _logout(BuildContext context) async {
-    await SharedPref.setValue(
-      key: AppConstant.routesKey,
-      value: AppConstant.authRoute,
-    );
+    await const SessionRepository().clear();
     if (!context.mounted) return;
     Navigator.of(context).pushNamedAndRemoveUntil(
       AuthPage.routeName,
@@ -172,3 +168,4 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
+

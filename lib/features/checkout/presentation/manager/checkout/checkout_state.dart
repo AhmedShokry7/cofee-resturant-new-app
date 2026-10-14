@@ -1,5 +1,21 @@
 part of 'checkout_cubit.dart';
 
+/// Immutable breakdown of what the customer pays. Computed once in the
+/// cubit so cart, checkout and payment pages never disagree.
+class CheckoutSummary {
+  const CheckoutSummary({
+    required this.subtotal,
+    required this.discount,
+    required this.deliveryFee,
+    required this.total,
+  });
+
+  final double subtotal;
+  final double discount;
+  final double deliveryFee;
+  final double total;
+}
+
 @immutable
 class CheckoutState {
   const CheckoutState({
