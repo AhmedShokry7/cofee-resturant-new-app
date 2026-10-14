@@ -63,7 +63,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               onPageChanged: (index) =>
                   context.read<BannerCubit>().jumpTo(index),
               itemBuilder: (context, index) =>
-                  BannerImage(banner: widget.banners[index]),
+                  BannerImage(banner: widget.banners[index], borderRadius: 0),
             ),
           ),
           SizedBox(height: SpacingTokens.md.h),

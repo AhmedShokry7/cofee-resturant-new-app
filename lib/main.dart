@@ -15,6 +15,7 @@ import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.d
 import 'package:new_coffee/features/checkout/presentation/views/payment_method_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/shipping_addresses_page.dart';
+import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -24,11 +25,14 @@ import 'package:new_coffee/features/orders/presentation/views/track_order_page.d
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
+import 'package:new_coffee/features/weather/data/repositories/weather_repository_impl.dart';
+import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_page.dart';
@@ -66,6 +70,12 @@ class MyApp extends StatelessWidget {
               BlocProvider(create: (context) => CheckoutCubit()),
               BlocProvider(create: (context) => SavedCardsCubit()),
               BlocProvider(create: (context) => SearchCubit()),
+              BlocProvider(create: (context) => CategoriesCubit()),
+              BlocProvider(create: (context) => ProfileCubit()),
+              BlocProvider(
+                create: (context) =>
+                    WeatherCubit(const WeatherRepositoryImpl())..load(),
+              ),
             ],
             child: MaterialApp(
               title: 'New Coffee',

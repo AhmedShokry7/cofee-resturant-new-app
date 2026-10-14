@@ -5,10 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/categories/data/categories_list.dart';
+import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/category_grid_item.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
-import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
-import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 
 class HomeCategoriesSection extends StatelessWidget {
   const HomeCategoriesSection({super.key});
@@ -59,8 +58,8 @@ class HomeCategoriesSection extends StatelessWidget {
                 itemBuilder: (context, index) => CategoryGridItem(
                   category: categories[index],
                   onTap: () {
-                    context.read<SearchCubit>().search(categories[index].label);
-                    Navigator.of(context).pushNamed(SearchPage.routeName);
+                    context.read<CategoriesCubit>().select(index);
+                    context.read<MainCubit>().changeTab(1);
                   },
                 ),
               ),

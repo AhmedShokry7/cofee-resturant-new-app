@@ -12,6 +12,7 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_card
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/page_title.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -19,40 +20,51 @@ class CartPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Cart")),
-      body: BlocBuilder<CartCubit, CartState>(
-        builder: (context, state) {
-          if (state.isEmpty) {
-            return const EmptyState(
-              icon: HugeIcons.strokeRoundedShoppingCart01,
-              title: "Your cart is empty",
-              subtitle: "Add your favorite coffee from the menu",
-            );
-          }
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: EdgeInsets.all(SpacingTokens.lg.w),
-                  itemCount: state.items.length,
-                  itemBuilder: (context, index) {
-                    final item = state.items[index];
-                    return ProductCard(
-                      product: item.product,
-                      quantity: item.quantity,
-                      showFavorite: false,
-                      onIncrement: () =>
-                          context.read<CartCubit>().increment(item.product.id),
-                      onDecrement: () =>
-                          context.read<CartCubit>().decrement(item.product.id),
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const PageTitle(title: "Cart"),
+            Expanded(
+              child: BlocBuilder<CartCubit, CartState>(
+                builder: (context, state) {
+                  if (state.isEmpty) {
+                    return const EmptyState(
+                      icon: HugeIcons.strokeRoundedShoppingCart01,
+                      title: "Your cart is empty",
+                      subtitle: "Add your favorite coffee from the menu",
                     );
-                  },
-                ),
+                  }
+                  return Column(
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          padding: EdgeInsets.all(SpacingTokens.lg.w),
+                          itemCount: state.items.length,
+                          itemBuilder: (context, index) {
+                            final item = state.items[index];
+                            return ProductCard(
+                              product: item.product,
+                              quantity: item.quantity,
+                              showFavorite: false,
+                              onIncrement: () => context
+                                  .read<CartCubit>()
+                                  .increment(item.product.id),
+                              onDecrement: () => context
+                                  .read<CartCubit>()
+                                  .decrement(item.product.id),
+                            );
+                          },
+                        ),
+                      ),
+                      _CartSummary(total: state.total),
+                    ],
+                  );
+                },
               ),
-              _CartSummary(total: state.total),
-            ],
-          );
-        },
+            ),
+          ],
+        ),
       ),
     );
   }

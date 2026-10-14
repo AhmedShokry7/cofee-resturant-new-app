@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -12,6 +13,7 @@ class HomeHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -19,11 +21,23 @@ class HomeHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                "Good Morning",
-                style: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+              Row(
+                children: [
+                  Text(
+                    getGreeting(now),
+                    style: AppFonts.regular14(
+                      context,
+                    ).copyWith(color: AppColor.greyColor),
+                  ),
+                  SizedBox(width: 4.w),
+                  Icon(
+                    isDaytime(now)
+                        ? HugeIcons.strokeRoundedSun01
+                        : HugeIcons.strokeRoundedMoon02,
+                    size: 16.w,
+                    color: AppColor.primaryColor,
+                  ),
+                ],
               ),
               SizedBox(height: 4.h),
               Text(
