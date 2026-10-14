@@ -25,7 +25,7 @@ class SearchPage extends StatelessWidget {
           Padding(
             padding: EdgeInsets.fromLTRB(
               SpacingTokens.lg.w,
-              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
               SpacingTokens.lg.w,
               SpacingTokens.md.h,
             ),

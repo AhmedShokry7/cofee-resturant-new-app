@@ -30,7 +30,12 @@ class EReceiptPage extends StatelessWidget {
               subtitle: "Your latest order receipt will appear here",
             )
           : ListView(
-              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              padding: EdgeInsets.fromLTRB(
+                SpacingTokens.lg.w,
+                SpacingTokens.md.h,
+                SpacingTokens.lg.w,
+                SpacingTokens.lg.w,
+              ),
               children: [
                 _ReceiptCard(order: order),
                 SizedBox(height: SpacingTokens.lg.h),

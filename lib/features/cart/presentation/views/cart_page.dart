@@ -3,10 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -16,6 +18,31 @@ import 'package:new_coffee/shared/widgets/page_title.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
+
+  /// Minus on the last piece removes the line, with an Undo snackbar
+  /// instead of a blocking warning (fast to use, forgiving on mistakes).
+  void _decrementOrRemove(BuildContext context, CartItem item) {
+    final cart = context.read<CartCubit>();
+    if (item.quantity > 1) {
+      cart.decrement(item.product.id);
+      return;
+    }
+    cart.decrement(item.product.id);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Removed ${item.product.name}"),
+        action: SnackBarAction(
+          label: "Undo",
+          onPressed: () => cart.add(
+            item.product,
+            quantity: item.quantity,
+            note: item.note,
+            unitPrice: item.unitPrice,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +66,12 @@ class CartPage extends StatelessWidget {
                     children: [
                       Expanded(
                         child: ListView.builder(
-                          padding: EdgeInsets.all(SpacingTokens.lg.w),
+                          padding: EdgeInsets.fromLTRB(
+                            SpacingTokens.lg.w,
+                            SpacingTokens.md.h,
+                            SpacingTokens.lg.w,
+                            SpacingTokens.lg.w,
+                          ),
                           itemCount: state.items.length,
                           itemBuilder: (context, index) {
                             final item = state.items[index];
@@ -52,14 +84,15 @@ class CartPage extends StatelessWidget {
                               onIncrement: () => context
                                   .read<CartCubit>()
                                   .increment(item.product.id),
-                              onDecrement: () => context
-                                  .read<CartCubit>()
-                                  .decrement(item.product.id),
+                              onDecrement: () => _decrementOrRemove(
+                                context,
+                                item,
+                              ),
                             );
                           },
                         ),
                       ),
-                      _CartSummary(total: state.total),
+                      const _CartSummary(),
                     ],
                   );
                 },
@@ -72,46 +105,237 @@ class CartPage extends StatelessWidget {
   }
 }
 
-class _CartSummary extends StatelessWidget {
-  const _CartSummary({required this.total});
+class _CartSummary extends StatefulWidget {
+  const _CartSummary();
 
-  final double total;
+  @override
+  State<_CartSummary> createState() => _CartSummaryState();
+}
+
+class _CartSummaryState extends State<_CartSummary> {
+  final _promoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  void _applyPromo() {
+    FocusScope.of(context).unfocus();
+    final applied = context.read<CheckoutCubit>().applyCoupon(
+      _promoController.text,
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(applied ? "Coupon applied" : "Invalid coupon code"),
+      ),
+    );
+    if (applied) _promoController.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CartCubit, CartState>(
+      builder: (context, cart) {
+        return BlocBuilder<CheckoutCubit, CheckoutState>(
+          builder: (context, checkoutState) {
+            final checkout = context.read<CheckoutCubit>();
+            final subtotal = cart.total;
+            final discount = checkout.discountFor(subtotal);
+            final total = checkout.finalTotal(subtotal);
+            return Container(
+              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              decoration: BoxDecoration(
+                color: AppColor.whiteColor,
+                border: Border.all(color: AppColor.borderColor),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(16.r),
+                  topRight: Radius.circular(16.r),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (checkoutState.appliedCoupon == null)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _promoController,
+                            textInputAction: TextInputAction.done,
+                            onSubmitted: (_) => _applyPromo(),
+                            style: AppFonts.regular14(context),
+                            decoration: InputDecoration(
+                              hintText: "Promo Code",
+                              hintStyle: AppFonts.regular14(context).copyWith(
+                                color: AppColor.greyColor,
+                              ),
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: SpacingTokens.lg.w,
+                                vertical: SpacingTokens.sm.h,
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(100.r),
+                                borderSide: const BorderSide(
+                                  color: AppColor.borderColor,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(100.r),
+                                borderSide: const BorderSide(
+                                  color: AppColor.primaryColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: SpacingTokens.sm.w),
+                        GestureDetector(
+                          onTap: _applyPromo,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: SpacingTokens.xl.w,
+                              vertical: SpacingTokens.sm.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.primaryColor,
+                              borderRadius: BorderRadius.circular(100.r),
+                            ),
+                            child: Text(
+                              "Apply",
+                              style: AppFonts.medium14(
+                                context,
+                              ).copyWith(color: AppColor.whiteColor),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    _AppliedCouponRow(
+                      code: checkoutState.appliedCoupon!.code,
+                      onRemove: () => context
+                          .read<CheckoutCubit>()
+                          .removeCoupon(),
+                    ),
+                  SizedBox(height: SpacingTokens.md.h),
+                  _SummaryRow(
+                    label: "Sub-Total",
+                    value: Formatters.price(subtotal),
+                  ),
+                  SizedBox(height: SpacingTokens.xs.h),
+                  _SummaryRow(
+                    label: "Delivery Fee",
+                    value: Formatters.price(AppConstant.deliveryFee),
+                  ),
+                  if (discount > 0) ...[
+                    SizedBox(height: SpacingTokens.xs.h),
+                    _SummaryRow(
+                      label: "Discount",
+                      value: "-${Formatters.price(discount)}",
+                    ),
+                  ],
+                  SizedBox(height: SpacingTokens.sm.h),
+                  const Divider(height: 1),
+                  SizedBox(height: SpacingTokens.sm.h),
+                  _SummaryRow(
+                    label: "Total Cost",
+                    value: Formatters.price(total),
+                    total: true,
+                  ),
+                  SizedBox(height: SpacingTokens.md.h),
+                  CustomBtn(
+                    text: "Proceed to Checkout",
+                    borderRadius: 32.r,
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pushNamed(CheckoutPage.routeName),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _AppliedCouponRow extends StatelessWidget {
+  const _AppliedCouponRow({required this.code, required this.onRemove});
+
+  final String code;
+  final VoidCallback onRemove;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(SpacingTokens.lg.w),
-      decoration: const BoxDecoration(
-        color: AppColor.whiteColor,
-        border: Border(top: BorderSide(color: AppColor.borderColor)),
+      padding: EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md.w,
+        vertical: SpacingTokens.sm.h,
       ),
-      child: Column(
+      decoration: BoxDecoration(
+        color: AppColor.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(100.r),
+      ),
+      child: Row(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Total",
-                style: AppFonts.regular16(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
-              ),
-              Text(
-                Formatters.price(total),
-                style: AppFonts.semiBold20(
-                  context,
-                ).copyWith(color: AppColor.primaryColor),
-              ),
-            ],
+          Expanded(
+            child: Text(
+              code,
+              style: AppFonts.medium14(
+                context,
+              ).copyWith(color: AppColor.primaryColor),
+            ),
           ),
-          SizedBox(height: SpacingTokens.md.h),
-          CustomBtn(
-            text: "Checkout",
-            onPressed: () =>
-                Navigator.of(context).pushNamed(CheckoutPage.routeName),
+          GestureDetector(
+            onTap: onRemove,
+            child: Icon(
+              Icons.close,
+              size: 20.w,
+              color: AppColor.primaryColor,
+            ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.total = false,
+  });
+
+  final String label;
+  final String value;
+  final bool total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: (total
+                  ? AppFonts.medium16(context)
+                  : AppFonts.regular16(context))
+              .copyWith(color: AppColor.greyColor),
+        ),
+        Text(
+          value,
+          style: (total
+                  ? AppFonts.semiBold16(context)
+                  : AppFonts.regular16(context))
+              .copyWith(
+                color: total ? AppColor.primaryColor : AppColor.blackColor,
+              ),
+        ),
+      ],
     );
   }
 }

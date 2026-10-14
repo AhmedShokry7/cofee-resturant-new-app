@@ -115,7 +115,14 @@ class _ProductsGridViewState extends State<ProductsGridView> {
       physics: widget.physics,
       slivers: [
         SliverPadding(
-          padding: widget.padding ?? EdgeInsets.all(SpacingTokens.lg.w),
+          padding:
+              widget.padding ??
+              EdgeInsets.fromLTRB(
+                SpacingTokens.lg.w,
+                SpacingTokens.md.h,
+                SpacingTokens.lg.w,
+                SpacingTokens.lg.w,
+              ),
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,

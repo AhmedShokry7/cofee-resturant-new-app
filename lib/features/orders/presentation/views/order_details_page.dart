@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -6,6 +7,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -19,17 +21,6 @@ class OrderDetailsPage extends StatelessWidget {
   static const routeName = "orderDetailsRoute";
 
   final OrderItemModel order;
-
-  Color _statusColor(BuildContext context) {
-    switch (order.status) {
-      case OrderStatus.active:
-        return AppColor.primaryColor;
-      case OrderStatus.completed:
-        return AppColor.greenColor;
-      case OrderStatus.cancelled:
-        return AppColor.greyColor;
-    }
-  }
 
   void _onAction(BuildContext context) {
     if (order.status == OrderStatus.active) {
@@ -45,11 +36,54 @@ class OrderDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Re-reads the order so cancelling from tracking reflects here on return.
+    // Falls back to the passed order when no OrdersCubit is above.
+    OrderItemModel? fresh;
+    try {
+      final orders = context.watch<OrdersCubit>().state.orders;
+      for (final item in orders) {
+        if (item.id == order.id) {
+          fresh = item;
+          break;
+        }
+      }
+    } catch (_) {
+      fresh = null;
+    }
+    final current = fresh ?? order;
+    return _DetailsScaffold(order: current, onAction: _onAction);
+  }
+}
+
+class _DetailsScaffold extends StatelessWidget {
+  const _DetailsScaffold({required this.order, required this.onAction});
+
+  final OrderItemModel order;
+  final void Function(BuildContext context) onAction;
+
+  Color _statusColor(BuildContext context) {
+    switch (order.status) {
+      case OrderStatus.active:
+        return AppColor.primaryColor;
+      case OrderStatus.completed:
+        return AppColor.greenColor;
+      case OrderStatus.cancelled:
+        return AppColor.greyColor;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final total = order.product.price * order.quantity;
     return Scaffold(
       appBar: AppBar(title: const Text("Order Details")),
       body: ListView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.fromLTRB(
+          SpacingTokens.lg.w,
+          SpacingTokens.md.h,
+          SpacingTokens.lg.w,
+          SpacingTokens.lg.w,
+        ),
         children: [
           Row(
             children: [
@@ -158,7 +192,7 @@ class OrderDetailsPage extends StatelessWidget {
                     text: order.status == OrderStatus.active
                         ? "Track Order"
                         : "Leave Review",
-                    onPressed: () => _onAction(context),
+                    onPressed: () => onAction(context),
                   ),
                 ),
     );

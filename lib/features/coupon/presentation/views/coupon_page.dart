@@ -16,7 +16,12 @@ class CouponPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Coupon")),
       body: ListView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.fromLTRB(
+          SpacingTokens.lg.w,
+          SpacingTokens.md.h,
+          SpacingTokens.lg.w,
+          SpacingTokens.lg.w,
+        ),
         children: [
           Text("Best offers for you", style: AppFonts.semiBold18(context)),
           SizedBox(height: SpacingTokens.lg.h),

@@ -16,4 +16,25 @@ class OrdersCubit extends Cubit<OrdersState> {
   void selectStatus(OrderStatus status) {
     emit(OrdersState(status: status, orders: state.orders));
   }
+
+  /// Updates a single order's status (e.g. cancel from tracking).
+  void updateStatus(String orderId, OrderStatus status) {
+    emit(
+      OrdersState(
+        status: state.status,
+        orders: [
+          for (final order in state.orders)
+            if (order.id == orderId)
+              OrderItemModel(
+                id: order.id,
+                product: order.product,
+                status: status,
+                quantity: order.quantity,
+              )
+            else
+              order,
+        ],
+      ),
+    );
+  }
 }

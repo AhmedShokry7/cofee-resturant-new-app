@@ -41,7 +41,12 @@ class BundleDetailsPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(bundle.title)),
       body: ListView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.fromLTRB(
+          SpacingTokens.lg.w,
+          SpacingTokens.md.h,
+          SpacingTokens.lg.w,
+          SpacingTokens.lg.w,
+        ),
         children: [
           if (image != null)
             Center(

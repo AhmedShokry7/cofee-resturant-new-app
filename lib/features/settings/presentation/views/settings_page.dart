@@ -44,10 +44,15 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(
-          children: [
-            Padding(
-              padding: EdgeInsets.all(SpacingTokens.lg.w),
+          child: ListView(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  SpacingTokens.lg.w,
+                  SpacingTokens.md.h,
+                  SpacingTokens.lg.w,
+                  SpacingTokens.lg.w,
+                ),
               child: Column(
                 children: [
                   BlocBuilder<ProfileCubit, ProfileState>(

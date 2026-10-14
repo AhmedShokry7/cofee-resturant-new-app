@@ -1,6 +1,8 @@
 class AppImages {
   // =========== Logo Image ===========
   static const String logo = "assets/images/logo.png";
+  // =========== Temporary product placeholder ===========
+  static const String product = "assets/images/product.png";
   // =========== Banner Image ===========
   static const String banner = "assets/images/banar.png";
   // =========== AI Assistant Icon ===========

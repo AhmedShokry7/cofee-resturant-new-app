@@ -17,9 +17,14 @@ class TrackOrderPageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.all(SpacingTokens.lg.w),
+      padding: EdgeInsets.fromLTRB(
+        SpacingTokens.lg.w,
+        SpacingTokens.md.h,
+        SpacingTokens.lg.w,
+        SpacingTokens.lg.w,
+      ),
       children: [
-        OrderItemCard(product: order.product),
+        OrderItemCard(product: order.product, quantity: order.quantity),
         SizedBox(height: SpacingTokens.lg.h),
         Text("Order Details", style: AppFonts.semiBold16(context)),
         SizedBox(height: SpacingTokens.md.h),

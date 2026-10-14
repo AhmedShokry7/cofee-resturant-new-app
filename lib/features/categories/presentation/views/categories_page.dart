@@ -72,7 +72,12 @@ class _BundlesList extends StatelessWidget {
   Widget build(BuildContext context) {
     final bundles = getBundlesList();
     return ListView.builder(
-      padding: EdgeInsets.all(SpacingTokens.lg.w),
+      padding: EdgeInsets.fromLTRB(
+        SpacingTokens.lg.w,
+        SpacingTokens.md.h,
+        SpacingTokens.lg.w,
+        SpacingTokens.lg.w,
+      ),
       itemCount: bundles.length,
       itemBuilder: (context, index) =>
           BundleListTile(bundle: bundles[index]),

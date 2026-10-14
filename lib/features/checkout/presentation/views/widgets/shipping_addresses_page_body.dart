@@ -17,7 +17,12 @@ class ShippingAddressesPageBody extends StatelessWidget {
     return BlocBuilder<CheckoutCubit, CheckoutState>(
       builder: (context, state) {
         return ListView(
-          padding: EdgeInsets.all(SpacingTokens.lg.w),
+          padding: EdgeInsets.fromLTRB(
+            SpacingTokens.lg.w,
+            SpacingTokens.md.h,
+            SpacingTokens.lg.w,
+            SpacingTokens.lg.w,
+          ),
           children: [
             for (var index = 0; index < state.addresses.length; index++) ...[
               AddressTile(

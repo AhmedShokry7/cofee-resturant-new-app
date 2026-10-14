@@ -25,11 +25,10 @@ class PaymentMethodBottomBar extends StatelessWidget {
         text: "Confirm Payment",
         onPressed: () {
           final cart = context.read<CartCubit>().state;
-          context.read<CheckoutCubit>().placeOrder(
-            items: cart.items,
-            total: cart.total,
-          );
-          context.read<LoyaltyCubit>().earnForOrder(cart.total);
+          final checkout = context.read<CheckoutCubit>();
+          final total = checkout.finalTotal(cart.total);
+          checkout.placeOrder(items: cart.items, total: total);
+          context.read<LoyaltyCubit>().earnForOrder(total);
           context.read<CartCubit>().clear();
           Navigator.of(context).pushNamedAndRemoveUntil(
             PaymentSuccessPage.routeName,

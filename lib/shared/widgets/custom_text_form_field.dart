@@ -21,6 +21,9 @@ class CustomTextFormField extends StatefulWidget {
   final double? padding;
   final List<TextInputFormatter>? inputFormatters;
 
+  /// Space below the field. Defaults to 16 (set 8 for denser forms).
+  final double bottomPadding;
+
   const CustomTextFormField({
     super.key,
     required this.hint,
@@ -37,6 +40,7 @@ class CustomTextFormField extends StatefulWidget {
     this.suffixIcon,
     this.padding,
     this.inputFormatters,
+    this.bottomPadding = 16,
   });
 
   @override
@@ -70,7 +74,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         : AppColor.greyColor.withValues(alpha: 0.35);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.only(bottom: widget.bottomPadding.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

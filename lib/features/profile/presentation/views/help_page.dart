@@ -16,7 +16,12 @@ class HelpPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Help")),
       body: ListView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.fromLTRB(
+          SpacingTokens.lg.w,
+          SpacingTokens.md.h,
+          SpacingTokens.lg.w,
+          SpacingTokens.lg.w,
+        ),
         children: [
           Text("Frequently asked questions", style: AppFonts.semiBold16(context)),
           SizedBox(height: SpacingTokens.md.h),

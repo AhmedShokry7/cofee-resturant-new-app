@@ -48,7 +48,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: EdgeInsets.all(SpacingTokens.lg.w),
+          padding: EdgeInsets.fromLTRB(
+            SpacingTokens.lg.w,
+            SpacingTokens.md.h,
+            SpacingTokens.lg.w,
+            SpacingTokens.lg.w,
+          ),
           children: [
             Center(
               child: Stack(

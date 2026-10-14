@@ -1205,6 +1205,19 @@ class AssistantEngine {
     AssistantMemory memory, {
     required bool arabic,
   }) {
+    if (memory.draft.items.isEmpty) {
+      memory.pendingQuestion = null;
+      return AssistantAnswer(
+        text: arabic
+            ? 'مفيش حاجة في الاوردر حالياً. قولي عايز تطلب إيه.'
+            : 'Your order is empty right now. Tell me what to add.',
+        topic: 'order',
+        sourceId: 'order-empty-confirm',
+        quickReplies: arabic
+            ? const ['عايز اطلب', 'رشحلي مشروب']
+            : const ['I want to order', 'Suggest a drink'],
+      );
+    }
     final actions = memory.draft.items
         .map(
           (item) => CartAction(

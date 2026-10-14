@@ -129,13 +129,11 @@ class _AssistantSheetState extends State<AssistantSheet> {
               children: [
                 Row(
                   children: [
-                    ClipOval(
-                      child: Image.asset(
-                        AppImages.aiBot,
-                        height: 40.w,
-                        width: 40.w,
-                        fit: BoxFit.cover,
-                      ),
+                    Image.asset(
+                      AppImages.aiBot,
+                      height: 40.w,
+                      width: 40.w,
+                      fit: BoxFit.contain,
                     ),
                     SizedBox(width: SpacingTokens.sm.w),
                     Expanded(

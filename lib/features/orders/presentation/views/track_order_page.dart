@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
+import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_action_bottom_bar.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/track_order_page_body.dart';
 
@@ -11,14 +14,29 @@ class TrackOrderPage extends StatelessWidget {
 
   final OrderItemModel order;
 
+  void _cancelOrder(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      context.read<OrdersCubit>().updateStatus(order.id, OrderStatus.cancelled);
+    } catch (_) {
+      // Orders list is optional here; still go back.
+    }
+    Navigator.of(context).pop();
+    messenger.showSnackBar(
+      const SnackBar(content: Text("Order cancelled")),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Track Order")),
       body: TrackOrderPageBody(order: order),
       bottomNavigationBar: OrderActionBottomBar(
-        onCancel: () => Navigator.of(context).pop(),
-        onSubmit: () {},
+        cancelText: "Cancel Order",
+        submitText: "Back",
+        onCancel: () => _cancelOrder(context),
+        onSubmit: () => Navigator.of(context).pop(),
       ),
     );
   }

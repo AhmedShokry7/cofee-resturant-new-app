@@ -48,7 +48,12 @@ class LoyaltyPage extends StatelessWidget {
               .where((reward) => !reward.affordable(state.balance))
               .toList();
           return ListView(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.lg.w,
+            ),
             children: [
               _BalanceCard(balance: state.balance),
               SizedBox(height: SpacingTokens.xl.h),

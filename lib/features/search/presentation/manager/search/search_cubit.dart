@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/features/assistant/data/assistant_language.dart';
+import 'package:new_coffee/features/assistant/data/assistant_phrases.dart';
 import 'package:new_coffee/features/menu/data/menu_list.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/search/data/model/search_sort.dart';
@@ -53,13 +55,33 @@ class SearchCubit extends Cubit<SearchState> {
     required double? minPrice,
     required double? maxPrice,
   }) {
-    final keyword = query.trim().toLowerCase();
+    final keyword = normalizeText(query);
+    // Same Arabic vocabulary the assistant understands (شاي -> tea...).
+    final synonymsHit = <String>{};
+    var coffeeTalk = false;
+    if (keyword.isNotEmpty) {
+      for (final entry in AssistantPhrases.productSynonyms.entries) {
+        final synonym = normalizeText(entry.key);
+        if (synonym.length > 2 && keyword.contains(synonym)) {
+          if (entry.value == 'coffee') {
+            coffeeTalk = true;
+          } else {
+            synonymsHit.add(entry.value.toLowerCase());
+          }
+        }
+      }
+    }
     final results = getMenuList().where((product) {
+      final name = normalizeText(product.name);
+      final description = normalizeText(product.description);
+      final normalizedCategory = normalizeText(product.category);
       final matchesQuery =
           keyword.isEmpty ||
-          product.name.toLowerCase().contains(keyword) ||
-          product.description.toLowerCase().contains(keyword) ||
-          product.category.toLowerCase().contains(keyword);
+          name.contains(keyword) ||
+          description.contains(keyword) ||
+          normalizedCategory.contains(keyword) ||
+          synonymsHit.any(name.contains) ||
+          (coffeeTalk && normalizedCategory.contains('coffee'));
       final matchesCategory = category == null || product.category == category;
       final matchesPrice =
           (minPrice == null || product.price >= minPrice) &&

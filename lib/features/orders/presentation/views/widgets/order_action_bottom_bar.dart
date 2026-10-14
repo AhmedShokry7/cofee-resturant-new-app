@@ -10,10 +10,14 @@ class OrderActionBottomBar extends StatelessWidget {
     super.key,
     required this.onCancel,
     required this.onSubmit,
+    this.cancelText = "Cancel",
+    this.submitText = "Submit",
   });
 
   final VoidCallback onCancel;
   final VoidCallback onSubmit;
+  final String cancelText;
+  final String submitText;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +31,14 @@ class OrderActionBottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: CustomBtn(
-              text: "Cancel",
+              text: cancelText,
               variant: BtnVariant.secondary,
               textColor: AppColor.primaryColor,
               onPressed: onCancel,
             ),
           ),
           SizedBox(width: SpacingTokens.md.w),
-          Expanded(child: CustomBtn(text: "Submit", onPressed: onSubmit)),
+          Expanded(child: CustomBtn(text: submitText, onPressed: onSubmit)),
         ],
       ),
     );

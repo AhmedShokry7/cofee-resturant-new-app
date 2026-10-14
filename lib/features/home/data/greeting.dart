@@ -5,7 +5,7 @@ String getGreeting(DateTime time) {
   return "Good Evening";
 }
 
-bool isDaytime(DateTime time) => time.hour >= 6 && time.hour < 18;
+bool isDaytime(DateTime time) => time.hour >= 6 && time.hour < 17;
 
 String? firstNameOf(String? fullName) {
   final parts = (fullName ?? '')

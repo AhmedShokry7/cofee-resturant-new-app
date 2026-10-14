@@ -23,12 +23,14 @@ class AddAddressPageBody extends StatefulWidget {
 class _AddAddressPageBodyState extends State<AddAddressPageBody> {
   static const LatLng _currentLocation = LatLng(16.8892, 42.5511);
 
+  final MapController _mapController = MapController();
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
   LatLng _selectedLocation = _currentLocation;
 
   @override
   void dispose() {
+    _mapController.dispose();
     _nameController.dispose();
     _locationController.dispose();
     super.dispose();
@@ -36,6 +38,7 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
 
   void _useCurrentLocation() {
     setState(() => _selectedLocation = _currentLocation);
+    _mapController.move(_currentLocation, 15);
     _locationController.text = "Jizan, main street";
   }
 
@@ -72,20 +75,20 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.sm.h,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  "Enter your location",
-                  textAlign: TextAlign.center,
-                  style: AppFonts.semiBold24(context),
-                ),
-                SizedBox(height: SpacingTokens.xl.h),
                 CustomTextFormField(
                   controller: _nameController,
                   hint: "Address name (e.g. Home)",
                   textInputAction: TextInputAction.next,
+                  bottomPadding: 8,
                 ),
                 CustomTextFormField(
                   controller: _locationController,
@@ -95,14 +98,14 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
                     color: AppColor.greyColor,
                   ),
                   textInputAction: TextInputAction.done,
+                  bottomPadding: 8,
                 ),
-                SizedBox(height: SpacingTokens.xs.h),
                 GestureDetector(
                   onTap: _useCurrentLocation,
                   behavior: HitTestBehavior.opaque,
                   child: Padding(
                     padding: EdgeInsets.symmetric(
-                      vertical: SpacingTokens.sm.h,
+                      vertical: SpacingTokens.xs.h,
                     ),
                     child: Row(
                       children: [
@@ -122,14 +125,15 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
                     ),
                   ),
                 ),
-                const Divider(),
-                SizedBox(height: SpacingTokens.md.h),
+                const Divider(height: 1),
+                SizedBox(height: SpacingTokens.sm.h),
                 CustomBtn(text: "Confirm", onPressed: _confirm),
               ],
             ),
           ),
           Expanded(
             child: FlutterMap(
+              mapController: _mapController,
               options: MapOptions(
                 initialCenter: _selectedLocation,
                 initialZoom: 14,

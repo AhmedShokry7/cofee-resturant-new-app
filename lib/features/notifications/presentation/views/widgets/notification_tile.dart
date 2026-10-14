@@ -7,9 +7,14 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 
 class NotificationTile extends StatelessWidget {
-  const NotificationTile({super.key, required this.notification});
+  const NotificationTile({
+    super.key,
+    required this.notification,
+    this.isRead = true,
+  });
 
   final NotificationModel notification;
+  final bool isRead;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +55,16 @@ class NotificationTile extends StatelessWidget {
                         style: AppFonts.semiBold16(context),
                       ),
                     ),
+                    if (!isRead)
+                      Container(
+                        height: 10.w,
+                        width: 10.w,
+                        margin: EdgeInsets.only(left: SpacingTokens.xs.w),
+                        decoration: const BoxDecoration(
+                          color: AppColor.primaryColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     SizedBox(width: SpacingTokens.sm.w),
                     Text(
                       notification.time,

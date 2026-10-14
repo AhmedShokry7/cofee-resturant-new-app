@@ -50,9 +50,17 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Leave Review")),
       body: ListView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.fromLTRB(
+          SpacingTokens.lg.w,
+          SpacingTokens.md.h,
+          SpacingTokens.lg.w,
+          SpacingTokens.lg.w,
+        ),
         children: [
-          OrderItemCard(product: widget.order.product),
+          OrderItemCard(
+            product: widget.order.product,
+            quantity: widget.order.quantity,
+          ),
           SizedBox(height: SpacingTokens.xl.h),
           Text(
             "How is your order?",

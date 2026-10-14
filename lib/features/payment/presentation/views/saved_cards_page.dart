@@ -21,7 +21,12 @@ class SavedCardsPage extends StatelessWidget {
       body: BlocBuilder<SavedCardsCubit, SavedCardsState>(
         builder: (context, state) {
           return ListView(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.lg.w,
+            ),
             children: [
               if (state.cards.isEmpty)
                 Padding(

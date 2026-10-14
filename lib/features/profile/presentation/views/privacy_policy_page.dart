@@ -16,7 +16,12 @@ class PrivacyPolicyPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Privacy Policy")),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.fromLTRB(
+          SpacingTokens.lg.w,
+          SpacingTokens.md.h,
+          SpacingTokens.lg.w,
+          SpacingTokens.lg.w,
+        ),
         child: Text(
           privacyPolicyText,
           style: AppFonts.regular14(context).copyWith(

@@ -10,6 +10,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
+import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 
 class HomeHeader extends StatefulWidget {
@@ -62,8 +63,8 @@ class _HomeHeaderState extends State<HomeHeader> {
                       SizedBox(width: 4.w),
                       Image.asset(
                         isDaytime(now) ? AppImages.sun : AppImages.moon,
-                        width: 18.w,
-                        height: 18.w,
+                        width: 30.w,
+                        height: 30.w,
                       ),
                     ],
                   );
@@ -85,17 +86,76 @@ class _HomeHeaderState extends State<HomeHeader> {
             height: 44.w,
             width: 44.w,
             decoration: BoxDecoration(
-              color: AppColor.lightGreyColor,
-              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: AppColor.primaryColor.withAlpha(75), width: 1.w),
+              shape: BoxShape.circle,
             ),
-            child: Icon(
-              HugeIcons.strokeRoundedNotification01,
-              size: 22.w,
-              color: AppColor.primaryColor,
-            ),
+            child: const _NotificationBell(),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Bell with an unread counter stacked over it (layout untouched).
+/// Falls back to a plain bell when no [NotificationsCubit] is provided
+/// (previews, isolated widget tests).
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context) {
+    NotificationsCubit? cubit;
+    try {
+      cubit = context.read<NotificationsCubit>();
+    } catch (_) {
+      cubit = null;
+    }
+    final bell = Icon(
+      HugeIcons.strokeRoundedNotification01,
+      size: 22.w,
+      color: AppColor.primaryColor,
+    );
+    if (cubit == null) return bell;
+    return BlocBuilder<NotificationsCubit, NotificationsState>(
+      builder: (context, state) {
+        final count = cubit!.unreadCount;
+        if (count == 0) return bell;
+        return Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.center,
+          children: [
+            bell,
+            Positioned(
+              top: -4.h,
+              right: -6.w,
+              child: Container(
+                constraints: BoxConstraints(
+                  minWidth: 18.w,
+                  minHeight: 18.w,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: 4.w),
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF3B30),
+                  borderRadius: BorderRadius.circular(100.r),
+                  border: Border.all(
+                    color: AppColor.whiteColor,
+                    width: 1.5.w,
+                  ),
+                ),
+                child: Text(
+                  count > 99 ? '99+' : '$count',
+                  style: AppFonts.medium12(context).copyWith(
+                    color: AppColor.whiteColor,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -18,7 +18,10 @@ class HomePageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: ListView(
-        padding: EdgeInsets.symmetric(vertical: SpacingTokens.lg.h),
+        padding: EdgeInsets.only(
+          top: SpacingTokens.md.h,
+          bottom: SpacingTokens.lg.h,
+        ),
         children: [
           const _HomeSection(child: HomeHeader()),
           SizedBox(height: SpacingTokens.lg.h),

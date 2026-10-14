@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
         return AppProviders(
           child: MaterialApp(
             title: 'New Coffee',
+            debugShowCheckedModeBanner: false,
             theme: ThemeClass.light(),
             navigatorKey: rootNavigatorKey,
             navigatorObservers: [AppRouteObserver.instance],

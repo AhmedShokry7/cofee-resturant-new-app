@@ -8,6 +8,7 @@ class CheckoutState {
     required this.paymentMethods,
     required this.selectedPaymentMethod,
     this.lastOrder,
+    this.appliedCoupon,
   });
 
   final List<AddressModel> addresses;
@@ -16,12 +17,17 @@ class CheckoutState {
   final PaymentMethodModel selectedPaymentMethod;
   final OrderModel? lastOrder;
 
+  /// Coupon applied to the current checkout (null = none).
+  final CouponModel? appliedCoupon;
+
   CheckoutState copyWith({
     List<AddressModel>? addresses,
     AddressModel? selectedAddress,
     List<PaymentMethodModel>? paymentMethods,
     PaymentMethodModel? selectedPaymentMethod,
     OrderModel? lastOrder,
+    CouponModel? appliedCoupon,
+    bool clearCoupon = false,
   }) {
     return CheckoutState(
       addresses: addresses ?? this.addresses,
@@ -29,6 +35,7 @@ class CheckoutState {
       paymentMethods: paymentMethods ?? this.paymentMethods,
       selectedPaymentMethod: selectedPaymentMethod ?? this.selectedPaymentMethod,
       lastOrder: lastOrder ?? this.lastOrder,
+      appliedCoupon: clearCoupon ? null : appliedCoupon ?? this.appliedCoupon,
     );
   }
 }
