@@ -8,6 +8,10 @@ class HomePopularSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return HomeProductsCarousel(title: "Popular", products: getMenuList());
+    return HomeProductsCarousel(
+      title: "Popular",
+      products: getMenuList(),
+      showViewMore: true,
+    );
   }
 }

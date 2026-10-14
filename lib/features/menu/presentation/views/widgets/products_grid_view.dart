@@ -3,7 +3,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
-import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/popular_card.dart';
 
@@ -14,7 +13,7 @@ class ProductsGridView extends StatefulWidget {
     this.padding,
     this.shrinkWrap = false,
     this.physics,
-    this.pageSize = 6,
+    this.pageSize = 10,
   });
 
   final List<ProductModel> products;
@@ -29,11 +28,27 @@ class ProductsGridView extends StatefulWidget {
 
 class _ProductsGridViewState extends State<ProductsGridView> {
   late int _shown;
+  late final ScrollController _controller;
+
+  int get _total => widget.products.length;
+  bool get _hasMore => _shown < _total;
 
   @override
   void initState() {
     super.initState();
     _shown = widget.pageSize;
+    _controller = ScrollController()..addListener(_onScroll);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _loadMoreIfContentTooShort(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
   }
 
   @override
@@ -41,6 +56,44 @@ class _ProductsGridViewState extends State<ProductsGridView> {
     super.didUpdateWidget(oldWidget);
     if (!_sameProducts(oldWidget.products, widget.products)) {
       _shown = widget.pageSize;
+      if (_controller.hasClients) _controller.jumpTo(0);
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _loadMoreIfContentTooShort(),
+      );
+    }
+  }
+
+  void _onScroll() {
+    if (!_controller.hasClients || !_hasMore) return;
+    final position = _controller.position;
+    if (!position.hasViewportDimension ||
+        !position.hasContentDimensions ||
+        position.maxScrollExtent <= 0) {
+      return;
+    }
+    if (position.pixels >= position.maxScrollExtent - 300) {
+      setState(() {
+        _shown = (_shown + widget.pageSize).clamp(0, _total);
+      });
+    }
+  }
+
+  void _loadMoreIfContentTooShort() {
+    if (!_controller.hasClients || !_hasMore) return;
+    final position = _controller.position;
+    if (!position.hasViewportDimension || !position.hasContentDimensions) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _loadMoreIfContentTooShort(),
+      );
+      return;
+    }
+    if (position.maxScrollExtent <= 0) {
+      setState(() {
+        _shown = (_shown + widget.pageSize).clamp(0, _total);
+      });
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _loadMoreIfContentTooShort(),
+      );
     }
   }
 
@@ -54,11 +107,10 @@ class _ProductsGridViewState extends State<ProductsGridView> {
 
   @override
   Widget build(BuildContext context) {
-    final total = widget.products.length;
-    final shown = _shown < total ? _shown : total;
-    final hasMore = shown < total;
+    final shown = _shown.clamp(0, _total);
 
     return CustomScrollView(
+      controller: _controller,
       shrinkWrap: widget.shrinkWrap,
       physics: widget.physics,
       slivers: [
@@ -77,7 +129,7 @@ class _ProductsGridViewState extends State<ProductsGridView> {
             ),
           ),
         ),
-        if (hasMore)
+        if (_hasMore)
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -87,23 +139,12 @@ class _ProductsGridViewState extends State<ProductsGridView> {
                 SpacingTokens.lg.h,
               ),
               child: Center(
-                child: GestureDetector(
-                  onTap: () => setState(() => _shown += widget.pageSize),
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: SpacingTokens.lg.w,
-                      vertical: SpacingTokens.sm.h,
-                    ),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColor.primaryColor),
-                      borderRadius: BorderRadius.circular(100.r),
-                    ),
-                    child: Text(
-                      "View more",
-                      style: AppFonts.medium14(
-                        context,
-                      ).copyWith(color: AppColor.primaryColor),
-                    ),
+                child: SizedBox(
+                  height: 24.w,
+                  width: 24.w,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2.5,
+                    color: AppColor.primaryColor,
                   ),
                 ),
               ),

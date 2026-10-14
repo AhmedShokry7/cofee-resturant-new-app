@@ -13,7 +13,14 @@ class HomeSectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: AppFonts.semiBold16(context)),
+        Flexible(
+          child: Text(
+            title,
+            style: AppFonts.semiBold16(context),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
         ?trailing,
       ],
     );

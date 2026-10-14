@@ -38,11 +38,13 @@ class HomeRecommendationsSection extends StatelessWidget {
                 ? "Cool picks for a warm day"
                 : "Warm picks for a chilly day",
             products: _byWeather(weather),
+            showViewMore: true,
           );
         }
         return HomeProductsCarousel(
           title: "Recommendations",
           products: getRecommendedProducts(),
+          showViewMore: true,
         );
       },
     );

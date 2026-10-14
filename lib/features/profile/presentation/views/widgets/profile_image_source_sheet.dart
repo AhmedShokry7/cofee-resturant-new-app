@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -21,9 +22,16 @@ Future<void> showProfileImagePicker(BuildContext context) async {
   );
   if (source == null || !context.mounted) return;
 
-  final bytes = await pickProfileImage(source: source);
-  if (bytes == null || !context.mounted) return;
-  context.read<ProfileCubit>().setImage(bytes);
+  try {
+    final bytes = await pickProfileImage(source: source);
+    if (bytes == null || !context.mounted) return;
+    context.read<ProfileCubit>().setImage(bytes);
+  } on PlatformException {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Couldn't open the image picker")),
+    );
+  }
 }
 
 class _ImageSourceSheet extends StatelessWidget {

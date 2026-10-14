@@ -3,6 +3,11 @@ class AppImages {
   static const String logo = "assets/images/logo.png";
   // =========== Banner Image ===========
   static const String banner = "assets/images/banar.png";
+  // =========== AI Assistant Icon ===========
+  static const String aiBot = "assets/icons/ai_bot.png";
+  // =========== Day / Night Hint Icons ===========
+  static const String sun = "assets/images/sun.png";
+  static const String moon = "assets/images/moon.png";
   // =========== Splash Image ===========
       // static const String splashImage = "assets/images/splash_screen.png";
       // // =========== Welcome View Image ===========

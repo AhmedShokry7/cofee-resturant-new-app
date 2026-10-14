@@ -188,7 +188,9 @@ class CustomBtn extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (hasLeading) ...[leadingIcon!, SizedBox(width: 8.w)],
-        Text(text, style: ts),
+        Flexible(
+          child: Text(text, style: ts, textAlign: TextAlign.center),
+        ),
         if (hasTrailing) ...[SizedBox(width: 8.w), trailingIcon!],
       ],
     );

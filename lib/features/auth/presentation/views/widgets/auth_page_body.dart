@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
@@ -9,6 +10,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
@@ -76,13 +78,13 @@ class _AuthPageBodyState extends State<AuthPageBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: SpacingTokens.lg.h),
                   Text(
                     "Sign In",
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: SpacingTokens.xs.h),
                   Text(
                     "Hi welcome back, you've been missed",
                     textAlign: TextAlign.center,
@@ -90,7 +92,7 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                       context,
                     ).copyWith(color: AppColor.greyColor),
                   ),
-                  SizedBox(height: SpacingTokens.xxl.h),
+                  SizedBox(height: SpacingTokens.xl.h),
                   CustomTextFormField(
                     controller: _emailController,
                     hint: "Email",
@@ -123,15 +125,28 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                       ),
                     ),
                   ),
-                  SizedBox(height: SpacingTokens.lg.h),
+                  SizedBox(height: SpacingTokens.md.h),
                   CustomBtn(
                     text: "Sign In",
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
-                  SizedBox(height: SpacingTokens.xxl.h),
-                  const AuthSocialLogin(),
                   SizedBox(height: SpacingTokens.xl.h),
+                  const AuthSocialLogin(),
+                  SizedBox(height: SpacingTokens.lg.h),
+                  CustomBtn(
+                    text: "Continue with phone number",
+                    variant: BtnVariant.outlined,
+                    leadingIcon: Icon(
+                      HugeIcons.strokeRoundedSmartPhone01,
+                      size: 20.w,
+                      color: AppColor.primaryColor,
+                    ),
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pushNamed(PhoneAuthPage.routeName),
+                  ),
+                  SizedBox(height: SpacingTokens.lg.h),
                   AuthSwitchPrompt(
                     question: "Don't have an account? ",
                     actionText: "Sign Up",
@@ -139,7 +154,7 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                       context,
                     ).pushReplacementNamed(SignUpPage.routeName),
                   ),
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: SpacingTokens.lg.h),
                 ],
               ),
             );

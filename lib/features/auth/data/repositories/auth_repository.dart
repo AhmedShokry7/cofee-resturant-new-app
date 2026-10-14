@@ -18,6 +18,13 @@ abstract class AuthRepository {
 
   Future<AuthUser> signInWithApple();
 
+  Future<void> sendPhoneCode({required String phone});
+
+  Future<AuthUser> verifyPhoneCode({
+    required String phone,
+    required String code,
+  });
+
   Future<void> sendPasswordResetEmail({required String email});
 
   Future<void> resetPassword({required String newPassword});

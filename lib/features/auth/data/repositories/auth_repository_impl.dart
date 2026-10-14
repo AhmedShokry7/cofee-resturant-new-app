@@ -38,6 +38,20 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> sendPhoneCode({required String phone}) async {
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+  }
+
+  @override
+  Future<AuthUser> verifyPhoneCode({
+    required String phone,
+    required String code,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 700));
+    return AuthUser(id: phone);
+  }
+
+  @override
   Future<void> sendPasswordResetEmail({required String email}) async {
     await Future<void>.delayed(const Duration(milliseconds: 700));
   }

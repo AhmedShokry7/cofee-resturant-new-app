@@ -6,6 +6,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/features/home/data/banners_list.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/banner/banner_cubit.dart';
+import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_dots.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 
@@ -62,8 +63,16 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               itemCount: widget.banners.length,
               onPageChanged: (index) =>
                   context.read<BannerCubit>().jumpTo(index),
-              itemBuilder: (context, index) =>
-                  BannerImage(banner: widget.banners[index], borderRadius: 0),
+              itemBuilder: (context, index) => GestureDetector(
+                onTap: () => Navigator.of(context).pushNamed(
+                  BannerDetailsPage.routeName,
+                  arguments: widget.banners[index],
+                ),
+                child: BannerImage(
+                  banner: widget.banners[index],
+                  borderRadius: 0,
+                ),
+              ),
             ),
           ),
           SizedBox(height: SpacingTokens.md.h),

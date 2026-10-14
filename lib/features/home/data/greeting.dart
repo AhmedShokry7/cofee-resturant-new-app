@@ -6,3 +6,12 @@ String getGreeting(DateTime time) {
 }
 
 bool isDaytime(DateTime time) => time.hour >= 6 && time.hour < 18;
+
+String? firstNameOf(String? fullName) {
+  final parts = (fullName ?? '')
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .toList();
+  return parts.isEmpty ? null : parts.first;
+}
