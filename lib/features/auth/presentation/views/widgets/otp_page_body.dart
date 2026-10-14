@@ -10,6 +10,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -114,13 +115,13 @@ class _OtpPageBodyState extends State<OtpPageBody> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AuthSpacings.top.h),
                 Text(
                   "Verification Code",
                   textAlign: TextAlign.center,
                   style: AppFonts.semiBold24(context),
                 ),
-                SizedBox(height: SpacingTokens.xs.h),
+                SizedBox(height: AuthSpacings.titleGap.h),
                 Text(
                   "We sent a 6-digit code to ${widget.phone}",
                   textAlign: TextAlign.center,
@@ -128,7 +129,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                     context,
                   ).copyWith(color: AppColor.greyColor),
                 ),
-                SizedBox(height: SpacingTokens.xl.h),
+                SizedBox(height: AuthSpacings.headerGap.h),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
@@ -170,19 +171,19 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                     ),
                   ),
                 ),
-                SizedBox(height: SpacingTokens.xl.h),
+                SizedBox(height: AuthSpacings.fieldsGap.h),
                 CustomBtn(
                   text: "Verify",
                   isLoading: isLoading,
                   onPressed: _submit,
                 ),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AuthSpacings.sectionGap.h),
                 AuthSwitchPrompt(
                   question: "Didn't receive the code? ",
                   actionText: "Resend",
                   onTap: _resend,
                 ),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AuthSpacings.bottom.h),
               ],
             );
           },

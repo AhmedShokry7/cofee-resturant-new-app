@@ -8,6 +8,7 @@ class AssistantState {
     this.products = const [],
     this.navigateRoute,
     this.navigateLabel,
+    this.cartActions = const [],
   });
 
   final List<ChatMessage> messages;
@@ -17,6 +18,9 @@ class AssistantState {
   final String? navigateRoute;
   final String? navigateLabel;
 
+  /// Pending tool calls (e.g. add-to-cart) for the UI layer to execute once.
+  final List<CartAction> cartActions;
+
   AssistantState copyWith({
     List<ChatMessage>? messages,
     bool? typing,
@@ -24,6 +28,7 @@ class AssistantState {
     List<ProductModel>? products,
     String? navigateRoute,
     String? navigateLabel,
+    List<CartAction>? cartActions,
     bool clearAction = false,
   }) {
     return AssistantState(
@@ -33,6 +38,7 @@ class AssistantState {
       products: products ?? this.products,
       navigateRoute: clearAction ? null : navigateRoute ?? this.navigateRoute,
       navigateLabel: clearAction ? null : navigateLabel ?? this.navigateLabel,
+      cartActions: clearAction ? const [] : cartActions ?? this.cartActions,
     );
   }
 }

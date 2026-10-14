@@ -7,6 +7,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
+import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 class PaymentMethodBottomBar extends StatelessWidget {
@@ -28,6 +29,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
             items: cart.items,
             total: cart.total,
           );
+          context.read<LoyaltyCubit>().earnForOrder(cart.total);
           context.read<CartCubit>().clear();
           Navigator.of(context).pushNamedAndRemoveUntil(
             PaymentSuccessPage.routeName,

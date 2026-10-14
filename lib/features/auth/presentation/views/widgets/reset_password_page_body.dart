@@ -7,6 +7,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -63,13 +64,13 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AuthSpacings.top.h),
                   Text(
                     "Reset Password",
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: AuthSpacings.titleGap.h),
                   Text(
                     "Enter your new password below",
                     textAlign: TextAlign.center,
@@ -77,7 +78,7 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                       context,
                     ).copyWith(color: AppColor.greyColor),
                   ),
-                  SizedBox(height: SpacingTokens.xxl.h),
+                  SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
                     controller: _passwordController,
                     hint: "New Password",
@@ -96,13 +97,13 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                         ? "Passwords do not match"
                         : null,
                   ),
-                  SizedBox(height: SpacingTokens.lg.h),
+                  SizedBox(height: AuthSpacings.fieldsGap.h),
                   CustomBtn(
                     text: "Reset Password",
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AuthSpacings.bottom.h),
                 ],
               ),
             );

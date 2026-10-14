@@ -9,6 +9,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -73,13 +74,13 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: SpacingTokens.lg.h),
+                  SizedBox(height: AuthSpacings.top.h),
                   Text(
                     "Sign In with Phone",
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
-                  SizedBox(height: SpacingTokens.xs.h),
+                  SizedBox(height: AuthSpacings.titleGap.h),
                   Text(
                     "Enter your phone number and we'll send you a verification code",
                     textAlign: TextAlign.center,
@@ -87,7 +88,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                       context,
                     ).copyWith(color: AppColor.greyColor),
                   ),
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
                     controller: _phoneController,
                     hint: "Phone number",
@@ -98,13 +99,13 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                     ],
                     validator: _validatePhone,
                   ),
-                  SizedBox(height: SpacingTokens.md.h),
+                  SizedBox(height: AuthSpacings.fieldsGap.h),
                   CustomBtn(
                     text: "Send Code",
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
-                  SizedBox(height: SpacingTokens.lg.h),
+                  SizedBox(height: AuthSpacings.bottom.h),
                 ],
               ),
             );

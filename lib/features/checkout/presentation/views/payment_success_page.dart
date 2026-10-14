@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -6,6 +7,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
+import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 class PaymentSuccessPage extends StatelessWidget {
@@ -52,6 +54,23 @@ class PaymentSuccessPage extends StatelessWidget {
                     style: AppFonts.regular14(
                       context,
                     ).copyWith(color: AppColor.greyColor),
+                  ),
+                  BlocBuilder<LoyaltyCubit, LoyaltyState>(
+                    builder: (context, state) {
+                      if (state.lastEarned <= 0) {
+                        return const SizedBox.shrink();
+                      }
+                      return Padding(
+                        padding: EdgeInsets.only(top: SpacingTokens.sm.h),
+                        child: Text(
+                          "You earned ${state.lastEarned} loyalty points!",
+                          textAlign: TextAlign.center,
+                          style: AppFonts.medium14(
+                            context,
+                          ).copyWith(color: AppColor.primaryColor),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),

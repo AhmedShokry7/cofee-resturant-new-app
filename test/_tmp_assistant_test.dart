@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/main.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
+import 'package:new_coffee/features/assistant/data/assistant_composer.dart';
 import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
@@ -70,6 +71,17 @@ class FakeAuthRepository implements AuthRepository {
       throw UnimplementedError();
 
   @override
+  Future<void> sendPhoneCode({required String phone}) =>
+      throw UnimplementedError();
+
+  @override
+  Future<AuthUser> verifyPhoneCode({
+    required String phone,
+    required String code,
+  }) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> signOut() async {}
 
   @override
@@ -119,7 +131,7 @@ void main() {
     expect(AssistantEngine.answer('do you have coupons?', memory: memory, now: morning).navigateRoute, 'couponRoute');
     expect(
       AssistantEngine.answer('zxqv blarg', memory: memory, now: morning).text,
-      contains('did not catch'),
+      contains("couldn't quite catch"),
     );
 
     memory.recordFeedback('x', true);
@@ -163,9 +175,10 @@ void main() {
     final pending = cubit.sendMessage('zxqv blarg unknown words here');
     await tester.pump(const Duration(milliseconds: 600));
     await pending;
+    // Fallback wording rotates; the reply must be one of the pool.
     expect(
-      cubit.state.messages.last.text,
-      contains('did not catch'),
+      AssistantComposer.fallback,
+      contains(cubit.state.messages.last.text),
     );
     expect(cubit.state.typing, isFalse);
     await cubit.close();

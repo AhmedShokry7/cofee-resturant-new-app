@@ -19,5 +19,6 @@ List<CategoryModel> getCategoriesList() {
     ),
     CategoryModel(label: "Bakery", icon: HugeIcons.strokeRoundedBread01),
     CategoryModel(label: "Donuts", icon: HugeIcons.strokeRoundedDoughnut),
+    CategoryModel(label: "Bundles", icon: HugeIcons.strokeRoundedPackage),
   ];
 }

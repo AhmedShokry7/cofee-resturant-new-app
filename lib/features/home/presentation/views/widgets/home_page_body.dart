@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
@@ -32,6 +33,8 @@ class HomePageBody extends StatelessWidget {
           const _HomeSection(child: HomeSingleBannerSection()),
           SizedBox(height: SpacingTokens.xl.h),
           const _HomeSection(child: HomeRecommendationsSection()),
+          SizedBox(height: SpacingTokens.lg.h),
+          const _HomeSection(child: HomeBundlesSection()),
         ],
       ),
     );

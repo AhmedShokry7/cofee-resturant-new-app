@@ -10,6 +10,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -80,13 +81,13 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AuthSpacings.top.h),
                   Text(
                     "Sign Up",
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: AuthSpacings.titleGap.h),
                   Text(
                     "Create your account to get started",
                     textAlign: TextAlign.center,
@@ -94,7 +95,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       context,
                     ).copyWith(color: AppColor.greyColor),
                   ),
-                  SizedBox(height: SpacingTokens.xxl.h),
+                  SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
                     controller: _nameController,
                     hint: "Name",
@@ -129,15 +130,15 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         ? "Passwords do not match"
                         : null,
                   ),
-                  SizedBox(height: SpacingTokens.lg.h),
+                  SizedBox(height: AuthSpacings.fieldsGap.h),
                   CustomBtn(
                     text: "Sign Up",
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
-                  SizedBox(height: SpacingTokens.xxl.h),
+                  SizedBox(height: AuthSpacings.buttonGap.h),
                   const AuthSocialLogin(label: "Or sign up with"),
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AuthSpacings.sectionGap.h),
                   AuthSwitchPrompt(
                     question: "Already have an account? ",
                     actionText: "Sign In",
@@ -145,7 +146,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       context,
                     ).pushReplacementNamed(AuthPage.routeName),
                   ),
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AuthSpacings.bottom.h),
                 ],
               ),
             );

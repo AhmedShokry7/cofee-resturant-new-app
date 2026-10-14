@@ -47,6 +47,8 @@ class CartPage extends StatelessWidget {
                               product: item.product,
                               quantity: item.quantity,
                               showFavorite: false,
+                              note: item.note,
+                              unitPrice: item.unitPrice,
                               onIncrement: () => context
                                   .read<CartCubit>()
                                   .increment(item.product.id),

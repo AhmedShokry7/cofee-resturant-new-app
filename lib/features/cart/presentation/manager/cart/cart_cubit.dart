@@ -8,14 +8,28 @@ part 'cart_state.dart';
 class CartCubit extends Cubit<CartState> {
   CartCubit() : super(const CartState(items: []));
 
-  void add(ProductModel product) {
+  void add(
+    ProductModel product, {
+    int quantity = 1,
+    String note = '',
+    double? unitPrice,
+  }) {
     final items = [...state.items];
-    final index = items.indexWhere((item) => item.product.id == product.id);
+    final index = items.indexWhere(
+      (item) => item.product.id == product.id && item.note == note,
+    );
     if (index == -1) {
-      items.add(CartItem(product: product));
+      items.add(
+        CartItem(
+          product: product,
+          quantity: quantity,
+          note: note,
+          unitPrice: unitPrice,
+        ),
+      );
     } else {
       items[index] = items[index].copyWith(
-        quantity: items[index].quantity + 1,
+        quantity: items[index].quantity + quantity,
       );
     }
     emit(CartState(items: items));

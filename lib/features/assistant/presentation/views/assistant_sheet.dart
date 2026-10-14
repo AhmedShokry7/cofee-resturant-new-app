@@ -3,13 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
+import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
+import 'package:new_coffee/features/menu/data/menu_list.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -40,10 +43,54 @@ class _AssistantSheetState extends State<AssistantSheet> {
     }
   }
 
+  Set<String> _cartProductIds() {
+    try {
+      return context
+          .read<CartCubit>()
+          .state
+          .items
+          .map((item) => item.product.id)
+          .toSet();
+    } catch (_) {
+      return const {};
+    }
+  }
+
   void _send([String? text]) {
     final value = text ?? _controller.text;
-    context.read<AssistantCubit>().sendMessage(value, favoriteIds: _favoriteIds());
+    context.read<AssistantCubit>().sendMessage(
+      value,
+      favoriteIds: _favoriteIds(),
+      cartProductIds: _cartProductIds(),
+    );
     _controller.clear();
+  }
+
+  /// Executes tool calls requested by the engine (add-to-cart) against the
+  /// real app cart, then marks them done.
+  void _executeCartActions(BuildContext context, AssistantState state) {
+    if (state.cartActions.isEmpty) return;
+    CartCubit? cart;
+    try {
+      cart = context.read<CartCubit>();
+    } catch (_) {
+      cart = null;
+    }
+    if (cart == null) return;
+    final menu = getMenuList();
+    for (final action in state.cartActions) {
+      for (final product in menu) {
+        if (product.id == action.productId) {
+          cart.add(
+            product,
+            quantity: action.quantity,
+            note: action.note,
+            unitPrice: action.unitPrice,
+          );
+        }
+      }
+    }
+    context.read<AssistantCubit>().clearCartActions();
   }
 
   void _openProduct(ProductModel product) {
@@ -53,6 +100,18 @@ class _AssistantSheetState extends State<AssistantSheet> {
       ProductDetailsPage.routeName,
       arguments: product,
     );
+  }
+
+  void _addToCart(BuildContext context, ProductModel product) {
+    context.read<AssistantCubit>().recordProductInterest(product);
+    try {
+      context.read<CartCubit>().add(product);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("${product.name} added to cart")),
+      );
+    } catch (_) {
+      // Cart is optional here; the card tap still opens details.
+    }
   }
 
   @override
@@ -70,17 +129,12 @@ class _AssistantSheetState extends State<AssistantSheet> {
               children: [
                 Row(
                   children: [
-                    Container(
-                      height: 36.w,
-                      width: 36.w,
-                      decoration: const BoxDecoration(
-                        color: AppColor.primaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        HugeIcons.strokeRoundedSparkles,
-                        size: 20.w,
-                        color: AppColor.whiteColor,
+                    ClipOval(
+                      child: Image.asset(
+                        AppImages.aiBot,
+                        height: 40.w,
+                        width: 40.w,
+                        fit: BoxFit.cover,
                       ),
                     ),
                     SizedBox(width: SpacingTokens.sm.w),
@@ -101,18 +155,19 @@ class _AssistantSheetState extends State<AssistantSheet> {
                 ),
                 SizedBox(height: SpacingTokens.sm.h),
                 Expanded(
-                  child: BlocConsumer<AssistantCubit, AssistantState>(
-                    listener: (context, state) {
-                      if (_scroll.hasClients && state.messages.isNotEmpty) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (_scroll.hasClients) {
-                            _scroll.jumpTo(
-                              _scroll.position.maxScrollExtent,
-                            );
-                          }
-                        });
-                      }
-                    },
+                child: BlocConsumer<AssistantCubit, AssistantState>(
+                  listener: (context, state) {
+                    if (_scroll.hasClients && state.messages.isNotEmpty) {
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (_scroll.hasClients) {
+                          _scroll.jumpTo(
+                            _scroll.position.maxScrollExtent,
+                          );
+                        }
+                      });
+                    }
+                    _executeCartActions(context, state);
+                  },
                     builder: (context, state) {
                       final lastAssistant = state.messages.lastIndexWhere(
                         (message) => message.role == MessageRole.assistant,
@@ -290,6 +345,23 @@ class _AssistantSheetState extends State<AssistantSheet> {
                       ],
                     ),
                   ),
+                  GestureDetector(
+                    onTap: () => _addToCart(context, product),
+                    child: Container(
+                      height: 32.w,
+                      width: 32.w,
+                      decoration: const BoxDecoration(
+                        color: AppColor.primaryColor,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        HugeIcons.strokeRoundedAdd01,
+                        size: 18.w,
+                        color: AppColor.whiteColor,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: SpacingTokens.xs.w),
                   Icon(
                     HugeIcons.strokeRoundedArrowRight01,
                     size: 18.w,

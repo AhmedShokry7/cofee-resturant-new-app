@@ -1,6 +1,12 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/features/assistant/data/assistant_actions.dart';
+import 'package:new_coffee/features/assistant/data/assistant_catalog.dart';
+import 'package:new_coffee/features/assistant/data/assistant_composer.dart';
+import 'package:new_coffee/features/assistant/data/assistant_conversation_log.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
+import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
+import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/llm/http_llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
@@ -20,7 +26,11 @@ class AssistantCubit extends Cubit<AssistantState> {
   final LlmConfig llmConfig;
 
   AssistantMemory _memory = AssistantMemory();
+  ConversationLog _log = ConversationLog();
   int _counter = 0;
+  bool _isReturning = false;
+  String? _firstName;
+  Set<String> _lastCartIds = const {};
 
   String _nextId() =>
       '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
@@ -30,9 +40,15 @@ class AssistantCubit extends Cubit<AssistantState> {
     return messages.sublist(messages.length - 100);
   }
 
-  Future<void> start() async {
+  Future<void> start({bool isReturning = false, String? firstName}) async {
+    _isReturning = isReturning;
+    _firstName = firstName;
     _memory = await AssistantMemory.load();
+    _log = await ConversationLog.load();
+    await AssistantCatalog.load();
     if (isClosed) return;
+    final arabic = _memory.replyArabic;
+    final returning = isReturning || _memory.totalChats > 0;
     emit(
       state.copyWith(
         messages: [
@@ -40,11 +56,22 @@ class AssistantCubit extends Cubit<AssistantState> {
           ChatMessage(
             id: _nextId(),
             role: MessageRole.assistant,
-            text:
-                'Hi! I am your coffee assistant. Ask me for a drink suggestion, order help or coffee tips.',
+            text: arabic
+                ? AssistantGreetings.chatGreetingAr(
+                    isReturning: returning,
+                    firstName: firstName,
+                    now: DateTime.now(),
+                  )
+                : AssistantGreetings.chatGreeting(
+                    isReturning: returning,
+                    firstName: firstName,
+                    now: DateTime.now(),
+                  ),
           ),
         ],
-        quickReplies: AssistantEngine.defaultQuickReplies,
+        quickReplies: arabic
+            ? AssistantComposer.quickRepliesAr
+            : AssistantEngine.defaultQuickReplies,
       ),
     );
   }
@@ -52,10 +79,15 @@ class AssistantCubit extends Cubit<AssistantState> {
   Future<void> sendMessage(
     String raw, {
     Set<String> favoriteIds = const {},
+    Set<String> cartProductIds = const {},
+    MessageChannel channel = MessageChannel.text,
   }) async {
     final text = raw.trim();
     if (text.isEmpty || state.typing) return;
     _memory.recordQuery(text);
+    _lastCartIds = cartProductIds;
+    // Stored verbatim: the exact user wording, ready for future learning.
+    await _log.logUser(raw, channel: channel);
     emit(
       state.copyWith(
         messages: [
@@ -74,9 +106,21 @@ class AssistantCubit extends Cubit<AssistantState> {
       memory: _memory,
       now: DateTime.now(),
       favoriteIds: favoriteIds,
+      cartProductIds: cartProductIds,
+      isReturning: _isReturning,
+      firstName: _firstName,
     );
     _memory.recordTopic(answer.topic);
     await _memory.save();
+    await _log.logAssistant(
+      answer.text,
+      intent: detectIntent(
+        text,
+        recentQueries: _memory.recentQueries,
+        lastTopic: _memory.lastTopic,
+      ).name,
+      topic: answer.topic,
+    );
     if (isClosed) return;
     final fallbackId = _nextId();
     emit(
@@ -95,11 +139,19 @@ class AssistantCubit extends Cubit<AssistantState> {
         products: answer.products,
         navigateRoute: answer.navigateRoute,
         navigateLabel: answer.navigateLabel,
+        cartActions: answer.actions,
       ),
     );
     if (answer.topic == 'fallback' && llmConfig.enabled) {
       await _tryLlmUpgrade(text, fallbackId);
     }
+  }
+
+  /// Called by the UI layer after executing [AssistantState.cartActions].
+  /// Clears only the actions — navigation buttons stay visible.
+  void clearCartActions() {
+    if (state.cartActions.isEmpty || isClosed) return;
+    emit(state.copyWith(cartActions: const []));
   }
 
   /// Hybrid escalation: only unknown queries reach the LLM, and only when a
@@ -108,7 +160,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     emit(state.copyWith(typing: true));
     final reply = await _llmClient.complete(
       system:
-          '${buildSystemPrompt(memory: _memory)}\n${buildLocalContext(text, _memory)}',
+          '${buildSystemPrompt(memory: _memory)}\n${buildLocalContext(text, _memory)}\n${buildLiveContext(_memory, cartProductIds: _lastCartIds)}',
       history: buildHistory(state.messages),
       query: text,
     );
@@ -155,6 +207,7 @@ class AssistantCubit extends Cubit<AssistantState> {
 
   Future<void> recordProductInterest(ProductModel product) async {
     _memory.recordCategory(product.category, 2);
+    _memory.recordProduct(product.id, 2);
     await _memory.save();
   }
 }

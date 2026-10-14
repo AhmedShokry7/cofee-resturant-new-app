@@ -14,6 +14,7 @@ import 'package:new_coffee/features/checkout/presentation/views/payment_method_p
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/shipping_addresses_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
+import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_page.dart';
@@ -47,6 +48,7 @@ class AppRoutes {
     PaymentSuccessPage.routeName: (context) => const PaymentSuccessPage(),
     EReceiptPage.routeName: (context) => const EReceiptPage(),
     CouponPage.routeName: (context) => const CouponPage(),
+    LoyaltyPage.routeName: (context) => const LoyaltyPage(),
     OrdersPage.routeName: (context) => const OrdersPage(),
     EditProfilePage.routeName: (context) => const EditProfilePage(),
     SavedCardsPage.routeName: (context) => const SavedCardsPage(),

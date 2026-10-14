@@ -18,32 +18,34 @@ class ProductDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Product Details"),
-        actions: [
-          BlocBuilder<FavoritesCubit, FavoritesState>(
-            builder: (context, state) {
-              final isFavorite = state.ids.contains(product.id);
-              return IconButton(
-                onPressed: () =>
-                    context.read<FavoritesCubit>().toggle(product.id),
-                icon: Icon(
-                  HugeIcons.strokeRoundedFavourite,
-                  color: isFavorite
-                      ? AppColor.primaryColor
-                      : AppColor.greyColor,
-                ),
-              );
-            },
+    return BlocProvider(
+      create: (context) => ProductDetailsCubit(),
+      child: Builder(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text("Product Details"),
+            actions: [
+              BlocBuilder<FavoritesCubit, FavoritesState>(
+                builder: (context, state) {
+                  final isFavorite = state.ids.contains(product.id);
+                  return IconButton(
+                    onPressed: () =>
+                        context.read<FavoritesCubit>().toggle(product.id),
+                    icon: Icon(
+                      HugeIcons.strokeRoundedFavourite,
+                      color: isFavorite
+                          ? AppColor.primaryColor
+                          : AppColor.greyColor,
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+          body: ProductDetailsBody(product: product),
+          bottomNavigationBar: ProductDetailsBottomBar(product: product),
+        ),
       ),
-      body: BlocProvider(
-        create: (context) => ProductDetailsCubit(),
-        child: ProductDetailsBody(product: product),
-      ),
-      bottomNavigationBar: ProductDetailsBottomBar(product: product),
     );
   }
 }

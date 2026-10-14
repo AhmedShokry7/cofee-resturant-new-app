@@ -23,7 +23,11 @@ class HttpLlmClient implements LlmClient {
       final response = await http
           .post(
             Uri.parse('${config.backendUrl}/v1/chat/completions'),
-            headers: const {'Content-Type': 'application/json'},
+            headers: {
+              'Content-Type': 'application/json',
+              if (config.apiKey.isNotEmpty)
+                'Authorization': 'Bearer ${config.apiKey}',
+            },
             body: jsonEncode({
               'model': config.model,
               'temperature': 0.3,

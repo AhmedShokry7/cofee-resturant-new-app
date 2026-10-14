@@ -1,16 +1,22 @@
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
+import 'package:new_coffee/features/menu/data/menu_list.dart';
+import 'package:new_coffee/features/orders/data/orders_list.dart';
 
 String buildSystemPrompt({required AssistantMemory memory}) {
   final buffer = StringBuffer(
     'You are the friendly in-app assistant of a coffee shop app. '
-    'Answer briefly in the user language, max 3 short sentences. '
-    'Only use the provided local knowledge; never invent prices, hours or policies. '
+    'Answer briefly in the user language (Egyptian Arabic if they write Arabic, else English), '
+    'max 3 short sentences. '
+    'Only use the provided local knowledge and live app data; never invent prices, hours or policies. '
     'If you are not sure, say so and offer the in-app help options. ',
   );
   final top = memory.topCategory();
   if (top != null) buffer.write('The user enjoys $top. ');
+  if (memory.replyArabic) {
+    buffer.write('The user prefers Egyptian Arabic. ');
+  }
   if (memory.totalChats > 0) {
     buffer.write('They have chatted ${memory.totalChats} times before. ');
   }
@@ -49,5 +55,45 @@ String buildLocalContext(
     if (body.length > 400) body = '${body.substring(0, 400)}…';
     buffer.writeln('- ${entry.$1.title}: $body');
   }
+  return buffer.toString();
+}
+
+/// Live app data grounding for the backend LLM: real menu (names, prices,
+/// categories), real order statuses, cart contents and learned tastes.
+/// Keeps the model honest — it answers from facts, not imagination.
+String buildLiveContext(
+  AssistantMemory memory, {
+  Set<String> cartProductIds = const {},
+}) {
+  final buffer = StringBuffer();
+  buffer.writeln('Menu (name | category | price):');
+  for (final product in getMenuList()) {
+    buffer.writeln(
+      '- ${product.name} | ${product.category} | ${product.price}',
+    );
+  }
+  final orders = getOrdersList();
+  if (orders.isEmpty) {
+    buffer.writeln('Orders: none.');
+  } else {
+    buffer.writeln('Orders (product | status | qty):');
+    for (final order in orders) {
+      buffer.writeln(
+        '- ${order.product.name} | ${order.status.label} | ${order.quantity}',
+      );
+    }
+  }
+  if (cartProductIds.isEmpty) {
+    buffer.writeln('Cart: empty.');
+  } else {
+    final names = getMenuList()
+        .where((product) => cartProductIds.contains(product.id))
+        .map((product) => product.name)
+        .join(', ');
+    buffer.writeln('Cart: $names.');
+  }
+  final tastes = memory.exportJson();
+  buffer.writeln('Learned tastes: ${tastes['categoryScores']}.');
+  buffer.writeln('Rejected products: ${tastes['dismissedIds']}.');
   return buffer.toString();
 }

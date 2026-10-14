@@ -10,6 +10,7 @@ import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
+import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
@@ -130,6 +131,12 @@ class SettingsPage extends StatelessWidget {
               label: "Coupon",
               onTap: () =>
                   Navigator.of(context).pushNamed(CouponPage.routeName),
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedStar,
+              label: "Loyalty Points",
+              onTap: () =>
+                  Navigator.of(context).pushNamed(LoyaltyPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedNotification01,

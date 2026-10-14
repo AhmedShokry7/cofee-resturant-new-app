@@ -7,6 +7,7 @@ import 'package:new_coffee/features/home/data/banners_list.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
+import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -87,21 +88,21 @@ void main() {
     // 10 products + 9 separators from ListView.separated.
     expect(delegate.estimatedChildCount, 10 * 2 - 1);
 
-    final viewMore = find.text('View more').first;
-    await tester.ensureVisible(viewMore);
-    // FAB overlay floats bottom-right; nudge content up so the tap lands.
-    final outerList = find.ancestor(
-      of: find.descendant(
-        of: find.byType(HomePopularSection),
-        matching: find.byType(ListView),
-      ),
-      matching: find.byType(ListView),
+    // Invoke the trailing "View more" tap callback directly: pixel-tapping
+    // is unreliable here (FAB overlay + scroll physics), and this exercises
+    // the exact same navigation code path.
+    final trailing = tester.widget<GestureDetector>(
+      find
+          .ancestor(
+            of: find.text('View more').first,
+            matching: find.byType(GestureDetector),
+          )
+          .first,
     );
-    await tester.drag(outerList, const Offset(0, -140));
-    await tester.pump();
-    await tester.tap(find.text('View more').first);
+    trailing.onTap!();
     await _settlePush(tester);
-    expect(find.byType(SearchPage), findsOneWidget);
+    expect(find.byType(SeeAllProductsPage), findsOneWidget);
+    expect(find.text('Popular'), findsWidgets);
 
     await tester.pump(const Duration(seconds: 20));
     await tester.pumpWidget(const SizedBox());

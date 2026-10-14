@@ -5,15 +5,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/app_route_observer.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
+import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
+import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_sheet.dart';
+import 'package:new_coffee/features/home/data/greeting.dart';
+import 'package:new_coffee/features/orders/data/orders_list.dart';
+import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
@@ -27,10 +34,10 @@ class AssistantFab extends StatefulWidget {
   const AssistantFab({super.key});
 
   @visibleForTesting
-  static const hintCycle = Duration(seconds: 30);
+  static const hintCycle = Duration(minutes: 2);
 
   @visibleForTesting
-  static const hintVisible = Duration(seconds: 5);
+  static const hintVisible = Duration(seconds: 6);
 
   @override
   State<AssistantFab> createState() => _AssistantFabState();
@@ -38,7 +45,6 @@ class AssistantFab extends StatefulWidget {
 
 class _AssistantFabState extends State<AssistantFab> {
   static const double _fabSize = 72;
-  static const double _margin = 16;
 
   /// Routes where the assistant button must stay hidden
   /// (welcome / onboarding / auth flow).
@@ -55,6 +61,14 @@ class _AssistantFabState extends State<AssistantFab> {
 
   bool _sheetOpen = false;
   bool _showHint = false;
+
+  /// First bubble is a smart welcome (personal + order-aware);
+  /// afterwards the bubble rotates through the generic hints.
+  bool _hasCycled = false;
+  String? _welcomeText;
+  bool _isReturningUser = false;
+  String? _firstName;
+  bool _replyArabic = false;
   int _hintIndex = 0;
   Timer? _cycleTimer;
   Timer? _hideTimer;
@@ -62,14 +76,63 @@ class _AssistantFabState extends State<AssistantFab> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 2), () {
+    _loadWelcome();
+    Timer(const Duration(seconds: 3), () {
       if (mounted) _displayHint();
     });
     _cycleTimer = Timer.periodic(AssistantFab.hintCycle, (_) {
       if (!mounted || _sheetOpen) return;
-      _hintIndex = (_hintIndex + 1) % assistantHints.length;
+      _hasCycled = true;
+      final hints = _replyArabic ? assistantHintsAr : assistantHints;
+      _hintIndex = (_hintIndex + 1) % hints.length;
       _displayHint();
     });
+  }
+
+  /// Has this device completed the auth flow before?
+  Future<void> _loadWelcome() async {
+    AuthRepository? repository;
+    try {
+      repository = context.read<AuthRepository>();
+    } catch (_) {
+      repository = null;
+    }
+    try {
+      final saved = await SharedPref.getValue(key: AppConstant.routesKey);
+      final memory = await AssistantMemory.load();
+      final isReturning = saved == AppConstant.homeRoute;
+      String? firstName;
+      try {
+        final user = await repository?.currentUser();
+        firstName = firstNameOf(user?.name);
+      } catch (_) {
+        firstName = null;
+      }
+      if (!mounted) return;
+      final activeOrders = getOrdersList()
+          .where((order) => order.status.name == 'active')
+          .toList();
+      setState(() {
+        _isReturningUser = isReturning;
+        _firstName = firstName;
+        _replyArabic = memory.replyArabic;
+        _welcomeText = memory.replyArabic
+            ? AssistantGreetings.welcomeBubbleAr(
+                isReturning: isReturning,
+                firstName: firstName,
+                now: DateTime.now(),
+                activeOrders: activeOrders,
+              )
+            : AssistantGreetings.welcomeBubble(
+                isReturning: isReturning,
+                firstName: firstName,
+                now: DateTime.now(),
+                activeOrders: activeOrders,
+              );
+      });
+    } catch (_) {
+      // Welcome bubble is best-effort; generic hints still rotate.
+    }
   }
 
   void _displayHint() {
@@ -79,6 +142,14 @@ class _AssistantFabState extends State<AssistantFab> {
     _hideTimer = Timer(AssistantFab.hintVisible, () {
       if (mounted) setState(() => _showHint = false);
     });
+  }
+
+  /// First display is the smart welcome bubble (when loaded);
+  /// every rotation afterwards uses the generic hints.
+  String get _currentHintText {
+    if (!_hasCycled && _welcomeText != null) return _welcomeText!;
+    final hints = _replyArabic ? assistantHintsAr : assistantHints;
+    return hints[_hintIndex % hints.length];
   }
 
   @override
@@ -103,7 +174,8 @@ class _AssistantFabState extends State<AssistantFab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (_) => BlocProvider(
-        create: (_) => AssistantCubit()..start(),
+        create: (_) => AssistantCubit()
+          ..start(isReturning: _isReturningUser, firstName: _firstName),
         child: const AssistantSheet(),
       ),
     );
@@ -171,7 +243,7 @@ class _AssistantFabState extends State<AssistantFab> {
                             SizedBox(width: SpacingTokens.xs.w),
                             Flexible(
                               child: Text(
-                                assistantHints[_hintIndex],
+                                _currentHintText,
                                 style: AppFonts.medium14(context).copyWith(
                                   color: AppColor.blackColor,
                                   decoration: TextDecoration.none,

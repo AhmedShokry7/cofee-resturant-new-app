@@ -21,6 +21,8 @@ class ProductCard extends StatelessWidget {
     this.onIncrement,
     this.onDecrement,
     this.showFavorite = true,
+    this.note = '',
+    this.unitPrice,
   });
 
   final ProductModel product;
@@ -28,6 +30,10 @@ class ProductCard extends StatelessWidget {
   final VoidCallback? onIncrement;
   final VoidCallback? onDecrement;
   final bool showFavorite;
+  final String note;
+
+  /// Variant-adjusted unit price for cart lines. Null = base price.
+  final double? unitPrice;
 
   bool get _isCart => quantity != null;
 
@@ -72,10 +78,23 @@ class ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(product.name, style: AppFonts.semiBold16(context)),
+                  if (note.isNotEmpty) ...[
+                    SizedBox(height: 2.h),
+                    Text(
+                      note,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.regular12(
+                        context,
+                      ).copyWith(color: AppColor.greyColor),
+                    ),
+                  ],
                   SizedBox(height: 4.h),
                   if (_isCart)
                     Text(
-                      Formatters.price(product.price * quantity!),
+                      Formatters.price(
+                        (unitPrice ?? product.price) * quantity!,
+                      ),
                       style: AppFonts.semiBold14(
                         context,
                       ).copyWith(color: AppColor.primaryColor),

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/features/bundles/data/bundles_list.dart';
+import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
 import 'package:new_coffee/features/categories/data/categories_list.dart';
+import 'package:new_coffee/core/theme/spacing_toxens.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
@@ -44,6 +48,9 @@ class _CategoryProducts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (category.label == "Bundles") {
+      return const _BundlesList();
+    }
     final products = getMenuList()
         .where((product) => product.category == category.label)
         .toList();
@@ -55,5 +62,20 @@ class _CategoryProducts extends StatelessWidget {
       );
     }
     return ProductsGridView(products: products);
+  }
+}
+
+class _BundlesList extends StatelessWidget {
+  const _BundlesList();
+
+  @override
+  Widget build(BuildContext context) {
+    final bundles = getBundlesList();
+    return ListView.builder(
+      padding: EdgeInsets.all(SpacingTokens.lg.w),
+      itemCount: bundles.length,
+      itemBuilder: (context, index) =>
+          BundleListTile(bundle: bundles[index]),
+    );
   }
 }
