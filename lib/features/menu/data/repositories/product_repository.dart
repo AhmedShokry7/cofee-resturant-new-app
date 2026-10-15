@@ -1,6 +1,7 @@
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
 /// Read access to the product catalogue.
@@ -40,10 +41,7 @@ abstract class ProductRepository {
 
   /// Manual is_featured first, then best sellers. Each row carries a `source`
   /// so the UI can explain why a product is shown.
-  Future<List<FeaturedProduct>> getFeatured({
-    String? branchId,
-    int limit = 10,
-  });
+  Future<List<FeaturedProduct>> getFeatured({String? branchId, int limit = 10});
 
   /// Ranked from completed orders inside a period. Returns an empty list while
   /// there is no sales history, which is a valid answer rather than an error.
@@ -114,19 +112,27 @@ class OptionGroup {
   /// the sizes as Large, Medium, Small.
   final int sortOrder;
 
+  String get name {
+    final localized = pickText((
+      ar: nameAr,
+      en: nameEn,
+    ), isArabic: AppLocale.instance.isArabic);
+    return localized.isEmpty ? code : localized;
+  }
+
   /// Replaces the frozen DrinkSize and SugarLevel enums.
   factory OptionGroup.fromJson(Map<String, dynamic> json) => OptionGroup(
-        id: json['id']?.toString() ?? '',
-        code: json['code']?.toString() ?? '',
-        nameAr: json['name_ar']?.toString() ?? '',
-        nameEn: json['name_en']?.toString() ?? '',
-        isSingleSelect: json['selection_type'] == 'single',
-        minSelect: (json['min_select'] as num?)?.toInt() ?? 0,
-        maxSelect: (json['max_select'] as num?)?.toInt(),
-        isRequired: json['is_required'] == true,
-        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
-        values: const [],
-      );
+    id: json['id']?.toString() ?? '',
+    code: json['code']?.toString() ?? '',
+    nameAr: json['name_ar']?.toString() ?? '',
+    nameEn: json['name_en']?.toString() ?? '',
+    isSingleSelect: json['selection_type'] == 'single',
+    minSelect: (json['min_select'] as num?)?.toInt() ?? 0,
+    maxSelect: (json['max_select'] as num?)?.toInt(),
+    isRequired: json['is_required'] == true,
+    sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+    values: const [],
+  );
 }
 
 class OptionValue {
@@ -153,16 +159,24 @@ class OptionValue {
   /// than alphabetically.
   final int sortOrder;
 
+  String get name {
+    final localized = pickText((
+      ar: nameAr,
+      en: nameEn,
+    ), isArabic: AppLocale.instance.isArabic);
+    return localized.isEmpty ? code : localized;
+  }
+
   factory OptionValue.fromJson(Map<String, dynamic> json) => OptionValue(
-        id: json['id']?.toString() ?? '',
-        code: json['code']?.toString() ?? '',
-        nameAr: json['name_ar']?.toString() ?? '',
-        nameEn: json['name_en']?.toString() ?? '',
-        priceDelta: (json['price_delta'] as num?)?.toDouble() ?? 0,
-        shortLabel: json['short_label']?.toString(),
-        isDefault: json['is_default'] == true,
-        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
-      );
+    id: json['id']?.toString() ?? '',
+    code: json['code']?.toString() ?? '',
+    nameAr: json['name_ar']?.toString() ?? '',
+    nameEn: json['name_en']?.toString() ?? '',
+    priceDelta: (json['price_delta'] as num?)?.toDouble() ?? 0,
+    shortLabel: json['short_label']?.toString(),
+    isDefault: json['is_default'] == true,
+    sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+  );
 }
 
 class ProductImage {
@@ -171,19 +185,22 @@ class ProductImage {
     this.altAr,
     this.altEn,
     this.isPrimary = false,
+    this.sortOrder = 0,
   });
 
   final String url;
   final String? altAr;
   final String? altEn;
   final bool isPrimary;
+  final int sortOrder;
 
   factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
-        url: json['image_url']?.toString() ?? '',
-        altAr: json['alt_ar']?.toString(),
-        altEn: json['alt_en']?.toString(),
-        isPrimary: json['is_primary'] == true,
-      );
+    url: json['image_url']?.toString() ?? '',
+    altAr: json['alt_ar']?.toString(),
+    altEn: json['alt_en']?.toString(),
+    isPrimary: json['is_primary'] == true,
+    sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+  );
 }
 
 class FeaturedProduct {
@@ -201,6 +218,9 @@ class FeaturedProduct {
   final String nameEn;
   final String? imageUrl;
   final double effectivePrice;
+
+  String get name =>
+      pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 
   /// 'manual' when the admin pinned it, 'best_seller' when the ranking chose it.
   final String source;
@@ -222,6 +242,9 @@ class BestSeller {
   final int unitsSold;
   final double revenue;
   final String? imageUrl;
+
+  String get name =>
+      pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 }
 
 class ResolvedPrice {

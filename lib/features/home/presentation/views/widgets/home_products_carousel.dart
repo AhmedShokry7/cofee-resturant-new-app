@@ -7,7 +7,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/presentation/views/widgets/popular_card.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 
 class HomeProductsCarousel extends StatelessWidget {
   const HomeProductsCarousel({
@@ -76,11 +76,10 @@ class HomeProductsCarousel extends StatelessWidget {
             separatorBuilder: (context, index) =>
                 SizedBox(width: SpacingTokens.md.w),
             itemBuilder: (context, index) =>
-                PopularCard(product: displayed[index], width: 170),
+                ProductCard(product: displayed[index]),
           ),
         ),
       ],
     );
   }
 }
-

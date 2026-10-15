@@ -5,6 +5,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 
 class RewardCard extends StatelessWidget {
   const RewardCard({
@@ -34,11 +35,10 @@ class RewardCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12.r),
-              child: Image.asset(
-                reward.product.image,
+              child: SizedBox(
                 height: 56.w,
                 width: 56.w,
-                fit: BoxFit.cover,
+                child: ProductImageView(product: reward.product),
               ),
             ),
             SizedBox(width: SpacingTokens.md.w),
@@ -55,9 +55,8 @@ class RewardCard extends StatelessWidget {
                   SizedBox(height: 4.h),
                   Text(
                     '${reward.pointsCost} points',
-                    style: AppFonts.medium14(context).copyWith(
-                      color: AppColor.primaryColor,
-                    ),
+                    style: AppFonts.medium14(context)
+                        .copyWith(color: AppColor.primaryColor),
                   ),
                 ],
               ),
@@ -66,9 +65,8 @@ class RewardCard extends StatelessWidget {
             if (locked)
               Text(
                 'Locked',
-                style: AppFonts.medium14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                style: AppFonts.medium14(context)
+                    .copyWith(color: AppColor.greyColor),
               )
             else
               GestureDetector(
@@ -84,9 +82,8 @@ class RewardCard extends StatelessWidget {
                   ),
                   child: Text(
                     "Redeem",
-                    style: AppFonts.medium14(
-                      context,
-                    ).copyWith(color: AppColor.whiteColor),
+                    style: AppFonts.medium14(context)
+                        .copyWith(color: AppColor.whiteColor),
                   ),
                 ),
               ),
@@ -96,4 +93,3 @@ class RewardCard extends StatelessWidget {
     );
   }
 }
-

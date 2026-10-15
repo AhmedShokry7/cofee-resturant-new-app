@@ -15,6 +15,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
 class AssistantSheet extends StatefulWidget {
@@ -105,9 +106,9 @@ class _AssistantSheetState extends State<AssistantSheet> {
     context.read<AssistantCubit>().recordProductInterest(product);
     try {
       context.read<CartCubit>().add(product);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("${product.name} added to cart")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("${product.name} added to cart")));
     } catch (_) {
       // Cart is optional here; the card tap still opens details.
     }
@@ -121,96 +122,91 @@ class _AssistantSheetState extends State<AssistantSheet> {
       listener: (context, state) =>
           context.read<AssistantCubit>().setBranch(state.selected?.id),
       child: SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * 0.72,
-          child: Padding(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Image.asset(
-                      AppImages.aiBot,
-                      height: 40.w,
-                      width: 40.w,
-                      fit: BoxFit.contain,
-                    ),
-                    SizedBox(width: SpacingTokens.sm.w),
-                    Expanded(
-                      child: Text(
-                        'Coffee Assistant',
-                        style: AppFonts.semiBold16(context),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: SizedBox(
+            height: MediaQuery.sizeOf(context).height * 0.72,
+            child: Padding(
+              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Image.asset(
+                        AppImages.aiBot,
+                        height: 40.w,
+                        width: 40.w,
+                        fit: BoxFit.contain,
                       ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.close),
-                      color: AppColor.greyColor,
-                    ),
-                  ],
-                ),
-                SizedBox(height: SpacingTokens.sm.h),
-                Expanded(
-                child: BlocConsumer<AssistantCubit, AssistantState>(
-                  listener: (context, state) {
-                    if (_scroll.hasClients && state.messages.isNotEmpty) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (_scroll.hasClients) {
-                          _scroll.jumpTo(
-                            _scroll.position.maxScrollExtent,
-                          );
-                        }
-                      });
-                    }
-                    _executeCartActions(context, state);
-                  },
-                    builder: (context, state) {
-                      final lastAssistant = state.messages.lastIndexWhere(
-                        (message) => message.role == MessageRole.assistant,
-                      );
-                      return ListView.builder(
-                        controller: _scroll,
-                        itemCount:
-                            state.messages.length + (state.typing ? 1 : 0),
-                        itemBuilder: (context, index) {
-                          if (index >= state.messages.length) {
-                            return _assistantBubble(
-                              context,
-                              const Text('…'),
-                            );
-                          }
-                          final message = state.messages[index];
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              _bubble(context, message),
-                              if (message.role == MessageRole.assistant)
-                                _feedbackRow(context, message),
-                              if (index == lastAssistant) ...[
-                                _productCards(context, state),
-                                _actionButton(context, state),
-                              ],
-                            ],
-                          );
-                        },
-                      );
-                    },
+                      SizedBox(width: SpacingTokens.sm.w),
+                      Expanded(
+                        child: Text(
+                          'Coffee Assistant',
+                          style: AppFonts.semiBold16(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(Icons.close),
+                        color: AppColor.greyColor,
+                      ),
+                    ],
                   ),
-                ),
-                _quickReplies(context),
-                SizedBox(height: SpacingTokens.sm.h),
-                _inputBar(context),
-              ],
+                  SizedBox(height: SpacingTokens.sm.h),
+                  Expanded(
+                    child: BlocConsumer<AssistantCubit, AssistantState>(
+                      listener: (context, state) {
+                        if (_scroll.hasClients && state.messages.isNotEmpty) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (_scroll.hasClients) {
+                              _scroll.jumpTo(_scroll.position.maxScrollExtent);
+                            }
+                          });
+                        }
+                        _executeCartActions(context, state);
+                      },
+                      builder: (context, state) {
+                        final lastAssistant = state.messages.lastIndexWhere(
+                          (message) => message.role == MessageRole.assistant,
+                        );
+                        return ListView.builder(
+                          controller: _scroll,
+                          itemCount:
+                              state.messages.length + (state.typing ? 1 : 0),
+                          itemBuilder: (context, index) {
+                            if (index >= state.messages.length) {
+                              return _assistantBubble(context, const Text('…'));
+                            }
+                            final message = state.messages[index];
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _bubble(context, message),
+                                if (message.role == MessageRole.assistant)
+                                  _feedbackRow(context, message),
+                                if (index == lastAssistant) ...[
+                                  _productCards(context, state),
+                                  _actionButton(context, state),
+                                ],
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  _quickReplies(context),
+                  SizedBox(height: SpacingTokens.sm.h),
+                  _inputBar(context),
+                ],
+              ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -229,16 +225,12 @@ class _AssistantSheetState extends State<AssistantSheet> {
         decoration: BoxDecoration(
           color: isUser ? AppColor.primaryColor : AppColor.whiteColor,
           borderRadius: BorderRadius.circular(12.r),
-          border: isUser
-              ? null
-              : Border.all(color: AppColor.borderColor),
+          border: isUser ? null : Border.all(color: AppColor.borderColor),
         ),
         child: Text(
           message.text,
           style: isUser
-              ? AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.whiteColor)
+              ? AppFonts.regular14(context).copyWith(color: AppColor.whiteColor)
               : AppFonts.regular14(context),
         ),
       ),
@@ -271,9 +263,10 @@ class _AssistantSheetState extends State<AssistantSheet> {
         children: [
           IconButton(
             onPressed: message.feedback == null
-                ? () => context
-                      .read<AssistantCubit>()
-                      .giveFeedback(message.id, true)
+                ? () => context.read<AssistantCubit>().giveFeedback(
+                    message.id,
+                    true,
+                  )
                 : null,
             icon: Icon(
               HugeIcons.strokeRoundedThumbsUp,
@@ -285,9 +278,10 @@ class _AssistantSheetState extends State<AssistantSheet> {
           ),
           IconButton(
             onPressed: message.feedback == null
-                ? () => context
-                      .read<AssistantCubit>()
-                      .giveFeedback(message.id, false)
+                ? () => context.read<AssistantCubit>().giveFeedback(
+                    message.id,
+                    false,
+                  )
                 : null,
             icon: Icon(
               HugeIcons.strokeRoundedThumbsDown,
@@ -321,11 +315,10 @@ class _AssistantSheetState extends State<AssistantSheet> {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(8.r),
-                    child: Image.asset(
-                      product.image,
+                    child: SizedBox(
                       height: 40.w,
                       width: 40.w,
-                      fit: BoxFit.cover,
+                      child: ProductImageView(product: product),
                     ),
                   ),
                   SizedBox(width: SpacingTokens.sm.w),
@@ -341,9 +334,8 @@ class _AssistantSheetState extends State<AssistantSheet> {
                         ),
                         Text(
                           Formatters.price(product.price),
-                          style: AppFonts.regular12(context).copyWith(
-                            color: AppColor.primaryColor,
-                          ),
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.primaryColor),
                         ),
                       ],
                     ),
@@ -401,9 +393,8 @@ class _AssistantSheetState extends State<AssistantSheet> {
           ),
           child: Text(
             state.navigateLabel ?? 'Open',
-            style: AppFonts.medium14(
-              context,
-            ).copyWith(color: AppColor.primaryColor),
+            style: AppFonts.medium14(context)
+                .copyWith(color: AppColor.primaryColor),
             textAlign: TextAlign.center,
           ),
         ),
@@ -428,17 +419,12 @@ class _AssistantSheetState extends State<AssistantSheet> {
                 onTap: () => _send(reply),
                 child: Container(
                   alignment: Alignment.center,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.md.w,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
                   decoration: BoxDecoration(
                     color: AppColor.lightGreyColor,
                     borderRadius: BorderRadius.circular(100.r),
                   ),
-                  child: Text(
-                    reply,
-                    style: AppFonts.regular12(context),
-                  ),
+                  child: Text(reply, style: AppFonts.regular12(context)),
                 ),
               );
             },
@@ -492,4 +478,3 @@ class _AssistantSheetState extends State<AssistantSheet> {
     );
   }
 }
-

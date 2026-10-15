@@ -7,6 +7,7 @@ import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_route_observer.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
@@ -14,6 +15,7 @@ import 'package:new_coffee/features/assistant/presentation/widgets/assistant_fab
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await AppLocale.instance.initialize();
 
   // Fail soft: without --dart-define the app still runs on the local mock
   // repositories, so the UI stays reviewable offline instead of crashing.
@@ -44,21 +46,26 @@ class MyApp extends StatelessWidget {
       splitScreenMode: true,
       builder: (context, child) {
         return AppProviders(
-          child: MaterialApp(
-            title: 'New Coffee',
-            debugShowCheckedModeBanner: false,
-            theme: ThemeClass.light(),
-            navigatorKey: rootNavigatorKey,
-            navigatorObservers: [AppRouteObserver.instance],
-            builder: (context, child) => Stack(
-              children: [
-                child ?? const SizedBox.shrink(),
-                const AssistantFab(),
-              ],
+          child: AnimatedBuilder(
+            animation: AppLocale.instance,
+            builder: (context, _) => MaterialApp(
+              title: 'New Coffee',
+              locale: AppLocale.instance.locale,
+              supportedLocales: const [Locale('ar'), Locale('en')],
+              debugShowCheckedModeBanner: false,
+              theme: ThemeClass.light(),
+              navigatorKey: rootNavigatorKey,
+              navigatorObservers: [AppRouteObserver.instance],
+              builder: (context, child) => Stack(
+                children: [
+                  child ?? const SizedBox.shrink(),
+                  const AssistantFab(),
+                ],
+              ),
+              initialRoute: AppRoutes.initialRouteName(currentRoute),
+              onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+              routes: AppRoutes.routes,
             ),
-            initialRoute: AppRoutes.initialRouteName(currentRoute),
-            onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-            routes: AppRoutes.routes,
           ),
         );
       },

@@ -3,8 +3,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/presentation/views/widgets/popular_card.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 
 class ProductsGridView extends StatefulWidget {
   const ProductsGridView({
@@ -131,7 +132,7 @@ class _ProductsGridViewState extends State<ProductsGridView> {
               childAspectRatio: 0.72,
             ),
             delegate: SliverChildBuilderDelegate(
-              (context, index) => PopularCard(product: widget.products[index]),
+              (context, index) => ProductCard(product: widget.products[index]),
               childCount: shown,
             ),
           ),

@@ -12,7 +12,7 @@ abstract class BranchRepository {
 
 class BranchRepositoryImpl implements BranchRepository {
   const BranchRepositoryImpl({SupabaseClient? client})
-      : _clientOverride = client;
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -46,6 +46,8 @@ class BranchRepositoryImpl implements BranchRepository {
       nameAr: 'الفرع الرئيسي',
       nameEn: 'Main Branch',
       address: 'شارع الملك فهد، العليا، الرياض',
+      addressAr: 'شارع الملك فهد، العليا، الرياض',
+      addressEn: 'King Fahd Road, Olaya, Riyadh',
       phone: '+966500000001',
     ),
     Branch(
@@ -54,6 +56,8 @@ class BranchRepositoryImpl implements BranchRepository {
       nameAr: 'فرع جدة',
       nameEn: 'Jeddah Branch',
       address: 'شارع التحلية، حي الروضة، جدة',
+      addressAr: 'شارع التحلية، حي الروضة، جدة',
+      addressEn: 'Tahlia Street, Al Rawdah, Jeddah',
       phone: '+966500000002',
     ),
   ];

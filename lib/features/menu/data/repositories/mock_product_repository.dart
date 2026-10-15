@@ -12,11 +12,11 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 /// menu_list.dart and categories_list.dart once the database path is the only
 /// one in use.
 class MockProductRepository implements CatalogRepository {
-  const MockProductRepository();
+  MockProductRepository();
 
   /// Offline catalogue rows. These used to be a globally shared menu module;
   /// they now live inside the only implementation that reads them.
-  static const List<ProductModel> _legacyMenu = [
+  static List<ProductModel> _legacyMenu = [
     ProductModel(
       id: "1",
       name: "Espresso",

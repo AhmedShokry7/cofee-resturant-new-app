@@ -22,4 +22,7 @@ class AppColor {
   static const darkBorder = Color(0xff3A3A3A);
   static const darkText = Color(0xffE0E0E0);
   static const darkTextSecondary = Color(0xff9E9E9E);
+
+  /// Light surface color used as fallback background for product images.
+  static const surfaceColor = Color(0xffF9F9F9);
 }

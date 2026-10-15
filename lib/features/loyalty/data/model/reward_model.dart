@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
 /// A redeemable loyalty reward backed by `loyalty.loyalty_rewards`.
@@ -24,8 +25,7 @@ class RewardModel {
 
   bool get isOutOfStock => stockAvailable != null && stockAvailable! <= 0;
 
-  bool affordable(int balance) =>
-      !isOutOfStock && balance >= pointsCost;
+  bool affordable(int balance) => !isOutOfStock && balance >= pointsCost;
 
   factory RewardModel.fromDatabase({
     required Map<String, dynamic> row,
@@ -59,6 +59,9 @@ class LoyaltyRule {
   final String nameEn;
   final double pointsPerCurrencyUnit;
   final bool isActive;
+
+  String get name =>
+      pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 
   int pointsFor(double amount) =>
       (amount * pointsPerCurrencyUnit).floor().clamp(0, 1 << 31);

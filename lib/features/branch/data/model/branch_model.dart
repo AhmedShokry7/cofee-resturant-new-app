@@ -11,18 +11,33 @@ class Branch {
     required this.code,
     required this.nameAr,
     required this.nameEn,
-    this.address,
+    String? address,
+    this.addressAr,
+    this.addressEn,
     this.phone,
     this.isActive = true,
-  });
+  }) : _legacyAddress = address;
 
   final String id;
   final String code;
   final String nameAr;
   final String nameEn;
-  final String? address;
+  final String? addressAr;
+  final String? addressEn;
   final String? phone;
   final bool isActive;
+  final String? _legacyAddress;
+
+  String? get address {
+    final ar = addressAr ?? '';
+    final en = addressEn ?? '';
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyAddress;
+    final localized = pickText((
+      ar: ar,
+      en: en,
+    ), isArabic: AppLocale.instance.isArabic);
+    return localized.isEmpty ? _legacyAddress : localized;
+  }
 
   String get name {
     final ar = nameAr.trim();
@@ -39,6 +54,8 @@ class Branch {
       nameAr: Db.text(map['name_ar']),
       nameEn: Db.text(map['name_en']),
       address: Db.textOrNull(map['address']),
+      addressAr: Db.textOrNull(map['address_ar']),
+      addressEn: Db.textOrNull(map['address_en']),
       phone: Db.textOrNull(map['phone']),
       isActive: Db.asBool(map['is_active'], fallback: true),
     );

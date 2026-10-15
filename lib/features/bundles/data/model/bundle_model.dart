@@ -21,8 +21,8 @@ class BundleModel {
     this.components = const [],
     this.isActive = true,
     this.sortOrder = 0,
-  })  : _legacyTitle = title ?? '',
-        _legacySubtitle = subtitle ?? '';
+  }) : _legacyTitle = title ?? '',
+       _legacySubtitle = subtitle ?? '';
 
   final String id;
 
@@ -55,14 +55,14 @@ class BundleModel {
   String get title {
     final ar = nameAr ?? '';
     final en = nameEn ?? '';
-    if (ar.isEmpty && en.isEmpty) return _legacyTitle;
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyTitle;
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
 
   String get subtitle {
     final ar = descriptionAr ?? '';
     final en = descriptionEn ?? '';
-    if (ar.isEmpty && en.isEmpty) return _legacySubtitle;
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacySubtitle;
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
 
@@ -121,16 +121,16 @@ class BundleModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'name_ar': nameAr,
-        'name_en': nameEn,
-        'description_ar': descriptionAr,
-        'description_en': descriptionEn,
-        'image_url': imageUrl,
-        'bundle_price': price,
-        'is_active': isActive,
-        'sort_order': sortOrder,
-      };
+    'id': id,
+    'name_ar': nameAr,
+    'name_en': nameEn,
+    'description_ar': descriptionAr,
+    'description_en': descriptionEn,
+    'image_url': imageUrl,
+    'bundle_price': price,
+    'is_active': isActive,
+    'sort_order': sortOrder,
+  };
 }
 
 class BundleComponent {
@@ -153,6 +153,14 @@ class BundleComponent {
   final String? nameEn;
   final String? imageUrl;
 
+  String get name {
+    final localized = pickText((
+      ar: nameAr ?? '',
+      en: nameEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
+    return localized.isEmpty ? productId : localized;
+  }
+
   factory BundleComponent.fromJson(Map<String, dynamic> json) =>
       BundleComponent(
         productId: Db.text(json['product_id']),
@@ -164,11 +172,11 @@ class BundleComponent {
       );
 
   Map<String, dynamic> toJson() => {
-        'product_id': productId,
-        'quantity': quantity,
-        'allow_options': allowOptions,
-        'name_ar': nameAr,
-        'name_en': nameEn,
-        'image_url': imageUrl,
-      };
+    'product_id': productId,
+    'quantity': quantity,
+    'allow_options': allowOptions,
+    'name_ar': nameAr,
+    'name_en': nameEn,
+    'image_url': imageUrl,
+  };
 }

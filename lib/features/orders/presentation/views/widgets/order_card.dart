@@ -5,6 +5,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
@@ -17,9 +18,8 @@ class OrderCard extends StatelessWidget {
   final OrderItemModel order;
 
   void _openDetails(BuildContext context) {
-    Navigator.of(
-      context,
-    ).pushNamed(OrderDetailsPage.routeName, arguments: order);
+    Navigator.of(context)
+        .pushNamed(OrderDetailsPage.routeName, arguments: order);
   }
 
   @override
@@ -38,23 +38,21 @@ class OrderCard extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8.r),
-              child: Image.asset(
-                order.product.image,
+              child: SizedBox(
                 height: 72.w,
                 width: 72.w,
-                fit: BoxFit.cover,
+                child: ProductImageView(product: order.product),
               ),
             ),
             SizedBox(width: SpacingTokens.md.w),
             Expanded(
-child: Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Order #${order.displayNumber}',
-                    style: AppFonts.regular12(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   SizedBox(height: 4.h),
                   Text(
@@ -75,16 +73,16 @@ child: Column(
             if (order.status == OrderStatus.active)
               _ActionButton(
                 label: "Track Order",
-                onTap: () => Navigator.of(
-                  context,
-                ).pushNamed(TrackOrderPage.routeName, arguments: order),
+                onTap: () =>
+                    Navigator.of(context)
+                        .pushNamed(TrackOrderPage.routeName, arguments: order),
               )
             else if (order.status == OrderStatus.completed)
               _ActionButton(
                 label: "Leave Review",
-                onTap: () => Navigator.of(
-                  context,
-                ).pushNamed(LeaveReviewPage.routeName, arguments: order),
+                onTap: () =>
+                    Navigator.of(context)
+                        .pushNamed(LeaveReviewPage.routeName, arguments: order),
               ),
           ],
         ),
@@ -119,9 +117,8 @@ class _ActionButton extends StatelessWidget {
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppFonts.regular12(
-                context,
-              ).copyWith(color: AppColor.whiteColor),
+              style: AppFonts.regular12(context)
+                  .copyWith(color: AppColor.whiteColor),
             ),
           ),
         ),
@@ -129,4 +126,3 @@ class _ActionButton extends StatelessWidget {
     );
   }
 }
-

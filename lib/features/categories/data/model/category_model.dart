@@ -55,9 +55,14 @@ class CategoryModel {
   String get label {
     final ar = nameAr ?? '';
     final en = nameEn ?? '';
-    if (ar.isEmpty && en.isEmpty) return _legacyLabel;
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyLabel;
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
+
+  String get description => pickText((
+    ar: descriptionAr ?? '',
+    en: descriptionEn ?? '',
+  ), isArabic: isArabic);
 
   factory CategoryModel.fromJson(Map<String, dynamic> json) {
     final ar = Db.textOrNull(json['name_ar']) ?? '';
@@ -81,17 +86,17 @@ class CategoryModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'slug': slug,
-        'parent_id': parentId,
-        'name_ar': nameAr,
-        'name_en': nameEn,
-        'description_ar': descriptionAr,
-        'description_en': descriptionEn,
-        'image_url': imageUrl,
-        'icon_key': iconKey,
-        'sort_order': sortOrder,
-      };
+    'id': id,
+    'slug': slug,
+    'parent_id': parentId,
+    'name_ar': nameAr,
+    'name_en': nameEn,
+    'description_ar': descriptionAr,
+    'description_en': descriptionEn,
+    'image_url': imageUrl,
+    'icon_key': iconKey,
+    'sort_order': sortOrder,
+  };
 
   CategoryModel copyWith({
     String? id,
@@ -101,15 +106,14 @@ class CategoryModel {
     String? nameAr,
     String? nameEn,
     String? iconKey,
-  }) =>
-      CategoryModel(
-        id: id ?? this.id,
-        slug: slug ?? this.slug,
-        nameAr: nameAr ?? this.nameAr,
-        nameEn: nameEn ?? this.nameEn,
-        iconKey: iconKey ?? this.iconKey,
-        icon: icon ?? this.icon,
-      );
+  }) => CategoryModel(
+    id: id ?? this.id,
+    slug: slug ?? this.slug,
+    nameAr: nameAr ?? this.nameAr,
+    nameEn: nameEn ?? this.nameEn,
+    iconKey: iconKey ?? this.iconKey,
+    icon: icon ?? this.icon,
+  );
 
   @override
   bool operator ==(Object other) =>

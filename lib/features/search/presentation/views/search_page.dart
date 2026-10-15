@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -9,6 +8,8 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/widgets/search_filter_sheet.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -80,12 +81,45 @@ class SearchPage extends StatelessWidget {
               ],
             ),
           ),
-          const Expanded(
-            child: EmptyState(
-              icon: Icons.search,
-title: "لا نتائج تطابق بحثك",
-                subtitle: "جرب كلمة مختلفة أو اضبط الفلاتر",
-              ),
+          Expanded(
+            child: BlocBuilder<SearchCubit, SearchState>(
+              builder: (context, state) {
+                // Show loading indicator while search is in progress
+                if (state.isLoading) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
+
+                // Show error message if search failed
+                if (state.error != null) {
+                  return Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(SpacingTokens.lg.w),
+                      child: Text(
+                        state.error!,
+                        textAlign: TextAlign.center,
+                        style: AppFonts.regular16(context).copyWith(
+                          color: AppColor.errorColor,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                // Show "No results found" when search completed with no results
+                if (state.isEmptyResult) {
+                  return const EmptyState(
+                    icon: Icons.search,
+                    title: "No results found",
+                    subtitle: "Try a different keyword or filters",
+                  );
+                }
+
+                // Show actual search results
+                return ProductsGridView(products: state.results);
+              },
+            ),
           ),
         ],
       ),

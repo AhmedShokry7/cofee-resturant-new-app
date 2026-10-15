@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/services/session_repository.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -27,10 +28,8 @@ class SettingsPage extends StatelessWidget {
   Future<void> _logout(BuildContext context) async {
     await const SessionRepository().clear();
     if (!context.mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      AuthPage.routeName,
-      (route) => false,
-    );
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(AuthPage.routeName, (route) => false);
   }
 
   Future<void> _pickImage(BuildContext context) =>
@@ -40,15 +39,15 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-          child: ListView(
-            children: [
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  SpacingTokens.lg.w,
-                  SpacingTokens.md.h,
-                  SpacingTokens.lg.w,
-                  SpacingTokens.lg.w,
-                ),
+        child: ListView(
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                SpacingTokens.lg.w,
+                SpacingTokens.md.h,
+                SpacingTokens.lg.w,
+                SpacingTokens.lg.w,
+              ),
               child: Column(
                 children: [
                   BlocBuilder<ProfileCubit, ProfileState>(
@@ -108,18 +107,23 @@ class SettingsPage extends StatelessWidget {
             ),
             SizedBox(height: SpacingTokens.md.h),
             ProfileMenuTile(
+              icon: Icons.language,
+              label: AppLocale.instance.isArabic
+                  ? 'اللغة: العربية'
+                  : 'Language: English',
+              onTap: () async => AppLocale.instance.toggle(),
+            ),
+            ProfileMenuTile(
               icon: HugeIcons.strokeRoundedUserCircle,
               label: "Your Profile",
-              onTap: () => Navigator.of(
-                context,
-              ).pushNamed(EditProfilePage.routeName),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(EditProfilePage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedCreditCard,
               label: "Payment Method",
-              onTap: () => Navigator.of(
-                context,
-              ).pushNamed(SavedCardsPage.routeName),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(SavedCardsPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedPackage,
@@ -168,4 +172,3 @@ class SettingsPage extends StatelessWidget {
     );
   }
 }
-

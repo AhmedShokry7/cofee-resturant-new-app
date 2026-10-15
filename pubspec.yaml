@@ -49,6 +49,7 @@ dependencies:
   # Backend. Publishable key only — the service_role key never enters the app
   # (DATABASE_SPEC.md section 1.5). URL and key arrive via --dart-define.
   supabase_flutter: ^2.10.0
+  cached_network_image: ^4.0.4
 
 dev_dependencies:
   flutter_test:

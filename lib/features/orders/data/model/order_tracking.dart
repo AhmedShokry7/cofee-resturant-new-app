@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/orders/data/model/tracking_step_model.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
@@ -44,6 +45,7 @@ class OrderTrackingSteps {
     required List<OrderStatusEvent> events,
     DateTime? placedAt,
   }) {
+    final arabic = AppLocale.instance.isArabic;
     final dates = <String, DateTime>{};
     for (final event in events) {
       final at = event.changedAt;
@@ -57,12 +59,12 @@ class OrderTrackingSteps {
     if (databaseStatus == 'cancelled') {
       return [
         TrackingStepModel(
-          title: 'Order placed',
+          title: arabic ? 'تم استلام الطلب' : 'Order placed',
           date: dateFor('pending', fallback: placedAt),
           done: true,
         ),
         TrackingStepModel(
-          title: 'Order cancelled',
+          title: arabic ? 'تم إلغاء الطلب' : 'Order cancelled',
           date: dateFor('cancelled'),
           done: true,
         ),
@@ -81,14 +83,16 @@ class OrderTrackingSteps {
         : const ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
     final current = flow.indexOf(databaseStatus);
     final titles = {
-      'pending': 'Order placed',
-      'confirmed': 'Order confirmed',
-      'preparing': 'Preparing',
-      'ready': fulfillmentType == 'delivery'
-          ? 'Ready for delivery'
-          : 'Ready for pickup',
-      'out_for_delivery': 'Out for delivery',
-      'completed': 'Completed',
+      'pending': arabic ? 'تم استلام الطلب' : 'Order placed',
+      'confirmed': arabic ? 'تم تأكيد الطلب' : 'Order confirmed',
+      'preparing': arabic ? 'قيد التحضير' : 'Preparing',
+      'ready': arabic
+          ? (fulfillmentType == 'delivery' ? 'جاهز للتوصيل' : 'جاهز للاستلام')
+          : (fulfillmentType == 'delivery'
+                ? 'Ready for delivery'
+                : 'Ready for pickup'),
+      'out_for_delivery': arabic ? 'خرج للتوصيل' : 'Out for delivery',
+      'completed': arabic ? 'مكتمل' : 'Completed',
     };
     return [
       for (var i = 0; i < flow.length; i++)

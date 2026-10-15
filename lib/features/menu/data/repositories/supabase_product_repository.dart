@@ -16,7 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// referenced.
 class SupabaseProductRepository implements CatalogRepository {
   SupabaseProductRepository([SupabaseClient? client])
-      : _client = client ?? SupabaseService.client;
+    : _client = client ?? SupabaseService.client;
 
   final SupabaseClient _client;
 
@@ -52,27 +52,35 @@ class SupabaseProductRepository implements CatalogRepository {
   ) {
     final override = prices[product.id];
     if (override == null) return product;
-    return product.copyWith(
-      price: override.priceOverride ?? product.price,
-    );
+    return product.copyWith(price: override.priceOverride ?? product.price);
   }
 
   ProductModel _fromRpcRow(Map<String, dynamic> row) => ProductModel(
-        id: Db.text(row['id']),
-        name: Db.textOrNull(row['name_en']) ?? '',
-        nameAr: Db.textOrNull(row['name_ar']),
-        nameEn: Db.textOrNull(row['name_en']),
-        description: Db.textOrNull(row['description_en']) ?? '',
-        descriptionAr: Db.textOrNull(row['description_ar']),
-        descriptionEn: Db.textOrNull(row['description_en']),
-        category: Db.textOrNull(row['category_name_en']) ?? '',
-        categoryId: Db.textOrNull(row['category_id']),
-      categorySlug: Db.textOrNull(row['category_slug']) ?? '',
-        slug: Db.textOrNull(row['slug']),
-        price: Db.asDouble(row['effective_price'] ?? row['base_price']),
-        image: Db.textOrNull(row['image_url']) ?? '',
-        isFeatured: row['rank'] != null,
-      );
+    id: Db.text(row['id']),
+    name:
+        Db.textOrNull(row['name']) ??
+        Db.textOrNull(row['name_en']) ??
+        Db.textOrNull(row['name_ar']) ??
+        '',
+    nameAr: Db.textOrNull(row['name_ar']),
+    nameEn: Db.textOrNull(row['name_en']),
+    description:
+        Db.textOrNull(row['description']) ??
+        Db.textOrNull(row['description_en']) ??
+        Db.textOrNull(row['description_ar']) ??
+        '',
+    descriptionAr: Db.textOrNull(row['description_ar']),
+    descriptionEn: Db.textOrNull(row['description_en']),
+    category: Db.textOrNull(row['category_name']) ?? '',
+    categoryAr: Db.textOrNull(row['category_name_ar']),
+    categoryEn: Db.textOrNull(row['category_name_en']),
+    categoryId: Db.textOrNull(row['category_id']),
+    categorySlug: Db.textOrNull(row['category_slug']) ?? '',
+    slug: Db.textOrNull(row['slug']),
+    price: Db.asDouble(row['effective_price'] ?? row['base_price']),
+    image: Db.textOrNull(row['image_url']) ?? '',
+    isFeatured: row['rank'] != null,
+  );
 
   @override
   Future<List<ProductModel>> getProducts({
@@ -83,31 +91,63 @@ class SupabaseProductRepository implements CatalogRepository {
   }) async {
     final rows = await (categoryId == null
         ? _client
-            .from('products')
-            .select('*')
-            .range(offset, offset + limit - 1)
-            .order('sort_order', ascending: true)
+              .from('products')
+              .select('*')
+              .range(offset, offset + limit - 1)
+              .order('sort_order', ascending: true)
         : _client
-            .from('products')
-            .select('*')
-            .eq('category_id', categoryId)
-            .range(offset, offset + limit - 1)
-            .order('sort_order', ascending: true));
+              .from('products')
+              .select('*')
+              .eq('category_id', categoryId)
+              .range(offset, offset + limit - 1)
+              .order('sort_order', ascending: true));
     if (rows.isEmpty) return [];
 
-    final prices = await _branchPrices(
-      rows.map((r) => r['id'].toString()).toList(),
-      branchId,
-    );
+    final productIds = rows.map((r) => r['id'].toString()).toList();
+
+    // Batch-fetch all product images in a single query to avoid N+1.
+    final imageRows = await _client
+        .from('product_images')
+        .select('*')
+        .inFilter('product_id', productIds)
+        .order('sort_order', ascending: true);
+
+    // Map image records to product IDs as ProductImage objects.
+    final imageMap = <String, List<ProductImage>>{};
+    for (final row in imageRows) {
+      final pid = row['product_id'].toString();
+      imageMap
+          .putIfAbsent(pid, () => [])
+          .add(ProductImage.fromJson(Map<String, dynamic>.from(row)));
+    }
+
+    final prices = await _branchPrices(productIds, branchId);
     return rows
-        .map((r) => _withBranch(ProductModel.fromJson(r), prices))
+        .map((r) {
+          final product = ProductModel.fromJson(r);
+          final images = imageMap[r['id'].toString()] ?? [];
+          final imageUrls = images.map((img) => img.url).toList();
+          final primaryImageUrl =
+              _determinePrimaryImageUrl(images) ??
+              (product.image.trim().isEmpty ? null : product.image.trim());
+          return product.copyWith(
+            imageUrls: imageUrls.isNotEmpty ? imageUrls : const [],
+            primaryImageUrl: primaryImageUrl,
+            isPrimaryImageAvailable: primaryImageUrl != null,
+          );
+        })
+        .toList()
+        .map((product) => _withBranch(product, prices))
         .toList();
   }
 
   @override
   Future<ProductModel?> getById(String id, {String? branchId}) async {
-    final rows =
-        await _client.from('products').select('*').eq('id', id).limit(1);
+    final rows = await _client
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .limit(1);
     if (rows.isEmpty) return null;
     final product = ProductModel.fromJson(rows.first);
     final prices = await _branchPrices([product.id], branchId);
@@ -115,7 +155,10 @@ class SupabaseProductRepository implements CatalogRepository {
   }
 
   @override
-Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async {
+  Future<ProductWithOptions?> getWithOptions(
+    String id, {
+    String? branchId,
+  }) async {
     // The product row and its option bindings do not depend on each other, so
     // they are fetched together rather than one round trip after another.
     final productFuture = getById(id, branchId: branchId);
@@ -154,24 +197,21 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
       list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     }
 
-    final groups = groupRows
-        .map((g) {
-          final parsed = OptionGroup.fromJson(g);
-          return OptionGroup(
-            id: parsed.id,
-            code: parsed.code,
-            nameAr: parsed.nameAr,
-            nameEn: parsed.nameEn,
-            isSingleSelect: parsed.isSingleSelect,
-            minSelect: parsed.minSelect,
-            maxSelect: parsed.maxSelect,
-            isRequired: parsed.isRequired,
-            sortOrder: parsed.sortOrder,
-            values: valuesByGroup[g['id'].toString()] ?? const [],
-          );
-        })
-        .toList()
-      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    final groups = groupRows.map((g) {
+      final parsed = OptionGroup.fromJson(g);
+      return OptionGroup(
+        id: parsed.id,
+        code: parsed.code,
+        nameAr: parsed.nameAr,
+        nameEn: parsed.nameEn,
+        isSingleSelect: parsed.isSingleSelect,
+        minSelect: parsed.minSelect,
+        maxSelect: parsed.maxSelect,
+        isRequired: parsed.isRequired,
+        sortOrder: parsed.sortOrder,
+        values: valuesByGroup[g['id'].toString()] ?? const [],
+      );
+    }).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     return ProductWithOptions(
       product: product,
@@ -189,6 +229,29 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
     return rows.map(ProductImage.fromJson).toList();
   }
 
+  /// Determines the primary image URL from a list of [ProductImage] records.
+  /// Priority: explicit is_primary flag, then lowest sort_order, then fall back
+  /// to the product-level [image] field, and finally null.
+  static String? _determinePrimaryImageUrl(List<ProductImage> images) {
+    // 1. Image explicitly marked as primary.
+    final primary = images.firstWhere(
+      (img) => img.isPrimary,
+      orElse: () => ProductImage(url: '', isPrimary: false),
+    );
+    if (primary.isPrimary && primary.url.isNotEmpty) {
+      return primary.url;
+    }
+
+    // 2. Otherwise, the image with the lowest sort_order.
+    final sorted = images..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    if (sorted.isNotEmpty && sorted.first.url.isNotEmpty) {
+      return sorted.first.url;
+    }
+
+    // 3. Fall back to the product-level image_url.
+    return null;
+  }
+
   @override
   Future<List<ProductModel>> search(
     String query, {
@@ -198,17 +261,22 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
     int limit = 20,
     int offset = 0,
   }) async {
-    final rows = await _client.rpc('search_products', params: {
-      if (query.trim().isNotEmpty) 'p_query': query.trim(),
-      // Optional parameters may be omitted; p_branch_id is optional here so
-      // omitting it is correct and lets the server fall back to base prices.
-      'p_branch_id': ?branchId,
-      'p_category_id': ?categoryId,
-      'p_sort': sort,
-      'p_page': (offset ~/ limit) + 1,
-      'p_page_size': limit,
-    });
-    return (rows as List).map((r) => _fromRpcRow(r as Map<String, dynamic>)).toList();
+    final rows = await _client.rpc(
+      'search_products',
+      params: {
+        if (query.trim().isNotEmpty) 'p_query': query.trim(),
+        // Optional parameters may be omitted; p_branch_id is optional here so
+        // omitting it is correct and lets the server fall back to base prices.
+        'p_branch_id': ?branchId,
+        'p_category_id': ?categoryId,
+        'p_sort': sort,
+        'p_page': (offset ~/ limit) + 1,
+        'p_page_size': limit,
+      },
+    );
+    return (rows as List)
+        .map((r) => _fromRpcRow(r as Map<String, dynamic>))
+        .toList();
   }
 
   @override
@@ -216,13 +284,16 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
     String? branchId,
     int limit = 10,
   }) async {
-    final rows = await _client.rpc('get_featured', params: {
-      // p_branch_id has no default on the server, so it must always be sent.
-      // Passing null explicitly is different from omitting the key: omission
-      // makes PostgREST fail to match the signature (PGRST202).
-      'p_branch_id': branchId,
-      'p_limit': limit,
-    });
+    final rows = await _client.rpc(
+      'get_featured',
+      params: {
+        // p_branch_id has no default on the server, so it must always be sent.
+        // Passing null explicitly is different from omitting the key: omission
+        // makes PostgREST fail to match the signature (PGRST202).
+        'p_branch_id': branchId,
+        'p_limit': limit,
+      },
+    );
     return (rows as List).map((r) {
       final m = r as Map<String, dynamic>;
       return FeaturedProduct(
@@ -242,11 +313,14 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
     Duration period = const Duration(days: 30),
     int limit = 10,
   }) async {
-    final rows = await _client.rpc('get_best_sellers', params: {
-      'p_branch_id': branchId,
-      'p_period': '${period.inDays} days',
-      'p_limit': limit,
-    });
+    final rows = await _client.rpc(
+      'get_best_sellers',
+      params: {
+        'p_branch_id': branchId,
+        'p_period': '${period.inDays} days',
+        'p_limit': limit,
+      },
+    );
     return (rows as List).map((r) {
       final m = r as Map<String, dynamic>;
       return BestSeller(
@@ -266,11 +340,14 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
     String? branchId,
     List<String> optionValueIds = const [],
   }) async {
-    final rows = await _client.rpc('resolve_effective_price', params: {
-      'p_branch_id': branchId,
-      'p_product_id': productId,
-      'p_option_value_ids': optionValueIds,
-    });
+    final rows = await _client.rpc(
+      'resolve_effective_price',
+      params: {
+        'p_branch_id': branchId,
+        'p_product_id': productId,
+        'p_option_value_ids': optionValueIds,
+      },
+    );
     if (rows.isEmpty) return null;
     final m = rows.first as Map<String, dynamic>;
     return ResolvedPrice(
@@ -304,14 +381,17 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
         .toSet()
         .toList();
 
-    final names = <String, String>{};
+    final names = <String, ({String ar, String en})>{};
     if (categoryIds.isNotEmpty) {
       final cats = await _client
           .from('categories')
           .select('id, name_en, name_ar')
           .inFilter('id', categoryIds);
       for (final c in cats) {
-        names[c['id'].toString()] = Db.text(c['name_en']);
+        names[c['id'].toString()] = (
+          ar: Db.text(c['name_ar']),
+          en: Db.text(c['name_en']),
+        );
       }
     }
 
@@ -319,14 +399,19 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
       final enriched = Map<String, dynamic>.from(r);
       final targetId = r['target_id']?.toString();
       if (r['target_type'] == 'category' && targetId != null) {
-        enriched['target_category_name'] = names[targetId] ?? '';
+        final categoryNames = names[targetId];
+        enriched['target_category_name_ar'] = categoryNames?.ar ?? '';
+        enriched['target_category_name_en'] = categoryNames?.en ?? '';
       }
       return BannerModel.fromJson(enriched);
     }).toList();
   }
 
   @override
-  Future<List<BundleModel>> getBundles({String? branchId, int limit = 20}) async {
+  Future<List<BundleModel>> getBundles({
+    String? branchId,
+    int limit = 20,
+  }) async {
     final rows = await _client
         .from('bundles')
         .select('*')
@@ -342,55 +427,70 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
         .inFilter('bundle_id', bundleIds)
         .order('sort_order');
 
-final byBundle = <String, List<BundleComponent>>{};
+    final byBundle = <String, List<BundleComponent>>{};
     for (final row in items) {
       final bundleId = row['bundle_id'].toString();
       final product = row['product'];
       final embedded = product is Map ? product : const <String, dynamic>{};
-      byBundle.putIfAbsent(bundleId, () => []).add(BundleComponent(
-            productId: Db.text(row['product_id']),
-            quantity: Db.asInt(row['quantity'], fallback: 1),
-            allowOptions: row['allow_options'] == true,
-            nameAr: Db.textOrNull(embedded['name_ar']),
-            nameEn: Db.textOrNull(embedded['name_en']),
-            imageUrl: Db.textOrNull(embedded['image_url']),
-          ));
+      byBundle
+          .putIfAbsent(bundleId, () => [])
+          .add(
+            BundleComponent(
+              productId: Db.text(row['product_id']),
+              quantity: Db.asInt(row['quantity'], fallback: 1),
+              allowOptions: row['allow_options'] == true,
+              nameAr: Db.textOrNull(embedded['name_ar']),
+              nameEn: Db.textOrNull(embedded['name_en']),
+              imageUrl: Db.textOrNull(embedded['image_url']),
+            ),
+          );
     }
 
     return rows
-        .map((r) => BundleModel.fromJson(
-              r,
-              components: byBundle[r['id'].toString()] ?? const [],
-            ))
+        .map(
+          (r) => BundleModel.fromJson(
+            r,
+            components: byBundle[r['id'].toString()] ?? const [],
+          ),
+        )
         .toList();
   }
 
   // --- CategoryRepository --------------------------------------------------
 
   @override
-  Future<List<CategoryModel>> getCategories({bool includeInactive = false}) async {
+  Future<List<CategoryModel>> getCategories({
+    bool includeInactive = false,
+  }) async {
     // Built in one expression: the PostgREST builder changes type after each
     // filter, so reassigning a `var` across filters does not type check.
     final rows = await (includeInactive
         ? _client.from('categories').select('*').order('sort_order')
         : _client
-            .from('categories')
-            .select('*')
-            .eq('is_active', true)
-            .order('sort_order'));
+              .from('categories')
+              .select('*')
+              .eq('is_active', true)
+              .order('sort_order'));
     return rows.map(CategoryModel.fromJson).toList();
   }
 
   @override
   Future<CategoryModel?> getCategoryById(String id) async {
-    final rows = await _client.from('categories').select('*').eq('id', id).limit(1);
+    final rows = await _client
+        .from('categories')
+        .select('*')
+        .eq('id', id)
+        .limit(1);
     return rows.isEmpty ? null : CategoryModel.fromJson(rows.first);
   }
 
   @override
   Future<CategoryModel?> getCategoryBySlug(String slug) async {
-    final rows =
-        await _client.from('categories').select('*').eq('slug', slug).limit(1);
+    final rows = await _client
+        .from('categories')
+        .select('*')
+        .eq('slug', slug)
+        .limit(1);
     return rows.isEmpty ? null : CategoryModel.fromJson(rows.first);
   }
 

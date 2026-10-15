@@ -10,6 +10,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/bundle_details_cubit.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
@@ -32,31 +33,28 @@ class BundleDetailsPage extends StatelessWidget {
         builder: (context) => BlocListener<BranchCubit, BranchState>(
           listenWhen: (previous, current) =>
               previous.selected?.id != current.selected?.id,
-          listener: (context, state) => context
-              .read<BundleDetailsCubit>()
-              .setBranch(state.selected?.id),
+          listener: (context, state) =>
+              context.read<BundleDetailsCubit>().setBranch(state.selected?.id),
           child: Scaffold(
-          appBar: AppBar(title: Text(bundle.title)),
-          body: const _BundleDetailsBody(),
-          bottomNavigationBar: Container(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
-            decoration: const BoxDecoration(
-              color: AppColor.whiteColor,
-              border: Border(
-                top: BorderSide(color: AppColor.borderColor),
+            appBar: AppBar(title: Text(bundle.title)),
+            body: const _BundleDetailsBody(),
+            bottomNavigationBar: Container(
+              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              decoration: const BoxDecoration(
+                color: AppColor.whiteColor,
+                border: Border(top: BorderSide(color: AppColor.borderColor)),
               ),
-            ),
-            child: BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
-              builder: (context, state) => CustomBtn(
-                text: 'Add Bundle to Cart',
-                onPressed: state.products.isEmpty
-                    ? null
-                    : () => _addBundle(context),
+              child: BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
+                builder: (context, state) => CustomBtn(
+                  text: 'Add Bundle to Cart',
+                  onPressed: state.products.isEmpty
+                      ? null
+                      : () => _addBundle(context),
+                ),
               ),
             ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -76,9 +74,8 @@ class BundleDetailsPage extends StatelessWidget {
         unitPrice: shares[product.id],
       );
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${bundle.title} added to cart')),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text('${bundle.title} added to cart')));
   }
 }
 
@@ -97,9 +94,9 @@ class _BundleDetailsBody extends StatelessWidget {
         }
 
         final cubit = context.read<BundleDetailsCubit>();
-        final image = state.products.isEmpty
+        final imageProduct = state.products.isEmpty
             ? null
-            : state.products.first.image;
+            : state.products.first;
         return ListView(
           padding: EdgeInsets.fromLTRB(
             SpacingTokens.lg.w,
@@ -108,15 +105,14 @@ class _BundleDetailsBody extends StatelessWidget {
             SpacingTokens.lg.w,
           ),
           children: [
-            if (image != null)
+            if (imageProduct != null)
               Center(
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16.r),
-                  child: Image.asset(
-                    image,
+                  child: SizedBox(
                     height: 200.h,
                     width: double.infinity,
-                    fit: BoxFit.cover,
+                    child: ProductImageView(product: imageProduct),
                   ),
                 ),
               ),
@@ -125,9 +121,8 @@ class _BundleDetailsBody extends StatelessWidget {
             SizedBox(height: 4.h),
             Text(
               state.bundle.subtitle,
-              style: AppFonts.regular14(
-                context,
-              ).copyWith(color: AppColor.greyColor),
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
             SizedBox(height: SpacingTokens.lg.h),
             Text("What's inside", style: AppFonts.semiBold16(context)),
@@ -145,11 +140,10 @@ class _BundleDetailsBody extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8.r),
-                      child: Image.asset(
-                        product.image,
+                      child: SizedBox(
                         height: 48.w,
                         width: 48.w,
-                        fit: BoxFit.cover,
+                        child: ProductImageView(product: product),
                       ),
                     ),
                     SizedBox(width: SpacingTokens.sm.w),
@@ -163,9 +157,8 @@ class _BundleDetailsBody extends StatelessWidget {
                     ),
                     Text(
                       Formatters.price(product.price),
-                      style: AppFonts.semiBold14(
-                        context,
-                      ).copyWith(color: AppColor.greyColor),
+                      style: AppFonts.semiBold14(context)
+                          .copyWith(color: AppColor.greyColor),
                     ),
                   ],
                 ),
@@ -215,9 +208,8 @@ class _PriceRow extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppFonts.regular14(
-            context,
-          ).copyWith(color: AppColor.greyColor),
+          style: AppFonts.regular14(context)
+              .copyWith(color: AppColor.greyColor),
         ),
         Text(
           value,

@@ -6,6 +6,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
@@ -25,13 +26,11 @@ class OrderDetailsPage extends StatelessWidget {
 
   void _onAction(BuildContext context) {
     if (order.status == OrderStatus.active) {
-      Navigator.of(
-        context,
-      ).pushNamed(TrackOrderPage.routeName, arguments: order);
+      Navigator.of(context)
+          .pushNamed(TrackOrderPage.routeName, arguments: order);
     } else if (order.status == OrderStatus.completed) {
-      Navigator.of(
-        context,
-      ).pushNamed(LeaveReviewPage.routeName, arguments: order);
+      Navigator.of(context)
+          .pushNamed(LeaveReviewPage.routeName, arguments: order);
     }
   }
 
@@ -88,7 +87,7 @@ class _DetailsScaffold extends StatelessWidget {
         children: [
           Row(
             children: [
-Text(
+              Text(
                 "Order #${order.displayNumber}",
                 style: AppFonts.semiBold18(context),
               ),
@@ -104,9 +103,8 @@ Text(
                 ),
                 child: Text(
                   order.status.label,
-                  style: AppFonts.medium12(
-                    context,
-                  ).copyWith(color: _statusColor(context)),
+                  style: AppFonts.medium12(context)
+                      .copyWith(color: _statusColor(context)),
                 ),
               ),
             ],
@@ -123,11 +121,10 @@ Text(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12.r),
-                  child: Image.asset(
-                    order.product.image,
+                  child: SizedBox(
                     height: 72.w,
                     width: 72.w,
-                    fit: BoxFit.cover,
+                    child: ProductImageView(product: order.product),
                   ),
                 ),
                 SizedBox(width: SpacingTokens.md.w),
@@ -137,9 +134,8 @@ Text(
                     children: [
                       Text(
                         order.product.category,
-                        style: AppFonts.regular12(
-                          context,
-                        ).copyWith(color: AppColor.greyColor),
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.greyColor),
                       ),
                       SizedBox(height: 4.h),
                       Text(
@@ -149,18 +145,16 @@ Text(
                       SizedBox(height: 4.h),
                       Text(
                         "Qty: ${order.quantity}",
-                        style: AppFonts.regular14(
-                          context,
-                        ).copyWith(color: AppColor.greyColor),
+                        style: AppFonts.regular14(context)
+                            .copyWith(color: AppColor.greyColor),
                       ),
                     ],
                   ),
                 ),
                 Text(
                   Formatters.price(total),
-                  style: AppFonts.semiBold16(
-                    context,
-                  ).copyWith(color: AppColor.primaryColor),
+                  style: AppFonts.semiBold16(context)
+                      .copyWith(color: AppColor.primaryColor),
                 ),
               ],
             ),
@@ -180,25 +174,21 @@ Text(
           ),
         ],
       ),
-      bottomNavigationBar:
-          order.status == OrderStatus.cancelled
-              ? null
-              : Container(
-                  padding: EdgeInsets.all(SpacingTokens.lg.w),
-                  decoration: const BoxDecoration(
-                    color: AppColor.whiteColor,
-                    border: Border(
-                      top: BorderSide(color: AppColor.borderColor),
-                    ),
-                  ),
-                  child: CustomBtn(
-                    text: order.status == OrderStatus.active
-                        ? "Track Order"
-                        : "Leave Review",
-                    onPressed: () => onAction(context),
-                  ),
-                ),
+      bottomNavigationBar: order.status == OrderStatus.cancelled
+          ? null
+          : Container(
+              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              decoration: const BoxDecoration(
+                color: AppColor.whiteColor,
+                border: Border(top: BorderSide(color: AppColor.borderColor)),
+              ),
+              child: CustomBtn(
+                text: order.status == OrderStatus.active
+                    ? "Track Order"
+                    : "Leave Review",
+                onPressed: () => onAction(context),
+              ),
+            ),
     );
   }
 }
-

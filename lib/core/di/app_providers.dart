@@ -63,7 +63,7 @@ class AppProviders extends StatelessWidget {
   /// RLS still decides the rows.
   CatalogRepository _buildCatalogRepository() {
     if (SupabaseService.isReady) return SupabaseProductRepository();
-    return const MockProductRepository();
+    return MockProductRepository();
   }
 
   /// Cart stays on the device when Supabase is unavailable; when configured it

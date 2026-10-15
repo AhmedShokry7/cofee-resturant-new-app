@@ -1,11 +1,18 @@
+import 'package:new_coffee/core/locale/app_locale.dart';
+
 enum OrderStatus {
-  active('Active'),
-  completed('Completed'),
-  cancelled('Cancelled');
+  active,
+  completed,
+  cancelled;
 
-  const OrderStatus(this.label);
-
-  final String label;
+  String get label {
+    final arabic = AppLocale.instance.isArabic;
+    return switch (this) {
+      OrderStatus.active => arabic ? 'قيد التنفيذ' : 'Active',
+      OrderStatus.completed => arabic ? 'مكتمل' : 'Completed',
+      OrderStatus.cancelled => arabic ? 'ملغي' : 'Cancelled',
+    };
+  }
 
   /// Maps the database status to the three customer-facing buckets.
   ///
@@ -18,8 +25,7 @@ enum OrderStatus {
       'confirmed' ||
       'preparing' ||
       'ready' ||
-      'out_for_delivery' =>
-        OrderStatus.active,
+      'out_for_delivery' => OrderStatus.active,
       'completed' => OrderStatus.completed,
       'cancelled' => OrderStatus.cancelled,
       _ => throw FormatException('Unknown order status: $value'),

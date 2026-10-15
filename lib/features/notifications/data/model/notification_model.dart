@@ -18,10 +18,10 @@ class NotificationModel {
     this.type = 'system',
     this.createdAt,
     this.isRead = true,
-  })  : _legacyTitle = title ?? '',
-        _legacyBody = body ?? '',
-        _legacyTime = time,
-        _legacyIcon = icon;
+  }) : _legacyTitle = title ?? '',
+       _legacyBody = body ?? '',
+       _legacyTime = time,
+       _legacyIcon = icon;
 
   final String id;
   final String? titleAr;
@@ -38,18 +38,18 @@ class NotificationModel {
   final IconData? _legacyIcon;
 
   String get title {
-    final text = pickText(
-      (ar: titleAr ?? '', en: titleEn ?? ''),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: titleAr ?? '',
+      en: titleEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? _legacyTitle : text;
   }
 
   String get body {
-    final text = pickText(
-      (ar: bodyAr ?? '', en: bodyEn ?? ''),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: bodyAr ?? '',
+      en: bodyEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? _legacyBody : text;
   }
 
@@ -60,10 +60,15 @@ class NotificationModel {
     final at = createdAt;
     if (at == null) return '';
     final age = DateTime.now().difference(at);
-    if (age.inMinutes < 1) return 'now';
-    if (age.inMinutes < 60) return '${age.inMinutes}m ago';
-    if (age.inHours < 24) return '${age.inHours}h ago';
-    return '${age.inDays}d ago';
+    final arabic = AppLocale.instance.isArabic;
+    if (age.inMinutes < 1) return arabic ? 'الآن' : 'now';
+    if (age.inMinutes < 60) {
+      return arabic ? 'قبل ${age.inMinutes} دقيقة' : '${age.inMinutes}m ago';
+    }
+    if (age.inHours < 24) {
+      return arabic ? 'قبل ${age.inHours} ساعة' : '${age.inHours}h ago';
+    }
+    return arabic ? 'قبل ${age.inDays} يوم' : '${age.inDays}d ago';
   }
 
   IconData get icon {
@@ -93,4 +98,3 @@ class NotificationModel {
     );
   }
 }
-

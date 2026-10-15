@@ -29,8 +29,7 @@ class OptionSelection {
 
   /// Never returns null, so callers can treat a group with no selection as an
   /// empty set instead of handling a special case.
-  Set<String> inGroup(String groupId) =>
-      _byGroup[groupId] ?? const <String>{};
+  Set<String> inGroup(String groupId) => _byGroup[groupId] ?? const <String>{};
 
   bool isSelected(String valueId) =>
       _byGroup.values.any((ids) => ids.contains(valueId));
@@ -47,10 +46,10 @@ class OptionSelection {
 
   /// Every selected value, flattened.
   List<OptionValue> selectedValues(List<OptionGroup> groups) => [
-        for (final group in groups)
-          for (final value in group.values)
-            if (inGroup(group.id).contains(value.id)) value,
-      ];
+    for (final group in groups)
+      for (final value in group.values)
+        if (inGroup(group.id).contains(value.id)) value,
+  ];
 
   /// Sum of the deltas. Used for the instant local price while the server
   /// confirms the authoritative one.
@@ -63,22 +62,17 @@ class OptionSelection {
   }
 
   /// Flat list sent to resolvePrice, which takes option value ids.
-  List<String> get valueIds => [
-        for (final ids in _byGroup.values) ...ids,
-      ];
+  List<String> get valueIds => [for (final ids in _byGroup.values) ...ids];
 
   /// "Large, Less Sugar, Whipped Cream" for the cart note.
   ///
   /// The old note joined the Dart enum labels. This joins the database labels,
   /// so a renamed option shows its new name instead of the stale compiled one.
   String note(List<OptionGroup> groups) {
-    final ar = AppLocale.instance.isArabic;
     return [
       for (final group in groups)
         for (final value in group.values)
-          if (inGroup(group.id).contains(value.id))
-            ar ? (value.nameAr.isNotEmpty ? value.nameAr : value.nameEn)
-                : value.nameEn,
+          if (inGroup(group.id).contains(value.id)) value.name,
     ].join(', ');
   }
 
@@ -88,20 +82,24 @@ class OptionSelection {
     for (final group in groups) {
       final count = inGroup(group.id).length;
       if (count < group.minSelect) {
-        final name = ar ? group.nameAr : group.nameEn;
-        return ar ? 'يجب اختيار $name' : 'Please choose $name';
+        return ar ? 'يجب اختيار ${group.name}' : 'Please choose ${group.name}';
       }
       final max = group.maxSelect;
       if (max != null && count > max) {
-        final name = ar ? group.nameAr : group.nameEn;
-        return ar ? 'يمكنك اختيار $max فقط من $name' : 'You can pick at most $max for $name';
+        return ar
+            ? 'يمكنك اختيار $max فقط من ${group.name}'
+            : 'You can pick at most $max for ${group.name}';
       }
     }
     return null;
   }
 
   /// Applies a tap, honouring single-select, max-select and min-select.
-  OptionSelection toggle(List<OptionGroup> groups, String groupId, String valueId) {
+  OptionSelection toggle(
+    List<OptionGroup> groups,
+    String groupId,
+    String valueId,
+  ) {
     final group = groups.firstWhere((g) => g.id == groupId);
     final next = {..._byGroup};
     final current = {...(next[groupId] ?? const <String>{})};
@@ -186,5 +184,4 @@ double estimateUnitPrice(
   ProductModel product,
   List<OptionGroup> groups,
   OptionSelection selection,
-) =>
-    product.price + selection.deltaOf(groups);
+) => product.price + selection.deltaOf(groups);

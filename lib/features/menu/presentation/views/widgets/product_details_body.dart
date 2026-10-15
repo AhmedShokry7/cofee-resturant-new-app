@@ -11,6 +11,7 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/cup_icon.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_description.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
 class ProductDetailsBody extends StatelessWidget {
@@ -43,33 +44,36 @@ class ProductDetailsBody extends StatelessWidget {
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16.r),
-                child: Image.asset(
-                  product.image,
+                child: SizedBox(
                   height: 220.h,
                   width: 220.w,
-                  fit: BoxFit.cover,
+                  child: ProductImageView(product: product),
                 ),
               ),
             ),
             SizedBox(height: SpacingTokens.lg.h),
             Text(
               product.category,
-              style:
-                  AppFonts.regular14(context).copyWith(color: AppColor.greyColor),
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
             SizedBox(height: 4.h),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(product.name, style: AppFonts.semiBold20(context)),
+                  child: Text(
+                    product.name,
+                    style: AppFonts.semiBold20(context),
+                  ),
                 ),
                 SizedBox(width: SpacingTokens.sm.w),
                 Text(
-                  Formatters.price(context.read<ProductDetailsCubit>().unitPrice),
-                  style: AppFonts.semiBold18(
-                    context,
-                  ).copyWith(color: AppColor.primaryColor),
+                  Formatters.price(
+                    context.read<ProductDetailsCubit>().unitPrice,
+                  ),
+                  style: AppFonts.semiBold18(context)
+                      .copyWith(color: AppColor.primaryColor),
                 ),
               ],
             ),
@@ -103,8 +107,7 @@ class ProductDetailsBody extends StatelessWidget {
       },
     );
   }
-
-  }
+}
 
 class _UnavailableBanner extends StatelessWidget {
   const _UnavailableBanner({this.reason});
@@ -122,8 +125,7 @@ class _UnavailableBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline,
-              size: 18.w, color: AppColor.errorColor),
+          Icon(Icons.info_outline, size: 18.w, color: AppColor.errorColor),
           SizedBox(width: SpacingTokens.sm.w),
           Expanded(
             child: Text(
@@ -131,9 +133,8 @@ class _UnavailableBanner extends StatelessWidget {
                   (ar
                       ? 'هذا الخيار غير متوفر حاليًا'
                       : 'This combination is not available right now'),
-              style: AppFonts.medium14(
-                context,
-              ).copyWith(color: AppColor.errorColor),
+              style: AppFonts.medium14(context)
+                  .copyWith(color: AppColor.errorColor),
             ),
           ),
         ],
@@ -158,7 +159,7 @@ class _OptionGroupSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ar = AppLocale.instance.isArabic;
-    final name = ar ? group.nameAr : group.nameEn;
+    final name = group.name;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -169,8 +170,8 @@ class _OptionGroupSection extends StatelessWidget {
             padding: EdgeInsets.only(top: 2.h, bottom: SpacingTokens.xs.h),
             child: Text(
               ar ? 'مطلوب' : 'Required',
-              style:
-                  AppFonts.regular12(context).copyWith(color: AppColor.greyColor),
+              style: AppFonts.regular12(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
           )
         else
@@ -186,7 +187,8 @@ class _OptionGroupSection extends StatelessWidget {
                   child: _ValueChip(
                     label: _label(group.values[i]),
                     hint: _hint(group.values[i]),
-                    selected: selection.inGroup(group.id)
+                    selected: selection
+                        .inGroup(group.id)
                         .contains(group.values[i].id),
                     icon: showCupArt
                         ? CupIcon(
@@ -210,19 +212,16 @@ class _OptionGroupSection extends StatelessWidget {
               label: _label(value),
               hint: _hint(value),
               selected: selection.inGroup(group.id).contains(value.id),
-              onTap: () => context
-                  .read<ProductDetailsCubit>()
-                  .toggleValue(group.id, value.id),
+              onTap: () => context.read<ProductDetailsCubit>().toggleValue(
+                group.id,
+                value.id,
+              ),
             ),
       ],
     );
   }
 
-  static String _label(OptionValue value) {
-    final ar = AppLocale.instance.isArabic;
-    final chosen = ar ? value.nameAr : value.nameEn;
-    return chosen.isNotEmpty ? chosen : value.code;
-  }
+  static String _label(OptionValue value) => value.name;
 
   static String? _hint(OptionValue value) =>
       value.priceDelta == 0 ? null : '+${Formatters.price(value.priceDelta)}';
@@ -265,10 +264,7 @@ class _ValueChip extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[
-              icon!,
-              SizedBox(height: 4.h),
-            ],
+            if (icon != null) ...[icon!, SizedBox(height: 4.h)],
             Text(
               label,
               textAlign: TextAlign.center,
@@ -342,9 +338,8 @@ class _ValueTile extends StatelessWidget {
             if (hint != null)
               Text(
                 hint!,
-                style: AppFonts.semiBold14(
-                  context,
-                ).copyWith(color: AppColor.primaryColor),
+                style: AppFonts.semiBold14(context)
+                    .copyWith(color: AppColor.primaryColor),
               ),
           ],
         ),

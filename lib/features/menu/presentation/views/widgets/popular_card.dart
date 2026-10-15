@@ -10,6 +10,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_favorite_button.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 
 class PopularCard extends StatelessWidget {
@@ -21,9 +22,9 @@ class PopularCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(
-        context,
-      ).pushNamed(ProductDetailsPage.routeName, arguments: product),
+      onTap: () =>
+          Navigator.of(context)
+              .pushNamed(ProductDetailsPage.routeName, arguments: product),
       child: Container(
         width: width?.w,
         padding: EdgeInsets.all(SpacingTokens.md.w),
@@ -41,11 +42,7 @@ class PopularCard extends StatelessWidget {
                   Positioned.fill(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12.r),
-                      child: Image.asset(
-                        product.image,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                      ),
+                      child: ProductImageView(product: product),
                     ),
                   ),
                   Positioned(
@@ -93,4 +90,3 @@ class PopularCard extends StatelessWidget {
     );
   }
 }
-

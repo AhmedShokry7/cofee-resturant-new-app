@@ -6,6 +6,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
 class OrderItemCard extends StatelessWidget {
@@ -39,11 +40,10 @@ class OrderItemCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12.r),
-            child: Image.asset(
-              product.image,
+            child: SizedBox(
               height: 64.w,
               width: 64.w,
-              fit: BoxFit.cover,
+              child: ProductImageView(product: product),
             ),
           ),
           SizedBox(width: SpacingTokens.md.w),
@@ -63,9 +63,8 @@ class OrderItemCard extends StatelessWidget {
                     note,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppFonts.regular12(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                 ],
                 SizedBox(height: 4.h),
@@ -73,9 +72,8 @@ class OrderItemCard extends StatelessWidget {
                   children: [
                     Text(
                       "$quantity × ${Formatters.price(effectiveUnit)}",
-                      style: AppFonts.regular12(
-                        context,
-                      ).copyWith(color: AppColor.greyColor),
+                      style: AppFonts.regular12(context)
+                          .copyWith(color: AppColor.greyColor),
                     ),
                     const Spacer(),
                     if (unitPrice == null)
@@ -83,9 +81,8 @@ class OrderItemCard extends StatelessWidget {
                     else
                       Text(
                         Formatters.price(effectiveUnit * quantity),
-                        style: AppFonts.semiBold14(
-                          context,
-                        ).copyWith(color: AppColor.primaryColor),
+                        style: AppFonts.semiBold14(context)
+                            .copyWith(color: AppColor.primaryColor),
                       ),
                   ],
                 ),
@@ -97,4 +94,3 @@ class OrderItemCard extends StatelessWidget {
     );
   }
 }
-

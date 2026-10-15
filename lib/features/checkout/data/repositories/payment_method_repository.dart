@@ -13,7 +13,7 @@ abstract class PaymentMethodRepository {
 
 class SupabasePaymentMethodRepository implements PaymentMethodRepository {
   SupabasePaymentMethodRepository({SupabaseClient? client})
-      : _clientOverride = client;
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -27,15 +27,16 @@ class SupabasePaymentMethodRepository implements PaymentMethodRepository {
     if (client == null) return LocalPaymentMethodRepository._seed;
 
     try {
-      final rows = await client
-          .from('payment_methods')
-          .select()
-          .eq('is_active', true)
-          .order('sort_order') as List;
+      final rows =
+          await client
+                  .from('payment_methods')
+                  .select()
+                  .eq('is_active', true)
+                  .order('sort_order')
+              as List;
       return [
         for (final row in rows)
-          if (row is Map<String, dynamic>)
-            PaymentMethodModel.fromDatabase(row),
+          if (row is Map<String, dynamic>) PaymentMethodModel.fromDatabase(row),
       ];
     } catch (_) {
       return LocalPaymentMethodRepository._seed;
@@ -47,9 +48,24 @@ class LocalPaymentMethodRepository implements PaymentMethodRepository {
   const LocalPaymentMethodRepository();
 
   static const List<PaymentMethodModel> _seed = [
-    PaymentMethodModel(id: 'cash', label: 'Cash on Delivery', icon: null),
-    PaymentMethodModel(id: 'card', label: 'Credit / Debit Card', icon: null),
-    PaymentMethodModel(id: 'apple_pay', label: 'Apple Pay', icon: null),
+    PaymentMethodModel(
+      id: 'cash',
+      label: 'Cash on Delivery',
+      labelAr: 'الدفع عند الاستلام',
+      labelEn: 'Cash on Delivery',
+    ),
+    PaymentMethodModel(
+      id: 'card',
+      label: 'Credit / Debit Card',
+      labelAr: 'بطاقة ائتمانية أو مدى',
+      labelEn: 'Credit / Debit Card',
+    ),
+    PaymentMethodModel(
+      id: 'apple_pay',
+      label: 'Apple Pay',
+      labelAr: 'Apple Pay',
+      labelEn: 'Apple Pay',
+    ),
   ];
 
   @override

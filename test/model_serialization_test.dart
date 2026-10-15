@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
+import 'package:new_coffee/features/checkout/data/model/payment_method_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Serialization tests for the bilingual model layer.
 ///
@@ -11,7 +14,10 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 /// `catalog.products` and `catalog.categories`, so a schema drift shows up here
 /// rather than as an empty screen at runtime.
 void main() {
-  setUp(() => AppLocale.instance.debugSet(AppLanguage.arabic));
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+  });
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.arabic));
 
   group('ProductModel.fromJson', () {
@@ -60,10 +66,12 @@ void main() {
     test('switches language without changing the underlying fields', () {
       final p = ProductModel.fromJson(productRow);
       expect(p.name, 'لاتيه');
+      expect(p.category, 'قهوة ساخنة');
 
       AppLocale.instance.debugSet(AppLanguage.english);
       expect(p.name, 'Latte');
       expect(p.description, 'Espresso with steamed milk');
+      expect(p.category, 'Hot Coffee');
 
       // The stored pair is untouched by the locale.
       expect(p.nameAr, 'لاتيه');
@@ -77,8 +85,11 @@ void main() {
         'name_en': 'Iced Latte',
       });
       AppLocale.instance.debugSet(AppLanguage.arabic);
-      expect(partial.name, 'Iced Latte',
-          reason: 'missing Arabic must fall back, not render empty');
+      expect(
+        partial.name,
+        'Iced Latte',
+        reason: 'missing Arabic must fall back, not render empty',
+      );
     });
 
     test('legacy mock data still resolves its single-language name', () {
@@ -176,20 +187,55 @@ void main() {
   });
 
   group('AppLocale', () {
-    test('defaults to Arabic and toggles', () {
+    test('switches locale and persists the selection', () async {
       AppLocale.instance.debugSet(AppLanguage.arabic);
       expect(AppLocale.instance.isArabic, isTrue);
       expect(AppLocale.instance.textDirection, TextDirection.rtl);
-      AppLocale.instance.toggle();
+      await AppLocale.instance.toggle();
       expect(AppLocale.instance.isArabic, isFalse);
       expect(AppLocale.instance.textDirection, TextDirection.ltr);
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString('app_language'), 'en');
     });
 
     test('parses a language code defensively', () {
       expect(AppLanguage.fromCode('en'), AppLanguage.english);
+      expect(AppLanguage.fromCode('en-US'), AppLanguage.english);
       expect(AppLanguage.fromCode('ar'), AppLanguage.arabic);
       expect(AppLanguage.fromCode(null), AppLanguage.arabic);
       expect(AppLanguage.fromCode('fr'), AppLanguage.arabic);
     });
+  });
+
+  test('payment method label follows the selected language', () {
+    final method = PaymentMethodModel.fromDatabase({
+      'id': 'cash',
+      'name_ar': 'الدفع عند الاستلام',
+      'name_en': 'Cash on Delivery',
+      'code': 'cash',
+    });
+
+    AppLocale.instance.debugSet(AppLanguage.english);
+    expect(method.label, 'Cash on Delivery');
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    expect(method.label, 'الدفع عند الاستلام');
+  });
+
+  test('branch address follows the selected language', () {
+    final branch = Branch.fromDatabase({
+      'id': 'branch-1',
+      'code': 'MAIN',
+      'name_ar': 'الفرع الرئيسي',
+      'name_en': 'Main Branch',
+      'address': 'شارع الملك فهد، العليا، الرياض',
+      'address_ar': 'شارع الملك فهد، العليا، الرياض',
+      'address_en': 'King Fahd Road, Olaya, Riyadh',
+    });
+
+    AppLocale.instance.debugSet(AppLanguage.english);
+    expect(branch.name, 'Main Branch');
+    expect(branch.address, 'King Fahd Road, Olaya, Riyadh');
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    expect(branch.address, 'شارع الملك فهد، العليا، الرياض');
   });
 }

@@ -18,17 +18,22 @@ class ProductModel {
     required this.image,
     this.nameAr,
     this.nameEn,
+    this.categoryAr,
+    this.categoryEn,
     this.descriptionAr,
     this.descriptionEn,
     this.slug,
     this.sku,
-this.categoryId,
+    this.categoryId,
     this.categorySlug = '',
     this.isFeatured = false,
     this.prepMinutes,
-  })  : _legacyName = name ?? '',
-        _legacyCategory = category ?? '',
-        _legacyDescription = description ?? '';
+    this.imageUrls = const [],
+    this.isPrimaryImageAvailable = false,
+    this.primaryImageUrl,
+  }) : _legacyName = name ?? '',
+       _legacyCategory = category ?? '',
+       _legacyDescription = description ?? '';
 
   final String id;
 
@@ -38,9 +43,12 @@ this.categoryId,
   /// English name. Falls back to [nameAr] when absent.
   final String? nameEn;
 
+  final String? categoryAr;
+  final String? categoryEn;
+
   /// Category id from `catalog.categories`. Null for legacy mock data, which
   /// only ever had the category label.
-final String? categoryId;
+  final String? categoryId;
 
   /// Stable category key, e.g. `hot-coffee`.
   ///
@@ -69,23 +77,46 @@ final String? categoryId;
   final String _legacyCategory;
   final String _legacyDescription;
 
+  /// List of product image URLs from the database, ordered by sort_order.
+  final List<String> imageUrls;
+
+  /// Whether a primary image is available.
+  final bool isPrimaryImageAvailable;
+
+  /// The primary image URL, determined by priority: explicit is_primary → lowest sort_order → product-level image → null.
+  final String? primaryImageUrl;
+
+  /// First usable product image, with legacy and secondary-image fallbacks.
+  String? get displayImageUrl {
+    for (final candidate in [primaryImageUrl, ...imageUrls, image]) {
+      final url = candidate?.trim();
+      if (url != null && url.isNotEmpty) return url;
+    }
+    return null;
+  }
+
   /// Category label as a plain string. Still the join key for the mock data and
   /// for anything that has not moved to ids yet.
-  String get category => _legacyCategory;
+  String get category {
+    final ar = categoryAr ?? '';
+    final en = categoryEn ?? '';
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyCategory;
+    return pickText((ar: ar, en: en), isArabic: isArabic);
+  }
 
   bool get isArabic => AppLocale.instance.isArabic;
 
   String get name {
     final ar = nameAr ?? '';
     final en = nameEn ?? '';
-    if (ar.isEmpty && en.isEmpty) return _legacyName;
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyName;
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
 
   String get description {
     final ar = descriptionAr ?? '';
     final en = descriptionEn ?? '';
-    if (ar.isEmpty && en.isEmpty) return _legacyDescription;
+    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyDescription;
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
 
@@ -105,19 +136,27 @@ final String? categoryId;
   /// Accepts the snake_case column names PostgREST returns, and also tolerates
   /// the camelCase names used by RPCs so one constructor serves both.
   factory ProductModel.fromJson(Map<String, dynamic> json) {
-    final categoryName = Db.textOrNull(json['category_name_en']) ??
+    final categoryName =
         Db.textOrNull(json['category_name']) ??
         Db.textOrNull(json['category']) ??
         '';
     return ProductModel(
       id: Db.text(json['id']),
-      name: Db.textOrNull(json['name_en']) ??
+      name:
+          Db.textOrNull(json['name_en']) ??
           Db.textOrNull(json['name']) ??
           Db.textOrNull(json['name_ar']) ??
           '',
       nameAr: Db.textOrNull(json['name_ar']),
       nameEn: Db.textOrNull(json['name_en']),
-      description: Db.textOrNull(json['description_en']) ??
+      categoryAr:
+          Db.textOrNull(json['category_name_ar']) ??
+          Db.textOrNull(json['category_ar']),
+      categoryEn:
+          Db.textOrNull(json['category_name_en']) ??
+          Db.textOrNull(json['category_en']),
+      description:
+          Db.textOrNull(json['description_en']) ??
           Db.textOrNull(json['description']) ??
           '',
       descriptionAr: Db.textOrNull(json['description_ar']),
@@ -128,36 +167,54 @@ final String? categoryId;
       slug: Db.textOrNull(json['slug']),
       sku: Db.textOrNull(json['sku']),
       price: Db.asDouble(json['base_price'] ?? json['price']),
-      oldPrice: Db.asDoubleOrNull(json['compare_at_price'] ?? json['old_price']),
-      image: Db.textOrNull(json['image_url']) ?? Db.textOrNull(json['image']) ?? '',
+      oldPrice: Db.asDoubleOrNull(
+        json['compare_at_price'] ?? json['old_price'],
+      ),
+      image:
+          Db.textOrNull(json['image_url']) ??
+          Db.textOrNull(json['image']) ??
+          '',
       isFeatured: Db.asBool(json['is_featured']),
-      prepMinutes:
-          json['prep_minutes'] == null ? null : Db.asInt(json['prep_minutes']),
+      imageUrls: Db.textOrNull(json['image_urls']) != null
+          ? Db.text(json['image_urls']).split(',')
+          : const [],
+      isPrimaryImageAvailable: Db.asBool(json['is_primary']),
+      primaryImageUrl: Db.textOrNull(json['primary_image_url']),
+      prepMinutes: json['prep_minutes'] == null
+          ? null
+          : Db.asInt(json['prep_minutes']),
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'slug': slug,
-        'sku': sku,
-        'name_ar': nameAr ?? name,
-        'name_en': nameEn ?? name,
-        'description_ar': descriptionAr ?? description,
-        'description_en': descriptionEn ?? description,
-        'category_id': categoryId,
-        'category': category,
-        'base_price': price,
-        'compare_at_price': oldPrice,
-        'image_url': image,
-        'is_featured': isFeatured,
-        'prep_minutes': prepMinutes,
-      };
+    'id': id,
+    'slug': slug,
+    'sku': sku,
+    'name_ar': nameAr ?? name,
+    'name_en': nameEn ?? name,
+    'category_name_ar': categoryAr,
+    'category_name_en': categoryEn,
+    'description_ar': descriptionAr ?? description,
+    'description_en': descriptionEn ?? description,
+    'category_id': categoryId,
+    'category': category,
+    'base_price': price,
+    'compare_at_price': oldPrice,
+    'image_url': image,
+    'is_featured': isFeatured,
+    'prep_minutes': prepMinutes,
+    'image_urls': imageUrls.join(','),
+    'is_primary': isPrimaryImageAvailable,
+    'primary_image_url': primaryImageUrl,
+  };
 
   ProductModel copyWith({
     String? id,
     String? name,
     String? nameAr,
     String? nameEn,
+    String? categoryAr,
+    String? categoryEn,
     String? category,
     String? categoryId,
     String? description,
@@ -167,22 +224,30 @@ final String? categoryId;
     double? oldPrice,
     String? image,
     bool? isFeatured,
-  }) =>
-      ProductModel(
-        id: id ?? this.id,
-        name: name ?? this.name,
-        nameAr: nameAr ?? this.nameAr,
-        nameEn: nameEn ?? this.nameEn,
-        category: category ?? this.category,
-        categoryId: categoryId ?? this.categoryId,
-        description: description ?? this.description,
-        descriptionAr: descriptionAr ?? this.descriptionAr,
-        descriptionEn: descriptionEn ?? this.descriptionEn,
-        price: price ?? this.price,
-        oldPrice: oldPrice ?? this.oldPrice,
-        image: image ?? this.image,
-        isFeatured: isFeatured ?? this.isFeatured,
-      );
+    List<String>? imageUrls,
+    bool? isPrimaryImageAvailable,
+    String? primaryImageUrl,
+  }) => ProductModel(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    nameAr: nameAr ?? this.nameAr,
+    nameEn: nameEn ?? this.nameEn,
+    categoryAr: categoryAr ?? this.categoryAr,
+    categoryEn: categoryEn ?? this.categoryEn,
+    category: category ?? this.category,
+    categoryId: categoryId ?? this.categoryId,
+    description: description ?? this.description,
+    descriptionAr: descriptionAr ?? this.descriptionAr,
+    descriptionEn: descriptionEn ?? this.descriptionEn,
+    price: price ?? this.price,
+    oldPrice: oldPrice ?? this.oldPrice,
+    image: image ?? this.image,
+    isFeatured: isFeatured ?? this.isFeatured,
+    imageUrls: imageUrls ?? this.imageUrls,
+    isPrimaryImageAvailable:
+        isPrimaryImageAvailable ?? this.isPrimaryImageAvailable,
+    primaryImageUrl: primaryImageUrl ?? this.primaryImageUrl,
+  );
 
   @override
   bool operator ==(Object other) =>
