@@ -1,31 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
-import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
+import 'package:new_coffee/features/on_boarding/data/on_boarding_knowledge.dart';
 import 'package:new_coffee/features/on_boarding/data/model/on_boarding_model.dart';
 
 part 'on_boarding_state.dart';
 
 class OnBoardingCubit extends Cubit<OnBoardingState> {
-  OnBoardingCubit({required ContentRepository content})
-      : _content = content,
-        super(OnBoardingInitial()) {
+  OnBoardingCubit()
+      : super(OnBoardingInitial()) {
     pageController = PageController(initialPage: currentPage);
     load();
   }
 
-  final ContentRepository _content;
   int currentPage = 0;
   late PageController pageController;
 
   Future<void> load() async {
+    print('[OnBoarding] 🔄 Loading started...');
     try {
-      final slides = await _content.onBoardingSlides();
-      if (isClosed) return;
-      emit(OnBoardingLoaded(slides: slides));
+      final effectiveSlides = onBoardingSlides;
+      emit(OnBoardingLoaded(slides: effectiveSlides));
+      print('[OnBoarding] 📊 Emitted OnBoardingLoaded state with ${effectiveSlides.length} slides');
     } catch (error, stackTrace) {
+      print('[OnBoarding] ❌ Error caught: $error');
+      print('[OnBoarding] 📋 Stack trace: $stackTrace');
       if (isClosed) return;
       emit(OnBoardingError(message: error.toString()));
       addError(error, stackTrace);

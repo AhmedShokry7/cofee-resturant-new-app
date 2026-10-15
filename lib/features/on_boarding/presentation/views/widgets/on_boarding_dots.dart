@@ -14,7 +14,7 @@ class OnBoardingDots extends StatelessWidget {
     return BlocBuilder<OnBoardingCubit, OnBoardingState>(
       builder: (context, state) {
         final count = state is OnBoardingLoaded
-            ? (state as OnBoardingLoaded).slides.length
+            ? (state).slides.length
             : 0;
         return Row(
           children: [
@@ -22,8 +22,8 @@ class OnBoardingDots extends StatelessWidget {
               count,
               (index) => AnimatedContainer(
                 margin: const EdgeInsets.only(right: 8),
-                height: currentPage == index ? 12.h : 8.h,
-                width: currentPage == index ? 12.h : 8.h,
+                height: currentPage == index ? 10.h : 6.h,
+                width: currentPage == index ? 10.h : 6.h,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(100),
                   color: currentPage == index

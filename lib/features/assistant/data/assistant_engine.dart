@@ -1141,7 +1141,7 @@ class AssistantEngine {
           .join('، ');
       return AssistantAnswer(
         text: arabic
-            ? '${known}الحلو نوع إيه بالظبط؟ عندنا $options.'
+            ? '$knownالحلو نوع إيه بالظبط؟ عندنا $options.'
             : '${known}Which dessert exactly? We have $options.',
         topic: 'order',
         sourceId: 'order-clarify',
@@ -1388,7 +1388,7 @@ class AssistantEngine {
     if (now) {
       return AssistantAnswer(
         text: arabic
-            ? '${prefix}تمام، افتح الدفع واختار البطاقة المناسبة.'
+            ? '$prefixتمام، افتح الدفع واختار البطاقة المناسبة.'
             : '${prefix}Opening payment — pick your card there.',
         topic: 'order',
         sourceId: 'order-pay-now',
@@ -1399,7 +1399,7 @@ class AssistantEngine {
     }
     return AssistantAnswer(
       text: arabic
-          ? '${prefix}تمام، افتح الدفع واختار (عند الاستلام).'
+          ? '$prefixتمام، افتح الدفع واختار (عند الاستلام).'
           : '${prefix}Opening checkout — choose On Delivery there.',
       topic: 'order',
       sourceId: 'order-pay-cash',

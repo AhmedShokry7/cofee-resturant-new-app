@@ -15,11 +15,10 @@ part 'bundle_details_state.dart';
 /// rendered the stale compiled row.
 class BundleDetailsCubit extends Cubit<BundleDetailsState> {
   BundleDetailsCubit({
-    required CatalogRepository repository,
+    required this._repository,
     required this.bundle,
     this.branchId,
-  })  : _repository = repository,
-        super(BundleDetailsState(bundle: bundle)) {
+  })  : super(BundleDetailsState(bundle: bundle)) {
     load();
   }
 

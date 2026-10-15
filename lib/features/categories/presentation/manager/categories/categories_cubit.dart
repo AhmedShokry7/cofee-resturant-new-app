@@ -16,10 +16,9 @@ part 'categories_state.dart';
 /// category is renamed or translated.
 class CategoriesCubit extends Cubit<CategoriesState> {
   CategoriesCubit({
-    required CatalogRepository repository,
+    required this._repository,
     this.branchId,
-  })  : _repository = repository,
-        super(const CategoriesState()) {
+  })  : super(const CategoriesState()) {
     load();
   }
 

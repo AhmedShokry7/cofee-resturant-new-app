@@ -202,8 +202,8 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
       if (query.trim().isNotEmpty) 'p_query': query.trim(),
       // Optional parameters may be omitted; p_branch_id is optional here so
       // omitting it is correct and lets the server fall back to base prices.
-      if (branchId != null) 'p_branch_id': branchId,
-      if (categoryId != null) 'p_category_id': categoryId,
+      'p_branch_id': ?branchId,
+      'p_category_id': ?categoryId,
       'p_sort': sort,
       'p_page': (offset ~/ limit) + 1,
       'p_page_size': limit,

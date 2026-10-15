@@ -13,9 +13,8 @@ part 'orders_state.dart';
 /// compiled menu. History now comes from frozen invoice snapshots, so a later
 /// price or product change cannot rewrite an old receipt.
 class OrdersCubit extends Cubit<OrdersState> {
-  OrdersCubit({required OrdersRepository repository})
-      : _repository = repository,
-        super(const OrdersState(status: OrderStatus.active)) {
+  OrdersCubit({required this._repository})
+      : super(const OrdersState(status: OrderStatus.active)) {
     load();
   }
 

@@ -17,10 +17,9 @@ part 'loyalty_state.dart';
 /// wallet because there is no account for the ledger to belong to.
 class LoyaltyCubit extends Cubit<LoyaltyState> {
   LoyaltyCubit({
-    required LoyaltyRepository repository,
+    required this._repository,
     this.branchId,
-  })  : _repository = repository,
-        super(const LoyaltyState()) {
+  })  : super(const LoyaltyState()) {
     if (SupabaseService.isReady) {
       _authSubscription = SupabaseService
           .client.auth.onAuthStateChange

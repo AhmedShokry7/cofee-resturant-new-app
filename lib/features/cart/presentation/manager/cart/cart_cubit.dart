@@ -23,11 +23,10 @@ part 'cart_state.dart';
 /// being flattened away.
 class CartCubit extends Cubit<CartState> {
   CartCubit({
-    required CartRepository cartRepository,
+    required this._cartRepository,
     required CatalogRepository catalogRepository,
     this.branchId,
-  })  : _cartRepository = cartRepository,
-        _catalogRepository = catalogRepository,
+  })  : _catalogRepository = catalogRepository,
         super(const CartState(items: [])) {
     load();
   }
@@ -113,6 +112,7 @@ class CartCubit extends Cubit<CartState> {
     String note = '',
     List<String> optionValueIds = const [],
     double? unitPrice,
+    String? bundleId,
   }) {
     final items = [...state.items];
     final optionIds = [
@@ -150,6 +150,7 @@ class CartCubit extends Cubit<CartState> {
       note: note,
       optionValueIds: optionValueIds,
       unitPrice: unitPrice ?? product.price,
+      bundleId: bundleId,
     );
   }
 

@@ -41,13 +41,43 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> _authenticate(Future<AuthUser> Function() action) async {
     emit(AuthLoading());
+    print('[Auth] Starting authentication action...');
     try {
       final user = await action();
       emit(AuthSuccess(user));
+      print('[Auth] ✅ Authentication successful!');
     } on AuthException catch (error) {
-      emit(AuthFailure(error.message));
-    } catch (error) {
-      emit(AuthFailure(error.toString()));
+      print('[Auth] ❌ AuthException caught: ${error.message}');
+      // Clear Arabic messages for common auth errors
+      String arabicMessage;
+      switch (error.message.toLowerCase()) {
+        case 'invalid login credentials':
+        case 'invalid password':
+          arabicMessage = 'بيانات الدخول غير صحيحة، برجاء التحقق من الإيميل وكلمة المرور';
+          break;
+        case 'user not found':
+          arabicMessage = 'هذا الإيميل غير مسجل في قاعدة البيانات، برجاء التسجيل أولًا';
+          break;
+        case 'user disabled':
+          arabicMessage = 'هذا الحساب已被已被禁用، برجاء التواصل مع الدعم';
+          break;
+        case 'email already in use':
+        case 'email already exists':
+          arabicMessage = 'هذا الإيميلAlready مسجل، برجاء استخدام إيميل مختلف أو الدخول';
+          break;
+        case 'weak password':
+          arabicMessage = 'كلمة المرور ضعيفة، برجاء استخدام كلمة مرور أطول وأكثر أمانًا';
+          break;
+        case 'invalid email':
+          arabicMessage = 'إيميل غير صحيح، برجاء إدخال إيميل صحيح';
+          break;
+        default:
+          arabicMessage = 'حدث خطأ أثناء الدخول: ${error.message}';
+      }
+      emit(AuthFailure(arabicMessage));
+    } catch (exception) {
+      print('[Auth] ❌ Unexpected exception caught: $exception');
+      emit(AuthFailure('حدث خطأ غير متوقع، برجاء المحاولة senare'));
     }
   }
 }

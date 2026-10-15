@@ -13,9 +13,8 @@ part 'branch_state.dart';
 /// without a branch are base prices, and branch-specific data stays unloaded
 /// until a choice exists.
 class BranchCubit extends Cubit<BranchState> {
-  BranchCubit({required BranchRepository repository})
-      : _repository = repository,
-        super(const BranchState()) {
+  BranchCubit({required this._repository})
+      : super(const BranchState()) {
     load();
   }
 

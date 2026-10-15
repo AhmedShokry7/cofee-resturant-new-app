@@ -60,10 +60,9 @@ abstract class LoyaltyRepository {
 
 class LoyaltyRepositoryImpl implements LoyaltyRepository {
   const LoyaltyRepositoryImpl({
-    required CatalogRepository catalog,
+    required this._catalog,
     SupabaseClient? client,
-  })  : _catalog = catalog,
-        _clientOverride = client;
+  })  : _clientOverride = client;
 
   final CatalogRepository _catalog;
   final SupabaseClient? _clientOverride;

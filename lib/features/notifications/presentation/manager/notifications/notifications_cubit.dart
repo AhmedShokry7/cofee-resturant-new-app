@@ -15,9 +15,8 @@ part 'notifications_state.dart';
 /// stored read state for those inventions locally. An empty list is the only
 /// honest signed-out answer.
 class NotificationsCubit extends Cubit<NotificationsState> {
-  NotificationsCubit({required NotificationsRepository repository})
-      : _repository = repository,
-        super(const NotificationsState()) {
+  NotificationsCubit({required this._repository})
+      : super(const NotificationsState()) {
     if (SupabaseService.isReady) {
       _authSubscription = SupabaseService
           .client.auth.onAuthStateChange

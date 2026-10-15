@@ -15,13 +15,13 @@ class AuthSpacings {
   static const double titleGap = SpacingTokens.xs;
 
   /// Between the subtitle and the first input.
-  static const double headerGap = SpacingTokens.xl;
+  static const double headerGap = SpacingTokens.lg;
 
   /// Between the inputs and the primary button.
-  static const double fieldsGap = SpacingTokens.md;
+  static const double fieldsGap = SpacingTokens.sm;
 
   /// Between the primary button and the section below it.
-  static const double buttonGap = SpacingTokens.xl;
+  static const double buttonGap = SpacingTokens.lg;
 
   /// Between stacked lower sections (social / phone / prompts).
   static const double sectionGap = SpacingTokens.lg;

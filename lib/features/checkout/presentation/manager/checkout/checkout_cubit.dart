@@ -16,15 +16,12 @@ part 'checkout_state.dart';
 
 class CheckoutCubit extends Cubit<CheckoutState> {
   CheckoutCubit({
-    required CouponRepository coupons,
+    required this._coupons,
     required AddressRepository addresses,
-    required PaymentMethodRepository paymentMethods,
-    required ContentRepository content,
+    required this._paymentMethods,
+    required this._content,
     this.branchId,
-  })  : _coupons = coupons,
-        _addresses = addresses,
-        _paymentMethods = paymentMethods,
-        _content = content,
+  })  : _addresses = addresses,
         super(const CheckoutState()) {
     load();
   }

@@ -16,8 +16,8 @@ class OnBoardingNextBtn extends StatelessWidget {
         BlocProvider.of<OnBoardingCubit>(context).nextBtn(context);
       },
       child: Container(
-        height: AppConstant.btnHeight(context) - 10,
-        width: AppConstant.btnHeight(context) - 10,
+        height: AppConstant.btnHeight(context) - 15,
+        width: AppConstant.btnHeight(context) - 15,
         decoration: const BoxDecoration(
           color: AppColor.primaryColor,
           shape: BoxShape.circle,

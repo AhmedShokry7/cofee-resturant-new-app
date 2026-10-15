@@ -16,10 +16,12 @@ class AppImages {
       // static const String welcomeImage1 = "assets/images/welcome1.png";
       // static const String welcomeImage2 = "assets/images/welcome2.png";
       // static const String welcomeImage3 = "assets/images/welcome3.png";
-      // // =========== OnBoarding View Image ===========
-      // static const String onBoarding1 = "assets/images/onboarding 1.png";
-      // static const String onBoarding2 = "assets/images/onboarding 2.png";
-      // static const String onBoarding3 = "assets/images/onboarding 3.png";
+      // =========== OnBoarding View Image ===========
+  static const String onBoarding1 = "assets/images/onboarding_1.png";
+  static const String onBoarding2 = "assets/images/onboarding_2.png";
+  static const String onBoarding3 = "assets/images/onboarding_3.png";
+  static const String welcomeImage = "assets/images/welcome_page.png";
+
       // // =========== Social Icons ===========
       // static const String gimal = "assets/icons/gimal.svg";
       // static const String faceBook = "assets/icons/facebook.svg";

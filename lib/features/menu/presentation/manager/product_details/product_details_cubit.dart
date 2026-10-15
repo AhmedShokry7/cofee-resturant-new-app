@@ -15,11 +15,10 @@ part 'product_details_state.dart';
 /// the admin configured and asks the server to price the chosen combination.
 class ProductDetailsCubit extends Cubit<ProductDetailsState> {
   ProductDetailsCubit({
-    required ProductRepository repository,
+    required this._repository,
     required this.productId,
     this.branchId,
-  })  : _repository = repository,
-        super(const ProductDetailsState()) {
+  })  : super(const ProductDetailsState()) {
     load();
   }
 

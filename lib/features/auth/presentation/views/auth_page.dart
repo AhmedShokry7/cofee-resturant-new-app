@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
-import 'package:new_coffee/features/auth/presentation/views/widgets/auth_page_body.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/login_page_body.dart';
 
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
@@ -14,7 +14,7 @@ class AuthPage extends StatelessWidget {
     return Scaffold(
       body: BlocProvider(
         create: (context) => AuthCubit(context.read<AuthRepository>()),
-        child: const AuthPageBody(),
+        child: const LoginPageBody(),
       ),
     );
   }

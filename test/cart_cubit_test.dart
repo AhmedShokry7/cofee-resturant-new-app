@@ -6,7 +6,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
-import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 
 void main() {
   test('stored cart ids resolve against the repository, not the old menu', () async {

@@ -1,6 +1,7 @@
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/features/on_boarding/data/model/on_boarding_model.dart';
 import 'package:new_coffee/features/profile/data/model/faq_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -104,24 +105,23 @@ class SupabaseContentRepository implements ContentRepository {
 
   @override
   Future<List<OnBoardingModel>> onBoardingSlides() async {
-    final client = _client;
-    if (client == null) return const [];
-
-    final rows = await client
-        .from('onboarding_slides')
-        .select('image_url, title_ar, title_en, body_ar, body_en, sort_order')
-        .eq('is_active', true)
-        .order('sort_order') as List;
+    // Return hardcoded slides - no database dependency
     return [
-      for (final row in rows)
-        if (row is Map<String, dynamic>)
-          OnBoardingModel(
-            image: Db.text(row['image_url']),
-            titleAr: Db.textOrNull(row['title_ar']),
-            titleEn: Db.textOrNull(row['title_en']),
-            bodyAr: Db.textOrNull(row['body_ar']),
-            bodyEn: Db.textOrNull(row['body_en']),
-          ),
+      OnBoardingModel(
+        title: 'مرحباً بك في تطبيق القهوة',
+        body: 'اكتشف أفضل المشروبات والمناسبات المميزة',
+        image: AppImages.onBoarding1,
+      ),
+      OnBoardingModel(
+        title: 'اختر مشروبك المفضل',
+        body: 'تصفح القائمة وتمتع بعروض حصرية',
+        image: AppImages.onBoarding2,
+      ),
+      OnBoardingModel(
+        title: 'قم بالطلب بكل سهولة',
+        body: 'اختصر الخطوات وادفع عند الاستلام',
+        image: AppImages.onBoarding3,
+      ),
     ];
   }
 

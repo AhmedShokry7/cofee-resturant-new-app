@@ -16,8 +16,8 @@ class OnBoardingBackBtn extends StatelessWidget {
         BlocProvider.of<OnBoardingCubit>(context).backBtn();
       },
       child: Container(
-  height: AppConstant.btnHeight(context) - 10,
-        width: AppConstant.btnHeight(context) - 10,
+  height: AppConstant.btnHeight(context) - 15,
+        width: AppConstant.btnHeight(context) - 15,
         decoration: BoxDecoration(
           border: Border.all(color: AppColor.primaryColor, width: 2),
           shape: BoxShape.circle,

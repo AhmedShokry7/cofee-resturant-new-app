@@ -1,0 +1,15 @@
+Onboarding Feature Refactoring Complete
+
+The onboarding feature has been successfully refactored to use hardcoded data from the app instead of the database.
+
+Key Changes:
+1. Data Layer: Created on_boarding_knowledge.dart with constant list onBoardingSlides
+2. Model: Simplified OnBoardingModel with title, body, image fields
+3. Cubit: OnBoardingCubit uses hardcoded slides from data layer (no database)
+4. Repository: ContentRepository.onBoardingSlides() returns hardcoded slides
+5. UI: OnBoardingPageViewData displays images with title and body
+6. Assets: Onboarding image constants in app_images.dart
+
+Result: Onboarding data now comes from the app (hardcoded constants) not the database, following the same pattern as other features (like the assistant's coffeeKnowledge).
+
+Analysis: dart analyze lib/features/on_boarding/ passes with only info-level warnings (no errors).

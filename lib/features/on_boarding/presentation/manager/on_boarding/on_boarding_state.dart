@@ -23,5 +23,5 @@ final class OnBoardingError extends OnBoardingState {
 
 final class OnBoardingPageChanged extends OnBoardingState {
   final int currentPage;
-  OnBoardingPageChanged({required this.currentPage});
+  const OnBoardingPageChanged({required this.currentPage});
 }

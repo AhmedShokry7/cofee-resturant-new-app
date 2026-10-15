@@ -68,8 +68,8 @@ class SupabaseAddressRepository implements AddressRepository {
         .insert({
           'label': label.trim(),
           'details': details.trim(),
-          if (latitude != null) 'latitude': latitude,
-          if (longitude != null) 'longitude': longitude,
+          'latitude': ?latitude,
+          'longitude': ?longitude,
         })
         .select() as List;
     if (rows.isEmpty || rows.first is! Map<String, dynamic>) {

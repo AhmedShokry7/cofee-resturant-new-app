@@ -17,10 +17,9 @@ part 'home_state.dart';
 /// snapshot, which is also one round trip instead of seven.
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit({
-    required CatalogRepository repository,
+    required this._repository,
     this.branchId,
-  })  : _repository = repository,
-        super(const HomeState()) {
+  })  : super(const HomeState()) {
     load();
   }
 

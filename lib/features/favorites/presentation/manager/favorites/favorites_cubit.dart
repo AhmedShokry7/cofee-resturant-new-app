@@ -17,11 +17,10 @@ part 'favorites_state.dart';
 /// merge without a session, and none is invented.
 class FavoritesCubit extends Cubit<FavoritesState> {
   FavoritesCubit({
-    required CatalogRepository repository,
+    required this._repository,
     required FavoritesRepository favorites,
     this.branchId,
-  })  : _repository = repository,
-        _favorites = favorites,
+  })  : _favorites = favorites,
         super(const FavoritesState(ids: {})) {
     if (SupabaseService.isReady) {
       _authSubscription = SupabaseService

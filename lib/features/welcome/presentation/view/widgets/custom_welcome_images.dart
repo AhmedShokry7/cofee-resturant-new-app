@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 
 class CustomWelcomeImages extends StatelessWidget {
@@ -13,9 +12,8 @@ class CustomWelcomeImages extends StatelessWidget {
         Expanded(
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(1000.0.r),
               image: const DecorationImage(
-                image: AssetImage(AppImages.logo),
+                image: AssetImage(AppImages.welcomeImage),
                 fit: BoxFit.fill,
               ),
             ),

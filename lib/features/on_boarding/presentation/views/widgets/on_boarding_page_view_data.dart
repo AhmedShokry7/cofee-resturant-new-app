@@ -19,7 +19,7 @@ class OnBoardingPageViewData extends StatelessWidget {
           return Center(child: Text(state.message));
         }
         final slides = state is OnBoardingLoaded
-            ? (state as OnBoardingLoaded).slides
+            ? (state).slides
             : const [];
         if (slides.isEmpty) {
           return const Center(child: Text('No onboarding slides'));
@@ -34,7 +34,10 @@ class OnBoardingPageViewData extends StatelessWidget {
             return Column(
               children: [
                 Expanded(
-                  child: Image.asset(item.image, fit: BoxFit.fill),
+                  child: Image.asset(
+                    item.image,
+                    fit: BoxFit.fill,
+                  ),
                 ),
                 SizedBox(height: 32.h),
                 Text(
@@ -44,7 +47,7 @@ class OnBoardingPageViewData extends StatelessWidget {
                     context,
                   ).copyWith(color: AppColor.primaryColor),
                 ),
-                SizedBox(height: 12.h),
+                const SizedBox(height: 12),
                 Text(
                   textAlign: TextAlign.center,
                   item.body,

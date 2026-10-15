@@ -14,6 +14,7 @@ import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/shared/widgets/skip_btn.dart';
 
 class SignUpPageBody extends StatefulWidget {
   const SignUpPageBody({super.key});
@@ -72,79 +73,92 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
           },
           builder: (context, state) {
             final isLoading = state is AuthLoading;
-            return Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SizedBox(height: AuthSpacings.top.h),
-                  Text(
-                    "Sign Up",
-                    textAlign: TextAlign.center,
-                    style: AppFonts.semiBold24(context),
+            return Stack(
+              children: [
+                SkipBtn(
+              onTap: () async {
+                await const SessionRepository().markAuthenticated();
+                if (!context.mounted) return;
+                Navigator.of(context).pushReplacementNamed(
+                  MainPage.routeName,
+                );
+              },
+            ),
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SizedBox(height: AuthSpacings.top.h),
+                      Text(
+                        "Sign Up",
+                        textAlign: TextAlign.center,
+                        style: AppFonts.semiBold24(context),
+                      ),
+                      SizedBox(height: AuthSpacings.titleGap.h),
+                      Text(
+                        "Create your account to get started",
+                        textAlign: TextAlign.center,
+                        style: AppFonts.regular14(
+                          context,
+                        ).copyWith(color: AppColor.greyColor),
+                      ),
+                      SizedBox(height: AuthSpacings.headerGap.h),
+                      CustomTextFormField(
+                        controller: _nameController,
+                        hint: "Name",
+                        keyboardType: TextInputType.name,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) =>
+                            (value == null || value.isEmpty) ? "Name is required" : null,
+                      ),
+                      CustomTextFormField(
+                        controller: _emailController,
+                        hint: "Email",
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) =>
+                            (value == null || value.isEmpty) ? "Email is required" : null,
+                      ),
+                      CustomTextFormField(
+                        controller: _passwordController,
+                        hint: "Password",
+                        obscureText: true,
+                        textInputAction: TextInputAction.next,
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Password is required"
+                            : null,
+                      ),
+                      CustomTextFormField(
+                        controller: _confirmPasswordController,
+                        hint: "Confirm Password",
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        validator: (value) => (value != _passwordController.text)
+                            ? "Passwords do not match"
+                            : null,
+                      ),
+                      SizedBox(height: AuthSpacings.fieldsGap.h),
+                      CustomBtn(
+                        text: "Sign Up",
+                        isLoading: isLoading,
+                        onPressed: _submit,
+                      ),
+                      SizedBox(height: AuthSpacings.buttonGap.h),
+                      const AuthSocialLogin(label: "Or sign up with"),
+                      SizedBox(height: AuthSpacings.sectionGap.h),
+                      AuthSwitchPrompt(
+                        question: "Already have an account? ",
+                        actionText: "Sign In",
+                        onTap: () => Navigator.of(
+                          context,
+                        ).pushReplacementNamed(AuthPage.routeName),
+                      ),
+                      SizedBox(height: AuthSpacings.bottom.h),
+                    ],
                   ),
-                  SizedBox(height: AuthSpacings.titleGap.h),
-                  Text(
-                    "Create your account to get started",
-                    textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
-                  ),
-                  SizedBox(height: AuthSpacings.headerGap.h),
-                  CustomTextFormField(
-                    controller: _nameController,
-                    hint: "Name",
-                    keyboardType: TextInputType.name,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        (value == null || value.isEmpty) ? "Name is required" : null,
-                  ),
-                  CustomTextFormField(
-                    controller: _emailController,
-                    hint: "Email",
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        (value == null || value.isEmpty) ? "Email is required" : null,
-                  ),
-                  CustomTextFormField(
-                    controller: _passwordController,
-                    hint: "Password",
-                    obscureText: true,
-                    textInputAction: TextInputAction.next,
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? "Password is required"
-                        : null,
-                  ),
-                  CustomTextFormField(
-                    controller: _confirmPasswordController,
-                    hint: "Confirm Password",
-                    obscureText: true,
-                    textInputAction: TextInputAction.done,
-                    validator: (value) => (value != _passwordController.text)
-                        ? "Passwords do not match"
-                        : null,
-                  ),
-                  SizedBox(height: AuthSpacings.fieldsGap.h),
-                  CustomBtn(
-                    text: "Sign Up",
-                    isLoading: isLoading,
-                    onPressed: _submit,
-                  ),
-                  SizedBox(height: AuthSpacings.buttonGap.h),
-                  const AuthSocialLogin(label: "Or sign up with"),
-                  SizedBox(height: AuthSpacings.sectionGap.h),
-                  AuthSwitchPrompt(
-                    question: "Already have an account? ",
-                    actionText: "Sign In",
-                    onTap: () => Navigator.of(
-                      context,
-                    ).pushReplacementNamed(AuthPage.routeName),
-                  ),
-                  SizedBox(height: AuthSpacings.bottom.h),
-                ],
-              ),
+                ),
+              ],
             );
           },
         ),

@@ -3,9 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
-import 'package:new_coffee/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
-import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
@@ -44,13 +42,18 @@ class AppProviders extends StatelessWidget {
 
   /// The one place that decides which auth implementation runs.
   ///
-  /// Both implementations satisfy the same [AuthRepository] contract, so every
-  /// screen and cubit is unaware of the swap. Supabase is used when the build
-  /// supplied credentials and the client initialised; otherwise the local mock
-  /// keeps the app runnable offline.
+  /// Supabase Auth is used exclusively. If Supabase is not configured, the app
+  /// will fail to start rather than falling back to a fake authentication flow,
+  /// ensuring all users must be registered in the database to log in.
   AuthRepository _buildAuthRepository() {
     if (SupabaseService.isReady) return SupabaseAuthRepository();
-    return const AuthRepositoryImpl();
+    throw StateError(
+      'Supabase authentication is required but not configured.\n'
+      'Run with:\n'
+      '  flutter run --dart-define=SUPABASE_URL=<url> '
+      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
+      'Without Supabase, the app cannot authenticate users.',
+    );
   }
 
   /// The one place that decides which catalogue source runs.

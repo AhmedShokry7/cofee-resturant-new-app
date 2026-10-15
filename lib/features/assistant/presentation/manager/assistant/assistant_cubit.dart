@@ -23,13 +23,12 @@ part 'assistant_state.dart';
 
 class AssistantCubit extends Cubit<AssistantState> {
   AssistantCubit({
-    required CatalogRepository catalog,
+    required this._catalog,
     required OrdersRepository orders,
     this.branchId,
     LlmClient? llmClient,
     this.llmConfig = const LlmConfig(),
-  })  : _catalog = catalog,
-        _orders = orders,
+  })  : _orders = orders,
         _llmClient = llmClient ?? HttpLlmClient(llmConfig),
         super(const AssistantState()) {
     _snapshot = const AssistantSnapshot.empty();
