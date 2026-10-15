@@ -31,6 +31,9 @@ class _AddCardPageState extends State<AddCardPage> {
   final _cvvController = TextEditingController();
   bool _saveCard = false;
 
+  /// CVV digit count required by the detected card brand (3, or 4 for Amex).
+  int _cvvLength = 3;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -38,6 +41,16 @@ class _AddCardPageState extends State<AddCardPage> {
     _expiryController.dispose();
     _cvvController.dispose();
     super.dispose();
+  }
+
+  /// Exact CVV digit count for the brand currently typed in the number
+  /// field: 4 for American Express, 3 for every other brand.
+  /// Mutates state, so the caller wraps it in a setState.
+  void _syncCvvLength() {
+    final digits = _numberController.text.replaceAll(RegExp(r'\D'), '');
+    _cvvLength = digits.isNotEmpty && detectCardBrand(digits) == CardBrand.amex
+        ? 4
+        : 3;
   }
 
   void _submit() {
@@ -99,7 +112,7 @@ class _AddCardPageState extends State<AddCardPage> {
               keyboardType: TextInputType.number,
               inputFormatters: [CardNumberInputFormatter()],
               textInputAction: TextInputAction.next,
-              onChanged: (_) => setState(() {}),
+              onChanged: (_) => setState(_syncCvvLength),
               validator: (value) =>
                   (value == null || value.replaceAll(' ', '').length < 16)
                   ? "Enter a valid card number"
@@ -125,16 +138,17 @@ class _AddCardPageState extends State<AddCardPage> {
                 Expanded(
                   child: CustomTextFormField(
                     controller: _cvvController,
-                    hint: "CVV",
+                    hint: _cvvLength == 4 ? 'CVV (4 digits)' : 'CVV',
                     keyboardType: TextInputType.number,
                     obscureText: true,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(4),
+                      LengthLimitingTextInputFormatter(_cvvLength),
                     ],
                     textInputAction: TextInputAction.done,
-                    validator: (value) => (value == null || value.length < 3)
-                        ? "Invalid CVV"
+                    validator: (value) =>
+                        (value == null || value.length != _cvvLength)
+                        ? "CVV must be $_cvvLength digits"
                         : null,
                   ),
                 ),
@@ -149,9 +163,8 @@ class _AddCardPageState extends State<AddCardPage> {
                 ),
                 Text(
                   "Save Card",
-                  style: AppFonts.medium14(
-                    context,
-                  ).copyWith(color: AppColor.secondryColor),
+                  style: AppFonts.medium14(context)
+                      .copyWith(color: AppColor.secondryColor),
                 ),
               ],
             ),
@@ -169,4 +182,3 @@ class _AddCardPageState extends State<AddCardPage> {
     );
   }
 }
-

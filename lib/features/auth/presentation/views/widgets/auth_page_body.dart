@@ -61,9 +61,8 @@ class _AuthPageBodyState extends State<AuthPageBody> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             } else if (state is AuthSuccess) {
               _onAuthenticated();
             }
@@ -85,9 +84,8 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                   Text(
                     "Hi welcome back, you've been missed",
                     textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
@@ -95,8 +93,9 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                     hint: "Email",
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    validator: (value) =>
-                        (value == null || value.isEmpty) ? "Email is required" : null,
+                    validator: (value) => (value == null || value.isEmpty)
+                        ? "Email is required"
+                        : null,
                   ),
                   CustomTextFormField(
                     controller: _passwordController,
@@ -110,9 +109,9 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () => Navigator.of(
-                        context,
-                      ).pushNamed(ForgetPasswordPage.routeName),
+                      onPressed: () =>
+                          Navigator.of(context)
+                              .pushNamed(ForgetPasswordPage.routeName),
                       child: Text(
                         "Forget your password?",
                         style: AppFonts.regular12(context).copyWith(
@@ -131,25 +130,60 @@ class _AuthPageBodyState extends State<AuthPageBody> {
                   SizedBox(height: AuthSpacings.buttonGap.h),
                   const AuthSocialLogin(),
                   SizedBox(height: AuthSpacings.sectionGap.h),
-                  CustomBtn(
-                    text: "Continue with phone number",
-                    variant: BtnVariant.outlined,
-                    leadingIcon: Icon(
-                      HugeIcons.strokeRoundedSmartPhone01,
-                      size: 20.w,
-                      color: AppColor.primaryColor,
+                  Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 420),
+                      child: Material(
+                        color: AppColor.whiteColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(100.r),
+                          side: const BorderSide(color: AppColor.primaryColor),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () =>
+                              Navigator.of(context)
+                                  .pushNamed(PhoneAuthPage.routeName),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: SpacingTokens.lg.w,
+                              vertical: 14.h,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  HugeIcons.strokeRoundedSmartPhone01,
+                                  size: 20.w,
+                                  color: AppColor.primaryColor,
+                                ),
+                                SizedBox(width: SpacingTokens.sm.w),
+                                Flexible(
+                                  child: Text(
+                                    "Continue with phone number",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    textAlign: TextAlign.center,
+                                    style: AppFonts.regular14(context).copyWith(
+                                      color: AppColor.primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).pushNamed(PhoneAuthPage.routeName),
                   ),
                   SizedBox(height: AuthSpacings.sectionGap.h),
                   AuthSwitchPrompt(
                     question: "Don't have an account? ",
                     actionText: "Sign Up",
-                    onTap: () => Navigator.of(
-                      context,
-                    ).pushReplacementNamed(SignUpPage.routeName),
+                    onTap: () =>
+                        Navigator.of(context)
+                            .pushReplacementNamed(SignUpPage.routeName),
                   ),
                   SizedBox(height: AuthSpacings.bottom.h),
                 ],
@@ -161,4 +195,3 @@ class _AuthPageBodyState extends State<AuthPageBody> {
     );
   }
 }
-

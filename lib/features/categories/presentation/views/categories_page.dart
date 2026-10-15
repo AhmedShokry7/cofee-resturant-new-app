@@ -2,14 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/features/bundles/data/bundles_list.dart';
-import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
-import 'package:new_coffee/features/categories/data/categories_list.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
-import 'package:new_coffee/features/categories/data/model/category_model.dart';
+import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
+import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
@@ -19,7 +16,6 @@ class CategoriesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories = getCategoriesList();
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -29,8 +25,35 @@ class CategoriesPage extends StatelessWidget {
             Expanded(
               child: BlocBuilder<CategoriesCubit, CategoriesState>(
                 builder: (context, state) {
-                  final index = state.index.clamp(0, categories.length - 1);
-                  return _CategoryProducts(category: categories[index]);
+                  if (state.isLoading && state.categories.isEmpty) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state.categories.isEmpty) {
+                    return const EmptyState(
+                      icon: Icons.category_outlined,
+                      title: "No categories yet",
+                      subtitle: "Categories will appear here once they are added",
+                    );
+                  }
+                  final index = state.index.clamp(0, state.categories.length - 1);
+                  final category = state.categories[index];
+
+                  // Bundle contents come from the bundles tab's own data
+                  // rather than a category product query, because a bundle is
+                  // not a product row.
+                  if (context.read<CategoriesCubit>().isBundlesTab(index)) {
+                    return _BundlesList(bundles: state.bundles);
+                  }
+
+                  final products = context.read<CategoriesCubit>().productsAt(index);
+                  if (products.isEmpty) {
+                    return EmptyState(
+                      icon: category.icon,
+                      title: "No products yet",
+                      subtitle: "Products in ${category.label} will appear here",
+                    );
+                  }
+                  return ProductsGridView(products: products);
                 },
               ),
             ),
@@ -41,36 +64,20 @@ class CategoriesPage extends StatelessWidget {
   }
 }
 
-class _CategoryProducts extends StatelessWidget {
-  const _CategoryProducts({required this.category});
+class _BundlesList extends StatelessWidget {
+  const _BundlesList({required this.bundles});
 
-  final CategoryModel category;
+  final List<BundleModel> bundles;
 
   @override
   Widget build(BuildContext context) {
-    if (category.label == "Bundles") {
-      return const _BundlesList();
-    }
-    final products = getMenuList()
-        .where((product) => product.category == category.label)
-        .toList();
-    if (products.isEmpty) {
-      return EmptyState(
-        icon: category.icon,
-        title: "No products yet",
-        subtitle: "Products in ${category.label} will appear here",
+    if (bundles.isEmpty) {
+      return const EmptyState(
+        icon: Icons.inventory_2_outlined,
+        title: "No bundles yet",
+        subtitle: "Bundles will appear here once they are added",
       );
     }
-    return ProductsGridView(products: products);
-  }
-}
-
-class _BundlesList extends StatelessWidget {
-  const _BundlesList();
-
-  @override
-  Widget build(BuildContext context) {
-    final bundles = getBundlesList();
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
         SpacingTokens.lg.w,
@@ -84,4 +91,3 @@ class _BundlesList extends StatelessWidget {
     );
   }
 }
-

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
@@ -7,11 +8,25 @@ import 'package:new_coffee/core/navigation/app_route_observer.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
 import 'package:new_coffee/features/assistant/presentation/widgets/assistant_fab.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Fail soft: without --dart-define the app still runs on the local mock
+  // repositories, so the UI stays reviewable offline instead of crashing.
+  try {
+    await SupabaseService.init();
+  } catch (error, stackTrace) {
+    if (kDebugMode) {
+      debugPrint('[main] Supabase init failed, continuing with local data.');
+      debugPrint('[main] $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
   final currentRoute = await SharedPref.getValue(key: AppConstant.routesKey);
   runApp(MyApp(currentRoute: currentRoute));
 }

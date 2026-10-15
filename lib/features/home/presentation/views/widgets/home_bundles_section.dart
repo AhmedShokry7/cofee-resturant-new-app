@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/bundles/data/bundles_list.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
+import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -15,7 +16,7 @@ class HomeBundlesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bundles = getBundlesList();
+    final bundles = context.watch<HomeCubit>().state.bundles;
     if (bundles.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -45,7 +46,7 @@ class _BundleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = bundleProducts(bundle);
+    final products = context.read<HomeCubit>().productsIn(bundle);
     final image = products.isEmpty ? null : products.first.image;
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed(
@@ -103,7 +104,9 @@ class _BundleCard extends StatelessWidget {
                 SizedBox(width: SpacingTokens.xs.w),
                 Flexible(
                   child: Text(
-                    Formatters.price(bundleOriginalTotal(bundle)),
+                    Formatters.price(
+                      context.read<HomeCubit>().originalTotalFor(bundle),
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.regular12(context).copyWith(

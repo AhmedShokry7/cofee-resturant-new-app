@@ -1,13 +1,103 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
+import 'package:new_coffee/features/categories/data/model/category_model.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+
 part 'categories_state.dart';
 
+/// Loads the category tabs and the products under the selected one.
+///
+/// Previously the page called `getCategoriesList()` and `getMenuList()`
+/// directly during build, so the tabs were fixed at compile time. It also
+/// matched products to categories by display name, which breaks the moment a
+/// category is renamed or translated.
 class CategoriesCubit extends Cubit<CategoriesState> {
-  CategoriesCubit() : super(const CategoriesState(index: 0));
+  CategoriesCubit({
+    required CatalogRepository repository,
+    this.branchId,
+  })  : _repository = repository,
+        super(const CategoriesState()) {
+    load();
+  }
+
+  final CatalogRepository _repository;
+
+  /// Branch whose prices and availability apply. Null until the customer picks.
+  String? branchId;
+
+  /// The category whose bundles get a dedicated tab.
+  static const String bundlesSlug = 'bundles';
+
+  Future<void> load() async {
+    emit(state.copyWith(isLoading: true, error: null));
+    try {
+      final results = await Future.wait([
+        _repository.getCategories(),
+        _repository.getProducts(branchId: branchId, limit: 200),
+        _repository.getBundles(branchId: branchId),
+      ]);
+
+      final categories = results[0] as List<CategoryModel>;
+      final products = results[1] as List<ProductModel>;
+      final bundles = results[2] as List<BundleModel>;
+
+      // Keep the selected tab valid. The old code did
+      // `index.clamp(0, categories.length - 1)`, which throws when the list is
+      // empty, and kept rendering a stale tab if the backend returned fewer
+      // categories than the hard-coded list had.
+      final maxIndex = categories.isEmpty ? 0 : categories.length - 1;
+
+      emit(state.copyWith(
+        categories: categories,
+        products: products,
+        bundles: bundles,
+        index: state.index.clamp(0, maxIndex),
+        isLoading: false,
+      ));
+    } catch (error, stackTrace) {
+      emit(state.copyWith(isLoading: false, error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  /// Reloads after the customer picks a different branch.
+  Future<void> setBranch(String? branchId) {
+    if (branchId == this.branchId) return Future.value();
+    this.branchId = branchId;
+    return load();
+  }
 
   void select(int index) {
+    if (index < 0 || index >= state.categories.length) return;
     if (index == state.index) return;
-    emit(CategoriesState(index: index));
+    emit(state.copyWith(index: index));
+  }
+
+  /// Products in the tab at [index].
+  ///
+  /// Joins on the category id, not the label. A product whose category failed to
+  /// resolve keeps a null id and is excluded rather than silently landing in
+  /// whichever tab happened to share its display name.
+  List<ProductModel> productsAt(int index) {
+    final categories = state.categories;
+    if (categories.isEmpty) return const [];
+    final safeIndex = index.clamp(0, categories.length - 1);
+    final id = categories[safeIndex].id;
+    if (id == null) return const [];
+    return state.products
+        .where((p) => p.categoryId == id)
+        .toList(growable: false);
+  }
+
+  /// True when the tab at [index] should render bundles instead of products.
+  bool isBundlesTab(int index) {
+    final categories = state.categories;
+    if (categories.isEmpty) return false;
+    final safeIndex = index.clamp(0, categories.length - 1);
+    final category = categories[safeIndex];
+    return category.slug == bundlesSlug || category.label == 'Bundles';
   }
 }

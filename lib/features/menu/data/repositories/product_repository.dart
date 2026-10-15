@@ -1,0 +1,252 @@
+import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
+import 'package:new_coffee/features/categories/data/model/category_model.dart';
+import 'package:new_coffee/features/home/data/model/banner_model.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
+/// Read access to the product catalogue.
+///
+/// Declared against behaviour, not against Supabase. Screens and cubits depend
+/// only on this, so the data source can be swapped without touching a widget.
+/// Two implementations ship: one that reads the database, one that reads the
+/// old Dart constants so the app stays runnable when Supabase is not configured.
+abstract class ProductRepository {
+  /// The catalogue for a branch, with branch pricing already applied.
+  ///
+  /// [branchId] selects the price and availability the customer would actually
+  /// be charged. When it is null the base price is returned.
+  Future<List<ProductModel>> getProducts({
+    String? branchId,
+    String? categoryId,
+    int limit = 100,
+    int offset = 0,
+  });
+
+  Future<ProductModel?> getById(String id, {String? branchId});
+
+  /// Everything a product detail screen needs: the product plus the option
+  /// groups bound to it and their values.
+  Future<ProductWithOptions?> getWithOptions(String id, {String? branchId});
+
+  /// Server-side search. Arabic works because the aliases live in the database
+  /// rather than in a Dart map, so search no longer borrows from the assistant.
+  Future<List<ProductModel>> search(
+    String query, {
+    String? branchId,
+    String? categoryId,
+    String sort = 'relevance',
+    int limit = 20,
+    int offset = 0,
+  });
+
+  /// Manual is_featured first, then best sellers. Each row carries a `source`
+  /// so the UI can explain why a product is shown.
+  Future<List<FeaturedProduct>> getFeatured({
+    String? branchId,
+    int limit = 10,
+  });
+
+  /// Ranked from completed orders inside a period. Returns an empty list while
+  /// there is no sales history, which is a valid answer rather than an error.
+  Future<List<BestSeller>> getBestSellers({
+    String? branchId,
+    Duration period = const Duration(days: 30),
+    int limit = 10,
+  });
+
+  /// Branch-specific price for one product, resolved on the server.
+  Future<ResolvedPrice?> resolvePrice(
+    String productId, {
+    String? branchId,
+    List<String> optionValueIds = const [],
+  });
+
+  /// Published home banners, already inside their display window.
+  ///
+  /// The window filter runs on the server so an expired banner never reaches
+  /// the client at all.
+  Future<List<BannerModel>> getBanners({int limit = 20});
+
+  /// Active bundles with their components and quantities resolved.
+  Future<List<BundleModel>> getBundles({String? branchId, int limit = 20});
+}
+
+/// A product together with the options bound to it.
+class ProductWithOptions {
+  const ProductWithOptions({
+    required this.product,
+    this.groups = const [],
+    this.images = const [],
+  });
+
+  final ProductModel product;
+
+  /// Option groups offered by this product, each with its selectable values.
+  final List<OptionGroup> groups;
+
+  final List<ProductImage> images;
+}
+
+class OptionGroup {
+  const OptionGroup({
+    required this.id,
+    required this.code,
+    required this.nameAr,
+    required this.nameEn,
+    required this.isSingleSelect,
+    required this.minSelect,
+    required this.maxSelect,
+    required this.isRequired,
+    required this.values,
+  });
+
+  final String id;
+  final String code;
+  final String nameAr;
+  final String nameEn;
+  final bool isSingleSelect;
+  final int minSelect;
+  final int? maxSelect;
+  final bool isRequired;
+  final List<OptionValue> values;
+
+  /// Replaces the frozen DrinkSize and SugarLevel enums.
+  factory OptionGroup.fromJson(Map<String, dynamic> json) => OptionGroup(
+        id: json['id']?.toString() ?? '',
+        code: json['code']?.toString() ?? '',
+        nameAr: json['name_ar']?.toString() ?? '',
+        nameEn: json['name_en']?.toString() ?? '',
+        isSingleSelect: json['selection_type'] == 'single',
+        minSelect: (json['min_select'] as num?)?.toInt() ?? 0,
+        maxSelect: (json['max_select'] as num?)?.toInt(),
+        isRequired: json['is_required'] == true,
+        values: const [],
+      );
+}
+
+class OptionValue {
+  const OptionValue({
+    required this.id,
+    required this.code,
+    required this.nameAr,
+    required this.nameEn,
+    required this.priceDelta,
+    this.shortLabel,
+    this.isDefault = false,
+  });
+
+  final String id;
+  final String code;
+  final String nameAr;
+  final String nameEn;
+  final double priceDelta;
+  final String? shortLabel;
+  final bool isDefault;
+
+  factory OptionValue.fromJson(Map<String, dynamic> json) => OptionValue(
+        id: json['id']?.toString() ?? '',
+        code: json['code']?.toString() ?? '',
+        nameAr: json['name_ar']?.toString() ?? '',
+        nameEn: json['name_en']?.toString() ?? '',
+        priceDelta: (json['price_delta'] as num?)?.toDouble() ?? 0,
+        shortLabel: json['short_label']?.toString(),
+        isDefault: json['is_default'] == true,
+      );
+}
+
+class ProductImage {
+  const ProductImage({
+    required this.url,
+    this.altAr,
+    this.altEn,
+    this.isPrimary = false,
+  });
+
+  final String url;
+  final String? altAr;
+  final String? altEn;
+  final bool isPrimary;
+
+  factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
+        url: json['image_url']?.toString() ?? '',
+        altAr: json['alt_ar']?.toString(),
+        altEn: json['alt_en']?.toString(),
+        isPrimary: json['is_primary'] == true,
+      );
+}
+
+class FeaturedProduct {
+  const FeaturedProduct({
+    required this.productId,
+    required this.nameAr,
+    required this.nameEn,
+    this.imageUrl,
+    required this.effectivePrice,
+    required this.source,
+  });
+
+  final String productId;
+  final String nameAr;
+  final String nameEn;
+  final String? imageUrl;
+  final double effectivePrice;
+
+  /// 'manual' when the admin pinned it, 'best_seller' when the ranking chose it.
+  final String source;
+}
+
+class BestSeller {
+  const BestSeller({
+    required this.productId,
+    required this.nameAr,
+    required this.nameEn,
+    required this.unitsSold,
+    required this.revenue,
+    this.imageUrl,
+  });
+
+  final String productId;
+  final String nameAr;
+  final String nameEn;
+  final int unitsSold;
+  final double revenue;
+  final String? imageUrl;
+}
+
+class ResolvedPrice {
+  const ResolvedPrice({
+    required this.unitPrice,
+    required this.currencyCode,
+    required this.isAvailable,
+    this.unavailableReason,
+  });
+
+  final double unitPrice;
+  final String currencyCode;
+  final bool isAvailable;
+  final String? unavailableReason;
+}
+
+/// Category reads, kept separate so a category listing never has to pull the
+/// whole catalogue to render a grid.
+///
+/// Names are prefixed because a single class implements this alongside
+/// [ProductRepository], and `getById` would otherwise be an ambiguous override.
+abstract class CategoryRepository {
+  Future<List<CategoryModel>> getCategories({bool includeInactive = false});
+
+  Future<CategoryModel?> getCategoryById(String id);
+
+  Future<CategoryModel?> getCategoryBySlug(String slug);
+
+  /// Sub-categories of a parent. The old CategoryModel had no id at all, so the
+  /// app could never express this.
+  Future<List<CategoryModel>> getCategoryChildren(String parentId);
+}
+
+/// The catalogue as a single dependency.
+///
+/// Products and categories are separate concerns, but they come from the same
+/// tables and are always read together, so the app injects one instance under
+/// both types rather than building two that could disagree.
+abstract class CatalogRepository
+    implements ProductRepository, CategoryRepository {}

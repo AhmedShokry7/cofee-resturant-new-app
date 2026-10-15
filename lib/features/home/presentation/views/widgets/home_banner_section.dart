@@ -3,9 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
-import 'package:new_coffee/features/home/data/banners_list.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/banner/banner_cubit.dart';
+import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_dots.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
@@ -15,7 +15,8 @@ class HomeBannerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final banners = getBannersList();
+    final banners = context.watch<HomeCubit>().state.banners;
+    if (banners.isEmpty) return const SizedBox.shrink();
     return BlocProvider(
       create: (context) => BannerCubit(length: banners.length),
       child: _BannerCarousel(banners: banners),

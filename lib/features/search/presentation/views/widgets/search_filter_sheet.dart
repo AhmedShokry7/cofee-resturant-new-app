@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,8 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/categories/data/categories_list.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
+import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/search/data/model/search_sort.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -37,19 +35,23 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
   late final double _minBound;
   late final double _maxBound;
   late SearchSort _sort;
-  String? _category;
+  String? _categoryId;
   late RangeValues _prices;
 
   @override
   void initState() {
     super.initState();
-    final prices = getMenuList().map((product) => product.price).toList();
-    _minBound = prices.reduce((a, b) => math.min(a, b));
-    _maxBound = prices.reduce((a, b) => math.max(a, b));
+final cubit = context.read<SearchCubit>();
+    final prices = cubit.priceBounds();
+    // Bounds come from the loaded results, not from scanning the whole
+    // catalogue. The old version walked getMenuList() and called reduce() on it,
+    // which threw on an empty menu.
+    _minBound = prices.first;
+    _maxBound = prices.last;
 
-    final state = context.read<SearchCubit>().state;
+    final state = cubit.state;
     _sort = state.sort;
-    _category = state.category;
+    _categoryId = state.category;
     _prices = RangeValues(
       state.minPrice ?? _minBound,
       state.maxPrice ?? _maxBound,
@@ -59,7 +61,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
   void _apply() {
     context.read<SearchCubit>().applyFilters(
       sort: _sort,
-      category: _category,
+      category: _categoryId,
       minPrice: _prices.start,
       maxPrice: _prices.end,
     );
@@ -69,7 +71,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
   void _reset() {
     setState(() {
       _sort = SearchSort.relevance;
-      _category = null;
+      _categoryId = null;
       _prices = RangeValues(_minBound, _maxBound);
     });
     context.read<SearchCubit>().resetFilters();
@@ -121,15 +123,24 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
               children: [
                 _ChoiceChip(
                   label: "All",
-                  selected: _category == null,
-                  onTap: () => setState(() => _category = null),
+                  selected: _categoryId == null,
+                  onTap: () => setState(() => _categoryId = null),
                 ),
-                ...getCategoriesList().map(
-                  (category) => _ChoiceChip(
-                    label: category.label,
-                    selected: _category == category.label,
-                    onTap: () => setState(() => _category = category.label),
-                  ),
+...context.read<SearchCubit>().state.categories.map(
+                  (CategoryModel category) {
+                    final id = category.id;
+                    if (id == null) {
+                      // Without an id this chip could only send a display
+                      // label, which the RPC would treat as an id and match
+                      // nothing. Skip it rather than offer a filter that lies.
+                      return const SizedBox.shrink();
+                    }
+                    return _ChoiceChip(
+                      label: category.label,
+                      selected: _categoryId == id,
+                      onTap: () => setState(() => _categoryId = id),
+                    );
+                  },
                 ),
               ],
             ),

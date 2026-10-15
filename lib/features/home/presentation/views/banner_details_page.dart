@@ -6,9 +6,9 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
+import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -22,9 +22,8 @@ class BannerDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final related = getMenuList()
-        .where((product) => product.category == banner.targetCategory)
-        .toList();
+final related = context
+        .select((HomeCubit c) => c.state.productsForBanner(banner));
     return Scaffold(
       appBar: AppBar(title: Text(banner.title)),
       body: ListView(

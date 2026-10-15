@@ -46,6 +46,10 @@ dependencies:
   geolocator: ^14.1.1
   image_picker: ^1.2.4
 
+  # Backend. Publishable key only — the service_role key never enters the app
+  # (DATABASE_SPEC.md section 1.5). URL and key arrive via --dart-define.
+  supabase_flutter: ^2.10.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

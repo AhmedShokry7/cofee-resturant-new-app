@@ -46,3 +46,20 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# ── SECRETS — NEVER COMMIT ─────────────────────────────────────────
+# Environment files and local credentials
+.env
+.env.*
+!.env.example
+*.env
+!.env.example
+secrets.json
+*.pem
+*.key
+!.gitkeep
+
+# Supabase CLI local state (contains project keys)
+.supabase/
+.branches/
+.temp/

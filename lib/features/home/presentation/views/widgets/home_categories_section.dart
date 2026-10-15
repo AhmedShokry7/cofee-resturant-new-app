@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/categories/data/categories_list.dart';
+import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/category_grid_item.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
@@ -17,7 +17,8 @@ class HomeCategoriesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final categories = getCategoriesList();
+    final categories = context.watch<HomeCubit>().state.categories;
+    if (categories.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
