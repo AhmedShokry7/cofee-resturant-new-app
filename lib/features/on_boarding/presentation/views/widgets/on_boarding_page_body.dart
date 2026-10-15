@@ -15,7 +15,7 @@ class OnBoardingPageBody extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.symmetric(
-          horizontal: AppConstant.horizontalPadding(context),
+          horizontal: AppConstant.horizontalPadding(context) ,
         ),
         child: Column(
           children: [

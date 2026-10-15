@@ -122,15 +122,19 @@ class _CartSummaryState extends State<_CartSummary> {
     super.dispose();
   }
 
-  void _applyPromo() {
+  void _applyPromo() async {
     FocusScope.of(context).unfocus();
-    final applied = context.read<CheckoutCubit>().applyCoupon(
+    final checkout = context.read<CheckoutCubit>();
+    final applied = await checkout.applyCoupon(
       _promoController.text,
+      subtotal: context.read<CartCubit>().state.total,
     );
+    if (!mounted) return;
+    final message = applied
+        ? 'Coupon applied'
+        : checkout.state.couponError ?? 'Invalid coupon code';
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(applied ? "Coupon applied" : "Invalid coupon code"),
-      ),
+      SnackBar(content: Text(message)),
     );
     if (applied) _promoController.clear();
   }

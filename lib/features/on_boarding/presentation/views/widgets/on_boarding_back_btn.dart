@@ -10,14 +10,14 @@ class OnBoardingBackBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final myHight = MediaQuery.of(context).size.height;
+    final myHight = MediaQuery.of(context).size.height ;
     return GestureDetector(
       onTap: () {
         BlocProvider.of<OnBoardingCubit>(context).backBtn();
       },
       child: Container(
-        height: AppConstant.btnHeight(context),
-        width: AppConstant.btnHeight(context),
+  height: AppConstant.btnHeight(context) - 10,
+        width: AppConstant.btnHeight(context) - 10,
         decoration: BoxDecoration(
           border: Border.all(color: AppColor.primaryColor, width: 2),
           shape: BoxShape.circle,

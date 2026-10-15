@@ -25,6 +25,7 @@ class AssistantCubit extends Cubit<AssistantState> {
   AssistantCubit({
     required CatalogRepository catalog,
     required OrdersRepository orders,
+    this.branchId,
     LlmClient? llmClient,
     this.llmConfig = const LlmConfig(),
   })  : _catalog = catalog,
@@ -36,6 +37,19 @@ class AssistantCubit extends Cubit<AssistantState> {
 
   final CatalogRepository _catalog;
   final OrdersRepository _orders;
+
+  /// Branch used for catalogue prices in the assistant snapshot.
+  String? branchId;
+
+  Future<void> setBranch(String? branchId) async {
+    if (branchId == this.branchId) return;
+    this.branchId = branchId;
+    _snapshot = await AssistantSnapshot.load(
+      catalog: _catalog,
+      activeOrders: () => _orders.listOrders(status: OrderStatus.active),
+      branchId: branchId,
+    );
+  }
   final LlmClient _llmClient;
   final LlmConfig llmConfig;
   late AssistantSnapshot _snapshot;
@@ -67,6 +81,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     _snapshot = await AssistantSnapshot.load(
       catalog: _catalog,
       activeOrders: () => _orders.listOrders(status: OrderStatus.active),
+      branchId: branchId,
     );
     if (isClosed) return;
     final arabic = _memory.replyArabic;

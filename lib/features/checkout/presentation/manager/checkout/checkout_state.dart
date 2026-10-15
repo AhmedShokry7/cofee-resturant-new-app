@@ -19,22 +19,39 @@ class CheckoutSummary {
 @immutable
 class CheckoutState {
   const CheckoutState({
-    required this.addresses,
-    required this.selectedAddress,
-    required this.paymentMethods,
-    required this.selectedPaymentMethod,
+    this.addresses = const [],
+    this.selectedAddress,
+    this.paymentMethods = const [],
+    this.selectedPaymentMethod,
     this.lastOrder,
     this.appliedCoupon,
+    this.availableCoupons = const [],
+    this.couponError,
+    this.isLoading = true,
+    this.error,
+    this.deliveryFee = 20,
   });
 
   final List<AddressModel> addresses;
-  final AddressModel selectedAddress;
+  final AddressModel? selectedAddress;
   final List<PaymentMethodModel> paymentMethods;
-  final PaymentMethodModel selectedPaymentMethod;
+  final PaymentMethodModel? selectedPaymentMethod;
   final OrderModel? lastOrder;
 
   /// Coupon applied to the current checkout (null = none).
   final CouponModel? appliedCoupon;
+
+  /// Coupons advertised by the server.
+  final List<CouponModel> availableCoupons;
+
+  /// Last coupon validation failure, if any.
+  final String? couponError;
+
+  final bool isLoading;
+  final String? error;
+
+  /// Delivery fee from the database, falling back to 20 when unavailable.
+  final double deliveryFee;
 
   CheckoutState copyWith({
     List<AddressModel>? addresses,
@@ -43,7 +60,14 @@ class CheckoutState {
     PaymentMethodModel? selectedPaymentMethod,
     OrderModel? lastOrder,
     CouponModel? appliedCoupon,
+    List<CouponModel>? availableCoupons,
+    String? couponError,
     bool clearCoupon = false,
+    bool clearCouponError = false,
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+    double? deliveryFee,
   }) {
     return CheckoutState(
       addresses: addresses ?? this.addresses,
@@ -52,6 +76,12 @@ class CheckoutState {
       selectedPaymentMethod: selectedPaymentMethod ?? this.selectedPaymentMethod,
       lastOrder: lastOrder ?? this.lastOrder,
       appliedCoupon: clearCoupon ? null : appliedCoupon ?? this.appliedCoupon,
+      availableCoupons: availableCoupons ?? this.availableCoupons,
+      couponError:
+          clearCouponError ? null : (couponError ?? this.couponError),
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+      deliveryFee: deliveryFee ?? this.deliveryFee,
     );
   }
 }

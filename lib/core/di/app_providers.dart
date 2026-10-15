@@ -5,17 +5,28 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
+import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
+import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
+import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
+import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
+import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
+import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
+import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
+import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/supabase_order_repository.dart';
@@ -52,10 +63,14 @@ class AppProviders extends StatelessWidget {
     return const MockProductRepository();
   }
 
-  /// Orders and cancellation go through the order backend when available.
-  ///
-  /// Offline callers get an explicitly empty history rather than the five
-  /// invented orders the old mock supplied.
+  /// Cart stays on the device when Supabase is unavailable; when configured it
+  /// is the authoritative source and the local store is just a best-effort
+  /// fallback.
+  CartRepository _buildCartRepository() {
+    if (SupabaseService.isReady) return SupabaseCartRepository();
+    return LocalCartRepository();
+  }
+
   OrdersRepository _buildOrdersRepository() {
     if (SupabaseService.isReady) return SupabaseOrdersRepository();
     return const LocalOrdersRepository();
@@ -78,12 +93,33 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<OrdersRepository>(
           create: (_) => _buildOrdersRepository(),
         ),
+        RepositoryProvider<CartRepository>(
+          create: (_) => _buildCartRepository(),
+        ),
+        RepositoryProvider<CouponRepository>(
+          create: (_) => const CouponRepositoryImpl(),
+        ),
+        RepositoryProvider<AddressRepository>(
+          create: (_) => SupabaseAddressRepository(),
+        ),
+        RepositoryProvider<PaymentMethodRepository>(
+          create: (_) => SupabasePaymentMethodRepository(),
+        ),
+        RepositoryProvider<ContentRepository>(
+          create: (_) => SupabaseContentRepository(),
+        ),
       ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
+            create: (_) => BranchCubit(
+              repository: const BranchRepositoryImpl(),
+            ),
+          ),
+          BlocProvider(
             create: (context) => CartCubit(
-              repository: context.read<CatalogRepository>(),
+              cartRepository: context.read<CartRepository>(),
+              catalogRepository: context.read<CatalogRepository>(),
             )..load(),
           ),
           BlocProvider(
@@ -92,7 +128,14 @@ class AppProviders extends StatelessWidget {
               favorites: FavoritesRepositoryImpl(),
             )..load(),
           ),
-          BlocProvider(create: (context) => CheckoutCubit()),
+          BlocProvider(
+            create: (context) => CheckoutCubit(
+              coupons: context.read<CouponRepository>(),
+              addresses: context.read<AddressRepository>(),
+              paymentMethods: context.read<PaymentMethodRepository>(),
+              content: context.read<ContentRepository>(),
+            ),
+          ),
           BlocProvider(create: (context) => SavedCardsCubit()..load()),
           BlocProvider(
             create: (context) => SearchCubit(
@@ -100,10 +143,13 @@ class AppProviders extends StatelessWidget {
               branchId: null,
             ),
           ),
-          BlocProvider(create: (context) => NotificationsCubit()..load()),
           BlocProvider(
-            create: (context) =>
-                CategoriesCubit(repository: context.read<CatalogRepository>()),
+            create: (context) => NotificationsCubit(
+              repository: const NotificationsRepositoryImpl(),
+            )..load(),
+          ),
+          BlocProvider(
+            create: (context) => CategoriesCubit(repository: context.read<CatalogRepository>()),
           ),
           BlocProvider(create: (context) => ProfileCubit()),
           BlocProvider(
@@ -119,12 +165,44 @@ class AppProviders extends StatelessWidget {
             )..load(),
           ),
           BlocProvider(
-            create: (context) =>
-                WeatherCubit(const WeatherRepositoryImpl())..load(),
+            create: (context) => WeatherCubit(const WeatherRepositoryImpl())..load(),
           ),
         ],
-        child: child,
+        child: _BranchSync(child: child),
       ),
+    );
+  }
+}
+
+/// Propagates the customer's explicit branch choice to every branch-aware
+/// cubit.
+///
+/// Each cubit reloads only when the id actually changes, so opening the app
+/// with a stored branch costs one coordinated refresh rather than unrelated
+/// screens drifting across different branches.
+class _BranchSync extends StatelessWidget {
+  const _BranchSync({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocListener<BranchCubit, BranchState>(
+      listenWhen: (previous, current) =>
+          previous.selected?.id != current.selected?.id,
+      listener: (context, state) async {
+        final branchId = state.selected?.id;
+        context.read<CheckoutCubit>().setBranch(branchId);
+        await Future.wait([
+          context.read<CartCubit>().setBranch(branchId),
+          context.read<FavoritesCubit>().setBranch(branchId),
+          context.read<SearchCubit>().setBranch(branchId),
+          context.read<CategoriesCubit>().setBranch(branchId),
+          context.read<HomeCubit>().setBranch(branchId),
+          context.read<LoyaltyCubit>().setBranch(branchId),
+        ]);
+      },
+      child: child,
     );
   }
 }

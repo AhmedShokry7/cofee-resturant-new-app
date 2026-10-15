@@ -19,7 +19,7 @@ class OnBoardingButtonsAndSliderDotes extends StatelessWidget {
           currentPage = state.currentPage;
         }
         return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
+          padding: EdgeInsets.symmetric(horizontal: 10.w),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

@@ -1,56 +1,81 @@
-import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/services/shared_pref.dart';
-import 'package:new_coffee/features/notifications/data/notifications_list.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
+import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 
 part 'notifications_state.dart';
 
-/// Tracks which notifications were read. Anything not marked read counts
-/// as unread (like the cart badge counter).
+/// Server-owned notifications for the signed-in customer.
+///
+/// Guests have no notification rows: the old screen invented four of them and
+/// stored read state for those inventions locally. An empty list is the only
+/// honest signed-out answer.
 class NotificationsCubit extends Cubit<NotificationsState> {
-  NotificationsCubit() : super(const NotificationsState());
-
-  static const _storageKey = 'notifications_read_v1';
-
-  int get unreadCount {
-    final ids = getNotificationsList().map((item) => item.id).toSet();
-    return ids.difference(state.readIds).length;
+  NotificationsCubit({required NotificationsRepository repository})
+      : _repository = repository,
+        super(const NotificationsState()) {
+    if (SupabaseService.isReady) {
+      _authSubscription = SupabaseService
+          .client.auth.onAuthStateChange
+          .listen((_) => load());
+    }
+    load();
   }
 
-  Future<void> load() async {
+  final NotificationsRepository _repository;
+  StreamSubscription<dynamic>? _authSubscription;
+
+  int get unreadCount =>
+      state.notifications.where((item) => !item.isRead).length;
+
+  Future<void> load() => _load(markRead: false);
+
+  Future<void> refresh() => _load(markRead: false);
+
+  Future<void> markAllRead() => _load(markRead: true);
+
+  Future<void> _load({required bool markRead}) async {
+    emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      final raw = await SharedPref.getValue(key: _storageKey);
-      if (raw == null || raw.isEmpty || isClosed) return;
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return;
-      emit(
-        NotificationsState(
-          readIds: decoded.map((item) => item.toString()).toSet(),
-        ),
-      );
-    } catch (_) {
-      // Best-effort: everything counts as unread rather than crash.
+      var notifications = await _repository.listNotifications();
+      if (markRead) {
+        final unread = notifications
+            .where((item) => !item.isRead)
+            .map((item) => item.id)
+            .toList(growable: false);
+        if (unread.isNotEmpty) {
+          await _repository.markRead(unread);
+          notifications = await _repository.listNotifications();
+        }
+      }
+      if (isClosed) return;
+      emit(state.copyWith(
+        notifications: notifications,
+        isLoading: false,
+        signedOut: false,
+      ));
+    } on NotificationSignInRequiredException {
+      if (isClosed) return;
+      emit(state.copyWith(
+        notifications: const [],
+        isLoading: false,
+        signedOut: true,
+      ));
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(isLoading: false, error: error.toString()));
+      addError(error, stackTrace);
     }
   }
 
-  void markAllRead() {
-    final ids = getNotificationsList().map((item) => item.id).toSet();
-    if (state.readIds.containsAll(ids) || isClosed) return;
-    emit(NotificationsState(readIds: {...state.readIds, ...ids}));
-    _persist();
-  }
-
-  Future<void> _persist() async {
-    try {
-      await SharedPref.setValue(
-        key: _storageKey,
-        value: jsonEncode(state.readIds.toList()),
-      );
-    } catch (_) {
-      // Best-effort: never break navigation if storage fails.
-    }
+  @override
+  Future<void> close() {
+    _authSubscription?.cancel();
+    _authSubscription = null;
+    return super.close();
   }
 }

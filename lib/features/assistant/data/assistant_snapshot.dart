@@ -48,13 +48,19 @@ class AssistantSnapshot {
   static Future<AssistantSnapshot> load({
     required CatalogRepository catalog,
     required Future<List<OrderItemModel>> Function() activeOrders,
+    String? branchId,
     int productLimit = 200,
   }) async {
-    final products = await catalog.getProducts(limit: productLimit);
+    final products = await catalog.getProducts(
+      branchId: branchId,
+      limit: productLimit,
+    );
     final optionsByProductId = <String, List<OptionGroup>>{};
     await Future.wait([
       for (final product in products)
-        catalog.getWithOptions(product.id).then((loaded) {
+        catalog
+            .getWithOptions(product.id, branchId: branchId)
+            .then((loaded) {
           if (loaded != null && loaded.groups.isNotEmpty) {
             optionsByProductId[product.id] = loaded.groups;
           }

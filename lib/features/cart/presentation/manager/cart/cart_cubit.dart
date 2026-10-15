@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 
@@ -22,14 +23,17 @@ part 'cart_state.dart';
 /// being flattened away.
 class CartCubit extends Cubit<CartState> {
   CartCubit({
-    required CatalogRepository repository,
+    required CartRepository cartRepository,
+    required CatalogRepository catalogRepository,
     this.branchId,
-  })  : _repository = repository,
+  })  : _cartRepository = cartRepository,
+        _catalogRepository = catalogRepository,
         super(const CartState(items: [])) {
     load();
   }
 
-  final CatalogRepository _repository;
+  final CartRepository _cartRepository;
+  final CatalogRepository _catalogRepository;
 
   /// Branch whose catalogue rows apply to restored lines.
   String? branchId;
@@ -47,20 +51,24 @@ class CartCubit extends Cubit<CartState> {
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
 
-      final products = await _repository.getProducts(
+      // Resolve products from the catalogue using the stored product IDs.
+      final productIds = <String>[];
+      for (final entry in decoded) {
+        if (entry is! Map) continue;
+        final productId = entry['productId']?.toString();
+        if (productId != null && productId.isNotEmpty) productIds.add(productId);
+      }
+      final productsById = await _catalogRepository.getProducts(
         branchId: branchId,
         limit: _catalogPageSize,
-      );
-      final productsById = {for (final p in products) p.id: p};
+      ).then((products) => {for (final p in products) p.id: p});
+
       final items = <CartItem>[];
       for (final entry in decoded) {
         if (entry is! Map) continue;
-        final id = entry['productId']?.toString();
-        if (id == null || id.isEmpty) continue;
-        final product =
-            productsById[id] ?? await _repository.getById(id, branchId: branchId);
-        // A product that no longer exists is dropped. Showing its old id with
-        // no name, price or image would be worse than an honestly shorter cart.
+        final productId = entry['productId']?.toString();
+        if (productId == null || productId.isEmpty) continue;
+        final product = productsById[productId];
         if (product == null) continue;
 
         final quantity =
@@ -80,6 +88,16 @@ class CartCubit extends Cubit<CartState> {
       emit(CartState(items: items));
     } catch (_) {
       // Best-effort: start with an empty cart rather than crash.
+    }
+  }
+
+  Future<void> _refreshFromServer() async {
+    final serverState = await _cartRepository.getCartSummary();
+    if (serverState.isEmpty && isClosed) return;
+    // When server has items, replace local state; otherwise keep local.
+    if (!serverState.isEmpty) {
+      emit(serverState);
+      _persist();
     }
   }
 
@@ -124,6 +142,15 @@ class CartCubit extends Cubit<CartState> {
     }
     emit(CartState(items: items));
     _persist();
+
+    // Attempt server sync (best-effort; never blocks UI).
+    _cartRepository.addItem(
+      productId: product.id,
+      quantity: quantity,
+      note: note,
+      optionValueIds: optionValueIds,
+      unitPrice: unitPrice ?? product.price,
+    );
   }
 
   /// Kept for callers that only know a product. The cart page and stepper now
@@ -160,6 +187,7 @@ class CartCubit extends Cubit<CartState> {
   void clear() {
     emit(const CartState(items: []));
     _persist();
+    _cartRepository.clearCart();
   }
 
   void _changeQuantityForProduct(String productId, int delta) {

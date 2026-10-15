@@ -5,15 +5,35 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
-import 'package:new_coffee/features/payment/data/saved_cards_list.dart';
 import 'package:new_coffee/shared/utils/card_brand.dart';
 
 part 'saved_cards_state.dart';
 
+/// Saved payment cards, stored on the device.
+///
+/// There is deliberately no server table for saved cards: no order references
+/// one, and a card number is not an address. These rows stay local.
 class SavedCardsCubit extends Cubit<SavedCardsState> {
-  SavedCardsCubit() : super(SavedCardsState(cards: getSavedCardsList()));
+  SavedCardsCubit() : super(SavedCardsState(cards: _seed));
 
   static const _storageKey = 'saved_cards_v1';
+
+  static final List<SavedCardModel> _seed = [
+    SavedCardModel(
+      id: "1",
+      brand: CardBrand.visa,
+      last4: "4242",
+      holder: "Ahmed Shokry",
+      expiry: "02/30",
+    ),
+    SavedCardModel(
+      id: "2",
+      brand: CardBrand.mastercard,
+      last4: "4444",
+      holder: "Ahmed Shokry",
+      expiry: "09/28",
+    ),
+  ];
 
   Future<void> load() async {
     try {

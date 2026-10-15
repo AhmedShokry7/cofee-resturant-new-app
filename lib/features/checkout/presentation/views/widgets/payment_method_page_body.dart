@@ -41,7 +41,7 @@ class PaymentMethodPageBody extends StatelessWidget {
             ...state.paymentMethods.map(
               (method) => PaymentOptionTile(
                 method: method,
-                selected: state.selectedPaymentMethod.id == method.id,
+                selected: state.selectedPaymentMethod?.id == method.id,
                 onTap: () =>
                     context.read<CheckoutCubit>().selectPaymentMethod(method),
               ),

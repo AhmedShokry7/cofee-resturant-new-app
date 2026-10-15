@@ -41,13 +41,14 @@ class EReceiptPage extends StatelessWidget {
                 SizedBox(height: SpacingTokens.lg.h),
                 _InfoCard(
                   label: "Payment Method",
-                  value: state.selectedPaymentMethod.label,
+                  value: state.selectedPaymentMethod?.label ?? '—',
                 ),
                 SizedBox(height: SpacingTokens.md.h),
                 _InfoCard(
                   label: "Shipping Address",
-                  value:
-                      "${state.selectedAddress.label} - ${state.selectedAddress.details}",
+value: state.selectedAddress == null
+                      ? '—'
+                      : "${state.selectedAddress!.label} - ${state.selectedAddress!.details}",
                 ),
               ],
             ),

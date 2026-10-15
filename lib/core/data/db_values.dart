@@ -4,6 +4,17 @@
 /// depending on precision, and money must never be trusted to a raw cast.
 /// A malformed price silently becoming 0.0 would be a pricing bug, so every
 /// conversion here falls back to the supplied default rather than throwing.
+class DbValues {
+  /// The branch id from the current branch selection. Set by [BranchCubit].
+  static String? branchId;
+
+  /// The cart id for the current user. Generated on first add, stored locally.
+  static String? cartId;
+
+  /// Convert a Dart string to a Postgres UUID literal.
+  static String uuidFromString(String s) => 'uuid\'$s\'';
+}
+
 class Db {
   const Db._();
 

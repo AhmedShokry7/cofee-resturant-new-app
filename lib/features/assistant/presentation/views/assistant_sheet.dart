@@ -10,6 +10,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -114,7 +115,12 @@ class _AssistantSheetState extends State<AssistantSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return BlocListener<BranchCubit, BranchState>(
+      listenWhen: (previous, current) =>
+          previous.selected?.id != current.selected?.id,
+      listener: (context, state) =>
+          context.read<AssistantCubit>().setBranch(state.selected?.id),
+      child: SafeArea(
       child: Padding(
         padding: EdgeInsets.only(
           bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -204,6 +210,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

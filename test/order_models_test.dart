@@ -4,6 +4,7 @@ import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 
 void main() {
   test('operational statuses map to the three customer buckets', () {
@@ -55,8 +56,7 @@ void main() {
     expect(currentCatalogueRow.price, 999);
   });
 
-  test('a deleted product still renders as an invoice line', () {
-    final line = OrderItemModel.fromDatabase(
+  test('a deleted product still renders as an invoice line', () {    final line = OrderItemModel.fromDatabase(
       order: {
         'id': 'order-2',
         'order_number': '1008',
@@ -82,5 +82,64 @@ void main() {
     expect(line.product.name, 'Removed product');
     expect(line.product.image, AppImages.product);
     expect(line.status, OrderStatus.cancelled);
+  });
+
+  test('tracking follows server history instead of fixed steps', () {
+    final steps = OrderTrackingSteps.forOrder(
+      databaseStatus: 'preparing',
+      fulfillmentType: 'delivery',
+      events: [
+        OrderStatusEvent(
+          toStatus: 'pending',
+          changedAt: DateTime.utc(2026, 10, 1, 10),
+        ),
+        OrderStatusEvent(
+          fromStatus: 'pending',
+          toStatus: 'confirmed',
+          changedAt: DateTime.utc(2026, 10, 1, 10, 5),
+        ),
+        OrderStatusEvent(
+          fromStatus: 'confirmed',
+          toStatus: 'preparing',
+          changedAt: DateTime.utc(2026, 10, 1, 10, 12),
+        ),
+      ],
+      placedAt: DateTime.utc(2026, 10, 1, 10),
+    );
+
+    expect(
+      steps.map((step) => step.title),
+      [
+        'Order placed',
+        'Order confirmed',
+        'Preparing',
+        'Ready for delivery',
+        'Out for delivery',
+        'Completed',
+      ],
+    );
+    expect(steps.take(3).every((step) => step.done), isTrue);
+    expect(steps.skip(3).every((step) => !step.done), isTrue);
+    expect(steps.first.date, isNotEmpty);
+  });
+
+  test('cancelled tracking shows placement and cancellation only', () {
+    final steps = OrderTrackingSteps.forOrder(
+      databaseStatus: 'cancelled',
+      fulfillmentType: 'pickup',
+      events: [
+        OrderStatusEvent(
+          toStatus: 'cancelled',
+          changedAt: DateTime.utc(2026, 10, 2, 11),
+        ),
+      ],
+      placedAt: DateTime.utc(2026, 10, 2, 10),
+    );
+
+    expect(
+      steps.map((step) => step.title),
+      ['Order placed', 'Order cancelled'],
+    );
+    expect(steps.every((step) => step.done), isTrue);
   });
 }

@@ -18,6 +18,7 @@ import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_sheet.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -190,6 +191,7 @@ class _AssistantFabState extends State<AssistantFab> {
         create: (_) => AssistantCubit(
           catalog: navContext.read<CatalogRepository>(),
           orders: navContext.read<OrdersRepository>(),
+          branchId: navContext.read<BranchCubit>().state.selected?.id,
         )..start(isReturning: _isReturningUser, firstName: _firstName),
         child: const AssistantSheet(),
       ),

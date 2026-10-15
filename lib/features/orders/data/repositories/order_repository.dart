@@ -1,5 +1,6 @@
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 
 /// Thrown when order history is requested without a signed-in customer.
 ///
@@ -30,4 +31,7 @@ abstract class OrdersRepository {
   /// Cancels the whole order header. There is no supported customer transition
   /// other than cancellation.
   Future<void> cancelOrder(String orderId, {String? reason});
+
+  /// Status transitions recorded by the server, oldest first.
+  Future<List<OrderStatusEvent>> orderHistory(String orderId);
 }

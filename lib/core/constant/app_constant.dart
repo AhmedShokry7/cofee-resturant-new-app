@@ -13,7 +13,7 @@ class AppConstant {
   /// Tune here when the real delivery pricing arrives.
   static const double deliveryFee = 20;
 
-  static double horizontalPadding(BuildContext context) => SpacingTokens.xl.w;
+  static double horizontalPadding(BuildContext context) => SpacingTokens.lg.w;
 
   static double btnHeight(BuildContext context) => 52.h;
 }

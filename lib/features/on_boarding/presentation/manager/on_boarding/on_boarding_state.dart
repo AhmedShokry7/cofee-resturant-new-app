@@ -1,9 +1,25 @@
 part of 'on_boarding_cubit.dart';
 
 @immutable
-sealed class OnBoardingState {}
+sealed class OnBoardingState {
+  const OnBoardingState();
+}
 
-final class OnBoardingInitial extends OnBoardingState {}
+final class OnBoardingInitial extends OnBoardingState {
+  const OnBoardingInitial();
+}
+
+final class OnBoardingLoaded extends OnBoardingState {
+  const OnBoardingLoaded({required this.slides});
+
+  final List<OnBoardingModel> slides;
+}
+
+final class OnBoardingError extends OnBoardingState {
+  const OnBoardingError({required this.message});
+
+  final String message;
+}
 
 final class OnBoardingPageChanged extends OnBoardingState {
   final int currentPage;

@@ -1,6 +1,7 @@
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -96,6 +97,23 @@ class SupabaseOrdersRepository implements OrdersRepository {
       if (reason?.trim().isNotEmpty ?? false) 'p_reason': reason!.trim(),
     });
   }
+
+  @override
+  Future<List<OrderStatusEvent>> orderHistory(String orderId) async {
+    _requireUserId();
+    if (orderId.isEmpty) {
+      throw ArgumentError.value(orderId, 'orderId', 'must not be empty');
+    }
+    final rows = await _client
+        .from('order_status_history')
+        .select('from_status, to_status, note, created_at')
+        .eq('order_id', orderId)
+        .order('created_at') as List;
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>) OrderStatusEvent.fromDatabase(row),
+    ];
+  }
 }
 
 /// Used when Supabase is unavailable or unconfigured.
@@ -121,4 +139,8 @@ class LocalOrdersRepository implements OrdersRepository {
           'Connect Supabase and sign in first.',
         ),
       );
+
+  @override
+  Future<List<OrderStatusEvent>> orderHistory(String orderId) async =>
+      const [];
 }

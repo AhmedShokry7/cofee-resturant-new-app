@@ -4,13 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/main.dart';
-import 'package:new_coffee/features/home/data/banners_list.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
@@ -59,7 +59,7 @@ void main() {
 
     rootNavigatorKey.currentState!.pushNamed(
       BannerDetailsPage.routeName,
-      arguments: getBannersList()[2],
+      arguments: (await const MockProductRepository().getBanners())[2],
     );
     await _settlePush(tester);
 

@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 
 void main() {
   test('stored cart ids resolve against the repository, not the old menu', () async {
@@ -21,7 +23,10 @@ void main() {
       ]),
     });
 
-    final cubit = CartCubit(repository: const MockProductRepository());
+    final cubit = CartCubit(
+      cartRepository: LocalCartRepository(),
+      catalogRepository: MockProductRepository(),
+    );
     await cubit.load();
 
     expect(cubit.state.items.map((item) => item.product.id), ['1']);
@@ -36,7 +41,10 @@ void main() {
 
     final repository = const MockProductRepository();
     final product = await repository.getById('1');
-    final cubit = CartCubit(repository: repository);
+    final cubit = CartCubit(
+      cartRepository: LocalCartRepository(),
+      catalogRepository: repository,
+    );
     await cubit.load();
 
     cubit.add(product!, note: 'Large', optionValueIds: ['b', 'a']);

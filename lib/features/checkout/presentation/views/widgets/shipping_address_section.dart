@@ -34,10 +34,10 @@ class ShippingAddressSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(address.label, style: AppFonts.semiBold16(context)),
+Text(address?.label ?? '—', style: AppFonts.semiBold16(context)),
                       SizedBox(height: 4.h),
                       Text(
-                        address.details,
+                        address?.details ?? '',
                         style: AppFonts.regular14(
                           context,
                         ).copyWith(color: AppColor.greyColor),

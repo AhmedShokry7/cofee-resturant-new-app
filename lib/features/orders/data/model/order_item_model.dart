@@ -22,6 +22,8 @@ class OrderItemModel {
     this.note = '',
     this.placedAt,
     this.createdAt,
+    this.fulfillmentType = '',
+    this.databaseStatus = '',
   });
 
   final String id;
@@ -42,6 +44,13 @@ class OrderItemModel {
 
   final String note;
   final DateTime? placedAt;
+
+  /// Pickup or delivery, frozen from the order header.
+  final String fulfillmentType;
+
+  /// Raw database status (`preparing`, `ready`, ...). The public [status] is
+  /// only the customer-facing bucket.
+  final String databaseStatus;
 
   /// Line creation order within an order. Used only to keep the invoice lines
   /// in their stored sequence.
@@ -96,6 +105,8 @@ class OrderItemModel {
       unitPrice: unitPrice,
       lineTotal: lineTotal,
       note: Db.text(itemMap['note']),
+      fulfillmentType: Db.text(orderMap['fulfillment_type']),
+      databaseStatus: Db.text(orderMap['status']),
       placedAt: placedAtValue == null
           ? null
           : DateTime.tryParse(placedAtValue)?.toLocal(),

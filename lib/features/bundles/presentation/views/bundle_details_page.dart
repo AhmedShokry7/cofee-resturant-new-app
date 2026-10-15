@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/bundle_details_cubit.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
@@ -25,9 +26,16 @@ class BundleDetailsPage extends StatelessWidget {
       create: (context) => BundleDetailsCubit(
         repository: context.read<CatalogRepository>(),
         bundle: bundle,
+        branchId: context.read<BranchCubit>().state.selected?.id,
       ),
       child: Builder(
-        builder: (context) => Scaffold(
+        builder: (context) => BlocListener<BranchCubit, BranchState>(
+          listenWhen: (previous, current) =>
+              previous.selected?.id != current.selected?.id,
+          listener: (context, state) => context
+              .read<BundleDetailsCubit>()
+              .setBranch(state.selected?.id),
+          child: Scaffold(
           appBar: AppBar(title: Text(bundle.title)),
           body: const _BundleDetailsBody(),
           bottomNavigationBar: Container(
@@ -48,6 +56,7 @@ class BundleDetailsPage extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

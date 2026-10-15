@@ -25,7 +25,7 @@ class WelcomePageBody extends StatelessWidget {
 
             SizedBox(height: 8.h),
             const WelcomeViewTextBody(),
-            const Spacer(),
+                SizedBox(height: 16.h),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: CustomBtn(
@@ -40,7 +40,6 @@ class WelcomePageBody extends StatelessWidget {
               ),
             ),
            
-            const Spacer(),
           ],
         ),
       ),

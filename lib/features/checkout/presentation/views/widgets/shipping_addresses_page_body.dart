@@ -27,8 +27,8 @@ class ShippingAddressesPageBody extends StatelessWidget {
             for (var index = 0; index < state.addresses.length; index++) ...[
               AddressTile(
                 address: state.addresses[index],
-                selected:
-                    state.selectedAddress.id == state.addresses[index].id,
+selected:
+                    state.selectedAddress?.id == state.addresses[index].id,
                 onTap: () => context.read<CheckoutCubit>().selectAddress(
                   state.addresses[index],
                 ),

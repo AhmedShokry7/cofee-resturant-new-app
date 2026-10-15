@@ -78,9 +78,9 @@ final CatalogRepository _catalog;
       );
 
   /// Switches the branch the results are priced for, and re-runs the query.
-  void setBranch(String? branchId) {
+  Future<void> setBranch(String? branchId) {
     _branchIdOverride = branchId;
-    _run(query: state.query);
+    return _run(query: state.query);
   }
 
   /// Price bounds for the filter sheet, taken from what is actually loaded
