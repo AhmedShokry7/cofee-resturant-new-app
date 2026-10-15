@@ -1,6 +1,6 @@
 import 'package:new_coffee/features/assistant/data/assistant_language.dart';
+import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/product_knowledge.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
 /// The bot's internal product brain: names, aliases, ingredients and tags.
@@ -41,6 +41,30 @@ class AssistantCatalog {
     return null;
   }
 
+  ProductKnowledge? knowledgeOfProduct(ProductModel product) {
+    final slug = product.slug?.trim().toLowerCase();
+    for (final row in _knowledge) {
+      if (slug != null &&
+          slug.isNotEmpty &&
+          row.productSlug == slug) {
+        return row;
+      }
+      if (row.productId == product.id) return row;
+    }
+    // Compiled-menu rows carry no slug, but their English names match the
+    // database slugs once spaces become hyphens.
+    final nameSlug = (product.nameEn?.isNotEmpty ?? false
+            ? product.nameEn!
+            : product.name)
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'\s+'), '-');
+    for (final row in _knowledge) {
+      if (row.productSlug == nameSlug) return row;
+    }
+    return null;
+  }
+
   /// Ingredient ids mentioned anywhere in [query] (whole words).
   Set<String> detectIngredients(String query) {
     final normalized = normalizeText(query);
@@ -70,11 +94,11 @@ class AssistantCatalog {
     int limit = 3,
   }) {
     if (ingredients.isEmpty) return const [];
-    final menu = getMenuList();
+    final menu = AssistantSnapshot.current.products;
     final scored = <MapEntry<ProductModel, double>>[];
     for (final product in menu) {
       if (excludeIds.contains(product.id)) continue;
-      final row = knowledgeOf(product.id);
+      final row = knowledgeOfProduct(product);
       if (row == null || row.ingredients.isEmpty) continue;
       final matched = ingredients
           .where((ingredient) => row.ingredients.contains(ingredient))

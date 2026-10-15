@@ -5,9 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/bundles/data/bundles_list.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
+import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/bundle_details_cubit.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
@@ -18,129 +19,169 @@ class BundleDetailsPage extends StatelessWidget {
 
   final BundleModel bundle;
 
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => BundleDetailsCubit(
+        repository: context.read<CatalogRepository>(),
+        bundle: bundle,
+      ),
+      child: Builder(
+        builder: (context) => Scaffold(
+          appBar: AppBar(title: Text(bundle.title)),
+          body: const _BundleDetailsBody(),
+          bottomNavigationBar: Container(
+            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            decoration: const BoxDecoration(
+              color: AppColor.whiteColor,
+              border: Border(
+                top: BorderSide(color: AppColor.borderColor),
+              ),
+            ),
+            child: BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
+              builder: (context, state) => CustomBtn(
+                text: 'Add Bundle to Cart',
+                onPressed: state.products.isEmpty
+                    ? null
+                    : () => _addBundle(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _addBundle(BuildContext context) {
-    final products = bundleProducts(bundle);
-    final shares = bundleShares(bundle);
+    final cubit = context.read<BundleDetailsCubit>();
+    final shares = cubit.sharesFor();
     final cart = context.read<CartCubit>();
-    for (final product in products) {
+    for (final product in cubit.state.products) {
+      final component = bundle.components.firstWhere(
+        (item) => item.productId == product.id,
+      );
       cart.add(
         product,
+        quantity: component.quantity,
         note: 'Bundle: ${bundle.title}',
         unitPrice: shares[product.id],
       );
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("${bundle.title} added to cart")),
+      SnackBar(content: Text('${bundle.title} added to cart')),
     );
   }
+}
+
+class _BundleDetailsBody extends StatelessWidget {
+  const _BundleDetailsBody();
 
   @override
   Widget build(BuildContext context) {
-    final products = bundleProducts(bundle);
-    final image = products.isEmpty ? null : products.first.image;
-    return Scaffold(
-      appBar: AppBar(title: Text(bundle.title)),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          SpacingTokens.lg.w,
-          SpacingTokens.md.h,
-          SpacingTokens.lg.w,
-          SpacingTokens.lg.w,
-        ),
-        children: [
-          if (image != null)
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
-                child: Image.asset(
-                  image,
-                  height: 200.h,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
+    return BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
+      builder: (context, state) {
+        if (state.isLoading && state.products.isEmpty) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state.error != null && state.products.isEmpty) {
+          return Center(child: Text(state.error!));
+        }
+
+        final cubit = context.read<BundleDetailsCubit>();
+        final image = state.products.isEmpty
+            ? null
+            : state.products.first.image;
+        return ListView(
+          padding: EdgeInsets.fromLTRB(
+            SpacingTokens.lg.w,
+            SpacingTokens.md.h,
+            SpacingTokens.lg.w,
+            SpacingTokens.lg.w,
+          ),
+          children: [
+            if (image != null)
+              Center(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: Image.asset(
+                    image,
+                    height: 200.h,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
+            SizedBox(height: SpacingTokens.lg.h),
+            Text(state.bundle.title, style: AppFonts.semiBold20(context)),
+            SizedBox(height: 4.h),
+            Text(
+              state.bundle.subtitle,
+              style: AppFonts.regular14(
+                context,
+              ).copyWith(color: AppColor.greyColor),
             ),
-          SizedBox(height: SpacingTokens.lg.h),
-          Text(bundle.title, style: AppFonts.semiBold20(context)),
-          SizedBox(height: 4.h),
-          Text(
-            bundle.subtitle,
-            style: AppFonts.regular14(
-              context,
-            ).copyWith(color: AppColor.greyColor),
-          ),
-          SizedBox(height: SpacingTokens.lg.h),
-          Text("What's inside", style: AppFonts.semiBold16(context)),
-          SizedBox(height: SpacingTokens.sm.h),
-          for (final product in products)
-            Container(
-              margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
-              padding: EdgeInsets.all(SpacingTokens.sm.w),
-              decoration: BoxDecoration(
-                color: AppColor.whiteColor,
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: AppColor.borderColor),
-              ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.r),
-                    child: Image.asset(
-                      product.image,
-                      height: 48.w,
-                      width: 48.w,
-                      fit: BoxFit.cover,
+            SizedBox(height: SpacingTokens.lg.h),
+            Text("What's inside", style: AppFonts.semiBold16(context)),
+            SizedBox(height: SpacingTokens.sm.h),
+            for (final product in state.products)
+              Container(
+                margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+                padding: EdgeInsets.all(SpacingTokens.sm.w),
+                decoration: BoxDecoration(
+                  color: AppColor.whiteColor,
+                  borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColor.borderColor),
+                ),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: Image.asset(
+                        product.image,
+                        height: 48.w,
+                        width: 48.w,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: SpacingTokens.sm.w),
-                  Expanded(
-                    child: Text(
-                      product.name,
-                      style: AppFonts.medium14(context),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    SizedBox(width: SpacingTokens.sm.w),
+                    Expanded(
+                      child: Text(
+                        product.name,
+                        style: AppFonts.medium14(context),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
-                  ),
-                  Text(
-                    Formatters.price(product.price),
-                    style: AppFonts.semiBold14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
-                  ),
-                ],
+                    Text(
+                      Formatters.price(product.price),
+                      style: AppFonts.semiBold14(
+                        context,
+                      ).copyWith(color: AppColor.greyColor),
+                    ),
+                  ],
+                ),
               ),
+            SizedBox(height: SpacingTokens.md.h),
+            _PriceRow(
+              label: "Original total",
+              value: Formatters.price(cubit.originalTotalFor()),
+              struck: true,
             ),
-          SizedBox(height: SpacingTokens.md.h),
-          _PriceRow(
-            label: "Original total",
-            value: Formatters.price(bundleOriginalTotal(bundle)),
-            struck: true,
-          ),
-          SizedBox(height: SpacingTokens.xs.h),
-          _PriceRow(
-            label: "Bundle price",
-            value: Formatters.price(bundle.price),
-            highlighted: true,
-          ),
-          SizedBox(height: SpacingTokens.xs.h),
-          _PriceRow(
-            label: "You save",
-            value: Formatters.price(bundleSavings(bundle)),
-            highlighted: true,
-          ),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
-        decoration: const BoxDecoration(
-          color: AppColor.whiteColor,
-          border: Border(top: BorderSide(color: AppColor.borderColor)),
-        ),
-        child: CustomBtn(
-          text: "Add Bundle to Cart",
-          onPressed: () => _addBundle(context),
-        ),
-      ),
+            SizedBox(height: SpacingTokens.xs.h),
+            _PriceRow(
+              label: "Bundle price",
+              value: Formatters.price(state.bundle.price),
+              highlighted: true,
+            ),
+            SizedBox(height: SpacingTokens.xs.h),
+            _PriceRow(
+              label: "You save",
+              value: Formatters.price(cubit.savingsFor()),
+              highlighted: true,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -180,4 +221,3 @@ class _PriceRow extends StatelessWidget {
     );
   }
 }
-

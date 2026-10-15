@@ -97,6 +97,7 @@ class OptionGroup {
     required this.maxSelect,
     required this.isRequired,
     required this.values,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -109,6 +110,10 @@ class OptionGroup {
   final bool isRequired;
   final List<OptionValue> values;
 
+  /// Display order chosen by the admin. Sorting on `code` instead would render
+  /// the sizes as Large, Medium, Small.
+  final int sortOrder;
+
   /// Replaces the frozen DrinkSize and SugarLevel enums.
   factory OptionGroup.fromJson(Map<String, dynamic> json) => OptionGroup(
         id: json['id']?.toString() ?? '',
@@ -119,6 +124,7 @@ class OptionGroup {
         minSelect: (json['min_select'] as num?)?.toInt() ?? 0,
         maxSelect: (json['max_select'] as num?)?.toInt(),
         isRequired: json['is_required'] == true,
+        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
         values: const [],
       );
 }
@@ -132,6 +138,7 @@ class OptionValue {
     required this.priceDelta,
     this.shortLabel,
     this.isDefault = false,
+    this.sortOrder = 0,
   });
 
   final String id;
@@ -142,6 +149,10 @@ class OptionValue {
   final String? shortLabel;
   final bool isDefault;
 
+  /// Admin-defined display order, so sizes render Small, Medium, Large rather
+  /// than alphabetically.
+  final int sortOrder;
+
   factory OptionValue.fromJson(Map<String, dynamic> json) => OptionValue(
         id: json['id']?.toString() ?? '',
         code: json['code']?.toString() ?? '',
@@ -150,6 +161,7 @@ class OptionValue {
         priceDelta: (json['price_delta'] as num?)?.toDouble() ?? 0,
         shortLabel: json['short_label']?.toString(),
         isDefault: json['is_default'] == true,
+        sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
       );
 }
 

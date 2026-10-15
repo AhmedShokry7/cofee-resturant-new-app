@@ -1,4 +1,3 @@
-import 'package:new_coffee/features/bundles/data/bundles_list.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/banners_list.dart';
@@ -45,11 +44,20 @@ class MockProductRepository implements CatalogRepository {
   }
 
   @override
-  Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async {
-    final product = await getById(id, branchId: branchId);
-    if (product == null) return null;
-    return ProductWithOptions(product: product);
-  }
+Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async {
+      final product = await getById(id, branchId: branchId);
+      if (product == null) return null;
+      return ProductWithOptions(
+        product: product,
+        groups: _legacyOptionGroups(
+          // Legacy mock products carry only a display label, so the slug has to
+          // be derived or the lookup below misses and the screen shows nothing.
+          product.categorySlug.isNotEmpty
+              ? product.categorySlug
+              : product.category.toLowerCase().replaceAll(' ', '-'),
+        ),
+      );
+    }
 
   @override
   Future<List<ProductModel>> search(
@@ -147,7 +155,64 @@ static const Set<String> _featuredNames = {
 
   @override
   Future<List<BundleModel>> getBundles({String? branchId, int limit = 20}) async =>
-      getBundlesList().take(limit).toList();
+      _legacyBundles.take(limit).toList();
+
+  /// Legacy bundles for the offline fallback.
+  ///
+  /// The details screen resolves components through the same mock catalogue,
+  /// so these carry quantities rather than relying on the deleted shared
+  /// helper to look products up globally.
+  static final List<BundleModel> _legacyBundles = [
+    _legacyBundle(
+      id: 'morning-duo',
+      title: 'Morning Duo',
+      subtitle: 'Espresso + Butter Croissant',
+      price: 48,
+      productIds: ['1', '12'],
+    ),
+    _legacyBundle(
+      id: 'sweet-break',
+      title: 'Sweet Break',
+      subtitle: 'Latte + Cheesecake',
+      price: 79,
+      productIds: ['3', '9'],
+    ),
+    _legacyBundle(
+      id: 'iced-refresh',
+      title: 'Iced Refresh',
+      subtitle: 'Iced Latte + Glazed Donut',
+      price: 56,
+      productIds: ['6', '16'],
+    ),
+    _legacyBundle(
+      id: 'tea-time',
+      title: 'Tea Time',
+      subtitle: 'Green Tea + Butter Bread',
+      price: 42,
+      productIds: ['7', '15'],
+    ),
+  ];
+
+  static BundleModel _legacyBundle({
+    required String id,
+    required String title,
+    required String subtitle,
+    required double price,
+    required List<String> productIds,
+  }) {
+    final components = [
+      for (final productId in productIds)
+        BundleComponent(productId: productId, quantity: 1),
+    ];
+    return BundleModel(
+      id: id,
+      title: title,
+      subtitle: subtitle,
+      productIds: productIds,
+      price: price,
+      components: components,
+    );
+  }
 
 /// Legacy categories for the offline fallback.
 ///
@@ -188,6 +253,111 @@ static final List<CategoryModel> _legacyCategories = [
       if (c.slug == id) return c;
     }
     return null;
+  }
+
+  /// Option groups for the offline path, mirroring the seed.
+  ///
+  /// The details screen reads these instead of frozen enums. Without them the
+  /// offline build would silently lose the size, sugar and extras sections,
+  /// which is worse than a slower screen.
+  static List<OptionGroup> _legacyOptionGroups(String categorySlug) {
+    OptionValue v(
+      String id,
+      String ar,
+      String en,
+      double delta,
+      int order, {
+      bool isDefault = false,
+      String? short,
+    }) =>
+        OptionValue(
+          id: id,
+          code: id,
+          nameAr: ar,
+          nameEn: en,
+          priceDelta: delta,
+          isDefault: isDefault,
+          sortOrder: order,
+          shortLabel: short,
+        );
+
+    final size = OptionGroup(
+      id: 'size',
+      code: 'size',
+      nameAr: 'الحجم',
+      nameEn: 'Size',
+      isSingleSelect: true,
+      minSelect: 0,
+      maxSelect: 1,
+      isRequired: false,
+      sortOrder: 1,
+      values: [
+        v('small', 'صغير', 'Small', 0, 1, isDefault: true, short: 'S'),
+        v('medium', 'وسط', 'Medium', 5, 2, short: 'M'),
+        v('large', 'كبير', 'Large', 10, 3, short: 'L'),
+      ],
+    );
+
+    final sugar = OptionGroup(
+      id: 'sugar',
+      code: 'sugar',
+      nameAr: 'السكر',
+      nameEn: 'Sugar Level',
+      isSingleSelect: true,
+      minSelect: 0,
+      maxSelect: 1,
+      isRequired: false,
+      sortOrder: 2,
+      values: [
+        v('none', 'بدون سكر', 'No Sugar', 0, 1, isDefault: true),
+        v('less', 'سكر قليل', 'Less Sugar', 0, 2),
+        v('normal', 'سكر عادي', 'Regular', 0, 3),
+        v('extra', 'سكر كثير', 'Extra Sugar', 0, 4),
+      ],
+    );
+
+    final extrasForCategory = <String, List<OptionValue>>{
+      'hot-coffee': [
+        v('shot', 'جرعة إسبريسو إضافية', 'Extra Espresso Shot', 8, 1),
+        v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 2),
+        v('vanilla', 'شراب الفانيلا', 'Vanilla Syrup', 5, 3),
+        v('caramel', 'شراب الكراميل', 'Caramel Syrup', 5, 4),
+      ],
+      'cold-coffee': [
+        v('shot', 'جرعة إسبريسو إضافية', 'Extra Espresso Shot', 8, 1),
+        v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 2),
+        v('vanilla', 'شراب الفانيلا', 'Vanilla Syrup', 5, 3),
+        v('caramel', 'شراب الكراميل', 'Caramel Syrup', 5, 4),
+      ],
+      'tea': [
+        v('mint', 'نعناع طازج', 'Fresh Mint', 3, 1),
+        v('honey', 'عسل', 'Honey', 5, 2),
+      ],
+      'milkshakes': [
+        v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 1),
+        v('scoop', 'كرة آيس كريم إضافية', 'Extra Ice Cream Scoop', 10, 2),
+      ],
+    };
+
+    final extras = extrasForCategory[categorySlug];
+    if (extras == null) return const [];
+
+    return [
+      size,
+      sugar,
+      OptionGroup(
+        id: 'extras',
+        code: 'extras',
+        nameAr: 'الإضافات',
+        nameEn: 'Extras',
+        isSingleSelect: false,
+        minSelect: 0,
+        maxSelect: 6,
+        isRequired: false,
+        sortOrder: 3,
+        values: extras,
+      ),
+    ];
   }
 
   @override

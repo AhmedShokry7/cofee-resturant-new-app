@@ -75,7 +75,7 @@ class _DetailsScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = order.product.price * order.quantity;
+    final total = order.chargedTotal;
     return Scaffold(
       appBar: AppBar(title: const Text("Order Details")),
       body: ListView(
@@ -88,8 +88,8 @@ class _DetailsScaffold extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                "Order #${order.id}",
+Text(
+                "Order #${order.displayNumber}",
                 style: AppFonts.semiBold18(context),
               ),
               const Spacer(),

@@ -307,21 +307,21 @@ class AssistantPhrases {
     'كاسه': 'coffee', 'كاس': 'coffee',
   };
 
-  /// Generic category words (Saudi حلا, etc.) mapped to the menu categories
-  /// they boost. Used when no specific product is named.
+  /// Generic category words (Saudi حلا, etc.) mapped to the category slugs
+  /// they boost. Slugs are stable; display names are not.
   static const Map<String, Set<String>> categoryBoosts = {
-    'حلا': {'Desserts', 'Snacks', 'Bakery', 'Donuts'},
-    'حلويات': {'Desserts', 'Snacks', 'Bakery', 'Donuts'},
-    'ديزيرت': {'Desserts', 'Snacks', 'Bakery', 'Donuts'},
-    'dessert': {'Desserts', 'Snacks', 'Bakery', 'Donuts'},
-    'desserts': {'Desserts', 'Snacks', 'Bakery', 'Donuts'},
-    'سناك': {'Snacks'},
-    'سناكس': {'Snacks'},
-    'تسالي': {'Snacks'},
-    'حلو': {'Desserts', 'Snacks', 'Bakery', 'Donuts'},
-    'قهوه': {'Hot Coffee', 'Cold Coffee'},
-    'قهوة': {'Hot Coffee', 'Cold Coffee'},
-    'كوفي': {'Hot Coffee', 'Cold Coffee'},
+    'حلا': {'desserts', 'snacks', 'bakery', 'donuts'},
+    'حلويات': {'desserts', 'snacks', 'bakery', 'donuts'},
+    'ديزيرت': {'desserts', 'snacks', 'bakery', 'donuts'},
+    'dessert': {'desserts', 'snacks', 'bakery', 'donuts'},
+    'desserts': {'desserts', 'snacks', 'bakery', 'donuts'},
+    'سناك': {'snacks'},
+    'سناكس': {'snacks'},
+    'تسالي': {'snacks'},
+    'حلو': {'desserts', 'snacks', 'bakery', 'donuts'},
+    'قهوه': {'hot-coffee', 'cold-coffee'},
+    'قهوة': {'hot-coffee', 'cold-coffee'},
+    'كوفي': {'hot-coffee', 'cold-coffee'},
   };
 
   /// Markers of a follow-up / refinement to the previous answer

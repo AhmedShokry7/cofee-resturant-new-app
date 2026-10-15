@@ -22,6 +22,7 @@ class ProductCard extends StatelessWidget {
     this.onDecrement,
     this.showFavorite = true,
     this.note = '',
+    this.lineId,
     this.unitPrice,
   });
 
@@ -31,6 +32,11 @@ class ProductCard extends StatelessWidget {
   final VoidCallback? onDecrement;
   final bool showFavorite;
   final String note;
+
+  /// Stable cart-line identity. Product pages pass it so a quantity stepper
+  /// edits exactly the displayed variant instead of the first row with the
+  /// same product id.
+  final String? lineId;
 
   /// Variant-adjusted unit price for cart lines. Null = base price.
   final double? unitPrice;

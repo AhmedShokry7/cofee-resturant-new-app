@@ -10,17 +10,18 @@ import 'package:new_coffee/features/assistant/data/assistant_phrases.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
+import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/product_variants.dart';
-import 'package:new_coffee/features/orders/data/orders_list.dart';
+
+
 import 'package:new_coffee/shared/utils/formatters.dart';
 
 /// One synonym hit: [start]..[end] in normalized text, [kind] 0 = product
 /// name, 1 = generic category word.
 typedef _MatchSpan = ({int start, int end, int kind, String value});
 
-class AssistantAnswer {  const AssistantAnswer({
+class AssistantAnswer {
+  const AssistantAnswer({
     required this.text,
     this.sourceId,
     this.topic = 'general',
@@ -51,6 +52,29 @@ class AssistantEngine {
   ];
 
   static AssistantAnswer answer(
+    String query, {
+    required AssistantSnapshot snapshot,
+    required AssistantMemory memory,
+    required DateTime now,
+    Set<String> favoriteIds = const {},
+    Set<String> cartProductIds = const {},
+    bool isReturning = false,
+    String? firstName,
+  }) =>
+      AssistantSnapshot.run(
+        snapshot,
+        () => _answer(
+          query,
+          memory: memory,
+          now: now,
+          favoriteIds: favoriteIds,
+          cartProductIds: cartProductIds,
+          isReturning: isReturning,
+          firstName: firstName,
+        ),
+      );
+
+  static AssistantAnswer _answer(
     String query, {
     required AssistantMemory memory,
     required DateTime now,
@@ -283,15 +307,15 @@ class AssistantEngine {
   }
 
   static String? _productNameOf(String id) {
-    for (final product in getMenuList()) {
+    for (final product in AssistantSnapshot.current.products) {
       if (product.id == id) return product.name;
     }
     return null;
   }
 
   static String? _productIdOfName(String name) {
-    for (final product in getMenuList()) {
-      if (product.name == name) return product.id;
+    for (final product in AssistantSnapshot.current.products) {
+      if (AssistantSnapshot.canonicalName(product) == name) return product.id;
     }
     return null;
   }
@@ -322,8 +346,10 @@ class AssistantEngine {
         index = normalized.indexOf(norm, index + 1);
       }
     }
-    for (final product in getMenuList()) {
-      addMention(product.name, product.id);
+    for (final product in AssistantSnapshot.current.products) {
+      final canonical = AssistantSnapshot.canonicalName(product);
+      addMention(canonical, product.id);
+      if (product.name != canonical) addMention(product.name, product.id);
     }
     for (final entry in AssistantPhrases.productSynonyms.entries) {
       final id = _productIdOfName(entry.value);
@@ -386,30 +412,34 @@ class AssistantEngine {
     }
     // Taste learned from real order history (completed orders).
     final historyBoost = <String, double>{};
-    for (final order in getOrdersList()) {
+    for (final order in AssistantSnapshot.current.orders) {
       if (order.status.name == 'completed') {
-        historyBoost[order.product.category] =
-            (historyBoost[order.product.category] ?? 0) + 0.4;
+        final key = AssistantSnapshot.categoryKey(order.product);
+        historyBoost[key] = (historyBoost[key] ?? 0) + 0.4;
       }
     }
-    final scored = getMenuList()
+    final scored = AssistantSnapshot.current.products
         .where(
           // Dismissed products stay out — unless explicitly requested
           // again (and not re-rejected in this same message).
           (product) =>
               !memory.dismissedIds.contains(product.id) ||
-              (wantedProducts.contains(product.name) &&
+              (wantedProducts.contains(
+                    AssistantSnapshot.canonicalName(product),
+                  ) &&
                   !negatedIds.contains(product.id)),
         )
         .map((product) {
+      final canonicalName = AssistantSnapshot.canonicalName(product);
+      final categoryKey = AssistantSnapshot.categoryKey(product);
       var score = 1.0;
-      score += (memory.categoryScores[product.category] ?? 0) * 0.6;
+      score += AssistantSnapshot.categoryScore(memory.categoryScores, product) * 0.6;
       score += (memory.productScores[product.id] ?? 0) * 0.5;
-      score += historyBoost[product.category] ?? 0;
-      if (expanded.categories.contains(product.category)) score += 2;
+      score += historyBoost[categoryKey] ?? 0;
+      if (expanded.categories.contains(categoryKey)) score += 2;
       // Ingredient overlap: "the one with chocolate" finds Mocha.
       if (ingredientHits.isNotEmpty) {
-        final row = AssistantCatalog.current.knowledgeOf(product.id);
+        final row = AssistantCatalog.current.knowledgeOfProduct(product);
         if (row != null) {
           var matched = 0;
           for (final ingredient in ingredientHits) {
@@ -419,29 +449,29 @@ class AssistantEngine {
         }
       }
       if (favoriteIds.contains(product.id)) score += 0.5;
-      if (wantedProducts.contains(product.name)) score += 3;
+      if (wantedProducts.contains(canonicalName)) score += 3;
       if (isDaytime(now) &&
-          (product.category == 'Hot Coffee' || product.category == 'Tea')) {
+          (categoryKey == 'hot-coffee' || categoryKey == 'tea')) {
         score += 0.4;
       }
-      if (!isDaytime(now) && product.category == 'Cold Coffee') score += 0.3;
+      if (!isDaytime(now) && categoryKey == 'cold-coffee') score += 0.3;
       if (tokens.contains('hot') &&
-          (product.category == 'Hot Coffee' || product.category == 'Tea')) {
+          (categoryKey == 'hot-coffee' || categoryKey == 'tea')) {
         score += 1;
       }
       if (tokens.contains('cold') &&
-          (product.category == 'Cold Coffee' ||
-              product.category == 'Milkshakes' ||
-              product.category == 'Soft Drinks')) {
+          (categoryKey == 'cold-coffee' ||
+              categoryKey == 'milkshakes' ||
+              categoryKey == 'soft-drinks')) {
         score += 1;
       }
       if (tokens.contains('strong')) {
-        if (product.name == 'Espresso' || product.name == 'Americano') {
+        if (canonicalName == 'Espresso' || canonicalName == 'Americano') {
           score += 1.5;
         }
       }
       if (tokens.contains('sweet') || tokens.contains('chocolate')) {
-        if (product.name == 'Mocha' || product.category == 'Desserts') {
+        if (canonicalName == 'Mocha' || categoryKey == 'desserts') {
           score += 1.5;
         }
       }
@@ -450,7 +480,7 @@ class AssistantEngine {
       }
       if (product.hasDiscount) score += 0.3;
       for (final token in tokens) {
-        if (normalizeText(product.name).contains(token)) score += 1;
+        if (normalizeText(canonicalName).contains(token)) score += 1;
         if (normalizeText(product.category).contains(token)) score += 1.5;
       }
       return MapEntry(product, score);
@@ -459,7 +489,11 @@ class AssistantEngine {
     final picks = <ProductModel>[];
     for (final entry in scored) {
       if (picks.length >= 3) break;
-      if (picks.any((picked) => picked.category == entry.key.category)) {
+      if (picks.any(
+        (picked) =>
+            AssistantSnapshot.categoryKey(picked) ==
+            AssistantSnapshot.categoryKey(entry.key),
+      )) {
         continue;
       }
       picks.add(entry.key);
@@ -530,7 +564,7 @@ class AssistantEngine {
     };
     for (final token in tokens) {
       if (token.length < 3 || generic.contains(token)) continue;
-      for (final product in getMenuList()) {
+      for (final product in AssistantSnapshot.current.products) {
         if (normalizeText(product.name).contains(token) ||
             normalizeText(product.category).contains(token)) {
           return true;
@@ -579,28 +613,29 @@ class AssistantEngine {
     List<MapEntry<ProductModel, double>> scored,
   ) {
     if (cartIds.isEmpty) return null;
-    final menu = getMenuList();
+    final menu = AssistantSnapshot.current.products;
     final cartCats = menu
         .where((product) => cartIds.contains(product.id))
-        .map((product) => product.category)
+        .map(AssistantSnapshot.categoryKey)
         .toSet();
     if (cartCats.isEmpty) return null;
     const drinks = {
-      'Hot Coffee', 'Cold Coffee', 'Tea', 'Milkshakes', 'Soft Drinks',
+      'hot-coffee', 'cold-coffee', 'tea', 'milkshakes', 'soft-drinks',
     };
-    const foods = {'Desserts', 'Snacks', 'Bakery', 'Donuts'};
-    final pickCats = picks.map((product) => product.category).toSet();
+    const foods = {'desserts', 'snacks', 'bakery', 'donuts'};
+    final pickCats =
+        picks.map(AssistantSnapshot.categoryKey).toSet();
     String? target;
     if (cartCats.intersection(drinks).isNotEmpty &&
         pickCats.intersection(foods).isEmpty) {
-      target = 'Desserts';
+      target = 'desserts';
     } else if (cartCats.intersection(foods).isNotEmpty &&
         pickCats.intersection(drinks).isEmpty) {
-      target = 'Hot Coffee';
+      target = 'hot-coffee';
     }
     if (target == null) return null;
     for (final entry in scored) {
-      if (entry.key.category == target &&
+      if (AssistantSnapshot.categoryKey(entry.key) == target &&
           !picks.any((picked) => picked.id == entry.key.id)) {
         return entry.key;
       }
@@ -659,7 +694,7 @@ class AssistantEngine {
   }
 
   static ProductModel? _productById(String id) {
-    for (final product in getMenuList()) {
+    for (final product in AssistantSnapshot.current.products) {
       if (product.id == id) return product;
     }
     return null;
@@ -737,7 +772,7 @@ class AssistantEngine {
     AssistantMemory memory,
     Set<String> favoriteIds,
   ) {
-    final menu = getMenuList();
+    final menu = AssistantSnapshot.current.products;
     ProductModel? byId(String id) {
       for (final product in menu) {
         if (product.id == id) return product;
@@ -751,7 +786,7 @@ class AssistantEngine {
       if (found != null) return found;
     }
     final historyCounts = <String, int>{};
-    for (final order in getOrdersList()) {
+    for (final order in AssistantSnapshot.current.orders) {
       if (order.status.name == 'completed' && available(order.product.id)) {
         historyCounts[order.product.id] =
             (historyCounts[order.product.id] ?? 0) + order.quantity;
@@ -867,8 +902,15 @@ class AssistantEngine {
       collect(entry.key, 0, entry.value);
     }
     // Raw menu names too ("i want latte" must find Latte even in Latin).
-    for (final product in getMenuList()) {
-      collect(product.name, 0, product.name);
+    for (final product in AssistantSnapshot.current.products) {
+      collect(
+        AssistantSnapshot.canonicalName(product),
+        0,
+        AssistantSnapshot.canonicalName(product),
+      );
+      if (product.name != AssistantSnapshot.canonicalName(product)) {
+        collect(product.name, 0, AssistantSnapshot.canonicalName(product));
+      }
     }
     for (final entry in AssistantPhrases.categoryBoosts.entries) {
       collect(entry.key, 1, entry.key);
@@ -914,7 +956,7 @@ class AssistantEngine {
   }
 
   static AssistantAnswer _orderStatus({bool arabic = false}) {
-    final orders = getOrdersList();
+    final orders = AssistantSnapshot.current.orders;
     final active =
         orders.where((order) => order.status.name == 'active').toList();
     final delivered =
@@ -985,12 +1027,11 @@ class AssistantEngine {
     final tokens = tokenize(query).toSet();
     final wanted = _expandAll(query, tokens).wanted;
     if (wanted.isEmpty) return null;
-    final menu = getMenuList();
     final lines = <String>[];
     final products = <ProductModel>[];
     for (final name in wanted) {
-      for (final product in menu) {
-        if (product.name == name &&
+      for (final product in AssistantSnapshot.current.products) {
+        if (AssistantSnapshot.canonicalName(product) == name &&
             !products.any((p) => p.id == product.id)) {
           products.add(product);
           lines.add(
@@ -1039,7 +1080,7 @@ class AssistantEngine {
   }
 
   static List<ProductModel> _draftProducts(AssistantMemory memory) {
-    final menu = getMenuList();
+    final menu = AssistantSnapshot.current.products;
     final products = <ProductModel>[];
     for (final item in memory.draft.items) {
       for (final product in menu) {
@@ -1053,9 +1094,12 @@ class AssistantEngine {
   }
 
   static List<ProductModel> _dessertOptions() {
-    const sweetCats = {'Desserts', 'Snacks', 'Bakery', 'Donuts'};
-    return getMenuList()
-        .where((product) => sweetCats.contains(product.category))
+    const sweetCats = {'desserts', 'snacks', 'bakery', 'donuts'};
+    return AssistantSnapshot.current.products
+        .where(
+          (product) =>
+              sweetCats.contains(AssistantSnapshot.categoryKey(product)),
+        )
         .take(3)
         .toList();
   }
@@ -1188,18 +1232,6 @@ class AssistantEngine {
     );
   }
 
-  /// Variant-adjusted unit price for a draft item (size deltas; sugar is
-  /// free). Null when the base price applies.
-  static double? _actionUnitPrice(OrderDraftItem item) {
-    if (item.size == null) return null;
-    for (final product in getMenuList()) {
-      if (product.id == item.productId) {
-        return unitPrice(product, size: DrinkSize.fromName(item.size));
-      }
-    }
-    return null;
-  }
-
   /// "ايوه" on a confirmation → fills the real cart, then asks how to pay.
   static AssistantAnswer _executeConfirm(
     AssistantMemory memory, {
@@ -1220,11 +1252,9 @@ class AssistantEngine {
     }
     final actions = memory.draft.items
         .map(
-          (item) => CartAction(
-            productId: item.productId,
-            quantity: item.quantity,
-            note: item.variantNote(arabic: arabic),
-            unitPrice: _actionUnitPrice(item),
+          (item) => AssistantSnapshot.current.cartActionFor(
+            item,
+            arabic: arabic,
           ),
         )
         .toList();
@@ -1266,25 +1296,20 @@ class AssistantEngine {
             : const ['Latte', 'Cappuccino', 'Cheesecake'],
       );
     }
-    final menu = getMenuList();
     final names = <String>[];
     final products = <ProductModel>[];
     final actions = <CartAction>[];
     for (final item in parsed.items) {
-      for (final product in menu) {
+      for (final product in AssistantSnapshot.current.products) {
         if (product.id == item.productId) {
-          final note = item.variantNote(arabic: arabic);
+          final note =
+              AssistantSnapshot.current.variantNoteFor(item, arabic: arabic);
           names.add(
             '${item.quantity}x ${product.name}${note.isEmpty ? '' : ' ($note)'}',
           );
           products.add(product);
           actions.add(
-            CartAction(
-              productId: product.id,
-              quantity: item.quantity,
-              note: note,
-              unitPrice: _actionUnitPrice(item),
-            ),
+            AssistantSnapshot.current.cartActionFor(item, arabic: arabic),
           );
         }
       }
@@ -1352,12 +1377,7 @@ class AssistantEngine {
       // Skipped confirmation: confirm silently, then pay.
       for (final item in memory.draft.items) {
         actions.add(
-          CartAction(
-            productId: item.productId,
-            quantity: item.quantity,
-            note: item.variantNote(arabic: arabic),
-            unitPrice: _actionUnitPrice(item),
-          ),
+          AssistantSnapshot.current.cartActionFor(item, arabic: arabic),
         );
       }
       prefix = arabic ? 'ضفت طلبك للسلة. ' : 'Added your order to the cart. ';

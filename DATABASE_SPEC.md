@@ -202,7 +202,7 @@ PRIMARY KEY (branch_id, product_id, variant_key)
 | `payments` | طرق الدفع، المحاولات، المعاملات | ✅ مكشوف (قراءة إدارية فقط) | 3 |
 | `loyalty` | الحساب، الحركات، القواعد، المكافآت | ✅ مكشوف (قراءة مملوكة) | 4 |
 | `marketing` | البانرات، الكوبونات، الاستهلاك | ✅ مكشوف | 4 |
-| `engagement` | التقييمات، الإشعارات، التفضيلات، الأجهزة | ✅ مكشوف | 4 |
+| `engagement` | التقييمات، المفضلة، الإشعارات، التفضيلات، الأجهزة | ✅ مكشوف | 5 |
 | `ai` | معرفة المنتج للمساعد المحلي + المعرفة العامة | ❌ **غير مكشوف** | 2 |
 
 **`public`:** تبقى فارغة من الجداول. تُستخدم فقط لـ`extensions` و`pgtle`/`postgis` إن لزم.
@@ -1027,6 +1027,18 @@ IX (product_id) WHERE is_published
 ```
 `RLS` — قراءة `is_published` للجميع؛ كتابة لمستخدمه فقط؛ **و`INSERT` يتطلب `order_id` يخصّه ويحتوي المنتج** (شرط «شراء موثّق»).
 
+#### `engagement.customer_favorites`
+```
+id            uuid PK
+user_id       uuid NOT NULL FK → identity.profiles(id) ON DELETE CASCADE
+product_id    uuid NOT NULL FK → catalog.products(id) ON DELETE CASCADE
+created_at    timestamptz NOT NULL DEFAULT now()
+UNIQUE (user_id, product_id)
+IX (user_id, created_at DESC)
+IX (product_id)
+```
+`RLS` — ملكية العميل فقط لجميع العمليات؛ **لا كتابة مباشرة لغير المالك**، وحذف المنتج يحذف إشاراته المرجعية تلقائيًا.
+
 #### `engagement.notifications`
 ```
 id            uuid PK
@@ -1175,6 +1187,7 @@ is_active   boolean NOT NULL DEFAULT true
 | `marketing.banners` | ✅ قراءة المنشورة | ✅ | ✅ |
 | `marketing.coupons` | ✅ قراءة النشطة (بدون usage) | ✅ | ✅ |
 | `engagement.product_reviews` | ✅ قراءة المنشورة | ✅ كتابة ملكيته | ✅ |
+| `engagement.customer_favorites` | ❌ | ✅ ملكيته فقط | ❌ |
 | `engagement.notifications` | ❌ | ✅ ملكيته فقط | ✅ `notifications.read` |
 | `engagement.device_tokens` | ❌ | ✅ ملكيته فقط | — |
 | `ai.*` | ❌ | ❌ | ❌ — **غير مكشوف، يُقرأ بـEdge Function فقط** |
@@ -1305,6 +1318,7 @@ is_active   boolean NOT NULL DEFAULT true
 | 014 | `loyalty_01.sql` | `loyalty_accounts`, `loyalty_rules`, `loyalty_rewards`, `loyalty_transactions` | 011 |
 | 015 | `marketing_01.sql` | `banners`, `coupons`, `coupons_categories`, `coupon_redemptions` | 010 |
 | 016 | `engagement_01.sql` | `product_reviews`, `notifications`, `notification_preferences`, `device_tokens` | 011 |
+| 038 | `engagement_02_customer_favorites.sql` | `customer_favorites`, سياسات الملكية، منح `authenticated`، عرض `public` | 016 |
 | 017 | `ai_01.sql` | `product_knowledge`, `knowledge_articles` | 007 |
 | 018 | `rls_01_identity.sql` | سياسات `identity` | 004 |
 | 019 | `rls_02_core_catalog.sql` | سياسات `core`, `catalog` | 010 |

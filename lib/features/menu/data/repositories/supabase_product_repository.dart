@@ -115,17 +115,26 @@ class SupabaseProductRepository implements CatalogRepository {
   }
 
   @override
-  Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async {
-    final product = await getById(id, branchId: branchId);
-    if (product == null) return null;
-
-    final links = await _client
+Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async {
+    // The product row and its option bindings do not depend on each other, so
+    // they are fetched together rather than one round trip after another.
+    final productFuture = getById(id, branchId: branchId);
+    final linksFuture = _client
         .from('product_option_groups')
         .select('group_id')
         .eq('product_id', id);
 
+    final product = await productFuture;
+    final links = await linksFuture;
+    if (product == null) return null;
+
     final groupIds = links.map((r) => r['group_id'].toString()).toList();
-    if (groupIds.isEmpty) return ProductWithOptions(product: product);
+    if (groupIds.isEmpty) {
+      return ProductWithOptions(
+        product: product,
+        images: await _productImages(id),
+      );
+    }
 
     final groupRows = await _client
         .from('option_groups')
@@ -142,7 +151,7 @@ class SupabaseProductRepository implements CatalogRepository {
       valuesByGroup.putIfAbsent(gid, () => []).add(OptionValue.fromJson(v));
     }
     for (final list in valuesByGroup.values) {
-      list.sort((a, b) => a.code.compareTo(b.code));
+      list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     }
 
     final groups = groupRows
@@ -157,23 +166,27 @@ class SupabaseProductRepository implements CatalogRepository {
             minSelect: parsed.minSelect,
             maxSelect: parsed.maxSelect,
             isRequired: parsed.isRequired,
+            sortOrder: parsed.sortOrder,
             values: valuesByGroup[g['id'].toString()] ?? const [],
           );
         })
         .toList()
-      ..sort((a, b) => a.code.compareTo(b.code));
-
-    final imageRows = await _client
-        .from('product_images')
-        .select('*')
-        .eq('product_id', id)
-        .order('sort_order', ascending: true);
+      ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     return ProductWithOptions(
       product: product,
       groups: groups,
-      images: imageRows.map(ProductImage.fromJson).toList(),
+      images: await _productImages(id),
     );
+  }
+
+  Future<List<ProductImage>> _productImages(String productId) async {
+    final rows = await _client
+        .from('product_images')
+        .select('*')
+        .eq('product_id', productId)
+        .order('sort_order', ascending: true);
+    return rows.map(ProductImage.fromJson).toList();
   }
 
   @override

@@ -47,11 +47,11 @@ class OrderCard extends StatelessWidget {
             ),
             SizedBox(width: SpacingTokens.md.w),
             Expanded(
-              child: Column(
+child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    order.product.category,
+                    'Order #${order.displayNumber}',
                     style: AppFonts.regular12(
                       context,
                     ).copyWith(color: AppColor.greyColor),

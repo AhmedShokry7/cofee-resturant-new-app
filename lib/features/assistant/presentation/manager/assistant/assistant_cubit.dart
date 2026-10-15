@@ -8,22 +8,40 @@ import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
+import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/llm/http_llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
 import 'package:new_coffee/features/assistant/data/llm/rag_context.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 
 part 'assistant_state.dart';
 
 class AssistantCubit extends Cubit<AssistantState> {
-  AssistantCubit({LlmClient? llmClient, this.llmConfig = const LlmConfig()})
-      : _llmClient = llmClient ?? HttpLlmClient(llmConfig),
-        super(const AssistantState());
+  AssistantCubit({
+    required CatalogRepository catalog,
+    required OrdersRepository orders,
+    LlmClient? llmClient,
+    this.llmConfig = const LlmConfig(),
+  })  : _catalog = catalog,
+        _orders = orders,
+        _llmClient = llmClient ?? HttpLlmClient(llmConfig),
+        super(const AssistantState()) {
+    _snapshot = const AssistantSnapshot.empty();
+  }
 
+  final CatalogRepository _catalog;
+  final OrdersRepository _orders;
   final LlmClient _llmClient;
   final LlmConfig llmConfig;
+  late AssistantSnapshot _snapshot;
+
+  /// Repository-backed catalogue context used for the current chat session.
+  AssistantSnapshot get snapshot => _snapshot;
 
   AssistantMemory _memory = AssistantMemory();
   ConversationLog _log = ConversationLog();
@@ -46,6 +64,10 @@ class AssistantCubit extends Cubit<AssistantState> {
     _memory = await AssistantMemory.load();
     _log = await ConversationLog.load();
     await AssistantCatalog.load();
+    _snapshot = await AssistantSnapshot.load(
+      catalog: _catalog,
+      activeOrders: () => _orders.listOrders(status: OrderStatus.active),
+    );
     if (isClosed) return;
     final arabic = _memory.replyArabic;
     final returning = isReturning || _memory.totalChats > 0;
@@ -103,6 +125,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     if (isClosed) return;
     final answer = AssistantEngine.answer(
       text,
+      snapshot: _snapshot,
       memory: _memory,
       now: DateTime.now(),
       favoriteIds: favoriteIds,
@@ -160,7 +183,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     emit(state.copyWith(typing: true));
     final reply = await _llmClient.complete(
       system:
-          '${buildSystemPrompt(memory: _memory)}\n${buildLocalContext(text, _memory)}\n${buildLiveContext(_memory, cartProductIds: _lastCartIds)}',
+          '${buildSystemPrompt(memory: _memory)}\n${buildLocalContext(text, _memory)}\n${buildLiveContext(_memory, snapshot: _snapshot, cartProductIds: _lastCartIds)}',
       history: buildHistory(state.messages),
       query: text,
     );
@@ -206,7 +229,10 @@ class AssistantCubit extends Cubit<AssistantState> {
   }
 
   Future<void> recordProductInterest(ProductModel product) async {
-    _memory.recordCategory(product.category, 2);
+    _memory.recordCategory(
+      AssistantSnapshot.categoryKey(product),
+      2,
+    );
     _memory.recordProduct(product.id, 2);
     await _memory.save();
   }

@@ -2,26 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/features/menu/data/product_variants.dart';
+import 'package:new_coffee/features/menu/data/product_options.dart';
 
 /// Takeaway-cup illustration, drawn in code so it stays sharp at any size.
-/// The cup grows with the drink size: S < M < L.
+///
+/// The cup scales with the chosen size option. The art only knows three shapes,
+/// so [CupSize.fromCode] maps whatever the admin defined onto one of them and
+/// falls back to medium for anything unrecognised.
 class CupIcon extends StatelessWidget {
   const CupIcon({super.key, required this.size, required this.selected});
 
-  final DrinkSize size;
+  final CupSize size;
   final bool selected;
 
-  double get _height {
-    switch (size) {
-      case DrinkSize.small:
-        return 20;
-      case DrinkSize.medium:
-        return 26;
-      case DrinkSize.large:
-        return 32;
-    }
-  }
+  static const _baseHeight = 26.0;
+
+  double get _height => _baseHeight * size.scale;
 
   @override
   Widget build(BuildContext context) {

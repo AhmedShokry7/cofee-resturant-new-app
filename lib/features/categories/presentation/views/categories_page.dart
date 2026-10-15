@@ -7,6 +7,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
@@ -42,7 +43,12 @@ class CategoriesPage extends StatelessWidget {
                   // rather than a category product query, because a bundle is
                   // not a product row.
                   if (context.read<CategoriesCubit>().isBundlesTab(index)) {
-                    return _BundlesList(bundles: state.bundles);
+                    return _BundlesList(
+                      bundles: state.bundles,
+                      productsById: {
+                        for (final product in state.products) product.id: product,
+                      },
+                    );
                   }
 
                   final products = context.read<CategoriesCubit>().productsAt(index);
@@ -65,9 +71,10 @@ class CategoriesPage extends StatelessWidget {
 }
 
 class _BundlesList extends StatelessWidget {
-  const _BundlesList({required this.bundles});
+  const _BundlesList({required this.bundles, required this.productsById});
 
   final List<BundleModel> bundles;
+  final Map<String, ProductModel> productsById;
 
   @override
   Widget build(BuildContext context) {
@@ -86,8 +93,10 @@ class _BundlesList extends StatelessWidget {
         SpacingTokens.lg.w,
       ),
       itemCount: bundles.length,
-      itemBuilder: (context, index) =>
-          BundleListTile(bundle: bundles[index]),
+      itemBuilder: (context, index) => BundleListTile(
+        bundle: bundles[index],
+        productsById: productsById,
+      ),
     );
   }
 }

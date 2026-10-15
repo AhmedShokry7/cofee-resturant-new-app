@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
-import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_action_bottom_bar.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/track_order_page_body.dart';
@@ -14,16 +13,22 @@ class TrackOrderPage extends StatelessWidget {
 
   final OrderItemModel order;
 
-  void _cancelOrder(BuildContext context) {
+  void _cancelOrder(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      context.read<OrdersCubit>().updateStatus(order.id, OrderStatus.cancelled);
-    } catch (_) {
-      // Orders list is optional here; still go back.
+      await context.read<OrdersCubit>().cancelOrder(order);
+    } catch (error) {
+      if (context.mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Could not cancel: $error')),
+        );
+      }
+      return;
     }
+    if (!context.mounted) return;
     Navigator.of(context).pop();
     messenger.showSnackBar(
-      const SnackBar(content: Text("Order cancelled")),
+      const SnackBar(content: Text('Order cancelled')),
     );
   }
 

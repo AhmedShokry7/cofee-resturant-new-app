@@ -8,12 +8,17 @@ class CartAction {
     required this.productId,
     this.quantity = 1,
     this.note = '',
+    this.optionValueIds = const [],
     this.unitPrice,
   });
 
   final String productId;
   final int quantity;
   final String note;
+
+  /// Structured option selections behind [note]. The cart uses these rather
+  /// than parsing display text back into options.
+  final List<String> optionValueIds;
 
   /// Variant-adjusted unit price (size + extras). Null = base price.
   final double? unitPrice;
@@ -23,6 +28,7 @@ class CartAction {
     'productId': productId,
     'quantity': quantity,
     if (note.isNotEmpty) 'note': note,
+    if (optionValueIds.isNotEmpty) 'optionValueIds': optionValueIds,
     if (unitPrice != null) 'unitPrice': unitPrice,
   };
 }

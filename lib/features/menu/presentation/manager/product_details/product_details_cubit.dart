@@ -1,34 +1,37 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/features/menu/data/product_variants.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/features/menu/data/product_options.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 
 part 'product_details_state.dart';
 
+/// Owns one product's configuration screen.
+///
+/// Previously the sizes, sugar levels and extras were frozen enums in
+/// `product_variants.dart` and the price was summed in Dart. The database
+/// already models all of this as option groups, so this cubit reads the groups
+/// the admin configured and asks the server to price the chosen combination.
 class ProductDetailsCubit extends Cubit<ProductDetailsState> {
-  ProductDetailsCubit()
-      : super(const ProductDetailsState(showFullDescription: false));
+  ProductDetailsCubit({
+    required ProductRepository repository,
+    required this.productId,
+    this.branchId,
+  })  : _repository = repository,
+        super(const ProductDetailsState()) {
+    load();
+  }
+
+  final ProductRepository _repository;
+
+  final String productId;
+
+  /// Branch whose price and availability apply.
+  String? branchId;
 
   void toggleDescription() {
     emit(state.copyWith(showFullDescription: !state.showFullDescription));
-  }
-
-  void selectSize(DrinkSize size) {
-    emit(state.copyWith(size: size));
-  }
-
-  void selectSugar(SugarLevel sugar) {
-    emit(state.copyWith(sugar: sugar));
-  }
-
-  void toggleExtra(String extraId) {
-    final ids = {...state.extraIds};
-    if (ids.contains(extraId)) {
-      ids.remove(extraId);
-    } else {
-      ids.add(extraId);
-    }
-    emit(state.copyWith(extraIds: ids));
   }
 
   void incrementQuantity() {
@@ -38,4 +41,100 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
   void decrementQuantity() {
     if (state.quantity > 1) emit(state.copyWith(quantity: state.quantity - 1));
   }
+
+  Future<void> load() async {
+    emit(state.copyWith(isLoading: true, error: null));
+    try {
+      final loaded = await _repository.getWithOptions(
+        productId,
+        branchId: branchId,
+      );
+      if (loaded == null) {
+        emit(state.copyWith(
+          isLoading: false,
+          error: 'This product is no longer available',
+        ));
+        return;
+      }
+
+      final groups = loaded.groups;
+      // Start from whatever the admin marked as the default, so an optional
+      // group never begins in an arbitrary state.
+      final selection = OptionSelection.defaultsFor(groups);
+
+      emit(state.copyWith(
+        product: loaded.product,
+        groups: groups,
+        selection: selection,
+        estimatedUnitPrice:
+            estimateUnitPrice(loaded.product, groups, selection),
+        isLoading: false,
+      ));
+
+      await _confirmPrice(selection);
+    } catch (error, stackTrace) {
+      emit(state.copyWith(isLoading: false, error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  Future<void> setBranch(String? branchId) {
+    if (branchId == this.branchId) return Future.value();
+    this.branchId = branchId;
+    return load();
+  }
+
+  /// Taps a chip. Updates the estimate on the same frame, then reconciles with
+  /// the server so a branch override or an unavailable combination is caught.
+  Future<void> toggleValue(String groupId, String valueId) async {
+    final groups = state.groups;
+    final product = state.product;
+    if (groups.isEmpty || product == null) return;
+    final selection = state.selection.toggle(groups, groupId, valueId);
+
+    emit(state.copyWith(
+      selection: selection,
+      estimatedUnitPrice: estimateUnitPrice(product, groups, selection),
+      // The previous answer described the previous combination, so drop it
+      // rather than show a stale price for one frame.
+      clearResolvedPrice: true,
+    ));
+    await _confirmPrice(selection);
+  }
+
+  /// The server decides the real price: it applies the branch override and
+  /// knows which combinations cannot be made.
+  Future<void> _confirmPrice(OptionSelection selection) async {
+    final product = state.product;
+    if (product == null) return;
+    try {
+      final resolved = await _repository.resolvePrice(
+        productId,
+        branchId: branchId,
+        optionValueIds: selection.valueIds,
+      );
+      if (resolved == null) return;
+
+      // The selection may have moved on while this was in flight, so only apply
+      // the answer if it is still for the combination on screen.
+      if (state.selection.toMap().toString() != selection.toMap().toString()) {
+        return;
+      }
+
+      emit(state.copyWith(
+        resolvedPrice: resolved.unitPrice,
+        isAvailable: resolved.isAvailable,
+        unavailableReason: resolved.unavailableReason,
+        clearUnavailableReason: resolved.isAvailable,
+      ));
+    } catch (error, stackTrace) {
+      // Keep the estimate. Failing to confirm must not block ordering, and the
+      // cart re-prices at checkout anyway.
+      addError(error, stackTrace);
+    }
+  }
+
+  /// The price to charge: the server figure when it arrived, the local estimate
+  /// otherwise.
+  double get unitPrice => state.resolvedPrice ?? state.estimatedUnitPrice;
 }

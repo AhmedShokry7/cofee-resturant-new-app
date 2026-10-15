@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_body.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_bottom_bar.dart';
@@ -19,7 +20,11 @@ class ProductDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ProductDetailsCubit(),
+      create: (context) => ProductDetailsCubit(
+        repository: context.read<CatalogRepository>(),
+        productId: product.id,
+        branchId: null,
+      ),
       child: Builder(
         builder: (context) => Scaffold(
           appBar: AppBar(
@@ -42,8 +47,8 @@ class ProductDetailsPage extends StatelessWidget {
               ),
             ],
           ),
-          body: ProductDetailsBody(product: product),
-          bottomNavigationBar: ProductDetailsBottomBar(product: product),
+body: const ProductDetailsBody(),
+          bottomNavigationBar: const ProductDetailsBottomBar(),
         ),
       ),
     );

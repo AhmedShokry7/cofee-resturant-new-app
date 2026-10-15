@@ -10,6 +10,8 @@ import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_composer.dart';
 import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
+import 'package:new_coffee/features/assistant/data/assistant_order.dart';
+import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
@@ -19,6 +21,8 @@ import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
+import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'package:new_coffee/features/orders/data/repositories/supabase_order_repository.dart';
 
 class FakeLlmClient implements LlmClient {
   FakeLlmClient({this.reply});
@@ -102,6 +106,13 @@ Future<void> _setSurface(WidgetTester tester) async {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
+Future<AssistantSnapshot> _assistantSnapshot() =>
+    AssistantSnapshot.load(
+      catalog: const MockProductRepository(),
+      activeOrders: () =>
+          const LocalOrdersRepository().listOrders(),
+    );
+
 void main() {
   test('intent detection', () {
     expect(detectIntent('track my order please'), AssistantIntent.orderStatus);
@@ -116,11 +127,34 @@ void main() {
     expect(firstNameOf('  Sara  '), 'Sara');
   });
 
-  test('engine answers + memory learning', () {
+  test('assistant draft uses repository options, not frozen deltas', () async {
+    final snapshot = await _assistantSnapshot();
+    final parsed = AssistantSnapshot.run(
+      snapshot,
+      () => parseOrderMessage('2 large latte less sugar'),
+    );
+
+    expect(parsed.items.map((item) => item.productId), ['3']);
+    final item = parsed.items.single;
+    expect(item.quantity, 2);
+    expect(snapshot.optionIdsFor(item), ['large', 'less']);
+    expect(snapshot.estimatedUnitPriceFor(item), 45);
+    expect(
+      AssistantSnapshot.run(
+        snapshot,
+        () => OrderDraft([item]).total(),
+      ),
+      90,
+    );
+  });
+
+  test('engine answers + memory learning', () async {
     final memory = AssistantMemory();
+    final snapshot = await _assistantSnapshot();
     final morning = DateTime(2026, 1, 1, 9);
     final sweet = AssistantEngine.answer(
       'something sweet please',
+      snapshot: snapshot,
       memory: memory,
       now: morning,
     );
@@ -128,9 +162,22 @@ void main() {
       sweet.products.map((product) => product.name),
       contains('Mocha'),
     );
-    expect(AssistantEngine.answer('do you have coupons?', memory: memory, now: morning).navigateRoute, 'couponRoute');
     expect(
-      AssistantEngine.answer('zxqv blarg', memory: memory, now: morning).text,
+      AssistantEngine.answer(
+        'do you have coupons?',
+        snapshot: snapshot,
+        memory: memory,
+        now: morning,
+      ).navigateRoute,
+      'couponRoute',
+    );
+    expect(
+      AssistantEngine.answer(
+        'zxqv blarg',
+        snapshot: snapshot,
+        memory: memory,
+        now: morning,
+      ).text,
       contains("couldn't quite catch"),
     );
 
@@ -147,7 +194,7 @@ void main() {
       reply: const LlmReply(text: 'LLM says hi'),
     );
     const config = LlmConfig(backendUrl: 'https://llm.test');
-    final cubit = AssistantCubit(llmClient: fake, llmConfig: config);
+    final cubit = AssistantCubit(catalog: const MockProductRepository(), orders: const LocalOrdersRepository(), llmClient: fake, llmConfig: config);
     await cubit.start();
 
     Future<void> sendAndSettle(String text) async {
@@ -170,7 +217,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final fake = FakeLlmClient(reply: null);
     const config = LlmConfig(backendUrl: 'https://llm.test');
-    final cubit = AssistantCubit(llmClient: fake, llmConfig: config);
+    final cubit = AssistantCubit(catalog: const MockProductRepository(), orders: const LocalOrdersRepository(), llmClient: fake, llmConfig: config);
     await cubit.start();
     final pending = cubit.sendMessage('zxqv blarg unknown words here');
     await tester.pump(const Duration(milliseconds: 600));

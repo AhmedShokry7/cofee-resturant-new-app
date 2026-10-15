@@ -19,7 +19,10 @@ import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_sheet.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
-import 'package:new_coffee/features/orders/data/orders_list.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
+import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
@@ -90,6 +93,17 @@ class _AssistantFabState extends State<AssistantFab> {
   }
 
   /// Has this device completed the auth flow before?
+  Future<List<OrderItemModel>> _activeOrders() async {
+    try {
+      return await context.read<OrdersRepository>().listOrders(
+            status: OrderStatus.active,
+          );
+    } catch (_) {
+      // Guests and offline callers have no order history to greet with.
+      return const [];
+    }
+  }
+
   Future<void> _loadWelcome() async {
     AuthRepository? repository;
     try {
@@ -109,9 +123,8 @@ class _AssistantFabState extends State<AssistantFab> {
         firstName = null;
       }
       if (!mounted) return;
-      final activeOrders = getOrdersList()
-          .where((order) => order.status.name == 'active')
-          .toList();
+      final activeOrders = await _activeOrders();
+      if (!mounted) return;
       setState(() {
         _isReturningUser = isReturning;
         _firstName = firstName;
@@ -174,8 +187,10 @@ class _AssistantFabState extends State<AssistantFab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
       ),
       builder: (_) => BlocProvider(
-        create: (_) => AssistantCubit()
-          ..start(isReturning: _isReturningUser, firstName: _firstName),
+        create: (_) => AssistantCubit(
+          catalog: navContext.read<CatalogRepository>(),
+          orders: navContext.read<OrdersRepository>(),
+        )..start(isReturning: _isReturningUser, firstName: _firstName),
         child: const AssistantSheet(),
       ),
     );

@@ -12,7 +12,6 @@ import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -77,18 +76,17 @@ class _AssistantSheetState extends State<AssistantSheet> {
       cart = null;
     }
     if (cart == null) return;
-    final menu = getMenuList();
+    final snapshot = context.read<AssistantCubit>().snapshot;
     for (final action in state.cartActions) {
-      for (final product in menu) {
-        if (product.id == action.productId) {
-          cart.add(
-            product,
-            quantity: action.quantity,
-            note: action.note,
-            unitPrice: action.unitPrice,
-          );
-        }
-      }
+      final product = snapshot.productById(action.productId);
+      if (product == null) continue;
+      cart.add(
+        product,
+        quantity: action.quantity,
+        note: action.note,
+        optionValueIds: action.optionValueIds,
+        unitPrice: action.unitPrice,
+      );
     }
     context.read<AssistantCubit>().clearCartActions();
   }

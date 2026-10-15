@@ -1,7 +1,6 @@
 import 'package:new_coffee/features/assistant/data/assistant_language.dart';
 import 'package:new_coffee/features/assistant/data/assistant_phrases.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
-import 'package:new_coffee/features/menu/data/product_variants.dart';
+import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 
 /// Canonical variant values (English internally, localized on display).
 class OrderVariants {
@@ -176,30 +175,22 @@ class OrderDraft {
   }
 
   double total() {
-    final menu = getMenuList();
+    final snapshot = AssistantSnapshot.current;
     var sum = 0.0;
     for (final item in items) {
-      for (final product in menu) {
-        if (product.id == item.productId) {
-          sum +=
-              unitPrice(product, size: DrinkSize.fromName(item.size)) *
-              item.quantity;
-        }
-      }
+      sum += snapshot.estimatedUnitPriceFor(item) * item.quantity;
     }
     return sum;
   }
 
   /// "2x Latte (large, less sugar) + 1x Cheesecake (small)".
   String describe({required bool arabic}) {
-    final menu = getMenuList();
+    final snapshot = AssistantSnapshot.current;
     final parts = <String>[];
     for (final item in items) {
-      var name = item.productId;
-      for (final product in menu) {
-        if (product.id == item.productId) name = product.name;
-      }
-      final note = item.variantNote(arabic: arabic);
+      final product = snapshot.productById(item.productId);
+      final name = product?.name ?? item.productId;
+      final note = snapshot.variantNoteFor(item, arabic: arabic);
       parts.add('${item.quantity}x $name${note.isEmpty ? '' : ' ($note)'}');
     }
     return parts.join(' + ');
@@ -240,10 +231,12 @@ ParsedOrder parseOrderMessage(String query) {
   if (normalized.isEmpty) {
     return ParsedOrder(items: const []);
   }
-  final menu = getMenuList();
+  final menu = AssistantSnapshot.current.products;
   String? idOfName(String name) {
     for (final product in menu) {
-      if (normalizeText(product.name) == name) return product.id;
+      if (normalizeText(AssistantSnapshot.canonicalName(product)) == name) {
+        return product.id;
+      }
     }
     return null;
   }
@@ -263,7 +256,9 @@ ParsedOrder parseOrderMessage(String query) {
   }
 
   for (final product in menu) {
-    addMention(product.name, product.id);
+    final canonical = AssistantSnapshot.canonicalName(product);
+    addMention(canonical, product.id);
+    if (product.name != canonical) addMention(product.name, product.id);
   }
   for (final entry in AssistantPhrases.productSynonyms.entries) {
     final id = idOfName(normalizeText(entry.value));
@@ -337,11 +332,12 @@ bool _containsWord(String normalized, String word) {
 }
 
 bool _hasDessertCategory(Iterable<String> ids) {
-  const sweetCats = {'Desserts', 'Snacks', 'Bakery', 'Donuts'};
-  final menu = getMenuList();
+  const sweetCats = {'desserts', 'snacks', 'bakery', 'donuts'};
+  final menu = AssistantSnapshot.current.products;
   for (final id in ids) {
     for (final product in menu) {
-      if (product.id == id && sweetCats.contains(product.category)) {
+      if (product.id == id &&
+          sweetCats.contains(AssistantSnapshot.categoryKey(product))) {
         return true;
       }
     }

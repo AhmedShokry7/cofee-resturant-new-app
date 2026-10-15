@@ -7,6 +7,7 @@ import 'package:new_coffee/features/checkout/presentation/views/widgets/order_it
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/tracking_steps_list.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_status_timeline.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 
 class TrackOrderPageBody extends StatelessWidget {
@@ -24,20 +25,22 @@ class TrackOrderPageBody extends StatelessWidget {
         SpacingTokens.lg.w,
       ),
       children: [
-        OrderItemCard(product: order.product, quantity: order.quantity),
+OrderItemCard(product: order.product, quantity: order.quantity),
         SizedBox(height: SpacingTokens.lg.h),
         Text("Order Details", style: AppFonts.semiBold16(context)),
         SizedBox(height: SpacingTokens.md.h),
-        const LabeledValueRow(
-          label: "Expected Deliver Date",
-          value: "03 Sep 2025",
-          valueSize: 16,
-          labelExpanded: true,
-        ),
-        SizedBox(height: SpacingTokens.sm.h),
-        const LabeledValueRow(
+        if (order.placedAt != null) ...[
+          LabeledValueRow(
+            label: "Placed",
+            value: Formatters.date(order.placedAt!),
+            valueSize: 16,
+            labelExpanded: true,
+          ),
+          SizedBox(height: SpacingTokens.sm.h),
+        ],
+        LabeledValueRow(
           label: "Tracking ID",
-          value: "TRW15415412124212",
+          value: order.displayNumber,
           valueSize: 16,
           labelExpanded: true,
         ),

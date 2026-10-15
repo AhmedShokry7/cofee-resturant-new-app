@@ -24,10 +24,10 @@ class CartPage extends StatelessWidget {
   void _decrementOrRemove(BuildContext context, CartItem item) {
     final cart = context.read<CartCubit>();
     if (item.quantity > 1) {
-      cart.decrement(item.product.id);
+      cart.decrementLine(item.lineId);
       return;
     }
-    cart.decrement(item.product.id);
+    cart.decrementLine(item.lineId);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text("Removed ${item.product.name}"),
@@ -80,10 +80,11 @@ class CartPage extends StatelessWidget {
                               quantity: item.quantity,
                               showFavorite: false,
                               note: item.note,
+                              lineId: item.lineId,
                               unitPrice: item.unitPrice,
                               onIncrement: () => context
                                   .read<CartCubit>()
-                                  .increment(item.product.id),
+                                  .incrementLine(item.lineId),
                               onDecrement: () => _decrementOrRemove(
                                 context,
                                 item,

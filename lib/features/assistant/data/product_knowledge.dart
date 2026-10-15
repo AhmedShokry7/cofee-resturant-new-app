@@ -10,12 +10,18 @@ class ProductKnowledge {
   const ProductKnowledge({
     required this.productId,
     required this.ingredients,
+    this.productSlug,
     this.aliases = const [],
     this.tags = const [],
   });
 
   /// Menu product id this row describes.
   final String productId;
+
+  /// Stable product slug. Catalogue ids differ between the compiled mock and
+  /// the database, so ingredient matching keys on the slug and keeps the id
+  /// only for backward compatibility.
+  final String? productSlug;
 
   /// Canonical ingredient ids (see [IngredientLexicon]).
   final List<String> ingredients;
@@ -28,6 +34,7 @@ class ProductKnowledge {
 
   Map<String, dynamic> toJson() => {
     'productId': productId,
+    if (productSlug != null) 'productSlug': productSlug,
     'ingredients': ingredients,
     'aliases': aliases,
     'tags': tags,
@@ -43,6 +50,7 @@ class ProductKnowledge {
           : const <String>[];
       return ProductKnowledge(
         productId: id,
+        productSlug: value['productSlug']?.toString(),
         ingredients: strings(value['ingredients']),
         aliases: strings(value['aliases']),
         tags: strings(value['tags']),
@@ -64,30 +72,55 @@ abstract class ProductKnowledgeRepository {
 class LocalProductKnowledgeRepository implements ProductKnowledgeRepository {
   const LocalProductKnowledgeRepository();
 
-  static const Map<String, List<String>> _ingredientsByProductId = {
-    '1': ['espresso'],
-    '2': ['espresso', 'milk', 'foam'],
-    '3': ['espresso', 'milk'],
-    '4': ['espresso', 'milk', 'chocolate', 'cream'],
-    '5': ['espresso', 'water'],
-    '6': ['espresso', 'milk', 'ice'],
-    '7': ['tea', 'water'],
-    '8': ['tea', 'milk', 'spices', 'ginger', 'cardamom', 'cinnamon'],
-    '9': ['cheese', 'cream', 'biscuit', 'sugar', 'egg'],
-    '10': ['chocolate', 'cocoa', 'butter', 'egg', 'flour'],
-    '11': ['chocolate', 'butter', 'flour', 'sugar', 'egg'],
-    '12': ['butter', 'flour', 'milk'],
-    '13': ['milk', 'ice_cream', 'chocolate', 'cream'],
-    '14': ['soda', 'ice', 'sugar'],
-    '15': ['flour', 'butter', 'milk', 'egg'],
-    '16': ['flour', 'sugar', 'glaze', 'egg'],
+  static const Map<String, List<String>> _ingredientsByProductSlug = {
+    'espresso': ['espresso'],
+    'cappuccino': ['espresso', 'milk', 'foam'],
+    'latte': ['espresso', 'milk'],
+    'mocha': ['espresso', 'milk', 'chocolate', 'cream'],
+    'americano': ['espresso', 'water'],
+    'iced-latte': ['espresso', 'milk', 'ice'],
+    'green-tea': ['tea', 'water'],
+    'masala-tea': ['tea', 'milk', 'spices', 'ginger', 'cardamom', 'cinnamon'],
+    'cheesecake': ['cheese', 'cream', 'biscuit', 'sugar', 'egg'],
+    'chocolate-brownie': ['chocolate', 'cocoa', 'butter', 'egg', 'flour'],
+    'chocolate-chip-cookie': ['chocolate', 'butter', 'flour', 'sugar', 'egg'],
+    'butter-croissant': ['butter', 'flour', 'milk'],
+    'chocolate-milkshake': ['milk', 'ice_cream', 'chocolate', 'cream'],
+    'cola': ['soda', 'ice', 'sugar'],
+    'butter-bread': ['flour', 'butter', 'milk', 'egg'],
+    'glazed-donut': ['flour', 'sugar', 'glaze', 'egg'],
+  };
+
+  /// Legacy compiled-menu ids for the same slugs. Kept so rows serialized
+  /// before the slug migration still resolve.
+  static const Map<String, String> _legacyIdsByProductSlug = {
+    'espresso': '1',
+    'cappuccino': '2',
+    'latte': '3',
+    'mocha': '4',
+    'americano': '5',
+    'iced-latte': '6',
+    'green-tea': '7',
+    'masala-tea': '8',
+    'cheesecake': '9',
+    'chocolate-brownie': '10',
+    'chocolate-chip-cookie': '11',
+    'butter-croissant': '12',
+    'chocolate-milkshake': '13',
+    'cola': '14',
+    'butter-bread': '15',
+    'glazed-donut': '16',
   };
 
   @override
   Future<List<ProductKnowledge>> load() async {
     return [
-      for (final entry in _ingredientsByProductId.entries)
-        ProductKnowledge(productId: entry.key, ingredients: entry.value),
+      for (final entry in _ingredientsByProductSlug.entries)
+        ProductKnowledge(
+          productId: _legacyIdsByProductSlug[entry.key] ?? entry.key,
+          productSlug: entry.key,
+          ingredients: entry.value,
+        ),
     ];
   }
 }

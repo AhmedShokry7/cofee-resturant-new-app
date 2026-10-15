@@ -10,6 +10,11 @@ class AppColor {
   static const borderColor = Color(0xffE6E6E6);
   static const greenColor = Color.fromARGB(255, 1, 116, 1);
 
+  /// Used for messages that block an action, such as an option combination the
+  /// selected branch cannot make. It was missing, so an unavailable product had
+  /// no established colour to reuse.
+  static const errorColor = Color(0xFFDC2626);
+
   // Dark mode
   static const darkBackground = Color(0xff121212);
   static const darkSurface = Color(0xff1E1E1E);

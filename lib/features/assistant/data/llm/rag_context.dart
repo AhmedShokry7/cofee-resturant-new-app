@@ -1,8 +1,7 @@
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
+import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
-import 'package:new_coffee/features/menu/data/menu_list.dart';
-import 'package:new_coffee/features/orders/data/orders_list.dart';
 
 String buildSystemPrompt({required AssistantMemory memory}) {
   final buffer = StringBuffer(
@@ -63,16 +62,17 @@ String buildLocalContext(
 /// Keeps the model honest — it answers from facts, not imagination.
 String buildLiveContext(
   AssistantMemory memory, {
+  required AssistantSnapshot snapshot,
   Set<String> cartProductIds = const {},
 }) {
   final buffer = StringBuffer();
   buffer.writeln('Menu (name | category | price):');
-  for (final product in getMenuList()) {
+  for (final product in snapshot.products) {
     buffer.writeln(
       '- ${product.name} | ${product.category} | ${product.price}',
     );
   }
-  final orders = getOrdersList();
+  final orders = snapshot.orders;
   if (orders.isEmpty) {
     buffer.writeln('Orders: none.');
   } else {
@@ -86,7 +86,7 @@ String buildLiveContext(
   if (cartProductIds.isEmpty) {
     buffer.writeln('Cart: empty.');
   } else {
-    final names = getMenuList()
+    final names = snapshot.products
         .where((product) => cartProductIds.contains(product.id))
         .map((product) => product.name)
         .join(', ');
