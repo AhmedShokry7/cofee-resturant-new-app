@@ -19,19 +19,9 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
   int currentPage = 0;
   late PageController pageController;
 
-  Future<void> load() async {
-    print('[OnBoarding] 🔄 Loading started...');
-    try {
-      final effectiveSlides = onBoardingSlides;
-      emit(OnBoardingLoaded(slides: effectiveSlides));
-      print('[OnBoarding] 📊 Emitted OnBoardingLoaded state with ${effectiveSlides.length} slides');
-    } catch (error, stackTrace) {
-      print('[OnBoarding] ❌ Error caught: $error');
-      print('[OnBoarding] 📋 Stack trace: $stackTrace');
-      if (isClosed) return;
-      emit(OnBoardingError(message: error.toString()));
-      addError(error, stackTrace);
-    }
+  void load() {
+    final effectiveSlides = onBoardingSlides;
+    emit(OnBoardingLoaded(slides: effectiveSlides));
   }
 
   int get slideCount => state is OnBoardingLoaded

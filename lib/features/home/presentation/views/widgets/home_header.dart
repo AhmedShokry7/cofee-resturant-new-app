@@ -11,7 +11,6 @@ import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
-import 'package:new_coffee/features/branch/presentation/views/widgets/branch_selector.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 
 class HomeHeader extends StatefulWidget {
@@ -71,8 +70,6 @@ class _HomeHeaderState extends State<HomeHeader> {
                   );
                 },
               ),
-              SizedBox(height: 4.h),
-              const BranchSelector(),
               SizedBox(height: 4.h),
               Text(
                 "What would you like today?",
