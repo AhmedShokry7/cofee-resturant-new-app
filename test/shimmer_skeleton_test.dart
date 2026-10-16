@@ -72,7 +72,7 @@ void main() {
       expect(find.byType(AspectRatio), findsOneWidget);
       expect(
         tester.widget<AspectRatio>(find.byType(AspectRatio)).aspectRatio,
-        0.64,
+        0.60,
       );
       // Image area, title, description, price row and add button slots.
       expect(find.byType(ShimmerBox), findsWidgets);
@@ -91,7 +91,7 @@ void main() {
       final delegate =
           grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
       expect(delegate.crossAxisCount, 2);
-      expect(delegate.childAspectRatio, 0.64);
+      expect(delegate.childAspectRatio, 0.60);
     });
 
     testWidgets('ProductsCarouselSkeleton keeps the derived list height', (
@@ -108,7 +108,7 @@ void main() {
       // The derived-height strip is laid out; only viewport-visible cards are built,
       // exactly like the real horizontal carousel.
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(150 / 0.64, 1));
+      expect(strip.height, closeTo(150 / 0.60, 1));
       expect(find.byType(ProductCardSkeleton), findsWidgets);
       // Scrolling reveals more skeleton cards, proving all four exist.
       await tester.drag(find.byType(ListView), const Offset(-400, 0));

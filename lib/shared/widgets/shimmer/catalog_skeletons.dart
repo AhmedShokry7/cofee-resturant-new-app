@@ -8,7 +8,7 @@ import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
 /// Skeleton that mirrors [ProductCard] in its grid/carousel variant.
 ///
 /// Layout contract (product_card.dart): finite cell width (or 150.w when the
-/// horizontal parent is unbounded), AspectRatio 0.64, padding md.w, radius
+/// horizontal parent is unbounded), AspectRatio 0.60, padding md.w, radius
 /// 16.r, image Expanded with radius 12.r plus a 28.w favorite badge, then
 /// title / description lines and a price + 36.w add-button row.
 class ProductCardSkeleton extends StatelessWidget {
@@ -30,7 +30,7 @@ class ProductCardSkeleton extends StatelessWidget {
           child: AspectRatio(
             // Mirrors ProductCard.cardAspectRatio (kept literal to avoid a
             // shared -> feature import).
-            aspectRatio: 0.64,
+            aspectRatio: 0.60,
             child: Container(
               padding: EdgeInsets.all(SpacingTokens.md.w),
               decoration: BoxDecoration(
@@ -84,7 +84,7 @@ class ProductCardSkeleton extends StatelessWidget {
 }
 
 /// Skeleton grid mirroring [ProductsGridView]: same outer padding, 2 columns,
-/// same spacings and the same 0.64 child aspect ratio, so real cards replace
+/// same spacings and the same 0.60 child aspect ratio, so real cards replace
 /// skeleton cards without any layout shift.
 class ProductsGridSkeleton extends StatelessWidget {
   const ProductsGridSkeleton({super.key, this.itemCount = 6, this.padding});
@@ -109,7 +109,7 @@ class ProductsGridSkeleton extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: SpacingTokens.md.w,
         mainAxisSpacing: SpacingTokens.md.h,
-        childAspectRatio: 0.64,
+        childAspectRatio: 0.60,
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) => const ProductCardSkeleton(),
@@ -154,7 +154,7 @@ class ProductsCarouselSkeleton extends StatelessWidget {
         ],
         SizedBox(height: SpacingTokens.md.h),
         SizedBox(
-          height: 150.w / 0.64,
+          height: 150.w / 0.60,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
