@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -20,7 +21,7 @@ class ShippingAddressSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Shipping Address", style: AppFonts.semiBold16(context)),
+            Text(S.shippingAddress, style: AppFonts.semiBold16(context)),
             SizedBox(height: SpacingTokens.md.h),
             Row(
               children: [
@@ -34,22 +35,24 @@ class ShippingAddressSection extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-Text(address?.label ?? '—', style: AppFonts.semiBold16(context)),
+                      Text(
+                        address?.label ?? '—',
+                        style: AppFonts.semiBold16(context),
+                      ),
                       SizedBox(height: 4.h),
                       Text(
                         address?.details ?? '',
-                        style: AppFonts.regular14(
-                          context,
-                        ).copyWith(color: AppColor.greyColor),
+                        style: AppFonts.regular14(context)
+                            .copyWith(color: AppColor.greyColor),
                       ),
                     ],
                   ),
                 ),
                 SizedBox(width: SpacingTokens.sm.w),
                 GestureDetector(
-                  onTap: () => Navigator.of(
-                    context,
-                  ).pushNamed(ShippingAddressesPage.routeName),
+                  onTap: () =>
+                      Navigator.of(context)
+                          .pushNamed(ShippingAddressesPage.routeName),
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: SpacingTokens.md.w,
@@ -60,10 +63,9 @@ Text(address?.label ?? '—', style: AppFonts.semiBold16(context)),
                       borderRadius: BorderRadius.circular(10.r),
                     ),
                     child: Text(
-                      "Change",
-                      style: AppFonts.regular12(
-                        context,
-                      ).copyWith(color: AppColor.primaryColor),
+                      S.change,
+                      style: AppFonts.regular12(context)
+                          .copyWith(color: AppColor.primaryColor),
                     ),
                   ),
                 ),
@@ -75,4 +77,3 @@ Text(address?.label ?? '—', style: AppFonts.semiBold16(context)),
     );
   }
 }
-

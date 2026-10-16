@@ -59,10 +59,8 @@ abstract class LoyaltyRepository {
 }
 
 class LoyaltyRepositoryImpl implements LoyaltyRepository {
-  const LoyaltyRepositoryImpl({
-    required this._catalog,
-    SupabaseClient? client,
-  })  : _clientOverride = client;
+  const LoyaltyRepositoryImpl({required this._catalog, SupabaseClient? client})
+    : _clientOverride = client;
 
   final CatalogRepository _catalog;
   final SupabaseClient? _clientOverride;
@@ -76,47 +74,43 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
   @override
   Future<LoyaltyCatalog> loadCatalog() async {
     final client = _client;
-    if (client == null) return _localCatalog();
-
-    try {
-      final results = await Future.wait([
-        client.from('loyalty_rules').select().eq('is_active', true),
-        client.from('loyalty_rewards').select().eq('is_active', true).order(
-              'points_cost',
-              ascending: true,
-            ),
-        client.from('brand').select('currency_code').limit(1),
-      ]);
-      final ruleRows = (results[0] as List).cast<Map<String, dynamic>>();
-      final rewardRows = (results[1] as List).cast<Map<String, dynamic>>();
-      final brandRows = (results[2] as List).cast<Map<String, dynamic>>();
-
-      final rewards = <RewardModel>[];
-      for (final row in rewardRows) {
-        final productId = row['product_id']?.toString();
-        if (productId == null || productId.isEmpty) continue;
-        final product = await _catalog.getById(productId);
-        // A reward whose product disappeared is omitted. Showing its stale id
-        // would let a customer attempt an impossible redemption.
-        if (product == null) continue;
-        rewards.add(
-          RewardModel.fromDatabase(row: row, product: product),
-        );
-      }
-
-      return LoyaltyCatalog(
-        rules: [
-          for (final row in ruleRows) LoyaltyRule.fromDatabase(row),
-        ],
-        rewards: rewards,
-        currencyCode: brandRows.isEmpty
-            ? 'SAR'
-            : Db.text(brandRows.first['currency_code'], 'SAR'),
+    if (client == null) {
+      throw StateError(
+        'Loyalty catalogue needs a configured Supabase backend.',
       );
-    } catch (_) {
-      // Catalogue reference data must degrade, not blank the loyalty screen.
-      return _localCatalog();
     }
+
+    final results = await Future.wait([
+      client.from('loyalty_rules').select().eq('is_active', true),
+      client
+          .from('loyalty_rewards')
+          .select()
+          .eq('is_active', true)
+          .order('points_cost', ascending: true),
+      client.from('brand').select('currency_code').limit(1),
+    ]);
+    final ruleRows = (results[0] as List).cast<Map<String, dynamic>>();
+    final rewardRows = (results[1] as List).cast<Map<String, dynamic>>();
+    final brandRows = (results[2] as List).cast<Map<String, dynamic>>();
+
+    final rewards = <RewardModel>[];
+    for (final row in rewardRows) {
+      final productId = row['product_id']?.toString();
+      if (productId == null || productId.isEmpty) continue;
+      final product = await _catalog.getById(productId);
+      // A reward whose product disappeared is omitted. Showing its stale id
+      // would let a customer attempt an impossible redemption.
+      if (product == null) continue;
+      rewards.add(RewardModel.fromDatabase(row: row, product: product));
+    }
+
+    return LoyaltyCatalog(
+      rules: [for (final row in ruleRows) LoyaltyRule.fromDatabase(row)],
+      rewards: rewards,
+      currencyCode: brandRows.isEmpty
+          ? 'SAR'
+          : Db.text(brandRows.first['currency_code'], 'SAR'),
+    );
   }
 
   @override
@@ -142,8 +136,7 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
       lifetimePoints: Db.asInt(account?['lifetime_points']),
       tier: Db.text(account?['tier'], 'bronze'),
       transactions: [
-        for (final row in transactionRows)
-          LoyaltyTransaction.fromDatabase(row),
+        for (final row in transactionRows) LoyaltyTransaction.fromDatabase(row),
       ],
     );
   }
@@ -160,80 +153,36 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
     if (branchId.isEmpty) {
       throw ArgumentError.value(branchId, 'branchId', 'must not be empty');
     }
-    final rows = await client.rpc('redeem_reward', params: {
-      'p_product_id': productId,
-      'p_branch_id': branchId,
-    }) as List;
+    final rows = await client.rpc(
+      'redeem_reward',
+      params: {'p_product_id': productId, 'p_branch_id': branchId},
+    ) as List;
     if (rows.isEmpty) {
       throw StateError('Redemption returned no balance.');
     }
     return Db.asInt(rows.first);
   }
-
-  Future<LoyaltyCatalog> _localCatalog() async {
-    // Offline mirror of the seed. Kept inside the repository so the UI never
-    // imports the old frozen rules directly.
-    const costs = {
-      '14': 150,
-      '11': 180,
-      '7': 200,
-      '1': 250,
-      '12': 300,
-      '2': 400,
-    };
-    final rewards = <RewardModel>[];
-    for (final entry in costs.entries) {
-      final product = await _catalog.getById(entry.key);
-      if (product == null) continue;
-      rewards.add(RewardModel(product: product, pointsCost: entry.value));
-    }
-    rewards.sort((a, b) => a.pointsCost.compareTo(b.pointsCost));
-    return LoyaltyCatalog(
-      rules: const [
-        LoyaltyRule(
-          code: 'default_earn',
-          nameAr: 'نقاط الطلب الافتراضية',
-          nameEn: 'Default earn rate',
-          pointsPerCurrencyUnit: 1,
-        ),
-      ],
-      rewards: rewards,
-      currencyCode: 'SAR',
-    );
-  }
 }
 
-/// Device wallet used only for guests and unconfigured builds.
-///
-/// This preserves the old demo behaviour without pretending to be the ledger.
-/// It must never be added to a server balance.
+/// Device wallet for guests. Starts empty: points are only ever recorded from
+/// real guest checkouts, never granted as a fabricated welcome bonus.
 class GuestLoyaltyWalletStore {
   const GuestLoyaltyWalletStore();
 
   static const storageKey = 'loyalty_wallet_v1';
   static const maxHistory = 50;
-  static const welcomeBonus = 50;
 
   Future<({int balance, List<LoyaltyTransaction> transactions})> load() async {
     try {
       final raw = await SharedPref.getValue(key: storageKey);
       if (raw == null || raw.isEmpty) {
-        return (
-          balance: welcomeBonus,
-          transactions: [
-            LoyaltyTransaction(
-              id: 'welcome-${DateTime.now().microsecondsSinceEpoch}',
-              title: 'Welcome bonus',
-              points: welcomeBonus,
-              date: DateTime.now(),
-            ),
-          ],
-        );
+        return (balance: 0, transactions: <LoyaltyTransaction>[]);
       }
       final json = jsonDecode(raw) as Map<String, dynamic>;
       return (
         balance: (json['balance'] as num?)?.toInt() ?? 0,
-        transactions: (json['transactions'] as List?)
+        transactions:
+            (json['transactions'] as List?)
                 ?.map(LoyaltyTransaction.fromJson)
                 .whereType<LoyaltyTransaction>()
                 .toList() ??

@@ -5,7 +5,6 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
-import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
@@ -21,7 +20,6 @@ import 'package:new_coffee/features/branch/data/repositories/branch_repository.d
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
@@ -58,25 +56,41 @@ class AppProviders extends StatelessWidget {
 
   /// The one place that decides which catalogue source runs.
   ///
-  /// Same contract, same fallback. SupabaseProductRepository reads the
-  /// `public` routing views, which run with the caller's role so the catalogue
-  /// RLS still decides the rows.
+  /// The database is the only source. There is deliberately no mock fallback:
+  /// fabricated products, prices and banners must never reach the customer.
   CatalogRepository _buildCatalogRepository() {
     if (SupabaseService.isReady) return SupabaseProductRepository();
-    return MockProductRepository();
+    throw StateError(
+      'Supabase catalogue is required but not configured.\n'
+      'Run with:\n'
+      '  flutter run --dart-define=SUPABASE_URL=<url> '
+      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
+      'Without Supabase, the app cannot load its catalogue.',
+    );
   }
 
-  /// Cart stays on the device when Supabase is unavailable; when configured it
-  /// is the authoritative source and the local store is just a best-effort
-  /// fallback.
+  /// The server cart is authoritative. There is no local-only fallback: an
+  /// order must always price and validate against the database.
   CartRepository _buildCartRepository() {
     if (SupabaseService.isReady) return SupabaseCartRepository();
-    return LocalCartRepository();
+    throw StateError(
+      'Supabase cart is required but not configured.\n'
+      'Run with:\n'
+      '  flutter run --dart-define=SUPABASE_URL=<url> '
+      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
+      'Without Supabase, the app cannot manage a cart.',
+    );
   }
 
   OrdersRepository _buildOrdersRepository() {
     if (SupabaseService.isReady) return SupabaseOrdersRepository();
-    return const LocalOrdersRepository();
+    throw StateError(
+      'Supabase orders are required but not configured.\n'
+      'Run with:\n'
+      '  flutter run --dart-define=SUPABASE_URL=<url> '
+      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
+      'Without Supabase, the app cannot load order history.',
+    );
   }
 
   @override
@@ -86,7 +100,9 @@ class AppProviders extends StatelessWidget {
     final catalog = _buildCatalogRepository();
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<AuthRepository>(create: (_) => _buildAuthRepository()),
+        RepositoryProvider<AuthRepository>(
+          create: (_) => _buildAuthRepository(),
+        ),
         // Registered under all three names, pointing at one instance. A cubit
         // that asks for CatalogRepository must find it, and one that asks for
         // ProductRepository must get the same object.
@@ -115,9 +131,8 @@ class AppProviders extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (_) => BranchCubit(
-              repository: const BranchRepositoryImpl(),
-            ),
+            create: (_) =>
+                BranchCubit(repository: const BranchRepositoryImpl()),
           ),
           BlocProvider(
             create: (context) => CartCubit(
@@ -152,13 +167,13 @@ class AppProviders extends StatelessWidget {
             )..load(),
           ),
           BlocProvider(
-            create: (context) => CategoriesCubit(repository: context.read<CatalogRepository>()),
+            create: (context) =>
+                CategoriesCubit(repository: context.read<CatalogRepository>()),
           ),
           BlocProvider(create: (context) => ProfileCubit()),
           BlocProvider(
-            create: (context) => HomeCubit(
-              repository: context.read<CatalogRepository>(),
-            ),
+            create: (context) =>
+                HomeCubit(repository: context.read<CatalogRepository>()),
           ),
           BlocProvider(
             create: (context) => LoyaltyCubit(
@@ -168,7 +183,8 @@ class AppProviders extends StatelessWidget {
             )..load(),
           ),
           BlocProvider(
-            create: (context) => WeatherCubit(const WeatherRepositoryImpl())..load(),
+            create: (context) =>
+                WeatherCubit(const WeatherRepositoryImpl())..load(),
           ),
         ],
         child: _BranchSync(child: child),

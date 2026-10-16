@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -15,9 +16,8 @@ class CouponCard extends StatelessWidget {
 
   void _copyCode(BuildContext context) {
     Clipboard.setData(ClipboardData(text: coupon.code));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("Code ${coupon.code} copied")),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(S.codeCopied(coupon.code))));
   }
 
   @override
@@ -59,9 +59,8 @@ class CouponCard extends StatelessWidget {
                       SizedBox(height: 4.h),
                       Text(
                         coupon.description,
-                        style: AppFonts.regular12(
-                          context,
-                        ).copyWith(color: AppColor.greyColor),
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.greyColor),
                       ),
                       SizedBox(height: SpacingTokens.sm.h),
                       Row(
@@ -93,10 +92,9 @@ class CouponCard extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: SpacingTokens.md.h),
               child: Center(
                 child: Text(
-                  "Copy Code",
-                  style: AppFonts.medium16(
-                    context,
-                  ).copyWith(color: AppColor.primaryColor),
+                  S.copyCode,
+                  style: AppFonts.medium16(context)
+                      .copyWith(color: AppColor.primaryColor),
                 ),
               ),
             ),
@@ -106,4 +104,3 @@ class CouponCard extends StatelessWidget {
     );
   }
 }
-

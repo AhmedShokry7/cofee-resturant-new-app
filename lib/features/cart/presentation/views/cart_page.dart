@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'package:new_coffee/core/constant/app_constant.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -11,10 +11,10 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -30,13 +30,14 @@ class CartPage extends StatelessWidget {
     cart.decrementLine(item.lineId);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Removed ${item.product.name}"),
+        content: Text(S.removedFromCart(item.product.name)),
         action: SnackBarAction(
-          label: "Undo",
+          label: S.undo,
           onPressed: () => cart.add(
             item.product,
             quantity: item.quantity,
             note: item.note,
+            optionValueIds: item.optionValueIds,
             unitPrice: item.unitPrice,
           ),
         ),
@@ -51,15 +52,15 @@ class CartPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const PageTitle(title: "Cart"),
+            PageTitle(title: S.cart),
             Expanded(
               child: BlocBuilder<CartCubit, CartState>(
                 builder: (context, state) {
                   if (state.isEmpty) {
-                    return const EmptyState(
+                    return EmptyState(
                       icon: HugeIcons.strokeRoundedShoppingCart01,
-                      title: "Your cart is empty",
-                      subtitle: "Add your favorite coffee from the menu",
+                      title: S.cartEmpty,
+                      subtitle: S.cartEmptyHint,
                     );
                   }
                   return Column(
@@ -85,10 +86,8 @@ class CartPage extends StatelessWidget {
                               onIncrement: () => context
                                   .read<CartCubit>()
                                   .incrementLine(item.lineId),
-                              onDecrement: () => _decrementOrRemove(
-                                context,
-                                item,
-                              ),
+                              onDecrement: () =>
+                                  _decrementOrRemove(context, item),
                             );
                           },
                         ),
@@ -133,9 +132,8 @@ class _CartSummaryState extends State<_CartSummary> {
     final message = applied
         ? 'Coupon applied'
         : checkout.state.couponError ?? 'Invalid coupon code';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
     if (applied) _promoController.clear();
   }
 
@@ -173,10 +171,9 @@ class _CartSummaryState extends State<_CartSummary> {
                             onSubmitted: (_) => _applyPromo(),
                             style: AppFonts.regular14(context),
                             decoration: InputDecoration(
-                              hintText: "Promo Code",
-                              hintStyle: AppFonts.regular14(context).copyWith(
-                                color: AppColor.greyColor,
-                              ),
+                              hintText: S.promoCode,
+                              hintStyle: AppFonts.regular14(context)
+                                  .copyWith(color: AppColor.greyColor),
                               contentPadding: EdgeInsets.symmetric(
                                 horizontal: SpacingTokens.lg.w,
                                 vertical: SpacingTokens.sm.h,
@@ -209,10 +206,9 @@ class _CartSummaryState extends State<_CartSummary> {
                               borderRadius: BorderRadius.circular(100.r),
                             ),
                             child: Text(
-                              "Apply",
-                              style: AppFonts.medium14(
-                                context,
-                              ).copyWith(color: AppColor.whiteColor),
+                              S.apply,
+                              style: AppFonts.medium14(context)
+                                  .copyWith(color: AppColor.whiteColor),
                             ),
                           ),
                         ),
@@ -221,42 +217,38 @@ class _CartSummaryState extends State<_CartSummary> {
                   else
                     _AppliedCouponRow(
                       code: checkoutState.appliedCoupon!.code,
-                      onRemove: () => context
-                          .read<CheckoutCubit>()
-                          .removeCoupon(),
+                      onRemove: () =>
+                          context.read<CheckoutCubit>().removeCoupon(),
                     ),
                   SizedBox(height: SpacingTokens.md.h),
-                  _SummaryRow(
-                    label: "Sub-Total",
-                    value: Formatters.price(subtotal),
-                  ),
+                  _SummaryRow(label: S.subTotal, priceValue: subtotal),
                   SizedBox(height: SpacingTokens.xs.h),
                   _SummaryRow(
-                    label: "Delivery Fee",
-                    value: Formatters.price(AppConstant.deliveryFee),
+                    label: S.deliveryFee,
+                    priceValue: checkoutState.deliveryFee,
                   ),
                   if (discount > 0) ...[
                     SizedBox(height: SpacingTokens.xs.h),
                     _SummaryRow(
-                      label: "Discount",
-                      value: "-${Formatters.price(discount)}",
+                      label: S.discount,
+                      priceValue: discount,
+                      pricePrefix: '-',
                     ),
                   ],
                   SizedBox(height: SpacingTokens.sm.h),
                   const Divider(height: 1),
                   SizedBox(height: SpacingTokens.sm.h),
                   _SummaryRow(
-                    label: "Total Cost",
-                    value: Formatters.price(total),
+                    label: S.totalCost,
+                    priceValue: total,
                     total: true,
                   ),
                   SizedBox(height: SpacingTokens.md.h),
                   CustomBtn(
-                    text: "Proceed to Checkout",
+                    text: S.proceedToCheckout,
                     borderRadius: 32.r,
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).pushNamed(CheckoutPage.routeName),
+                    onPressed: () =>
+                        Navigator.of(context).pushNamed(CheckoutPage.routeName),
                   ),
                 ],
               ),
@@ -290,18 +282,13 @@ class _AppliedCouponRow extends StatelessWidget {
           Expanded(
             child: Text(
               code,
-              style: AppFonts.medium14(
-                context,
-              ).copyWith(color: AppColor.primaryColor),
+              style: AppFonts.medium14(context)
+                  .copyWith(color: AppColor.primaryColor),
             ),
           ),
           GestureDetector(
             onTap: onRemove,
-            child: Icon(
-              Icons.close,
-              size: 20.w,
-              color: AppColor.primaryColor,
-            ),
+            child: Icon(Icons.close, size: 20.w, color: AppColor.primaryColor),
           ),
         ],
       ),
@@ -312,37 +299,44 @@ class _AppliedCouponRow extends StatelessWidget {
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({
     required this.label,
-    required this.value,
+    required this.priceValue,
     this.total = false,
+    this.pricePrefix = '',
   });
 
   final String label;
-  final String value;
   final bool total;
+
+  /// Monetary value rendered with the standard currency icon.
+  final double priceValue;
+
+  /// Literal prepended to [priceValue] (`-` for discounts).
+  final String pricePrefix;
 
   @override
   Widget build(BuildContext context) {
+    final valueStyle =
+        (total ? AppFonts.semiBold16(context) : AppFonts.regular16(context))
+            .copyWith(
+              color: total ? AppColor.primaryColor : AppColor.blackColor,
+            );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(
           label,
-          style: (total
-                  ? AppFonts.medium16(context)
-                  : AppFonts.regular16(context))
-              .copyWith(color: AppColor.greyColor),
+          style:
+              (total ? AppFonts.medium16(context) : AppFonts.regular16(context))
+                  .copyWith(color: AppColor.greyColor),
         ),
-        Text(
-          value,
-          style: (total
-                  ? AppFonts.semiBold16(context)
-                  : AppFonts.regular16(context))
-              .copyWith(
-                color: total ? AppColor.primaryColor : AppColor.blackColor,
-              ),
+        PriceLabel(
+          amount: priceValue,
+          prefix: pricePrefix,
+          style: valueStyle,
+          iconSize: valueStyle.fontSize,
+          iconColor: valueStyle.color,
         ),
       ],
     );
   }
 }
-

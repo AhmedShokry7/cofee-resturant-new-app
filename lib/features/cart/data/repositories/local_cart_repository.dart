@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 
+/// Device persistence for one customer's cart. Used by widget tests and as
+/// the offline store behind [CartCubit]; production server mirroring lives in
+/// [SupabaseCartRepository].
 class LocalCartRepository implements CartRepository {
   LocalCartRepository();
 
@@ -16,11 +19,17 @@ class LocalCartRepository implements CartRepository {
     required List<String> optionValueIds,
     required double unitPrice,
     String? bundleId,
+    String? branchId,
   }) async {
     final raw = await SharedPref.getValue(key: _storageKey);
-    List<dynamic> items = raw != null && raw.isNotEmpty ? jsonDecode(raw) as List<dynamic> : [];
-    final index =
-        items.indexWhere((item) => item['productId'] == productId && _sameNoteAndOptions(item, note, optionValueIds));
+    List<dynamic> items = raw != null && raw.isNotEmpty
+        ? jsonDecode(raw) as List<dynamic>
+        : [];
+    final index = items.indexWhere(
+      (item) =>
+          item['productId'] == productId &&
+          _sameNoteAndOptions(item, note, optionValueIds),
+    );
 
     if (index == -1) {
       items.add({
@@ -31,41 +40,22 @@ class LocalCartRepository implements CartRepository {
         'unitPrice': unitPrice,
       });
     } else {
-      items[index]['quantity'] = (items[index]['quantity'] ?? 0 + quantity).clamp(1, 99);
+      items[index]['quantity'] = (items[index]['quantity'] ?? 0 + quantity)
+          .clamp(1, 99);
     }
     await SharedPref.setValue(key: _storageKey, value: jsonEncode(items));
   }
 
   @override
-  Future<void> removeItem(String lineId) async {
-    final raw = await SharedPref.getValue(key: _storageKey);
-    List<dynamic> items = raw != null && raw.isNotEmpty ? jsonDecode(raw) as List<dynamic> : [];
-    final parts = lineId.split('::');
-    if (parts.isEmpty) return;
-    final productId = parts[0];
-    items.removeWhere((item) => item['productId'] == productId);
-    await SharedPref.setValue(key: _storageKey, value: jsonEncode(items));
-  }
-
-  @override
-  Future getCartSummary() async {
-    final raw = await SharedPref.getValue(key: _storageKey);
-    List<dynamic> items = raw != null && raw.isNotEmpty ? jsonDecode(raw) as List<dynamic> : [];
-    return items.map((item) => {
-      'productId': item['productId'],
-      'quantity': item['quantity'],
-      'note': item['note'],
-      'optionValueIds': List<String>.from(item['optionValueIds'] ?? []),
-      'unitPrice': item['unitPrice'],
-    }).toList();
-  }
-
-  @override
-  Future<void> clearCart() async {
+  Future<void> clearCart({String? branchId}) async {
     await SharedPref.setValue(key: _storageKey, value: jsonEncode([]));
   }
 
-  bool _sameNoteAndOptions(Map<String, dynamic> a, String note, List<String> optionValueIds) {
+  bool _sameNoteAndOptions(
+    Map<String, dynamic> a,
+    String note,
+    List<String> optionValueIds,
+  ) {
     final aNote = a['note'] ?? '';
     final aOptions = List<String>.from(a['optionValueIds'] ?? []);
     return aNote == note && _listEq(aOptions, optionValueIds);

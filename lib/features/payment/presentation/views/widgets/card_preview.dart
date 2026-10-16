@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -48,10 +49,8 @@ class CardPreview extends StatelessWidget {
                 if (brand != CardBrand.unknown)
                   Text(
                     brand.label,
-                    style: AppFonts.bold16(context).copyWith(
-                      color: AppColor.whiteColor,
-                      letterSpacing: 1,
-                    ),
+                    style: AppFonts.bold16(context)
+                        .copyWith(color: AppColor.whiteColor, letterSpacing: 1),
                   ),
               ],
             ),
@@ -60,9 +59,8 @@ class CardPreview extends StatelessWidget {
               number.isEmpty ? "#### #### #### ####" : number,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppFonts.semiBold18(
-                context,
-              ).copyWith(color: AppColor.whiteColor, letterSpacing: 2),
+              style: AppFonts.semiBold18(context)
+                  .copyWith(color: AppColor.whiteColor, letterSpacing: 2),
             ),
             SizedBox(height: SpacingTokens.md.h),
             Row(
@@ -70,13 +68,13 @@ class CardPreview extends StatelessWidget {
               children: [
                 Expanded(
                   child: _CardField(
-                    label: "CARD HOLDER",
-                    value: name.isEmpty ? "YOUR NAME" : name.toUpperCase(),
+                    label: S.cardHolder,
+                    value: name.isEmpty ? S.yourName : name.toUpperCase(),
                   ),
                 ),
                 SizedBox(width: SpacingTokens.md.w),
                 _CardField(
-                  label: "EXPIRES",
+                  label: S.expires,
                   value: expiry.isEmpty ? "MM/YY" : expiry,
                 ),
               ],
@@ -101,21 +99,18 @@ class _CardField extends StatelessWidget {
       children: [
         Text(
           label,
-          style: AppFonts.regular12(
-            context,
-          ).copyWith(color: AppColor.whiteColor.withValues(alpha: 0.7)),
+          style: AppFonts.regular12(context)
+              .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.7)),
         ),
         SizedBox(height: 2.h),
         Text(
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: AppFonts.medium14(
-            context,
-          ).copyWith(color: AppColor.whiteColor),
+          style: AppFonts.medium14(context)
+              .copyWith(color: AppColor.whiteColor),
         ),
       ],
     );
   }
 }
-

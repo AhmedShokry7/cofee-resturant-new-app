@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/di/app_providers.dart';
@@ -8,17 +9,17 @@ import 'package:new_coffee/core/navigation/app_route_observer.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
-import 'package:new_coffee/features/assistant/presentation/widgets/assistant_fab.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppLocale.instance.initialize();
 
-  // Fail soft: without --dart-define the app still runs on the local mock
-  // repositories, so the UI stays reviewable offline instead of crashing.
+  // Fail fast: without --dart-define the providers below throw a clear
+  // StateError instead of serving fabricated catalogue data.
   try {
     await SupabaseService.init();
   } catch (error, stackTrace) {
@@ -49,19 +50,21 @@ class MyApp extends StatelessWidget {
           child: AnimatedBuilder(
             animation: AppLocale.instance,
             builder: (context, _) => MaterialApp(
-              title: 'New Coffee',
+              title: S.appName,
               locale: AppLocale.instance.locale,
               supportedLocales: const [Locale('ar'), Locale('en')],
+              localizationsDelegates: const [
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
               debugShowCheckedModeBanner: false,
               theme: ThemeClass.light(),
               navigatorKey: rootNavigatorKey,
               navigatorObservers: [AppRouteObserver.instance],
-              builder: (context, child) => Stack(
-                children: [
-                  child ?? const SizedBox.shrink(),
-                  const AssistantFab(),
-                ],
-              ),
+              // The assistant FAB is owned by the Home page scaffold, not by
+              // a global overlay, so it can never duplicate or leak onto
+              // other screens.
               initialRoute: AppRoutes.initialRouteName(currentRoute),
               onGenerateRoute: AppRouteGenerator.onGenerateRoute,
               routes: AppRoutes.routes,

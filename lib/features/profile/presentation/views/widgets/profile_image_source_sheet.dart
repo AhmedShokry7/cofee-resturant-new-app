@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -28,9 +29,8 @@ Future<void> showProfileImagePicker(BuildContext context) async {
     context.read<ProfileCubit>().setImage(bytes);
   } on PlatformException {
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Couldn't open the image picker")),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(S.imagePickerFailed)));
   }
 }
 
@@ -58,19 +58,19 @@ class _ImageSourceSheet extends StatelessWidget {
             ),
             SizedBox(height: SpacingTokens.lg.h),
             Text(
-              "Profile Picture",
+              S.profilePicture,
               textAlign: TextAlign.center,
               style: AppFonts.semiBold18(context),
             ),
             SizedBox(height: SpacingTokens.md.h),
             _SourceTile(
               icon: HugeIcons.strokeRoundedCamera01,
-              label: "Take a photo",
+              label: S.takePhoto,
               onTap: () => Navigator.of(context).pop(ImageSource.camera),
             ),
             _SourceTile(
               icon: HugeIcons.strokeRoundedImage01,
-              label: "Choose from gallery",
+              label: S.chooseFromGallery,
               onTap: () => Navigator.of(context).pop(ImageSource.gallery),
             ),
           ],
@@ -109,4 +109,3 @@ class _SourceTile extends StatelessWidget {
     );
   }
 }
-

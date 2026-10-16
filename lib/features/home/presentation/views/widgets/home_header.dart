@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -55,9 +56,8 @@ class _HomeHeaderState extends State<HomeHeader> {
                           greeting,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppFonts.regular14(
-                            context,
-                          ).copyWith(color: AppColor.greyColor),
+                          style: AppFonts.regular14(context)
+                              .copyWith(color: AppColor.greyColor),
                         ),
                       ),
                       SizedBox(width: 4.w),
@@ -71,10 +71,7 @@ class _HomeHeaderState extends State<HomeHeader> {
                 },
               ),
               SizedBox(height: 4.h),
-              Text(
-                "What would you like today?",
-                style: AppFonts.semiBold20(context),
-              ),
+              Text(S.homeQuestion, style: AppFonts.semiBold20(context)),
             ],
           ),
         ),
@@ -86,7 +83,10 @@ class _HomeHeaderState extends State<HomeHeader> {
             height: 44.w,
             width: 44.w,
             decoration: BoxDecoration(
-              border: Border.all(color: AppColor.primaryColor.withAlpha(75), width: 1.w),
+              border: Border.all(
+                color: AppColor.primaryColor.withAlpha(75),
+                width: 1.w,
+              ),
               shape: BoxShape.circle,
             ),
             child: const _NotificationBell(),
@@ -130,26 +130,18 @@ class _NotificationBell extends StatelessWidget {
               top: -4.h,
               right: -6.w,
               child: Container(
-                constraints: BoxConstraints(
-                  minWidth: 18.w,
-                  minHeight: 18.w,
-                ),
+                constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.w),
                 padding: EdgeInsets.symmetric(horizontal: 4.w),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: const Color(0xFFFF3B30),
                   borderRadius: BorderRadius.circular(100.r),
-                  border: Border.all(
-                    color: AppColor.whiteColor,
-                    width: 1.5.w,
-                  ),
+                  border: Border.all(color: AppColor.whiteColor, width: 1.5.w),
                 ),
                 child: Text(
                   count > 99 ? '99+' : '$count',
-                  style: AppFonts.medium12(context).copyWith(
-                    color: AppColor.whiteColor,
-                    height: 1,
-                  ),
+                  style: AppFonts.medium12(context)
+                      .copyWith(color: AppColor.whiteColor, height: 1),
                 ),
               ),
             ),
@@ -159,4 +151,3 @@ class _NotificationBell extends StatelessWidget {
     );
   }
 }
-

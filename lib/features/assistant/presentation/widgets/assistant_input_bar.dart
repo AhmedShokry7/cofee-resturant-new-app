@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -20,7 +21,7 @@ Widget assistantInputBar({
           onSubmitted: (_) => onSubmitted(),
           style: AppFonts.regular14(context),
           decoration: InputDecoration(
-            hintText: 'Ask me anything…',
+            hintText: S.askAnything,
             contentPadding: EdgeInsets.symmetric(
               horizontal: SpacingTokens.md.w,
               vertical: SpacingTokens.sm.h,

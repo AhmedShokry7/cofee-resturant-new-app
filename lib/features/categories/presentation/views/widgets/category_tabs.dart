@@ -6,6 +6,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
+import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 
 class CategoryTabs extends StatelessWidget {
   const CategoryTabs({super.key});
@@ -19,6 +20,9 @@ class CategoryTabs extends StatelessWidget {
       builder: (context, state) {
         final categories = state.categories;
         if (categories.isEmpty) {
+          // While the first page loads, shimmer tab pills keep the 50.h bar
+          // laid out exactly as the loaded tabs will be.
+          if (state.isLoading) return const CategoryTabsSkeleton();
           return SizedBox(height: 50.h);
         }
 
@@ -39,8 +43,7 @@ class CategoryTabs extends StatelessWidget {
                 onTap: () => context.read<CategoriesCubit>().select(index),
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
+                  padding: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
                   child: IntrinsicWidth(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -10,7 +11,7 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class HomeBundlesSection extends StatelessWidget {
   const HomeBundlesSection({super.key});
@@ -22,7 +23,7 @@ class HomeBundlesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const HomeSectionTitle(title: "Bundles"),
+        HomeSectionTitle(title: S.bundles),
         SizedBox(height: SpacingTokens.md.h),
         SizedBox(
           height: 210.h,
@@ -90,23 +91,25 @@ class _BundleCard extends StatelessWidget {
             SizedBox(height: 4.h),
             Row(
               children: [
-                Text(
-                  Formatters.price(bundle.price),
-                  style: AppFonts.semiBold14(context)
-                      .copyWith(color: AppColor.primaryColor),
+                Flexible(
+                  child: PriceLabel(
+                    amount: bundle.price,
+                    style: AppFonts.semiBold14(context)
+                        .copyWith(color: AppColor.primaryColor),
+                    iconSize: 14,
+                    iconColor: AppColor.primaryColor,
+                  ),
                 ),
                 SizedBox(width: SpacingTokens.xs.w),
                 Flexible(
-                  child: Text(
-                    Formatters.price(
-                      context.read<HomeCubit>().originalTotalFor(bundle),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: PriceLabel(
+                    amount: context.read<HomeCubit>().originalTotalFor(bundle),
                     style: AppFonts.regular12(context).copyWith(
                       color: AppColor.greyColor,
                       decoration: TextDecoration.lineThrough,
                     ),
+                    iconSize: 12,
+                    iconColor: AppColor.greyColor,
                   ),
                 ),
               ],

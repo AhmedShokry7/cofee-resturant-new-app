@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -18,7 +19,7 @@ class PaymentSuccessPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Payment")),
+      appBar: AppBar(title: Text(S.payment)),
       body: Column(
         children: [
           Expanded(
@@ -41,19 +42,17 @@ class PaymentSuccessPage extends StatelessWidget {
                   ),
                   SizedBox(height: SpacingTokens.xl.h),
                   Text(
-                    "Payment Successful!",
+                    S.paymentSuccess,
                     textAlign: TextAlign.center,
-                    style: AppFonts.semiBold24(
-                      context,
-                    ).copyWith(color: AppColor.secondryColor),
+                    style: AppFonts.semiBold24(context)
+                        .copyWith(color: AppColor.secondryColor),
                   ),
                   SizedBox(height: SpacingTokens.sm.h),
                   Text(
-                    "Thank you for your purchase.",
+                    S.thankYouPurchase,
                     textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   BlocBuilder<LoyaltyCubit, LoyaltyState>(
                     builder: (context, state) {
@@ -65,9 +64,8 @@ class PaymentSuccessPage extends StatelessWidget {
                         child: Text(
                           "You earned ${state.lastEarned} loyalty points!",
                           textAlign: TextAlign.center,
-                          style: AppFonts.medium14(
-                            context,
-                          ).copyWith(color: AppColor.primaryColor),
+                          style: AppFonts.medium14(context)
+                              .copyWith(color: AppColor.primaryColor),
                         ),
                       );
                     },
@@ -85,7 +83,7 @@ class PaymentSuccessPage extends StatelessWidget {
             child: Column(
               children: [
                 CustomBtn(
-                  text: "Go to main page",
+                  text: S.goToMain,
                   onPressed: () =>
                       Navigator.of(context).popUntil((route) => route.isFirst),
                 ),
@@ -94,10 +92,9 @@ class PaymentSuccessPage extends StatelessWidget {
                   onTap: () =>
                       Navigator.of(context).pushNamed(EReceiptPage.routeName),
                   child: Text(
-                    "View E-Receipt",
-                    style: AppFonts.medium16(
-                      context,
-                    ).copyWith(color: AppColor.primaryColor),
+                    S.viewEReceipt,
+                    style: AppFonts.medium16(context)
+                        .copyWith(color: AppColor.primaryColor),
                   ),
                 ),
               ],
@@ -108,4 +105,3 @@ class PaymentSuccessPage extends StatelessWidget {
     );
   }
 }
-

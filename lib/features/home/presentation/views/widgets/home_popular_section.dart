@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 
@@ -20,7 +21,7 @@ class HomePopularSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return HomeProductsCarousel(
-      title: "Popular",
+      title: S.popular,
       products: products,
       showViewMore: true,
     );

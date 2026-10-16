@@ -129,7 +129,7 @@ class _ProductsGridViewState extends State<ProductsGridView> {
               crossAxisCount: 2,
               crossAxisSpacing: SpacingTokens.md.w,
               mainAxisSpacing: SpacingTokens.md.h,
-              childAspectRatio: 0.72,
+              childAspectRatio: ProductCard.cardAspectRatio,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) => ProductCard(product: widget.products[index]),
@@ -162,4 +162,3 @@ class _ProductsGridViewState extends State<ProductsGridView> {
     );
   }
 }
-

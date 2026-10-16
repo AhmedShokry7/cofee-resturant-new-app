@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
@@ -9,7 +10,7 @@ class WelcomeViewTextBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       textAlign: TextAlign.center,
-      "Discover your favorite coffee and make every moment a little more special, one cup at a time.",
+      S.welcomeDescription,
       style: AppFonts.regular16(context).copyWith(color: AppColor.greyColor),
     );
   }

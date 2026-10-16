@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
@@ -13,11 +15,10 @@ class OrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("My Orders")),
+      appBar: AppBar(title: Text(S.myOrders)),
       body: BlocProvider(
-        create: (context) => OrdersCubit(
-          repository: context.read<OrdersRepository>(),
-        ),
+        create: (context) =>
+            OrdersCubit(repository: context.read<OrdersRepository>()),
         child: const OrdersPageBody(),
       ),
     );

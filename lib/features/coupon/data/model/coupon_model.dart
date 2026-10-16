@@ -22,8 +22,8 @@ class CouponModel {
     this.maxDiscount,
     this.minOrderAmount = 0,
     this.message,
-  })  : _legacyTitle = title ?? '',
-        _legacyDescription = description ?? '';
+  }) : _legacyTitle = title ?? '',
+       _legacyDescription = description ?? '';
 
   final String id;
   final String code;
@@ -44,33 +44,42 @@ class CouponModel {
   final String _legacyDescription;
 
   String get title {
-    final text = pickText(
-      (ar: titleAr ?? '', en: titleEn ?? ''),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: titleAr ?? '',
+      en: titleEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? _legacyTitle : text;
   }
 
   String get description {
-    final text = pickText(
-      (ar: descriptionAr ?? '', en: descriptionEn ?? ''),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: descriptionAr ?? '',
+      en: descriptionEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? _legacyDescription : text;
   }
 
-  /// Human-readable rule derived from the numeric fields.
+  /// Human-readable rule derived from the numeric fields, in the app language.
   String get discount {
+    final ar = AppLocale.instance.isArabic;
     if (discountType == 'percentage') {
       final percent = discountValue == discountValue.roundToDouble()
           ? discountValue.toInt().toString()
           : discountValue.toString();
+      if (ar) {
+        final capped = maxDiscount == null
+            ? ''
+            : ' حتى ${Formatters.price(maxDiscount!)}';
+        return 'خصم $percent%$capped';
+      }
       final capped = maxDiscount == null
           ? ''
           : ' up to ${Formatters.price(maxDiscount!)}';
       return '$percent% off$capped';
     }
-    return '${Formatters.price(discountValue)} off';
+    return ar
+        ? 'خصم ${Formatters.price(discountValue)}'
+        : '${Formatters.price(discountValue)} off';
   }
 
   double discountFor(double subtotal) {
@@ -102,24 +111,23 @@ class CouponModel {
     required double discount,
     required double subtotal,
     String? message,
-  }) =>
-      ValidatedCoupon(
-        coupon: CouponModel(
-          id: id,
-          code: code,
-          titleAr: titleAr,
-          titleEn: titleEn,
-          descriptionAr: descriptionAr,
-          descriptionEn: descriptionEn,
-          discountType: discountType,
-          discountValue: discountValue,
-          maxDiscount: maxDiscount,
-          minOrderAmount: minOrderAmount,
-          message: message ?? this.message,
-        ),
-        discount: discount,
-        subtotal: subtotal,
-      );
+  }) => ValidatedCoupon(
+    coupon: CouponModel(
+      id: id,
+      code: code,
+      titleAr: titleAr,
+      titleEn: titleEn,
+      descriptionAr: descriptionAr,
+      descriptionEn: descriptionEn,
+      discountType: discountType,
+      discountValue: discountValue,
+      maxDiscount: maxDiscount,
+      minOrderAmount: minOrderAmount,
+      message: message ?? this.message,
+    ),
+    discount: discount,
+    subtotal: subtotal,
+  );
 }
 
 /// A coupon plus the exact discount the server approved for one subtotal.
@@ -137,4 +145,3 @@ class ValidatedCoupon {
   final double discount;
   final double subtotal;
 }
-

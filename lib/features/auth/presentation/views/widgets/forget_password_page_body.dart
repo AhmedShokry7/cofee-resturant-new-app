@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -47,9 +48,8 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
         child: BlocConsumer<PasswordResetCubit, PasswordResetState>(
           listener: (context, state) {
             if (state is PasswordResetFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             } else if (state is PasswordResetEmailSent) {
               Navigator.of(context).pushNamed(ResetPasswordPage.routeName);
             }
@@ -63,7 +63,7 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                 children: [
                   SizedBox(height: AuthSpacings.top.h),
                   Text(
-                    "Forget Password",
+                    S.forgetPassword,
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
@@ -71,30 +71,29 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                   Text(
                     "Enter your email and we'll send you a link to reset your password",
                     textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
                     controller: _emailController,
-                    hint: "Email",
+                    hint: S.emailHint,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
                     validator: (value) => (value == null || value.isEmpty)
-                        ? "Email is required"
+                        ? S.emailRequired
                         : null,
                   ),
                   SizedBox(height: AuthSpacings.fieldsGap.h),
                   CustomBtn(
-                    text: "Send Reset Link",
+                    text: S.sendResetLink,
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
                   SizedBox(height: AuthSpacings.buttonGap.h),
                   AuthSwitchPrompt(
-                    question: "Remember your password? ",
-                    actionText: "Sign In",
+                    question: S.rememberPasswordQ,
+                    actionText: S.signIn,
                     onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(
                       AuthPage.routeName,
                       (route) => false,
@@ -110,4 +109,3 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
     );
   }
 }
-

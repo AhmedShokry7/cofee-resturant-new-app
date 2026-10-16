@@ -32,10 +32,13 @@ class ProductFavoriteButton extends StatelessWidget {
           color: AppColor.whiteColor.withValues(alpha: 0.7),
           shape: BoxShape.circle,
         ),
+        // Inactive: outlined heart in grey. Active: filled red heart, so the
+        // saved state is obvious at a glance against the same background.
+        // hugeicons ships no filled heart, hence the Material filled icon.
         child: Icon(
-          HugeIcons.strokeRoundedFavourite,
+          isFavorite ? Icons.favorite : HugeIcons.strokeRoundedFavourite,
           size: (size * 0.55).w,
-          color: isFavorite ? AppColor.primaryColor : AppColor.greyColor,
+          color: isFavorite ? AppColor.errorColor : AppColor.greyColor,
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -35,10 +36,9 @@ class AddCardTile extends StatelessWidget {
             SizedBox(width: SpacingTokens.md.w),
             Expanded(
               child: Text(
-                "Add Card",
-                style: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                S.addCard,
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
             ),
             Icon(
@@ -52,4 +52,3 @@ class AddCardTile extends StatelessWidget {
     );
   }
 }
-

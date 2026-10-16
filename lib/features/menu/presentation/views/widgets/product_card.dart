@@ -11,8 +11,8 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_favo
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// Shared reusable product card used across the entire application.
 ///
@@ -22,6 +22,12 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 /// available, and uses [CachedNetworkImage] for loading and caching the remote
 /// image.
 class ProductCard extends StatelessWidget {
+  /// Width-to-height ratio of the grid/carousel card. The image area is
+  /// [Expanded], so growing the card height flows entirely into a larger
+  /// product image while title, description, price and actions keep their
+  /// fixed slots.
+  static const double cardAspectRatio = 0.64;
+
   const ProductCard({
     super.key,
     required this.product,
@@ -59,7 +65,7 @@ class ProductCard extends StatelessWidget {
         return SizedBox(
           width: width,
           child: AspectRatio(
-            aspectRatio: 0.72,
+            aspectRatio: cardAspectRatio,
             child: GestureDetector(
               onTap: () => _openDetails(context),
               child: Container(
@@ -175,10 +181,12 @@ class ProductCard extends StatelessWidget {
                   ),
                 ],
                 SizedBox(height: 4.h),
-                Text(
-                  Formatters.price((unitPrice ?? product.price) * quantity!),
+                PriceLabel(
+                  amount: (unitPrice ?? product.price) * quantity!,
                   style: AppFonts.semiBold14(context)
                       .copyWith(color: AppColor.primaryColor),
+                  iconSize: 14,
+                  iconColor: AppColor.primaryColor,
                 ),
               ],
             ),

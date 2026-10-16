@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -6,6 +8,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});
@@ -15,7 +18,7 @@ class NotificationsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Notifications")),
+      appBar: AppBar(title: Text(S.notifications)),
       body: BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
           // Opening the page marks everything seen, through the server RPC
@@ -26,27 +29,27 @@ class NotificationsPage extends StatelessWidget {
             }
           });
           if (state.isLoading && state.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const NotificationsSkeleton();
           }
           if (state.signedOut) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.notifications_outlined,
-              title: 'Sign in to see notifications',
-              subtitle: 'Order updates arrive in your account',
+              title: S.signInForNotifications,
+              subtitle: S.orderUpdatesAccount,
             );
           }
           if (state.error != null && state.notifications.isEmpty) {
             return EmptyState(
               icon: Icons.notifications_outlined,
-              title: 'Could not load notifications',
+              title: S.couldNotLoadNotifications,
               subtitle: state.error,
             );
           }
           if (state.notifications.isEmpty) {
-            return const EmptyState(
+            return EmptyState(
               icon: Icons.notifications_outlined,
-              title: 'No notifications yet',
-              subtitle: 'Order updates will appear here',
+              title: S.noNotifications,
+              subtitle: S.notificationsHint,
             );
           }
           return ListView(
@@ -70,4 +73,3 @@ class NotificationsPage extends StatelessWidget {
     );
   }
 }
-

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -10,7 +11,7 @@ import 'package:new_coffee/features/checkout/presentation/manager/checkout/check
 import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/add_card_tile.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/payment_option_tile.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class PaymentMethodPageBody extends StatelessWidget {
   const PaymentMethodPageBody({super.key});
@@ -29,14 +30,14 @@ class PaymentMethodPageBody extends StatelessWidget {
           children: [
             const _PayableTotal(),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("Credit & Debit Card", style: AppFonts.semiBold16(context)),
+            Text(S.creditDebitCard, style: AppFonts.semiBold16(context)),
             SizedBox(height: SpacingTokens.md.h),
             AddCardTile(
               onTap: () =>
                   Navigator.of(context).pushNamed(AddCardPage.routeName),
             ),
             SizedBox(height: SpacingTokens.xl.h),
-            Text("More Payment Options", style: AppFonts.semiBold16(context)),
+            Text(S.morePaymentOptions, style: AppFonts.semiBold16(context)),
             SizedBox(height: SpacingTokens.md.h),
             ...state.paymentMethods.map(
               (method) => PaymentOptionTile(
@@ -72,16 +73,16 @@ class _PayableTotal extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Total to pay",
-                style: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                S.totalToPay,
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
-              Text(
-                Formatters.price(summary.total),
-                style: AppFonts.semiBold18(
-                  context,
-                ).copyWith(color: AppColor.primaryColor),
+              PriceLabel(
+                amount: summary.total,
+                style: AppFonts.semiBold18(context)
+                    .copyWith(color: AppColor.primaryColor),
+                iconSize: 18,
+                iconColor: AppColor.primaryColor,
               ),
             ],
           ),
@@ -90,4 +91,3 @@ class _PayableTotal extends StatelessWidget {
     );
   }
 }
-

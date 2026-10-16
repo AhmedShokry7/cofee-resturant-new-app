@@ -3,11 +3,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
@@ -22,8 +25,23 @@ import 'package:new_coffee/features/profile/presentation/views/privacy_policy_pa
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bottom_sheet.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  late final Future<AuthUser?> _userFuture = _loadUser();
+
+  Future<AuthUser?> _loadUser() async {
+    try {
+      return await context.read<AuthRepository>().currentUser();
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> _logout(BuildContext context) async {
     await const SessionRepository().clear();
@@ -101,68 +119,73 @@ class SettingsPage extends StatelessWidget {
                     },
                   ),
                   SizedBox(height: SpacingTokens.md.h),
-                  Text("Ahmed Shokry", style: AppFonts.semiBold24(context)),
+                  FutureBuilder<AuthUser?>(
+                    future: _userFuture,
+                    builder: (context, snapshot) {
+                      final name = snapshot.data?.name?.trim() ?? '';
+                      if (name.isEmpty) return const SizedBox.shrink();
+                      return Text(name, style: AppFonts.semiBold24(context));
+                    },
+                  ),
                 ],
               ),
             ),
             SizedBox(height: SpacingTokens.md.h),
             ProfileMenuTile(
               icon: Icons.language,
-              label: AppLocale.instance.isArabic
-                  ? 'اللغة: العربية'
-                  : 'Language: English',
+              label: S.languageValue(AppLocale.instance.isArabic),
               onTap: () async => AppLocale.instance.toggle(),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedUserCircle,
-              label: "Your Profile",
+              label: S.yourProfile,
               onTap: () =>
                   Navigator.of(context).pushNamed(EditProfilePage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedCreditCard,
-              label: "Payment Method",
+              label: S.paymentMethod,
               onTap: () =>
                   Navigator.of(context).pushNamed(SavedCardsPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedPackage,
-              label: "My Orders",
+              label: S.myOrders,
               onTap: () =>
                   Navigator.of(context).pushNamed(OrdersPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedCoupon01,
-              label: "Coupon",
+              label: S.coupon,
               onTap: () =>
                   Navigator.of(context).pushNamed(CouponPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedStar,
-              label: "Loyalty Points",
+              label: S.loyaltyPoints,
               onTap: () =>
                   Navigator.of(context).pushNamed(LoyaltyPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedNotification01,
-              label: "Notifications",
+              label: S.notifications,
               onTap: () =>
                   Navigator.of(context).pushNamed(NotificationsPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedHelpCircle,
-              label: "Help",
+              label: S.help,
               onTap: () => Navigator.of(context).pushNamed(HelpPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedShieldKey,
-              label: "Privacy Policy",
+              label: S.privacyPolicy,
               onTap: () =>
                   Navigator.of(context).pushNamed(PrivacyPolicyPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedLogout01,
-              label: "Log Out",
+              label: S.logOut,
               onTap: () =>
                   showLogoutSheet(context, onConfirm: () => _logout(context)),
             ),

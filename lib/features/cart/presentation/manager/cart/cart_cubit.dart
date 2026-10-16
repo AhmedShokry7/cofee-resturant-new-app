@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -12,91 +14,130 @@ part 'cart_state.dart';
 
 /// Owns the customer-facing cart.
 ///
-/// The active cart stays on the device because ordering needs a signed-in
-/// customer, a selected branch and a completed checkout/payment flow. The
-/// server intentionally rejects client-supplied prices, and bundle discounts
-/// have no server-side line representation yet, so prematurely moving local
-/// writes to `upsert_cart_item()` would charge full shelf price for bundle
-/// components. What moved to the repository here is product resolution:
-/// stored lines are rebuilt from the current catalogue instead of from the
-/// compiled menu, and the chosen option ids travel with the line instead of
-/// being flattened away.
+/// The device cart is namespaced per account ([storageKeyFor]), so two
+/// customers sharing one device never see each other's lines: switching
+/// accounts reloads that account's own cart. A guest cart is adopted into the
+/// account once, on the first load after sign-in, then cleared.
+///
+/// The server intentionally rejects client-supplied prices, and bundle
+/// discounts have no server-side line representation yet, so the device cart
+/// stays the checkout source of truth. Writes are mirrored best-effort into
+/// the customer's per-branch server cart and must never block the UI.
 class CartCubit extends Cubit<CartState> {
   CartCubit({
-    required this._cartRepository,
+    required CartRepository cartRepository,
     required CatalogRepository catalogRepository,
     this.branchId,
-  })  : _catalogRepository = catalogRepository,
-        super(const CartState(items: [])) {
+    String? Function()? userIdProvider,
+  }) : _cartRepository = cartRepository,
+       _catalogRepository = catalogRepository,
+       _userIdProvider = userIdProvider ?? _defaultUserId,
+       super(const CartState(items: [])) {
+    if (SupabaseService.isReady) {
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        (_) => load(),
+      );
+    }
     load();
   }
 
   final CartRepository _cartRepository;
   final CatalogRepository _catalogRepository;
+  final String? Function() _userIdProvider;
 
   /// Branch whose catalogue rows apply to restored lines.
   String? branchId;
 
-  static const _storageKey = 'cart_v1';
-  static const _maxItems = 50;
+  StreamSubscription<dynamic>? _authSubscription;
+
+  /// Device key for one account's cart. `null` is the signed-out guest cart.
+  /// Never share a key across accounts: that leaks one customer's lines
+  /// into another's.
+  static String storageKeyFor(String? userId) => 'cart_v1_${userId ?? 'guest'}';
+
+  static String? _defaultUserId() => SupabaseService.isReady
+      ? SupabaseService.client.auth.currentUser?.id
+      : null;
+
+  String? get _userId => _userIdProvider();
+  String get _key => storageKeyFor(_userId);
 
   /// Restored rows stay within the catalogue's configured page width.
   static const _catalogPageSize = 200;
+  static const _maxItems = 50;
+
+  /// Guards guest adoption: concurrent loads must not adopt the same guest
+  /// lines twice (quantities would double), and a retry must not replay them.
+  bool _adoptingGuestCart = false;
 
   Future<void> load() async {
     try {
-      final raw = await SharedPref.getValue(key: _storageKey);
-      if (raw == null || raw.isEmpty || isClosed) return;
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return;
-
-      // Resolve products from the catalogue using the stored product IDs.
-      final productIds = <String>[];
-      for (final entry in decoded) {
-        if (entry is! Map) continue;
-        final productId = entry['productId']?.toString();
-        if (productId != null && productId.isNotEmpty) productIds.add(productId);
-      }
-      final productsById = await _catalogRepository.getProducts(
-        branchId: branchId,
-        limit: _catalogPageSize,
-      ).then((products) => {for (final p in products) p.id: p});
-
-      final items = <CartItem>[];
-      for (final entry in decoded) {
-        if (entry is! Map) continue;
-        final productId = entry['productId']?.toString();
-        if (productId == null || productId.isEmpty) continue;
-        final product = productsById[productId];
-        if (product == null) continue;
-
-        final quantity =
-            (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
-        items.add(
-          CartItem(
-            product: product,
-            quantity: quantity,
-            note: entry['note']?.toString() ?? '',
-            optionValueIds: _optionIds(entry['optionValueIds']),
-            unitPrice: (entry['unitPrice'] as num?)?.toDouble(),
-          ),
-        );
-        if (items.length >= _maxItems) break;
-      }
+      final raw = await SharedPref.getValue(key: _key);
       if (isClosed) return;
-      emit(CartState(items: items));
+      Map<String, ProductModel>? productsById;
+      Future<Map<String, ProductModel>> catalog() async {
+        final cached = productsById;
+        if (cached != null) return cached;
+        final fresh = await _catalogRepository
+            .getProducts(branchId: branchId, limit: _catalogPageSize)
+            .then((products) => {for (final p in products) p.id: p});
+        productsById = fresh;
+        return fresh;
+      }
+
+      if (raw != null && raw.isNotEmpty) {
+        final items = await _resolveItems(_decodeEntries(raw), catalog);
+        if (isClosed) return;
+        emit(CartState(items: items));
+      }
+
+      // One-time adoption: a guest cart becomes the account's cart on the
+      // first load after sign-in, then the guest slot is cleared so a later
+      // sign-out starts empty instead of replaying old lines. The slot is
+      // claimed before processing so overlapping loads cannot adopt twice
+      // (quantities would double), and a retry never replays adopted lines.
+      if (_userId != null && !_adoptingGuestCart) {
+        _adoptingGuestCart = true;
+        try {
+          final guestRaw = await SharedPref.getValue(key: storageKeyFor(null));
+          final guestEntries = guestRaw == null || guestRaw.isEmpty
+              ? const <Map<String, dynamic>>[]
+              : _decodeEntries(guestRaw);
+          if (guestEntries.isNotEmpty) {
+            await SharedPref.setValue(
+              key: storageKeyFor(null),
+              value: jsonEncode([]),
+            );
+            if (isClosed) return;
+            for (final entry in guestEntries) {
+              final guestProductId = entry['productId']?.toString() ?? '';
+              if (guestProductId.isEmpty) continue;
+              final product =
+                  (await catalog())[guestProductId] ??
+                  await _catalogRepository.getById(
+                    guestProductId,
+                    branchId: branchId,
+                  );
+              if (product == null || isClosed) continue;
+              add(
+                product,
+                quantity: entry['quantity'] as int? ?? 1,
+                note: entry['note'] as String? ?? '',
+                optionValueIds:
+                    (entry['optionValueIds'] as List?)
+                        ?.map((e) => e.toString())
+                        .toList() ??
+                    const [],
+                unitPrice: (entry['unitPrice'] as num?)?.toDouble(),
+              );
+            }
+          }
+        } finally {
+          _adoptingGuestCart = false;
+        }
+      }
     } catch (_) {
       // Best-effort: start with an empty cart rather than crash.
-    }
-  }
-
-  Future<void> _refreshFromServer() async {
-    final serverState = await _cartRepository.getCartSummary();
-    if (serverState.isEmpty && isClosed) return;
-    // When server has items, replace local state; otherwise keep local.
-    if (!serverState.isEmpty) {
-      emit(serverState);
-      _persist();
     }
   }
 
@@ -143,14 +184,18 @@ class CartCubit extends Cubit<CartState> {
     emit(CartState(items: items));
     _persist();
 
-    // Attempt server sync (best-effort; never blocks UI).
-    _cartRepository.addItem(
-      productId: product.id,
-      quantity: quantity,
-      note: note,
-      optionValueIds: optionValueIds,
-      unitPrice: unitPrice ?? product.price,
-      bundleId: bundleId,
+    // Mirror best-effort into the per-branch server cart. Never blocks UI;
+    // failures are reported, never silent and never fatal.
+    _mirror(
+      _cartRepository.addItem(
+        productId: product.id,
+        quantity: quantity,
+        note: note,
+        optionValueIds: optionValueIds,
+        unitPrice: unitPrice ?? product.price,
+        bundleId: bundleId,
+        branchId: branchId,
+      ),
     );
   }
 
@@ -188,7 +233,23 @@ class CartCubit extends Cubit<CartState> {
   void clear() {
     emit(const CartState(items: []));
     _persist();
-    _cartRepository.clearCart();
+    _mirror(_cartRepository.clearCart(branchId: branchId));
+  }
+
+  @override
+  Future<void> close() {
+    _authSubscription?.cancel();
+    _authSubscription = null;
+    return super.close();
+  }
+
+  void _mirror(Future<void> work) {
+    work.then(
+      (_) {},
+      onError: (Object error, StackTrace stack) {
+        if (!isClosed) addError(error, stack);
+      },
+    );
   }
 
   void _changeQuantityForProduct(String productId, int delta) {
@@ -223,12 +284,48 @@ class CartCubit extends Cubit<CartState> {
     return true;
   }
 
+  static List<Map<String, dynamic>> _decodeEntries(String raw) {
+    final decoded = jsonDecode(raw);
+    if (decoded is! List) return const [];
+    return [
+      for (final entry in decoded)
+        if (entry is Map) Map<String, dynamic>.from(entry),
+    ];
+  }
+
+  Future<List<CartItem>> _resolveItems(
+    List<Map<String, dynamic>> entries,
+    Future<Map<String, ProductModel>> Function() catalog,
+  ) async {
+    final items = <CartItem>[];
+    for (final entry in entries) {
+      final productId = entry['productId']?.toString();
+      if (productId == null || productId.isEmpty) continue;
+      final product =
+          (await catalog())[productId] ??
+          await _catalogRepository.getById(productId, branchId: branchId);
+      if (product == null) continue;
+
+      final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
+      items.add(
+        CartItem(
+          product: product,
+          quantity: quantity,
+          note: entry['note']?.toString() ?? '',
+          optionValueIds: _optionIds(entry['optionValueIds']),
+          unitPrice: (entry['unitPrice'] as num?)?.toDouble(),
+        ),
+      );
+      if (items.length >= _maxItems) break;
+    }
+    return items;
+  }
+
   static List<String> _optionIds(dynamic raw) {
     if (raw is List) {
       final ids = <String>[
         for (final value in raw)
-          if (value?.toString().trim().isNotEmpty ?? false)
-            value.toString(),
+          if (value?.toString().trim().isNotEmpty ?? false) value.toString(),
       ]..sort();
       return ids;
     }
@@ -238,7 +335,7 @@ class CartCubit extends Cubit<CartState> {
   Future<void> _persist() async {
     try {
       await SharedPref.setValue(
-        key: _storageKey,
+        key: _key,
         value: jsonEncode(
           state.items
               .take(_maxItems)

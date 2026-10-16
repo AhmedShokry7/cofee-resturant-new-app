@@ -7,7 +7,6 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
-import 'package:new_coffee/core/navigation/app_route_observer.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -25,15 +24,13 @@ import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
-import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
-import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_page.dart';
-import 'package:new_coffee/features/welcome/presentation/view/welcome_view.dart';
 
+/// Smart assistant entry point, owned by the Home page.
+///
+/// Rendered in [HomePage]'s [Scaffold.floatingActionButton] slot, so the
+/// button exists exactly once and only while the Home tab is visible. Route
+/// filtering is unnecessary: pushed pages, auth flows and the other tabs
+/// never contain this widget.
 class AssistantFab extends StatefulWidget {
   const AssistantFab({super.key});
 
@@ -48,20 +45,8 @@ class AssistantFab extends StatefulWidget {
 }
 
 class _AssistantFabState extends State<AssistantFab> {
-  static const double _fabSize = 72;
-
-  /// Routes where the assistant button must stay hidden
-  /// (welcome / onboarding / auth flow).
-  static const Set<String> _hiddenRoutes = {
-    WelcomePage.routeName,
-    OnBoardingView.routeName,
-    AuthPage.routeName,
-    SignUpPage.routeName,
-    ForgetPasswordPage.routeName,
-    ResetPasswordPage.routeName,
-    PhoneAuthPage.routeName,
-    OtpPage.routeName,
-  };
+  /// Bot artwork size inside the standard 56dp FAB.
+  static const double _fabIconSize = 44;
 
   bool _sheetOpen = false;
   bool _showHint = false;
@@ -97,8 +82,8 @@ class _AssistantFabState extends State<AssistantFab> {
   Future<List<OrderItemModel>> _activeOrders() async {
     try {
       return await context.read<OrdersRepository>().listOrders(
-            status: OrderStatus.active,
-          );
+        status: OrderStatus.active,
+      );
     } catch (_) {
       // Guests and offline callers have no order history to greet with.
       return const [];
@@ -201,93 +186,77 @@ class _AssistantFabState extends State<AssistantFab> {
 
   @override
   Widget build(BuildContext context) {
+    // While the sheet is open the entry point hides; ownership by the Home
+    // page scaffold already limits visibility to the Home tab.
     if (_sheetOpen) return const SizedBox.shrink();
-    return ValueListenableBuilder<String?>(
-      valueListenable: AppRouteObserver.instance.currentRouteName,
-      builder: (context, routeName, _) {
-        if (_hiddenRoutes.contains(routeName)) {
-          return const SizedBox.shrink();
-        }
-        return Stack(
-          children: [
-            Positioned(
-              key: const ValueKey('assistant_fab_pos'),
-              right: 4.w,
-              bottom: 55.h,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedOpacity(
-                opacity: _showHint ? 1 : 0,
-                duration: const Duration(milliseconds: 300),
-                child: _showHint
-                    ? Container(
-                        constraints: BoxConstraints(maxWidth: 230.w),
-                        margin: EdgeInsets.only(
-                          bottom: SpacingTokens.sm.h,
+    return Column(
+      key: const ValueKey('assistant_fab_pos'),
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AnimatedOpacity(
+          opacity: _showHint ? 1 : 0,
+          duration: const Duration(milliseconds: 300),
+          child: _showHint
+              ? Container(
+                  constraints: BoxConstraints(maxWidth: 230.w),
+                  margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: SpacingTokens.md.w,
+                    vertical: SpacingTokens.sm.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColor.whiteColor,
+                    borderRadius: BorderRadius.circular(16.r),
+                    border: Border.all(color: AppColor.borderColor),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.blackColor.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.only(top: 2.h),
+                        child: Icon(
+                          HugeIcons.strokeRoundedSparkles,
+                          size: 14.w,
+                          color: AppColor.primaryColor,
                         ),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: SpacingTokens.md.w,
-                          vertical: SpacingTokens.sm.h,
+                      ),
+                      SizedBox(width: SpacingTokens.xs.w),
+                      Flexible(
+                        child: Text(
+                          _currentHintText,
+                          style: AppFonts.medium14(context).copyWith(
+                            color: AppColor.blackColor,
+                            decoration: TextDecoration.none,
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: AppColor.whiteColor,
-                          borderRadius: BorderRadius.circular(16.r),
-                          border: Border.all(color: AppColor.borderColor),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.blackColor.withValues(
-                                alpha: 0.12,
-                              ),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Padding(
-                              padding: EdgeInsets.only(top: 2.h),
-                              child: Icon(
-                                HugeIcons.strokeRoundedSparkles,
-                                size: 14.w,
-                                color: AppColor.primaryColor,
-                              ),
-                            ),
-                            SizedBox(width: SpacingTokens.xs.w),
-                            Flexible(
-                              child: Text(
-                                _currentHintText,
-                                style: AppFonts.medium14(context).copyWith(
-                                  color: AppColor.blackColor,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-              GestureDetector(
-                onTap: _openSheet,
-                child: Image.asset(
-                  AppImages.aiBot,
-                  key: const ValueKey('assistant_fab_image'),
-                  width: _fabSize.w,
-                  height: _fabSize.w,
-                ),
-              ),
-            ],
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+        FloatingActionButton(
+          onPressed: _openSheet,
+          backgroundColor: AppColor.whiteColor,
+          elevation: 6,
+          shape: const CircleBorder(),
+          child: Image.asset(
+            AppImages.aiBot,
+            key: const ValueKey('assistant_fab_image'),
+            width: _fabIconSize.w,
+            height: _fabIconSize.w,
           ),
         ),
       ],
     );
-      },
-    );
   }
 }
-

@@ -6,12 +6,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Owns favourite product ids on the device and in the database.
 ///
-/// Device storage is the offline source of truth and the guest path: a signed
-/// out customer still gets hearts. When Supabase is configured and a session
-/// exists, the same ids are mirrored to `engagement.customer_favorites`, whose
-/// RLS permits only the owning user. Local-only ids are uploaded after the
-/// catalogue confirms they still identify real products, so a stale id can
-/// never violate the `product_id` foreign key.
+/// Device storage is namespaced per account ([storageKeyFor]): two customers
+/// sharing one device never see each other's hearts. A guest list is adopted
+/// into the account once, on the first load after sign-in (see
+/// [migrateGuestIds]), instead of leaking across accounts.
+///
+/// When Supabase is configured and a session exists, the same ids are mirrored
+/// to `engagement.customer_favorites`, whose RLS permits only the owning
+/// user. Local-only ids are uploaded after the catalogue confirms they still
+/// identify real products, so a stale id can never violate the `product_id`
+/// foreign key.
 abstract class FavoritesRepository {
   Future<Set<String>> loadLocalIds();
   Future<Set<String>> synchronizedIds(
@@ -20,15 +24,28 @@ abstract class FavoritesRepository {
   });
   Future<void> addFavorite(String productId);
   Future<void> removeFavorite(String productId);
+
+  /// Moves the signed-out guest list into the signed-in account once, then
+  /// clears the guest slot. No-op when signed out or when there is nothing
+  /// to move.
+  Future<void> migrateGuestIds();
 }
 
 class FavoritesRepositoryImpl implements FavoritesRepository {
-  const FavoritesRepositoryImpl({SupabaseClient? client})
-      : _clientOverride = client;
+  const FavoritesRepositoryImpl({
+    SupabaseClient? client,
+    String? Function()? userIdProvider,
+  }) : _clientOverride = client,
+       _userIdProvider = userIdProvider;
 
   final SupabaseClient? _clientOverride;
+  final String? Function()? _userIdProvider;
 
-  static const _storageKey = 'favorites_v1';
+  /// Device key for one account's hearts. `null` is the signed-out guest list.
+  /// Never share a key across accounts: that leaks one customer's hearts
+  /// into another's.
+  static String storageKeyFor(String? userId) =>
+      'favorites_v1_${userId ?? 'guest'}';
 
   SupabaseClient? get _client =>
       _clientOverride ??
@@ -36,10 +53,14 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
 
   User? get _user => _client?.auth.currentUser;
 
+  String? get _effectiveUserId => _userIdProvider?.call() ?? _user?.id;
+
+  String get _key => storageKeyFor(_effectiveUserId);
+
   @override
   Future<Set<String>> loadLocalIds() async {
     try {
-      final raw = await SharedPref.getValue(key: _storageKey);
+      final raw = await SharedPref.getValue(key: _key);
       if (raw == null || raw.isEmpty) return const {};
       final decoded = jsonDecode(raw);
       if (decoded is! List) return const {};
@@ -47,6 +68,28 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
     } catch (_) {
       // Favourites are best-effort: start empty rather than crash.
       return const {};
+    }
+  }
+
+  @override
+  Future<void> migrateGuestIds() async {
+    if (_effectiveUserId == null) return;
+    final guestKey = storageKeyFor(null);
+    if (guestKey == _key) return;
+    try {
+      final raw = await SharedPref.getValue(key: guestKey);
+      if (raw == null || raw.isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List || decoded.isEmpty) {
+        await SharedPref.setValue(key: guestKey, value: jsonEncode([]));
+        return;
+      }
+      final guestIds = {for (final item in decoded) item.toString()};
+      final owned = {...await loadLocalIds(), ...guestIds};
+      await _persistLocal(owned);
+      await SharedPref.setValue(key: guestKey, value: jsonEncode([]));
+    } catch (_) {
+      // Best-effort: a failed move keeps the guest list where it is.
     }
   }
 
@@ -102,12 +145,14 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
   }
 
   Future<Set<String>> _remoteIds(SupabaseClient client, String userId) async {
-    final rows = await client
-        .from('customer_favorites')
-        .select('product_id')
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .limit(1000) as List;
+    final rows =
+        await client
+                .from('customer_favorites')
+                .select('product_id')
+                .eq('user_id', userId)
+                .order('created_at', ascending: false)
+                .limit(1000)
+            as List;
     return {
       for (final row in rows)
         if (row is Map && (row['product_id']?.toString() ?? '').isNotEmpty)
@@ -133,10 +178,7 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
 
   Future<void> _persistLocal(Set<String> ids) async {
     try {
-      await SharedPref.setValue(
-        key: _storageKey,
-        value: jsonEncode(ids.toList()),
-      );
+      await SharedPref.setValue(key: _key, value: jsonEncode(ids.toList()));
     } catch (_) {
       // Best-effort: never break toggling if storage fails.
     }

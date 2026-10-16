@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
@@ -35,18 +36,23 @@ class ProductDetailsPage extends StatelessWidget {
               context.read<ProductDetailsCubit>().setBranch(state.selected?.id),
           child: Scaffold(
             appBar: AppBar(
-              title: const Text("Product Details"),
+              title: Text(S.productDetails),
               actions: [
                 BlocBuilder<FavoritesCubit, FavoritesState>(
                   builder: (context, state) {
                     final isFavorite = state.ids.contains(product.id);
+                    // Same contract as the shared ProductFavoriteButton:
+                    // outlined grey heart when idle, completely filled red
+                    // heart when saved.
                     return IconButton(
                       onPressed: () =>
                           context.read<FavoritesCubit>().toggle(product.id),
                       icon: Icon(
-                        HugeIcons.strokeRoundedFavourite,
+                        isFavorite
+                            ? Icons.favorite
+                            : HugeIcons.strokeRoundedFavourite,
                         color: isFavorite
-                            ? AppColor.primaryColor
+                            ? AppColor.errorColor
                             : AppColor.greyColor,
                       ),
                     );

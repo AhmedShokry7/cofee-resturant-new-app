@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -17,7 +18,7 @@ class SavedCardsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Payment Method")),
+      appBar: AppBar(title: Text(S.paymentMethod)),
       body: BlocBuilder<SavedCardsCubit, SavedCardsState>(
         builder: (context, state) {
           return ListView(
@@ -32,11 +33,10 @@ class SavedCardsPage extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.symmetric(vertical: SpacingTokens.xl.h),
                   child: Text(
-                    "No saved cards yet",
+                    S.noSavedCards,
                     textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                 ),
               ...state.cards.map(
@@ -59,9 +59,8 @@ class SavedCardsPage extends StatelessWidget {
                   ),
                   child: Text(
                     "+ Add new card",
-                    style: AppFonts.medium14(
-                      context,
-                    ).copyWith(color: AppColor.primaryColor),
+                    style: AppFonts.medium14(context)
+                        .copyWith(color: AppColor.primaryColor),
                   ),
                 ),
               ),
@@ -72,4 +71,3 @@ class SavedCardsPage extends StatelessWidget {
     );
   }
 }
-

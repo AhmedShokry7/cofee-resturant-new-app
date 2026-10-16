@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
@@ -25,14 +26,13 @@ class HomeCategoriesSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text("Categories", style: AppFonts.semiBold18(context)),
+            Text(S.categories, style: AppFonts.semiBold18(context)),
             GestureDetector(
               onTap: () => context.read<MainCubit>().changeTab(1),
               child: Text(
-                "See all",
-                style: AppFonts.medium12(
-                  context,
-                ).copyWith(decoration: TextDecoration.underline),
+                S.seeAll,
+                style: AppFonts.medium12(context)
+                    .copyWith(decoration: TextDecoration.underline),
               ),
             ),
           ],
@@ -59,7 +59,12 @@ class HomeCategoriesSection extends StatelessWidget {
                 itemBuilder: (context, index) => CategoryGridItem(
                   category: categories[index],
                   onTap: () {
-                    context.read<CategoriesCubit>().select(index);
+                    // Match by stable id, not by position: the home grid and
+                    // the categories tab load independently, so equal indices
+                    // do not guarantee equal categories.
+                    context.read<CategoriesCubit>().selectCategoryById(
+                      categories[index].id,
+                    );
                     context.read<MainCubit>().changeTab(1);
                   },
                 ),
@@ -71,4 +76,3 @@ class HomeCategoriesSection extends StatelessWidget {
     );
   }
 }
-

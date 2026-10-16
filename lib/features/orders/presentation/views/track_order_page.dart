@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -20,26 +22,24 @@ class TrackOrderPage extends StatelessWidget {
     } catch (error) {
       if (context.mounted) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Could not cancel: $error')),
+          SnackBar(content: Text(S.cancelFailed('$error'))),
         );
       }
       return;
     }
     if (!context.mounted) return;
     Navigator.of(context).pop();
-    messenger.showSnackBar(
-      const SnackBar(content: Text('Order cancelled')),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(S.orderCancelled)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Track Order")),
+      appBar: AppBar(title: Text(S.trackOrder)),
       body: TrackOrderPageBody(order: order),
       bottomNavigationBar: OrderActionBottomBar(
-        cancelText: "Cancel Order",
-        submitText: "Back",
+        cancelText: S.cancelOrder,
+        submitText: S.back,
         onCancel: () => _cancelOrder(context),
         onSubmit: () => Navigator.of(context).pop(),
       ),

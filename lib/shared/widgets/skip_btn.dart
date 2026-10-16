@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
@@ -19,7 +20,7 @@ class SkipBtn extends StatelessWidget {
             child: Column(
               children: [
                 Text(
-                 "Skip",
+                  S.skip,
                   style: AppFonts.regular14(context).copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColor.greyColor,

@@ -20,7 +20,7 @@ abstract class AddressRepository {
 
 class SupabaseAddressRepository implements AddressRepository {
   SupabaseAddressRepository({SupabaseClient? client})
-      : _clientOverride = client;
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -40,12 +40,14 @@ class SupabaseAddressRepository implements AddressRepository {
   Future<List<AddressModel>> listAddresses() async {
     final client = _requireClient();
 
-    final rows = await client
-        .from('customer_addresses')
-        .select()
-        .isFilter('archived_at', null)
-        .order('is_default', ascending: false)
-        .order('created_at') as List;
+    final rows =
+        await client
+                .from('customer_addresses')
+                .select()
+                .isFilter('archived_at', null)
+                .order('is_default', ascending: false)
+                .order('created_at')
+            as List;
     return [
       for (final row in rows)
         if (row is Map<String, dynamic>) AddressModel.fromDatabase(row),
@@ -63,15 +65,14 @@ class SupabaseAddressRepository implements AddressRepository {
     if (client == null) {
       throw StateError('Addresses need a signed-in account.');
     }
-    final rows = await client
-        .from('customer_addresses')
-        .insert({
-          'label': label.trim(),
-          'details': details.trim(),
-          'latitude': ?latitude,
-          'longitude': ?longitude,
-        })
-        .select() as List;
+    final rows =
+        await client.from('customer_addresses').insert({
+              'label': label.trim(),
+              'details': details.trim(),
+              'latitude': ?latitude,
+              'longitude': ?longitude,
+            }).select()
+            as List;
     if (rows.isEmpty || rows.first is! Map<String, dynamic>) {
       throw StateError('Could not save the address.');
     }
@@ -88,37 +89,4 @@ class SupabaseAddressRepository implements AddressRepository {
         .update({'archived_at': DateTime.now().toUtc().toIso8601String()})
         .eq('id', id);
   }
-}
-
-/// Offline fallback mirroring the seeded addresses.
-class LocalAddressRepository implements AddressRepository {
-  const LocalAddressRepository();
-
-  static const List<AddressModel> _seed = [
-    AddressModel(
-      id: "1",
-      label: "Home",
-      details: "1901 Jizan, Al-Arda, Bathan, main street",
-    ),
-    AddressModel(
-      id: "2",
-      label: "Work",
-      details: "King Fahd Road, Al Olaya district, office 12",
-    ),
-  ];
-
-  @override
-  Future<List<AddressModel>> listAddresses() async => _seed;
-
-  @override
-  Future<AddressModel> addAddress({
-    required String label,
-    required String details,
-    double? latitude,
-    double? longitude,
-  }) async =>
-      AddressModel(id: 'local-${DateTime.now().microsecondsSinceEpoch}', label: label, details: details);
-
-  @override
-  Future<void> removeAddress(String id) async {}
 }

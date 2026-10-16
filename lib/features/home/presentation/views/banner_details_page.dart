@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -100,7 +101,7 @@ class BannerDetailsPage extends StatelessWidget {
                   onPressed: () => _onCta(context),
                 ),
                 SizedBox(height: SpacingTokens.xl.h),
-                HomeProductsCarousel(title: "You may like", products: related),
+                HomeProductsCarousel(title: S.youMayLike, products: related),
               ],
             ),
           ),

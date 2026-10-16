@@ -12,33 +12,20 @@ part 'saved_cards_state.dart';
 /// Saved payment cards, stored on the device.
 ///
 /// There is deliberately no server table for saved cards: no order references
-/// one, and a card number is not an address. These rows stay local.
+/// one, and a card number is not an address. These rows stay local, and the
+/// list starts empty: only cards the customer actually adds are ever shown.
 class SavedCardsCubit extends Cubit<SavedCardsState> {
-  SavedCardsCubit() : super(SavedCardsState(cards: _seed));
+  SavedCardsCubit() : super(const SavedCardsState(cards: []));
 
   static const _storageKey = 'saved_cards_v1';
-
-  static final List<SavedCardModel> _seed = [
-    SavedCardModel(
-      id: "1",
-      brand: CardBrand.visa,
-      last4: "4242",
-      holder: "Ahmed Shokry",
-      expiry: "02/30",
-    ),
-    SavedCardModel(
-      id: "2",
-      brand: CardBrand.mastercard,
-      last4: "4444",
-      holder: "Ahmed Shokry",
-      expiry: "09/28",
-    ),
-  ];
 
   Future<void> load() async {
     try {
       final raw = await SharedPref.getValue(key: _storageKey);
-      if (raw == null || raw.isEmpty || isClosed) return;
+      if (raw == null || raw.isEmpty || isClosed) {
+        if (!isClosed) emit(const SavedCardsState(cards: []));
+        return;
+      }
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
       final cards = decoded
@@ -47,7 +34,8 @@ class SavedCardsCubit extends Cubit<SavedCardsState> {
           .toList();
       emit(SavedCardsState(cards: cards));
     } catch (_) {
-      // Best-effort: keep the bundled cards rather than crash.
+      // Best-effort: an unreadable store yields an empty list, never an error.
+      if (!isClosed) emit(const SavedCardsState(cards: []));
     }
   }
 

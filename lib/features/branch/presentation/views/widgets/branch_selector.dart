@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -51,9 +52,7 @@ class BranchSelector extends StatelessWidget {
                 SizedBox(width: 4.w),
                 Flexible(
                   child: Text(
-                    state.isLoading
-                        ? '…'
-                        : selected?.name ?? 'Choose branch',
+                    state.isLoading ? '…' : selected?.name ?? S.chooseBranch,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.medium12(context).copyWith(
@@ -87,9 +86,7 @@ class BranchSelector extends StatelessWidget {
             for (final branch in state.branches)
               ListTile(
                 title: Text(branch.name),
-                subtitle: branch.address == null
-                    ? null
-                    : Text(branch.address!),
+                subtitle: branch.address == null ? null : Text(branch.address!),
                 trailing: branch.id == state.selected?.id
                     ? const Icon(Icons.check, color: AppColor.primaryColor)
                     : null,

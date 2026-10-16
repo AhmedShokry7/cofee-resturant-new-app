@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 import 'package:new_coffee/features/profile/data/model/faq_model.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class HelpPage extends StatelessWidget {
   const HelpPage({super.key});
@@ -16,19 +18,19 @@ class HelpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Help")),
+      appBar: AppBar(title: Text(S.help)),
       body: FutureBuilder<List<FaqModel>>(
         future: context.read<ContentRepository>().faqs(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const FaqLoadingView();
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Could not load FAQs: ${snapshot.error}'));
+            return Center(child: Text(S.faqsLoadError('${snapshot.error}')));
           }
           final faqs = snapshot.data ?? const [];
           if (faqs.isEmpty) {
-            return const Center(child: Text('No FAQs available'));
+            return Center(child: Text(S.noFaqs));
           }
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -38,10 +40,7 @@ class HelpPage extends StatelessWidget {
               SpacingTokens.lg.w,
             ),
             children: [
-              Text(
-                "Frequently asked questions",
-                style: AppFonts.semiBold16(context),
-              ),
+              Text(S.faqTitle, style: AppFonts.semiBold16(context)),
               SizedBox(height: SpacingTokens.md.h),
               ...faqs.map(
                 (faq) => Container(
@@ -70,10 +69,8 @@ class HelpPage extends StatelessWidget {
                     children: [
                       Text(
                         faq.answer,
-                        style: AppFonts.regular14(context).copyWith(
-                          color: AppColor.greyColor,
-                          height: 1.5,
-                        ),
+                        style: AppFonts.regular14(context)
+                            .copyWith(color: AppColor.greyColor, height: 1.5),
                       ),
                     ],
                   ),

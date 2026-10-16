@@ -1,8 +1,10 @@
+import 'package:new_coffee/core/locale/app_strings.dart';
+
 String getGreeting(DateTime time) {
   final hour = time.hour;
-  if (hour < 12) return "Good Morning";
-  if (hour < 17) return "Good Afternoon";
-  return "Good Evening";
+  if (hour < 12) return S.goodMorning;
+  if (hour < 17) return S.goodAfternoon;
+  return S.goodEvening;
 }
 
 bool isDaytime(DateTime time) => time.hour >= 6 && time.hour < 17;

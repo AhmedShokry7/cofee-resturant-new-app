@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -32,9 +33,9 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
 
   String? _validatePhone(String? value) {
     final phone = (value ?? '').replaceAll(RegExp(r'\s'), '');
-    if (phone.isEmpty) return "Phone number is required";
+    if (phone.isEmpty) return S.phoneRequired;
     if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(phone)) {
-      return "Enter a valid phone number";
+      return S.validPhoneNumber;
     }
     return null;
   }
@@ -56,9 +57,8 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
         child: BlocConsumer<PhoneAuthCubit, PhoneAuthState>(
           listener: (context, state) {
             if (state is PhoneAuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             } else if (state is PhoneAuthCodeSent) {
               Navigator.of(context).pushNamed(
                 OtpPage.routeName,
@@ -76,7 +76,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                 children: [
                   SizedBox(height: AuthSpacings.top.h),
                   Text(
-                    "Sign In with Phone",
+                    S.signInWithPhone,
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
@@ -84,14 +84,13 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                   Text(
                     "Enter your phone number and we'll send you a verification code",
                     textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
                     controller: _phoneController,
-                    hint: "Phone number",
+                    hint: S.phoneHint,
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.done,
                     inputFormatters: [
@@ -101,7 +100,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                   ),
                   SizedBox(height: AuthSpacings.fieldsGap.h),
                   CustomBtn(
-                    text: "Send Code",
+                    text: S.sendCode,
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
@@ -115,4 +114,3 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
     );
   }
 }
-

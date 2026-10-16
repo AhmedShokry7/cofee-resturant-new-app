@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -70,16 +71,14 @@ class _AddCardPageState extends State<AddCardPage> {
       );
       final messenger = ScaffoldMessenger.of(context);
       Navigator.of(context).pop();
-      messenger.showSnackBar(
-        const SnackBar(content: Text("Card added successfully")),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(S.cardAdded)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Card")),
+      appBar: AppBar(title: Text(S.addCard)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -98,24 +97,24 @@ class _AddCardPageState extends State<AddCardPage> {
             SizedBox(height: SpacingTokens.xl.h),
             CustomTextFormField(
               controller: _nameController,
-              hint: "Card Holder Name",
+              hint: S.cardHolderName,
               keyboardType: TextInputType.name,
               textInputAction: TextInputAction.next,
               onChanged: (_) => setState(() {}),
               validator: (value) => (value == null || value.trim().isEmpty)
-                  ? "Card holder name is required"
+                  ? S.cardHolderRequired
                   : null,
             ),
             CustomTextFormField(
               controller: _numberController,
-              hint: "Card Number",
+              hint: S.cardNumber,
               keyboardType: TextInputType.number,
               inputFormatters: [CardNumberInputFormatter()],
               textInputAction: TextInputAction.next,
               onChanged: (_) => setState(_syncCvvLength),
               validator: (value) =>
                   (value == null || value.replaceAll(' ', '').length < 16)
-                  ? "Enter a valid card number"
+                  ? S.validCardNumber
                   : null,
             ),
             Row(
@@ -130,7 +129,7 @@ class _AddCardPageState extends State<AddCardPage> {
                     textInputAction: TextInputAction.next,
                     onChanged: (_) => setState(() {}),
                     validator: (value) => (value == null || value.length < 5)
-                        ? "Invalid date"
+                        ? S.invalidDate
                         : null,
                   ),
                 ),
@@ -162,7 +161,7 @@ class _AddCardPageState extends State<AddCardPage> {
                       setState(() => _saveCard = value ?? false),
                 ),
                 Text(
-                  "Save Card",
+                  S.saveCard,
                   style: AppFonts.medium14(context)
                       .copyWith(color: AppColor.secondryColor),
                 ),
@@ -177,7 +176,7 @@ class _AddCardPageState extends State<AddCardPage> {
           color: AppColor.whiteColor,
           border: Border(top: BorderSide(color: AppColor.borderColor)),
         ),
-        child: CustomBtn(text: "Add Card", onPressed: _submit),
+        child: CustomBtn(text: S.addCard, onPressed: _submit),
       ),
     );
   }

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
@@ -21,8 +20,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required this._paymentMethods,
     required this._content,
     this.branchId,
-  })  : _addresses = addresses,
-        super(const CheckoutState()) {
+  }) : _addresses = addresses,
+       super(const CheckoutState()) {
     load();
   }
 
@@ -49,20 +48,22 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       final coupons = results[2] as List<CouponModel>;
       final deliveryFee = results[3] as double;
 
-      emit(state.copyWith(
-        addresses: addresses,
-        paymentMethods: paymentMethods,
-        availableCoupons: coupons,
-        deliveryFee: deliveryFee,
-        selectedAddress: addresses.isEmpty ? null : addresses.first,
-        selectedPaymentMethod: paymentMethods.isEmpty
-            ? null
-            : paymentMethods.firstWhere(
-                (method) => method.isOnline,
-                orElse: () => paymentMethods.last,
-              ),
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          addresses: addresses,
+          paymentMethods: paymentMethods,
+          availableCoupons: coupons,
+          deliveryFee: deliveryFee,
+          selectedAddress: addresses.isEmpty ? null : addresses.first,
+          selectedPaymentMethod: paymentMethods.isEmpty
+              ? null
+              : paymentMethods.firstWhere(
+                  (method) => method.isOnline,
+                  orElse: () => paymentMethods.last,
+                ),
+          isLoading: false,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
@@ -103,10 +104,12 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         longitude: address.longitude,
       );
       if (isClosed) return;
-      emit(state.copyWith(
-        addresses: [...state.addresses, saved],
-        selectedAddress: saved,
-      ));
+      emit(
+        state.copyWith(
+          addresses: [...state.addresses, saved],
+          selectedAddress: saved,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(error: error.toString()));
@@ -118,10 +121,12 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     await _addresses.removeAddress(id);
     if (isClosed) return;
     final remaining = state.addresses.where((a) => a.id != id).toList();
-    emit(state.copyWith(
-      addresses: remaining,
-      selectedAddress: remaining.isEmpty ? null : remaining.first,
-    ));
+    emit(
+      state.copyWith(
+        addresses: remaining,
+        selectedAddress: remaining.isEmpty ? null : remaining.first,
+      ),
+    );
   }
 
   void selectPaymentMethod(PaymentMethodModel method) {
@@ -132,10 +137,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   /// is unknown, expired, below minimum spend, over a usage limit or outside
   /// the cart's scope. The numeric discount comes from the response, never
   /// from display text.
-  Future<bool> applyCoupon(
-    String code, {
-    required double subtotal,
-  }) async {
+  Future<bool> applyCoupon(String code, {required double subtotal}) async {
     final normalized = code.trim();
     if (normalized.isEmpty || isClosed) return false;
     try {
@@ -145,10 +147,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         branchId: branchId,
       );
       if (isClosed) return false;
-      emit(state.copyWith(
-        appliedCoupon: validated.coupon,
-        clearCouponError: true,
-      ));
+      emit(
+        state.copyWith(appliedCoupon: validated.coupon, clearCouponError: true),
+      );
       return true;
     } on CouponRejectedException catch (error) {
       if (isClosed) return false;

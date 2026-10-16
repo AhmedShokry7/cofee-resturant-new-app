@@ -9,7 +9,7 @@ import 'package:new_coffee/features/menu/data/repositories/mock_product_reposito
 
 Future<FavoritesCubit> _readyCubit() async {
   final cubit = FavoritesCubit(
-    repository: const MockProductRepository(),
+    repository: MockProductRepository(),
     favorites: FavoritesRepositoryImpl(),
   );
   await cubit.stream.firstWhere((state) => !state.isLoading);
@@ -19,14 +19,13 @@ Future<FavoritesCubit> _readyCubit() async {
 void main() {
   test('stored favourite ids resolve to catalogue rows', () async {
     SharedPreferences.setMockInitialValues({
-      'favorites_v1': jsonEncode(['1', 'missing-product']),
+      'favorites_v1_guest': jsonEncode(['1', 'missing-product']),
     });
 
     final cubit = await _readyCubit();
-    expect(
-      cubit.state.favoriteProducts.map((product) => product.name),
-      ['Espresso'],
-    );
+    expect(cubit.state.favoriteProducts.map((product) => product.name), [
+      'Espresso',
+    ]);
     // An id that no longer exists is not shown, but its heart stays set.
     expect(cubit.state.ids, {'1', 'missing-product'});
     await cubit.close();
@@ -50,13 +49,12 @@ void main() {
     await cubit.toggle('2');
 
     expect(cubit.state.ids, {'2'});
-    expect(
-      cubit.state.favoriteProducts.map((product) => product.name),
-      ['Cappuccino'],
-    );
+    expect(cubit.state.favoriteProducts.map((product) => product.name), [
+      'Cappuccino',
+    ]);
 
     final prefs = await SharedPreferences.getInstance();
-    expect(jsonDecode(prefs.getString('favorites_v1')!), ['2']);
+    expect(jsonDecode(prefs.getString('favorites_v1_guest')!), ['2']);
     await cubit.close();
   });
 

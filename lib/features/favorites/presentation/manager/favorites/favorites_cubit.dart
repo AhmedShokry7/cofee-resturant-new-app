@@ -20,12 +20,12 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     required this._repository,
     required FavoritesRepository favorites,
     this.branchId,
-  })  : _favorites = favorites,
-        super(const FavoritesState(ids: {})) {
+  }) : _favorites = favorites,
+       super(const FavoritesState(ids: {})) {
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService
-          .client.auth.onAuthStateChange
-          .listen((_) => load());
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        (_) => load(),
+      );
     }
     load();
   }
@@ -38,11 +38,22 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   StreamSubscription<dynamic>? _authSubscription;
 
+  /// Product ids with a toggle currently in flight. A second tap while the
+  /// first persistence round-trip is still running is ignored, so rapid taps
+  /// can neither duplicate requests nor interleave add/remove into a wrong
+  /// final state.
+  final Set<String> _togglesInFlight = {};
+
   /// Favorite rows stay readable when only a subset of the catalog is loaded.
   /// Two hundred comfortably covers the whole seeded menu without paging.
   static const _catalogPageSize = 200;
 
   Future<void> load() async {
+    // Adopt the guest list into a freshly signed-in account before reading,
+    // so hearts set while signed out survive sign-in without ever leaking
+    // across accounts.
+    await _favorites.migrateGuestIds();
+    if (isClosed) return;
     final localIds = await _favorites.loadLocalIds();
     if (isClosed) return;
     emit(state.copyWith(ids: localIds, isLoading: true, clearError: true));
@@ -73,12 +84,21 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     return load();
   }
 
+  Future<void> toggle(String productId) async {
+    if (!_togglesInFlight.add(productId)) return;
+    try {
+      await _toggle(productId);
+    } finally {
+      _togglesInFlight.remove(productId);
+    }
+  }
+
   /// Adds or removes one favourite, then ensures its product row is available.
   ///
   /// Kept async because a newly favourited product may not have been part of
   /// the resolved page, and constructing a placeholder would show a wrong name,
   /// price or image until the next refresh.
-  Future<void> toggle(String productId) async {
+  Future<void> _toggle(String productId) async {
     final wasFavorite = state.ids.contains(productId);
     if (wasFavorite) {
       emit(state.copyWith(ids: {...state.ids}..remove(productId)));
@@ -86,16 +106,19 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       return;
     }
 
-    final product = state.products[productId] ??
+    final product =
+        state.products[productId] ??
         await _repository.getById(productId, branchId: branchId);
     // A heart is never set for an id the catalogue cannot resolve. Otherwise
     // the server sync would immediately violate its product foreign key.
     if (product == null || isClosed) return;
 
-    emit(state.copyWith(
-      ids: {...state.ids, productId},
-      products: {...state.products, product.id: product},
-    ));
+    emit(
+      state.copyWith(
+        ids: {...state.ids, productId},
+        products: {...state.products, product.id: product},
+      ),
+    );
     try {
       await _favorites.addFavorite(productId);
     } catch (error, stackTrace) {

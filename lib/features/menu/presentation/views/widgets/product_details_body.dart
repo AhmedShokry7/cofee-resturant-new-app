@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -12,7 +13,9 @@ import 'package:new_coffee/features/menu/presentation/manager/product_details/pr
 import 'package:new_coffee/features/menu/presentation/views/widgets/cup_icon.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_description.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class ProductDetailsBody extends StatelessWidget {
   const ProductDetailsBody({super.key});
@@ -24,9 +27,10 @@ class ProductDetailsBody extends StatelessWidget {
         final product = state.product;
         if (product == null) {
           // Loading and failing are different states: the first shows a
-          // progress indicator, only the second shows a message.
+          // skeleton mirroring the gallery, title, price, description and
+          // option groups; only the second shows a message.
           if (state.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const ProductDetailsSkeleton();
           }
           return Center(
             child: Text(
@@ -38,75 +42,97 @@ class ProductDetailsBody extends StatelessWidget {
 
         final groups = state.groups;
 
+        // Order on screen: full-bleed image first (flush under the AppBar,
+        // which already carries back + favorite), then the padded product
+        // information: title, price, quantity, description and options.
         return ListView(
-          padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            SpacingTokens.lg.w,
-          ),
+          padding: EdgeInsets.only(bottom: SpacingTokens.lg.h),
           children: [
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16.r),
-                child: SizedBox(
-                  height: 220.h,
-                  width: 220.w,
-                  child: ProductImageView(product: product),
-                ),
+            SizedBox(
+              width: double.infinity,
+              height: 300.h,
+              child: ProductImageView(product: product),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                SpacingTokens.lg.w,
+                SpacingTokens.md.h,
+                SpacingTokens.lg.w,
+                0,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.category,
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
+                  ),
+                  SizedBox(height: 4.h),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: AppFonts.semiBold20(context),
+                        ),
+                      ),
+                      SizedBox(width: SpacingTokens.sm.w),
+                      PriceLabel(
+                        amount: context.read<ProductDetailsCubit>().unitPrice,
+                        style: AppFonts.semiBold18(context)
+                            .copyWith(color: AppColor.primaryColor),
+                        iconSize: 18,
+                        iconColor: AppColor.primaryColor,
+                      ),
+                    ],
+                  ),
+                  if (!state.isAvailable) ...[
+                    SizedBox(height: SpacingTokens.sm.h),
+                    _UnavailableBanner(reason: state.unavailableReason),
+                  ],
+                  SizedBox(height: SpacingTokens.lg.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(S.quantity, style: AppFonts.semiBold16(context)),
+                      QuantityStepper(
+                        quantity: state.quantity,
+                        onIncrement: () => context
+                            .read<ProductDetailsCubit>()
+                            .incrementQuantity(),
+                        onDecrement: () => context
+                            .read<ProductDetailsCubit>()
+                            .decrementQuantity(),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: SpacingTokens.lg.h),
+                  Text(S.productDetails, style: AppFonts.semiBold16(context)),
+                  SizedBox(height: SpacingTokens.sm.h),
+                  ProductDescription(description: product.description),
+
+                  // Every group is rendered from what the admin configured. The old
+                  // page had exactly three hardcoded sections and matched them on
+                  // category names, so a product with a different set of options could
+                  // not be configured at all.
+                  for (final group in groups) ...[
+                    SizedBox(height: SpacingTokens.lg.h),
+                    _OptionGroupSection(
+                      group: group,
+                      selection: state.selection,
+                      showCupArt: group.code == 'size',
+                      cupSize: cupSizeFor(groups, state.selection),
+                    ),
+                  ],
+
+                  SizedBox(height: SpacingTokens.lg.h),
+                  const Divider(),
+                ],
               ),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
-            Text(
-              product.category,
-              style: AppFonts.regular14(context)
-                  .copyWith(color: AppColor.greyColor),
-            ),
-            SizedBox(height: 4.h),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    product.name,
-                    style: AppFonts.semiBold20(context),
-                  ),
-                ),
-                SizedBox(width: SpacingTokens.sm.w),
-                Text(
-                  Formatters.price(
-                    context.read<ProductDetailsCubit>().unitPrice,
-                  ),
-                  style: AppFonts.semiBold18(context)
-                      .copyWith(color: AppColor.primaryColor),
-                ),
-              ],
-            ),
-            if (!state.isAvailable) ...[
-              SizedBox(height: SpacingTokens.sm.h),
-              _UnavailableBanner(reason: state.unavailableReason),
-            ],
-            SizedBox(height: SpacingTokens.lg.h),
-            Text("Product Details", style: AppFonts.semiBold16(context)),
-            SizedBox(height: SpacingTokens.sm.h),
-            ProductDescription(description: product.description),
-
-            // Every group is rendered from what the admin configured. The old
-            // page had exactly three hardcoded sections and matched them on
-            // category names, so a product with a different set of options could
-            // not be configured at all.
-            for (final group in groups) ...[
-              SizedBox(height: SpacingTokens.lg.h),
-              _OptionGroupSection(
-                group: group,
-                selection: state.selection,
-                showCupArt: group.code == 'size',
-                cupSize: cupSizeFor(groups, state.selection),
-              ),
-            ],
-
-            SizedBox(height: SpacingTokens.lg.h),
-            const Divider(),
           ],
         );
       },
@@ -191,7 +217,7 @@ class _OptionGroupSection extends StatelessWidget {
                 Expanded(
                   child: _ValueChip(
                     label: _label(group.values[i]),
-                    hint: _hint(group.values[i]),
+                    hint: _delta(group.values[i]),
                     selected: selection
                         .inGroup(group.id)
                         .contains(group.values[i].id),
@@ -215,7 +241,7 @@ class _OptionGroupSection extends StatelessWidget {
           for (final value in group.values)
             _ValueTile(
               label: _label(value),
-              hint: _hint(value),
+              hint: _delta(value),
               selected: selection.inGroup(group.id).contains(value.id),
               onTap: () => context.read<ProductDetailsCubit>().toggleValue(
                 group.id,
@@ -228,8 +254,8 @@ class _OptionGroupSection extends StatelessWidget {
 
   static String _label(OptionValue value) => value.name;
 
-  static String? _hint(OptionValue value) =>
-      value.priceDelta == 0 ? null : '+${Formatters.price(value.priceDelta)}';
+  static double? _delta(OptionValue value) =>
+      value.priceDelta == 0 ? null : value.priceDelta;
 }
 
 class _ValueChip extends StatelessWidget {
@@ -242,13 +268,14 @@ class _ValueChip extends StatelessWidget {
   });
 
   final String label;
-  final String? hint;
+  final double? hint;
   final Widget? icon;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final hintAmount = hint;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -277,12 +304,17 @@ class _ValueChip extends StatelessWidget {
                 color: selected ? AppColor.primaryColor : AppColor.blackColor,
               ),
             ),
-            if (hint != null)
-              Text(
-                hint!,
+            if (hintAmount != null)
+              PriceLabel(
+                amount: hintAmount,
+                prefix: '+',
                 style: AppFonts.regular12(context).copyWith(
                   color: selected ? AppColor.primaryColor : AppColor.greyColor,
                 ),
+                iconSize: 12,
+                iconColor: selected
+                    ? AppColor.primaryColor
+                    : AppColor.greyColor,
               ),
           ],
         ),
@@ -300,7 +332,7 @@ class _ValueTile extends StatelessWidget {
   });
 
   final String label;
-  final String? hint;
+  final double? hint;
   final bool selected;
   final VoidCallback onTap;
 
@@ -341,10 +373,13 @@ class _ValueTile extends StatelessWidget {
             SizedBox(width: SpacingTokens.sm.w),
             Expanded(child: Text(label, style: AppFonts.medium14(context))),
             if (hint != null)
-              Text(
-                hint!,
+              PriceLabel(
+                amount: hint!,
+                prefix: '+',
                 style: AppFonts.semiBold14(context)
                     .copyWith(color: AppColor.primaryColor),
+                iconSize: 13,
+                iconColor: AppColor.primaryColor,
               ),
           ],
         ),

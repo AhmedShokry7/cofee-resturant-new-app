@@ -12,6 +12,7 @@ class SearchState {
     this.maxPrice,
     this.isLoading = false,
     this.error,
+    this.hasSearched = false,
   });
 
   final String query;
@@ -40,12 +41,18 @@ class SearchState {
   /// list, so an outage never looks like "no results".
   final String? error;
 
+  /// True once any search has completed. False means the customer has not
+  /// searched yet, which renders an inviting prompt instead of "no results".
+  final bool hasSearched;
+
   bool get hasActiveFilters =>
       sort != SearchSort.relevance ||
       category != null ||
       minPrice != null ||
       maxPrice != null;
 
-  /// True when a search ran and legitimately found nothing.
-  bool get isEmptyResult => !isLoading && error == null && results.isEmpty;
+  /// True when a search ran and legitimately found nothing. A page that was
+  /// never searched is idle, not empty.
+  bool get isEmptyResult =>
+      hasSearched && !isLoading && error == null && results.isEmpty;
 }

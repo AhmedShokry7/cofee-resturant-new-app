@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -33,22 +35,19 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
   void _submit() {
     FocusScope.of(context).unfocus();
     if (_rating == 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a rating")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.selectRating)));
       return;
     }
     final messenger = ScaffoldMessenger.of(context);
     Navigator.of(context).pop();
-    messenger.showSnackBar(
-      const SnackBar(content: Text("Review submitted successfully")),
-    );
+    messenger.showSnackBar(SnackBar(content: Text(S.reviewSubmitted)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Leave Review")),
+      appBar: AppBar(title: Text(S.leaveReview)),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           SpacingTokens.lg.w,
@@ -63,17 +62,16 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
           ),
           SizedBox(height: SpacingTokens.xl.h),
           Text(
-            "How is your order?",
+            S.howIsOrder,
             textAlign: TextAlign.center,
             style: AppFonts.semiBold24(context),
           ),
           SizedBox(height: SpacingTokens.lg.h),
           Text(
-            "Your overall rating",
+            S.overallRating,
             textAlign: TextAlign.center,
-            style: AppFonts.regular16(
-              context,
-            ).copyWith(color: AppColor.greyColor),
+            style: AppFonts.regular16(context)
+                .copyWith(color: AppColor.greyColor),
           ),
           SizedBox(height: SpacingTokens.md.h),
           StarRating(
@@ -83,7 +81,7 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
           SizedBox(height: SpacingTokens.xl.h),
           const Divider(),
           SizedBox(height: SpacingTokens.lg.h),
-          Text("Add detailed review", style: AppFonts.semiBold16(context)),
+          Text(S.addReview, style: AppFonts.semiBold16(context)),
           SizedBox(height: SpacingTokens.md.h),
           Container(
             decoration: BoxDecoration(
@@ -103,10 +101,9 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
               decoration: InputDecoration(
                 border: InputBorder.none,
                 isDense: true,
-                hintText: "Write your review here...",
-                hintStyle: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                hintText: S.reviewHint,
+                hintStyle: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
             ),
           ),
@@ -119,4 +116,3 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
     );
   }
 }
-

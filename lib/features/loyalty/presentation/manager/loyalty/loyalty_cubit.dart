@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
@@ -13,17 +14,16 @@ part 'loyalty_state.dart';
 /// Customer loyalty wallet and redeemable catalogue.
 ///
 /// Reference data always comes from `loyalty_rules` and `loyalty_rewards`.
-/// Signed-in customers see their server ledger; guests keep a device-only demo
-/// wallet because there is no account for the ledger to belong to.
+/// Signed-in customers see their server ledger; guests keep a device-only
+/// wallet that starts empty because there is no account for a ledger
+/// to belong to.
 class LoyaltyCubit extends Cubit<LoyaltyState> {
-  LoyaltyCubit({
-    required this._repository,
-    this.branchId,
-  })  : super(const LoyaltyState()) {
+  LoyaltyCubit({required this._repository, this.branchId})
+    : super(const LoyaltyState()) {
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService
-          .client.auth.onAuthStateChange
-          .listen((_) => load());
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        (_) => load(),
+      );
     }
     load();
   }
@@ -36,8 +36,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   StreamSubscription<dynamic>? _authSubscription;
 
   int _counter = 0;
-  String _nextId() =>
-      '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
+  String _nextId() => '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
 
   Future<void> load() async {
     emit(state.copyWith(isLoading: true, clearError: true));
@@ -50,20 +49,22 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       if (isClosed) return;
       final catalog = results[0] as LoyaltyCatalog;
       final wallet = results[1] as LoyaltyWallet?;
-      final guest = results[2]
-          as ({int balance, List<LoyaltyTransaction> transactions});
+      final guest =
+          results[2] as ({int balance, List<LoyaltyTransaction> transactions});
 
-      emit(state.copyWith(
-        rules: catalog.rules,
-        rewards: catalog.rewards,
-        currencyCode: catalog.currencyCode,
-        balance: wallet?.balance ?? guest.balance,
-        transactions: wallet?.transactions ?? guest.transactions,
-        lifetimePoints: wallet?.lifetimePoints ?? 0,
-        tier: wallet?.tier ?? 'guest',
-        isGuest: wallet == null,
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          rules: catalog.rules,
+          rewards: catalog.rewards,
+          currencyCode: catalog.currencyCode,
+          balance: wallet?.balance ?? guest.balance,
+          transactions: wallet?.transactions ?? guest.transactions,
+          lifetimePoints: wallet?.lifetimePoints ?? 0,
+          tier: wallet?.tier ?? 'guest',
+          isGuest: wallet == null,
+          isLoading: false,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
@@ -82,8 +83,10 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   /// This remains a device wallet until the server-backed checkout places a
   /// real order. `place_order()` is the only writer of server points, so this
   /// method deliberately does not touch the server ledger.
-  Future<int> earnForOrder(double orderTotal,
-      {String title = 'Order purchase'}) async {
+  Future<int> earnForOrder(
+    double orderTotal, {
+    String title = 'Order purchase',
+  }) async {
     final rule = state.rules.isEmpty ? null : state.rules.first;
     final points = rule?.pointsFor(orderTotal) ?? 0;
     if (points <= 0 || isClosed) return 0;
@@ -102,11 +105,13 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       date: DateTime.now(),
     );
     final transactions = [transaction, ...state.transactions].take(50).toList();
-    emit(state.copyWith(
-      balance: state.balance + points,
-      transactions: transactions,
-      lastEarned: points,
-    ));
+    emit(
+      state.copyWith(
+        balance: state.balance + points,
+        transactions: transactions,
+        lastEarned: points,
+      ),
+    );
     await const GuestLoyaltyWalletStore().save(
       balance: state.balance,
       transactions: state.transactions,
@@ -126,9 +131,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
 
     final branch = branchId;
     if (branch == null || branch.isEmpty) {
-      emit(state.copyWith(
-        error: 'Select a branch before redeeming this reward.',
-      ));
+      emit(
+        state.copyWith(error: 'Select a branch before redeeming this reward.'),
+      );
       return false;
     }
 
@@ -153,15 +158,17 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     if (state.balance < reward.pointsCost || isClosed) return false;
     final transaction = LoyaltyTransaction(
       id: _nextId(),
-      title: 'Redeemed ${reward.product.name}',
+      title: S.redeemedReward(reward.product.name),
       points: -reward.pointsCost,
       date: DateTime.now(),
     );
     final transactions = [transaction, ...state.transactions].take(50).toList();
-    emit(state.copyWith(
-      balance: state.balance - reward.pointsCost,
-      transactions: transactions,
-    ));
+    emit(
+      state.copyWith(
+        balance: state.balance - reward.pointsCost,
+        transactions: transactions,
+      ),
+    );
     await const GuestLoyaltyWalletStore().save(
       balance: state.balance,
       transactions: state.transactions,

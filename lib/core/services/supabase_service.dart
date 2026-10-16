@@ -5,8 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Owns the single [SupabaseClient] for the process.
 ///
 /// Initialisation is lazy and idempotent: every caller awaits [client] and gets
-/// the same instance. When credentials are absent the app stays on the local
-/// mock repositories instead of crashing at startup.
+/// the same instance. Production providers throw a clear error when the
+/// backend was never configured instead of serving fabricated data.
 class SupabaseService {
   const SupabaseService._();
 

@@ -20,7 +20,7 @@ abstract class NotificationsRepository {
 
 class NotificationsRepositoryImpl implements NotificationsRepository {
   const NotificationsRepositoryImpl({SupabaseClient? client})
-      : _clientOverride = client;
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -37,31 +37,38 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   @override
   Future<List<NotificationModel>> listNotifications({int limit = 50}) async {
     final client = _client;
-    if (client == null) return const [];
+    if (client == null) {
+      throw StateError('Notifications need a configured Supabase backend.');
+    }
     _requireUserId(client);
 
-    final rows = await client
-        .from('notifications')
-        .select(
-          'id, type, title_ar, title_en, body_ar, body_en, is_read, created_at',
-        )
-        .order('created_at', ascending: false)
-        .limit(limit.clamp(1, 200)) as List;
+    final rows =
+        await client
+                .from('notifications')
+                .select(
+                  'id, type, title_ar, title_en, body_ar, body_en, is_read, created_at',
+                )
+                .order('created_at', ascending: false)
+                .limit(limit.clamp(1, 200))
+            as List;
     return [
       for (final row in rows)
-        if (row is Map<String, dynamic>)
-          NotificationModel.fromDatabase(row),
+        if (row is Map<String, dynamic>) NotificationModel.fromDatabase(row),
     ];
   }
 
   @override
   Future<int> markRead(List<String> ids) async {
     final client = _client;
-    if (client == null || ids.isEmpty) return 0;
+    if (client == null) {
+      throw StateError('Notifications need a configured Supabase backend.');
+    }
+    if (ids.isEmpty) return 0;
     _requireUserId(client);
-    final rows = await client.rpc('mark_notifications_read', params: {
-      'p_ids': ids,
-    }) as List;
+    final rows = await client.rpc(
+      'mark_notifications_read',
+      params: {'p_ids': ids},
+    ) as List;
     if (rows.isEmpty) return 0;
     return (rows.first as num?)?.toInt() ?? 0;
   }

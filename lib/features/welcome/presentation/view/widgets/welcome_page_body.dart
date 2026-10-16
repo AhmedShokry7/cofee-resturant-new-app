@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_page.dart';
 import 'package:new_coffee/features/welcome/presentation/view/widgets/custom_welcome_images.dart';
@@ -17,9 +18,7 @@ class WelcomePageBody extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           // صورة تغطي الشاشة بالكامل
-          const Positioned.fill(
-            child: CustomWelcomeImages(),
-          ),
+          const Positioned.fill(child: CustomWelcomeImages()),
 
           // تدرج لوني لتحسين وضوح النص
           // Positioned.fill(
@@ -43,10 +42,7 @@ class WelcomePageBody extends StatelessWidget {
           // المحتوى فوق الصورة
           SafeArea(
             child: Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: 24.w,
-                vertical: 20.h,
-              ),
+              padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 20.h),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -59,7 +55,7 @@ class WelcomePageBody extends StatelessWidget {
                   SizedBox(height: 12.h),
 
                   CustomBtn(
-                    text: "Let's Get Started",
+                    text: S.letsGetStarted,
                     onPressed: () {
                       const SessionRepository().markOnboardingSeen();
                       Navigator.pushReplacementNamed(
@@ -68,7 +64,6 @@ class WelcomePageBody extends StatelessWidget {
                       );
                     },
                   ),
-
                 ],
               ),
             ),

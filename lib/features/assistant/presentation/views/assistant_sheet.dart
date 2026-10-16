@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -16,7 +17,7 @@ import 'package:new_coffee/features/favorites/presentation/manager/favorites/fav
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class AssistantSheet extends StatefulWidget {
   const AssistantSheet({super.key});
@@ -106,9 +107,9 @@ class _AssistantSheetState extends State<AssistantSheet> {
     context.read<AssistantCubit>().recordProductInterest(product);
     try {
       context.read<CartCubit>().add(product);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text("${product.name} added to cart")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.addedProductToCart(product.name))),
+      );
     } catch (_) {
       // Cart is optional here; the card tap still opens details.
     }
@@ -143,7 +144,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
                       SizedBox(width: SpacingTokens.sm.w),
                       Expanded(
                         child: Text(
-                          'Coffee Assistant',
+                          S.assistantTitle,
                           style: AppFonts.semiBold16(context),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -332,10 +333,12 @@ class _AssistantSheetState extends State<AssistantSheet> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        Text(
-                          Formatters.price(product.price),
+                        PriceLabel(
+                          amount: product.price,
                           style: AppFonts.regular12(context)
                               .copyWith(color: AppColor.primaryColor),
+                          iconSize: 12,
+                          iconColor: AppColor.primaryColor,
                         ),
                       ],
                     ),
@@ -392,7 +395,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
             border: Border.all(color: AppColor.primaryColor),
           ),
           child: Text(
-            state.navigateLabel ?? 'Open',
+            state.navigateLabel ?? S.open,
             style: AppFonts.medium14(context)
                 .copyWith(color: AppColor.primaryColor),
             textAlign: TextAlign.center,
@@ -443,7 +446,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
             onSubmitted: (_) => _send(),
             style: AppFonts.regular14(context),
             decoration: InputDecoration(
-              hintText: 'Ask me anything…',
+              hintText: S.askAnything,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: SpacingTokens.md.w,
                 vertical: SpacingTokens.sm.h,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -9,6 +10,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/widgets/reward_card.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class LoyaltyPage extends StatelessWidget {
   const LoyaltyPage({super.key});
@@ -25,32 +27,29 @@ class LoyaltyPage extends StatelessWidget {
       // Guests still use the device cart because they have no server cart.
       if (wasGuest) {
         context.read<CartCubit>().add(
-              reward.product,
-              unitPrice: 0,
-              note: 'Loyalty reward',
-            );
+          reward.product,
+          unitPrice: 0,
+          note: S.loyaltyRewardNote,
+        );
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Enjoy your ${reward.product.name}!')),
+        SnackBar(content: Text(S.enjoyReward(reward.product.name))),
       );
     } else {
       final error = context.read<LoyaltyCubit>().state.error;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(error ?? 'Not enough points yet'),
-        ),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error ?? S.notEnoughPoints)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Loyalty Points")),
+      appBar: AppBar(title: Text(S.loyaltyPoints)),
       body: BlocBuilder<LoyaltyCubit, LoyaltyState>(
         builder: (context, state) {
           if (state.isLoading && state.rewards.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const LoyaltyLoadingView();
           }
           final unlocked = state.rewards
               .where((reward) => reward.affordable(state.balance))
@@ -70,14 +69,14 @@ class LoyaltyPage extends StatelessWidget {
                 balance: state.balance,
                 earnText: _earnText(state),
                 accountText: state.isGuest
-                    ? 'Guest wallet on this device'
-                    : '${state.tier} · ${state.lifetimePoints} lifetime points',
+                    ? S.guestWalletDevice
+                    : S.lifetimePoints(state.tier, state.lifetimePoints),
               ),
               SizedBox(height: SpacingTokens.xl.h),
               Text(
                 unlocked.isEmpty
-                    ? "Keep collecting to unlock rewards"
-                    : "Your points unlock",
+                    ? S.keepCollectingToUnlock
+                    : S.yourPointsUnlock,
                 style: AppFonts.semiBold18(context),
               ),
               SizedBox(height: SpacingTokens.md.h),
@@ -89,17 +88,14 @@ class LoyaltyPage extends StatelessWidget {
                 ),
               if (locked.isNotEmpty) ...[
                 SizedBox(height: SpacingTokens.md.h),
-                Text(
-                  "Keep collecting",
-                  style: AppFonts.semiBold18(context),
-                ),
+                Text(S.keepCollecting, style: AppFonts.semiBold18(context)),
                 SizedBox(height: SpacingTokens.md.h),
                 for (final reward in locked)
                   RewardCard(reward: reward, locked: true),
               ],
               if (state.transactions.isNotEmpty) ...[
                 SizedBox(height: SpacingTokens.md.h),
-                Text("History", style: AppFonts.semiBold18(context)),
+                Text(S.history, style: AppFonts.semiBold18(context)),
                 SizedBox(height: SpacingTokens.md.h),
                 for (final transaction in state.transactions)
                   _HistoryTile(
@@ -113,13 +109,14 @@ class LoyaltyPage extends StatelessWidget {
       ),
     );
   }
+
   static String _earnText(LoyaltyState state) {
     final rate = state.pointsPerCurrencyUnit;
-    if (rate == null) return 'Earn rate unavailable';
+    if (rate == null) return S.earnRateUnavailable;
     final formatted = rate == rate.roundToDouble()
         ? rate.toInt().toString()
         : rate.toString();
-    return 'Earn $formatted point${rate == 1 ? '' : 's'} per 1 ${state.currencyCode} on every order';
+    return S.earnRate(formatted, state.currencyCode);
   }
 }
 
@@ -149,10 +146,9 @@ class _BalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Your Balance",
-            style: AppFonts.regular14(
-              context,
-            ).copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
+            S.yourBalance,
+            style: AppFonts.regular14(context)
+                .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
           ),
           SizedBox(height: SpacingTokens.xs.h),
           Row(
@@ -160,18 +156,17 @@ class _BalanceCard extends StatelessWidget {
             children: [
               Text(
                 '$balance',
-                style: AppFonts.semiBold32(
-                  context,
-                ).copyWith(color: AppColor.whiteColor),
+                style: AppFonts.semiBold32(context)
+                    .copyWith(color: AppColor.whiteColor),
               ),
               SizedBox(width: SpacingTokens.xs.w),
               Padding(
                 padding: EdgeInsets.only(bottom: 4.h),
                 child: Text(
-                  "points",
-                  style: AppFonts.medium16(
-                    context,
-                  ).copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
+                  S.pointsWord,
+                  style: AppFonts.medium16(context).copyWith(
+                    color: AppColor.whiteColor.withValues(alpha: 0.85),
+                  ),
                 ),
               ),
             ],
@@ -179,16 +174,14 @@ class _BalanceCard extends StatelessWidget {
           SizedBox(height: SpacingTokens.xs.h),
           Text(
             earnText,
-            style: AppFonts.regular12(
-              context,
-            ).copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
           ),
           SizedBox(height: SpacingTokens.xs.h),
           Text(
             accountText,
-            style: AppFonts.regular12(
-              context,
-            ).copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
           ),
         ],
       ),
@@ -218,9 +211,7 @@ class _HistoryTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Text(title, style: AppFonts.medium14(context)),
-          ),
+          Expanded(child: Text(title, style: AppFonts.medium14(context))),
           Text(
             '${earned ? '+' : ''}$points',
             style: AppFonts.semiBold14(context).copyWith(
@@ -232,4 +223,3 @@ class _HistoryTile extends StatelessWidget {
     );
   }
 }
-

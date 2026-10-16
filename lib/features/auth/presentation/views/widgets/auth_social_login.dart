@@ -3,15 +3,16 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 
 class AuthSocialLogin extends StatelessWidget {
-  const AuthSocialLogin({super.key, this.label = "Or sign in with"});
+  const AuthSocialLogin({super.key, this.label});
 
-  final String label;
+  final String? label;
 
   @override
   Widget build(BuildContext context) {
@@ -23,10 +24,9 @@ class AuthSocialLogin extends StatelessWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: SpacingTokens.sm.w),
               child: Text(
-                label,
-                style: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                label ?? S.orSignInWith,
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
             ),
             const Expanded(child: Divider()),
@@ -80,4 +80,3 @@ class _SocialButton extends StatelessWidget {
     );
   }
 }
-

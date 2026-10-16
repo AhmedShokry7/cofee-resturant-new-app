@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -72,15 +73,14 @@ class _LoginPageBodyState extends State<LoginPageBody> {
             final isLoading = state is AuthLoading;
             return Stack(
               children: [
-                  SkipBtn(
-              onTap: () async {
-                await const SessionRepository().markAuthenticated();
-                if (!context.mounted) return;
-                Navigator.of(context).pushReplacementNamed(
-                  MainPage.routeName,
-                );
-              },
-            ),
+                SkipBtn(
+                  onTap: () async {
+                    await const SessionRepository().markAuthenticated();
+                    if (!context.mounted) return;
+                    Navigator.of(context)
+                        .pushReplacementNamed(MainPage.routeName);
+                  },
+                ),
                 Form(
                   key: _formKey,
                   child: Column(
@@ -88,7 +88,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                     children: [
                       SizedBox(height: AuthSpacings.top.h),
                       Text(
-                        "Sign In",
+                        S.signIn,
                         textAlign: TextAlign.center,
                         style: AppFonts.semiBold24(context),
                       ),
@@ -102,20 +102,20 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       SizedBox(height: AuthSpacings.headerGap.h),
                       CustomTextFormField(
                         controller: _emailController,
-                        hint: "Email",
+                        hint: S.emailHint,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
                         validator: (value) => (value == null || value.isEmpty)
-                            ? "Email is required"
+                            ? S.emailRequired
                             : null,
                       ),
                       CustomTextFormField(
                         controller: _passwordController,
-                        hint: "Password",
+                        hint: S.passwordHint,
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                         validator: (value) => (value == null || value.isEmpty)
-                            ? "Password is required"
+                            ? S.passwordRequired
                             : null,
                       ),
                       Align(
@@ -125,7 +125,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                               Navigator.of(context)
                                   .pushNamed(ForgetPasswordPage.routeName),
                           child: Text(
-                            "Forget your password?",
+                            S.forgotPasswordQ,
                             style: AppFonts.regular12(context).copyWith(
                               color: AppColor.primaryColor,
                               decoration: TextDecoration.underline,
@@ -135,7 +135,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       ),
                       SizedBox(height: AuthSpacings.fieldsGap.h),
                       CustomBtn(
-                        text: "Sign In",
+                        text: S.signIn,
                         isLoading: isLoading,
                         onPressed: _submit,
                       ),
@@ -149,7 +149,9 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                             color: AppColor.whiteColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(100.r),
-                              side: const BorderSide(color: AppColor.primaryColor),
+                              side: const BorderSide(
+                                color: AppColor.primaryColor,
+                              ),
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
@@ -172,14 +174,15 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                                     SizedBox(width: SpacingTokens.sm.w),
                                     Flexible(
                                       child: Text(
-                                        "Continue with phone number",
+                                        S.continueWithPhone,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         textAlign: TextAlign.center,
-                                        style: AppFonts.regular14(context).copyWith(
-                                          color: AppColor.primaryColor,
-                                          fontWeight: FontWeight.w500,
-                                        ),
+                                        style: AppFonts.regular14(context)
+                                            .copyWith(
+                                              color: AppColor.primaryColor,
+                                              fontWeight: FontWeight.w500,
+                                            ),
                                       ),
                                     ),
                                   ],
@@ -191,8 +194,8 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       ),
                       SizedBox(height: AuthSpacings.sectionGap.h),
                       AuthSwitchPrompt(
-                        question: "Don't have an account? ",
-                        actionText: "Sign Up",
+                        question: S.dontHaveAccount,
+                        actionText: S.signUp,
                         onTap: () =>
                             Navigator.of(context)
                                 .pushReplacementNamed(SignUpPage.routeName),

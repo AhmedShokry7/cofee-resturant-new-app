@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 
 class ShippingAddressesBottomBar extends StatelessWidget {
@@ -8,7 +9,7 @@ class ShippingAddressesBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PrimaryBottomBar(
-      text: "Apply",
+      text: S.apply,
       onPressed: () => Navigator.of(context).pop(),
     );
   }

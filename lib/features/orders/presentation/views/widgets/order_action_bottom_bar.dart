@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -10,14 +11,14 @@ class OrderActionBottomBar extends StatelessWidget {
     super.key,
     required this.onCancel,
     required this.onSubmit,
-    this.cancelText = "Cancel",
-    this.submitText = "Submit",
+    this.cancelText,
+    this.submitText,
   });
 
   final VoidCallback onCancel;
   final VoidCallback onSubmit;
-  final String cancelText;
-  final String submitText;
+  final String? cancelText;
+  final String? submitText;
 
   @override
   Widget build(BuildContext context) {
@@ -31,17 +32,18 @@ class OrderActionBottomBar extends StatelessWidget {
         children: [
           Expanded(
             child: CustomBtn(
-              text: cancelText,
+              text: cancelText ?? S.cancel,
               variant: BtnVariant.secondary,
               textColor: AppColor.primaryColor,
               onPressed: onCancel,
             ),
           ),
           SizedBox(width: SpacingTokens.md.w),
-          Expanded(child: CustomBtn(text: submitText, onPressed: onSubmit)),
+          Expanded(
+            child: CustomBtn(text: submitText ?? S.submit, onPressed: onSubmit),
+          ),
         ],
       ),
     );
   }
 }
-

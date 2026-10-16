@@ -1,14 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:new_coffee/core/data/db_values.dart';
+
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 
+/// Mirrors the device cart into the signed-in customer's server cart.
+///
+/// Every call resolves ownership on the server via `auth.uid()`: the client
+/// never supplies a user or cart id, so one customer can never touch
+/// another's cart. Guests and branch-less writes stay local-only.
 class SupabaseCartRepository implements CartRepository {
   SupabaseCartRepository();
 
   final SupabaseClient _supa = Supabase.instance.client;
 
-  /// Helper: convert a Dart string to a Postgres UUID literal.
-  static String _uuid(String s) => 'uuid\'$s\'';
+  bool get _signedIn => _supa.auth.currentSession != null;
 
   @override
   Future<void> addItem({
@@ -18,52 +22,37 @@ class SupabaseCartRepository implements CartRepository {
     required List<String> optionValueIds,
     required double unitPrice,
     String? bundleId,
+    String? branchId,
   }) async {
-    // The RPC internally calls get_or_create_cart(p_branch_id) so we don't
-    // need to supply a cart_id. The server prices according to the bundle
-    // proportional share when p_bundle_id is set, otherwise it uses
-    // resolve_effective_price (client price is ignored for security).
-    await _supa.rpc('orders.upsert_cart_item', params: <String, dynamic>{
-      'p_branch_id': DbValues.branchId,
-      'p_product_id': productId,
-      'p_quantity': quantity,
-      'p_note': note,
-      'p_option_value_ids': optionValueIds.map(_uuid).toList(),
-      'p_bundle_id': bundleId != null ? _uuid(bundleId) : null,
-    });
+    final branch = branchId?.trim() ?? '';
+    if (!_signedIn || branch.isEmpty) return;
+    // UUID strings travel as a JSON array; PostgREST casts them to uuid[].
+    // Never format them as `uuid'...'` SQL literals: that cast fails.
+    await _supa.rpc(
+      'public.upsert_cart_item',
+      params: <String, dynamic>{
+        'p_branch_id': branch,
+        'p_product_id': productId,
+        'p_quantity': quantity,
+        'p_note': note,
+        'p_option_value_ids': optionValueIds,
+        if (bundleId != null && bundleId.trim().isNotEmpty)
+          'p_bundle_id': bundleId.trim(),
+      },
+    );
   }
 
   @override
-  Future getCartSummary() async {
-    // Rebuild cart from server lines. The SQL function returns subtotal and count.
-    final result = await _supa.rpc('orders.get_cart_summary', params: <String, dynamic>{
-      'p_cart_id': DbValues.cartId,
-    });
-
-    // Result format from the SQL function: subtotal, item_count
-    final subtotal = (result[0] as num).toDouble();
-    final itemCount = (result[1] as num).toInt();
-
-    // Return basic cart summary - the CartCubit manages its own state
-    return {'subtotal': subtotal, 'itemCount': itemCount};
-  }
-
-  @override
-  Future<void> clearCart() async {
-    await _supa.rpc('orders.remove_all_cart_items', params: <String, dynamic>{
-      'p_cart_id': DbValues.cartId,
-    });
-  }
-
-  @override
-  Future<void> removeItem(String lineId) async {
-    // Parse the lineId format: 'productId::note::optionValueIds'
-    final parts = lineId.split('::');
-    if (parts.length < 2) return;
-    final productId = parts[0];
-    // Simplified removal - in a full implementation would need the cart item ID
-    await _supa.rpc('orders.remove_cart_item', params: <String, dynamic>{
-      'p_cart_item_id': productId,
-    });
+  Future<void> clearCart({String? branchId}) async {
+    final branch = branchId?.trim() ?? '';
+    if (!_signedIn || branch.isEmpty) return;
+    final cartId = (await _supa.rpc(
+      'public.get_or_create_cart',
+      params: <String, dynamic>{'p_branch_id': branch},
+    )).toString();
+    await _supa.rpc(
+      'public.remove_all_cart_items',
+      params: <String, dynamic>{'p_cart_id': cartId},
+    );
   }
 }

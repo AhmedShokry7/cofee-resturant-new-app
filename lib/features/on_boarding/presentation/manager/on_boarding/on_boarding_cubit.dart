@@ -4,33 +4,42 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
-import 'package:new_coffee/features/on_boarding/data/on_boarding_knowledge.dart';
+import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 import 'package:new_coffee/features/on_boarding/data/model/on_boarding_model.dart';
 
 part 'on_boarding_state.dart';
 
 class OnBoardingCubit extends Cubit<OnBoardingState> {
-  OnBoardingCubit()
-      : super(OnBoardingInitial()) {
+  OnBoardingCubit({required this.content}) : super(OnBoardingInitial()) {
     pageController = PageController(initialPage: currentPage);
     load();
   }
 
+  final ContentRepository content;
+
   int currentPage = 0;
   late PageController pageController;
 
-  void load() {
-    final effectiveSlides = onBoardingSlides;
-    emit(OnBoardingLoaded(slides: effectiveSlides));
+  List<OnBoardingModel> _slides = const [];
+
+  Future<void> load() async {
+    try {
+      final slides = await content.onBoardingSlides();
+      if (isClosed) return;
+      _slides = slides;
+      emit(OnBoardingLoaded(slides: slides));
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(OnBoardingError(message: error.toString()));
+      addError(error, stackTrace);
+    }
   }
 
-  int get slideCount => state is OnBoardingLoaded
-      ? (state as OnBoardingLoaded).slides.length
-      : 0;
+  int get slideCount => _slides.length;
 
   void changePage(int page) {
     currentPage = page;
-    emit(OnBoardingPageChanged(currentPage: page));
+    emit(OnBoardingPageChanged(currentPage: page, slides: _slides));
   }
 
   void nextBtn(BuildContext context) async {
@@ -40,7 +49,7 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
         curve: Curves.easeInOut,
       );
       currentPage++;
-      emit(OnBoardingPageChanged(currentPage: currentPage));
+      emit(OnBoardingPageChanged(currentPage: currentPage, slides: _slides));
     } else {
       await SharedPref.setValue(
         key: AppConstant.routesKey,
@@ -58,7 +67,7 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
         curve: Curves.easeInOut,
       );
       currentPage--;
-      emit(OnBoardingPageChanged(currentPage: currentPage));
+      emit(OnBoardingPageChanged(currentPage: currentPage, slides: _slides));
     }
   }
 }

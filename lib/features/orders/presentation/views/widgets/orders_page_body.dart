@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -12,6 +13,7 @@ import 'package:new_coffee/features/orders/presentation/views/widgets/order_card
 import 'package:new_coffee/features/orders/presentation/views/widgets/orders_tabs.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class OrdersPageBody extends StatelessWidget {
   const OrdersPageBody({super.key});
@@ -22,31 +24,30 @@ class OrdersPageBody extends StatelessWidget {
       children: [
         const OrdersTabs(),
         Expanded(
-child: BlocBuilder<OrdersCubit, OrdersState>(
-              builder: (context, state) {
-                if (state.isLoading && state.orders.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state.signedOut) {
-                  return _SignInRequired(
-                    onSignIn: () => Navigator.of(context).pushNamed(
-                      AuthPage.routeName,
-                    ),
-                    onRetry: () => context.read<OrdersCubit>().refresh(),
-                  );
-                }
-                if (state.error != null && state.orders.isEmpty) {
-                  return _OrdersError(
-                    message: state.error!,
-                    onRetry: () => context.read<OrdersCubit>().refresh(),
-                  );
-                }
-                final orders = state.filtered;
+          child: BlocBuilder<OrdersCubit, OrdersState>(
+            builder: (context, state) {
+              if (state.isLoading && state.orders.isEmpty) {
+                return const OrdersSkeleton();
+              }
+              if (state.signedOut) {
+                return _SignInRequired(
+                  onSignIn: () =>
+                      Navigator.of(context).pushNamed(AuthPage.routeName),
+                  onRetry: () => context.read<OrdersCubit>().refresh(),
+                );
+              }
+              if (state.error != null && state.orders.isEmpty) {
+                return _OrdersError(
+                  message: state.error!,
+                  onRetry: () => context.read<OrdersCubit>().refresh(),
+                );
+              }
+              final orders = state.filtered;
               if (orders.isEmpty) {
-                return const EmptyState(
+                return EmptyState(
                   icon: HugeIcons.strokeRoundedPackage,
-                  title: "No orders here",
-                  subtitle: "Your orders in this status will appear here",
+                  title: S.noOrders,
+                  subtitle: S.ordersEmptyHint,
                 );
               }
               return ListView.builder(
@@ -82,15 +83,15 @@ class _SignInRequired extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const EmptyState(
+            EmptyState(
               icon: HugeIcons.strokeRoundedPackage,
-              title: 'Sign in to see your orders',
-              subtitle: 'Order history belongs to your account',
+              title: S.signInToSeeOrders,
+              subtitle: S.orderHistoryAccount,
             ),
             SizedBox(height: SpacingTokens.md.h),
-            CustomBtn(text: 'Sign in', onPressed: onSignIn),
+            CustomBtn(text: S.signIn, onPressed: onSignIn),
             SizedBox(height: SpacingTokens.sm.h),
-            TextButton(onPressed: onRetry, child: const Text('Retry')),
+            TextButton(onPressed: onRetry, child: Text(S.retry)),
           ],
         ),
       ),
@@ -112,24 +113,22 @@ class _OrdersError extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const EmptyState(
+            EmptyState(
               icon: HugeIcons.strokeRoundedPackage,
-              title: 'Could not load orders',
+              title: S.couldNotLoadOrders,
             ),
             SizedBox(height: SpacingTokens.sm.h),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: AppFonts.regular14(context).copyWith(
-                color: AppColor.greyColor,
-              ),
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
             SizedBox(height: SpacingTokens.md.h),
-            CustomBtn(text: 'Try again', onPressed: onRetry),
+            CustomBtn(text: S.tryAgain, onPressed: onRetry),
           ],
         ),
       ),
     );
   }
 }
-

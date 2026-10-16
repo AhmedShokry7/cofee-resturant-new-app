@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -47,14 +48,12 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
         child: BlocConsumer<PasswordResetCubit, PasswordResetState>(
           listener: (context, state) {
             if (state is PasswordResetFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             } else if (state is PasswordResetSuccess) {
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                AuthPage.routeName,
-                (route) => false,
-              );
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil(AuthPage.routeName, (route) => false);
             }
           },
           builder: (context, state) {
@@ -66,40 +65,39 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                 children: [
                   SizedBox(height: AuthSpacings.top.h),
                   Text(
-                    "Reset Password",
+                    S.resetPassword,
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
                   SizedBox(height: AuthSpacings.titleGap.h),
                   Text(
-                    "Enter your new password below",
+                    S.enterNewPassword,
                     textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   SizedBox(height: AuthSpacings.headerGap.h),
                   CustomTextFormField(
                     controller: _passwordController,
-                    hint: "New Password",
+                    hint: S.newPasswordHint,
                     obscureText: true,
                     textInputAction: TextInputAction.next,
                     validator: (value) => (value == null || value.isEmpty)
-                        ? "Password is required"
+                        ? S.passwordRequired
                         : null,
                   ),
                   CustomTextFormField(
                     controller: _confirmPasswordController,
-                    hint: "Confirm Password",
+                    hint: S.confirmPasswordHint,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     validator: (value) => (value != _passwordController.text)
-                        ? "Passwords do not match"
+                        ? S.passwordsNoMatch
                         : null,
                   ),
                   SizedBox(height: AuthSpacings.fieldsGap.h),
                   CustomBtn(
-                    text: "Reset Password",
+                    text: S.resetPassword,
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
@@ -113,4 +111,3 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
     );
   }
 }
-

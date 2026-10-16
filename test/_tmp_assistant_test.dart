@@ -54,8 +54,7 @@ class FakeAuthRepository implements AuthRepository {
     required String name,
     required String email,
     required String password,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 
   @override
   Future<AuthUser> signInWithGoogle() => throw UnimplementedError();
@@ -82,8 +81,7 @@ class FakeAuthRepository implements AuthRepository {
   Future<AuthUser> verifyPhoneCode({
     required String phone,
     required String code,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 
   @override
   Future<void> signOut() async {}
@@ -95,9 +93,9 @@ class FakeAuthRepository implements AuthRepository {
 Finder get _fabImage => find.byKey(const ValueKey('assistant_fab_image'));
 
 Widget _wrapWithScreenUtil(Widget child) => ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(home: Scaffold(body: child)),
-    );
+  designSize: const Size(360, 690),
+  builder: (context, _) => MaterialApp(home: Scaffold(body: child)),
+);
 
 Future<void> _setSurface(WidgetTester tester) async {
   tester.view.physicalSize = const Size(360, 800) * 3.0;
@@ -106,12 +104,10 @@ Future<void> _setSurface(WidgetTester tester) async {
   addTearDown(tester.view.resetDevicePixelRatio);
 }
 
-Future<AssistantSnapshot> _assistantSnapshot() =>
-    AssistantSnapshot.load(
-      catalog: const MockProductRepository(),
-      activeOrders: () =>
-          const LocalOrdersRepository().listOrders(),
-    );
+Future<AssistantSnapshot> _assistantSnapshot() => AssistantSnapshot.load(
+  catalog: MockProductRepository(),
+  activeOrders: () => LocalOrdersRepository().listOrders(),
+);
 
 void main() {
   test('intent detection', () {
@@ -140,10 +136,7 @@ void main() {
     expect(snapshot.optionIdsFor(item), ['large', 'less']);
     expect(snapshot.estimatedUnitPriceFor(item), 45);
     expect(
-      AssistantSnapshot.run(
-        snapshot,
-        () => OrderDraft([item]).total(),
-      ),
+      AssistantSnapshot.run(snapshot, () => OrderDraft([item]).total()),
       90,
     );
   });
@@ -158,10 +151,7 @@ void main() {
       memory: memory,
       now: morning,
     );
-    expect(
-      sweet.products.map((product) => product.name),
-      contains('Mocha'),
-    );
+    expect(sweet.products.map((product) => product.name), contains('Mocha'));
     expect(
       AssistantEngine.answer(
         'do you have coupons?',
@@ -190,11 +180,14 @@ void main() {
 
   testWidgets('hybrid escalates only unknown queries', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    final fake = FakeLlmClient(
-      reply: const LlmReply(text: 'LLM says hi'),
-    );
+    final fake = FakeLlmClient(reply: const LlmReply(text: 'LLM says hi'));
     const config = LlmConfig(backendUrl: 'https://llm.test');
-    final cubit = AssistantCubit(catalog: const MockProductRepository(), orders: const LocalOrdersRepository(), llmClient: fake, llmConfig: config);
+    final cubit = AssistantCubit(
+      catalog: MockProductRepository(),
+      orders: LocalOrdersRepository(),
+      llmClient: fake,
+      llmConfig: config,
+    );
     await cubit.start();
 
     Future<void> sendAndSettle(String text) async {
@@ -217,7 +210,12 @@ void main() {
     SharedPreferences.setMockInitialValues({});
     final fake = FakeLlmClient(reply: null);
     const config = LlmConfig(backendUrl: 'https://llm.test');
-    final cubit = AssistantCubit(catalog: const MockProductRepository(), orders: const LocalOrdersRepository(), llmClient: fake, llmConfig: config);
+    final cubit = AssistantCubit(
+      catalog: MockProductRepository(),
+      orders: LocalOrdersRepository(),
+      llmClient: fake,
+      llmConfig: config,
+    );
     await cubit.start();
     final pending = cubit.sendMessage('zxqv blarg unknown words here');
     await tester.pump(const Duration(milliseconds: 600));
@@ -231,8 +229,9 @@ void main() {
     await cubit.close();
   });
 
-  testWidgets('home header greeting without name uses day/night image',
-      (tester) async {
+  testWidgets('home header greeting without name uses day/night image', (
+    tester,
+  ) async {
     await _setSurface(tester);
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(_wrapWithScreenUtil(const HomeHeader()));
@@ -240,14 +239,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text(getGreeting(DateTime.now())), findsOneWidget);
-    final expectedAsset =
-        isDaytime(DateTime.now()) ? AppImages.sun : AppImages.moon;
+    final expectedAsset = isDaytime(DateTime.now())
+        ? AppImages.sun
+        : AppImages.moon;
     expect(find.image(AssetImage(expectedAsset)), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('home header greeting shows first name when present',
-      (tester) async {
+  testWidgets('home header greeting shows first name when present', (
+    tester,
+  ) async {
     await _setSurface(tester);
     SharedPreferences.setMockInitialValues({});
     await tester.pumpWidget(
@@ -278,12 +279,16 @@ void main() {
     expect(find.byType(AssistantFab), findsOneWidget);
     expect(_fabImage, findsOneWidget);
 
-    final pos = find.byKey(const ValueKey('assistant_fab_pos'));
-    final position = tester.widget<Positioned>(pos);
-    expect(position.right, isNotNull);
-    expect(position.bottom, isNotNull);
-    expect(position.left, isNull);
-    expect(position.top, isNull);
+    // Home-owned entry point: a real circular FAB in the Home scaffold,
+    // never a global overlay, so it cannot duplicate across screens.
+    expect(find.byKey(const ValueKey('assistant_fab_pos')), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+    expect(
+      tester
+          .widget<FloatingActionButton>(find.byType(FloatingActionButton))
+          .shape,
+      isA<CircleBorder>(),
+    );
 
     await tester.pump(AssistantFab.hintCycle);
     expect(find.text(assistantHints[1]), findsOneWidget);

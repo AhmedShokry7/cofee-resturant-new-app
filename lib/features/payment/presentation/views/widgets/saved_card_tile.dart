@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -44,15 +45,16 @@ class SavedCardTile extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  card.brand.label.isEmpty ? "CARD" : card.brand.label,
+                  card.brand.label.isEmpty
+                      ? S.cardBrandFallback
+                      : card.brand.label,
                   style: AppFonts.semiBold16(context),
                 ),
                 SizedBox(height: 4.h),
                 Text(
                   "**** **** **** ${card.last4}",
-                  style: AppFonts.regular14(
-                    context,
-                  ).copyWith(color: AppColor.greyColor),
+                  style: AppFonts.regular14(context)
+                      .copyWith(color: AppColor.greyColor),
                 ),
               ],
             ),
@@ -73,4 +75,3 @@ class SavedCardTile extends StatelessWidget {
     );
   }
 }
-

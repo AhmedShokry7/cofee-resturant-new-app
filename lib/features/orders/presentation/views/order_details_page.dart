@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -11,9 +12,9 @@ import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// Full order data (big-app pattern): tapping an order opens its details,
 /// and tracking/review branch out from here.
@@ -76,7 +77,7 @@ class _DetailsScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final total = order.chargedTotal;
     return Scaffold(
-      appBar: AppBar(title: const Text("Order Details")),
+      appBar: AppBar(title: Text(S.orderDetails)),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           SpacingTokens.lg.w,
@@ -151,24 +152,26 @@ class _DetailsScaffold extends StatelessWidget {
                     ],
                   ),
                 ),
-                Text(
-                  Formatters.price(total),
+                PriceLabel(
+                  amount: total,
                   style: AppFonts.semiBold16(context)
                       .copyWith(color: AppColor.primaryColor),
+                  iconSize: 16,
+                  iconColor: AppColor.primaryColor,
                 ),
               ],
             ),
           ),
           SizedBox(height: SpacingTokens.lg.h),
           LabeledValueRow(
-            label: "Items count",
+            label: S.itemsCount,
             value: "${order.quantity}",
             valueSize: 16,
           ),
           SizedBox(height: SpacingTokens.sm.h),
           LabeledValueRow(
-            label: "Total",
-            value: Formatters.price(total),
+            label: S.total,
+            priceValue: total,
             emphasized: true,
             valueSize: 16,
           ),
@@ -184,8 +187,8 @@ class _DetailsScaffold extends StatelessWidget {
               ),
               child: CustomBtn(
                 text: order.status == OrderStatus.active
-                    ? "Track Order"
-                    : "Leave Review",
+                    ? S.trackOrder
+                    : S.leaveReview,
                 onPressed: () => onAction(context),
               ),
             ),

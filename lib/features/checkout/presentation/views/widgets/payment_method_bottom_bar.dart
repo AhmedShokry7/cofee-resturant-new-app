@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
@@ -13,7 +14,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PrimaryBottomBar(
-      text: "Confirm Payment",
+      text: S.confirmPayment,
       onPressed: () {
         final cart = context.read<CartCubit>().state;
         final checkout = context.read<CheckoutCubit>();

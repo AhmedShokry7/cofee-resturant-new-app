@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -42,14 +43,13 @@ class _LogoutSheet extends StatelessWidget {
               ),
             ),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("Log Out", style: AppFonts.semiBold18(context)),
+            Text(S.logOut, style: AppFonts.semiBold18(context)),
             SizedBox(height: SpacingTokens.md.h),
             Text(
-              "Are you sure you want to log out ?",
+              S.logoutConfirm,
               textAlign: TextAlign.center,
-              style: AppFonts.regular16(
-                context,
-              ).copyWith(color: AppColor.greyColor),
+              style: AppFonts.regular16(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
             SizedBox(height: SpacingTokens.lg.h),
             const Divider(),
@@ -58,7 +58,7 @@ class _LogoutSheet extends StatelessWidget {
               children: [
                 Expanded(
                   child: CustomBtn(
-                    text: "Cancel",
+                    text: S.cancel,
                     variant: BtnVariant.secondary,
                     textColor: AppColor.primaryColor,
                     onPressed: () => Navigator.of(context).pop(),
@@ -66,7 +66,7 @@ class _LogoutSheet extends StatelessWidget {
                 ),
                 SizedBox(width: SpacingTokens.md.w),
                 Expanded(
-                  child: CustomBtn(text: "Yes, Logout", onPressed: onConfirm),
+                  child: CustomBtn(text: S.confirmLogout, onPressed: onConfirm),
                 ),
               ],
             ),
@@ -76,4 +76,3 @@ class _LogoutSheet extends StatelessWidget {
     );
   }
 }
-

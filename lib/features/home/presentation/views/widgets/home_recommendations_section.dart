@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -40,21 +41,24 @@ class HomeRecommendationsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<WeatherCubit, WeatherState>(
       builder: (context, weatherState) {
-        final pool = context.select((HomeCubit c) => c.state.recommendationPool);
+        final pool = context.select(
+          (HomeCubit c) => c.state.recommendationPool,
+        );
 
         // Only offer the seasonal subtitle once the pool has actually loaded,
         // otherwise the heading promises picks that are not there yet.
-        final weather =
-            weatherState is WeatherLoaded ? weatherState.weather : null;
+        final weather = weatherState is WeatherLoaded
+            ? weatherState.weather
+            : null;
         final hasWeather = weather != null && pool.isNotEmpty;
 
         return HomeProductsCarousel(
-          title: "Recommendations",
+          title: S.recommendations,
           subtitle: !hasWeather
               ? null
               : weather.isHot
-                  ? "Cool picks for a warm day"
-                  : "Warm picks for a chilly day",
+              ? S.hotDayPicks
+              : S.coldDayPicks,
           products: hasWeather
               ? _byWeather(pool, weather)
               : pool.take(_maxRecommendations).toList(),

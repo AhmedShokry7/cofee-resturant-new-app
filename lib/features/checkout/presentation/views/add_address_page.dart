@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
+
 import 'package:new_coffee/features/checkout/presentation/views/widgets/add_address_page_body.dart';
 
 class AddAddressPage extends StatelessWidget {
@@ -10,7 +12,7 @@ class AddAddressPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Enter your location")),
+      appBar: AppBar(title: Text(S.enterLocation)),
       body: const AddAddressPageBody(),
     );
   }

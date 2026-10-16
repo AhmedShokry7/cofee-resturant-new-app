@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -50,7 +51,7 @@ class OrderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Order #${order.displayNumber}',
+                    S.orderNumber(order.displayNumber),
                     style: AppFonts.regular12(context)
                         .copyWith(color: AppColor.greyColor),
                   ),
@@ -72,14 +73,14 @@ class OrderCard extends StatelessWidget {
             ),
             if (order.status == OrderStatus.active)
               _ActionButton(
-                label: "Track Order",
+                label: S.trackOrder,
                 onTap: () =>
                     Navigator.of(context)
                         .pushNamed(TrackOrderPage.routeName, arguments: order),
               )
             else if (order.status == OrderStatus.completed)
               _ActionButton(
-                label: "Leave Review",
+                label: S.leaveReview,
                 onTap: () =>
                     Navigator.of(context)
                         .pushNamed(LeaveReviewPage.routeName, arguments: order),

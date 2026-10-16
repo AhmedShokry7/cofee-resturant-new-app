@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -54,7 +55,7 @@ class RewardCard extends StatelessWidget {
                   ),
                   SizedBox(height: 4.h),
                   Text(
-                    '${reward.pointsCost} points',
+                    S.points(reward.pointsCost),
                     style: AppFonts.medium14(context)
                         .copyWith(color: AppColor.primaryColor),
                   ),
@@ -64,7 +65,7 @@ class RewardCard extends StatelessWidget {
             SizedBox(width: SpacingTokens.sm.w),
             if (locked)
               Text(
-                'Locked',
+                S.locked,
                 style: AppFonts.medium14(context)
                     .copyWith(color: AppColor.greyColor),
               )
@@ -81,7 +82,7 @@ class RewardCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(100.r),
                   ),
                   child: Text(
-                    "Redeem",
+                    S.redeem,
                     style: AppFonts.medium14(context)
                         .copyWith(color: AppColor.whiteColor),
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -41,6 +42,9 @@ class HomeProductsCarousel extends StatelessWidget {
     final displayed = products.length > maxItems
         ? products.sublist(0, maxItems)
         : products;
+    // An empty pool must hide the whole block: title plus a fixed-height
+    // void reads as a broken section, not as "no results".
+    if (displayed.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -50,10 +54,9 @@ class HomeProductsCarousel extends StatelessWidget {
               ? GestureDetector(
                   onTap: () => _openAll(context),
                   child: Text(
-                    "View more",
-                    style: AppFonts.medium12(
-                      context,
-                    ).copyWith(decoration: TextDecoration.underline),
+                    S.viewMore,
+                    style: AppFonts.medium12(context)
+                        .copyWith(decoration: TextDecoration.underline),
                   ),
                 )
               : null,
@@ -62,14 +65,16 @@ class HomeProductsCarousel extends StatelessWidget {
           SizedBox(height: 4.h),
           Text(
             subtitle!,
-            style: AppFonts.regular12(
-              context,
-            ).copyWith(color: AppColor.greyColor),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.greyColor),
           ),
         ],
         SizedBox(height: SpacingTokens.md.h),
+        // The strip height is derived from the card width and aspect ratio
+        // instead of a fixed value, so taller cards always fit exactly on
+        // every screen size without clipping or dead space.
         SizedBox(
-          height: 210.h,
+          height: 150.w / ProductCard.cardAspectRatio,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: displayed.length,

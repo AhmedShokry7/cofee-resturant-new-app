@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -32,10 +33,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(
-      _codeLength,
-      (_) => TextEditingController(),
-    );
+    _controllers = List.generate(_codeLength, (_) => TextEditingController());
     _focusNodes = List.generate(_codeLength, (_) => FocusNode());
   }
 
@@ -65,9 +63,8 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   void _submit() {
     FocusScope.of(context).unfocus();
     if (_code.length < _codeLength) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter the 6-digit code")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.enterSixDigitCode)));
       return;
     }
     context.read<PhoneAuthCubit>().verifyCode(phone: widget.phone, code: _code);
@@ -81,10 +78,8 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   Future<void> _onAuthenticated() async {
     await const SessionRepository().markAuthenticated();
     if (!mounted) return;
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      MainPage.routeName,
-      (route) => false,
-    );
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(MainPage.routeName, (route) => false);
   }
 
   @override
@@ -95,13 +90,11 @@ class _OtpPageBodyState extends State<OtpPageBody> {
         child: BlocConsumer<PhoneAuthCubit, PhoneAuthState>(
           listener: (context, state) {
             if (state is PhoneAuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             } else if (state is PhoneAuthCodeSent) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("A new code has been sent")),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(S.codeSent)));
             } else if (state is PhoneAuthSuccess) {
               _onAuthenticated();
             }
@@ -113,7 +106,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
               children: [
                 SizedBox(height: AuthSpacings.top.h),
                 Text(
-                  "Verification Code",
+                  S.verificationCode,
                   textAlign: TextAlign.center,
                   style: AppFonts.semiBold24(context),
                 ),
@@ -121,9 +114,8 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                 Text(
                   "We sent a 6-digit code to ${widget.phone}",
                   textAlign: TextAlign.center,
-                  style: AppFonts.regular14(
-                    context,
-                  ).copyWith(color: AppColor.greyColor),
+                  style: AppFonts.regular14(context)
+                      .copyWith(color: AppColor.greyColor),
                 ),
                 SizedBox(height: AuthSpacings.headerGap.h),
                 Row(
@@ -159,9 +151,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                           fillColor: AppColor.lightGreyColor,
                           border: _border(),
                           enabledBorder: _border(),
-                          focusedBorder: _border(
-                            color: AppColor.primaryColor,
-                          ),
+                          focusedBorder: _border(color: AppColor.primaryColor),
                         ),
                       ),
                     ),
@@ -169,14 +159,14 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                 ),
                 SizedBox(height: AuthSpacings.fieldsGap.h),
                 CustomBtn(
-                  text: "Verify",
+                  text: S.verify,
                   isLoading: isLoading,
                   onPressed: _submit,
                 ),
                 SizedBox(height: AuthSpacings.sectionGap.h),
                 AuthSwitchPrompt(
-                  question: "Didn't receive the code? ",
-                  actionText: "Resend",
+                  question: S.didntReceiveCode,
+                  actionText: S.resend,
                   onTap: _resend,
                 ),
                 SizedBox(height: AuthSpacings.bottom.h),
@@ -195,4 +185,3 @@ class _OtpPageBodyState extends State<OtpPageBody> {
     );
   }
 }
-

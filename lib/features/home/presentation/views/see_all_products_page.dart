@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -45,18 +46,17 @@ class SeeAllProductsPage extends StatelessWidget {
               ),
               child: Text(
                 args.subtitle!,
-                style: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
             ),
           ],
           Expanded(
             child: args.products.isEmpty
-                ? const EmptyState(
+                ? EmptyState(
                     icon: HugeIcons.strokeRoundedCoffee02,
-                    title: "No products found",
-                    subtitle: "Try again later",
+                    title: S.noProductsFound,
+                    subtitle: S.tryAgainLater,
                   )
                 : ProductsGridView(products: args.products),
           ),

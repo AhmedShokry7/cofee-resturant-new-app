@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
@@ -10,6 +12,7 @@ import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class EReceiptPage extends StatelessWidget {
   const EReceiptPage({super.key});
@@ -22,12 +25,12 @@ class EReceiptPage extends StatelessWidget {
     final order = state.lastOrder;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("E-Receipt")),
+      appBar: AppBar(title: Text(S.eReceipt)),
       body: order == null
-          ? const EmptyState(
+          ? EmptyState(
               icon: HugeIcons.strokeRoundedReceiptDollar,
-              title: "No receipt yet",
-              subtitle: "Your latest order receipt will appear here",
+              title: S.noReceipt,
+              subtitle: S.receiptHint,
             )
           : ListView(
               padding: EdgeInsets.fromLTRB(
@@ -40,13 +43,13 @@ class EReceiptPage extends StatelessWidget {
                 _ReceiptCard(order: order),
                 SizedBox(height: SpacingTokens.lg.h),
                 _InfoCard(
-                  label: "Payment Method",
+                  label: S.paymentMethod,
                   value: state.selectedPaymentMethod?.label ?? '—',
                 ),
                 SizedBox(height: SpacingTokens.md.h),
                 _InfoCard(
-                  label: "Shipping Address",
-value: state.selectedAddress == null
+                  label: S.shippingAddress,
+                  value: state.selectedAddress == null
                       ? '—'
                       : "${state.selectedAddress!.label} - ${state.selectedAddress!.details}",
                 ),
@@ -83,7 +86,7 @@ class _ReceiptCard extends StatelessWidget {
               SizedBox(width: SpacingTokens.sm.w),
               Expanded(
                 child: Text(
-                  "E-Receipt",
+                  S.eReceipt,
                   style: AppFonts.semiBold18(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -92,18 +95,16 @@ class _ReceiptCard extends StatelessWidget {
               SizedBox(width: SpacingTokens.sm.w),
               Text(
                 order.id,
-                style: AppFonts.medium14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                style: AppFonts.medium14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
             ],
           ),
           SizedBox(height: SpacingTokens.xs.h),
           Text(
             Formatters.date(order.date),
-            style: AppFonts.regular14(
-              context,
-            ).copyWith(color: AppColor.greyColor),
+            style: AppFonts.regular14(context)
+                .copyWith(color: AppColor.greyColor),
           ),
           SizedBox(height: SpacingTokens.md.h),
           const Divider(),
@@ -118,9 +119,10 @@ class _ReceiptCard extends StatelessWidget {
                       style: AppFonts.regular14(context),
                     ),
                   ),
-                  Text(
-                    Formatters.price(item.total),
+                  PriceLabel(
+                    amount: item.total,
                     style: AppFonts.medium14(context),
+                    iconSize: 14,
                   ),
                 ],
               ),
@@ -131,12 +133,13 @@ class _ReceiptCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Total", style: AppFonts.semiBold16(context)),
-              Text(
-                Formatters.price(order.total),
-                style: AppFonts.semiBold18(
-                  context,
-                ).copyWith(color: AppColor.primaryColor),
+              Text(S.total, style: AppFonts.semiBold16(context)),
+              PriceLabel(
+                amount: order.total,
+                style: AppFonts.semiBold18(context)
+                    .copyWith(color: AppColor.primaryColor),
+                iconSize: 18,
+                iconColor: AppColor.primaryColor,
               ),
             ],
           ),
@@ -166,9 +169,8 @@ class _InfoCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppFonts.regular12(
-              context,
-            ).copyWith(color: AppColor.greyColor),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.greyColor),
           ),
           SizedBox(height: 4.h),
           Text(value, style: AppFonts.medium14(context)),
@@ -177,4 +179,3 @@ class _InfoCard extends StatelessWidget {
     );
   }
 }
-

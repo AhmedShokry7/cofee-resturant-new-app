@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
 
 /// Single renderer for every image that comes from the database.
 ///
@@ -48,8 +49,12 @@ class DbImage extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
-        placeholder: (context, url) =>
-            const Center(child: CircularProgressIndicator()),
+        // Shimmer fills the exact image bounds so the layout never jumps
+        // when the photo arrives. The error/empty states stay static and
+        // neutral on purpose: a missing picture is not loading.
+        placeholder: (context, url) => Shimmer(
+          child: ShimmerBox(width: width, height: height),
+        ),
         errorWidget: (context, url, error) =>
             _UnavailableDbImage(iconSize: iconSize),
       );

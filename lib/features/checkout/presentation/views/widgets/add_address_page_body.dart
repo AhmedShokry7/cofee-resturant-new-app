@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -39,7 +40,6 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
   void _useCurrentLocation() {
     setState(() => _selectedLocation = _currentLocation);
     _mapController.move(_currentLocation, 15);
-    _locationController.text = "Jizan, main street";
   }
 
   void _confirm() {
@@ -47,15 +47,13 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
     final details = _locationController.text.trim();
 
     if (label.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter an address name")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.addAddressName)));
       return;
     }
     if (details.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter your location")),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.addAddressLocation)));
       return;
     }
 
@@ -86,13 +84,13 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
               children: [
                 CustomTextFormField(
                   controller: _nameController,
-                  hint: "Address name (e.g. Home)",
+                  hint: S.addressNameHint,
                   textInputAction: TextInputAction.next,
                   bottomPadding: 8,
                 ),
                 CustomTextFormField(
                   controller: _locationController,
-                  hint: "Search your location",
+                  hint: S.searchLocation,
                   prefixIcon: Icon(
                     HugeIcons.strokeRoundedSearch01,
                     color: AppColor.greyColor,
@@ -104,9 +102,7 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
                   onTap: _useCurrentLocation,
                   behavior: HitTestBehavior.opaque,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      vertical: SpacingTokens.xs.h,
-                    ),
+                    padding: EdgeInsets.symmetric(vertical: SpacingTokens.xs.h),
                     child: Row(
                       children: [
                         Icon(
@@ -117,7 +113,7 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
                         SizedBox(width: SpacingTokens.sm.w),
                         Expanded(
                           child: Text(
-                            "Use my current location",
+                            S.useCurrentLocation,
                             style: AppFonts.medium16(context),
                           ),
                         ),
@@ -127,7 +123,7 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
                 ),
                 const Divider(height: 1),
                 SizedBox(height: SpacingTokens.sm.h),
-                CustomBtn(text: "Confirm", onPressed: _confirm),
+                CustomBtn(text: S.confirm, onPressed: _confirm),
               ],
             ),
           ),
@@ -170,4 +166,3 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
     );
   }
 }
-

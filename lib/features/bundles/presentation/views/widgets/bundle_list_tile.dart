@@ -11,7 +11,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// Full-width bundle row for vertical lists (e.g. the Bundles tab).
 class BundleListTile extends StatelessWidget {
@@ -79,21 +79,25 @@ class BundleListTile extends StatelessWidget {
                   SizedBox(height: 4.h),
                   Row(
                     children: [
-                      Text(
-                        Formatters.price(bundle.price),
-                        style: AppFonts.semiBold14(context)
-                            .copyWith(color: AppColor.primaryColor),
+                      Flexible(
+                        child: PriceLabel(
+                          amount: bundle.price,
+                          style: AppFonts.semiBold14(context)
+                              .copyWith(color: AppColor.primaryColor),
+                          iconSize: 14,
+                          iconColor: AppColor.primaryColor,
+                        ),
                       ),
                       SizedBox(width: SpacingTokens.xs.w),
                       Flexible(
-                        child: Text(
-                          Formatters.price(original),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        child: PriceLabel(
+                          amount: original,
                           style: AppFonts.regular12(context).copyWith(
                             color: AppColor.greyColor,
                             decoration: TextDecoration.lineThrough,
                           ),
+                          iconSize: 12,
+                          iconColor: AppColor.greyColor,
                         ),
                       ),
                     ],

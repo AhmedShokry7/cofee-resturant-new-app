@@ -1,6 +1,9 @@
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/features/on_boarding/data/model/on_boarding_model.dart';
 import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -18,11 +21,13 @@ class OnBoardingPageViewData extends StatelessWidget {
         if (state is OnBoardingError) {
           return Center(child: Text(state.message));
         }
-        final slides = state is OnBoardingLoaded
-            ? (state).slides
-            : const [];
+        final List<OnBoardingModel> slides = switch (state) {
+          OnBoardingLoaded(slides: final s) => s,
+          OnBoardingPageChanged(slides: final s) => s,
+          _ => const [],
+        };
         if (slides.isEmpty) {
-          return const Center(child: Text('No onboarding slides'));
+          return Center(child: Text(S.noSlides));
         }
         final cubit = context.read<OnBoardingCubit>();
         return PageView.builder(
@@ -34,26 +39,21 @@ class OnBoardingPageViewData extends StatelessWidget {
             return Column(
               children: [
                 Expanded(
-                  child: Image.asset(
-                    item.image,
-                    fit: BoxFit.fill,
-                  ),
+                  child: DbImage(image: item.image, fit: BoxFit.fill),
                 ),
                 SizedBox(height: 32.h),
                 Text(
                   textAlign: TextAlign.center,
                   item.title,
-                  style: AppFonts.semiBold24(
-                    context,
-                  ).copyWith(color: AppColor.primaryColor),
+                  style: AppFonts.semiBold24(context)
+                      .copyWith(color: AppColor.primaryColor),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   textAlign: TextAlign.center,
                   item.body,
-                  style: AppFonts.semiBold16(
-                    context,
-                  ).copyWith(color: AppColor.greyColor),
+                  style: AppFonts.semiBold16(context)
+                      .copyWith(color: AppColor.greyColor),
                 ),
               ],
             );

@@ -1,5 +1,5 @@
-
 import 'package:flutter/material.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
@@ -13,16 +13,12 @@ class WelcomeViewTextTitle extends StatelessWidget {
       TextSpan(
         children: [
           TextSpan(
-            text: "Your Coffee",
-            style: AppFonts.bold24(
-              context,
-            ).copyWith(color: AppColor.primaryColor),
+            text: S.yourCoffee,
+            style: AppFonts.bold24(context)
+                .copyWith(color: AppColor.primaryColor),
           ),
           const TextSpan(text: " "),
-          TextSpan(
-            text: "Your Moment, Your Way",
-            style: AppFonts.semiBold24(context),
-          ),
+          TextSpan(text: S.yourMoment, style: AppFonts.semiBold24(context)),
         ],
       ),
     );

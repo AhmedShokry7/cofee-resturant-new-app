@@ -23,6 +23,9 @@ class ThemeClass {
 
     return ThemeData(
       colorScheme: colorScheme,
+      // Cairo renders both Arabic and Latin, so one family covers the
+      // whole bilingual UI. Every AppFonts style inherits it.
+      fontFamily: 'Cairo',
       scaffoldBackgroundColor: AppColor.whiteColor,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColor.whiteColor,

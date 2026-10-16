@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
@@ -54,20 +55,18 @@ class _MainScaffold extends StatelessWidget {
             selectedLabelStyle: AppFonts.medium12(context),
             unselectedLabelStyle: AppFonts.medium12(context),
             items: [
-              const BottomNavigationBarItem(
-                icon: Icon(HugeIcons.strokeRoundedHome01),
-                label: "Home",
+              BottomNavigationBarItem(
+                icon: const Icon(HugeIcons.strokeRoundedHome01),
+                label: S.navHome,
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(HugeIcons.strokeRoundedGridView),
-                label: "Categories",
+              BottomNavigationBarItem(
+                icon: const Icon(HugeIcons.strokeRoundedGridView),
+                label: S.navCategories,
               ),
               BottomNavigationBarItem(
                 icon: BlocBuilder<CartCubit, CartState>(
                   builder: (context, cartState) {
-                    final icon = Icon(
-                      HugeIcons.strokeRoundedShoppingCart01,
-                    );
+                    final icon = Icon(HugeIcons.strokeRoundedShoppingCart01);
                     if (cartState.count == 0) {
                       return icon;
                     }
@@ -77,15 +76,15 @@ class _MainScaffold extends StatelessWidget {
                     );
                   },
                 ),
-                label: "Cart",
+                label: S.navCart,
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(HugeIcons.strokeRoundedFavourite),
-                label: "Favorites",
+              BottomNavigationBarItem(
+                icon: const Icon(HugeIcons.strokeRoundedFavourite),
+                label: S.navFavorites,
               ),
-              const BottomNavigationBarItem(
-                icon: Icon(HugeIcons.strokeRoundedSettings01),
-                label: "Settings",
+              BottomNavigationBarItem(
+                icon: const Icon(HugeIcons.strokeRoundedSettings01),
+                label: S.navSettings,
               ),
             ],
           ),

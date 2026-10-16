@@ -1,8 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -11,6 +11,7 @@ import 'package:new_coffee/features/search/data/model/search_sort.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 Future<void> showSearchFilterSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -41,7 +42,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
   @override
   void initState() {
     super.initState();
-final cubit = context.read<SearchCubit>();
+    final cubit = context.read<SearchCubit>();
     final prices = cubit.priceBounds();
     // Bounds come from the loaded results, not from scanning the whole
     // catalogue. The old version walked getMenuList() and called reduce() on it,
@@ -97,9 +98,9 @@ final cubit = context.read<SearchCubit>();
               ),
             ),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("Filters", style: AppFonts.semiBold18(context)),
+            Text(S.filters, style: AppFonts.semiBold18(context)),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("Sort by", style: AppFonts.medium16(context)),
+            Text(S.sortBy, style: AppFonts.medium16(context)),
             SizedBox(height: SpacingTokens.sm.h),
             Wrap(
               spacing: SpacingTokens.sm.w,
@@ -115,37 +116,37 @@ final cubit = context.read<SearchCubit>();
                   .toList(),
             ),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("Category", style: AppFonts.medium16(context)),
+            Text(S.category, style: AppFonts.medium16(context)),
             SizedBox(height: SpacingTokens.sm.h),
             Wrap(
               spacing: SpacingTokens.sm.w,
               runSpacing: SpacingTokens.sm.h,
               children: [
                 _ChoiceChip(
-                  label: "All",
+                  label: S.all,
                   selected: _categoryId == null,
                   onTap: () => setState(() => _categoryId = null),
                 ),
-...context.read<SearchCubit>().state.categories.map(
-                  (CategoryModel category) {
-                    final id = category.id;
-                    if (id == null) {
-                      // Without an id this chip could only send a display
-                      // label, which the RPC would treat as an id and match
-                      // nothing. Skip it rather than offer a filter that lies.
-                      return const SizedBox.shrink();
-                    }
-                    return _ChoiceChip(
-                      label: category.label,
-                      selected: _categoryId == id,
-                      onTap: () => setState(() => _categoryId = id),
-                    );
-                  },
-                ),
+                ...context.read<SearchCubit>().state.categories.map((
+                  CategoryModel category,
+                ) {
+                  final id = category.id;
+                  if (id == null) {
+                    // Without an id this chip could only send a display
+                    // label, which the RPC would treat as an id and match
+                    // nothing. Skip it rather than offer a filter that lies.
+                    return const SizedBox.shrink();
+                  }
+                  return _ChoiceChip(
+                    label: category.label,
+                    selected: _categoryId == id,
+                    onTap: () => setState(() => _categoryId = id),
+                  );
+                }),
               ],
             ),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("Price range", style: AppFonts.medium16(context)),
+            Text(S.priceRange, style: AppFonts.medium16(context)),
             RangeSlider(
               values: _prices,
               min: _minBound,
@@ -160,17 +161,19 @@ final cubit = context.read<SearchCubit>();
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  Formatters.price(_prices.start),
-                  style: AppFonts.regular12(
-                    context,
-                  ).copyWith(color: AppColor.greyColor),
+                PriceLabel(
+                  amount: _prices.start,
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
+                  iconSize: 12,
+                  iconColor: AppColor.greyColor,
                 ),
-                Text(
-                  Formatters.price(_prices.end),
-                  style: AppFonts.regular12(
-                    context,
-                  ).copyWith(color: AppColor.greyColor),
+                PriceLabel(
+                  amount: _prices.end,
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
+                  iconSize: 12,
+                  iconColor: AppColor.greyColor,
                 ),
               ],
             ),
@@ -179,7 +182,7 @@ final cubit = context.read<SearchCubit>();
               children: [
                 Expanded(
                   child: CustomBtn(
-                    text: "Reset",
+                    text: S.reset,
                     variant: BtnVariant.secondary,
                     textColor: AppColor.primaryColor,
                     onPressed: _reset,
@@ -187,7 +190,7 @@ final cubit = context.read<SearchCubit>();
                 ),
                 SizedBox(width: SpacingTokens.md.w),
                 Expanded(
-                  child: CustomBtn(text: "Apply", onPressed: _apply),
+                  child: CustomBtn(text: S.apply, onPressed: _apply),
                 ),
               ],
             ),
@@ -232,4 +235,3 @@ class _ChoiceChip extends StatelessWidget {
     );
   }
 }
-

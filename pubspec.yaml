@@ -30,6 +30,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -53,6 +55,7 @@ dependencies:
   # (DATABASE_SPEC.md section 1.5). URL and key arrive via --dart-define.
   supabase_flutter: ^2.10.0
   cached_network_image: ^4.0.4
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -83,6 +86,13 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
+
+  # Cairo is the app's primary typeface for both Arabic and Latin.
+  # Bundled locally so text renders offline from the first launch.
+  fonts:
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Variable.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

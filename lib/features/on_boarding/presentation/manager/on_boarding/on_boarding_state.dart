@@ -23,5 +23,9 @@ final class OnBoardingError extends OnBoardingState {
 
 final class OnBoardingPageChanged extends OnBoardingState {
   final int currentPage;
-  const OnBoardingPageChanged({required this.currentPage});
+  final List<OnBoardingModel> slides;
+  const OnBoardingPageChanged({
+    required this.currentPage,
+    required this.slides,
+  });
 }

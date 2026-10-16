@@ -7,7 +7,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class OrderItemCard extends StatelessWidget {
   const OrderItemCard({
@@ -71,18 +71,28 @@ class OrderItemCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      "$quantity × ${Formatters.price(effectiveUnit)}",
+                      '$quantity × ',
                       style: AppFonts.regular12(context)
                           .copyWith(color: AppColor.greyColor),
                     ),
-                    const Spacer(),
+                    Expanded(
+                      child: PriceLabel(
+                        amount: effectiveUnit,
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.greyColor),
+                        iconSize: 12,
+                        iconColor: AppColor.greyColor,
+                      ),
+                    ),
                     if (unitPrice == null)
                       ProductPrice(product: product)
                     else
-                      Text(
-                        Formatters.price(effectiveUnit * quantity),
+                      PriceLabel(
+                        amount: effectiveUnit * quantity,
                         style: AppFonts.semiBold14(context)
                             .copyWith(color: AppColor.primaryColor),
+                        iconSize: 14,
+                        iconColor: AppColor.primaryColor,
                       ),
                   ],
                 ),

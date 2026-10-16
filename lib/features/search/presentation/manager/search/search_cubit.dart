@@ -16,21 +16,17 @@ part 'search_state.dart';
 /// aliases and normalisation now live in Postgres, so this cubit holds no
 /// vocabulary and loads no catalogue of its own.
 class SearchCubit extends Cubit<SearchState> {
-SearchCubit({
+  SearchCubit({
     required CatalogRepository catalogRepository,
     required this.branchId,
-  })  : _catalog = catalogRepository,
-        super(
-          const SearchState(
-            query: "",
-            sort: SearchSort.relevance,
-            results: [],
-          ),
-        ) {
+  }) : _catalog = catalogRepository,
+       super(
+         const SearchState(query: "", sort: SearchSort.relevance, results: []),
+       ) {
     loadInitial();
   }
 
-final CatalogRepository _catalog;
+  final CatalogRepository _catalog;
 
   /// Branch whose prices and availability apply to these results.
   final String? branchId;
@@ -41,8 +37,9 @@ final CatalogRepository _catalog;
   String? get _effectiveBranch => _branchIdOverride ?? branchId;
 
   Future<void> loadInitial() async {
-    // Loaded once so the filter sheet has real category ids to send. Kept out
-    // of _run so changing the sort or the price range does not refetch the list.
+    // Loaded once so the filter sheet has real category ids to send. No
+    // search runs here: firing a catalogue-wide query just to show an idle
+    // prompt would flash a spinner and waste a round trip on every open.
     var categories = state.categories;
     try {
       categories = await _catalog.getCategories();
@@ -50,32 +47,54 @@ final CatalogRepository _catalog;
       // A missing category list must not block searching.
       addError(error, stackTrace);
     }
-    return _run(query: state.query, categories: categories);
+    if (isClosed) return;
+    emit(
+      SearchState(
+        query: '',
+        sort: state.sort,
+        results: const [],
+        categories: categories,
+      ),
+    );
   }
 
-  void search(String query) => _run(query: query);
+  /// Clearing the field returns to the idle prompt instead of firing an
+  /// empty query whose blank result would read as "no results".
+  void search(String query) {
+    if (query.trim().isEmpty) {
+      emit(
+        SearchState(
+          query: '',
+          sort: state.sort,
+          categories: state.categories,
+          results: const [],
+        ),
+      );
+      return;
+    }
+    _run(query: query);
+  }
 
   void applyFilters({
     required SearchSort sort,
     String? category,
     double? minPrice,
     double? maxPrice,
-  }) =>
-      _run(
-        query: state.query,
-        sort: sort,
-        category: category,
-        minPrice: minPrice,
-        maxPrice: maxPrice,
-      );
+  }) => _run(
+    query: state.query,
+    sort: sort,
+    category: category,
+    minPrice: minPrice,
+    maxPrice: maxPrice,
+  );
 
   void resetFilters() => _run(
-        query: state.query,
-        sort: SearchSort.relevance,
-        category: null,
-        minPrice: null,
-        maxPrice: null,
-      );
+    query: state.query,
+    sort: SearchSort.relevance,
+    category: null,
+    minPrice: null,
+    maxPrice: null,
+  );
 
   /// Switches the branch the results are priced for, and re-runs the query.
   Future<void> setBranch(String? branchId) {
@@ -91,7 +110,7 @@ final CatalogRepository _catalog;
     return [prices.first, prices.last];
   }
 
-Future<void> _run({
+  Future<void> _run({
     required String query,
     SearchSort? sort,
     String? category,
@@ -99,16 +118,19 @@ Future<void> _run({
     double? maxPrice,
     List<CategoryModel>? categories,
   }) async {
-    emit(SearchState(
-      query: query,
-      sort: sort ?? state.sort,
-      categories: categories ?? state.categories,
-      category: category,
-      minPrice: minPrice,
-      maxPrice: maxPrice,
-      results: state.results,
-      isLoading: true,
-    ));
+    emit(
+      SearchState(
+        query: query,
+        sort: sort ?? state.sort,
+        categories: categories ?? state.categories,
+        category: category,
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        results: state.results,
+        isLoading: true,
+        hasSearched: true,
+      ),
+    );
 
     try {
       var results = await _catalog.search(
@@ -128,26 +150,32 @@ Future<void> _run({
         return true;
       }).toList();
 
-emit(SearchState(
-        query: query,
-        sort: sort ?? state.sort,
-        categories: categories ?? state.categories,
-        category: category,
-        minPrice: minPrice,
-        maxPrice: maxPrice,
-        results: results,
-      ));
+      emit(
+        SearchState(
+          query: query,
+          sort: sort ?? state.sort,
+          categories: categories ?? state.categories,
+          category: category,
+          minPrice: minPrice,
+          maxPrice: maxPrice,
+          results: results,
+          hasSearched: true,
+        ),
+      );
     } catch (error, stackTrace) {
-      emit(SearchState(
-        query: query,
-        sort: sort ?? state.sort,
-        categories: categories ?? state.categories,
-        category: category,
-        minPrice: minPrice,
-        maxPrice: maxPrice,
-        results: const [],
-        error: error.toString(),
-      ));
+      emit(
+        SearchState(
+          query: query,
+          sort: sort ?? state.sort,
+          categories: categories ?? state.categories,
+          category: category,
+          minPrice: minPrice,
+          maxPrice: maxPrice,
+          results: const [],
+          error: error.toString(),
+          hasSearched: true,
+        ),
+      );
       addError(error, stackTrace);
     }
   }

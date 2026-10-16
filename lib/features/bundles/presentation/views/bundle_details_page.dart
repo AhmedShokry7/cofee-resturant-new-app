@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -11,8 +12,9 @@ import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class BundleDetailsPage extends StatelessWidget {
   const BundleDetailsPage({super.key, required this.bundle});
@@ -46,7 +48,7 @@ class BundleDetailsPage extends StatelessWidget {
               ),
               child: BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
                 builder: (context, state) => CustomBtn(
-                  text: 'Add Bundle to Cart',
+                  text: S.addBundleToCart,
                   onPressed: state.products.isEmpty
                       ? null
                       : () => _addBundle(context),
@@ -70,12 +72,13 @@ class BundleDetailsPage extends StatelessWidget {
       cart.add(
         product,
         quantity: component.quantity,
-        note: 'Bundle: ${bundle.title}',
+        note: S.bundleNote(bundle.title),
         unitPrice: shares[product.id],
       );
     }
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text('${bundle.title} added to cart')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(S.addedBundleToCart(bundle.title))));
   }
 }
 
@@ -87,7 +90,7 @@ class _BundleDetailsBody extends StatelessWidget {
     return BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
       builder: (context, state) {
         if (state.isLoading && state.products.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return const BundleDetailsSkeleton();
         }
         if (state.error != null && state.products.isEmpty) {
           return Center(child: Text(state.error!));
@@ -125,7 +128,7 @@ class _BundleDetailsBody extends StatelessWidget {
                   .copyWith(color: AppColor.greyColor),
             ),
             SizedBox(height: SpacingTokens.lg.h),
-            Text("What's inside", style: AppFonts.semiBold16(context)),
+            Text(S.whatsInside, style: AppFonts.semiBold16(context)),
             SizedBox(height: SpacingTokens.sm.h),
             for (final product in state.products)
               Container(
@@ -155,30 +158,32 @@ class _BundleDetailsBody extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Text(
-                      Formatters.price(product.price),
+                    PriceLabel(
+                      amount: product.price,
                       style: AppFonts.semiBold14(context)
                           .copyWith(color: AppColor.greyColor),
+                      iconSize: 14,
+                      iconColor: AppColor.greyColor,
                     ),
                   ],
                 ),
               ),
             SizedBox(height: SpacingTokens.md.h),
             _PriceRow(
-              label: "Original total",
-              value: Formatters.price(cubit.originalTotalFor()),
+              label: S.originalTotal,
+              amount: cubit.originalTotalFor(),
               struck: true,
             ),
             SizedBox(height: SpacingTokens.xs.h),
             _PriceRow(
-              label: "Bundle price",
-              value: Formatters.price(state.bundle.price),
+              label: S.bundlePrice,
+              amount: state.bundle.price,
               highlighted: true,
             ),
             SizedBox(height: SpacingTokens.xs.h),
             _PriceRow(
-              label: "You save",
-              value: Formatters.price(cubit.savingsFor()),
+              label: S.youSave,
+              amount: cubit.savingsFor(),
               highlighted: true,
             ),
           ],
@@ -191,18 +196,22 @@ class _BundleDetailsBody extends StatelessWidget {
 class _PriceRow extends StatelessWidget {
   const _PriceRow({
     required this.label,
-    required this.value,
+    required this.amount,
     this.struck = false,
     this.highlighted = false,
   });
 
   final String label;
-  final String value;
+  final double amount;
   final bool struck;
   final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
+    final valueStyle = AppFonts.semiBold16(context).copyWith(
+      color: highlighted ? AppColor.primaryColor : AppColor.blackColor,
+      decoration: struck ? TextDecoration.lineThrough : null,
+    );
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -211,12 +220,11 @@ class _PriceRow extends StatelessWidget {
           style: AppFonts.regular14(context)
               .copyWith(color: AppColor.greyColor),
         ),
-        Text(
-          value,
-          style: AppFonts.semiBold16(context).copyWith(
-            color: highlighted ? AppColor.primaryColor : AppColor.blackColor,
-            decoration: struck ? TextDecoration.lineThrough : null,
-          ),
+        PriceLabel(
+          amount: amount,
+          style: valueStyle,
+          iconSize: valueStyle.fontSize,
+          iconColor: valueStyle.color,
         ),
       ],
     );

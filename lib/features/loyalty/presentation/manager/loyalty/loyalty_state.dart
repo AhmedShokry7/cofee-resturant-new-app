@@ -28,7 +28,7 @@ class LoyaltyState {
   final int lifetimePoints;
   final String tier;
 
-  /// True for the device-only demo wallet. Server balances are never mixed
+  /// True for the device-only guest wallet. Server balances are never mixed
   /// with it.
   final bool isGuest;
 
@@ -52,18 +52,17 @@ class LoyaltyState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      LoyaltyState(
-        balance: balance ?? this.balance,
-        transactions: transactions ?? this.transactions,
-        lastEarned: lastEarned ?? this.lastEarned,
-        rules: rules ?? this.rules,
-        rewards: rewards ?? this.rewards,
-        currencyCode: currencyCode ?? this.currencyCode,
-        lifetimePoints: lifetimePoints ?? this.lifetimePoints,
-        tier: tier ?? this.tier,
-        isGuest: isGuest ?? this.isGuest,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => LoyaltyState(
+    balance: balance ?? this.balance,
+    transactions: transactions ?? this.transactions,
+    lastEarned: lastEarned ?? this.lastEarned,
+    rules: rules ?? this.rules,
+    rewards: rewards ?? this.rewards,
+    currencyCode: currencyCode ?? this.currencyCode,
+    lifetimePoints: lifetimePoints ?? this.lifetimePoints,
+    tier: tier ?? this.tier,
+    isGuest: isGuest ?? this.isGuest,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }

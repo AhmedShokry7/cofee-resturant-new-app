@@ -24,50 +24,20 @@ class SupabasePaymentMethodRepository implements PaymentMethodRepository {
   @override
   Future<List<PaymentMethodModel>> activeMethods() async {
     final client = _client;
-    if (client == null) return LocalPaymentMethodRepository._seed;
-
-    try {
-      final rows =
-          await client
-                  .from('payment_methods')
-                  .select()
-                  .eq('is_active', true)
-                  .order('sort_order')
-              as List;
-      return [
-        for (final row in rows)
-          if (row is Map<String, dynamic>) PaymentMethodModel.fromDatabase(row),
-      ];
-    } catch (_) {
-      return LocalPaymentMethodRepository._seed;
+    if (client == null) {
+      throw StateError('Payment methods need a configured Supabase backend.');
     }
+
+    final rows =
+        await client
+                .from('payment_methods')
+                .select()
+                .eq('is_active', true)
+                .order('sort_order')
+            as List;
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>) PaymentMethodModel.fromDatabase(row),
+    ];
   }
-}
-
-class LocalPaymentMethodRepository implements PaymentMethodRepository {
-  const LocalPaymentMethodRepository();
-
-  static const List<PaymentMethodModel> _seed = [
-    PaymentMethodModel(
-      id: 'cash',
-      label: 'Cash on Delivery',
-      labelAr: 'الدفع عند الاستلام',
-      labelEn: 'Cash on Delivery',
-    ),
-    PaymentMethodModel(
-      id: 'card',
-      label: 'Credit / Debit Card',
-      labelAr: 'بطاقة ائتمانية أو مدى',
-      labelEn: 'Credit / Debit Card',
-    ),
-    PaymentMethodModel(
-      id: 'apple_pay',
-      label: 'Apple Pay',
-      labelAr: 'Apple Pay',
-      labelEn: 'Apple Pay',
-    ),
-  ];
-
-  @override
-  Future<List<PaymentMethodModel>> activeMethods() async => _seed;
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -37,10 +38,9 @@ class HomeSearchBar extends StatelessWidget {
             ),
             SizedBox(width: SpacingTokens.sm.w),
             Text(
-              "Search coffee...",
-              style: AppFonts.regular14(
-                context,
-              ).copyWith(color: AppColor.greyColor),
+              S.searchHint,
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
           ],
         ),
@@ -48,4 +48,3 @@ class HomeSearchBar extends StatelessWidget {
     );
   }
 }
-

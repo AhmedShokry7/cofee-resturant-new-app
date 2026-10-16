@@ -5,10 +5,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/widgets/search_filter_sheet.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
+import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 class SearchPage extends StatelessWidget {
@@ -19,7 +22,7 @@ class SearchPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Search")),
+      appBar: AppBar(title: Text(S.search)),
       body: Column(
         children: [
           Padding(
@@ -38,14 +41,10 @@ class SearchPage extends StatelessWidget {
                     style: AppFonts.regular16(context),
                     cursorColor: AppColor.primaryColor,
                     decoration: InputDecoration(
-                      hintText: "Search coffee...",
-                      hintStyle: AppFonts.regular14(
-                        context,
-                      ).copyWith(color: AppColor.greyColor),
-                      prefixIcon: Icon(
-                        Icons.search,
-                        color: AppColor.greyColor,
-                      ),
+                      hintText: S.searchHint,
+                      hintStyle: AppFonts.regular14(context)
+                          .copyWith(color: AppColor.greyColor),
+                      prefixIcon: Icon(Icons.search, color: AppColor.greyColor),
                       filled: true,
                       fillColor: AppColor.lightGreyColor,
                       contentPadding: EdgeInsets.symmetric(
@@ -84,24 +83,43 @@ class SearchPage extends StatelessWidget {
           Expanded(
             child: BlocBuilder<SearchCubit, SearchState>(
               builder: (context, state) {
-                // Show loading indicator while search is in progress
-                if (state.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+                // Idle: the customer has not searched yet. An inviting prompt,
+                // never "no results".
+                if (!state.hasSearched) {
+                  return EmptyState(
+                    icon: HugeIcons.strokeRoundedSearch01,
+                    title: S.searchPromptTitle,
+                    subtitle: S.searchPromptHint,
                   );
                 }
 
-                // Show error message if search failed
+                // Show skeleton grid while search is in progress. The search
+                // field row above stays visible so the layout never jumps.
+                if (state.isLoading) {
+                  return const ProductsGridSkeleton();
+                }
+
+                // A failure shows what happened plus a retry, so an outage
+                // never looks like "no results" and never dead-ends.
                 if (state.error != null) {
                   return Center(
                     child: Padding(
                       padding: EdgeInsets.all(SpacingTokens.lg.w),
-                      child: Text(
-                        state.error!,
-                        textAlign: TextAlign.center,
-                        style: AppFonts.regular16(context).copyWith(
-                          color: AppColor.errorColor,
-                        ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          EmptyState(
+                            icon: Icons.cloud_off_outlined,
+                            title: S.searchFailed,
+                            subtitle: state.error,
+                          ),
+                          SizedBox(height: SpacingTokens.md.h),
+                          CustomBtn(
+                            text: S.retry,
+                            onPressed: () =>
+                                context.read<SearchCubit>().search(state.query),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -109,10 +127,10 @@ class SearchPage extends StatelessWidget {
 
                 // Show "No results found" when search completed with no results
                 if (state.isEmptyResult) {
-                  return const EmptyState(
+                  return EmptyState(
                     icon: Icons.search,
-                    title: "No results found",
-                    subtitle: "Try a different keyword or filters",
+                    title: S.noResults,
+                    subtitle: S.tryDifferentKeyword,
                   );
                 }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -64,9 +65,8 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             } else if (state is AuthSuccess) {
               _onAuthenticated();
             }
@@ -76,14 +76,13 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
             return Stack(
               children: [
                 SkipBtn(
-              onTap: () async {
-                await const SessionRepository().markAuthenticated();
-                if (!context.mounted) return;
-                Navigator.of(context).pushReplacementNamed(
-                  MainPage.routeName,
-                );
-              },
-            ),
+                  onTap: () async {
+                    await const SessionRepository().markAuthenticated();
+                    if (!context.mounted) return;
+                    Navigator.of(context)
+                        .pushReplacementNamed(MainPage.routeName);
+                  },
+                ),
                 Form(
                   key: _formKey,
                   child: Column(
@@ -91,68 +90,70 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                     children: [
                       SizedBox(height: AuthSpacings.top.h),
                       Text(
-                        "Sign Up",
+                        S.signUp,
                         textAlign: TextAlign.center,
                         style: AppFonts.semiBold24(context),
                       ),
                       SizedBox(height: AuthSpacings.titleGap.h),
                       Text(
-                        "Create your account to get started",
+                        S.createAccountSubtitle,
                         textAlign: TextAlign.center,
-                        style: AppFonts.regular14(
-                          context,
-                        ).copyWith(color: AppColor.greyColor),
+                        style: AppFonts.regular14(context)
+                            .copyWith(color: AppColor.greyColor),
                       ),
                       SizedBox(height: AuthSpacings.headerGap.h),
                       CustomTextFormField(
                         controller: _nameController,
-                        hint: "Name",
+                        hint: S.nameHint,
                         keyboardType: TextInputType.name,
                         textInputAction: TextInputAction.next,
-                        validator: (value) =>
-                            (value == null || value.isEmpty) ? "Name is required" : null,
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? S.nameRequired
+                            : null,
                       ),
                       CustomTextFormField(
                         controller: _emailController,
-                        hint: "Email",
+                        hint: S.emailHint,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
-                        validator: (value) =>
-                            (value == null || value.isEmpty) ? "Email is required" : null,
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? S.emailRequired
+                            : null,
                       ),
                       CustomTextFormField(
                         controller: _passwordController,
-                        hint: "Password",
+                        hint: S.passwordHint,
                         obscureText: true,
                         textInputAction: TextInputAction.next,
                         validator: (value) => (value == null || value.isEmpty)
-                            ? "Password is required"
+                            ? S.passwordRequired
                             : null,
                       ),
                       CustomTextFormField(
                         controller: _confirmPasswordController,
-                        hint: "Confirm Password",
+                        hint: S.confirmPasswordHint,
                         obscureText: true,
                         textInputAction: TextInputAction.done,
-                        validator: (value) => (value != _passwordController.text)
-                            ? "Passwords do not match"
+                        validator: (value) =>
+                            (value != _passwordController.text)
+                            ? S.passwordsNoMatch
                             : null,
                       ),
                       SizedBox(height: AuthSpacings.fieldsGap.h),
                       CustomBtn(
-                        text: "Sign Up",
+                        text: S.signUp,
                         isLoading: isLoading,
                         onPressed: _submit,
                       ),
                       SizedBox(height: AuthSpacings.buttonGap.h),
-                      const AuthSocialLogin(label: "Or sign up with"),
+                      AuthSocialLogin(label: S.orSignUpWith),
                       SizedBox(height: AuthSpacings.sectionGap.h),
                       AuthSwitchPrompt(
-                        question: "Already have an account? ",
-                        actionText: "Sign In",
-                        onTap: () => Navigator.of(
-                          context,
-                        ).pushReplacementNamed(AuthPage.routeName),
+                        question: S.alreadyHaveAccount,
+                        actionText: S.signIn,
+                        onTap: () =>
+                            Navigator.of(context)
+                                .pushReplacementNamed(AuthPage.routeName),
                       ),
                       SizedBox(height: AuthSpacings.bottom.h),
                     ],
@@ -166,4 +167,3 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
     );
   }
 }
-
