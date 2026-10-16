@@ -252,6 +252,15 @@ class SupabaseProductRepository implements CatalogRepository {
     return null;
   }
 
+  /// Parses a `timestamptz` value from PostgREST into UTC. Null when absent
+  /// or unparseable, which the publish-window check treats as "no bound".
+  static DateTime? _asUtcDate(Object? value) {
+    if (value == null) return null;
+    final parsed = DateTime.tryParse(value.toString());
+    if (parsed == null) return null;
+    return parsed.isUtc ? parsed : parsed.toUtc();
+  }
+
   @override
   Future<List<ProductModel>> search(
     String query, {
@@ -362,48 +371,119 @@ class SupabaseProductRepository implements CatalogRepository {
 
   @override
   Future<List<BannerModel>> getBanners({int limit = 20}) async {
-    final now = DateTime.now().toUtc().toIso8601String();
-    final rows = await _client
+    // Only eq/order/limit filters here: complex `or` date expressions are a
+    // PostgREST version-sensitive failure point, and a 400 on this query
+    // would empty the whole banner section. The publish window is enforced
+    // below in Dart instead, with identical semantics.
+    final fetched = await _client
         .from('banners')
         .select('*')
         .eq('is_published', true)
-        .or('starts_at.is.null,starts_at.lte.$now')
-        .or('ends_at.is.null,ends_at.gte.$now')
         .order('sort_order')
         .limit(limit);
 
-    // Resolve the banner target so the detail screen can navigate without
-    // matching on a display string.
-    final categoryIds = rows
-        .where((r) => r['target_type'] == 'category')
-        .map((r) => r['target_id'])
-        .whereType<String>()
-        .toSet()
-        .toList();
+    final now = DateTime.now().toUtc();
+    final rows = fetched.where((r) {
+      final start = _asUtcDate(r['starts_at']);
+      if (start != null && now.isBefore(start)) return false;
+      final end = _asUtcDate(r['ends_at']);
+      if (end != null && now.isAfter(end)) return false;
+      return true;
+    }).toList();
 
-    final names = <String, ({String ar, String en})>{};
+    // Resolve the banner target so the detail screen can navigate without
+    // matching on a display string. Enrichment is best-effort and batched:
+    // one bad target must never fail the whole banner list.
+    final categoryIds = <String>{};
+    final productIds = <String>{};
+    final bundleIds = <String>{};
+    for (final r in rows) {
+      final type = r['target_type']?.toString();
+      final tid = r['target_id']?.toString();
+      if (tid == null || tid.isEmpty) continue;
+      switch (type) {
+        case 'category':
+          categoryIds.add(tid);
+        case 'product':
+          productIds.add(tid);
+        case 'bundle':
+          bundleIds.add(tid);
+      }
+    }
+
+    final categoryNames = <String, ({String ar, String en})>{};
     if (categoryIds.isNotEmpty) {
-      final cats = await _client
-          .from('categories')
-          .select('id, name_en, name_ar')
-          .inFilter('id', categoryIds);
-      for (final c in cats) {
-        names[c['id'].toString()] = (
-          ar: Db.text(c['name_ar']),
-          en: Db.text(c['name_en']),
-        );
+      try {
+        final cats = await _client
+            .from('categories')
+            .select('id, name_en, name_ar')
+            .inFilter('id', categoryIds.toList());
+        for (final c in cats) {
+          categoryNames[c['id'].toString()] = (
+            ar: Db.text(c['name_ar']),
+            en: Db.text(c['name_en']),
+          );
+        }
+      } catch (_) {
+        // Category labels stay empty; navigation still uses the stable id.
+      }
+    }
+
+    final productsById = <String, ProductModel>{};
+    if (productIds.isNotEmpty) {
+      try {
+        final prods = await _client
+            .from('products')
+            .select('*')
+            .inFilter('id', productIds.toList());
+        for (final p in prods) {
+          try {
+            final model = ProductModel.fromJson(
+              Map<String, dynamic>.from(p as Map),
+            );
+            productsById[model.id] = model;
+          } catch (_) {
+            // Skip one malformed row, keep the rest.
+          }
+        }
+      } catch (_) {
+        // Banner list still returns; product targets resolve to nothing.
+      }
+    }
+
+    final bundlesById = <String, BundleModel>{};
+    if (bundleIds.isNotEmpty) {
+      for (final bid in bundleIds) {
+        try {
+          final b = await getBundleById(bid);
+          if (b != null) bundlesById[bid] = b;
+        } catch (_) {
+          // Skip one unresolvable bundle, keep the rest.
+        }
       }
     }
 
     return rows.map((r) {
       final enriched = Map<String, dynamic>.from(r);
       final targetId = r['target_id']?.toString();
-      if (r['target_type'] == 'category' && targetId != null) {
-        final categoryNames = names[targetId];
-        enriched['target_category_name_ar'] = categoryNames?.ar ?? '';
-        enriched['target_category_name_en'] = categoryNames?.en ?? '';
+      if (targetId != null) {
+        final type = r['target_type']?.toString();
+        if (type == 'category') {
+          final resolved = categoryNames[targetId];
+          enriched['target_category_name_ar'] = resolved?.ar ?? '';
+          enriched['target_category_name_en'] = resolved?.en ?? '';
+        }
       }
-      return BannerModel.fromJson(enriched);
+      var banner = BannerModel.fromJson(enriched);
+      if (banner.targetType == 'product' && targetId != null) {
+        final p = productsById[targetId];
+        if (p != null) banner = banner.copyWith(targetProduct: p);
+      }
+      if (banner.targetType == 'bundle' && targetId != null) {
+        final b = bundlesById[targetId];
+        if (b != null) banner = banner.copyWith(targetBundle: b);
+      }
+      return banner;
     }).toList();
   }
 
@@ -454,6 +534,47 @@ class SupabaseProductRepository implements CatalogRepository {
           ),
         )
         .toList();
+  }
+
+  @override
+  Future<BundleModel?> getBundleById(String id) async {
+    final rows = await _client
+        .from('bundles')
+        .select('*')
+        .eq('id', id)
+        .eq('is_active', true)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    final bundle = rows.first;
+    final bundleId = bundle['id'].toString();
+    final items = await _client
+        .from('bundle_items')
+        .select('*, product:products(id, name_ar, name_en, image_url)')
+        .eq('bundle_id', bundleId)
+        .order('sort_order');
+
+    final byBundle = <String, List<BundleComponent>>{};
+    for (final row in items) {
+      final product = row['product'];
+      final embedded = product is Map ? product : const <String, dynamic>{};
+      byBundle
+          .putIfAbsent(bundleId, () => [])
+          .add(
+            BundleComponent(
+              productId: Db.text(row['product_id']),
+              quantity: Db.asInt(row['quantity'], fallback: 1),
+              allowOptions: row['allow_options'] == true,
+              nameAr: Db.textOrNull(embedded['name_ar']),
+              nameEn: Db.textOrNull(embedded['name_en']),
+              imageUrl: Db.textOrNull(embedded['image_url']),
+            ),
+          );
+    }
+
+    return BundleModel.fromJson(
+      bundle,
+      components: byBundle[bundleId] ?? const [],
+    );
   }
 
   // --- CategoryRepository --------------------------------------------------

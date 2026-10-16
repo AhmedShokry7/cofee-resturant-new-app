@@ -66,6 +66,9 @@ abstract class ProductRepository {
 
   /// Active bundles with their components and quantities resolved.
   Future<List<BundleModel>> getBundles({String? branchId, int limit = 20});
+
+  /// One bundle by id, with components resolved. Null when not found.
+  Future<BundleModel?> getBundleById(String id);
 }
 
 /// A product together with the options bound to it.

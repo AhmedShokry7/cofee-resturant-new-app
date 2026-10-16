@@ -1,5 +1,7 @@
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
 /// A home page banner.
 ///
@@ -32,6 +34,8 @@ class BannerModel {
     this.isPublished = false,
     this.startsAt,
     this.endsAt,
+    this.targetProduct,
+    this.targetBundle,
   }) : _legacyTitle = title ?? '',
        _legacySubtitle = subtitle ?? '',
        _legacyDescription = description ?? '',
@@ -63,6 +67,14 @@ class BannerModel {
 
   final String image;
 
+  /// Resolved target product when [targetType] is 'product'. Populated by the
+  /// repository after loading banners.
+  final ProductModel? targetProduct;
+
+  /// Resolved target bundle when [targetType] is 'bundle'. Populated by the
+  /// repository after loading banners.
+  final BundleModel? targetBundle;
+
   /// Single-language values from the mock data, so the locale-aware getters stay
   /// safe while the bilingual columns are empty.
   final String _legacyTitle;
@@ -90,6 +102,62 @@ class BannerModel {
     return pickText((ar: a, en: b), isArabic: isArabic);
   }
 
+  BannerModel copyWith({
+    String? id,
+    String? image,
+    String? title,
+    String? subtitle,
+    String? description,
+    String? ctaLabel,
+    String? targetCategory,
+    String? titleAr,
+    String? titleEn,
+    String? subtitleAr,
+    String? subtitleEn,
+    String? descriptionAr,
+    String? descriptionEn,
+    String? ctaLabelAr,
+    String? ctaLabelEn,
+    String? targetCategoryAr,
+    String? targetCategoryEn,
+    String? targetType,
+    String? targetId,
+    String? targetUrl,
+    int? sortOrder,
+    bool? isPublished,
+    DateTime? startsAt,
+    DateTime? endsAt,
+    ProductModel? targetProduct,
+    BundleModel? targetBundle,
+  }) => BannerModel(
+    id: id ?? this.id,
+    image: image ?? this.image,
+    title: title ?? _legacyTitle,
+    subtitle: subtitle ?? _legacySubtitle,
+    description: description ?? _legacyDescription,
+    ctaLabel: ctaLabel ?? _legacyCtaLabel,
+    targetCategory: targetCategory ?? _legacyTargetCategory,
+    titleAr: titleAr ?? this.titleAr,
+    titleEn: titleEn ?? this.titleEn,
+    subtitleAr: subtitleAr ?? this.subtitleAr,
+    subtitleEn: subtitleEn ?? this.subtitleEn,
+    descriptionAr: descriptionAr ?? this.descriptionAr,
+    descriptionEn: descriptionEn ?? this.descriptionEn,
+    ctaLabelAr: ctaLabelAr ?? this.ctaLabelAr,
+    ctaLabelEn: ctaLabelEn ?? this.ctaLabelEn,
+    targetCategoryAr: targetCategoryAr ?? this.targetCategoryAr,
+    targetCategoryEn: targetCategoryEn ?? this.targetCategoryEn,
+    targetType: targetType ?? this.targetType,
+    targetId: targetId ?? this.targetId,
+    targetUrl: targetUrl ?? this.targetUrl,
+    sortOrder: sortOrder ?? this.sortOrder,
+    isPublished: isPublished ?? this.isPublished,
+    startsAt: startsAt ?? this.startsAt,
+    endsAt: endsAt ?? this.endsAt,
+    targetProduct: targetProduct ?? this.targetProduct,
+    targetBundle: targetBundle ?? this.targetBundle,
+  );
+
   factory BannerModel.fromJson(Map<String, dynamic> json) => BannerModel(
     id: Db.text(json['id']),
     title: Db.textOrNull(json['title']) ?? '',
@@ -110,8 +178,6 @@ class BannerModel {
     targetType: Db.text(json['target_type'], 'category'),
     targetId: Db.textOrNull(json['target_id']),
     targetUrl: Db.textOrNull(json['target_url']),
-    // Joined from catalog.categories when the row carries it.
-    targetCategory: Db.textOrNull(json['target_category_name']) ?? '',
     sortOrder: Db.asInt(json['sort_order']),
     isPublished: json['is_published'] != false,
     startsAt: _date(json['starts_at']),

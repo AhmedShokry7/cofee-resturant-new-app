@@ -5,6 +5,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 
 class CategoryGridItem extends StatelessWidget {
   const CategoryGridItem({
@@ -18,6 +19,7 @@ class CategoryGridItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final imageUrl = category.imageUrl?.trim() ?? '';
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -38,11 +40,15 @@ class CategoryGridItem extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              category.icon,
-              size: 26.w,
-              color: AppColor.primaryColor,
-            ),
+            // The database picture when the row carries one, otherwise the
+            // icon mapped from `icon_key`. Both live in the same tile so a
+            // category without an image never renders an empty box.
+            child: imageUrl.isEmpty
+                ? Icon(category.icon, size: 26.w, color: AppColor.primaryColor)
+                : ClipRRect(
+                    borderRadius: BorderRadius.circular(16.r),
+                    child: DbImage(image: imageUrl, iconSize: 26.w),
+                  ),
           ),
           SizedBox(height: SpacingTokens.sm.h),
           Text(
@@ -57,4 +63,3 @@ class CategoryGridItem extends StatelessWidget {
     );
   }
 }
-

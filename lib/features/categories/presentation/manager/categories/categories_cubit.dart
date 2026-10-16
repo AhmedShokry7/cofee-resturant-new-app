@@ -15,10 +15,8 @@ part 'categories_state.dart';
 /// matched products to categories by display name, which breaks the moment a
 /// category is renamed or translated.
 class CategoriesCubit extends Cubit<CategoriesState> {
-  CategoriesCubit({
-    required this._repository,
-    this.branchId,
-  })  : super(const CategoriesState()) {
+  CategoriesCubit({required this._repository, this.branchId})
+    : super(const CategoriesState()) {
     load();
   }
 
@@ -49,13 +47,15 @@ class CategoriesCubit extends Cubit<CategoriesState> {
       // categories than the hard-coded list had.
       final maxIndex = categories.isEmpty ? 0 : categories.length - 1;
 
-      emit(state.copyWith(
-        categories: categories,
-        products: products,
-        bundles: bundles,
-        index: state.index.clamp(0, maxIndex),
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          categories: categories,
+          products: products,
+          bundles: bundles,
+          index: state.index.clamp(0, maxIndex),
+          isLoading: false,
+        ),
+      );
     } catch (error, stackTrace) {
       emit(state.copyWith(isLoading: false, error: error.toString()));
       addError(error, stackTrace);
@@ -73,6 +73,13 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     if (index < 0 || index >= state.categories.length) return;
     if (index == state.index) return;
     emit(state.copyWith(index: index));
+  }
+
+  /// Selects the category tab matching [categoryId], if it exists.
+  void selectCategoryById(String? categoryId) {
+    if (categoryId == null || categoryId.isEmpty) return;
+    final index = state.categories.indexWhere((c) => c.id == categoryId);
+    if (index >= 0) select(index);
   }
 
   /// Products in the tab at [index].

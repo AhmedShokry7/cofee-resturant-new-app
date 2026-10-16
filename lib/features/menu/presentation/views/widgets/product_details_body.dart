@@ -23,6 +23,11 @@ class ProductDetailsBody extends StatelessWidget {
       builder: (context, state) {
         final product = state.product;
         if (product == null) {
+          // Loading and failing are different states: the first shows a
+          // progress indicator, only the second shows a message.
+          if (state.isLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
           return Center(
             child: Text(
               state.error ?? 'Product unavailable',

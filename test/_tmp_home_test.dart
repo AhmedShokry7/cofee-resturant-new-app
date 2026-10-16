@@ -5,13 +5,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/main.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
-import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
-import 'package:new_coffee/features/search/presentation/views/search_page.dart';
+import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
+import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 Future<void> _setSurface(WidgetTester tester) async {
@@ -35,7 +34,19 @@ void main() {
     await tester.pump();
     expect(find.byType(MainPage), findsOneWidget);
 
-    await tester.tap(find.byType(BannerImage).first);
+    rootNavigatorKey.currentState!.pushNamed(
+      BannerDetailsPage.routeName,
+      arguments: const BannerModel(
+        id: 'banner-morning',
+        image: 'assets/images/banar.png',
+        title: 'Morning Boost',
+        subtitle: 'Start your day the right way',
+        description: 'Kick off your morning with our rich Hot Coffee picks.',
+        ctaLabel: 'Shop Hot Coffee',
+        targetType: 'category',
+        targetId: 'hot-coffee-category-id',
+      ),
+    );
     await _settlePush(tester);
     expect(find.byType(BannerDetailsPage), findsOneWidget);
     // Title shows in both the AppBar and the body.
@@ -44,7 +55,7 @@ void main() {
 
     await tester.tap(find.widgetWithText(CustomBtn, 'Shop Hot Coffee'));
     await _settlePush(tester);
-    expect(find.byType(SearchPage), findsOneWidget);
+    expect(find.byType(CategoriesPage), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 20));
     await tester.pumpWidget(const SizedBox());
@@ -59,7 +70,16 @@ void main() {
 
     rootNavigatorKey.currentState!.pushNamed(
       BannerDetailsPage.routeName,
-      arguments: (await const MockProductRepository().getBanners())[2],
+      arguments: const BannerModel(
+        id: 'banner-tea',
+        image: 'assets/images/banar.png',
+        title: 'Tea Time',
+        subtitle: 'Calm in every cup',
+        description: 'Unwind with our soothing Tea collection.',
+        ctaLabel: 'Shop Tea',
+        targetType: 'category',
+        targetId: 'tea-category-id',
+      ),
     );
     await _settlePush(tester);
 
@@ -89,16 +109,22 @@ void main() {
         matching: find.byType(ListView),
       ),
     );
-    final delegate =
-        listView.childrenDelegate as SliverChildBuilderDelegate;
+    final delegate = listView.childrenDelegate as SliverChildBuilderDelegate;
 
-final cubit =
-        BlocProvider.of<HomeCubit>(tester.element(find.byType(HomePopularSection)));
+    final cubit = BlocProvider.of<HomeCubit>(
+      tester.element(find.byType(HomePopularSection)),
+    );
     final featuredCount = cubit.state.popular.length;
-    expect(featuredCount, greaterThan(0),
-        reason: 'the featured section must not be empty');
-    expect(featuredCount, lessThan(10),
-        reason: 'featured is a subset, unlike the old whole-menu behaviour');
+    expect(
+      featuredCount,
+      greaterThan(0),
+      reason: 'the featured section must not be empty',
+    );
+    expect(
+      featuredCount,
+      lessThan(10),
+      reason: 'featured is a subset, unlike the old whole-menu behaviour',
+    );
 
     // ListView.separated: n products + (n - 1) separators, capped at 10.
     expect(delegate.estimatedChildCount, featuredCount * 2 - 1);

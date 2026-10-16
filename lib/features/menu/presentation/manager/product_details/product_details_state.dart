@@ -57,6 +57,7 @@ class ProductDetailsState {
 
   ProductDetailsState copyWith({
     ProductModel? product,
+    bool clearProduct = false,
     List<OptionGroup>? groups,
     OptionSelection? selection,
     double? estimatedUnitPrice,
@@ -70,21 +71,21 @@ class ProductDetailsState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      ProductDetailsState(
-        product: product ?? this.product,
-        groups: groups ?? this.groups,
-        selection: selection ?? this.selection,
-        estimatedUnitPrice: estimatedUnitPrice ?? this.estimatedUnitPrice,
-        resolvedPrice:
-            clearResolvedPrice ? null : (resolvedPrice ?? this.resolvedPrice),
-        quantity: quantity ?? this.quantity,
-        showFullDescription: showFullDescription ?? this.showFullDescription,
-        isAvailable: isAvailable ?? this.isAvailable,
-        unavailableReason: clearUnavailableReason
-            ? null
-            : (unavailableReason ?? this.unavailableReason),
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => ProductDetailsState(
+    product: clearProduct ? null : (product ?? this.product),
+    groups: groups ?? this.groups,
+    selection: selection ?? this.selection,
+    estimatedUnitPrice: estimatedUnitPrice ?? this.estimatedUnitPrice,
+    resolvedPrice: clearResolvedPrice
+        ? null
+        : (resolvedPrice ?? this.resolvedPrice),
+    quantity: quantity ?? this.quantity,
+    showFullDescription: showFullDescription ?? this.showFullDescription,
+    isAvailable: isAvailable ?? this.isAvailable,
+    unavailableReason: clearUnavailableReason
+        ? null
+        : (unavailableReason ?? this.unavailableReason),
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }

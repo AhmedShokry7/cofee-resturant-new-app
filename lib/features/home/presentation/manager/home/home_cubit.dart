@@ -16,10 +16,8 @@ part 'home_state.dart';
 /// without a release. One cubit loads it once and every widget reads the same
 /// snapshot, which is also one round trip instead of seven.
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit({
-    required this._repository,
-    this.branchId,
-  })  : super(const HomeState()) {
+  HomeCubit({required this._repository, this.branchId})
+    : super(const HomeState()) {
     load();
   }
 
@@ -37,53 +35,82 @@ class HomeCubit extends Cubit<HomeState> {
     // Each section loads independently so one failing source does not blank the
     // whole page. A section that fails keeps its previous value and the page
     // reports which ones are degraded.
-    try {
-      final results = await Future.wait([
-        _repository.getBanners(),
-        _repository.getBundles(branchId: branchId),
-        _repository.getCategories(),
-        _repository.getFeatured(branchId: branchId, limit: 10),
-        // Candidate pool for recommendations. Loaded once here so the weather
-        // rule can filter it without a query per temperature change.
-        _repository.getProducts(branchId: branchId, limit: 50),
-      ]);
+    final failures = <String>[];
 
-      final bundles = results[1] as List<BundleModel>;
-      final products = results[4] as List<ProductModel>;
-
-      // Resolve the products a bundle contains in one query, rather than per
-      // card. This also replaces the old bundleProducts() helper, which read
-      // them out of the Dart menu list.
-      final componentIds = <String>{
-        for (final b in bundles)
-          for (final c in b.components) c.productId,
-      }.toList();
-
-      final productsById = <String, ProductModel>{
-        for (final p in products) p.id: p,
-      };
-
-      // Only keep components we actually resolved. A dangling component id
-      // would otherwise crash the card when it reads the map.
-      final bundleProducts = <String, ProductModel>{};
-      for (final id in componentIds) {
-        final product = productsById[id];
-        if (product != null) bundleProducts[id] = product;
+    Future<T> guard<T>(
+      String section,
+      Future<T> Function() run,
+      T fallback,
+    ) async {
+      try {
+        return await run();
+      } catch (error, stackTrace) {
+        failures.add(section);
+        addError(error, stackTrace);
+        return fallback;
       }
+    }
 
-      emit(HomeState(
-        banners: results[0] as List<BannerModel>,
+    final banners = await guard(
+      'banners',
+      () => _repository.getBanners(),
+      state.banners,
+    );
+    final bundles = await guard(
+      'bundles',
+      () => _repository.getBundles(branchId: branchId),
+      state.bundles,
+    );
+    final categories = await guard(
+      'categories',
+      () => _repository.getCategories(),
+      state.categories,
+    );
+    final featured = await guard(
+      'featured',
+      () => _repository.getFeatured(branchId: branchId, limit: 10),
+      const <FeaturedProduct>[],
+    );
+    // Candidate pool for recommendations. Loaded once here so the weather
+    // rule can filter it without a query per temperature change.
+    final products = await guard(
+      'products',
+      () => _repository.getProducts(branchId: branchId, limit: 50),
+      state.recommendationPool,
+    );
+
+    // Resolve the products a bundle contains in one query, rather than per
+    // card. This also replaces the old bundleProducts() helper, which read
+    // them out of the Dart menu list.
+    final componentIds = <String>{
+      for (final b in bundles)
+        for (final c in b.components) c.productId,
+    }.toList();
+
+    final productsById = <String, ProductModel>{
+      for (final p in products) p.id: p,
+    };
+
+    // Only keep components we actually resolved. A dangling component id
+    // would otherwise crash the card when it reads the map.
+    final bundleProducts = <String, ProductModel>{};
+    for (final id in componentIds) {
+      final product = productsById[id];
+      if (product != null) bundleProducts[id] = product;
+    }
+
+    emit(
+      HomeState(
+        banners: banners,
         bundles: bundles,
-        categories: results[2] as List<CategoryModel>,
-        popular: _toProducts(results[3] as List<FeaturedProduct>),
+        categories: categories,
+        popular: _toProducts(featured),
         recommendationPool: products,
         bundleProducts: bundleProducts,
         isLoading: false,
-      ));
-    } catch (error, stackTrace) {
-      emit(state.copyWith(isLoading: false, error: error.toString()));
-      addError(error, stackTrace);
-    }
+        error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
+      ),
+    );
   }
 
   /// Products contained by the loaded bundles, keyed by product id.
@@ -91,10 +118,10 @@ class HomeCubit extends Cubit<HomeState> {
   /// Used to show a bundle's contents and the saving it represents, which used
   /// to be computed from the compiled-in menu.
   List<ProductModel> productsIn(BundleModel bundle) => [
-        for (final c in bundle.components)
-          if (state.bundleProducts[c.productId] != null)
-            state.bundleProducts[c.productId]!,
-      ];
+    for (final c in bundle.components)
+      if (state.bundleProducts[c.productId] != null)
+        state.bundleProducts[c.productId]!,
+  ];
 
   /// What the bundle contents would cost at their own prices.
   double originalTotalFor(BundleModel bundle) {
@@ -126,16 +153,18 @@ class HomeCubit extends Cubit<HomeState> {
   /// to render the carousel.
   static List<ProductModel> _toProducts(List<FeaturedProduct> featured) =>
       featured
-          .map((f) => ProductModel(
-                id: f.productId,
-                name: f.nameEn,
-                nameAr: f.nameAr,
-                nameEn: f.nameEn,
-                category: '',
-                description: '',
-                price: f.effectivePrice,
-                image: f.imageUrl ?? '',
-                isFeatured: f.source == 'manual',
-              ))
+          .map(
+            (f) => ProductModel(
+              id: f.productId,
+              name: f.nameEn,
+              nameAr: f.nameAr,
+              nameEn: f.nameEn,
+              category: '',
+              description: '',
+              price: f.effectivePrice,
+              image: f.imageUrl ?? '',
+              isFeatured: f.source == 'manual',
+            ),
+          )
           .toList();
 }

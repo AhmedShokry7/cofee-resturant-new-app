@@ -46,6 +46,9 @@ dependencies:
   geolocator: ^14.1.1
   image_picker: ^1.2.4
 
+  # External link launcher for banner CTA URLs.
+  url_launcher: ^6.3.1
+
   # Backend. Publishable key only — the service_role key never enters the app
   # (DATABASE_SPEC.md section 1.5). URL and key arrive via --dart-define.
   supabase_flutter: ^2.10.0

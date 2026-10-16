@@ -18,7 +18,16 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
     required this._repository,
     required this.productId,
     this.branchId,
-  })  : super(const ProductDetailsState()) {
+    ProductModel? initialProduct,
+  }) : super(
+         ProductDetailsState(
+           // The card already carries the product, so the screen renders its
+           // content immediately instead of flashing an empty state while
+           // the options and price load.
+           product: initialProduct,
+           estimatedUnitPrice: initialProduct?.price ?? 0,
+         ),
+       ) {
     load();
   }
 
@@ -42,17 +51,22 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
   }
 
   Future<void> load() async {
-    emit(state.copyWith(isLoading: true, error: null));
+    // clearError: copyWith(error: null) alone would keep a previous failure
+    // sticky and keep the Add button disabled after a successful reload.
+    emit(state.copyWith(isLoading: true, clearError: true));
     try {
       final loaded = await _repository.getWithOptions(
         productId,
         branchId: branchId,
       );
       if (loaded == null) {
-        emit(state.copyWith(
-          isLoading: false,
-          error: 'This product is no longer available',
-        ));
+        emit(
+          state.copyWith(
+            isLoading: false,
+            error: 'This product is no longer available',
+            clearProduct: true,
+          ),
+        );
         return;
       }
 
@@ -61,14 +75,19 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
       // group never begins in an arbitrary state.
       final selection = OptionSelection.defaultsFor(groups);
 
-      emit(state.copyWith(
-        product: loaded.product,
-        groups: groups,
-        selection: selection,
-        estimatedUnitPrice:
-            estimateUnitPrice(loaded.product, groups, selection),
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          product: loaded.product,
+          groups: groups,
+          selection: selection,
+          estimatedUnitPrice: estimateUnitPrice(
+            loaded.product,
+            groups,
+            selection,
+          ),
+          isLoading: false,
+        ),
+      );
 
       await _confirmPrice(selection);
     } catch (error, stackTrace) {
@@ -91,13 +110,15 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
     if (groups.isEmpty || product == null) return;
     final selection = state.selection.toggle(groups, groupId, valueId);
 
-    emit(state.copyWith(
-      selection: selection,
-      estimatedUnitPrice: estimateUnitPrice(product, groups, selection),
-      // The previous answer described the previous combination, so drop it
-      // rather than show a stale price for one frame.
-      clearResolvedPrice: true,
-    ));
+    emit(
+      state.copyWith(
+        selection: selection,
+        estimatedUnitPrice: estimateUnitPrice(product, groups, selection),
+        // The previous answer described the previous combination, so drop it
+        // rather than show a stale price for one frame.
+        clearResolvedPrice: true,
+      ),
+    );
     await _confirmPrice(selection);
   }
 
@@ -120,12 +141,14 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         return;
       }
 
-      emit(state.copyWith(
-        resolvedPrice: resolved.unitPrice,
-        isAvailable: resolved.isAvailable,
-        unavailableReason: resolved.unavailableReason,
-        clearUnavailableReason: resolved.isAvailable,
-      ));
+      emit(
+        state.copyWith(
+          resolvedPrice: resolved.unitPrice,
+          isAvailable: resolved.isAvailable,
+          unavailableReason: resolved.unavailableReason,
+          clearUnavailableReason: resolved.isAvailable,
+        ),
+      );
     } catch (error, stackTrace) {
       // Keep the estimate. Failing to confirm must not block ordering, and the
       // cart re-prices at checkout anyway.

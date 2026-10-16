@@ -13,10 +13,18 @@ import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
 
 class CategoriesPage extends StatelessWidget {
-  const CategoriesPage({super.key});
+  const CategoriesPage({super.key, this.initialCategoryId});
+
+  final String? initialCategoryId;
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<CategoriesCubit>();
+    if (initialCategoryId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        cubit.selectCategoryById(initialCategoryId);
+      });
+    }
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -33,10 +41,14 @@ class CategoriesPage extends StatelessWidget {
                     return const EmptyState(
                       icon: Icons.category_outlined,
                       title: "No categories yet",
-                      subtitle: "Categories will appear here once they are added",
+                      subtitle:
+                          "Categories will appear here once they are added",
                     );
                   }
-                  final index = state.index.clamp(0, state.categories.length - 1);
+                  final index = state.index.clamp(
+                    0,
+                    state.categories.length - 1,
+                  );
                   final category = state.categories[index];
 
                   // Bundle contents come from the bundles tab's own data
@@ -46,17 +58,21 @@ class CategoriesPage extends StatelessWidget {
                     return _BundlesList(
                       bundles: state.bundles,
                       productsById: {
-                        for (final product in state.products) product.id: product,
+                        for (final product in state.products)
+                          product.id: product,
                       },
                     );
                   }
 
-                  final products = context.read<CategoriesCubit>().productsAt(index);
+                  final products = context.read<CategoriesCubit>().productsAt(
+                    index,
+                  );
                   if (products.isEmpty) {
                     return EmptyState(
                       icon: category.icon,
                       title: "No products yet",
-                      subtitle: "Products in ${category.label} will appear here",
+                      subtitle:
+                          "Products in ${category.label} will appear here",
                     );
                   }
                   return ProductsGridView(products: products);
@@ -93,10 +109,8 @@ class _BundlesList extends StatelessWidget {
         SpacingTokens.lg.w,
       ),
       itemCount: bundles.length,
-      itemBuilder: (context, index) => BundleListTile(
-        bundle: bundles[index],
-        productsById: productsById,
-      ),
+      itemBuilder: (context, index) =>
+          BundleListTile(bundle: bundles[index], productsById: productsById),
     );
   }
 }

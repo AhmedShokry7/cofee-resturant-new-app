@@ -48,13 +48,33 @@ class HomeState {
   /// Replaces the old lookup that compared products to a raw category name
   /// string, which broke whenever a category was renamed.
   List<ProductModel> productsForBanner(BannerModel banner) {
-    if (banner.targetType != 'category' || banner.targetId == null) {
-      return const [];
+    switch (banner.targetType) {
+      case 'product':
+        final product = banner.targetProduct;
+        if (product != null) return [product];
+        // Fall back to the pool when the target was not resolved.
+        final id = banner.targetId;
+        if (id == null) return const [];
+        return recommendationPool
+            .where((p) => p.id == id)
+            .toList(growable: false);
+      case 'bundle':
+        final bundle = banner.targetBundle;
+        if (bundle == null) return const [];
+        return [
+          for (final c in bundle.components)
+            if (bundleProducts[c.productId] != null)
+              bundleProducts[c.productId]!,
+        ];
+      case 'category':
+        final id = banner.targetId;
+        if (id == null) return const [];
+        return recommendationPool
+            .where((p) => p.categoryId == id)
+            .toList(growable: false);
+      default:
+        return const [];
     }
-    final id = banner.targetId;
-    return recommendationPool
-        .where((p) => p.categoryId == id)
-        .toList(growable: false);
   }
 
   HomeState copyWith({
@@ -67,15 +87,14 @@ class HomeState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      HomeState(
-        banners: banners ?? this.banners,
-        bundles: bundles ?? this.bundles,
-        categories: categories ?? this.categories,
-        popular: popular ?? this.popular,
-        recommendationPool: recommendationPool ?? this.recommendationPool,
-        bundleProducts: bundleProducts ?? this.bundleProducts,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => HomeState(
+    banners: banners ?? this.banners,
+    bundles: bundles ?? this.bundles,
+    categories: categories ?? this.categories,
+    popular: popular ?? this.popular,
+    recommendationPool: recommendationPool ?? this.recommendationPool,
+    bundleProducts: bundleProducts ?? this.bundleProducts,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }

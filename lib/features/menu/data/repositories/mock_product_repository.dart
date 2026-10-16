@@ -21,8 +21,7 @@ class MockProductRepository implements CatalogRepository {
       id: "1",
       name: "Espresso",
       category: "Hot Coffee",
-      description:
-          "A rich and bold single shot of pure espresso, made from freshly ground premium beans. Served hot with a thick golden crema on top for a smooth, intense coffee experience.",
+      description: "A rich and bold single shot of pure espresso, made from freshly ground premium beans. Served hot with a thick golden crema on top for a smooth, intense coffee experience.",
       price: 25,
       image: AppImages.product,
     ),
@@ -30,8 +29,7 @@ class MockProductRepository implements CatalogRepository {
       id: "2",
       name: "Cappuccino",
       category: "Hot Coffee",
-      description:
-          "A classic favorite made with a balanced shot of espresso, topped with steamed milk and a generous layer of velvety milk foam. Perfect for any time of the day.",
+      description: "A classic favorite made with a balanced shot of espresso, topped with steamed milk and a generous layer of velvety milk foam. Perfect for any time of the day.",
       price: 40,
       oldPrice: 50,
       image: AppImages.product,
@@ -40,8 +38,7 @@ class MockProductRepository implements CatalogRepository {
       id: "3",
       name: "Latte",
       category: "Hot Coffee",
-      description:
-          "Smooth espresso blended with plenty of steamed milk for a creamy, mellow flavor. Finished with a light layer of foam and a touch of natural sweetness.",
+      description: "Smooth espresso blended with plenty of steamed milk for a creamy, mellow flavor. Finished with a light layer of foam and a touch of natural sweetness.",
       price: 35,
       image: AppImages.product,
     ),
@@ -49,8 +46,7 @@ class MockProductRepository implements CatalogRepository {
       id: "4",
       name: "Mocha",
       category: "Hot Coffee",
-      description:
-          "A decadent combination of rich espresso, steamed milk and premium chocolate syrup, topped with whipped cream. The perfect treat for chocolate and coffee lovers alike.",
+      description: "A decadent combination of rich espresso, steamed milk and premium chocolate syrup, topped with whipped cream. The perfect treat for chocolate and coffee lovers alike.",
       price: 45,
       oldPrice: 55,
       image: AppImages.product,
@@ -59,8 +55,7 @@ class MockProductRepository implements CatalogRepository {
       id: "5",
       name: "Americano",
       category: "Hot Coffee",
-      description:
-          "Espresso diluted with hot water to create a lighter, smoother cup that keeps all the rich aroma of the beans. A clean and refreshing choice for everyday coffee.",
+      description: "Espresso diluted with hot water to create a lighter, smoother cup that keeps all the rich aroma of the beans. A clean and refreshing choice for everyday coffee.",
       price: 30,
       image: AppImages.product,
     ),
@@ -68,8 +63,7 @@ class MockProductRepository implements CatalogRepository {
       id: "6",
       name: "Iced Latte",
       category: "Cold Coffee",
-      description:
-          "Chilled espresso poured over ice and combined with cold fresh milk for a refreshing, creamy drink. The ideal cool-down on a warm and sunny day.",
+      description: "Chilled espresso poured over ice and combined with cold fresh milk for a refreshing, creamy drink. The ideal cool-down on a warm and sunny day.",
       price: 42,
       oldPrice: 50,
       image: AppImages.product,
@@ -78,8 +72,7 @@ class MockProductRepository implements CatalogRepository {
       id: "7",
       name: "Green Tea",
       category: "Tea",
-      description:
-          "A light and refreshing green tea brewed from premium leaves, rich in antioxidants and perfect for a calm moment any time of the day.",
+      description: "A light and refreshing green tea brewed from premium leaves, rich in antioxidants and perfect for a calm moment any time of the day.",
       price: 20,
       image: AppImages.product,
     ),
@@ -87,8 +80,7 @@ class MockProductRepository implements CatalogRepository {
       id: "8",
       name: "Masala Tea",
       category: "Tea",
-      description:
-          "A warm spiced tea blended with milk, cardamom, ginger and cinnamon for a comforting and aromatic cup.",
+      description: "A warm spiced tea blended with milk, cardamom, ginger and cinnamon for a comforting and aromatic cup.",
       price: 25,
       image: AppImages.product,
     ),
@@ -96,8 +88,7 @@ class MockProductRepository implements CatalogRepository {
       id: "9",
       name: "Cheesecake",
       category: "Desserts",
-      description:
-          "A rich and creamy cheesecake with a buttery biscuit base, baked to perfection and served chilled.",
+      description: "A rich and creamy cheesecake with a buttery biscuit base, baked to perfection and served chilled.",
       price: 55,
       oldPrice: 65,
       image: AppImages.product,
@@ -106,8 +97,7 @@ class MockProductRepository implements CatalogRepository {
       id: "10",
       name: "Chocolate Brownie",
       category: "Desserts",
-      description:
-          "A warm, fudgy chocolate brownie made with premium cocoa, served soft in the middle with a rich chocolate flavor.",
+      description: "A warm, fudgy chocolate brownie made with premium cocoa, served soft in the middle with a rich chocolate flavor.",
       price: 48,
       image: AppImages.product,
     ),
@@ -115,8 +105,7 @@ class MockProductRepository implements CatalogRepository {
       id: "11",
       name: "Chocolate Chip Cookie",
       category: "Snacks",
-      description:
-          "A freshly baked cookie loaded with melting chocolate chips. Crisp on the edges and soft in the center.",
+      description: "A freshly baked cookie loaded with melting chocolate chips. Crisp on the edges and soft in the center.",
       price: 18,
       image: AppImages.product,
     ),
@@ -124,8 +113,7 @@ class MockProductRepository implements CatalogRepository {
       id: "12",
       name: "Butter Croissant",
       category: "Snacks",
-      description:
-          "A golden, flaky and buttery croissant baked fresh every morning. The perfect snack with your coffee.",
+      description: "A golden, flaky and buttery croissant baked fresh every morning. The perfect snack with your coffee.",
       price: 30,
       image: AppImages.product,
     ),
@@ -133,8 +121,7 @@ class MockProductRepository implements CatalogRepository {
       id: "13",
       name: "Chocolate Milkshake",
       category: "Milkshakes",
-      description:
-          "A thick and creamy chocolate milkshake blended with premium ice cream and topped with whipped cream.",
+      description: "A thick and creamy chocolate milkshake blended with premium ice cream and topped with whipped cream.",
       price: 45,
       oldPrice: 55,
       image: AppImages.product,
@@ -143,8 +130,7 @@ class MockProductRepository implements CatalogRepository {
       id: "14",
       name: "Cola",
       category: "Soft Drinks",
-      description:
-          "A chilled glass of refreshing cola served over ice. The perfect fizzy companion to any meal.",
+      description: "A chilled glass of refreshing cola served over ice. The perfect fizzy companion to any meal.",
       price: 15,
       image: AppImages.product,
     ),
@@ -152,8 +138,7 @@ class MockProductRepository implements CatalogRepository {
       id: "15",
       name: "Butter Bread",
       category: "Bakery",
-      description:
-          "A freshly baked loaf of soft butter bread, perfect for breakfast or a light snack.",
+      description: "A freshly baked loaf of soft butter bread, perfect for breakfast or a light snack.",
       price: 28,
       image: AppImages.product,
     ),
@@ -161,8 +146,7 @@ class MockProductRepository implements CatalogRepository {
       id: "16",
       name: "Glazed Donut",
       category: "Donuts",
-      description:
-          "A soft and fluffy donut coated with a sweet glossy glaze. A classic treat for any time of the day.",
+      description: "A soft and fluffy donut coated with a sweet glossy glaze. A classic treat for any time of the day.",
       price: 22,
       image: AppImages.product,
     ),
@@ -178,9 +162,11 @@ class MockProductRepository implements CatalogRepository {
     var items = List<ProductModel>.of(_legacyMenu);
     if (categoryId != null) {
       items = items
-          .where((p) =>
-              p.id == categoryId ||
-              p.category.toLowerCase() == categoryId.toLowerCase())
+          .where(
+            (p) =>
+                p.id == categoryId ||
+                p.category.toLowerCase() == categoryId.toLowerCase(),
+          )
           .toList();
     }
     if (offset >= items.length) return [];
@@ -197,20 +183,23 @@ class MockProductRepository implements CatalogRepository {
   }
 
   @override
-Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async {
-      final product = await getById(id, branchId: branchId);
-      if (product == null) return null;
-      return ProductWithOptions(
-        product: product,
-        groups: _legacyOptionGroups(
-          // Legacy mock products carry only a display label, so the slug has to
-          // be derived or the lookup below misses and the screen shows nothing.
-          product.categorySlug.isNotEmpty
-              ? product.categorySlug
-              : product.category.toLowerCase().replaceAll(' ', '-'),
-        ),
-      );
-    }
+  Future<ProductWithOptions?> getWithOptions(
+    String id, {
+    String? branchId,
+  }) async {
+    final product = await getById(id, branchId: branchId);
+    if (product == null) return null;
+    return ProductWithOptions(
+      product: product,
+      groups: _legacyOptionGroups(
+        // Legacy mock products carry only a display label, so the slug has to
+        // be derived or the lookup below misses and the screen shows nothing.
+        product.categorySlug.isNotEmpty
+            ? product.categorySlug
+            : product.category.toLowerCase().replaceAll(' ', '-'),
+      ),
+    );
+  }
 
   @override
   Future<List<ProductModel>> search(
@@ -242,21 +231,21 @@ Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) async 
     return items.sublist(offset, end);
   }
 
-/// Products the database marks `is_featured`.
-///
-/// Mirrors the seed so the mock and the live repository agree on which
-/// products are "featured". The old mock had no such concept, which is why
-/// every product used to be shown as popular.
-static const Set<String> _featuredNames = {
-  'Espresso',
-  'Cappuccino',
-  'Latte',
-  'Iced Latte',
-  'Green Tea',
-  'Cheesecake',
-};
+  /// Products the database marks `is_featured`.
+  ///
+  /// Mirrors the seed so the mock and the live repository agree on which
+  /// products are "featured". The old mock had no such concept, which is why
+  /// every product used to be shown as popular.
+  static const Set<String> _featuredNames = {
+    'Espresso',
+    'Cappuccino',
+    'Latte',
+    'Iced Latte',
+    'Green Tea',
+    'Cheesecake',
+  };
 
-@override
+  @override
   Future<List<FeaturedProduct>> getFeatured({
     String? branchId,
     int limit = 10,
@@ -284,8 +273,7 @@ static const Set<String> _featuredNames = {
     String? branchId,
     Duration period = const Duration(days: 30),
     int limit = 10,
-  }) async =>
-      const [];
+  }) async => const [];
 
   @override
   Future<ResolvedPrice?> resolvePrice(
@@ -302,68 +290,24 @@ static const Set<String> _featuredNames = {
     );
   }
 
+  /// Banners always come from the database. The offline fallback carries no
+  /// fake banners: a fabricated banner would link to fabricated targets.
   @override
-  Future<List<BannerModel>> getBanners({int limit = 20}) async =>
-      _legacyBanners.take(limit).toList();
-
-  /// Offline banners. These used to be a globally shared home module; they now
-  /// live inside the only implementation that reads them.
-  static const List<BannerModel> _legacyBanners = [
-    BannerModel(
-      id: "1",
-      image: AppImages.banner,
-      title: "Morning Boost",
-      subtitle: "Start your day the right way",
-      description:
-          "Kick off your morning with our rich Hot Coffee picks. Bold espresso shots, creamy cappuccinos and smooth lattes, brewed fresh to fuel your whole day.",
-      ctaLabel: "Shop Hot Coffee",
-      targetCategory: "Hot Coffee",
-    ),
-    BannerModel(
-      id: "2",
-      image: AppImages.banner,
-      title: "Iced & Fresh",
-      subtitle: "Cool down with every sip",
-      description:
-          "Beat the heat with our chilled Cold Coffee selection. Iced lattes and frosty favorites, served over plenty of ice for maximum refreshment.",
-      ctaLabel: "Shop Cold Coffee",
-      targetCategory: "Cold Coffee",
-    ),
-    BannerModel(
-      id: "3",
-      image: AppImages.banner,
-      title: "Tea Time",
-      subtitle: "Calm in every cup",
-      description:
-          "Unwind with our soothing Tea collection. From antioxidant-rich Green Tea to warm spiced Masala Tea, there is a calm moment waiting for you.",
-      ctaLabel: "Shop Tea",
-      targetCategory: "Tea",
-    ),
-    BannerModel(
-      id: "4",
-      image: AppImages.banner,
-      title: "Sweet Treats",
-      subtitle: "Dessert lovers, this is for you",
-      description:
-          "Indulge your sweet tooth with our Desserts lineup. Creamy cheesecakes and fudgy brownies that pair perfectly with any coffee.",
-      ctaLabel: "Shop Desserts",
-      targetCategory: "Desserts",
-    ),
-    BannerModel(
-      id: "5",
-      image: AppImages.banner,
-      title: "Snack Corner",
-      subtitle: "Little bites, big flavor",
-      description:
-          "Grab a quick bite from our Snacks shelf. Freshly baked cookies and golden croissants, made to go perfectly with your favorite drink.",
-      ctaLabel: "Shop Snacks",
-      targetCategory: "Snacks",
-    ),
-  ];
+  Future<List<BannerModel>> getBanners({int limit = 20}) async => const [];
 
   @override
-  Future<List<BundleModel>> getBundles({String? branchId, int limit = 20}) async =>
-      _legacyBundles.take(limit).toList();
+  Future<List<BundleModel>> getBundles({
+    String? branchId,
+    int limit = 20,
+  }) async => _legacyBundles.take(limit).toList();
+
+  @override
+  Future<BundleModel?> getBundleById(String id) async {
+    for (final b in _legacyBundles) {
+      if (b.id == id) return b;
+    }
+    return null;
+  }
 
   /// Legacy bundles for the offline fallback.
   ///
@@ -422,38 +366,39 @@ static const Set<String> _featuredNames = {
     );
   }
 
-/// Legacy categories for the offline fallback.
-///
-/// These used to live in `features/categories/data/categories_list.dart`, a file
-/// shared with the UI. Now that the UI reads from the repository, this mock is
-/// the only consumer, so the data belongs here rather than in a shared module
-/// that the app no longer uses.
-///
-/// [slug] is derived from the label so `getCategoryById` can keep resolving
-/// keys the same way the old list did implicitly.
-static final List<CategoryModel> _legacyCategories = [
-  for (final label in const [
-    'Hot Coffee',
-    'Cold Coffee',
-    'Tea',
-    'Desserts',
-    'Snacks',
-    'Milkshakes',
-    'Soft Drinks',
-    'Bakery',
-    'Donuts',
-    'Bundles',
-  ])
-    CategoryModel(
-      label: label,
-      slug: label.toLowerCase().replaceAll(' ', '-'),
-      icon: resolveCategoryIcon(label.toLowerCase().replaceAll(' ', '_')),
-    ),
-];
+  /// Legacy categories for the offline fallback.
+  ///
+  /// These used to live in `features/categories/data/categories_list.dart`, a file
+  /// shared with the UI. Now that the UI reads from the repository, this mock is
+  /// the only consumer, so the data belongs here rather than in a shared module
+  /// that the app no longer uses.
+  ///
+  /// [slug] is derived from the label so `getCategoryById` can keep resolving
+  /// keys the same way the old list did implicitly.
+  static final List<CategoryModel> _legacyCategories = [
+    for (final label in const [
+      'Hot Coffee',
+      'Cold Coffee',
+      'Tea',
+      'Desserts',
+      'Snacks',
+      'Milkshakes',
+      'Soft Drinks',
+      'Bakery',
+      'Donuts',
+      'Bundles',
+    ])
+      CategoryModel(
+        label: label,
+        slug: label.toLowerCase().replaceAll(' ', '-'),
+        icon: resolveCategoryIcon(label.toLowerCase().replaceAll(' ', '_')),
+      ),
+  ];
 
-@override
-  Future<List<CategoryModel>> getCategories({bool includeInactive = false}) async =>
-      _legacyCategories;
+  @override
+  Future<List<CategoryModel>> getCategories({
+    bool includeInactive = false,
+  }) async => _legacyCategories;
 
   @override
   Future<CategoryModel?> getCategoryById(String id) async {
@@ -477,17 +422,16 @@ static final List<CategoryModel> _legacyCategories = [
       int order, {
       bool isDefault = false,
       String? short,
-    }) =>
-        OptionValue(
-          id: id,
-          code: id,
-          nameAr: ar,
-          nameEn: en,
-          priceDelta: delta,
-          isDefault: isDefault,
-          sortOrder: order,
-          shortLabel: short,
-        );
+    }) => OptionValue(
+      id: id,
+      code: id,
+      nameAr: ar,
+      nameEn: en,
+      priceDelta: delta,
+      isDefault: isDefault,
+      sortOrder: order,
+      shortLabel: short,
+    );
 
     final size = OptionGroup(
       id: 'size',
@@ -569,8 +513,10 @@ static final List<CategoryModel> _legacyCategories = [
   }
 
   @override
-  Future<CategoryModel?> getCategoryBySlug(String slug) => getCategoryById(slug);
+  Future<CategoryModel?> getCategoryBySlug(String slug) =>
+      getCategoryById(slug);
 
   @override
-  Future<List<CategoryModel>> getCategoryChildren(String parentId) async => const [];
+  Future<List<CategoryModel>> getCategoryChildren(String parentId) async =>
+      const [];
 }

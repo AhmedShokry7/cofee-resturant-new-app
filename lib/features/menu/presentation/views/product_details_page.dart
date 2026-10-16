@@ -25,37 +25,37 @@ class ProductDetailsPage extends StatelessWidget {
         repository: context.read<CatalogRepository>(),
         productId: product.id,
         branchId: context.read<BranchCubit>().state.selected?.id,
+        initialProduct: product,
       ),
       child: Builder(
         builder: (context) => BlocListener<BranchCubit, BranchState>(
           listenWhen: (previous, current) =>
               previous.selected?.id != current.selected?.id,
-          listener: (context, state) => context
-              .read<ProductDetailsCubit>()
-              .setBranch(state.selected?.id),
+          listener: (context, state) =>
+              context.read<ProductDetailsCubit>().setBranch(state.selected?.id),
           child: Scaffold(
-          appBar: AppBar(
-            title: const Text("Product Details"),
-            actions: [
-              BlocBuilder<FavoritesCubit, FavoritesState>(
-                builder: (context, state) {
-                  final isFavorite = state.ids.contains(product.id);
-                  return IconButton(
-                    onPressed: () =>
-                        context.read<FavoritesCubit>().toggle(product.id),
-                    icon: Icon(
-                      HugeIcons.strokeRoundedFavourite,
-                      color: isFavorite
-                          ? AppColor.primaryColor
-                          : AppColor.greyColor,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          body: const ProductDetailsBody(),
-          bottomNavigationBar: const ProductDetailsBottomBar(),
+            appBar: AppBar(
+              title: const Text("Product Details"),
+              actions: [
+                BlocBuilder<FavoritesCubit, FavoritesState>(
+                  builder: (context, state) {
+                    final isFavorite = state.ids.contains(product.id);
+                    return IconButton(
+                      onPressed: () =>
+                          context.read<FavoritesCubit>().toggle(product.id),
+                      icon: Icon(
+                        HugeIcons.strokeRoundedFavourite,
+                        color: isFavorite
+                            ? AppColor.primaryColor
+                            : AppColor.greyColor,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            body: const ProductDetailsBody(),
+            bottomNavigationBar: const ProductDetailsBottomBar(),
           ),
         ),
       ),
