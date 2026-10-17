@@ -10,6 +10,7 @@ import 'package:new_coffee/features/checkout/data/repositories/payment_method_re
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
+import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 
 part 'checkout_state.dart';
 
@@ -19,6 +20,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required AddressRepository addresses,
     required this._paymentMethods,
     required this._content,
+    required this._orders,
     this.branchId,
   }) : _addresses = addresses,
        super(const CheckoutState()) {
@@ -29,6 +31,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   final AddressRepository _addresses;
   final PaymentMethodRepository _paymentMethods;
   final ContentRepository _content;
+  final OrdersRepository _orders;
 
   /// Branch used for category-scoped coupon validation.
   String? branchId;
@@ -194,17 +197,72 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     );
   }
 
-  void placeOrder({required List<CartItem> items, required double total}) {
-    final number = DateTime.now().millisecondsSinceEpoch % 1000000;
+  /// Places the order on the server. Returns true only when the server
+  /// persisted it; a failure never produces a receipt and never clears the
+  /// cart. The device cart is the UI, but the invoice is the server's.
+  ///
+  /// Fulfillment is `pickup`: the app has no delivery-zone selection, and the
+  /// server rejects a delivery order without a zone the branch actually serves.
+  /// The server therefore prices the order without a delivery fee.
+  Future<bool> placeOrder({required List<CartItem> items}) async {
+    if (state.isPlacingOrder) return false;
+    final branch = branchId?.trim() ?? '';
+    if (branch.isEmpty) {
+      emit(state.copyWith(orderError: 'Select a branch before paying.'));
+      return false;
+    }
+    if (items.isEmpty) {
+      emit(state.copyWith(orderError: 'Your cart is empty.'));
+      return false;
+    }
+
     emit(
       state.copyWith(
-        lastOrder: OrderModel(
-          id: "#${number.toString().padLeft(6, '0')}",
-          date: DateTime.now(),
-          items: items,
-          total: total,
-        ),
+        isPlacingOrder: true,
+        clearLastOrder: true,
+        clearOrderError: true,
       ),
     );
+    try {
+      final placed = await _orders.placeOrder(
+        branchId: branch,
+        lines: [
+          for (final item in items)
+            PlaceOrderLine(
+              productId: item.product.id,
+              quantity: item.quantity,
+              note: item.note,
+              optionValueIds: item.optionValueIds,
+              bundleId: item.bundleId,
+            ),
+        ],
+        fulfillmentType: 'pickup',
+        couponCode: state.appliedCoupon?.code,
+      );
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          isPlacingOrder: false,
+          clearOrderError: true,
+          lastOrder: OrderModel(
+            id: placed.orderNumber.isEmpty ? placed.orderId : placed.orderNumber,
+            date: placed.placedAt,
+            items: items,
+            total: placed.grandTotal,
+          ),
+        ),
+      );
+      return true;
+    } catch (error, stackTrace) {
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          isPlacingOrder: false,
+          orderError: error.toString(),
+        ),
+      );
+      addError(error, stackTrace);
+      return false;
+    }
   }
 }

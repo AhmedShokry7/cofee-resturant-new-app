@@ -9,6 +9,8 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
+import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/bundle_details_cubit.dart';
+import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
@@ -16,12 +18,13 @@ import 'package:new_coffee/features/favorites/presentation/manager/favorites/fav
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_body.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_bottom_bar.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
-import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
@@ -278,10 +281,111 @@ void main() {
       expect(_detailsOf(tester).state.quantity, 3);
 
       expect(cart.state.count, 0);
-      await tester.tap(find.byType(CustomBtn));
+      await tester.tap(find.byType(AnimatedAddToCartButton));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
       expect(cart.state.count, 3);
+    });
+  });
+
+  group('goes well with', () {
+    testWidgets('details shows same-category pairs, never itself', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      await _setSurface(tester);
+      final product = await _firstProduct();
+      final favorites = await _readyFavorites();
+      final cart = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: MockProductRepository(),
+      );
+      final branch = BranchCubit(repository: _FakeBranchRepository());
+      addTearDown(favorites.close);
+      addTearDown(cart.close);
+      addTearDown(branch.close);
+
+      await _pumpDetailsPage(
+        tester,
+        product,
+        favorites: favorites,
+        cart: cart,
+        branch: branch,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      final pairs = _detailsOf(tester).state.pairs;
+      expect(pairs, isNotEmpty);
+      expect(pairs.length, lessThanOrEqualTo(5));
+      expect(pairs.map((p) => p.id), isNot(contains(product.id)));
+      expect(
+        find.descendant(
+          of: find.byType(ProductDetailsBody),
+          matching: find.byType(HomeProductsCarousel),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('bundle details derives pairs without extra requests', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      await _setSurface(tester);
+      final bundles = await MockProductRepository().getBundles();
+      final bundle = bundles.first;
+      final favorites = await _readyFavorites();
+      final cart = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: MockProductRepository(),
+      );
+      final branch = BranchCubit(repository: _FakeBranchRepository());
+      addTearDown(favorites.close);
+      addTearDown(cart.close);
+      addTearDown(branch.close);
+
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(360, 690),
+          builder: (context, _) => MaterialApp(
+            home: MultiBlocProvider(
+              providers: [
+                BlocProvider.value(value: branch),
+                BlocProvider.value(value: favorites),
+                BlocProvider.value(value: cart),
+                RepositoryProvider<CatalogRepository>.value(
+                  value: MockProductRepository(),
+                ),
+              ],
+              child: BundleDetailsPage(bundle: bundle),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      final cubit = BlocProvider.of<BundleDetailsCubit>(
+        tester.element(
+          find.descendant(
+            of: find.byType(BundleDetailsPage),
+            matching: find.byType(Scaffold),
+          ),
+        ),
+      );
+      expect(cubit.state.products, isNotEmpty);
+      final pairs = cubit.state.pairs;
+      expect(pairs, isNotEmpty);
+      expect(pairs.length, lessThanOrEqualTo(5));
+      expect(
+        pairs.map((p) => p.id).toSet(),
+        isNot(contains(bundle.productIds.first)),
+      );
+      // The section sits at the end of the content: scroll it into view.
+      await tester.drag(find.byType(ListView), const Offset(0, -1200));
+      await tester.pump();
+      expect(find.byType(HomeProductsCarousel), findsOneWidget);
     });
   });
 

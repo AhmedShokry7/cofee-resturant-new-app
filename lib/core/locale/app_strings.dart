@@ -99,8 +99,13 @@ class S {
   static String get addToCart => _ar ? 'أضف إلى السلة' : 'Add to Cart';
   static String get unavailable => _ar ? 'غير متوفر' : 'Unavailable';
   static String get quantity => _ar ? 'الكمية' : 'Quantity';
+  static String get goesWellWith => _ar ? 'يتماشى معه' : 'Goes well with';
   static String get addedToCart =>
       _ar ? 'تمت الإضافة إلى السلة' : 'Added to cart';
+  static String get adding => _ar ? 'جارٍ الإضافة...' : 'Adding...';
+  static String get added => _ar ? 'تمت الإضافة' : 'Added';
+  static String get failedToAddToCart =>
+      _ar ? 'تعذر الإضافة إلى السلة' : 'Could not add to cart';
   static String addedProductToCart(String name) =>
       _ar ? 'تمت إضافة $name إلى السلة' : '$name added to cart';
   static String get unavailableNow => _ar
@@ -136,6 +141,8 @@ class S {
   static String get continueToPayment =>
       _ar ? 'المتابعة للدفع' : 'Continue to Payment';
   static String get confirmPayment => _ar ? 'تأكيد الدفع' : 'Confirm Payment';
+  static String get orderFailed =>
+      _ar ? 'تعذّر إتمام الطلب. حاول مرة أخرى.' : 'Could not place the order. Please try again.';
   static String get addAddressName =>
       _ar ? 'من فضلك أدخل اسم العنوان' : 'Please enter an address name';
   static String get addAddressLocation =>
@@ -363,6 +370,10 @@ class S {
   static String get logoutConfirm => _ar
       ? 'هل أنت متأكد من تسجيل الخروج؟'
       : 'Are you sure you want to log out ?';
+  /// Shown when the client sign-out itself fails. The customer stays signed in
+  /// and the sign-out can be retried.
+  static String get logoutFailed =>
+      _ar ? 'تعذّر تسجيل الخروج. حاول مرة أخرى.' : 'Could not sign you out. Please try again.';
   static String get faqTitle =>
       _ar ? 'الأسئلة الشائعة' : 'Frequently asked questions';
   static String get profilePicture =>

@@ -14,6 +14,7 @@ class ProductDetailsState {
     this.unavailableReason,
     this.isLoading = true,
     this.error,
+    this.pairs = const [],
   });
 
   /// The product as the repository returned it, which carries the branch price
@@ -45,6 +46,10 @@ class ProductDetailsState {
   final bool isLoading;
   final String? error;
 
+  /// Same-category companions for the "Goes well with" section. Decorative:
+  /// empty until loaded, and never blocks the page when unavailable.
+  final List<ProductModel> pairs;
+
   bool get hasOptions => groups.isNotEmpty;
 
   /// Blocks adding to the cart until the admin's rules are satisfied.
@@ -71,6 +76,7 @@ class ProductDetailsState {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    List<ProductModel>? pairs,
   }) => ProductDetailsState(
     product: clearProduct ? null : (product ?? this.product),
     groups: groups ?? this.groups,
@@ -87,5 +93,6 @@ class ProductDetailsState {
         : (unavailableReason ?? this.unavailableReason),
     isLoading: isLoading ?? this.isLoading,
     error: clearError ? null : (error ?? this.error),
+    pairs: pairs ?? this.pairs,
   );
 }

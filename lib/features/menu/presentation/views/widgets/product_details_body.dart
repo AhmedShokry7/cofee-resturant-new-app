@@ -13,6 +13,7 @@ import 'package:new_coffee/features/menu/presentation/manager/product_details/pr
 import 'package:new_coffee/features/menu/presentation/views/widgets/cup_icon.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_description.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -125,6 +126,17 @@ class ProductDetailsBody extends StatelessWidget {
                       selection: state.selection,
                       showCupArt: group.code == 'size',
                       cupSize: cupSizeFor(groups, state.selection),
+                    ),
+                  ],
+
+                  // Same-category companions. Hidden until loaded; the same
+                  // carousel the home sections use, so cards behave alike.
+                  if (state.pairs.isNotEmpty) ...[
+                    SizedBox(height: SpacingTokens.xl.h),
+                    HomeProductsCarousel(
+                      title: S.goesWellWith,
+                      products: state.pairs,
+                      maxItems: 5,
                     ),
                   ],
 

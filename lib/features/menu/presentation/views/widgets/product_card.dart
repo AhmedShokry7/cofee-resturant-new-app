@@ -12,6 +12,7 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_imag
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// Shared reusable product card used across the entire application.
@@ -117,8 +118,10 @@ class ProductCard extends StatelessWidget {
                       children: [
                         Expanded(child: ProductPrice(product: product)),
                         SizedBox(width: SpacingTokens.xs.w),
-                        _AddButton(
-                          onTap: () => context.read<CartCubit>().add(product),
+                        AnimatedAddToCartIconButton(
+                          size: 36,
+                          onAdd: () async =>
+                              context.read<CartCubit>().add(product),
                         ),
                       ],
                     ),
@@ -200,30 +203,6 @@ class ProductCard extends StatelessWidget {
             onDecrement: onDecrement,
           ),
         ],
-      ),
-    ),
-  );
-}
-
-class _AddButton extends StatelessWidget {
-  const _AddButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      height: 36.w,
-      width: 36.w,
-      decoration: const BoxDecoration(
-        color: AppColor.primaryColor,
-        shape: BoxShape.circle,
-      ),
-      child: Icon(
-        HugeIcons.strokeRoundedAdd01,
-        size: 20.w,
-        color: AppColor.whiteColor,
       ),
     ),
   );

@@ -70,4 +70,47 @@ void main() {
       await cubit.close();
     },
   );
+
+  test(
+    'a bundle id survives persistence and restore, and a re-add replaces it',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+
+      final repository = MockProductRepository();
+      final product = await repository.getById('1');
+      final cubit = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: repository,
+      );
+      await cubit.load();
+
+      // Two adds of the same product/note/options merge into one line; the
+      // bundle id is deliberately not part of the merge identity, so the
+      // latest write wins, matching the server's ON CONFLICT update.
+      cubit.add(product!, bundleId: 'bundle-x');
+      cubit.add(product, bundleId: 'bundle-y');
+
+      expect(cubit.state.items, hasLength(1));
+      expect(cubit.state.items.single.quantity, 2);
+      expect(cubit.state.items.single.bundleId, 'bundle-y');
+
+      final prefs = await SharedPreferences.getInstance();
+      final stored = jsonDecode(prefs.getString('cart_v1_guest')!) as List;
+      expect(stored.single['bundleId'], 'bundle-y');
+
+      // A fresh cubit is rebuilt from device storage, so the bundle
+      // membership must round-trip without the catalogue knowing about it.
+      final restored = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: repository,
+      );
+      await restored.load();
+
+      expect(restored.state.items.single.bundleId, 'bundle-y');
+      expect(restored.state.items.single.quantity, 2);
+
+      await cubit.close();
+      await restored.close();
+    },
+  );
 }

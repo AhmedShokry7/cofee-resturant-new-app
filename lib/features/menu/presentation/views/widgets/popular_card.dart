@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -12,6 +11,7 @@ import 'package:new_coffee/features/menu/presentation/views/product_details_page
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_favorite_button.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
+import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 
 class PopularCard extends StatelessWidget {
   const PopularCard({super.key, required this.product, this.width});
@@ -66,21 +66,9 @@ class PopularCard extends StatelessWidget {
               children: [
                 Expanded(child: ProductPrice(product: product)),
                 SizedBox(width: SpacingTokens.xs.w),
-                GestureDetector(
-                  onTap: () => context.read<CartCubit>().add(product),
-                  child: Container(
-                    height: 28.w,
-                    width: 28.w,
-                    decoration: const BoxDecoration(
-                      color: AppColor.primaryColor,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 16.w,
-                      color: AppColor.whiteColor,
-                    ),
-                  ),
+                AnimatedAddToCartIconButton(
+                  size: 28,
+                  onAdd: () async => context.read<CartCubit>().add(product),
                 ),
               ],
             ),

@@ -162,11 +162,20 @@ class SupabaseAuthRepository implements AuthRepository {
     }
   }
 
-  @override
-  Future<void> signOut() async {
-    if (!SupabaseService.isReady) return;
-    await _client.auth.signOut();
+@override
+Future<void> signOut() async {
+  // Returning quietly used to let the settings screen navigate to the auth page
+  // as if the session had ended, while the client still held a live one and
+  // the customer was never actually signed out. Failing loudly keeps them
+  // signed in knowingly instead.
+  if (!SupabaseService.isReady) {
+    throw AuthException(
+      'Signing out needs a configured Supabase backend.\n'
+      '${AppConfig.missingConfigurationMessage}',
+    );
   }
+  await _client.auth.signOut();
+}
 
   /// Previously hardcoded to null, so the app never knew who was signed in.
   @override

@@ -474,24 +474,41 @@ class MockProductRepository implements CatalogRepository {
         v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 2),
         v('vanilla', 'شراب الفانيلا', 'Vanilla Syrup', 5, 3),
         v('caramel', 'شراب الكراميل', 'Caramel Syrup', 5, 4),
+        v('mint', 'نعناع طازج', 'Fresh Mint', 3, 5),
+        v('honey', 'عسل', 'Honey', 5, 6),
+        v('scoop', 'كرة آيس كريم إضافية', 'Extra Ice Cream Scoop', 10, 7),
       ],
       'cold-coffee': [
         v('shot', 'جرعة إسبريسو إضافية', 'Extra Espresso Shot', 8, 1),
         v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 2),
         v('vanilla', 'شراب الفانيلا', 'Vanilla Syrup', 5, 3),
         v('caramel', 'شراب الكراميل', 'Caramel Syrup', 5, 4),
+        v('mint', 'نعناع طازج', 'Fresh Mint', 3, 5),
+        v('honey', 'عسل', 'Honey', 5, 6),
+        v('scoop', 'كرة آيس كريم إضافية', 'Extra Ice Cream Scoop', 10, 7),
       ],
       'tea': [
-        v('mint', 'نعناع طازج', 'Fresh Mint', 3, 1),
-        v('honey', 'عسل', 'Honey', 5, 2),
+        v('shot', 'جرعة إسبريسو إضافية', 'Extra Espresso Shot', 8, 1),
+        v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 2),
+        v('vanilla', 'شراب الفانيلا', 'Vanilla Syrup', 5, 3),
+        v('caramel', 'شراب الكراميل', 'Caramel Syrup', 5, 4),
+        v('mint', 'نعناع طازج', 'Fresh Mint', 3, 5),
+        v('honey', 'عسل', 'Honey', 5, 6),
+        v('scoop', 'كرة آيس كريم إضافية', 'Extra Ice Cream Scoop', 10, 7),
       ],
       'milkshakes': [
-        v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 1),
-        v('scoop', 'كرة آيس كريم إضافية', 'Extra Ice Cream Scoop', 10, 2),
+        v('shot', 'جرعة إسبريسو إضافية', 'Extra Espresso Shot', 8, 1),
+        v('cream', 'كريمة مخفوقة', 'Whipped Cream', 5, 2),
+        v('vanilla', 'شراب الفانيلا', 'Vanilla Syrup', 5, 3),
+        v('caramel', 'شراب الكراميل', 'Caramel Syrup', 5, 4),
+        v('mint', 'نعناع طازج', 'Fresh Mint', 3, 5),
+        v('honey', 'عسل', 'Honey', 5, 6),
+        v('scoop', 'كرة آيس كريم إضافية', 'Extra Ice Cream Scoop', 10, 7),
       ],
     };
 
     final extras = extrasForCategory[categorySlug];
+    if (categorySlug == 'soft-drinks') return [size, sugar];
     if (extras == null) return const [];
 
     return [

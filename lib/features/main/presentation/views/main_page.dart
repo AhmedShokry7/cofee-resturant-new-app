@@ -27,22 +27,42 @@ class MainPage extends StatelessWidget {
   }
 }
 
-class _MainScaffold extends StatelessWidget {
+class _MainScaffold extends StatefulWidget {
   const _MainScaffold();
+ 
+  @override
+  State<_MainScaffold> createState() => _MainScaffoldState();
+}
+
+class _MainScaffoldState extends State<_MainScaffold> {
+  // Pages are built only once their tab has actually been visited, so the
+  // Home tab no longer drags Categories/Cart/Favorites/Settings into the
+  // first frame. Slots that have never been visited stay in the stack as tiny
+  // placeholders; once a page has been built it stays built for state retention.
+  final List<bool> _built = <bool>[true, false, false, false, false];
+
+  static const List<Widget> _pages = <Widget>[
+    HomePage(),
+    CategoriesPage(),
+    CartPage(),
+    FavoritesPage(),
+    SettingsPage(),
+  ];
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<MainCubit, MainState>(
       builder: (context, state) {
+        final index = state.index;
+        if (index >= 0 && index < _built.length) {
+          _built[index] = true;
+        }
         return Scaffold(
           body: IndexedStack(
-            index: state.index,
-            children: const [
-              HomePage(),
-              CategoriesPage(),
-              CartPage(),
-              FavoritesPage(),
-              SettingsPage(),
+            index: index,
+            children: [
+              for (var i = 0; i < _pages.length; i++)
+                _built[i] ? _pages[i] : const SizedBox.shrink(),
             ],
           ),
           bottomNavigationBar: BottomNavigationBar(

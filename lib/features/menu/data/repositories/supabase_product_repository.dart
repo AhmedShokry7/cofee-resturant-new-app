@@ -164,14 +164,18 @@ class SupabaseProductRepository implements CatalogRepository {
     final productFuture = getById(id, branchId: branchId);
     final linksFuture = _client
         .from('product_option_groups')
-        .select('group_id')
+        .select('group_id, sort_order, is_required')
         .eq('product_id', id);
 
     final product = await productFuture;
     final links = await linksFuture;
     if (product == null) return null;
 
-    final groupIds = links.map((r) => r['group_id'].toString()).toList();
+    final bindingByGroup = {
+      for (final link in links)
+        link['group_id'].toString(): link,
+    };
+    final groupIds = bindingByGroup.keys.toList();
     if (groupIds.isEmpty) {
       return ProductWithOptions(
         product: product,
@@ -182,10 +186,12 @@ class SupabaseProductRepository implements CatalogRepository {
     final groupRows = await _client
         .from('option_groups')
         .select('*')
+        .eq('is_active', true)
         .inFilter('id', groupIds);
     final valueRows = await _client
         .from('option_values')
         .select('*')
+        .eq('is_active', true)
         .inFilter('group_id', groupIds);
 
     final valuesByGroup = <String, List<OptionValue>>{};
@@ -197,21 +203,22 @@ class SupabaseProductRepository implements CatalogRepository {
       list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
     }
 
-    final groups = groupRows.map((g) {
+    final groups = <OptionGroup>[];
+    for (final g in groupRows) {
       final parsed = OptionGroup.fromJson(g);
-      return OptionGroup(
-        id: parsed.id,
-        code: parsed.code,
-        nameAr: parsed.nameAr,
-        nameEn: parsed.nameEn,
-        isSingleSelect: parsed.isSingleSelect,
-        minSelect: parsed.minSelect,
-        maxSelect: parsed.maxSelect,
-        isRequired: parsed.isRequired,
-        sortOrder: parsed.sortOrder,
-        values: valuesByGroup[g['id'].toString()] ?? const [],
+      final values = valuesByGroup[g['id'].toString()] ?? const <OptionValue>[];
+      if (values.isEmpty) continue;
+      final binding = bindingByGroup[parsed.id];
+      groups.add(
+        effectiveProductOptionGroup(
+          group: parsed,
+          bindingIsRequired: binding?['is_required'] == true,
+          bindingSortOrder: (binding?['sort_order'] as num?)?.toInt() ?? 0,
+          values: values,
+        ),
       );
-    }).toList()..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
+    groups.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
     return ProductWithOptions(
       product: product,
@@ -377,7 +384,11 @@ class SupabaseProductRepository implements CatalogRepository {
     // below in Dart instead, with identical semantics.
     final fetched = await _client
         .from('banners')
-        .select('*')
+        .select(
+          'id,title_ar,title_en,subtitle_ar,subtitle_en,description_ar,'
+          'description_en,image_url,cta_label_ar,cta_label_en,target_type,'
+          'target_id,target_url,sort_order,is_published,starts_at,ends_at',
+        )
         .eq('is_published', true)
         .order('sort_order')
         .limit(limit);
@@ -412,55 +423,122 @@ class SupabaseProductRepository implements CatalogRepository {
     }
 
     final categoryNames = <String, ({String ar, String en})>{};
-    if (categoryIds.isNotEmpty) {
-      try {
-        final cats = await _client
-            .from('categories')
-            .select('id, name_en, name_ar')
-            .inFilter('id', categoryIds.toList());
-        for (final c in cats) {
-          categoryNames[c['id'].toString()] = (
-            ar: Db.text(c['name_ar']),
-            en: Db.text(c['name_en']),
-          );
-        }
-      } catch (_) {
-        // Category labels stay empty; navigation still uses the stable id.
-      }
-    }
-
     final productsById = <String, ProductModel>{};
-    if (productIds.isNotEmpty) {
-      try {
-        final prods = await _client
-            .from('products')
-            .select('*')
-            .inFilter('id', productIds.toList());
-        for (final p in prods) {
-          try {
-            final model = ProductModel.fromJson(
-              Map<String, dynamic>.from(p as Map),
-            );
-            productsById[model.id] = model;
-          } catch (_) {
-            // Skip one malformed row, keep the rest.
-          }
-        }
-      } catch (_) {
-        // Banner list still returns; product targets resolve to nothing.
-      }
-    }
-
     final bundlesById = <String, BundleModel>{};
+
+    // The three enrichment jobs depend only on the ids extracted above, so they
+    // run concurrently. Each keeps its own best-effort error handling and may not
+    // block the others.
+    final enrichmentJobs = <Future<void>>[];
+    if (categoryIds.isNotEmpty) {
+      enrichmentJobs.add(
+        () async {
+          try {
+            final cats = await _client
+                .from('categories')
+                .select('id, name_en, name_ar')
+                .inFilter('id', categoryIds.toList());
+            for (final c in cats) {
+              categoryNames[c['id'].toString()] = (
+                ar: Db.text(c['name_ar']),
+                en: Db.text(c['name_en']),
+              );
+            }
+          } catch (_) {
+            // Category labels stay empty; navigation still uses the stable id.
+          }
+        }(),
+      );
+    }
+    if (productIds.isNotEmpty) {
+      enrichmentJobs.add(
+        () async {
+          try {
+            final prods = await _client
+                .from('products')
+                .select('*')
+                .inFilter('id', productIds.toList());
+            for (final p in prods) {
+              try {
+                final model = ProductModel.fromJson(
+                  Map<String, dynamic>.from(p as Map),
+                );
+                productsById[model.id] = model;
+              } catch (_) {
+                // Skip one malformed row, keep the rest.
+              }
+            }
+          } catch (_) {
+            // Banner list still returns; product targets resolve to nothing.
+          }
+        }(),
+      );
+    }
     if (bundleIds.isNotEmpty) {
-      for (final bid in bundleIds) {
-        try {
-          final b = await getBundleById(bid);
-          if (b != null) bundlesById[bid] = b;
-        } catch (_) {
-          // Skip one unresolvable bundle, keep the rest.
-        }
-      }
+      enrichmentJobs.add(
+        () async {
+          final uniqueBundleIds = <String>{};
+          for (final bid in bundleIds) {
+            final id = bid.trim();
+            if (id.isNotEmpty) uniqueBundleIds.add(id);
+          }
+          if (uniqueBundleIds.isEmpty) return;
+          try {
+            final activeIds = <String>[];
+            final fetchedRows = await _client
+                .from('bundles')
+                .select('*')
+                .inFilter('id', uniqueBundleIds.toList());
+            for (final row in fetchedRows) {
+              if (row['is_active'] == true) {
+                activeIds.add(row['id'].toString());
+              }
+            }
+
+            final itemsByBundle = <String, List<BundleComponent>>{};
+            if (activeIds.isNotEmpty) {
+              final itemRows = await _client
+                  .from('bundle_items')
+                  .select('*, product:products(id, name_ar, name_en, image_url)')
+                  .inFilter('bundle_id', activeIds)
+                  .order('sort_order');
+              for (final row in itemRows) {
+                final bundleId = row['bundle_id'].toString();
+                final product = row['product'];
+                final embedded =
+                    product is Map ? product : const <String, dynamic>{};
+                itemsByBundle
+                    .putIfAbsent(bundleId, () => [])
+                    .add(
+                      BundleComponent(
+                        productId: Db.text(row['product_id']),
+                        quantity: Db.asInt(row['quantity'], fallback: 1),
+                        allowOptions: row['allow_options'] == true,
+                        nameAr: Db.textOrNull(embedded['name_ar']),
+                        nameEn: Db.textOrNull(embedded['name_en']),
+                        imageUrl: Db.textOrNull(embedded['image_url']),
+                      ),
+                    );
+              }
+            }
+
+            for (final row in fetchedRows) {
+              if (row['is_active'] != true) continue;
+              final id = row['id'].toString();
+              final model = BundleModel.fromJson(
+                row,
+                components: itemsByBundle[id] ?? const [],
+              );
+              bundlesById[id] = model;
+            }
+          } catch (_) {
+            // Bundle enrichment is best-effort: the banner list still returns.
+          }
+        }(),
+      );
+    }
+    if (enrichmentJobs.isNotEmpty) {
+      await Future.wait(enrichmentJobs);
     }
 
     return rows.map((r) {

@@ -90,6 +90,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
       );
 
       await _confirmPrice(selection);
+      await _loadPairs(loaded.product);
     } catch (error, stackTrace) {
       emit(state.copyWith(isLoading: false, error: error.toString()));
       addError(error, stackTrace);
@@ -153,6 +154,33 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
       // Keep the estimate. Failing to confirm must not block ordering, and the
       // cart re-prices at checkout anyway.
       addError(error, stackTrace);
+    }
+  }
+
+  /// Same-category companions for "Goes well with". Best-effort and late:
+  /// the page never waits for it, and a failure leaves the section hidden.
+  Future<void> _loadPairs(ProductModel product) async {
+    // Prefer the stable id; legacy rows without one fall back to the
+    // display name (harmless: backends that require an id simply match
+    // nothing and the section stays hidden).
+    final categoryKey = product.categoryId?.isNotEmpty == true
+        ? product.categoryId!
+        : product.category.trim();
+    if (categoryKey.isEmpty) return;
+    try {
+      final rows = await _repository.getProducts(
+        branchId: branchId,
+        categoryId: categoryKey,
+        limit: 6,
+      );
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          pairs: rows.where((p) => p.id != productId).take(5).toList(),
+        ),
+      );
+    } catch (_) {
+      // Decorative section; a failure must not touch page state.
     }
   }
 

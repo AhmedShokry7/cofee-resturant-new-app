@@ -8,6 +8,7 @@ class CartItem {
     this.note = '',
     this.optionValueIds = const [],
     this.unitPrice,
+    this.bundleId,
   });
 
   final ProductModel product;
@@ -25,7 +26,18 @@ class CartItem {
   /// Variant-adjusted unit price (size + extras). Null = base price.
   final double? unitPrice;
 
+  /// Bundle this line belongs to, when it was added as a bundle component.
+  ///
+  /// The server prices a bundle component as its proportional share of the
+  /// bundle price, so the id must survive in the cart and be replayed at
+  /// checkout; dropping it would silently re-price the component at shelf price.
+  final String? bundleId;
+
   /// Stable merge identity for one product/note/option combination.
+  ///
+  /// Deliberately excludes [bundleId]: the server line identity is
+  /// (cart, product, note, options), and a re-add updates the line price, so
+  /// two adds that differ only by bundle must merge on both sides.
   String get lineId =>
       '${product.id}::$note::${optionValueIds.join(',')}';
 
@@ -38,6 +50,7 @@ class CartItem {
     String? note,
     List<String>? optionValueIds,
     double? unitPrice,
+    String? bundleId,
   }) =>
       CartItem(
         product: product,
@@ -45,6 +58,7 @@ class CartItem {
         note: note ?? this.note,
         optionValueIds: optionValueIds ?? this.optionValueIds,
         unitPrice: unitPrice ?? this.unitPrice,
+        bundleId: bundleId ?? this.bundleId,
       );
 }
 

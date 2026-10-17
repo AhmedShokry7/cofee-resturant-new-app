@@ -12,7 +12,8 @@ import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
+import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
@@ -47,11 +48,10 @@ class BundleDetailsPage extends StatelessWidget {
                 border: Border(top: BorderSide(color: AppColor.borderColor)),
               ),
               child: BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
-                builder: (context, state) => CustomBtn(
-                  text: S.addBundleToCart,
-                  onPressed: state.products.isEmpty
-                      ? null
-                      : () => _addBundle(context),
+                builder: (context, state) => AnimatedAddToCartButton(
+                  label: S.addBundleToCart,
+                  enabled: state.products.isNotEmpty,
+                  onAdd: () async => _addBundle(context),
                 ),
               ),
             ),
@@ -61,7 +61,9 @@ class BundleDetailsPage extends StatelessWidget {
     );
   }
 
-  void _addBundle(BuildContext context) {
+  /// Adds every bundle component to the cart. The shared button owns the
+  /// success animation, so there is no separate SnackBar here.
+  Future<void> _addBundle(BuildContext context) async {
     final cubit = context.read<BundleDetailsCubit>();
     final shares = cubit.sharesFor();
     final cart = context.read<CartCubit>();
@@ -76,9 +78,6 @@ class BundleDetailsPage extends StatelessWidget {
         unitPrice: shares[product.id],
       );
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(S.addedBundleToCart(bundle.title))));
   }
 }
 
@@ -186,6 +185,16 @@ class _BundleDetailsBody extends StatelessWidget {
               amount: cubit.savingsFor(),
               highlighted: true,
             ),
+            // Same-category companions outside the bundle, in the shared
+            // home carousel. Hidden when the catalogue offers none.
+            if (state.pairs.isNotEmpty) ...[
+              SizedBox(height: SpacingTokens.xl.h),
+              HomeProductsCarousel(
+                title: S.goesWellWith,
+                products: state.pairs,
+                maxItems: 5,
+              ),
+            ],
           ],
         );
       },

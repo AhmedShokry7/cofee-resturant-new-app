@@ -10,10 +10,38 @@ import 'package:new_coffee/features/notifications/presentation/views/widgets/not
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
 
   static const routeName = "notificationsRoute";
+
+  @override
+  State<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  /// Opening the page marks what is on screen as seen, through the server RPC
+  /// rather than device-only flags.
+  ///
+  /// This runs from [State.initState], so it happens once per visit. It used to
+  /// run from a post-frame callback registered inside `BlocBuilder.builder`,
+  /// which meant every emission scheduled another one and the page spun in an
+  /// endless emit -> rebuild -> mark-as-read -> request loop. `initState` is a
+  /// lifecycle callback, not a render callback, so no later emission can
+  /// restart it, and the cubit still re-reads the list afterwards so the unread
+  /// dots clear without losing the rows.
+  ///
+  /// Notifications that arrive later are not affected: only the ids that are
+  /// unread at the moment of the call are written, and a future visit marks
+  /// whatever is unread then.
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.read<NotificationsCubit>().markAllRead();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,13 +49,6 @@ class NotificationsPage extends StatelessWidget {
       appBar: AppBar(title: Text(S.notifications)),
       body: BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
-          // Opening the page marks everything seen, through the server RPC
-          // rather than device-only flags.
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (context.mounted) {
-              context.read<NotificationsCubit>().markAllRead();
-            }
-          });
           if (state.isLoading && state.notifications.isEmpty) {
             return const NotificationsSkeleton();
           }

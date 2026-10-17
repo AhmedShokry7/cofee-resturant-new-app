@@ -182,6 +182,27 @@ class OptionValue {
   );
 }
 
+OptionGroup effectiveProductOptionGroup({
+  required OptionGroup group,
+  required bool bindingIsRequired,
+  required int bindingSortOrder,
+  required List<OptionValue> values,
+}) {
+  final isRequired = bindingIsRequired || group.isRequired;
+  return OptionGroup(
+    id: group.id,
+    code: group.code,
+    nameAr: group.nameAr,
+    nameEn: group.nameEn,
+    isSingleSelect: group.isSingleSelect,
+    minSelect: isRequired && group.minSelect < 1 ? 1 : group.minSelect,
+    maxSelect: group.maxSelect,
+    isRequired: isRequired,
+    sortOrder: bindingSortOrder > 0 ? bindingSortOrder : group.sortOrder,
+    values: values,
+  );
+}
+
 class ProductImage {
   const ProductImage({
     required this.url,

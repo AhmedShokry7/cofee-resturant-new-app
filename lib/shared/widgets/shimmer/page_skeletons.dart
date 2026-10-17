@@ -106,6 +106,8 @@ class ProductDetailsSkeleton extends StatelessWidget {
                   ),
                 ),
               ],
+              SizedBox(height: SpacingTokens.xl.h),
+              const ProductsCarouselSkeleton(itemCount: 3),
               SizedBox(height: SpacingTokens.lg.h),
               const Divider(),
             ],
@@ -194,6 +196,8 @@ class BundleDetailsSkeleton extends StatelessWidget {
           ),
           SizedBox(height: SpacingTokens.xs.h),
         ],
+        SizedBox(height: SpacingTokens.xl.h),
+        const ProductsCarouselSkeleton(itemCount: 3),
       ],
     );
   }

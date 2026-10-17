@@ -9,6 +9,8 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState;
 
 part 'cart_state.dart';
 
@@ -33,10 +35,10 @@ class CartCubit extends Cubit<CartState> {
        _catalogRepository = catalogRepository,
        _userIdProvider = userIdProvider ?? _defaultUserId,
        super(const CartState(items: [])) {
+    _identity = _userIdProvider();
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
-        (_) => load(),
-      );
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange
+          .listen(_onAuthStateChanged);
     }
     load();
   }
@@ -48,7 +50,7 @@ class CartCubit extends Cubit<CartState> {
   /// Branch whose catalogue rows apply to restored lines.
   String? branchId;
 
-  StreamSubscription<dynamic>? _authSubscription;
+  StreamSubscription<AuthState>? _authSubscription;
 
   /// Device key for one account's cart. `null` is the signed-out guest cart.
   /// Never share a key across accounts: that leaks one customer's lines
@@ -59,8 +61,74 @@ class CartCubit extends Cubit<CartState> {
       ? SupabaseService.client.auth.currentUser?.id
       : null;
 
+  /// Which storage slot the restored lines come from.
   String? get _userId => _userIdProvider();
   String get _key => storageKeyFor(_userId);
+
+  /// Identity whose lines are currently in state. Null means guest.
+  ///
+  /// Seeded from the same source the storage key uses, so the very first load
+  /// is not mistaken for a transition: the constructor state is an empty cart,
+  /// which is exactly what a guest identity looks like.
+  String? _identity;
+
+  /// Monotonic id of the newest load. Only the load holding the latest number
+  /// may write state.
+  ///
+  /// Needed because an identity transition emits immediately, while a load that
+  /// started under the previous identity is still in flight and would otherwise
+  /// land afterwards and restore the previous customer's lines.
+  int _loadGeneration = 0;
+
+  /// Records that the signed-in customer changed and drops whatever the
+  /// previous one had on screen.
+  ///
+  /// Emits immediately rather than waiting for the next load, so the previous
+  /// customer's lines are never visible during the transition or after a failed
+  /// read. Only in-memory state is dropped: the per-account storage slots are
+  /// untouched, so switching back restores that customer's own cart.
+  ///
+  /// Returns true when this really was a different identity. An ordinary
+  /// refresh, a branch change or a token rotation leaves the data alone.
+  @visibleForTesting
+  bool applyIdentityTransition(String? identity) {
+    if (identity == _identity) return false;
+    _identity = identity;
+    // Invalidate anything already in flight under the previous identity.
+    _loadGeneration++;
+    if (state.items.isNotEmpty) {
+      emit(const CartState(items: []));
+    }
+    return true;
+  }
+
+  /// The cart is namespaced per account, so it reloads exactly when the
+  /// account behind [_userId] changes.
+  ///
+  /// `signedIn` may be a different customer entirely, whose lines live under a
+  /// different key, and `signedOut` must leave nothing of the signed-in cart on
+  /// screen. `passwordRecovery` is grouped with `signedIn` on purpose: GoTrue
+  /// emits it *instead of* `signedIn` when a recovery link establishes the
+  /// session, and this app supports exactly that flow, so skipping it would
+  /// leave the previous customer's lines on screen. `initialSession` is ignored
+  /// on purpose: the auth stream replays its latest event to every new
+  /// listener, and the constructor load above already read that session, so
+  /// honouring it here would load twice. The guest adoption below is a write and
+  /// is guarded separately by [_adoptingGuestCart], so no two loads can ever
+  /// claim the same guest lines. `tokenRefreshed` rotates a token and leaves the
+  /// account, therefore the cart, untouched; `userUpdated` changes a profile,
+  /// not the cart.
+  @visibleForTesting
+  bool shouldReloadOnAuthEvent(AuthState auth) =>
+      auth.event == AuthChangeEvent.signedIn ||
+      auth.event == AuthChangeEvent.passwordRecovery ||
+      auth.event == AuthChangeEvent.signedOut;
+
+  void _onAuthStateChanged(AuthState auth) {
+    if (!shouldReloadOnAuthEvent(auth)) return;
+    applyIdentityTransition(auth.session?.user.id);
+    load();
+  }
 
   /// Restored rows stay within the catalogue's configured page width.
   static const _catalogPageSize = 200;
@@ -71,6 +139,7 @@ class CartCubit extends Cubit<CartState> {
   bool _adoptingGuestCart = false;
 
   Future<void> load() async {
+    final generation = ++_loadGeneration;
     try {
       final raw = await SharedPref.getValue(key: _key);
       if (isClosed) return;
@@ -85,9 +154,18 @@ class CartCubit extends Cubit<CartState> {
         return fresh;
       }
 
-      if (raw != null && raw.isNotEmpty) {
-        final items = await _resolveItems(_decodeEntries(raw), catalog);
-        if (isClosed) return;
+      // An empty storage slot is a real answer: this account's cart is empty.
+      // Skipping the emit used to leave the previous account's lines on screen
+      // because nothing replaced them. Resolving zero entries never touches the
+      // catalogue, so an empty cart still costs no request.
+      final entries = (raw == null || raw.isEmpty)
+          ? const <Map<String, dynamic>>[]
+          : _decodeEntries(raw);
+      final items = await _resolveItems(entries, catalog);
+      if (isClosed) return;
+      // A newer load, or a newer identity, already owns the state.
+      if (generation != _loadGeneration) return;
+      if (items.isNotEmpty || state.items.isNotEmpty) {
         emit(CartState(items: items));
       }
 
@@ -109,6 +187,7 @@ class CartCubit extends Cubit<CartState> {
               value: jsonEncode([]),
             );
             if (isClosed) return;
+            if (generation != _loadGeneration) return;
             for (final entry in guestEntries) {
               final guestProductId = entry['productId']?.toString() ?? '';
               if (guestProductId.isEmpty) continue;
@@ -119,6 +198,7 @@ class CartCubit extends Cubit<CartState> {
                     branchId: branchId,
                   );
               if (product == null || isClosed) continue;
+              if (generation != _loadGeneration) return;
               add(
                 product,
                 quantity: entry['quantity'] as int? ?? 1,
@@ -129,6 +209,7 @@ class CartCubit extends Cubit<CartState> {
                         .toList() ??
                     const [],
                 unitPrice: (entry['unitPrice'] as num?)?.toDouble(),
+                bundleId: entry['bundleId']?.toString(),
               );
             }
           }
@@ -174,11 +255,16 @@ class CartCubit extends Cubit<CartState> {
           note: note,
           optionValueIds: optionIds,
           unitPrice: unitPrice,
+          bundleId: bundleId,
         ),
       );
     } else {
       items[index] = items[index].copyWith(
         quantity: (items[index].quantity + quantity).clamp(1, 99),
+        // A re-add updates the price (and bundle membership) on both sides,
+        // matching the server's ON CONFLICT update.
+        unitPrice: unitPrice,
+        bundleId: bundleId,
       );
     }
     emit(CartState(items: items));
@@ -314,6 +400,7 @@ class CartCubit extends Cubit<CartState> {
           note: entry['note']?.toString() ?? '',
           optionValueIds: _optionIds(entry['optionValueIds']),
           unitPrice: (entry['unitPrice'] as num?)?.toDouble(),
+          bundleId: entry['bundleId']?.toString(),
         ),
       );
       if (items.length >= _maxItems) break;
@@ -347,6 +434,8 @@ class CartCubit extends Cubit<CartState> {
                   if (item.optionValueIds.isNotEmpty)
                     'optionValueIds': item.optionValueIds,
                   if (item.unitPrice != null) 'unitPrice': item.unitPrice,
+                  if (item.bundleId != null && item.bundleId!.isNotEmpty)
+                    'bundleId': item.bundleId,
                 },
               )
               .toList(),

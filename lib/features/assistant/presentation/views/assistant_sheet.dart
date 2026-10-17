@@ -17,6 +17,7 @@ import 'package:new_coffee/features/favorites/presentation/manager/favorites/fav
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class AssistantSheet extends StatefulWidget {
@@ -101,18 +102,6 @@ class _AssistantSheetState extends State<AssistantSheet> {
       ProductDetailsPage.routeName,
       arguments: product,
     );
-  }
-
-  void _addToCart(BuildContext context, ProductModel product) {
-    context.read<AssistantCubit>().recordProductInterest(product);
-    try {
-      context.read<CartCubit>().add(product);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.addedProductToCart(product.name))),
-      );
-    } catch (_) {
-      // Cart is optional here; the card tap still opens details.
-    }
   }
 
   @override
@@ -343,21 +332,14 @@ class _AssistantSheetState extends State<AssistantSheet> {
                       ],
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () => _addToCart(context, product),
-                    child: Container(
-                      height: 32.w,
-                      width: 32.w,
-                      decoration: const BoxDecoration(
-                        color: AppColor.primaryColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        HugeIcons.strokeRoundedAdd01,
-                        size: 18.w,
-                        color: AppColor.whiteColor,
-                      ),
-                    ),
+                  AnimatedAddToCartIconButton(
+                    size: 32,
+                    onAdd: () async {
+                      context.read<AssistantCubit>().recordProductInterest(
+                        product,
+                      );
+                      context.read<CartCubit>().add(product);
+                    },
                   ),
                   SizedBox(width: SpacingTokens.xs.w),
                   Icon(

@@ -51,33 +51,39 @@ class HomeCubit extends Cubit<HomeState> {
       }
     }
 
-    final banners = await guard(
+    final bannersFuture = guard(
       'banners',
       () => _repository.getBanners(),
       state.banners,
     );
-    final bundles = await guard(
+    final bundlesFuture = guard(
       'bundles',
       () => _repository.getBundles(branchId: branchId),
       state.bundles,
     );
-    final categories = await guard(
+    final categoriesFuture = guard(
       'categories',
       () => _repository.getCategories(),
       state.categories,
     );
-    final featured = await guard(
+    final featuredFuture = guard(
       'featured',
       () => _repository.getFeatured(branchId: branchId, limit: 10),
       const <FeaturedProduct>[],
     );
     // Candidate pool for recommendations. Loaded once here so the weather
     // rule can filter it without a query per temperature change.
-    final products = await guard(
+    final productsFuture = guard(
       'products',
       () => _repository.getProducts(branchId: branchId, limit: 50),
       state.recommendationPool,
     );
+
+    final banners = await bannersFuture;
+    final bundles = await bundlesFuture;
+    final categories = await categoriesFuture;
+    final featured = await featuredFuture;
+    final products = await productsFuture;
 
     // Resolve the products a bundle contains in one query, rather than per
     // card. This also replaces the old bundleProducts() helper, which read

@@ -27,7 +27,7 @@ void main() {
   const mainBranch = '00000000-0000-4000-8000-000000000101';
 
   late CatalogRepository live;
-  const mock = MockProductRepository();
+  final mock = MockProductRepository();
 
   setUpAll(() async {
     if (skip != null) return;
@@ -44,6 +44,7 @@ void main() {
       int? max,
       List<OptionValue> values = const [],
       String code = 'size',
+      int sortOrder = 0,
     }) =>
         OptionGroup(
           id: 'g1',
@@ -55,6 +56,7 @@ void main() {
           maxSelect: max,
           isRequired: min > 0,
           values: values,
+          sortOrder: sortOrder,
         );
 
     OptionValue value(String id, {double delta = 0, bool isDefault = false}) =>
@@ -128,6 +130,220 @@ void main() {
       expect(CupSize.fromCode('large'), CupSize.large);
       expect(CupSize.fromCode('S'), CupSize.small);
     });
+
+    test('binding required is OR-ed with the group requirement', () {
+      final optional = group(single: true, values: [value('a')]);
+      final effective = effectiveProductOptionGroup(
+        group: optional,
+        bindingIsRequired: true,
+        bindingSortOrder: 0,
+        values: optional.values,
+      );
+      expect(effective.isRequired, isTrue);
+      expect(effective.minSelect, 1);
+    });
+
+    test('binding cannot make a required group optional', () {
+      final required = group(
+        single: true,
+        min: 1,
+        values: [value('a')],
+      );
+      final effective = effectiveProductOptionGroup(
+        group: required,
+        bindingIsRequired: false,
+        bindingSortOrder: 0,
+        values: required.values,
+      );
+      expect(effective.isRequired, isTrue);
+      expect(effective.minSelect, 1);
+    });
+
+    test('binding sort_order overrides the group only when positive', () {
+      final g = group(single: true, sortOrder: 5, values: [value('a')]);
+      final overridden = effectiveProductOptionGroup(
+        group: g,
+        bindingIsRequired: false,
+        bindingSortOrder: 2,
+        values: g.values,
+      );
+      expect(overridden.sortOrder, 2);
+
+      final kept = effectiveProductOptionGroup(
+        group: g,
+        bindingIsRequired: false,
+        bindingSortOrder: 0,
+        values: g.values,
+      );
+      expect(kept.sortOrder, 5);
+    });
+
+    test('binding never changes max_select', () {
+      final g = group(single: false, max: 3, values: [value('a')]);
+      final effective = effectiveProductOptionGroup(
+        group: g,
+        bindingIsRequired: false,
+        bindingSortOrder: 0,
+        values: g.values,
+      );
+      expect(effective.maxSelect, 3);
+    });
+  });
+
+  group('product option differences (pure, always runs)', () {
+    OptionGroup namedGroup({
+      required String code,
+      required bool single,
+      int min = 0,
+      int? max,
+      List<OptionValue>? values,
+    }) {
+      return OptionGroup(
+        id: code,
+        code: code,
+        nameAr: 'مجموعة',
+        nameEn: 'Group',
+        isSingleSelect: single,
+        minSelect: min,
+        maxSelect: max,
+        isRequired: min > 0,
+        values: values ?? const [],
+      );
+    }
+
+    OptionValue value(String id, {double delta = 0, bool isDefault = false}) =>
+        OptionValue(
+          id: id,
+          code: id,
+          nameAr: id,
+          nameEn: id,
+          priceDelta: delta,
+          isDefault: isDefault,
+        );
+
+    test('two products in the same category share one option group set', () {
+      final first = namedGroup(
+        code: 'size',
+        single: true,
+        values: [value('small'), value('large')],
+      );
+      final second = namedGroup(
+        code: 'size',
+        single: true,
+        values: [value('small'), value('large')],
+      );
+      expect(first.code, second.code);
+      expect(first.isSingleSelect, second.isSingleSelect);
+      expect(first.minSelect, second.minSelect);
+      expect(first.maxSelect, second.maxSelect);
+    });
+
+    test('two products in different categories have different group sets', () {
+      final drinkGroups = [
+        namedGroup(code: 'size', single: true),
+        namedGroup(code: 'sugar', single: true),
+        namedGroup(code: 'extras', single: false),
+      ];
+      final dessertGroups = const <OptionGroup>[];
+      expect(drinkGroups.length, 3);
+      expect(dessertGroups.length, 0);
+      expect(drinkGroups.map((g) => g.code), ['size', 'sugar', 'extras']);
+    });
+
+    test('a product allows only the option values defined by its groups', () {
+      final extras = namedGroup(
+        code: 'extras',
+        single: false,
+        values: [value('shot'), value('vanilla')],
+      );
+      final selected = OptionSelection.empty()
+          .toggle([extras], extras.id, 'shot')
+          .toggle([extras], extras.id, 'vanilla');
+      expect(selected.inGroup(extras.id), {'shot', 'vanilla'});
+      expect(selected.valueIds.toSet().length, selected.valueIds.length);
+    });
+
+    test('required single group rejects an empty selection', () {
+      final size = namedGroup(code: 'size', single: true, min: 1, values: [value('a')]);
+      var selected = const OptionSelection.empty();
+      expect(selected.validationError([size]), isNotNull);
+      selected = selected.toggle([size], size.id, 'a');
+      expect(selected.validationError([size]), isNull);
+      selected = selected.toggle([size], size.id, 'a');
+      expect(selected.inGroup(size.id), {'a'});
+    });
+
+    test('default values are selected exactly once per group', () {
+      final size = namedGroup(
+        code: 'size',
+        single: true,
+        values: [value('small', isDefault: true), value('large')],
+      );
+      final selected = OptionSelection.defaultsFor([size]);
+      final chosen = selected.inGroup(size.id);
+      expect(chosen.length, 1);
+      expect(size.values.firstWhere((v) => v.id == chosen.first).isDefault, isTrue);
+    });
+
+    test('maximum selection is enforced for multi option groups', () {
+      final extras = namedGroup(
+        code: 'extras',
+        single: false,
+        max: 2,
+        values: [value('a'), value('b'), value('c')],
+      );
+      var selected = OptionSelection.empty();
+      selected = selected.toggle([extras], extras.id, 'a');
+      selected = selected.toggle([extras], extras.id, 'b');
+      selected = selected.toggle([extras], extras.id, 'c');
+      expect(selected.inGroup(extras.id), {'a', 'b'});
+      expect(selected.validationError([extras]), isNull);
+    });
+
+    test('unit price uses product price plus selected option deltas', () {
+      final sizes = namedGroup(
+        code: 'size',
+        single: true,
+        values: [value('large', delta: 10)],
+      );
+      final extras = namedGroup(
+        code: 'extras',
+        single: false,
+        values: [value('shot', delta: 8)],
+      );
+      var selected = const OptionSelection.empty();
+      selected = selected.toggle([sizes], sizes.id, 'large');
+      selected = selected.toggle([extras], extras.id, 'shot');
+      final product = ProductModel(
+        id: '1',
+        name: 'Drink',
+        category: 'Hot Coffee',
+        description: 'Description',
+        price: 35,
+        image: 'assets/images/product.png',
+      );
+      expect(
+        estimateUnitPrice(product, [sizes, extras], selected),
+        53,
+        reason: '35 + 10 + 8',
+      );
+      expect(selected.valueIds, ['large', 'shot']);
+    });
+  });
+
+  group('mock handling (documented differences, current behavior)', () {
+    test('offline coffee mock exposes all current beverage extras', () async {
+      final loaded = await mock.getWithOptions('3');
+      final extras = loaded!.groups.firstWhere((g) => g.code == 'extras');
+      expect(extras.values.length, 7);
+      expect(extras.values.map((v) => v.code), containsAll(['shot', 'cream', 'vanilla', 'caramel', 'mint', 'honey', 'scoop']));
+    });
+
+    test('offline soft-drink mock exposes size and sugar, not extras', () async {
+      final loaded = await mock.getWithOptions('14');
+      final codes = loaded!.groups.map((g) => g.code).toList();
+      expect(codes, ['size', 'sugar']);
+    });
   });
 
   group('option groups live against Supabase', () {
@@ -135,7 +351,7 @@ void main() {
       final products = await live.getProducts();
       ProductModel? latte;
       for (final p in products) {
-        if (p.slug == 'latte') latte = p;
+        if (p.nameEn == 'Latte') latte = p;
       }
       expect(latte, isNotNull, reason: 'the seed creates a latte');
 
@@ -152,10 +368,47 @@ void main() {
       expect(size.isSingleSelect, isTrue);
     }, skip: skip);
 
+    test('two coffee drinks share the same option binding', () async {
+      final products = await live.getProducts();
+      final latte = products.firstWhere((p) => p.nameEn == 'Latte');
+      final cappuccino = products.firstWhere((p) => p.nameEn == 'Cappuccino');
+      final latteLoaded = await live.getWithOptions(latte.id, branchId: mainBranch);
+      final cappuccinoLoaded =
+          await live.getWithOptions(cappuccino.id, branchId: mainBranch);
+
+      expect(latteLoaded, isNotNull);
+      expect(cappuccinoLoaded, isNotNull);
+      expect(
+        latteLoaded!.groups.map((g) => g.code).toList(),
+        cappuccinoLoaded!.groups.map((g) => g.code).toList(),
+        reason: 'shared category option binding should agree',
+      );
+      expect(latteLoaded.groups.map((g) => g.code), contains('extras'));
+    }, skip: skip);
+
+    test('espresso and cheesecake expose different option bindings', () async {
+      final products = await live.getProducts();
+      final latte = products.firstWhere((p) => p.nameEn == 'Latte');
+      final cheesecake = products.firstWhere((p) => p.nameEn == 'Cheesecake');
+      final latteLoaded = await live.getWithOptions(latte.id, branchId: mainBranch);
+      final cheesecakeLoaded =
+          await live.getWithOptions(cheesecake.id, branchId: mainBranch);
+
+      expect(latteLoaded!.groups.map((g) => g.code), ['size', 'sugar', 'extras']);
+      expect(cheesecakeLoaded!.groups, isEmpty);
+    }, skip: skip);
+
+    test('cola exposes size and sugar only, not extras', () async {
+      final products = await live.getProducts();
+      final cola = products.firstWhere((p) => p.nameEn == 'Cola');
+      final loaded = await live.getWithOptions(cola.id, branchId: mainBranch);
+      expect(loaded!.groups.map((g) => g.code).toList(), ['size', 'sugar']);
+    }, skip: skip);
+
     test('every option value carries both languages and a price delta',
         () async {
       final products = await live.getProducts();
-      final latte = products.firstWhere((p) => p.slug == 'latte');
+      final latte = products.firstWhere((p) => p.nameEn == 'Latte');
       final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
 
       for (final group in loaded!.groups) {
@@ -170,7 +423,7 @@ void main() {
 
     test('defaults are preselected', () async {
       final latte =
-          (await live.getProducts()).firstWhere((p) => p.slug == 'latte');
+          (await live.getProducts()).firstWhere((p) => p.nameEn == 'Latte');
       final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
       final selection = OptionSelection.defaultsFor(loaded!.groups);
 
@@ -183,7 +436,7 @@ void main() {
 
     test('resolvePrice returns the same total the client estimates', () async {
       final latte =
-          (await live.getProducts()).firstWhere((p) => p.slug == 'latte');
+          (await live.getProducts()).firstWhere((p) => p.nameEn == 'Latte');
       final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
 
       final size = loaded!.groups.firstWhere((g) => g.code == 'size');
@@ -206,7 +459,7 @@ void main() {
 
     test('a product with no options loads cleanly', () async {
       final cheesecake =
-          (await live.getProducts()).firstWhere((p) => p.slug == 'cheesecake');
+          (await live.getProducts()).firstWhere((p) => p.nameEn == 'Cheesecake');
       final loaded =
           await live.getWithOptions(cheesecake.id, branchId: mainBranch);
       expect(loaded, isNotNull);

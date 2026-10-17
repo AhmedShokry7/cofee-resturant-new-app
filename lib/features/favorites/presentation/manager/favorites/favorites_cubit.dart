@@ -7,6 +7,8 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState;
 
 part 'favorites_state.dart';
 
@@ -22,10 +24,14 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     this.branchId,
   }) : _favorites = favorites,
        super(const FavoritesState(ids: {})) {
+    // Seeded from the same source the repositories read, so restoring the
+    // session that is already present is not mistaken for a switch to it.
+    _identity = SupabaseService.isReady
+        ? SupabaseService.client.auth.currentUser?.id
+        : null;
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
-        (_) => load(),
-      );
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange
+          .listen(_onAuthStateChanged);
     }
     load();
   }
@@ -36,7 +42,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   /// Branch whose prices apply to favourite rows. Null until one is chosen.
   String? branchId;
 
-  StreamSubscription<dynamic>? _authSubscription;
+  StreamSubscription<AuthState>? _authSubscription;
 
   /// Product ids with a toggle currently in flight. A second tap while the
   /// first persistence round-trip is still running is ignored, so rapid taps
@@ -44,18 +50,98 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   /// final state.
   final Set<String> _togglesInFlight = {};
 
+  /// The guest-id migration currently running, if any. It is a write: it claims
+  /// the signed-out list and then clears that slot, so two of them at once
+  /// would both claim the same ids. Same reason as CartCubit's
+  /// `_adoptingGuestCart`.
+  Future<void>? _migrationInFlight;
+
+  /// Identity whose hearts are currently in state. Null means guest.
+  String? _identity;
+
+  /// Monotonic id of the newest load. Only the load holding the latest number
+  /// may write state.
+  int _loadGeneration = 0;
+
+  /// Records that the signed-in customer changed and drops what the previous
+  /// one had on screen.
+  ///
+  /// Ids and their resolved product rows are cleared together, so a new
+  /// account's ids can never be rendered against the previous account's
+  /// catalogue snapshot. Only in-memory state is dropped; the per-account
+  /// storage slots are untouched and switching back restores that customer's
+  /// own hearts. Guest-to-account adoption still runs afterwards, inside
+  /// [load], so hearts set while signed out survive the transition.
+  ///
+  /// Returns true when this really was a different identity. An ordinary
+  /// refresh, a branch change or a token rotation leaves the data alone.
+  @visibleForTesting
+  bool applyIdentityTransition(String? identity) {
+    if (identity == _identity) return false;
+    _identity = identity;
+    // Invalidate anything already in flight under the previous identity.
+    _loadGeneration++;
+    emit(
+      state.copyWith(
+        ids: const {},
+        products: const {},
+        isLoading: true,
+        clearError: true,
+      ),
+    );
+    return true;
+  }
+
   /// Favorite rows stay readable when only a subset of the catalog is loaded.
   /// Two hundred comfortably covers the whole seeded menu without paging.
   static const _catalogPageSize = 200;
 
+  /// Hearts are namespaced per account, so the list reloads exactly when the
+  /// account changes.
+  ///
+  /// `signedIn` brings a different customer's storage key and must adopt any
+  /// guest hearts into it; `signedOut` must drop the signed-in customer's rows
+  /// and fall back to the guest slot. `passwordRecovery` belongs with
+  /// `signedIn`: GoTrue emits it instead of `signedIn` when a recovery link
+  /// establishes the session, and ignoring it would keep the previous
+  /// customer's hearts on screen. `initialSession` is ignored because the auth
+  /// stream replays its latest event to every new listener and the constructor
+  /// load already read that same session. `tokenRefreshed` rotates a token and
+  /// `userUpdated` a profile; neither can change which hearts belong to this
+  /// customer.
+  @visibleForTesting
+  bool shouldReloadOnAuthEvent(AuthState auth) =>
+      auth.event == AuthChangeEvent.signedIn ||
+      auth.event == AuthChangeEvent.passwordRecovery ||
+      auth.event == AuthChangeEvent.signedOut;
+
+  void _onAuthStateChanged(AuthState auth) {
+    if (!shouldReloadOnAuthEvent(auth)) return;
+    applyIdentityTransition(auth.session?.user.id);
+    load();
+  }
+
   Future<void> load() async {
+    final generation = ++_loadGeneration;
     // Adopt the guest list into a freshly signed-in account before reading,
     // so hearts set while signed out survive sign-in without ever leaking
     // across accounts.
-    await _favorites.migrateGuestIds();
+    //
+    // A migration failure is reported rather than thrown. `load` is deliberately
+    // fire-and-forget from `_onAuthStateChanged`, so an escaping error would
+    // become an unhandled async failure rather than something the page can
+    // show. The load carries on and reads whatever the account slot holds,
+    // which is still this customer's own hearts.
+    try {
+      await _migrateGuestIdsOnce();
+    } catch (error, stackTrace) {
+      if (!isClosed) addError(error, stackTrace);
+    }
     if (isClosed) return;
+    if (generation != _loadGeneration) return;
     final localIds = await _favorites.loadLocalIds();
     if (isClosed) return;
+    if (generation != _loadGeneration) return;
     emit(state.copyWith(ids: localIds, isLoading: true, clearError: true));
 
     try {
@@ -64,18 +150,35 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         limit: _catalogPageSize,
       );
       if (isClosed) return;
+      if (generation != _loadGeneration) return;
       final productsById = {for (final p in products) p.id: p};
       final ids = await _favorites.synchronizedIds(
         await _favorites.loadLocalIds(),
         validProductIds: productsById.keys.toSet(),
       );
       if (isClosed) return;
+      if (generation != _loadGeneration) return;
       emit(state.copyWith(ids: ids, products: productsById, isLoading: false));
     } catch (error, stackTrace) {
       if (isClosed) return;
+      if (generation != _loadGeneration) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
       addError(error, stackTrace);
     }
+  }
+
+  /// Runs [FavoritesRepository.migrateGuestIds] at most once at a time.
+  ///
+  /// A second caller waits for the running migration instead of skipping it.
+  /// Skipping would be a correctness bug, not just a lost write: this load then
+  /// reads the account slot before the guest ids have been moved into it, and
+  /// reports an empty heart list for a customer who does have hearts.
+  Future<void> _migrateGuestIdsOnce() {
+    final running = _migrationInFlight;
+    if (running != null) return running;
+    final run = _favorites.migrateGuestIds();
+    _migrationInFlight = run;
+    return run.whenComplete(() => _migrationInFlight = null);
   }
 
   Future<void> setBranch(String? branchId) {

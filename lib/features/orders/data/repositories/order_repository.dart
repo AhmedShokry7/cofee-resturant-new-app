@@ -15,6 +15,57 @@ class OrderSignInRequiredException implements Exception {
   String toString() => 'Sign in to view order history.';
 }
 
+/// One cart line as the server needs it: identity and quantity only.
+///
+/// The client never sends a price. `place_order` re-prices every line from the
+/// catalogue, so a tampered or stale device price cannot reach an invoice.
+class PlaceOrderLine {
+  const PlaceOrderLine({
+    required this.productId,
+    required this.quantity,
+    this.note = '',
+    this.optionValueIds = const [],
+    this.bundleId,
+  });
+
+  final String productId;
+  final int quantity;
+  final String note;
+  final List<String> optionValueIds;
+
+  /// Set when this line is a bundle component, so the server keeps charging
+  /// its share of the bundle price instead of the shelf price.
+  final String? bundleId;
+}
+
+/// The server's answer to a successful `place_order`.
+///
+/// Totals are the server's own arithmetic, not the client's: the receipt must
+/// show what was actually persisted.
+class PlacedOrder {
+  const PlacedOrder({
+    required this.orderId,
+    required this.orderNumber,
+    required this.subtotal,
+    required this.discountTotal,
+    required this.deliveryFee,
+    required this.taxTotal,
+    required this.grandTotal,
+    required this.pointsEarned,
+    required this.placedAt,
+  });
+
+  final String orderId;
+  final String orderNumber;
+  final double subtotal;
+  final double discountTotal;
+  final double deliveryFee;
+  final double taxTotal;
+  final double grandTotal;
+  final int pointsEarned;
+  final DateTime placedAt;
+}
+
 /// Customer-facing order history.
 ///
 /// The implementation returns frozen invoice lines. Every name and price comes
@@ -26,6 +77,22 @@ abstract class OrdersRepository {
   Future<List<OrderItemModel>> listOrders({
     OrderStatus? status,
     int limit = 100,
+  });
+
+  /// Places the customer's cart on the server, atomically and idempotently.
+  ///
+  /// The device cart is rebuilt server-side from [lines] first (the caller's
+  /// own active cart is emptied, then each line is re-added), so the server
+  /// cart always matches what the customer actually sees. [lines] carry no
+  /// price: `place_order` re-prices from the catalogue and re-validates every
+  /// option selection.
+  Future<PlacedOrder> placeOrder({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? couponCode,
+    String? note,
   });
 
   /// Cancels the whole order header. There is no supported customer transition

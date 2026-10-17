@@ -22,9 +22,15 @@ class CategoriesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<CategoriesCubit>();
+    cubit.ensureLoaded();
     if (initialCategoryId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        cubit.selectCategoryById(initialCategoryId);
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        try {
+          await cubit.stream.firstWhere((state) => !state.isLoading);
+        } catch (_) {}
+        if (!cubit.isClosed) {
+          cubit.selectCategoryById(initialCategoryId);
+        }
       });
     }
     return Scaffold(

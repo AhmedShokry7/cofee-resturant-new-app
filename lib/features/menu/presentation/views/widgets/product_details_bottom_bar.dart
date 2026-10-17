@@ -8,7 +8,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
-import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 
 class ProductDetailsBottomBar extends StatelessWidget {
   const ProductDetailsBottomBar({super.key});
@@ -42,27 +42,26 @@ class ProductDetailsBottomBar extends StatelessWidget {
                         .copyWith(color: AppColor.errorColor),
                   ),
                 ),
-              CustomBtn(
-                text: state.isAvailable ? S.addToCart : S.unavailable,
+              // The success feedback lives inside the button: it shows
+              // "Adding...", then a check, then returns to idle. No separate
+              // SnackBar is shown for a successful add.
+              AnimatedAddToCartButton(
+                label: state.isAvailable ? S.addToCart : S.unavailable,
                 // Disabled for an unavailable combination or an unmet
                 // admin rule, instead of accepting an order that the
                 // server would reject at checkout.
-                onPressed: state.canAddToCart
-                    ? () {
-                        final product = state.product;
-                        if (product == null) return;
-                        context.read<CartCubit>().add(
-                          product,
-                          quantity: state.quantity,
-                          note: note,
-                          optionValueIds: state.selection.valueIds,
-                          unitPrice: unit,
-                        );
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text(S.addedToCart)));
-                      }
-                    : null,
+                enabled: state.canAddToCart,
+                onAdd: () async {
+                  final product = state.product;
+                  if (product == null) return;
+                  context.read<CartCubit>().add(
+                    product,
+                    quantity: state.quantity,
+                    note: note,
+                    optionValueIds: state.selection.valueIds,
+                    unitPrice: unit,
+                  );
+                },
               ),
             ],
           ),

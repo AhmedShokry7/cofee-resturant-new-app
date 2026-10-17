@@ -35,6 +35,10 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late final Future<AuthUser?> _userFuture = _loadUser();
 
+  /// Guards a second sign-out while the first is still in flight, so a double
+  /// tap cannot run two sign-outs or navigate twice.
+  bool _loggingOut = false;
+
   Future<AuthUser?> _loadUser() async {
     try {
       return await context.read<AuthRepository>().currentUser();
@@ -43,11 +47,33 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  /// Signs the customer out for real, then returns to the auth screen.
+  ///
+  /// [AuthRepository] is a global provider (`AppProviders`), so it is available
+  /// here; `AuthCubit` is not — it is only provided inside `AuthPage`, which is
+  /// the screen being navigated to. Going through the repository therefore adds
+  /// no second authentication implementation.
+  ///
+  /// The stored route key is only cleared after the client sign-out actually
+  /// succeeded. If it throws, the customer stays where they are with an
+  /// explanation rather than a screen that claims they are signed out while the
+  /// session is still live.
   Future<void> _logout(BuildContext context) async {
-    await const SessionRepository().clear();
-    if (!context.mounted) return;
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil(AuthPage.routeName, (route) => false);
+    if (_loggingOut) return;
+    setState(() => _loggingOut = true);
+    try {
+      await context.read<AuthRepository>().signOut();
+      await const SessionRepository().clear();
+      if (!context.mounted) return;
+      Navigator.of(context)
+          .pushNamedAndRemoveUntil(AuthPage.routeName, (route) => false);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _loggingOut = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.logoutFailed)),
+      );
+    }
   }
 
   Future<void> _pickImage(BuildContext context) =>

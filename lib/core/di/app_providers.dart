@@ -152,6 +152,7 @@ class AppProviders extends StatelessWidget {
               addresses: context.read<AddressRepository>(),
               paymentMethods: context.read<PaymentMethodRepository>(),
               content: context.read<ContentRepository>(),
+              orders: context.read<OrdersRepository>(),
             ),
           ),
           BlocProvider(create: (context) => SavedCardsCubit()..load()),

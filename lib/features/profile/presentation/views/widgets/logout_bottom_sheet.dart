@@ -66,7 +66,17 @@ class _LogoutSheet extends StatelessWidget {
                 ),
                 SizedBox(width: SpacingTokens.md.w),
                 Expanded(
-                  child: CustomBtn(text: S.confirmLogout, onPressed: onConfirm),
+                  child: CustomBtn(
+                    text: S.confirmLogout,
+                    // Close first, then sign out. The sheet has to go before
+                    // the network call so that a failure leaves the customer on
+                    // the settings page with an explanation and the option to
+                    // try again, rather than stuck behind an open sheet.
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      onConfirm();
+                    },
+                  ),
                 ),
               ],
             ),

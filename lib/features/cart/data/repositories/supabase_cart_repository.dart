@@ -29,7 +29,7 @@ class SupabaseCartRepository implements CartRepository {
     // UUID strings travel as a JSON array; PostgREST casts them to uuid[].
     // Never format them as `uuid'...'` SQL literals: that cast fails.
     await _supa.rpc(
-      'public.upsert_cart_item',
+      'upsert_cart_item',
       params: <String, dynamic>{
         'p_branch_id': branch,
         'p_product_id': productId,
@@ -47,11 +47,11 @@ class SupabaseCartRepository implements CartRepository {
     final branch = branchId?.trim() ?? '';
     if (!_signedIn || branch.isEmpty) return;
     final cartId = (await _supa.rpc(
-      'public.get_or_create_cart',
+      'get_or_create_cart',
       params: <String, dynamic>{'p_branch_id': branch},
     )).toString();
     await _supa.rpc(
-      'public.remove_all_cart_items',
+      'remove_all_cart_items',
       params: <String, dynamic>{'p_cart_id': cartId},
     );
   }

@@ -16,7 +16,13 @@ part 'categories_state.dart';
 /// category is renamed or translated.
 class CategoriesCubit extends Cubit<CategoriesState> {
   CategoriesCubit({required this._repository, this.branchId})
-    : super(const CategoriesState()) {
+    : super(const CategoriesState());
+
+  bool _loadStarted = false;
+
+  void ensureLoaded() {
+    if (_loadStarted) return;
+    _loadStarted = true;
     load();
   }
 
@@ -78,7 +84,10 @@ class CategoriesCubit extends Cubit<CategoriesState> {
   /// Selects the category tab matching [categoryId], if it exists.
   void selectCategoryById(String? categoryId) {
     if (categoryId == null || categoryId.isEmpty) return;
-    final index = state.categories.indexWhere((c) => c.id == categoryId);
+    var index = state.categories.indexWhere((c) => c.id == categoryId);
+    if (index < 0) {
+      index = state.categories.indexWhere((c) => c.slug == categoryId);
+    }
     if (index >= 0) select(index);
   }
 

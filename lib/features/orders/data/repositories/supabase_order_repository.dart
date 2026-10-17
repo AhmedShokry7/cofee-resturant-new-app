@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -87,6 +90,96 @@ class SupabaseOrdersRepository implements OrdersRepository {
   }
 
   @override
+  Future<PlacedOrder> placeOrder({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? couponCode,
+    String? note,
+  }) async {
+    _requireUserId();
+    final branch = branchId.trim();
+    if (branch.isEmpty) {
+      throw ArgumentError.value(branchId, 'branchId', 'must not be empty');
+    }
+    if (lines.isEmpty) {
+      throw ArgumentError.value(lines, 'lines', 'must not be empty');
+    }
+
+    final cartId = (await _client.rpc(
+      'get_or_create_cart',
+      params: <String, dynamic>{'p_branch_id': branch},
+    )).toString();
+
+    // Rebuild the caller's own active server cart so it matches the device
+    // cart exactly. The cart RPCs only add, so a stale quantity could survive
+    // a local decrement; emptying first makes the server cart the faithful
+    // snapshot that place_order will price.
+    await _client.rpc(
+      'remove_all_cart_items',
+      params: <String, dynamic>{'p_cart_id': cartId},
+    );
+    for (final line in lines) {
+      final bundleId = line.bundleId?.trim() ?? '';
+      await _client.rpc(
+        'upsert_cart_item',
+        params: <String, dynamic>{
+          'p_branch_id': branch,
+          'p_product_id': line.productId,
+          'p_quantity': line.quantity,
+          'p_note': line.note,
+          'p_option_value_ids': line.optionValueIds,
+          if (bundleId.isNotEmpty) 'p_bundle_id': bundleId,
+        },
+      );
+    }
+
+    final zoneId = deliveryZoneId?.trim() ?? '';
+    final coupon = couponCode?.trim() ?? '';
+    final orderNote = note?.trim() ?? '';
+    final response = await _client.rpc(
+      'place_order',
+      params: <String, dynamic>{
+        'p_cart_id': cartId,
+        'p_idempotency_key': _newIdempotencyKey(),
+        'p_fulfillment_type': fulfillmentType,
+        if (zoneId.isNotEmpty) 'p_delivery_zone_id': zoneId,
+        if (coupon.isNotEmpty) 'p_coupon_code': coupon,
+        if (orderNote.isNotEmpty) 'p_note': orderNote,
+      },
+    );
+
+    final rows = response is List ? response : const [];
+    if (rows.isEmpty) {
+      throw StateError('place_order returned no row.');
+    }
+    final row = Db.asMap(rows.first as Map);
+    return PlacedOrder(
+      orderId: Db.text(row['order_id']),
+      orderNumber: Db.text(row['order_number']),
+      subtotal: Db.asDouble(row['subtotal']),
+      discountTotal: Db.asDouble(row['discount_total']),
+      deliveryFee: Db.asDouble(row['delivery_fee']),
+      taxTotal: Db.asDouble(row['tax_total']),
+      grandTotal: Db.asDouble(row['grand_total']),
+      pointsEarned: (row['points_earned'] as num?)?.toInt() ?? 0,
+      placedAt: DateTime.now(),
+    );
+  }
+
+  /// A fresh random idempotency key. `place_order` stores it under a UNIQUE
+  /// constraint, so a replayed submit can never create a second order.
+  static String _newIdempotencyKey() {
+    final random = Random.secure();
+    final buffer = StringBuffer();
+    for (var i = 0; i < 16; i++) {
+      buffer.write(random.nextInt(256).toRadixString(16).padLeft(2, '0'));
+    }
+    return buffer.toString();
+  }
+
+  @override
   Future<void> cancelOrder(String orderId, {String? reason}) async {
     _requireUserId();
     if (orderId.isEmpty) {
@@ -130,6 +223,21 @@ class LocalOrdersRepository implements OrdersRepository {
     int limit = 100,
   }) async =>
       const [];
+
+  @override
+  Future<PlacedOrder> placeOrder({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? couponCode,
+    String? note,
+  }) =>
+      Future.error(
+        UnsupportedError(
+          'Checkout needs the order backend. Connect Supabase and sign in first.',
+        ),
+      );
 
   @override
   Future<void> cancelOrder(String orderId, {String? reason}) =>
