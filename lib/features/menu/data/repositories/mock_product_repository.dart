@@ -12,7 +12,7 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 /// menu_list.dart and categories_list.dart once the database path is the only
 /// one in use.
 class MockProductRepository implements CatalogRepository {
-  MockProductRepository();
+  const MockProductRepository();
 
   /// Offline catalogue rows. These used to be a globally shared menu module;
   /// they now live inside the only implementation that reads them.

@@ -9,6 +9,7 @@ import 'package:new_coffee/features/cart/data/repositories/supabase_cart_reposit
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
@@ -124,6 +125,9 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<PaymentMethodRepository>(
           create: (_) => SupabasePaymentMethodRepository(),
         ),
+        RepositoryProvider<DeliveryZoneRepository>(
+          create: (_) => SupabaseDeliveryZoneRepository(),
+        ),
         RepositoryProvider<ContentRepository>(
           create: (_) => SupabaseContentRepository(),
         ),
@@ -151,7 +155,8 @@ class AppProviders extends StatelessWidget {
               coupons: context.read<CouponRepository>(),
               addresses: context.read<AddressRepository>(),
               paymentMethods: context.read<PaymentMethodRepository>(),
-              content: context.read<ContentRepository>(),
+              deliveryZoneRepository: context
+                  .read<DeliveryZoneRepository>(),
               orders: context.read<OrdersRepository>(),
             ),
           ),
@@ -222,7 +227,13 @@ class _BranchSync extends StatelessWidget {
           context.read<LoyaltyCubit>().setBranch(branchId),
         ]);
       },
-      child: child,
+      // A coupon is approved for one exact cart; when the cart changes the
+      // approval is dropped rather than shown against a cart it never priced.
+      child: BlocListener<CartCubit, CartState>(
+        listener: (context, cart) =>
+            context.read<CheckoutCubit>().onCartChanged(cart.items),
+        child: child,
+      ),
     );
   }
 }

@@ -163,6 +163,41 @@ class _DetailsScaffold extends StatelessWidget {
             ),
           ),
           SizedBox(height: SpacingTokens.lg.h),
+          if (order.isDelivery) ...[
+            LabeledValueRow(
+              label: S.fulfillmentMethod,
+              value: S.deliveryMethod,
+              valueSize: 16,
+              labelExpanded: true,
+            ),
+            if (order.deliveryZoneName != null) ...[
+              SizedBox(height: SpacingTokens.sm.h),
+              LabeledValueRow(
+                label: S.deliveryZone,
+                value: order.deliveryZoneName!,
+                valueSize: 16,
+                labelExpanded: true,
+              ),
+            ],
+            if (order.deliveryAddress != null) ...[
+              SizedBox(height: SpacingTokens.sm.h),
+              LabeledValueRow(
+                label: S.shippingAddress,
+                value: order.deliveryAddress!,
+                valueSize: 16,
+                labelExpanded: true,
+              ),
+            ],
+            if (order.deliveryFee > 0) ...[
+              SizedBox(height: SpacingTokens.sm.h),
+              LabeledValueRow(
+                label: S.deliveryFee,
+                priceValue: order.deliveryFee,
+                valueSize: 16,
+              ),
+            ],
+            SizedBox(height: SpacingTokens.lg.h),
+          ],
           LabeledValueRow(
             label: S.itemsCount,
             value: "${order.quantity}",

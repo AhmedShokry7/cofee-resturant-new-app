@@ -6,6 +6,11 @@ import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart'
 /// Device persistence for one customer's cart. Used by widget tests and as
 /// the offline store behind [CartCubit]; production server mirroring lives in
 /// [SupabaseCartRepository].
+///
+/// The line identity matches the server (see `orders.cart_items.options_key`):
+/// a line is the tuple (product, note, sorted option value ids). Two adds merge
+/// only when all three are equal, so two configurations of the same product
+/// stay separate and a repeated add of the same configuration adds quantity.
 class LocalCartRepository implements CartRepository {
   LocalCartRepository();
 
@@ -22,26 +27,42 @@ class LocalCartRepository implements CartRepository {
     String? branchId,
   }) async {
     final raw = await SharedPref.getValue(key: _storageKey);
-    List<dynamic> items = raw != null && raw.isNotEmpty
-        ? jsonDecode(raw) as List<dynamic>
-        : [];
+    final items = raw != null && raw.isNotEmpty
+        ? (jsonDecode(raw) as List<dynamic>).toList()
+        : <dynamic>[];
+    final options = canonicalOptionIds(optionValueIds);
+    final key = optionsKey(optionValueIds);
+
     final index = items.indexWhere(
       (item) =>
+          item is Map &&
           item['productId'] == productId &&
-          _sameNoteAndOptions(item, note, optionValueIds),
+          _noteOf(item) == note &&
+          optionsKey(_optionIdsOf(item)) == key,
     );
 
     if (index == -1) {
       items.add({
         'productId': productId,
-        'quantity': quantity,
+        'quantity': quantity.clamp(1, 99),
         'note': note,
-        'optionValueIds': optionValueIds,
+        'optionValueIds': options,
         'unitPrice': unitPrice,
+        if (bundleId != null && bundleId.trim().isNotEmpty)
+          'bundleId': bundleId.trim(),
       });
     } else {
-      items[index]['quantity'] = (items[index]['quantity'] ?? 0 + quantity)
-          .clamp(1, 99);
+      final current = (items[index]['quantity'] as num?)?.toInt() ?? 0;
+      items[index]['quantity'] = (current + quantity).clamp(1, 99);
+      // A re-add refreshes the price and bundle membership, matching the
+      // server's ON CONFLICT update.
+      items[index]['unitPrice'] = unitPrice;
+      final normalizedBundle = bundleId?.trim() ?? '';
+      if (normalizedBundle.isEmpty) {
+        items[index].remove('bundleId');
+      } else {
+        items[index]['bundleId'] = normalizedBundle;
+      }
     }
     await SharedPref.setValue(key: _storageKey, value: jsonEncode(items));
   }
@@ -51,21 +72,29 @@ class LocalCartRepository implements CartRepository {
     await SharedPref.setValue(key: _storageKey, value: jsonEncode([]));
   }
 
-  bool _sameNoteAndOptions(
-    Map<String, dynamic> a,
-    String note,
-    List<String> optionValueIds,
-  ) {
-    final aNote = a['note'] ?? '';
-    final aOptions = List<String>.from(a['optionValueIds'] ?? []);
-    return aNote == note && _listEq(aOptions, optionValueIds);
+  /// Sorted, de-duplicated, non-empty option value ids. This is the canonical
+  /// order that the identity key is built from, so the client never depends on
+  /// the order the UI happened to collect the selections in.
+  static List<String> canonicalOptionIds(Iterable<String> ids) {
+    final set = <String>{
+      for (final id in ids)
+        if (id.trim().isNotEmpty) id,
+    };
+    return set.toList()..sort();
   }
 
-  bool _listEq(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
+  /// Canonical identity for a set of option selections: sorted and joined.
+  static String optionsKey(Iterable<String> ids) =>
+      canonicalOptionIds(ids).join(',');
+
+  static String _noteOf(Map<dynamic, dynamic> item) =>
+      item['note']?.toString() ?? '';
+
+  static List<String> _optionIdsOf(Map<dynamic, dynamic> item) {
+    final raw = item['optionValueIds'];
+    if (raw is List) {
+      return [for (final value in raw) value.toString()];
     }
-    return true;
+    return const [];
   }
 }

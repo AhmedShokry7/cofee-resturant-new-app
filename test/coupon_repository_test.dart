@@ -2,33 +2,31 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
 
+/// Coupons are server-validated. There is no seeded offline list: any attempt
+/// to read or validate coupons without a Supabase backend must fail closed with
+/// a [StateError]. Client-side guards (empty code) still surface errors early.
 void main() {
-  test('offline coupons mirror the seeded numeric rules', () async {
+  test('empty coupon code throws an ArgumentError', () async {
     const repository = CouponRepositoryImpl();
-    final coupons = await repository.activeCoupons();
-
-    expect(coupons.map((coupon) => coupon.code), [
-      'WELCOME200',
-      'COFFEE20',
-      'COLD50',
-      'LOYAL10',
-    ]);
-    expect(coupons.first.discount, '50% off up to \$40.00');
+    await expectLater(
+      repository.validate(code: '   ', subtotal: 50),
+      throwsA(isA<ArgumentError>()),
+    );
   });
 
-  test('offline validation caps the discount and enforces minimums', () async {
+  test('active coupons require a configured backend', () async {
     const repository = CouponRepositoryImpl();
-
-    final capped = await repository.validate(code: 'welcome200', subtotal: 100);
-    expect(capped.discount, 40);
-
     await expectLater(
-      repository.validate(code: 'WELCOME200', subtotal: 20),
-      throwsA(isA<CouponRejectedException>()),
+      repository.activeCoupons(),
+      throwsA(isA<StateError>()),
     );
+  });
+
+  test('coupon validation requires a configured backend', () async {
+    const repository = CouponRepositoryImpl();
     await expectLater(
-      repository.validate(code: 'UNKNOWN', subtotal: 100),
-      throwsA(isA<CouponRejectedException>()),
+      repository.validate(code: 'WELCOME200', subtotal: 50),
+      throwsA(isA<StateError>()),
     );
   });
 }

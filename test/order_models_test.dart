@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -8,6 +9,7 @@ import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 
 void main() {
   test('operational statuses map to the three customer buckets', () {
+    AppLocale.instance.debugSet(AppLanguage.english);
     expect(OrderStatus.fromDatabase('pending'), OrderStatus.active);
     expect(OrderStatus.fromDatabase('confirmed'), OrderStatus.active);
     expect(OrderStatus.fromDatabase('preparing'), OrderStatus.active);
@@ -19,6 +21,7 @@ void main() {
   });
 
   test('invoice lines keep their frozen price when the catalogue moves', () {
+    AppLocale.instance.debugSet(AppLanguage.english);
     final line = OrderItemModel.fromDatabase(
       order: {
         'id': 'order-1',
@@ -41,7 +44,6 @@ void main() {
       },
     );
 
-    // The catalogue row may now cost something else. History must not follow it.
     final currentCatalogueRow = ProductModel(
       id: 'product-1',
       nameEn: 'Latte',
@@ -56,7 +58,9 @@ void main() {
     expect(currentCatalogueRow.price, 999);
   });
 
-  test('a deleted product still renders as an invoice line', () {    final line = OrderItemModel.fromDatabase(
+  test('a deleted product still renders as an invoice line', () {
+    AppLocale.instance.debugSet(AppLanguage.english);
+    final line = OrderItemModel.fromDatabase(
       order: {
         'id': 'order-2',
         'order_number': '1008',
@@ -85,6 +89,7 @@ void main() {
   });
 
   test('tracking follows server history instead of fixed steps', () {
+    AppLocale.instance.debugSet(AppLanguage.english);
     final steps = OrderTrackingSteps.forOrder(
       databaseStatus: 'preparing',
       fulfillmentType: 'delivery',
@@ -124,6 +129,7 @@ void main() {
   });
 
   test('cancelled tracking shows placement and cancellation only', () {
+    AppLocale.instance.debugSet(AppLanguage.english);
     final steps = OrderTrackingSteps.forOrder(
       databaseStatus: 'cancelled',
       fulfillmentType: 'pickup',

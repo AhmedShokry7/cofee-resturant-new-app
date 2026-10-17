@@ -166,6 +166,29 @@ class S {
   static String get thankYouPurchase =>
       _ar ? 'شكرًا لشرائك.' : 'Thank you for your purchase.';
   static String get viewEReceipt => _ar ? 'عرض الإيصال' : 'View E-Receipt';
+  static String get fulfillmentMethod =>
+      _ar ? 'طريقة الاستلام' : 'Fulfillment Method';
+  static String get pickupMethod => _ar ? 'استلام من الفرع' : 'Pickup';
+  static String get deliveryMethod => _ar ? 'توصيل' : 'Delivery';
+  static String get deliveryZone => _ar ? 'منطقة التوصيل' : 'Delivery Zone';
+  static String get selectDeliveryZone =>
+      _ar ? 'اختر منطقة التوصيل' : 'Select a delivery zone';
+  static String get deliveryUnavailable => _ar
+      ? 'التوصيل غير متاح لهذا الفرع، اختر الاستلام أو غيّر الفرع.'
+      : 'Delivery is unavailable for this branch. Choose pickup or another branch.';
+  static String get deliveryAddressRequired => _ar
+      ? 'أضف عنوان توصيل لإتمام الطلب.'
+      : 'Add a delivery address to place the order.';
+  static String get deliveryZoneRequired =>
+      _ar ? 'اختر منطقة التوصيل.' : 'Select a delivery zone.';
+  static String get deliveryMinimumNotMet => _ar
+      ? 'قيمة السلة أقل من الحد الأدنى للتوصيل في هذه المنطقة.'
+      : 'Your cart is below the delivery minimum for this zone.';
+  static String get deliveryUnavailableError => _ar
+      ? 'تعذر تحميل مناطق التوصيل. حاول مجددًا أو اختر الاستلام.'
+      : "Couldn't load delivery zones. Try again or choose pickup.";
+  static String get deliveryChoosePickup =>
+      _ar ? 'اختر الاستلام لإتمام الطلب.' : 'Choose pickup to continue.';
 
   // ---------- Orders ----------
   static String get myOrders => _ar ? 'طلباتي' : 'My Orders';
@@ -267,6 +290,9 @@ class S {
       _ar ? 'لا توجد كوبونات حاليًا' : 'No coupons right now';
   static String couponsLoadError(String error) =>
       _ar ? 'تعذر تحميل الكوبونات: $error' : 'Could not load coupons: $error';
+  static String get couponCheckFailed => _ar
+      ? 'تعذر التحقق من الكوبون للمرة الحالية. حدّث السلة وحاول مجددًا.'
+      : "Couldn't verify the coupon for the current cart. Refresh and try again.";
   static String codeCopied(String code) =>
       _ar ? 'تم نسخ الكود $code' : 'Code $code copied';
 

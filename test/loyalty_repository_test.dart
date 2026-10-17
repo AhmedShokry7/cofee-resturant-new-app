@@ -1,35 +1,24 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 
 void main() {
-  test('offline loyalty catalogue mirrors the seeded economy', () async {
-    const repository = LoyaltyRepositoryImpl(
-      catalog: MockProductRepository(),
-    );
+  // The default app language is Arabic; the wallet/title contract is asserted
+  // in English so the expected strings are unambiguous. A separate assertion
+  // below pins the Arabic title so the locale switch stays covered.
+  setUp(() => AppLocale.instance.debugSet(AppLanguage.english));
+  tearDown(() => AppLocale.instance.debugSet(AppLanguage.arabic));
 
-    final catalog = await repository.loadCatalog();
+  test('the offline catalogue is not invented: it needs a backend', () async {
+    // Deliberate contract: loyalty reference data is server-owned. Without a
+    // configured backend there is no fabricated reward table to fall back to.
+    final repository = LoyaltyRepositoryImpl(catalog: const MockProductRepository());
 
-    expect(catalog.currencyCode, 'SAR');
-    expect(catalog.rules.single.pointsPerCurrencyUnit, 1);
-    expect(
-      catalog.rewards.map((reward) => reward.pointsCost),
-      [150, 180, 200, 250, 300, 400],
-    );
-    expect(
-      catalog.rewards.map((reward) => reward.product.name),
-      [
-        'Cola',
-        'Chocolate Chip Cookie',
-        'Green Tea',
-        'Espresso',
-        'Butter Croissant',
-        'Cappuccino',
-      ],
-    );
+    await expectLater(repository.loadCatalog(), throwsStateError);
   });
 
   test('ledger rows become readable history titles', () {
@@ -54,15 +43,18 @@ void main() {
       'created_at': '2026-10-02T10:00:00Z',
     });
     expect(redeemed.title, 'Reward redeemed');
+
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    expect(redeemed.title, 'استبدال مكافأة');
   });
 
-  test('guest wallet starts with a welcome bonus and persists', () async {
+  test('guest wallet starts empty and persists', () async {
     SharedPreferences.setMockInitialValues({});
     const store = GuestLoyaltyWalletStore();
 
     final initial = await store.load();
-    expect(initial.balance, 50);
-    expect(initial.transactions.single.points, 50);
+    expect(initial.balance, 0);
+    expect(initial.transactions, isEmpty);
 
     await store.save(balance: 42, transactions: initial.transactions);
     final restored = await store.load();

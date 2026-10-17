@@ -1,5 +1,6 @@
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 
@@ -24,6 +25,11 @@ class OrderItemModel {
     this.createdAt,
     this.fulfillmentType = '',
     this.databaseStatus = '',
+    this.deliveryFee = 0,
+    this.deliveryZoneNameAr,
+    this.deliveryZoneNameEn,
+    this.deliveryAddressLabel,
+    this.deliveryAddressDetails,
   });
 
   final String id;
@@ -51,6 +57,48 @@ class OrderItemModel {
   /// Raw database status (`preparing`, `ready`, ...). The public [status] is
   /// only the customer-facing bucket.
   final String databaseStatus;
+
+  /// Delivery fee actually charged, frozen on the order header. Zero for
+  /// pickup and for pre-delivery orders.
+  final double deliveryFee;
+
+  /// Zone name frozen into the order's delivery snapshot at placement, so the
+  /// invoice keeps showing the zone the customer chose even if it is later
+  /// renamed, repriced or deactivated.
+  final String? deliveryZoneNameAr;
+  final String? deliveryZoneNameEn;
+
+  /// Delivery address frozen at placement. The client never re-reads the live
+  /// address book, so editing or archiving an address cannot rewrite history.
+  final String? deliveryAddressLabel;
+  final String? deliveryAddressDetails;
+
+  /// Whether this order is delivered rather than collected.
+  bool get isDelivery => fulfillmentType == 'delivery';
+
+  /// The frozen zone name in the active language, or null for pickup.
+  String? get deliveryZoneName {
+    if (!isDelivery) return null;
+    final ar = deliveryZoneNameAr?.trim() ?? '';
+    final en = deliveryZoneNameEn?.trim() ?? '';
+    if (ar.isEmpty && en.isEmpty) return null;
+    final text = pickText(
+      (ar: ar, en: en),
+      isArabic: AppLocale.instance.isArabic,
+    );
+    return text.isEmpty ? null : text;
+  }
+
+  /// The frozen address as one display line (`label - details`), or null.
+  String? get deliveryAddress {
+    if (!isDelivery) return null;
+    final label = deliveryAddressLabel?.trim() ?? '';
+    final details = deliveryAddressDetails?.trim() ?? '';
+    if (label.isEmpty && details.isEmpty) return null;
+    if (label.isEmpty) return details;
+    if (details.isEmpty) return label;
+    return '$label - $details';
+  }
 
   /// Line creation order within an order. Used only to keep the invoice lines
   /// in their stored sequence.
@@ -83,6 +131,10 @@ class OrderItemModel {
     final quantity = Db.asInt(itemMap['quantity'], fallback: 1).clamp(1, 99);
     final placedAtValue = Db.textOrNull(orderMap['placed_at']);
     final createdAtValue = Db.textOrNull(itemMap['created_at']);
+    final snapshotValue = orderMap['delivery_address_snapshot'];
+    final snapshot = snapshotValue is Map
+        ? Db.asMap(snapshotValue)
+        : const <String, dynamic>{};
 
     return OrderItemModel(
       id: lineId.isEmpty
@@ -107,6 +159,11 @@ class OrderItemModel {
       note: Db.text(itemMap['note']),
       fulfillmentType: Db.text(orderMap['fulfillment_type']),
       databaseStatus: Db.text(orderMap['status']),
+      deliveryFee: Db.asDouble(orderMap['delivery_fee']),
+      deliveryZoneNameAr: Db.textOrNull(snapshot['zone_name_ar']),
+      deliveryZoneNameEn: Db.textOrNull(snapshot['zone_name_en']),
+      deliveryAddressLabel: Db.textOrNull(snapshot['label']),
+      deliveryAddressDetails: Db.textOrNull(snapshot['details']),
       placedAt: placedAtValue == null
           ? null
           : DateTime.tryParse(placedAtValue)?.toLocal(),

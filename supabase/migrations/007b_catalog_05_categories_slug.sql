@@ -1,4 +1,9 @@
--- 004d_catalog_05_categories_slug.sql
+-- 007b_catalog_05_categories_slug.sql
+--
+-- Renamed from `004d_catalog_05_categories_slug.sql`. The slug work touches
+-- `catalog.categories`, which migration 007 creates, so it must run after 007
+-- for a from-scratch rebuild. The body is unchanged and idempotent, so an
+-- environment that already applied it as `004d` is unaffected by the rename.
 --
 -- Gap found while seeding: catalog.categories had no slug. Products and
 -- branches both had one, and the app resolves a category by name string

@@ -1,5 +1,6 @@
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
+import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Server-validated coupons.
@@ -14,6 +15,15 @@ abstract class CouponRepository {
     required double subtotal,
     String? branchId,
   });
+
+  /// Validates against the exact server-priced cart snapshot in one request.
+  /// The default keeps non-Supabase test and local implementations compatible.
+  Future<ValidatedCoupon> validateForCart({
+    required String code,
+    required double subtotal,
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+  }) => validate(code: code, subtotal: subtotal, branchId: branchId);
 }
 
 class CouponRepositoryImpl implements CouponRepository {
@@ -74,10 +84,62 @@ class CouponRepositoryImpl implements CouponRepository {
         if (branchId != null && branchId.isNotEmpty) 'p_branch_id': branchId,
       },
     ) as List;
-    if (rows.isEmpty || rows.first is! Map<String, dynamic>) {
+    return _parseValidation(
+      client,
+      normalized,
+      rows,
+      fallbackSubtotal: subtotal,
+    );
+  }
+
+  @override
+  Future<ValidatedCoupon> validateForCart({
+    required String code,
+    required double subtotal,
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+  }) async {
+    final normalized = code.trim().toUpperCase();
+    if (normalized.isEmpty) {
+      throw ArgumentError.value(code, 'code', 'must not be empty');
+    }
+    final client = _client;
+    if (client == null) {
+      throw StateError('Coupons need a configured Supabase backend.');
+    }
+    final rows = await client.rpc(
+      'validate_coupon_for_cart',
+      params: <String, dynamic>{
+        'p_branch_id': branchId,
+        'p_code': normalized,
+        'p_lines': [
+          for (final line in lines)
+            <String, dynamic>{
+              'product_id': line.productId,
+              'quantity': line.quantity,
+              'note': line.note,
+              'option_value_ids': line.optionValueIds,
+              if (line.bundleId?.trim().isNotEmpty ?? false)
+                'bundle_id': line.bundleId!.trim(),
+            },
+        ],
+      },
+    );
+    return _parseValidation(client, normalized, rows);
+  }
+
+  Future<ValidatedCoupon> _parseValidation(
+    SupabaseClient client,
+    String normalized,
+    dynamic rows, {
+    double? fallbackSubtotal,
+  }) async {
+    if (rows is! List || rows.isEmpty || rows.first is! Map<String, dynamic>) {
       throw StateError('Coupon validation returned no answer.');
     }
     final row = rows.first as Map<String, dynamic>;
+    final validatedSubtotal =
+        (row['cart_subtotal'] as num?)?.toDouble() ?? fallbackSubtotal;
     final discount = (row['discount'] as num?)?.toDouble() ?? 0;
     final message = row['message']?.toString() ?? '';
     if (discount <= 0) {
@@ -94,7 +156,7 @@ class CouponRepositoryImpl implements CouponRepository {
     return ValidatedCoupon(
       coupon: coupon,
       discount: discount,
-      subtotal: subtotal,
+      subtotal: validatedSubtotal ?? 0,
     );
   }
 }

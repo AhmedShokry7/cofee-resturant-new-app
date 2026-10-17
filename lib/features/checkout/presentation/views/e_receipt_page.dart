@@ -43,15 +43,27 @@ class EReceiptPage extends StatelessWidget {
                 _ReceiptCard(order: order),
                 SizedBox(height: SpacingTokens.lg.h),
                 _InfoCard(
-                  label: S.paymentMethod,
-                  value: state.selectedPaymentMethod?.label ?? '—',
+                  label: S.fulfillmentMethod,
+                  value: order.isDelivery ? S.deliveryMethod : S.pickupMethod,
                 ),
+                if (order.isDelivery && order.deliveryZoneName != null) ...[
+                  SizedBox(height: SpacingTokens.md.h),
+                  _InfoCard(
+                    label: S.deliveryZone,
+                    value: order.deliveryZoneName!,
+                  ),
+                ],
+                if (order.isDelivery && order.deliveryAddress != null) ...[
+                  SizedBox(height: SpacingTokens.md.h),
+                  _InfoCard(
+                    label: S.shippingAddress,
+                    value: order.deliveryAddress!,
+                  ),
+                ],
                 SizedBox(height: SpacingTokens.md.h),
                 _InfoCard(
-                  label: S.shippingAddress,
-                  value: state.selectedAddress == null
-                      ? '—'
-                      : "${state.selectedAddress!.label} - ${state.selectedAddress!.details}",
+                  label: S.paymentMethod,
+                  value: state.selectedPaymentMethod?.label ?? '—',
                 ),
               ],
             ),
@@ -130,6 +142,20 @@ class _ReceiptCard extends StatelessWidget {
           ),
           const Divider(),
           SizedBox(height: SpacingTokens.sm.h),
+          if (order.deliveryFee > 0) ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(S.deliveryFee, style: AppFonts.regular14(context)),
+                PriceLabel(
+                  amount: order.deliveryFee,
+                  style: AppFonts.medium14(context),
+                  iconSize: 14,
+                ),
+              ],
+            ),
+            SizedBox(height: SpacingTokens.sm.h),
+          ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [

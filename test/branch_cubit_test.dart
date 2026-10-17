@@ -1,37 +1,71 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 
-void main() {
-  test('offline branches match the seeded branches in name order', () async {
-    const repository = BranchRepositoryImpl();
-    final branches = await repository.activeBranches();
+/// Branches come from the database only. The old repository invented a seeded
+/// MAIN/JEDDAH list offline; that fallback was removed on purpose so a fake
+/// branch can never drive real pricing and fulfilment.
+const _main = Branch(
+  id: '00000000-0000-4000-8000-000000000101',
+  code: 'MAIN',
+  nameAr: 'الفرع الرئيسي',
+  nameEn: 'Main Branch',
+);
+const _jeddah = Branch(
+  id: '00000000-0000-4000-8000-000000000102',
+  code: 'JEDDAH',
+  nameAr: 'فرع جدة',
+  nameEn: 'Jeddah Branch',
+);
 
-    expect(branches.map((branch) => branch.code), ['MAIN', 'JEDDAH']);
-    expect(
-      branches.map((branch) => branch.nameEn),
-      ['Main Branch', 'Jeddah Branch'],
+class _FakeBranchRepository implements BranchRepository {
+  const _FakeBranchRepository(this._branches);
+
+  final List<Branch> _branches;
+
+  @override
+  Future<List<Branch>> activeBranches() async => _branches;
+}
+
+void main() {
+  test('without a backend the branch list is not invented', () async {
+    const repository = BranchRepositoryImpl();
+    await expectLater(
+      repository.activeBranches(),
+      throwsA(isA<StateError>()),
     );
   });
 
   test('a stored branch is restored, but none is invented', () async {
     SharedPreferences.setMockInitialValues({
-      'selected_branch_v1': '00000000-0000-4000-8000-000000000101',
+      'selected_branch_v1': _main.id,
     });
 
-    final cubit = BranchCubit(repository: const BranchRepositoryImpl());
+    final cubit = BranchCubit(
+      repository: const _FakeBranchRepository([_main, _jeddah]),
+    );
     await cubit.stream.firstWhere((state) => !state.isLoading);
     expect(cubit.state.selected?.code, 'MAIN');
 
     await cubit.select(cubit.state.branches.last);
     expect(cubit.state.selected?.code, 'JEDDAH');
     final prefs = await SharedPreferences.getInstance();
-    expect(
-      prefs.getString('selected_branch_v1'),
-      '00000000-0000-4000-8000-000000000102',
+    expect(prefs.getString('selected_branch_v1'), _jeddah.id);
+    await cubit.close();
+  });
+
+  test('no stored branch selects nothing rather than a default', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    final cubit = BranchCubit(
+      repository: const _FakeBranchRepository([_main, _jeddah]),
     );
+    await cubit.stream.firstWhere((state) => !state.isLoading);
+    expect(cubit.state.branches.length, 2);
+    expect(cubit.state.selected, isNull);
     await cubit.close();
   });
 }

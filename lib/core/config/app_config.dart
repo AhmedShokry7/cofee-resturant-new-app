@@ -1,59 +1,44 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Build-time configuration.
 ///
-/// Everything here arrives through .env file, so no value is ever
-/// hard-coded in the repository and no secret can be committed by accident.
+/// Every value is injected at build time with `--dart-define`, so nothing is
+/// hard-coded in the repository and no key can be committed by accident:
 ///
-/// 1. Create a `.env` file in the project root with:
-///    SUPABASE_URL=https://your-project.supabase.co
-///    SUPABASE_PUBLISHABLE_KEY=your_anon_key
-///    PASSWORD_RECOVERY_REDIRECT=<your_redirect_url>
+///   flutter run \
+///     --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
+///     --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key> \
+///     --dart-define=PASSWORD_RECOVERY_REDIRECT=<redirect-url>
 ///
-/// 2. The app reads these values at runtime via flutter_dotenv.
-///    No need to pass dart defines manually for development.
+/// `SUPABASE_PUBLISHABLE_KEY` is the public "anon" role and is safe to ship.
+/// The `service_role` key must never reach the client (DATABASE_SPEC.md 1.5).
 ///
-/// 3. For production builds (APK), you can either:
-///    - Include the .env file in the build (it will be packaged)
-///    - Or pass dart defines at build time: --dart-define=SUPABASE_URL=...
-///
-/// The .env file is gitignored by default for production, but for this app
-/// we keep it simple: the app will read from .env at runtime.
+/// A build without the defines still runs: [isSupabaseConfigured] is false and
+/// the app falls back to its local data instead of serving fabricated results.
 class AppConfig {
   AppConfig._();
 
-  /// Loads an environment variable from the .env file.
-  /// Returns empty string if not found (for safe default behavior).
-  static String _loadEnv(String key) {
-    final value = DotEnv().env[key];
-    if (value == null || value.isEmpty) {
-      print('[AppConfig] ⚠️ Env variable "$key" not found, using empty default');
-    } else {
-      print('[AppConfig] ✅ Loaded env variable: $key = $value');
-    }
-    return value ?? '';
-  }
+  /// Supabase project URL. Injected with `--dart-define=SUPABASE_URL=...`.
+  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
 
-  /// Supabase URL read from .env file.
-  /// Make sure to replace with your real project URL before publishing.
-  static const String supabaseUrl = 'https://webzzasosevzymftgszn.supabase.co';
-
-  /// Supabase publishable key read from .env file.
-  /// Make sure to replace with your real anon key before publishing.
+  /// Publishable (public) key. Injected with
+  /// `--dart-define=SUPABASE_PUBLISHABLE_KEY=...`.
   static const String supabasePublishableKey =
-      'sb_publishable_EsJ6IX8428kZpKqgHX6wfw_1Q1ob1NO';
+      String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 
-  /// Where Supabase should send the user after they follow a password reset
+  /// Where Supabase should send the user after they follow a password-reset
   /// link. Must be registered under Auth -> URL Configuration in the dashboard,
   /// otherwise the redirect is rejected and no recovery session is created.
-  static const String passwordRecoveryRedirect = '';
+  /// Injected with `--dart-define=PASSWORD_RECOVERY_REDIRECT=...`.
+  static const String passwordRecoveryRedirect =
+      String.fromEnvironment('PASSWORD_RECOVERY_REDIRECT');
 
-  /// Human-readable reason, shown once in debug rather than failing silently.
-  static String get missingConfigurationMessage {
-    final missing = <String>[];
-    return 'Missing configuration. Please check .env file setup.';
-  }
+  /// Shown when the app was built without the Supabase defines. Names the
+  /// missing inputs, never any value.
+  static String get missingConfigurationMessage =>
+      'Missing configuration. Build with '
+      '--dart-define=SUPABASE_URL=... and '
+      '--dart-define=SUPABASE_PUBLISHABLE_KEY=...';
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
@@ -65,11 +50,5 @@ class AppConfig {
   static void debugLogConfiguration() {
     if (!kDebugMode) return;
     debugPrint('[AppConfig] supabase configured: $isSupabaseConfigured');
-  }
-
-  static String _hostOf(String url) {
-    if (url.isEmpty) return '<none>';
-    final uri = Uri.tryParse(url);
-    return uri == null || uri.host.isEmpty ? '<invalid>' : uri.host;
   }
 }

@@ -8,6 +8,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/views/widgets/branch_selector.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/delivery_fulfillment_section.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_address_section.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
@@ -31,6 +32,10 @@ class CheckoutPageBody extends StatelessWidget {
           alignment: AlignmentDirectional.centerStart,
           child: BranchSelector(),
         ),
+        SizedBox(height: SpacingTokens.lg.h),
+        const Divider(),
+        SizedBox(height: SpacingTokens.lg.h),
+        const DeliveryFulfillmentSection(),
         SizedBox(height: SpacingTokens.lg.h),
         const Divider(),
         SizedBox(height: SpacingTokens.lg.h),
@@ -83,7 +88,7 @@ class _OrderSummary extends StatelessWidget {
                 SizedBox(height: SpacingTokens.xs.h),
                 LabeledValueRow(
                   label: S.deliveryFee,
-                  priceValue: checkout.deliveryFee,
+                  priceValue: summary.deliveryFee,
                 ),
                 if (saved > 0) ...[
                   SizedBox(height: SpacingTokens.xs.h),

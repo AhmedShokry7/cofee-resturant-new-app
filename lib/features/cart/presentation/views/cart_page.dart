@@ -126,7 +126,7 @@ class _CartSummaryState extends State<_CartSummary> {
     final checkout = context.read<CheckoutCubit>();
     final applied = await checkout.applyCoupon(
       _promoController.text,
-      subtotal: context.read<CartCubit>().state.total,
+      items: context.read<CartCubit>().state.items,
     );
     if (!mounted) return;
     final message = applied
@@ -216,7 +216,7 @@ class _CartSummaryState extends State<_CartSummary> {
                     )
                   else
                     _AppliedCouponRow(
-                      code: checkoutState.appliedCoupon!.code,
+                      code: checkoutState.appliedCoupon!.coupon.code,
                       onRemove: () =>
                           context.read<CheckoutCubit>().removeCoupon(),
                     ),
@@ -225,7 +225,7 @@ class _CartSummaryState extends State<_CartSummary> {
                   SizedBox(height: SpacingTokens.xs.h),
                   _SummaryRow(
                     label: S.deliveryFee,
-                    priceValue: checkoutState.deliveryFee,
+                    priceValue: summary.deliveryFee,
                   ),
                   if (discount > 0) ...[
                     SizedBox(height: SpacingTokens.xs.h),

@@ -1,10 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 
+/// Notifications come from the server and require authentication. The model
+/// should resolve bilingual titles, bodies and relative times. Without a backend
+/// the repository must fail closed (no invented rows for guests).
 void main() {
   test('database rows map to bilingual notifications with relative time', () {
+    AppLocale.instance.debugSet(AppLanguage.english);
     final createdAt = DateTime.now().subtract(const Duration(hours: 3));
     final notification = NotificationModel.fromDatabase({
       'id': 'notification-1',
@@ -23,11 +28,11 @@ void main() {
     expect(notification.time, '3h ago');
   });
 
-  test('guests receive an empty notification list, not invented rows', () async {
+  test('without a backend notifications are not invented for guests', () async {
     const repository = NotificationsRepositoryImpl();
     await expectLater(
       repository.listNotifications(),
-      completion(isEmpty),
+      throwsA(isA<StateError>()),
     );
   });
 }

@@ -1,5 +1,18 @@
 part of 'checkout_cubit.dart';
 
+/// How the customer receives the order. The database stores the same string
+/// (`orders.orders.fulfillment_type`), so the enum keeps one spelling.
+enum FulfillmentType {
+  pickup('pickup'),
+  delivery('delivery');
+
+  const FulfillmentType(this.value);
+
+  final String value;
+
+  bool get isDelivery => this == FulfillmentType.delivery;
+}
+
 /// Immutable breakdown of what the customer pays. Computed once in the
 /// cubit so cart, checkout and payment pages never disagree.
 class CheckoutSummary {
@@ -31,7 +44,11 @@ class CheckoutState {
     this.isPlacingOrder = false,
     this.orderError,
     this.error,
-    this.deliveryFee = 20,
+    this.fulfillment = FulfillmentType.pickup,
+    this.deliveryZones = const [],
+    this.selectedDeliveryZone,
+    this.deliveryZonesLoadFailed = false,
+    this.deliveryBlocked = false,
   });
 
   final List<AddressModel> addresses;
@@ -40,8 +57,12 @@ class CheckoutState {
   final PaymentMethodModel? selectedPaymentMethod;
   final OrderModel? lastOrder;
 
-  /// Coupon applied to the current checkout (null = none).
-  final CouponModel? appliedCoupon;
+  /// Coupon approved for the exact cart subtotal at apply time (null = none).
+  ///
+  /// The approval carries the server's own discount amount, never a client
+  /// recomputation, so a product-scoped coupon shows the same figure the server
+  /// will charge. It is dropped as soon as the cart it was approved for changes.
+  final ValidatedCoupon? appliedCoupon;
 
   /// Coupons advertised by the server.
   final List<CouponModel> availableCoupons;
@@ -61,8 +82,34 @@ class CheckoutState {
 
   final String? error;
 
-  /// Delivery fee from the database, falling back to 20 when unavailable.
-  final double deliveryFee;
+  /// Whether the order is collected at the branch or delivered.
+  final FulfillmentType fulfillment;
+
+  /// Zones the selected branch serves. Empty means delivery is unavailable.
+  final List<DeliveryZone> deliveryZones;
+
+  /// The zone whose fee and minimum apply when [fulfillment] is delivery.
+  final DeliveryZone? selectedDeliveryZone;
+
+  /// True when the last attempt to load zones failed: the `delivery_zones_for_
+  /// branch` bridge is missing/not deployed, or the request hit a network or
+  /// permission error. This is deliberately distinct from an empty
+  /// [deliveryZones], which is a valid "this branch serves no zones" answer.
+  final bool deliveryZonesLoadFailed;
+
+  /// True when the shopper asked for delivery while it was unavailable and has
+  /// not explicitly picked pickup since. [placeOrder] refuses while it is set,
+  /// so an attempted delivery can never be silently completed as a pickup.
+  final bool deliveryBlocked;
+
+  /// The fee the server will charge for the current selection: the chosen
+  /// zone's fee for delivery, and nothing for pickup.
+  double get payableDeliveryFee =>
+      fulfillment.isDelivery ? (selectedDeliveryZone?.deliveryFee ?? 0) : 0;
+
+  /// The minimum order for the current selection, or 0 when none applies.
+  double get minimumOrderAmount =>
+      fulfillment.isDelivery ? (selectedDeliveryZone?.minOrderAmount ?? 0) : 0;
 
   CheckoutState copyWith({
     List<AddressModel>? addresses,
@@ -71,7 +118,7 @@ class CheckoutState {
     PaymentMethodModel? selectedPaymentMethod,
     OrderModel? lastOrder,
     bool clearLastOrder = false,
-    CouponModel? appliedCoupon,
+    ValidatedCoupon? appliedCoupon,
     List<CouponModel>? availableCoupons,
     String? couponError,
     bool clearCoupon = false,
@@ -82,7 +129,12 @@ class CheckoutState {
     bool clearOrderError = false,
     String? error,
     bool clearError = false,
-    double? deliveryFee,
+    FulfillmentType? fulfillment,
+    List<DeliveryZone>? deliveryZones,
+    DeliveryZone? selectedDeliveryZone,
+    bool clearSelectedDeliveryZone = false,
+    bool? deliveryZonesLoadFailed,
+    bool? deliveryBlocked,
   }) {
     return CheckoutState(
       addresses: addresses ?? this.addresses,
@@ -98,7 +150,14 @@ class CheckoutState {
       isPlacingOrder: isPlacingOrder ?? this.isPlacingOrder,
       orderError: clearOrderError ? null : (orderError ?? this.orderError),
       error: clearError ? null : (error ?? this.error),
-      deliveryFee: deliveryFee ?? this.deliveryFee,
+      fulfillment: fulfillment ?? this.fulfillment,
+      deliveryZones: deliveryZones ?? this.deliveryZones,
+      selectedDeliveryZone: clearSelectedDeliveryZone
+          ? null
+          : selectedDeliveryZone ?? this.selectedDeliveryZone,
+      deliveryZonesLoadFailed:
+          deliveryZonesLoadFailed ?? this.deliveryZonesLoadFailed,
+      deliveryBlocked: deliveryBlocked ?? this.deliveryBlocked,
     );
   }
 }

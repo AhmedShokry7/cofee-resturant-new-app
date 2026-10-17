@@ -20,6 +20,37 @@ class SupabaseProductRepository implements CatalogRepository {
 
   final SupabaseClient _client;
 
+  // Explicit column lists instead of select('*'): the client asks for exactly
+  // what its models read, so a future column on the table can never leak into
+  // the app or break a parser by surprise.
+  static const _productColumns =
+      'id, category_id, sku, slug, name_ar, name_en, description_ar, '
+      'description_en, base_price, compare_at_price, image_url, is_featured, '
+      'prep_minutes, category_slug, category_name_ar, category_name_en';
+
+  static const _productImageColumns =
+      'id, product_id, image_url, alt_ar, alt_en, is_primary, sort_order';
+
+  static const _optionGroupColumns =
+      'id, code, name_ar, name_en, selection_type, min_select, max_select, '
+      'is_required, sort_order, is_active';
+
+  static const _optionValueColumns =
+      'id, group_id, code, name_ar, name_en, price_delta, short_label, '
+      'is_default, sort_order, is_active';
+
+  static const _bundleColumns =
+      'id, name_ar, name_en, description_ar, description_en, image_url, '
+      'bundle_price, is_active, sort_order';
+
+  static const _bundleItemColumns =
+      'id, bundle_id, product_id, quantity, allow_options, sort_order, '
+      'product:products(id, name_ar, name_en, image_url)';
+
+  static const _categoryColumns =
+      'id, slug, parent_id, name_ar, name_en, description_ar, description_en, '
+      'image_url, icon_key, sort_order, is_active';
+
   /// Branch pricing is fetched separately and merged in Dart.
   ///
   /// PostgREST cannot infer the relationship on a view, so embedding would
@@ -92,12 +123,12 @@ class SupabaseProductRepository implements CatalogRepository {
     final rows = await (categoryId == null
         ? _client
               .from('products')
-              .select('*')
+              .select(_productColumns)
               .range(offset, offset + limit - 1)
               .order('sort_order', ascending: true)
         : _client
               .from('products')
-              .select('*')
+              .select(_productColumns)
               .eq('category_id', categoryId)
               .range(offset, offset + limit - 1)
               .order('sort_order', ascending: true));
@@ -108,7 +139,7 @@ class SupabaseProductRepository implements CatalogRepository {
     // Batch-fetch all product images in a single query to avoid N+1.
     final imageRows = await _client
         .from('product_images')
-        .select('*')
+        .select(_productImageColumns)
         .inFilter('product_id', productIds)
         .order('sort_order', ascending: true);
 
@@ -145,7 +176,7 @@ class SupabaseProductRepository implements CatalogRepository {
   Future<ProductModel?> getById(String id, {String? branchId}) async {
     final rows = await _client
         .from('products')
-        .select('*')
+        .select(_productColumns)
         .eq('id', id)
         .limit(1);
     if (rows.isEmpty) return null;
@@ -185,12 +216,12 @@ class SupabaseProductRepository implements CatalogRepository {
 
     final groupRows = await _client
         .from('option_groups')
-        .select('*')
+        .select(_optionGroupColumns)
         .eq('is_active', true)
         .inFilter('id', groupIds);
     final valueRows = await _client
         .from('option_values')
-        .select('*')
+        .select(_optionValueColumns)
         .eq('is_active', true)
         .inFilter('group_id', groupIds);
 
@@ -230,7 +261,7 @@ class SupabaseProductRepository implements CatalogRepository {
   Future<List<ProductImage>> _productImages(String productId) async {
     final rows = await _client
         .from('product_images')
-        .select('*')
+        .select(_productImageColumns)
         .eq('product_id', productId)
         .order('sort_order', ascending: true);
     return rows.map(ProductImage.fromJson).toList();
@@ -456,7 +487,7 @@ class SupabaseProductRepository implements CatalogRepository {
           try {
             final prods = await _client
                 .from('products')
-                .select('*')
+                .select(_productColumns)
                 .inFilter('id', productIds.toList());
             for (final p in prods) {
               try {
@@ -487,7 +518,7 @@ class SupabaseProductRepository implements CatalogRepository {
             final activeIds = <String>[];
             final fetchedRows = await _client
                 .from('bundles')
-                .select('*')
+                .select(_bundleColumns)
                 .inFilter('id', uniqueBundleIds.toList());
             for (final row in fetchedRows) {
               if (row['is_active'] == true) {
@@ -499,7 +530,7 @@ class SupabaseProductRepository implements CatalogRepository {
             if (activeIds.isNotEmpty) {
               final itemRows = await _client
                   .from('bundle_items')
-                  .select('*, product:products(id, name_ar, name_en, image_url)')
+                  .select(_bundleItemColumns)
                   .inFilter('bundle_id', activeIds)
                   .order('sort_order');
               for (final row in itemRows) {
@@ -572,7 +603,7 @@ class SupabaseProductRepository implements CatalogRepository {
   }) async {
     final rows = await _client
         .from('bundles')
-        .select('*')
+        .select(_bundleColumns)
         .eq('is_active', true)
         .order('sort_order')
         .limit(limit);
@@ -581,7 +612,7 @@ class SupabaseProductRepository implements CatalogRepository {
     final bundleIds = rows.map((r) => r['id'].toString()).toList();
     final items = await _client
         .from('bundle_items')
-        .select('*, product:products(id, name_ar, name_en, image_url)')
+        .select(_bundleItemColumns)
         .inFilter('bundle_id', bundleIds)
         .order('sort_order');
 
@@ -618,7 +649,7 @@ class SupabaseProductRepository implements CatalogRepository {
   Future<BundleModel?> getBundleById(String id) async {
     final rows = await _client
         .from('bundles')
-        .select('*')
+        .select(_bundleColumns)
         .eq('id', id)
         .eq('is_active', true)
         .limit(1);
@@ -627,7 +658,7 @@ class SupabaseProductRepository implements CatalogRepository {
     final bundleId = bundle['id'].toString();
     final items = await _client
         .from('bundle_items')
-        .select('*, product:products(id, name_ar, name_en, image_url)')
+        .select(_bundleItemColumns)
         .eq('bundle_id', bundleId)
         .order('sort_order');
 
@@ -664,10 +695,10 @@ class SupabaseProductRepository implements CatalogRepository {
     // Built in one expression: the PostgREST builder changes type after each
     // filter, so reassigning a `var` across filters does not type check.
     final rows = await (includeInactive
-        ? _client.from('categories').select('*').order('sort_order')
+        ? _client.from('categories').select(_categoryColumns).order('sort_order')
         : _client
               .from('categories')
-              .select('*')
+              .select(_categoryColumns)
               .eq('is_active', true)
               .order('sort_order'));
     return rows.map(CategoryModel.fromJson).toList();
@@ -677,7 +708,7 @@ class SupabaseProductRepository implements CatalogRepository {
   Future<CategoryModel?> getCategoryById(String id) async {
     final rows = await _client
         .from('categories')
-        .select('*')
+        .select(_categoryColumns)
         .eq('id', id)
         .limit(1);
     return rows.isEmpty ? null : CategoryModel.fromJson(rows.first);
@@ -687,7 +718,7 @@ class SupabaseProductRepository implements CatalogRepository {
   Future<CategoryModel?> getCategoryBySlug(String slug) async {
     final rows = await _client
         .from('categories')
-        .select('*')
+        .select(_categoryColumns)
         .eq('slug', slug)
         .limit(1);
     return rows.isEmpty ? null : CategoryModel.fromJson(rows.first);
@@ -697,7 +728,7 @@ class SupabaseProductRepository implements CatalogRepository {
   Future<List<CategoryModel>> getCategoryChildren(String parentId) async {
     final rows = await _client
         .from('categories')
-        .select('*')
+        .select(_categoryColumns)
         .eq('parent_id', parentId)
         .order('sort_order');
     return rows.map(CategoryModel.fromJson).toList();

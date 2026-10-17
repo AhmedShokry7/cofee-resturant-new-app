@@ -46,13 +46,9 @@ class SupabaseCartRepository implements CartRepository {
   Future<void> clearCart({String? branchId}) async {
     final branch = branchId?.trim() ?? '';
     if (!_signedIn || branch.isEmpty) return;
-    final cartId = (await _supa.rpc(
-      'get_or_create_cart',
-      params: <String, dynamic>{'p_branch_id': branch},
-    )).toString();
     await _supa.rpc(
-      'remove_all_cart_items',
-      params: <String, dynamic>{'p_cart_id': cartId},
+      'replace_cart',
+      params: <String, dynamic>{'p_branch_id': branch, 'p_lines': <Object>[]},
     );
   }
 }

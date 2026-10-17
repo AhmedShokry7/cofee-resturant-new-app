@@ -668,6 +668,127 @@ async function cleanupOrders(whereSql, params = []) {
              detail: `customer DELETE blocked (${del.code}), row intact` };
   });
 
+  console.log('\n########## I — AUDIT FIXES (054-057) (34-37) ##########');
+
+  // 34. F1 — identity.user_points must be security_invoker so each caller only
+  // sees their own profile + loyalty row. Before 054 the inner view ran with
+  // owner rights and joined every profile to every loyalty account, so any
+  // signed-in user could read every other user's name and balance.
+  await t('I', '34. (F1) user_points exposes only the caller row', async () => {
+    await admin.query(`insert into loyalty.loyalty_accounts (user_id,points_balance,lifetime_points)
+      values ($1,111,111),($2,222,222)
+      on conflict (user_id) do update set points_balance=excluded.points_balance,
+        lifetime_points=excluded.lifetime_points`, [A, B]);
+    const mine = await asUser(A, 'select count(*)::int n from public.user_points');
+    const own  = await asUser(A, 'select points_balance from public.user_points where user_id=$1', [A]);
+    const other= await asUser(A, 'select count(*)::int n from public.user_points where user_id=$1', [B]);
+    const opt  = await admin.query(`select reloptions from pg_class where oid='identity.user_points'::regclass`);
+    const invoker = ((opt.rows[0].reloptions) || []).some(o => /security_invoker=true/.test(o));
+    return { good: mine.ok && mine.rows[0].n === 1 && other.ok && other.rows[0].n === 0
+                 && own.ok && Number(own.rows[0].points_balance) === 111 && invoker,
+             detail: `A sees ${mine.ok ? mine.rows[0].n : '?'} row(s), ${other.ok ? other.rows[0].n : '?'} of B, own balance=${own.ok ? own.rows[0].points_balance : '?'}; security_invoker=${invoker}` };
+  });
+
+  // 35. F2 — a product split across two cart lines must deduct stock once and
+  // write ONE 'sale' movement. Before 055 place_order inserted one movement per
+  // line and the second tripped uq_movement_sale_once -> whole order failed 23505.
+  await t('I', '35. (F2) two cart lines for one product deduct stock once', async () => {
+    await cleanupOrders(`idempotency_key like 'idem-f2-%'`);
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+    const key = 'idem-f2-' + Date.now();
+    const stock = async () => Number((await admin.query(
+      'select quantity_on_hand from inventory.branch_stock where product_id=$1 and branch_id=$2',
+      [LATTE, BR_MAIN])).rows[0].quantity_on_hand);
+    const start = await stock();
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'extra shot','{}')`, [BR_MAIN, LATTE]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,2,'no foam','{}')`, [BR_MAIN, LATTE]);
+    const lines = await admin.query('select count(*)::int n from orders.cart_items where cart_id=$1', [cart.rows[0].id]);
+    const o = await asUserCommit(A, `select * from orders.place_order($1,$2,'pickup',null,null,'')`, [cart.rows[0].id, key]);
+    if (!o.ok) {
+      await cleanupOrders('idempotency_key = $1', [key]);
+      return { good: false, detail: `place_order failed on a two-line product: ${o.error}` };
+    }
+    const end = await stock();
+    const mv = await admin.query(`select count(*)::int n, coalesce(sum(quantity_delta),0)::int dq
+      from inventory.stock_movements
+      where reference_id = (select id from orders.orders where idempotency_key=$1) and reason='sale'`, [key]);
+    await cleanupOrders('idempotency_key = $1', [key]);
+    return { good: lines.rows[0].n === 2 && (start - end) === 3
+                 && Number(mv.rows[0].n) === 1 && Number(mv.rows[0].dq) === -3,
+             detail: `${lines.rows[0].n} cart lines (one product), stock ${start}->${end} (deduct 3), sale movements=${mv.rows[0].n} delta=${mv.rows[0].dq}` };
+  });
+
+  // 36. F3 — a product-scoped coupon must discount only the eligible product's
+  // lines AND the order placed with it must charge that same amount. Before 056
+  // a 'product' coupon was never scope-checked and discounted the whole cart.
+  await t('I', '36. (F3) a product coupon discounts only the eligible lines', async () => {
+    await cleanupOrders(`idempotency_key like 'idem-f3-%'`);
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+    const code = 'PROD' + Date.now().toString(36).toUpperCase();
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'خصم إسبريسو','Espresso only','percentage',50,'product',99,true)`, [code]);
+    const cid = (await admin.query('select id from marketing.coupons where code=$1', [code])).rows[0].id;
+    await admin.query('insert into marketing.coupons_products (coupon_id,product_id) values ($1,$2)', [cid, ESPRESSO]);
+
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, ESPRESSO]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    const crows = await admin.query('select product_id, line_total from orders.cart_items where cart_id=$1', [cart.rows[0].id]);
+    const subtotal = crows.rows.reduce((s, r) => s + Number(r.line_total), 0);
+    const eligible = Number(crows.rows.find(r => r.product_id === ESPRESSO).line_total);
+    const expDisc = Math.round(eligible * 50) / 100;   // server: round(base*50/100,2)
+    const fullDisc = Math.round(subtotal * 50) / 100;  // what a scope-blind coupon would give
+
+    const v = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+    const placed = await asUserCommit(A, `select * from orders.place_order($1,$2,'pickup',null,$3,'')`,
+      [cart.rows[0].id, 'idem-f3-' + Date.now(), code]);
+
+    // Negative: a cart without the eligible product must be refused.
+    const cart2 = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    const rejected = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+
+    const scoped = expDisc < fullDisc;
+    const okV = v.ok && Math.abs(Number(v.rows[0].discount) - expDisc) < 0.005;
+    const okP = placed.ok && Math.abs(Number(placed.rows[0].subtotal) - subtotal) < 0.005
+      && Math.abs(Number(placed.rows[0].discount_total) - expDisc) < 0.005;
+    const okN = rejected.ok && Number(rejected.rows[0].discount) === 0;
+
+    await cleanupOrders(`idempotency_key like 'idem-f3-%'`);
+    await admin.query('delete from marketing.coupons where id=$1', [cid]);
+    return { good: scoped && okV && okP && okN,
+             detail: `subtotal=${subtotal} eligible=${eligible} discount=${v.ok ? v.rows[0].discount : '?'} (scope-blind would be ${fullDisc}); order discount_total=${placed.ok ? placed.rows[0].discount_total : '?'} grand=${placed.ok ? placed.rows[0].grand_total : '?'}; no-eligible-cart discount=${rejected.ok ? rejected.rows[0].discount : '?'}` };
+  });
+
+  // 37. F5 — editing a product or category as a staff member must rebuild the
+  // search document. Before 057 the rebuild functions ran as the caller, who
+  // lacks INSERT on the projection tables, so the AFTER trigger died 42501.
+  await t('I', '37. (F5) editing a product or category rebuilds the search doc', async () => {
+    const upP = await asUserCommit(OWNER, `update catalog.products set name_en = name_en || ' zqtoken' where id=$1`, [LATTE]);
+    const afterP = await admin.query('select body_norm from catalog.product_search where product_id=$1', [LATTE]);
+    const restored = await asUserCommit(OWNER, `update catalog.products set name_en = regexp_replace(name_en, ' zqtoken$', '') where id=$1`, [LATTE]);
+    const backBody = await admin.query('select body_norm from catalog.product_search where product_id=$1', [LATTE]);
+
+    const catId = (await admin.query('select category_id from catalog.products where id=$1', [LATTE])).rows[0].category_id;
+    const catBefore = await admin.query('select body_norm from catalog.category_search where category_id=$1', [catId]);
+    const upC = await asUserCommit(OWNER, `update catalog.categories set name_en = name_en || ' zqcat' where id=$1`, [catId]);
+    const catAfter = await admin.query('select body_norm from catalog.category_search where category_id=$1', [catId]);
+    await asUserCommit(OWNER, `update catalog.categories set name_en = regexp_replace(name_en, ' zqcat$', '') where id=$1`, [catId]);
+
+    const prodRebuilt = upP.ok && !!afterP.rows[0] && /zqtoken/.test(afterP.rows[0].body_norm)
+      && !!backBody.rows[0] && !/zqtoken/.test(backBody.rows[0].body_norm);
+    const catRebuilt = upC.ok && !!catAfter.rows[0] && /zqcat/.test(catAfter.rows[0].body_norm)
+      && catBefore.rows[0].body_norm !== catAfter.rows[0].body_norm;
+    return { good: prodRebuilt && catRebuilt,
+             detail: `product update ok=${upP.ok}, doc got token=${!!afterP.rows[0] && /zqtoken/.test(afterP.rows[0].body_norm)}, restored ok=${restored.ok}; category update ok=${upC.ok}, doc got token=${!!catAfter.rows[0] && /zqcat/.test(catAfter.rows[0].body_norm)}` };
+  });
+
   await admin.end();
 
   console.log('\n================ SUMMARY ================');

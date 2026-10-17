@@ -79,18 +79,30 @@ abstract class OrdersRepository {
     int limit = 100,
   });
 
-  /// Places the customer's cart on the server, atomically and idempotently.
+  /// Replaces the caller's active server cart in one server transaction.
   ///
-  /// The device cart is rebuilt server-side from [lines] first (the caller's
-  /// own active cart is emptied, then each line is re-added), so the server
-  /// cart always matches what the customer actually sees. [lines] carry no
-  /// price: `place_order` re-prices from the catalogue and re-validates every
-  /// option selection.
+  /// If validation or repricing of any line fails, the previous cart is kept.
+  ///
+  /// Needed before any server-side check that reads `orders.cart_items`, since
+  /// those checks (`validate_coupon`) see only what was last mirrored, and the
+  /// device cart is the checkout source of truth.
+  Future<void> syncCart({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+  });
+
+  /// Replaces the server cart and places its order in one server transaction.
+  ///
+  /// [idempotencyKey] stays fixed across retries of this logical purchase and
+  /// changes for a new purchase. [lines] carry no price: the server validates
+  /// options and re-prices from the catalogue before creating the order.
   Future<PlacedOrder> placeOrder({
     required String branchId,
     required List<PlaceOrderLine> lines,
+    required String idempotencyKey,
     String fulfillmentType = 'pickup',
     String? deliveryZoneId,
+    String? addressId,
     String? couponCode,
     String? note,
   });
