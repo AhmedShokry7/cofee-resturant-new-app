@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
@@ -183,6 +184,11 @@ void main() {
 
   setUp(() {
     AppLocale.instance.debugSet(AppLanguage.english);
+    SupabaseService.debugSetSignedIn(true);
+  });
+
+  tearDown(() {
+    SupabaseService.debugReset();
   });
 
   testWidgets('a failed delete shows an error snackbar when addresses exist', (

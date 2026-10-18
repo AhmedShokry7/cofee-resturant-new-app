@@ -13,6 +13,7 @@ import 'package:new_coffee/features/payment/presentation/views/widgets/card_prev
 import 'package:new_coffee/shared/utils/card_brand.dart';
 import 'package:new_coffee/shared/utils/input_formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
 /// Adds one card to the saved list.
@@ -116,8 +117,9 @@ class _AddCardPageState extends State<AddCardPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<SavedCardsCubit, SavedCardsState>(
-      builder: (context, state) {
+    return AuthGuard(
+      child: BlocBuilder<SavedCardsCubit, SavedCardsState>(
+        builder: (context, state) {
         return Scaffold(
           appBar: AppBar(title: Text(S.addCard)),
           // Once we know the provider cannot be reached, there is nothing to
@@ -146,7 +148,8 @@ class _AddCardPageState extends State<AddCardPage> {
                 ),
         );
       },
-    );
+    ),
+  );
   }
 
   Widget _formBody() => ListView(

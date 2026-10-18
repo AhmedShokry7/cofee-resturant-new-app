@@ -65,12 +65,26 @@ Deno.serve(async (req) => {
     }
   }
 
-  // Idempotency: reuse an existing transaction with the same key.
-  const existingTxQuery = orderId
-    ? `/payment_transactions?select=provider_reference,status,amount,currency_code&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
-    : `/payment_transactions?select=provider_reference,status,amount,currency_code&subscription_id=eq.${encodeURIComponent(subscriptionId)}&order=created_at.desc&limit=1`;
-  const existingTxRows = await serviceFetch(existingTxQuery);
-  const existingTx = Array.isArray(existingTxRows) ? existingTxRows[0] : null;
+  // Idempotency for orders is keyed by payment_attempts.idempotency_key.
+  // Reuse a charge only when the same key was already used for this order.
+  let existingTx: any = null;
+  if (orderId && idempotencyKey) {
+    const attempts = await serviceFetch(
+      `/payment_attempts?select=id&order_id=eq.${encodeURIComponent(orderId)}&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&limit=1`,
+    );
+    if (Array.isArray(attempts) && attempts.length > 0) {
+      const txRows = await serviceFetch(
+        `/payment_transactions?select=provider_reference,status&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`,
+      );
+      existingTx = Array.isArray(txRows) ? txRows[0] : null;
+    }
+  } else if (subscriptionId) {
+    // Subscriptions do not persist an idempotency key in the current schema.
+    const txRows = await serviceFetch(
+      `/payment_transactions?select=provider_reference,status&subscription_id=eq.${encodeURIComponent(subscriptionId)}&order=created_at.desc&limit=1`,
+    );
+    existingTx = Array.isArray(txRows) ? txRows[0] : null;
+  }
   if (existingTx?.provider_reference) {
     return new Response(JSON.stringify({
       reused: true,

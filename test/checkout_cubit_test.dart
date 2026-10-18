@@ -316,15 +316,17 @@ CheckoutCubit _cubit(
   DeliveryZoneRepository? deliveryZones,
   CouponRepository? coupons,
   _FakeAddresses? addressesRepository,
-}) => CheckoutCubit(
+}) {
+  return CheckoutCubit(
   coupons: coupons ?? _FakeCoupons(),
   addresses: addressesRepository ?? _FakeAddresses(addresses),
   paymentMethods: _FakePaymentMethods(),
   deliveryZoneRepository: deliveryZones ?? _FakeDeliveryZones(zones),
   orders: orders,
-  currentUserIdProvider: currentUserIdProvider,
+  currentUserIdProvider: currentUserIdProvider ?? () => 'test-user',
   branchId: branchId,
-);
+  );
+}
 
 CartItem _line(
   String id, {
@@ -349,6 +351,7 @@ ValidatedCoupon _validated(
 );
 
 void main() {
+  setUp(() => SharedPreferences.setMockInitialValues({}));
   // ---------- Per-line discount breakdown ----------
 
   test('applying a coupon fetches the per-line breakdown', () async {
@@ -562,7 +565,7 @@ void main() {
       expect(ok, isFalse);
       expect(cubit.state.isPlacingOrder, isFalse);
       expect(cubit.state.lastOrder, isNull);
-      expect(cubit.state.orderError, contains('boom'));
+      expect(cubit.state.orderError, S.orderFailed);
 
       await cubit.close();
     },
@@ -1135,6 +1138,30 @@ void main() {
 
       expect(find.byType(SnackBar), findsOneWidget);
       expect(find.text(S.addressSaveFailed), findsOneWidget);
+    },
+  );
+
+  test(
+    'a guest is rejected before order creation even when Supabase is not ready',
+    () async {
+      final orders = _FakeOrders(result: _placed());
+      final cubit = _cubit(
+        orders,
+        branchId: 'branch-1',
+        currentUserIdProvider: () => null,
+      );
+      await cubit.load();
+
+      final placed = await cubit.placeOrder(
+        items: [CartItem(product: _product('p1'))],
+      );
+
+      expect(placed, isFalse);
+      expect(cubit.state.isPlacingOrder, isFalse);
+      expect(cubit.state.orderError, S.signIn);
+      expect(orders.lines, isNull);
+
+      await cubit.close();
     },
   );
 }

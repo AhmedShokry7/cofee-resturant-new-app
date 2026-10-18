@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 
 void main() {
@@ -113,4 +115,85 @@ void main() {
       await restored.close();
     },
   );
+
+  test(
+    'a failed guest-cart adoption preserves the guest slot',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'cart_v1_guest': jsonEncode([
+          {'productId': '1', 'quantity': 2},
+        ]),
+      });
+
+      final cubit = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: _ThrowingCatalog(),
+        userIdProvider: () => 'user-a',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      final prefs = await SharedPreferences.getInstance();
+      final stored = jsonDecode(prefs.getString('cart_v1_guest')!) as List;
+      expect(stored, isNotEmpty);
+
+    await cubit.close();
+  },
+  );
+
+  test(
+    'an unavailable product is preserved when loading under a branch',
+    () async {
+      SharedPreferences.setMockInitialValues({
+        'cart_v1_guest': jsonEncode([
+          {'productId': 'missing', 'quantity': 2, 'unitPrice': 10.0},
+        ]),
+      });
+
+      final cubit = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: _UnavailableBranchCatalog(),
+        branchId: 'branch-2',
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      expect(cubit.state.items.map((item) => item.product.id), ['missing']);
+      expect(cubit.state.items.single.product.name, S.productUnavailable);
+
+      await cubit.close();
+    },
+  );
+}
+
+class _ThrowingCatalog extends MockProductRepository {
+  @override
+  Future<List<ProductModel>> getProducts({
+    String? branchId,
+    String? categoryId,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    throw StateError('catalog down');
+  }
+
+  @override
+  Future<ProductModel?> getById(String id, {String? branchId}) async {
+    throw StateError('catalog down');
+  }
+}
+
+class _UnavailableBranchCatalog extends MockProductRepository {
+  @override
+  Future<List<ProductModel>> getProducts({
+    String? branchId,
+    String? categoryId,
+    int limit = 100,
+    int offset = 0,
+  }) async {
+    return const [];
+  }
+
+  @override
+  Future<ProductModel?> getById(String id, {String? branchId}) async {
+    return null;
+  }
 }

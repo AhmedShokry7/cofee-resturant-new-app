@@ -9,6 +9,7 @@ import 'package:new_coffee/features/addresses/presentation/manager/addresses/add
 import 'package:new_coffee/features/checkout/data/model/address_model.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/features/location/presentation/widgets/location_picker.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -24,11 +25,13 @@ class AddressFormPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final address = ModalRoute.of(context)?.settings.arguments;
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(address is AddressModel ? S.editAddress : S.enterLocation),
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(address is AddressModel ? S.editAddress : S.enterLocation),
+        ),
+        body: _AddressFormBody(address: address is AddressModel ? address : null),
       ),
-      body: _AddressFormBody(address: address is AddressModel ? address : null),
     );
   }
 }

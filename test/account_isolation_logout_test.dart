@@ -151,7 +151,10 @@ class _FakeAuthRepository implements AuthRepository {
       throw UnimplementedError();
 
   @override
-  Future<void> changePassword({required String newPassword}) =>
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) =>
       throw UnimplementedError();
 }
 

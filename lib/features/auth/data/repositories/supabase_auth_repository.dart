@@ -214,9 +214,22 @@ Future<void> signOut() async {
   }
 
   @override
-  Future<void> changePassword({required String newPassword}) async {
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
     _guard;
+    final user = _client.auth.currentUser;
+    if (user == null || user.email == null) {
+      throw const AuthException('Not signed in.');
+    }
+    // Verify the current password before allowing a change.
+    await _client.auth.signInWithPassword(
+      email: user.email!,
+      password: oldPassword.trim(),
+    );
     await _client.auth.updateUser(UserAttributes(password: newPassword.trim()));
+    await _client.auth.refreshSession();
   }
 
   /// Previously hardcoded to null, so the app never knew who was signed in.

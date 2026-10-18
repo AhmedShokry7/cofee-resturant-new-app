@@ -81,24 +81,12 @@ class HomeCubit extends Cubit<HomeState> {
 
     // Critical sections first so the home renders quickly; heavier sections
     // (bundles, featured, products) follow without blocking the first frame.
-    final banners = await bannersFuture;
-    final categories = await categoriesFuture;
-    emit(
-      HomeState(
-        banners: banners,
-        bundles: const [],
-        categories: categories,
-        popular: const [],
-        recommendationPool: const [],
-        bundleProducts: const {},
-        isLoading: false,
-        error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
-      ),
-    );
-
     final bundles = await bundlesFuture;
     final featured = await featuredFuture;
     final products = await productsFuture;
+    final banners = await bannersFuture;
+    final categories = await categoriesFuture;
+    if (isClosed) return;
 
     // Resolve the products a bundle contains in one query, rather than per
     // card. This also replaces the old bundleProducts() helper, which read
@@ -120,6 +108,7 @@ class HomeCubit extends Cubit<HomeState> {
       if (product != null) bundleProducts[id] = product;
     }
 
+    if (isClosed) return;
     emit(
       HomeState(
         banners: banners,

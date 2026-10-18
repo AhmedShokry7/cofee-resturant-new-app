@@ -139,6 +139,10 @@ class CartCubit extends Cubit<CartState> {
   /// lines twice (quantities would double), and a retry must not replay them.
   bool _adoptingGuestCart = false;
 
+  /// While guest lines are being merged, account persistence is deferred so an
+  /// interrupted adoption cannot leave a partially written account cart.
+  bool _suppressPersist = false;
+
   Future<void> load() async {
     final generation = ++_loadGeneration;
     try {
@@ -177,46 +181,81 @@ class CartCubit extends Cubit<CartState> {
       // (quantities would double), and a retry never replays adopted lines.
       if (_userId != null && !_adoptingGuestCart) {
         _adoptingGuestCart = true;
+        _suppressPersist = true;
+        String? guestRaw;
+        List<Map<String, dynamic>> guestEntries = const [];
+        final preAdoptionItems = List<CartItem>.from(state.items);
         try {
-          final guestRaw = await SharedPref.getValue(key: storageKeyFor(null));
-          final guestEntries = guestRaw == null || guestRaw.isEmpty
+          guestRaw = await SharedPref.getValue(key: storageKeyFor(null));
+          guestEntries = guestRaw == null || guestRaw.isEmpty
               ? const <Map<String, dynamic>>[]
               : _decodeEntries(guestRaw);
           if (guestEntries.isNotEmpty) {
+            // Claim the guest slot first so concurrent/retried loads cannot
+            // adopt the same lines twice.
             await SharedPref.setValue(
               key: storageKeyFor(null),
               value: jsonEncode([]),
             );
-            if (isClosed) return;
-            if (generation != _loadGeneration) return;
+
+            bool aborted = false;
             for (final entry in guestEntries) {
+              if (isClosed ||
+                  generation != _loadGeneration ||
+                  _identity != _userId) {
+                aborted = true;
+                break;
+              }
+
               if (entry['isBundle'] == true) {
-                final bundleId = entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
+                final bundleId =
+                    entry['bundleId']?.toString() ??
+                    entry['productId']?.toString() ??
+                    '';
                 if (bundleId.isEmpty) continue;
                 final components = <CartBundleComponent>[];
                 final rawComponents = entry['bundleComponents'];
                 if (rawComponents is List) {
                   for (final raw in rawComponents) {
-                    if (raw is Map) components.add(CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)));
+                    if (raw is Map) {
+                      components.add(
+                        CartBundleComponent.fromJson(
+                          Map<String, dynamic>.from(raw),
+                        ),
+                      );
+                    }
                   }
                 }
-                if (isClosed) continue;
-                if (generation != _loadGeneration) return;
-                final guestImage = entry['bundleImage']?.toString().trim() ?? '';
+                if (isClosed ||
+                    generation != _loadGeneration ||
+                    _identity != _userId) {
+                  aborted = true;
+                  break;
+                }
+                final guestImage =
+                    entry['bundleImage']?.toString().trim() ?? '';
                 addBundle(
                   bundleId: bundleId,
                   title: entry['bundleTitle']?.toString() ?? S.bundleLabel,
                   image: guestImage.isEmpty
                       ? await _bundleFallbackImage(components, catalog)
                       : guestImage,
-                  price: (entry['bundlePrice'] as num?)?.toDouble() ?? (entry['unitPrice'] as num?)?.toDouble() ?? 0,
+                  price:
+                      (entry['bundlePrice'] as num?)?.toDouble() ??
+                      (entry['unitPrice'] as num?)?.toDouble() ??
+                      0,
                   components: components,
                   quantity: entry['quantity'] as int? ?? 1,
                   note: entry['note'] as String? ?? '',
-                  optionValueIds: (entry['optionValueIds'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[],
+                  optionValueIds:
+                      (entry['optionValueIds'] as List?)
+                          ?.map((e) => e.toString())
+                          .toList() ??
+                      const <String>[],
                 );
                 continue;
               }
+
               final guestProductId = entry['productId']?.toString() ?? '';
               if (guestProductId.isEmpty) continue;
               final product =
@@ -225,8 +264,13 @@ class CartCubit extends Cubit<CartState> {
                     guestProductId,
                     branchId: branchId,
                   );
-              if (product == null || isClosed) continue;
-              if (generation != _loadGeneration) return;
+              if (isClosed ||
+                  generation != _loadGeneration ||
+                  _identity != _userId) {
+                aborted = true;
+                break;
+              }
+              if (product == null) continue;
               add(
                 product,
                 quantity: entry['quantity'] as int? ?? 1,
@@ -235,18 +279,86 @@ class CartCubit extends Cubit<CartState> {
                     (entry['optionValueIds'] as List?)
                         ?.map((e) => e.toString())
                         .toList() ??
-                    const [],
+                    const <String>[],
                 unitPrice: (entry['unitPrice'] as num?)?.toDouble(),
                 bundleId: entry['bundleId']?.toString(),
               );
             }
+
+            if (aborted ||
+                isClosed ||
+                generation != _loadGeneration ||
+                _identity != _userId) {
+              aborted = true;
+            }
+
+            if (aborted) {
+              // Restore the claimed guest slot. The account slot was not
+              // persisted during adoption because persistence was suppressed.
+              await SharedPref.setValue(
+                key: storageKeyFor(null),
+                value: guestRaw ?? jsonEncode(guestEntries),
+              );
+              if (!isClosed &&
+                  generation == _loadGeneration &&
+                  _identity == _userId) {
+                emit(CartState(items: preAdoptionItems));
+              }
+            } else {
+              // One authoritative write after all lines have merged.
+              _suppressPersist = false;
+              await _persist();
+            }
+          }
+        } catch (error, stackTrace) {
+          // Restore the guest slot; do not overwrite the account slot because
+          // adoption never persisted it.
+          bool restored = false;
+          try {
+            await SharedPref.setValue(
+              key: storageKeyFor(null),
+              value: guestRaw ?? jsonEncode(guestEntries),
+            );
+            restored = true;
+          } catch (restoreError, restoreStackTrace) {
+            if (!isClosed) {
+              addError(restoreError, restoreStackTrace);
+            }
+          }
+          if (!restored) {
+            // Report that recovery itself failed.
+            if (!isClosed) {
+              addError(
+                StateError('Guest cart restoration failed'),
+                stackTrace,
+              );
+            }
+          }
+          if (!isClosed &&
+              generation == _loadGeneration &&
+              _identity == _userId) {
+            emit(
+              CartState(
+                items: preAdoptionItems,
+                error: error.toString(),
+              ),
+            );
+          }
+          if (!isClosed) {
+            addError(error, stackTrace);
           }
         } finally {
+          _suppressPersist = false;
           _adoptingGuestCart = false;
         }
       }
-    } catch (_) {
-      // Best-effort: start with an empty cart rather than crash.
+    } catch (error, stackTrace) {
+      // Best-effort: start with an empty cart rather than crash, but keep
+      // the failure visible so a sync problem is recoverable.
+      if (!isClosed) {
+        emit(CartState(items: state.items, error: error.toString()));
+        addError(error, stackTrace);
+      }
     }
   }
 
@@ -513,12 +625,24 @@ class CartCubit extends Cubit<CartState> {
       final product =
           (await catalog())[productId] ??
           await _catalogRepository.getById(productId, branchId: branchId);
-      if (product == null) continue;
+      // Preserve unavailable lines on a branch switch instead of silently
+      // dropping them; the customer can review before checkout.
+      final resolvedProduct = product ??
+          (branchId == null || branchId!.trim().isEmpty
+              ? null
+              : ProductModel(
+                  id: productId,
+                  name: S.productUnavailable,
+                  price: (entry['unitPrice'] as num?)?.toDouble() ?? 0,
+                  image: '',
+                ));
+      if (resolvedProduct == null) continue;
+      final productToUse = resolvedProduct;
 
       final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
       items.add(
         CartItem(
-          product: product,
+          product: productToUse,
           quantity: quantity,
           note: entry['note']?.toString() ?? '',
           optionValueIds: _optionIds(entry['optionValueIds']),
@@ -566,6 +690,7 @@ class CartCubit extends Cubit<CartState> {
   }
 
   Future<void> _persist() async {
+    if (_suppressPersist) return;
     try {
       await SharedPref.setValue(
         key: _key,

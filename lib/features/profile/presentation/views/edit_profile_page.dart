@@ -7,6 +7,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -57,6 +58,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _showChangePasswordDialog() async {
+    final oldPasswordController = TextEditingController();
     final newPasswordController = TextEditingController();
     final confirmPasswordController = TextEditingController();
     final formKey = GlobalKey<FormState>();
@@ -70,6 +72,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                TextFormField(
+                  controller: oldPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'كلمة المرور الحالية'),
+                  validator: (value) =>
+                      (value == null || value.trim().isEmpty) ? 'مطلوب' : null,
+                ),
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
@@ -98,13 +107,17 @@ class _EditProfilePageState extends State<EditProfilePage> {
         ),
       );
       if (changed != true || !mounted) return;
-      await context.read<AuthRepository>().changePassword(newPassword: newPasswordController.text.trim());
+      await context.read<AuthRepository>().changePassword(
+        oldPassword: oldPasswordController.text.trim(),
+        newPassword: newPasswordController.text.trim(),
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تغيير كلمة المرور')));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تغيير كلمة المرور')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تغيير كلمة المرور (تحقق من القديمة)')));
     } finally {
+      oldPasswordController.dispose();
       newPasswordController.dispose();
       confirmPasswordController.dispose();
     }
@@ -133,8 +146,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(S.yourProfile)),
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(title: Text(S.yourProfile)),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -176,6 +190,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           ],
         ),
       ),
+    ),
     );
   }
 }

@@ -61,13 +61,38 @@ class PaymentMethodBottomBar extends StatelessWidget {
           ),
         );
         if (!context.mounted) return;
-        if (launched != true) return;
-      } else if (chargeResult.status == CardPaymentStatus.paymentFailed) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(chargeResult.errorMessage ?? S.orderFailed)),
-        );
-        return;
-      }
+          if (launched != true) return;
+          final verified = await chargeCubit.verifyCharge();
+          if (!context.mounted) return;
+          if (verified != 'succeeded') {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
+                ),
+              ),
+            );
+            return;
+          }
+        } else if (chargeResult.status == CardPaymentStatus.paymentFailed) {
+          messenger.showSnackBar(
+            SnackBar(content: Text(chargeResult.errorMessage ?? S.orderFailed)),
+          );
+          return;
+        } else {
+          final verified = await chargeCubit.verifyCharge();
+          if (!context.mounted) return;
+          if (verified != 'succeeded') {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
+                ),
+              ),
+            );
+            return;
+          }
+        }
     } else if (isOnline && orderId.isNotEmpty) {
       final publicKey = const String.fromEnvironment('TAP_PUBLIC_KEY');
       final sdkConfig = <String, dynamic>{};
@@ -81,9 +106,22 @@ class PaymentMethodBottomBar extends StatelessWidget {
           ),
         ),
       );
-      if (!context.mounted) return;
-      if (result != true) return;
-    }
+        if (!context.mounted) return;
+        if (result != true) return;
+        final chargeCubit = context.read<CardPaymentCubit>();
+        final verified = await chargeCubit.verifyCharge();
+        if (!context.mounted) return;
+        if (verified != 'succeeded') {
+          messenger.showSnackBar(
+            SnackBar(
+              content: Text(
+                chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
+              ),
+            ),
+          );
+          return;
+        }
+      }
 
     context.read<LoyaltyCubit>().earnForOrder(total);
     cart.clear();

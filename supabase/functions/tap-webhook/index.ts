@@ -91,6 +91,60 @@ Deno.serve(async (req) => {
   const tx = Array.isArray(txRows) && txRows[0] ? txRows[0] : null;
   const orderId = tx?.order_id ?? null;
   const subscriptionId = tx?.subscription_id ?? null;
+
+  // Validate the webhook against the trusted local transaction/order before
+  // applying any state transition.
+  if (!tx || tx.provider_reference !== id) {
+    return new Response(JSON.stringify({ received: true, ignored: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const expectedAmount = Number(tx.amount ?? 0);
+  const expectedCurrency = String(tx.currency_code ?? "SAR");
+  const postedAmount = Number(charge?.amount ?? 0);
+  const postedCurrency = String(charge?.currency ?? "");
+  if (!Number.isFinite(expectedAmount) || expectedAmount <= 0 ||
+      !Number.isFinite(postedAmount) ||
+      roundAmount(postedAmount, postedCurrency) !== roundAmount(expectedAmount, expectedCurrency) ||
+      postedCurrency.toUpperCase() !== expectedCurrency.toUpperCase()) {
+    return new Response(JSON.stringify({ received: true, rejected: "amount_or_currency_mismatch" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  if (orderId) {
+    const orderRows = await serviceFetch(
+      `/orders?select=id,grand_total,currency_code&id=eq.${encodeURIComponent(orderId)}&limit=1`,
+    );
+    const order = Array.isArray(orderRows) ? orderRows[0] : null;
+    if (!order ||
+        roundAmount(Number(order.grand_total ?? 0), String(order.currency_code ?? "SAR")) !== roundAmount(expectedAmount, expectedCurrency) ||
+        String(order.currency_code ?? "SAR").toUpperCase() !== expectedCurrency.toUpperCase()) {
+      return new Response(JSON.stringify({ received: true, rejected: "order_amount_or_currency_mismatch" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+  if (subscriptionId) {
+    const subRows = await serviceFetch(
+      `/subscriptions?select=id,plan:plans(price,currency_code)&id=eq.${encodeURIComponent(subscriptionId)}&limit=1`,
+    );
+    const sub = Array.isArray(subRows) ? subRows[0] : null;
+    const planPrice = Number(sub?.plan?.price ?? 0);
+    const planCurrency = String(sub?.plan?.currency_code ?? "SAR");
+    if (!sub || roundAmount(planPrice, planCurrency) !== roundAmount(expectedAmount, expectedCurrency) ||
+        planCurrency.toUpperCase() !== expectedCurrency.toUpperCase()) {
+      return new Response(JSON.stringify({ received: true, rejected: "subscription_amount_or_currency_mismatch" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  }
+
   if (orderId) {
     const orderPaymentStatus = verified ? "paid" : (newStatus === "failed" ? "failed" : "pending");
     await serviceFetch(

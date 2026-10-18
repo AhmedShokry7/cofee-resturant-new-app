@@ -79,7 +79,10 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<void> changePassword({required String newPassword}) async {
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {
     await Future<void>.delayed(const Duration(milliseconds: 200));
   }
 }

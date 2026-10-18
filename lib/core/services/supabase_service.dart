@@ -16,6 +16,17 @@ class SupabaseService {
 
   static bool get isReady => _client != null;
 
+  /// Test hook for simulating an authenticated session without a live backend.
+  @visibleForTesting
+  static bool debugSignedIn = false;
+
+  @visibleForTesting
+  static void debugSetSignedIn(bool value) => debugSignedIn = value;
+
+  /// Whether the current process has an authenticated customer.
+  static bool get isSignedIn =>
+      debugSignedIn || (_client != null && _client!.auth.currentUser != null);
+
   /// Whether the app should use the live backend.
   static bool get isConfigured => AppConfig.isSupabaseConfigured;
 

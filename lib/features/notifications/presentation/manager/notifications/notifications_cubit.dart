@@ -135,6 +135,18 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     final generation = ++_loadGeneration;
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
+      if (_identity == null && SupabaseService.isReady) {
+        if (isClosed || generation != _loadGeneration) return;
+        emit(
+          state.copyWith(
+            notifications: const [],
+            isLoading: false,
+            signedOut: true,
+            clearError: true,
+          ),
+        );
+        return;
+      }
       var notifications = await _repository.listNotifications();
       if (markRead) {
         final unread = notifications

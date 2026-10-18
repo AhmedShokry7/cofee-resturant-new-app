@@ -9,6 +9,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
+import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_card.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/orders_tabs.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -31,8 +32,10 @@ class OrdersPageBody extends StatelessWidget {
               }
               if (state.signedOut) {
                 return _SignInRequired(
-                  onSignIn: () =>
-                      Navigator.of(context).pushNamed(AuthPage.routeName),
+                  onSignIn: () => Navigator.of(context).pushNamed(
+                    AuthPage.routeName,
+                    arguments: OrdersPage.routeName,
+                  ),
                   onRetry: () => context.read<OrdersCubit>().refresh(),
                 );
               }

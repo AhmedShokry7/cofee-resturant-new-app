@@ -20,7 +20,7 @@ import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
-import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_page.dart';
+import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';

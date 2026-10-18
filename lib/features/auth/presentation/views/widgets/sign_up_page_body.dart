@@ -54,7 +54,14 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
   Future<void> _onAuthenticated() async {
     await const SessionRepository().markAuthenticated();
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(MainPage.routeName);
+    final origin = ModalRoute.of(context)?.settings.arguments;
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    } else if (origin is String && origin.isNotEmpty) {
+      Navigator.of(context).pushReplacementNamed(origin);
+    } else {
+      Navigator.of(context).pushReplacementNamed(MainPage.routeName);
+    }
   }
 
   @override

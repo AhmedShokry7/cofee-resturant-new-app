@@ -9,6 +9,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/address_tile.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 
@@ -23,9 +24,11 @@ class AddressesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(S.myAddresses)),
-      body: const _AddressesView(),
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(title: Text(S.myAddresses)),
+        body: const _AddressesView(),
+      ),
     );
   }
 }

@@ -76,21 +76,35 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
     if (_effectiveUserId == null) return;
     final guestKey = storageKeyFor(null);
     if (guestKey == _key) return;
-    try {
-      final raw = await SharedPref.getValue(key: guestKey);
-      if (raw == null || raw.isEmpty) return;
-      final decoded = jsonDecode(raw);
-      if (decoded is! List || decoded.isEmpty) {
-        await SharedPref.setValue(key: guestKey, value: jsonEncode([]));
-        return;
-      }
-      final guestIds = {for (final item in decoded) item.toString()};
-      final owned = {...await loadLocalIds(), ...guestIds};
-      await _persistLocal(owned);
+
+    final guestRaw = await SharedPref.getValue(key: guestKey);
+    if (guestRaw == null || guestRaw.isEmpty) return;
+    final guestDecoded = jsonDecode(guestRaw);
+    if (guestDecoded is! List || guestDecoded.isEmpty) {
       await SharedPref.setValue(key: guestKey, value: jsonEncode([]));
-    } catch (_) {
-      // Best-effort: a failed move keeps the guest list where it is.
+      return;
     }
+    final guestIds = {for (final item in guestDecoded) item.toString()};
+
+    // Read the account slot directly so a read failure is not mistaken for an
+    // empty account; migration must abort rather than overwrite favorites.
+    final accountRaw = await SharedPref.getValue(key: _key);
+    final Set<String> accountIds;
+    if (accountRaw == null || accountRaw.isEmpty) {
+      accountIds = <String>{};
+    } else {
+      final accountDecoded = jsonDecode(accountRaw);
+      if (accountDecoded is! List) {
+        throw const FormatException('Invalid account favorites');
+      }
+      accountIds = {for (final item in accountDecoded) item.toString()};
+    }
+
+    final owned = {...accountIds, ...guestIds};
+    // Write the merged account list before clearing guest data. A write failure
+    // leaves the guest slot intact for retry.
+    await SharedPref.setValue(key: _key, value: jsonEncode(owned.toList()));
+    await SharedPref.setValue(key: guestKey, value: jsonEncode([]));
   }
 
   @override

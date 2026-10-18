@@ -266,7 +266,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       return;
     }
     if (latitude == null || longitude == null) {
-      emit(state.copyWith(addressOutOfZone: true, isResolvingZone: false, clearSelectedDeliveryZone: true));
+      // Addresses saved without coordinates keep the manually selected zone:
+      // the customer can still choose delivery, and the branch's configured
+      // zones apply.
+      emit(state.copyWith(addressOutOfZone: false, isResolvingZone: false));
       return;
     }
 
@@ -655,6 +658,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(orderError: S.cartEmpty));
       return false;
     }
+    // Order creation requires an authenticated customer. The check depends on
+    // the resolved user identity, not on whether Supabase has been initialised,
+    // so a guest is rejected in production and in tests alike.
+    if (_currentOrderUserId == null) {
+      emit(state.copyWith(orderError: S.signIn));
+      return false;
+    }
     // A shopper who asked for delivery but got "unavailable" must explicitly
     // choose pickup before checkout can proceed, so the order is never silently
     // placed as a pickup they did not pick.
@@ -750,12 +760,34 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       return true;
     } catch (error, stackTrace) {
       if (isClosed) return false;
-      emit(state.copyWith(isPlacingOrder: false, orderError: error.toString()));
+      // Keep diagnostics, but show a customer-facing message rather than a raw
+      // backend exception.
+      emit(
+        state.copyWith(
+          isPlacingOrder: false,
+          orderError: _customerFacingOrderError(error),
+        ),
+      );
       addError(error, stackTrace);
       return false;
     } finally {
       _orderSubmissionInProgress = false;
     }
+  }
+
+  /// Maps backend/technical failures to a customer-facing message while the
+  /// original error is still reported through [addError] for diagnostics.
+  String _customerFacingOrderError(Object error) {
+    final text = error.toString().toLowerCase();
+    if (text.contains('not authenticated') ||
+        text.contains('jwt') ||
+        text.contains('sign in')) {
+      return S.signIn;
+    }
+    if (text.contains('delivery') || text.contains('zone')) {
+      return S.deliveryUnavailable;
+    }
+    return S.orderFailed;
   }
 
   String? get _currentOrderUserId =>

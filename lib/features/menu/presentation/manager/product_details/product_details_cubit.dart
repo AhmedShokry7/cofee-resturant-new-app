@@ -60,6 +60,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         productId,
         branchId: branchId,
       );
+      if (isClosed) return;
       if (loaded == null) {
         emit(
           state.copyWith(
@@ -76,6 +77,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
       // group never begins in an arbitrary state.
       final selection = OptionSelection.defaultsFor(groups);
 
+      if (isClosed) return;
       emit(
         state.copyWith(
           product: loaded.product,
@@ -93,6 +95,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
       await _confirmPrice(selection);
       await _loadPairs(loaded.product);
     } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
       addError(error, stackTrace);
     }
@@ -136,6 +139,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         optionValueIds: selection.valueIds,
       );
       if (resolved == null) return;
+      if (isClosed) return;
 
       // The selection may have moved on while this was in flight, so only apply
       // the answer if it is still for the combination on screen.

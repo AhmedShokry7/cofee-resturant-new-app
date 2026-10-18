@@ -7,6 +7,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
@@ -45,21 +46,21 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(S.notifications)),
-      body: BlocBuilder<NotificationsCubit, NotificationsState>(
-        builder: (context, state) {
-          if (state.isLoading && state.notifications.isEmpty) {
-            return const NotificationsSkeleton();
-          }
-          if (state.signedOut) {
-            return EmptyState(
-              icon: Icons.notifications_outlined,
-              title: S.signInForNotifications,
-              subtitle: S.orderUpdatesAccount,
-            );
-          }
-          if (state.error != null && state.notifications.isEmpty) {
+    return BlocBuilder<NotificationsCubit, NotificationsState>(
+      builder: (context, state) {
+        if (state.signedOut) {
+          return const AuthRequiredView(
+            originRoute: NotificationsPage.routeName,
+          );
+        }
+        return Scaffold(
+          appBar: AppBar(title: Text(S.notifications)),
+          body: Builder(
+            builder: (context) {
+              if (state.isLoading && state.notifications.isEmpty) {
+                return const NotificationsSkeleton();
+              }
+              if (state.error != null && state.notifications.isEmpty) {
             return EmptyState(
               icon: Icons.notifications_outlined,
               title: S.couldNotLoadNotifications,
@@ -89,8 +90,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 )
                 .toList(),
           );
-        },
-      ),
+            }
+          ),
+        );
+      },
     );
   }
 }

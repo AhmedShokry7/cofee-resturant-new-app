@@ -90,9 +90,10 @@ class CartItem {
 
 @immutable
 class CartState {
-  const CartState({required this.items});
+  const CartState({required this.items, this.error});
 
   final List<CartItem> items;
+  final String? error;
 
   bool get isEmpty => items.isEmpty;
 

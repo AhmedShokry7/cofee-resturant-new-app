@@ -49,8 +49,8 @@ class DbImage extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
-        memCacheWidth: width?.toInt(),
-        memCacheHeight: height?.toInt(),
+        memCacheWidth: (width != null && width!.isFinite && width! > 0) ? width!.toInt() : null,
+        memCacheHeight: (height != null && height!.isFinite && height! > 0) ? height!.toInt() : null,
         // Shimmer fills the exact image bounds so the layout never jumps
         // when the photo arrives. The error/empty states stay static and
         // neutral on purpose: a missing picture is not loading.
@@ -66,8 +66,8 @@ class DbImage extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
-        cacheWidth: width?.toInt(),
-        cacheHeight: height?.toInt(),
+        cacheWidth: (width != null && width!.isFinite && width! > 0) ? width!.toInt() : null,
+        cacheHeight: (height != null && height!.isFinite && height! > 0) ? height!.toInt() : null,
         errorBuilder: (context, error, stackTrace) =>
             _UnavailableDbImage(iconSize: iconSize),
       );

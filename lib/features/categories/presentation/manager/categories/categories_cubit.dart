@@ -36,10 +36,12 @@ class CategoriesCubit extends Cubit<CategoriesState> {
   static const String bundlesSlug = 'bundles';
 
   Future<void> load() async {
+    if (isClosed) return;
     emit(state.copyWith(isLoading: true, error: null));
     try {
       final categories = await _repository.getCategories();
-      emit(state.copyWith(categories: categories, isLoading: false));
+      if (isClosed) return;
+    emit(state.copyWith(categories: categories, isLoading: false));
 
       final results = await Future.wait([
         _repository.getProducts(branchId: branchId, limit: 60),
@@ -47,6 +49,8 @@ class CategoriesCubit extends Cubit<CategoriesState> {
       ]);
       final products = results[0] as List<ProductModel>;
       final bundles = results[1] as List<BundleModel>;
+
+      if (isClosed) return;
 
       // Keep the selected tab valid. The old code did
       // `index.clamp(0, categories.length - 1)`, which throws when the list is
@@ -64,6 +68,7 @@ class CategoriesCubit extends Cubit<CategoriesState> {
         ),
       );
     } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
       addError(error, stackTrace);
     }

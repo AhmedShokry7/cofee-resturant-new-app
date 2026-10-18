@@ -69,10 +69,19 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
 
   final SupabaseClient _client;
 
+  void _requireSignedIn() {
+    if (_client.auth.currentUser == null) {
+      throw SaveCardException(
+        S.cardSaveNotAllowed,
+        failure: SaveCardFailure.notSignedIn,
+      );
+    }
+  }
+
   @override
   Future<List<SavedCardModel>> listSavedCards() async {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return const [];
+    _requireSignedIn();
+    final userId = _client.auth.currentUser!.id;
     final rows = await _client
         .from('saved_cards')
         .select()
@@ -93,6 +102,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     required String cvv,
     required String holderName,
   }) async {
+    _requireSignedIn();
     // A non-2xx invoke throws rather than resolving, and its `details` is the
     // decoded body — so the function's own error code is recovered from there.
     // Without this a declined card would read as saved.
@@ -214,6 +224,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
 
   @override
   Future<void> deleteSavedCard(String id) async {
+    _requireSignedIn();
     await _client.functions.invoke(
       'tap-delete-card',
       body: {'cardId': id},
@@ -222,6 +233,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
 
   @override
   Future<void> setDefaultCard(String id) async {
+    _requireSignedIn();
     await _client.functions.invoke(
       'set_default_card',
       body: {'cardId': id},

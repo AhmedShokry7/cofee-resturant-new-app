@@ -9,6 +9,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/saved_card_tile.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 
 class SavedCardsPage extends StatelessWidget {
   const SavedCardsPage({super.key});
@@ -17,9 +18,10 @@ class SavedCardsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(S.paymentMethod)),
-      body: BlocBuilder<SavedCardsCubit, SavedCardsState>(
+    return AuthGuard(
+      child: Scaffold(
+        appBar: AppBar(title: Text(S.paymentMethod)),
+        body: BlocBuilder<SavedCardsCubit, SavedCardsState>(
         builder: (context, state) {
           return ListView(
             padding: EdgeInsets.fromLTRB(
@@ -71,6 +73,7 @@ class SavedCardsPage extends StatelessWidget {
           );
         },
       ),
+    ),
     );
   }
 }
