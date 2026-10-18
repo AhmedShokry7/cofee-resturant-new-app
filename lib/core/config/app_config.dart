@@ -40,6 +40,12 @@ class AppConfig {
   static const String passwordRecoveryRedirect =
       String.fromEnvironment('PASSWORD_RECOVERY_REDIRECT');
 
+  /// Web OAuth client ID used as the Google Sign-In server client ID on
+  /// Android. Supplied via --dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>.
+  /// Leave empty to rely on google-services.json / Android manifest config.
+  static const String googleServerClientId =
+      String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+
   /// Shown if public configuration was intentionally cleared. Never includes
   /// a key value.
   static String get missingConfigurationMessage =>

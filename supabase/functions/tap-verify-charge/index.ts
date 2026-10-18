@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     chargeId,
     status: tapStatus,
     verified,
-    orderPaymentStatus,
+    orderPaymentStatus: targetPaymentStatus,
   }), { status: 200, headers: { "Content-Type": "application/json" } });
 });
 

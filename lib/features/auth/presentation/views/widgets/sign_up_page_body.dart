@@ -153,7 +153,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         onPressed: _submit,
                       ),
                       SizedBox(height: AuthSpacings.buttonGap.h),
-                      AuthSocialLogin(label: S.orSignUpWith),
+                      AuthSocialLogin(label: S.orSignUpWith, isLoading: isLoading),
                       SizedBox(height: AuthSpacings.sectionGap.h),
                       AuthSwitchPrompt(
                         question: S.alreadyHaveAccount,

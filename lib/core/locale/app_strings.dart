@@ -540,6 +540,8 @@ static String get cardHolderName =>
       : 'Discover your favorite coffee and make every moment a little more special, one cup at a time.';
   static String get continueWithPhone =>
       _ar ? 'المتابعة برقم الهاتف' : 'Continue with phone number';
+  static String get continueWithGoogle =>
+      _ar ? 'المتابعة بحساب جوجل' : 'Continue with Google';
   static String get forgotPasswordQ =>
       _ar ? 'نسيت كلمة المرور؟' : 'Forget your password?';
   static String get emailRequired =>

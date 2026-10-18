@@ -1,5 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
 
@@ -8,6 +11,7 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 // The Supabase SDK ships its own AuthUser and AuthException. This layer deals
 // in the app's domain types, so the SDK's copies are hidden to keep every
 // reference unambiguous.
@@ -322,9 +326,60 @@ Future<void> signOut() async {
   // Not implemented. Each says so plainly instead of faking a success.
   // -------------------------------------------------------------------------
 
+  static bool _googleInitialized = false;
+  static String? _googleNonce;
+
   @override
-  Future<AuthUser> signInWithGoogle() =>
-      Future.error(AuthException(_socialMessage('Google')));
+  Future<AuthUser> signInWithGoogle() async {
+    _guard;
+    await _ensureGoogleInitialized();
+    GoogleSignInAccount account;
+    try {
+      account = await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (error) {
+      debugPrint('GoogleSignInException: code=${error.code.name} desc=${error.description}');
+      if (error.code == GoogleSignInExceptionCode.canceled) {
+        throw const AuthException('google_sign_in_canceled');
+      }
+      throw AuthException(
+        'Google sign-in failed: ${error.description ?? error.code.name}',
+      );
+    }
+    final idToken = account.authentication.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      throw const AuthException('Google sign-in failed: missing ID token.');
+    }
+    final response = await _client.auth.signInWithIdToken(
+      provider: OAuthProvider.google,
+      idToken: idToken,
+      nonce: _googleNonce,
+    );
+    final user = response.user;
+    if (user == null) {
+      throw const AuthException('Google sign-in failed: no user returned.');
+    }
+    final domain = _toDomain(user);
+    await _cacheProfile(domain);
+    return domain;
+  }
+
+  Future<void> _ensureGoogleInitialized() async {
+    if (_googleInitialized) return;
+    _googleNonce = _generateNonce();
+    await GoogleSignIn.instance.initialize(
+      serverClientId: AppConfig.googleServerClientId.isEmpty
+          ? null
+          : AppConfig.googleServerClientId,
+      nonce: _googleNonce,
+    );
+    _googleInitialized = true;
+  }
+
+  static String _generateNonce() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  }
 
   @override
   Future<AuthUser> signInWithFacebook() =>

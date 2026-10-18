@@ -149,7 +149,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                         onPressed: _submit,
                       ),
                       SizedBox(height: AuthSpacings.buttonGap.h),
-                      const AuthSocialLogin(),
+                      AuthSocialLogin(isLoading: isLoading),
                       SizedBox(height: AuthSpacings.sectionGap.h),
                       Center(
                         child: ConstrainedBox(

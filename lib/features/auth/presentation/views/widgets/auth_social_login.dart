@@ -10,9 +10,10 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 
 class AuthSocialLogin extends StatelessWidget {
-  const AuthSocialLogin({super.key, this.label});
+  const AuthSocialLogin({super.key, this.label, this.isLoading = false});
 
   final String? label;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
@@ -38,16 +39,19 @@ class AuthSocialLogin extends StatelessWidget {
           children: [
             _SocialButton(
               icon: HugeIcons.strokeRoundedGoogle,
+              isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithGoogle(),
             ),
             SizedBox(width: SpacingTokens.lg.w),
             _SocialButton(
               icon: HugeIcons.strokeRoundedFacebook01,
+              isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithFacebook(),
             ),
             SizedBox(width: SpacingTokens.lg.w),
             _SocialButton(
               icon: HugeIcons.strokeRoundedApple,
+              isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithApple(),
             ),
           ],
@@ -58,16 +62,21 @@ class AuthSocialLogin extends StatelessWidget {
 }
 
 class _SocialButton extends StatelessWidget {
-  const _SocialButton({required this.icon, required this.onTap});
+  const _SocialButton({
+    required this.icon,
+    required this.onTap,
+    this.isLoading = false,
+  });
 
   final IconData icon;
   final VoidCallback onTap;
+  final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
     final size = 56.w;
     return GestureDetector(
-      onTap: onTap,
+      onTap: isLoading ? null : onTap,
       child: Container(
         height: size,
         width: size,

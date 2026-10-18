@@ -24,7 +24,7 @@ class AppFonts {
     double size,
   ) => base(context).copyWith(
     fontWeight: weight,
-    fontSize: _responsiveFontSize(size, context).sp,
+    fontSize: _responsiveFontSize(size, context).sp.clamp(1.0, 1000.0),
   );
 
   // ===== Regular (400) =====

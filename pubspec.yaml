@@ -57,6 +57,7 @@ dependencies:
   cached_network_image: ^4.0.4
   flutter_svg: ^2.3.0
   card_flutter: ^1.0.23
+  google_sign_in: ^7.2.0
 
 dev_dependencies:
   flutter_test:

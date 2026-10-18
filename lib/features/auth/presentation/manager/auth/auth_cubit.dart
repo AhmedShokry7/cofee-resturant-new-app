@@ -13,22 +13,42 @@ class AuthCubit extends Cubit<AuthState> {
 
   final AuthRepository _repository;
 
-  Future<void> signIn({required String email, required String password}) =>
-      _authenticate(
-        () => _repository.signIn(email: email, password: password),
-      );
+  Future<void> signIn({required String email, required String password}) async {
+    if (state is AuthLoading) return;
+    await _authenticate(
+      () => _repository.signIn(email: email, password: password),
+    );
+  }
 
   Future<void> signUp({
     required String name,
     required String email,
     required String password,
-  }) =>
-      _authenticate(
-        () => _repository.signUp(name: name, email: email, password: password),
-      );
+  }) async {
+    if (state is AuthLoading) return;
+    await _authenticate(
+      () => _repository.signUp(name: name, email: email, password: password),
+    );
+  }
 
-  Future<void> signInWithGoogle() =>
-      _authenticate(_repository.signInWithGoogle);
+  Future<void> signInWithGoogle() async {
+    if (state is AuthLoading) return;
+    emit(AuthLoading());
+    try {
+      final user = await _repository.signInWithGoogle();
+      emit(AuthSuccess(user));
+    } on AuthException catch (error) {
+      debugPrint('AuthException: ${error.message}');
+      if (error.message == 'google_sign_in_canceled') {
+        emit(AuthInitial());
+        return;
+      }
+      emit(AuthFailure(_messageFor(error.message)));
+    } catch (error, stackTrace) {
+      debugPrint('Unexpected Google sign-in error: $error\n$stackTrace');
+      emit(AuthFailure(S.authUnexpected));
+    }
+  }
 
   Future<void> signInWithFacebook() =>
       _authenticate(_repository.signInWithFacebook);
@@ -42,18 +62,14 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> _authenticate(Future<AuthUser> Function() action) async {
     emit(AuthLoading());
-    print('[Auth] Starting authentication action...');
     try {
       final user = await action();
       emit(AuthSuccess(user));
-      print('[Auth] ✅ Authentication successful!');
     } on AuthException catch (error) {
-      print('[Auth] ❌ AuthException caught: ${error.message}');
       // The provider's English never reaches the customer; each known cause
       // maps to one message in the app's current language.
       emit(AuthFailure(_messageFor(error.message)));
-    } catch (exception) {
-      print('[Auth] ❌ Unexpected exception caught: $exception');
+    } catch (_) {
       emit(AuthFailure(S.authUnexpected));
     }
   }
