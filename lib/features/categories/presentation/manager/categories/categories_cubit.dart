@@ -125,8 +125,6 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     final names = {
       'bundles',
       S.bundles.trim().toLowerCase(),
-      category.nameEn?.trim().toLowerCase() ?? '',
-      category.nameAr?.trim().toLowerCase() ?? '',
     };
     return names.contains(label);
   }

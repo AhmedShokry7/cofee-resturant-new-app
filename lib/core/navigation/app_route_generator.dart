@@ -8,6 +8,7 @@ import 'package:new_coffee/features/home/presentation/views/banner_details_page.
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
+import 'package:new_coffee/features/orders/data/model/order_group.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/order_details_page.dart';
@@ -39,6 +40,14 @@ class AppRouteGenerator {
       if (arguments is OrderItemModel) {
         return MaterialPageRoute(
           builder: (context) => OrderDetailsPage(order: arguments),
+        );
+      }
+      if (arguments is OrderGroup) {
+        return MaterialPageRoute(
+          builder: (context) => OrderDetailsPage(
+            order: arguments.header,
+            lines: arguments.lines,
+          ),
         );
       }
     }

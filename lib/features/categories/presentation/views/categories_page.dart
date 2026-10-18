@@ -81,7 +81,10 @@ class CategoriesPage extends StatelessWidget {
                       subtitle: S.productsIn(category.label),
                     );
                   }
-                  return ProductsGridView(products: products);
+                   return ProductsGridView(
+                     key: ValueKey(category.id),
+                     products: products,
+                   );
                 },
               ),
             ),

@@ -24,7 +24,7 @@ class OrderCard extends StatelessWidget {
   void _openDetails(BuildContext context) {
     Navigator.of(context).pushNamed(
       OrderDetailsPage.routeName,
-      arguments: order.header,
+      arguments: order,
     );
   }
 

@@ -18,17 +18,23 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   /// was built to charge a saved card instead.
   final Future<String?> Function()? sourceTokenProvider;
 
-  /// The order being paid. Set once the order has been placed.
+  /// The order or subscription being paid. Set once it has been created.
   String? _orderId;
+  String? _subscriptionId;
 
   /// When set, [createCharge] charges this saved card instead of asking for a
-  /// token — the server mints a single-use token from the card id, so no card
+  /// token -- the server mints a single-use token from the card id, so no card
   /// number crosses the client a second time.
   String? _savedCardId;
 
-  /// Binds the cubit to an order and, optionally, a saved card to charge.
-  void start({required String orderId, String? savedCardId}) {
+  /// Binds the cubit to an order/subscription and, optionally, a saved card to charge.
+  void start({
+    String? orderId,
+    String? subscriptionId,
+    String? savedCardId,
+  }) {
     _orderId = orderId;
+    _subscriptionId = subscriptionId;
     _savedCardId = savedCardId;
   }
 
@@ -48,7 +54,9 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   Future<void> createCharge() async {
     if (state.isBusy) return;
     final orderId = _orderId;
-    if (orderId == null || orderId.isEmpty) return;
+    final subscriptionId = _subscriptionId;
+    final targetId = subscriptionId ?? orderId;
+    if (targetId == null || targetId.isEmpty) return;
 
     // A saved card needs no token: the server mints one from the card id.
     final savedCard = _savedCardId;
@@ -82,11 +90,17 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     emit(state.copyWith(status: CardPaymentStatus.creatingCharge));
 
     try {
-      final result = await repository.createCharge(
-        orderId: orderId,
-        idempotencyKey: orderId,
-        sourceToken: token,
-      );
+      final result = subscriptionId != null
+          ? await repository.createSubscriptionCharge(
+              subscriptionId: subscriptionId,
+              idempotencyKey: subscriptionId,
+              sourceToken: token,
+            )
+          : await repository.createCharge(
+              orderId: orderId!,
+              idempotencyKey: orderId,
+              sourceToken: token,
+            );
       if (isClosed) return;
 
       emit(state.copyWith(
@@ -143,7 +157,9 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   Future<void> createChargeFromSavedCard(String savedCardId) async {
     if (state.isBusy) return;
     final orderId = _orderId;
-    if (orderId == null || orderId.isEmpty) return;
+    final subscriptionId = _subscriptionId;
+    final targetId = subscriptionId ?? orderId;
+    if (targetId == null || targetId.isEmpty) return;
     emit(
       state.copyWith(
         status: CardPaymentStatus.creatingCharge,
@@ -151,11 +167,17 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       ),
     );
     try {
-      final result = await repository.createCharge(
-        orderId: orderId,
-        idempotencyKey: orderId,
-        savedCardId: savedCardId,
-      );
+      final result = subscriptionId != null
+          ? await repository.createSubscriptionCharge(
+              subscriptionId: subscriptionId,
+              idempotencyKey: subscriptionId,
+              savedCardId: savedCardId,
+            )
+          : await repository.createCharge(
+              orderId: orderId!,
+              idempotencyKey: orderId,
+              savedCardId: savedCardId,
+            );
       if (isClosed) return;
       emit(
         state.copyWith(

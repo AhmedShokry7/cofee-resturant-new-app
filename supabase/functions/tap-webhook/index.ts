@@ -84,11 +84,13 @@ Deno.serve(async (req) => {
     },
   ).catch(() => undefined);
 
-  // Find order id from transaction.
+  // Find target from transaction.
   const txRows = await serviceFetch(
-    `/payment_transactions?select=order_id&provider=eq.tap&provider_reference=eq.${encodeURIComponent(id)}&limit=1`,
+    `/payment_transactions?select=order_id,subscription_id&provider=eq.tap&provider_reference=eq.${encodeURIComponent(id)}&limit=1`,
   );
-  const orderId = Array.isArray(txRows) && txRows[0] ? txRows[0].order_id : null;
+  const tx = Array.isArray(txRows) && txRows[0] ? txRows[0] : null;
+  const orderId = tx?.order_id ?? null;
+  const subscriptionId = tx?.subscription_id ?? null;
   if (orderId) {
     const orderPaymentStatus = verified ? "paid" : (newStatus === "failed" ? "failed" : "pending");
     await serviceFetch(
@@ -98,6 +100,15 @@ Deno.serve(async (req) => {
         body: JSON.stringify({ payment_status: orderPaymentStatus }),
       },
     ).catch(() => undefined);
+  }
+  if (verified && subscriptionId) {
+    await serviceFetch("/rpc/activate_subscription", {
+      method: "POST",
+      body: JSON.stringify({
+        p_subscription_id: subscriptionId,
+        p_payment_reference: id,
+      }),
+    }).catch(() => undefined);
   }
 
   return new Response(JSON.stringify({ received: true }), {

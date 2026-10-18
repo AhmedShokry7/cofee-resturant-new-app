@@ -17,6 +17,8 @@ import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
@@ -255,6 +257,18 @@ class _SettingsPageState extends State<SettingsPage> {
               label: S.loyaltyPoints,
               onTap: () =>
                   Navigator.of(context).pushNamed(LoyaltyPage.routeName),
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedPackage,
+              label: AppLocale.instance.isArabic ? '\u0628\u0627\u0642\u0627\u062A \u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u0642\u0647\u0648\u0629' : 'Coffee subscription plans',
+              onTap: () =>
+                  Navigator.of(context).pushNamed(SubscriptionPlansPage.routeName),
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedCreditCard,
+              label: AppLocale.instance.isArabic ? '\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A\u064A' : 'My subscriptions',
+              onTap: () =>
+                  Navigator.of(context).pushNamed(SubscriptionDetailsPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedNotification01,

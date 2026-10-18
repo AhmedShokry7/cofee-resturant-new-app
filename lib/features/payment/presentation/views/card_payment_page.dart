@@ -8,13 +8,15 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class CardPaymentPage extends StatefulWidget {
   const CardPaymentPage({
     super.key,
-    required this.orderId,
+    this.orderId = '',
+    this.subscriptionId,
     required this.idempotencyKey,
     required this.publicKey,
     required this.sdkConfiguration,
@@ -22,6 +24,7 @@ class CardPaymentPage extends StatefulWidget {
   });
 
   final String orderId;
+  final String? subscriptionId;
   final String idempotencyKey;
   final String publicKey;
   final Map<String, dynamic> sdkConfiguration;
@@ -48,11 +51,12 @@ class _CardPaymentPageState extends State<CardPaymentPage> {
     };
     config['scope'] = 'Token';
     config['purpose'] = 'Charge';
+    final targetId = widget.subscriptionId ?? widget.orderId;
     config['order'] = {
-      'id': widget.orderId,
+      'id': targetId,
       'currency': 'SAR',
       'amount': 1.0,
-      'reference': widget.orderId,
+      'reference': targetId,
       'description': '',
     };
     config['customer'] = {
@@ -133,10 +137,17 @@ class _CardPaymentPageState extends State<CardPaymentPage> {
     if (!mounted) return;
 
     if (result == 'succeeded') {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        PaymentSuccessPage.routeName,
-        (route) => route.isFirst,
-      );
+      if (widget.subscriptionId != null && widget.subscriptionId!.isNotEmpty) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          SubscriptionDetailsPage.routeName,
+          (route) => route.isFirst,
+        );
+      } else {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          PaymentSuccessPage.routeName,
+          (route) => route.isFirst,
+        );
+      }
     } else if (result == 'pending') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(S.paymentProcessing)),
@@ -151,7 +162,11 @@ class _CardPaymentPageState extends State<CardPaymentPage> {
   @override
   Widget build(BuildContext context) {
     final cubit = context.read<CardPaymentCubit>();
-    cubit.start(orderId: widget.orderId, savedCardId: widget.savedCardId);
+    cubit.start(
+      orderId: widget.orderId.isEmpty ? null : widget.orderId,
+      subscriptionId: widget.subscriptionId,
+      savedCardId: widget.savedCardId,
+    );
     return BlocProvider.value(
       value: cubit,
       child: _CardPaymentView(

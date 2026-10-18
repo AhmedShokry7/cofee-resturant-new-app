@@ -32,17 +32,27 @@ Deno.serve(async (req) => {
 
   // Ensure the charge belongs to this user.
   const txRows = await serviceFetch(
-    `/payment_transactions?select=id,order_id,status&provider=eq.tap&provider_reference=eq.${encodeURIComponent(chargeId)}`,
+    `/payment_transactions?select=id,order_id,subscription_id,status&provider=eq.tap&provider_reference=eq.${encodeURIComponent(chargeId)}`,
   );
   const tx = Array.isArray(txRows) ? txRows[0] : null;
   if (!tx) {
     return new Response(JSON.stringify({ error: "Transaction not found" }), { status: 404 });
   }
-  const orderRows = await serviceFetch(
-    `/orders?select=id,user_id& id=eq.${encodeURIComponent(tx.order_id)}`.replace(" ", ""),
-  );
-  const order = Array.isArray(orderRows) ? orderRows[0] : null;
-  if (!order || order.user_id !== user.id) {
+  let ownerId = null;
+  if (tx.order_id) {
+    const orderRows = await serviceFetch(
+      `/orders?select=id,user_id&id=eq.${encodeURIComponent(tx.order_id)}`,
+    );
+    const order = Array.isArray(orderRows) ? orderRows[0] : null;
+    ownerId = order?.user_id ?? null;
+  } else if (tx.subscription_id) {
+    const subRows = await serviceFetch(
+      `/subscriptions?select=id,user_id&id=eq.${encodeURIComponent(tx.subscription_id)}`,
+    );
+    const sub = Array.isArray(subRows) ? subRows[0] : null;
+    ownerId = sub?.user_id ?? null;
+  }
+  if (ownerId !== user.id) {
     return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403 });
   }
 
@@ -73,15 +83,26 @@ Deno.serve(async (req) => {
     },
   ).catch(() => undefined);
 
-  // Update order payment status.
-  const orderPaymentStatus = verified ? "paid" : (newStatus === "failed" ? "failed" : "pending");
-  await serviceFetch(
-    `/orders?id=eq.${encodeURIComponent(tx.order_id)}`,
-    {
-      method: "PATCH",
-      body: JSON.stringify({ payment_status: orderPaymentStatus }),
-    },
-  ).catch(() => undefined);
+  // Update target payment status.
+  const targetPaymentStatus = verified ? "paid" : (newStatus === "failed" ? "failed" : "pending");
+  if (tx.order_id) {
+    await serviceFetch(
+      `/orders?id=eq.${encodeURIComponent(tx.order_id)}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ payment_status: targetPaymentStatus }),
+      },
+    ).catch(() => undefined);
+  }
+  if (verified && tx.subscription_id) {
+    await serviceFetch("/rpc/activate_subscription", {
+      method: "POST",
+      body: JSON.stringify({
+        p_subscription_id: tx.subscription_id,
+        p_payment_reference: chargeId,
+      }),
+    }).catch(() => undefined);
+  }
 
   // Persist saved card if Tap returned one and save_card was requested.
   const savedCard = charge?.card;

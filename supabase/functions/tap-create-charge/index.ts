@@ -19,13 +19,17 @@ Deno.serve(async (req) => {
   }
 
   const orderId = String(body?.orderId ?? "").trim();
+  const subscriptionId = String(body?.subscriptionId ?? "").trim();
   const sourceToken = String(body?.sourceToken ?? "").trim();
   const savedCardId = String(body?.savedCardId ?? "").trim();
   const idempotencyKey = String(body?.idempotencyKey ?? "").trim();
   const saveCard = body?.saveCard === true;
 
-  if (!orderId) {
-    return new Response(JSON.stringify({ error: "orderId is required" }), { status: 400 });
+  if (!orderId && !subscriptionId) {
+    return new Response(JSON.stringify({ error: "orderId or subscriptionId is required" }), { status: 400 });
+  }
+  if (orderId && subscriptionId) {
+    return new Response(JSON.stringify({ error: "Provide only one target" }), { status: 400 });
   }
   if (!sourceToken && !savedCardId) {
     return new Response(JSON.stringify({ error: "sourceToken or savedCardId is required" }), { status: 400 });
@@ -34,31 +38,44 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ error: "idempotencyKey is required" }), { status: 400 });
   }
 
-  // Load and validate the order.
-  const orders = await serviceFetch(
-    `/orders?select=id,user_id,grand_total,currency_code,status,payment_status,branch_id&id=eq.${encodeURIComponent(orderId)}`,
-  );
-  const order = Array.isArray(orders) ? orders[0] : null;
-  if (!order || order.user_id !== user.id) {
-    return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
-  }
-  if (order.payment_status === "paid") {
-    return new Response(JSON.stringify({ error: "Order already paid" }), { status: 409 });
+  // Load and validate the payment target.
+  let order = null;
+  let subscription = null;
+  if (orderId) {
+    const orders = await serviceFetch(
+      `/orders?select=id,user_id,grand_total,currency_code,status,payment_status,branch_id&id=eq.${encodeURIComponent(orderId)}`,
+    );
+    order = Array.isArray(orders) ? orders[0] : null;
+    if (!order || order.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: "Order not found" }), { status: 404 });
+    }
+    if (order.payment_status === "paid") {
+      return new Response(JSON.stringify({ error: "Order already paid" }), { status: 409 });
+    }
+  } else {
+    const subscriptions = await serviceFetch(
+      `/subscriptions?select=id,user_id,status,plan:plans(price,currency_code)&id=eq.${encodeURIComponent(subscriptionId)}`,
+    );
+    subscription = Array.isArray(subscriptions) ? subscriptions[0] : null;
+    if (!subscription || subscription.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: "Subscription not found" }), { status: 404 });
+    }
+    if (subscription.status !== "pending_payment") {
+      return new Response(JSON.stringify({ error: "Subscription is not pending payment" }), { status: 409 });
+    }
   }
 
-  // Idempotency: reuse an existing attempt with the same key.
-  const existingAttempts = await serviceFetch(
-    `/payment_attempts?select=id,order_id,status&idempotency_key=eq.${encodeURIComponent(idempotencyKey)}&order_id=eq.${encodeURIComponent(orderId)}`,
-  );
-  if (Array.isArray(existingAttempts) && existingAttempts.length > 0) {
-    const existingTx = await serviceFetch(
-      `/payment_transactions?select=provider_reference,status,amount,currency_code&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`,
-    );
-    const tx = Array.isArray(existingTx) ? existingTx[0] : null;
+  // Idempotency: reuse an existing transaction with the same key.
+  const existingTxQuery = orderId
+    ? `/payment_transactions?select=provider_reference,status,amount,currency_code&order_id=eq.${encodeURIComponent(orderId)}&order=created_at.desc&limit=1`
+    : `/payment_transactions?select=provider_reference,status,amount,currency_code&subscription_id=eq.${encodeURIComponent(subscriptionId)}&order=created_at.desc&limit=1`;
+  const existingTxRows = await serviceFetch(existingTxQuery);
+  const existingTx = Array.isArray(existingTxRows) ? existingTxRows[0] : null;
+  if (existingTx?.provider_reference) {
     return new Response(JSON.stringify({
       reused: true,
-      chargeId: tx?.provider_reference ?? null,
-      status: tx?.status ?? "pending",
+      chargeId: existingTx.provider_reference,
+      status: existingTx.status ?? "pending",
     }), { status: 200 });
   }
 
@@ -97,10 +114,10 @@ Deno.serve(async (req) => {
     tapCustomerId = "";
   }
 
-  const amount = Number(order.grand_total);
-  const currency = order.currency_code ?? "SAR";
+  const amount = orderId ? Number(order.grand_total) : Number(subscription?.plan?.price ?? 0);
+  const currency = orderId ? (order.currency_code ?? "SAR") : (subscription?.plan?.currency_code ?? "SAR");
   if (!Number.isFinite(amount) || amount <= 0) {
-    return new Response(JSON.stringify({ error: "Invalid order amount" }), { status: 400 });
+    return new Response(JSON.stringify({ error: "Invalid payment amount" }), { status: 400 });
   }
 
   const chargePayload: any = {
@@ -162,7 +179,7 @@ Deno.serve(async (req) => {
   let methodId: string | null = null;
   const methods = await serviceFetch("/payment_methods?select=id&code=eq.card&limit=1");
   if (Array.isArray(methods) && methods.length > 0) methodId = methods[0].id;
-  if (methodId) {
+  if (methodId && orderId) {
     await serviceFetch("/payment_attempts", {
       method: "POST",
       body: JSON.stringify({
@@ -179,7 +196,8 @@ Deno.serve(async (req) => {
   await serviceFetch("/payment_transactions", {
     method: "POST",
     body: JSON.stringify({
-      order_id: orderId,
+      ...(orderId ? { order_id: orderId } : {}),
+      ...(subscriptionId ? { subscription_id: subscriptionId } : {}),
       provider: "tap",
       provider_reference: chargeId,
       amount,

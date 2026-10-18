@@ -20,11 +20,12 @@ import 'package:new_coffee/shared/widgets/price_label.dart';
 /// Full order data (big-app pattern): tapping an order opens its details,
 /// and tracking/review branch out from here.
 class OrderDetailsPage extends StatelessWidget {
-  const OrderDetailsPage({super.key, required this.order});
+  const OrderDetailsPage({super.key, required this.order, this.lines});
 
   static const routeName = "orderDetailsRoute";
 
   final OrderItemModel order;
+  final List<OrderItemModel>? lines;
 
   void _onAction(BuildContext context) {
     if (order.status == OrderStatus.active) {
@@ -53,14 +54,19 @@ class OrderDetailsPage extends StatelessWidget {
       fresh = null;
     }
     final current = fresh ?? order;
-    return _DetailsScaffold(order: current, onAction: _onAction);
+    return _DetailsScaffold(order: current, lines: lines, onAction: _onAction);
   }
 }
 
 class _DetailsScaffold extends StatelessWidget {
-  const _DetailsScaffold({required this.order, required this.onAction});
+  const _DetailsScaffold({
+    required this.order,
+    this.lines,
+    required this.onAction,
+  });
 
   final OrderItemModel order;
+  final List<OrderItemModel>? lines;
   final void Function(BuildContext context) onAction;
 
   Color _statusColor(BuildContext context) {
@@ -76,7 +82,24 @@ class _DetailsScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final total = order.chargedTotal;
+    final allLines = lines ??
+        (() {
+          try {
+            final orders = context.read<OrdersCubit>().state.orders;
+            final found = orders
+                .where(
+                  (o) =>
+                      o.orderId ==
+                      (order.orderId.isNotEmpty ? order.orderId : order.id),
+                )
+                .toList();
+            if (found.isNotEmpty) return found;
+          } catch (_) {}
+          return <OrderItemModel>[order];
+        })();
+    final totalItems = allLines.fold<int>(0, (sum, line) => sum + line.quantity);
+    final total = order.grandTotal ??
+        allLines.fold<double>(0.0, (sum, line) => sum + line.chargedTotal);
     return Scaffold(
       appBar: AppBar(title: Text(S.orderDetails)),
       body: ListView(
@@ -119,78 +142,87 @@ class _DetailsScaffold extends StatelessWidget {
               borderRadius: BorderRadius.circular(16.r),
               border: Border.all(color: AppColor.borderColor),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12.r),
-                  child: SizedBox(
-                    height: 72.w,
-                    width: 72.w,
-                    child: ProductImageView(product: order.product),
-                  ),
-                ),
-                SizedBox(width: SpacingTokens.md.w),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        order.product.category,
-                        style: AppFonts.regular12(context)
-                            .copyWith(color: AppColor.greyColor),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        order.product.name,
-                        style: AppFonts.semiBold16(context),
-                      ),
-                      SizedBox(height: 4.h),
-                      Text(
-                        S.quantityLabel(order.quantity),
-                        style: AppFonts.regular14(context)
-                            .copyWith(color: AppColor.greyColor),
-                      ),
-                    ],
-                  ),
-                ),
-                PriceLabel(
-                  amount: total,
-                  style: AppFonts.semiBold16(context)
-                      .copyWith(color: AppColor.primaryColor),
-                  iconSize: 16,
-                  iconColor: AppColor.primaryColor,
-                ),
-                // Per-line coupon attribution, when the server could break
-                // the discount down. Only lines that actually got a share are
-                // shown, so a normal coupon costs no extra space.
-                if (order.lineDiscountTotal != null &&
-                    order.lineDiscountTotal! > 0) ...[
-                  SizedBox(height: SpacingTokens.xs.h),
+                for (var i = 0; i < allLines.length; i++) ...[
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Icon(
-                        HugeIcons.strokeRoundedDiscount01,
-                        size: 12.w,
-                        color: AppColor.primaryColor,
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12.r),
+                        child: SizedBox(
+                          height: 72.w,
+                          width: 72.w,
+                          child: ProductImageView(product: allLines[i].product),
+                        ),
                       ),
-                      SizedBox(width: SpacingTokens.xs.w),
-                      Text(
-                        S.lineDiscount,
-                        style: AppFonts.regular12(context)
-                            .copyWith(color: AppColor.primaryColor),
+                      SizedBox(width: SpacingTokens.md.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              allLines[i].product.category,
+                              style: AppFonts.regular12(context)
+                                  .copyWith(color: AppColor.greyColor),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              allLines[i].product.name,
+                              style: AppFonts.semiBold16(context),
+                            ),
+                            SizedBox(height: 4.h),
+                            Text(
+                              S.quantityLabel(allLines[i].quantity),
+                              style: AppFonts.regular14(context)
+                                  .copyWith(color: AppColor.greyColor),
+                            ),
+                          ],
+                        ),
                       ),
-                      SizedBox(width: SpacingTokens.xs.w),
                       PriceLabel(
-                        amount: order.lineDiscountTotal!,
-                        prefix: '-',
-                        style: AppFonts.regular12(context)
+                        amount: allLines[i].chargedTotal,
+                        style: AppFonts.semiBold16(context)
                             .copyWith(color: AppColor.primaryColor),
-                        iconSize: 11,
+                        iconSize: 16,
                         iconColor: AppColor.primaryColor,
                       ),
                     ],
                   ),
+                  if (allLines[i].lineDiscountTotal != null &&
+                      allLines[i].lineDiscountTotal! > 0) ...[
+                    SizedBox(height: SpacingTokens.xs.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Icon(
+                          HugeIcons.strokeRoundedDiscount01,
+                          size: 12.w,
+                          color: AppColor.primaryColor,
+                        ),
+                        SizedBox(width: SpacingTokens.xs.w),
+                        Text(
+                          S.lineDiscount,
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.primaryColor),
+                        ),
+                        SizedBox(width: SpacingTokens.xs.w),
+                        PriceLabel(
+                          amount: allLines[i].lineDiscountTotal!,
+                          prefix: '-',
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.primaryColor),
+                          iconSize: 11,
+                          iconColor: AppColor.primaryColor,
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (i != allLines.length - 1)
+                    Padding(
+                      padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
+                      child: Divider(color: AppColor.borderColor),
+                    ),
                 ],
               ],
             ),
@@ -233,15 +265,15 @@ class _DetailsScaffold extends StatelessWidget {
           ],
           LabeledValueRow(
             label: S.itemsCount,
-            value: "${order.quantity}",
+            value: "$totalItems",
             valueSize: 16,
             labelExpanded: true,
           ),
-          if (order.lineDiscountTotal != null && order.lineDiscountTotal! > 0) ...[
+          if (order.discountTotal != null && order.discountTotal! > 0) ...[
             SizedBox(height: SpacingTokens.sm.h),
             LabeledValueRow(
               label: S.couponDiscount,
-              priceValue: order.lineDiscountTotal!,
+              priceValue: order.discountTotal!,
               pricePrefix: '-',
               valueSize: 16,
             ),
@@ -249,7 +281,7 @@ class _DetailsScaffold extends StatelessWidget {
           SizedBox(height: SpacingTokens.sm.h),
           LabeledValueRow(
             label: S.total,
-            priceValue: total - (order.lineDiscountTotal ?? 0),
+            priceValue: total,
             emphasized: true,
             valueSize: 16,
           ),

@@ -39,6 +39,22 @@ class _FakeRepository implements TapPaymentRepository {
   }
 
   @override
+  Future<TapChargeResult> createSubscriptionCharge({
+    required String subscriptionId,
+    required String idempotencyKey,
+    bool saveCard = false,
+    String? savedCardId,
+    String? sourceToken,
+  }) async {
+    chargeCallCount++;
+    lastSourceToken = sourceToken;
+    lastOrderId = subscriptionId;
+    lastIdempotencyKey = idempotencyKey;
+    if (chargeError != null) throw chargeError!;
+    return chargeResult!;
+  }
+
+  @override
   Future<TapVerificationResult> verifyCharge(String chargeId) async {
     verifyCallCount++;
     if (verifyError != null) throw verifyError!;

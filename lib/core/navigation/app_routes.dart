@@ -27,6 +27,9 @@ import 'package:new_coffee/features/profile/presentation/views/edit_profile_page
 import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
 import 'package:new_coffee/features/welcome/presentation/view/welcome_view.dart';
 
 /// Static (argument-free) routes + saved-session entry point.
@@ -67,6 +70,9 @@ class AppRoutes {
     SearchPage.routeName: (context) => const SearchPage(),
     AddressesPage.routeName: (context) => const AddressesPage(),
     AddressFormPage.routeName: (context) => const AddressFormPage(),
+    SubscriptionPlansPage.routeName: (context) => const SubscriptionPlansPage(),
+    SubscriptionDetailsPage.routeName: (context) => const SubscriptionDetailsPage(),
+    CashierSubscriptionConsumePage.routeName: (context) => const CashierSubscriptionConsumePage(),
   };
 
   /// Maps the persisted session flag to the first route to show.

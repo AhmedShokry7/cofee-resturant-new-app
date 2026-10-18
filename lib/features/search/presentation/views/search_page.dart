@@ -5,11 +5,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
-import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/widgets/search_filter_sheet.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
-import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/shared/widgets/search_text_field.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
@@ -46,11 +45,7 @@ class _SearchView extends StatelessWidget {
           child: Row(
             children: [
               Expanded(
-                child: CustomTextFormField(
-                  hint: S.searchHint,
-                  bottomPadding: 0,
-                  textInputAction: TextInputAction.search,
-                  prefixIcon: Icon(Icons.search, color: AppColor.greyColor),
+                child: SearchTextField(
                   onChanged: (value) =>
                       context.read<SearchCubit>().search(value),
                 ),

@@ -36,6 +36,7 @@ import 'package:new_coffee/features/payment/presentation/manager/card_payment/ca
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
+import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/weather/data/repositories/weather_repository_impl.dart';
 import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 
@@ -145,6 +146,9 @@ class AppProviders extends StatelessWidget {
         ),
         RepositoryProvider<PlaceSearchRepository>(
           create: (_) => NominatimPlaceSearchRepository(),
+        ),
+        RepositoryProvider<SubscriptionRepository>(
+          create: (_) => SubscriptionRepositoryImpl(),
         ),
       ],
       child: MultiBlocProvider(

@@ -59,6 +59,14 @@ abstract class TapPaymentRepository {
     String? sourceToken,
   });
 
+  Future<TapChargeResult> createSubscriptionCharge({
+    required String subscriptionId,
+    required String idempotencyKey,
+    bool saveCard = false,
+    String? savedCardId,
+    String? sourceToken,
+  });
+
   Future<TapVerificationResult> verifyCharge(String chargeId);
 }
 
@@ -80,6 +88,33 @@ class SupabaseTapPaymentRepository implements TapPaymentRepository {
       'tap-create-charge',
       body: {
         'orderId': orderId,
+        'idempotencyKey': idempotencyKey,
+        'saveCard': saveCard,
+        if (savedCardId != null && savedCardId.isNotEmpty)
+          'savedCardId': savedCardId,
+        if (sourceToken != null && sourceToken.isNotEmpty)
+          'sourceToken': sourceToken,
+      },
+    );
+    final data = response.data;
+    if (data is! Map<String, dynamic>) {
+      throw StateError('Invalid create charge response');
+    }
+    return TapChargeResult.fromMap(data);
+  }
+
+  @override
+  Future<TapChargeResult> createSubscriptionCharge({
+    required String subscriptionId,
+    required String idempotencyKey,
+    bool saveCard = false,
+    String? savedCardId,
+    String? sourceToken,
+  }) async {
+    final response = await _client.functions.invoke(
+      'tap-create-charge',
+      body: {
+        'subscriptionId': subscriptionId,
         'idempotencyKey': idempotencyKey,
         'saveCard': saveCard,
         if (savedCardId != null && savedCardId.isNotEmpty)
