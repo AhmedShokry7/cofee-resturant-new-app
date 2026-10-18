@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/views/widgets/branch_selector.dart';
@@ -11,6 +12,8 @@ import 'package:new_coffee/features/checkout/presentation/manager/checkout/check
 import 'package:new_coffee/features/checkout/presentation/views/widgets/delivery_fulfillment_section.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_address_section.dart';
+import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
+import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 
 class CheckoutPageBody extends StatelessWidget {
@@ -62,8 +65,112 @@ class CheckoutPageBody extends StatelessWidget {
           },
         ),
         SizedBox(height: SpacingTokens.md.h),
+        const _CouponSection(),
+        SizedBox(height: SpacingTokens.md.h),
         const _OrderSummary(),
       ],
+    );
+  }
+}
+
+class _CouponSection extends StatefulWidget {
+  const _CouponSection();
+
+  @override
+  State<_CouponSection> createState() => _CouponSectionState();
+}
+
+class _CouponSectionState extends State<_CouponSection> {
+  final _promoController = TextEditingController();
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _apply() async {
+    FocusScope.of(context).unfocus();
+    final checkout = context.read<CheckoutCubit>();
+    final cart = context.read<CartCubit>();
+    final applied = await checkout.applyCoupon(
+      _promoController.text,
+      items: cart.state.items,
+    );
+    if (!mounted) return;
+    final message = applied
+        ? S.couponApplied
+        : checkout.state.couponError ?? S.invalidCouponCode;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    if (applied) _promoController.clear();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CheckoutCubit, CheckoutState>(
+      builder: (context, state) {
+        if (state.appliedCoupon == null) {
+          return PromoCodeField(
+            controller: _promoController,
+            onApply: _apply,
+            error: state.couponError,
+            onClear: () => context.read<CheckoutCubit>().removeCoupon(),
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _AppliedCouponRow(
+              code: state.appliedCoupon!.coupon.code,
+              scopeLabel: state.appliedCoupon!.coupon.isScoped
+                  ? state.appliedCoupon!.coupon.scopeLabel
+                  : '',
+              onRemove: () => context.read<CheckoutCubit>().removeCoupon(),
+            ),
+            CouponBreakdown(coupon: state.appliedCoupon!),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AppliedCouponRow extends StatelessWidget {
+  const _AppliedCouponRow({
+    required this.code,
+    required this.onRemove,
+    this.scopeLabel = '',
+  });
+
+  final String code;
+  final VoidCallback onRemove;
+  final String scopeLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: SpacingTokens.md.w,
+        vertical: SpacingTokens.sm.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(100.r),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              code,
+              style: AppFonts.medium14(context).copyWith(color: AppColor.primaryColor),
+            ),
+          ),
+          GestureDetector(
+            onTap: onRemove,
+            child: Icon(Icons.close, size: 20.w, color: AppColor.primaryColor),
+          ),
+        ],
+      ),
     );
   }
 }

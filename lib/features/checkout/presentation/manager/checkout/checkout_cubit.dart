@@ -261,9 +261,44 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     final longitude = address?.longitude;
     final branch = branchId?.trim() ?? '';
 
-    if (address == null || latitude == null || longitude == null || branch.isEmpty) {
+    if (address == null || branch.isEmpty) {
       emit(state.copyWith(addressOutOfZone: false, isResolvingZone: false));
       return;
+    }
+    if (latitude == null || longitude == null) {
+      emit(state.copyWith(addressOutOfZone: true, isResolvingZone: false, clearSelectedDeliveryZone: true));
+      return;
+    }
+
+    // A fixed 20 km circular delivery radius around the branch. Anything
+    // beyond it is out of delivery range, regardless of configured zones.
+    if (SupabaseService.isReady) {
+      try {
+        final row = await SupabaseService.client
+            .from('branches')
+            .select('latitude,longitude')
+            .eq('id', branch)
+            .maybeSingle();
+        final branchLat = (row?['latitude'] as num?)?.toDouble();
+        final branchLng = (row?['longitude'] as num?)?.toDouble();
+        if (branchLat != null && branchLng != null) {
+          const earthRadiusKm = 6371.0;
+          final dLat = (latitude - branchLat) * pi / 180;
+          final dLng = (longitude - branchLng) * pi / 180;
+          final a = sin(dLat / 2) * sin(dLat / 2) +
+              cos(branchLat * pi / 180) *
+                  cos(latitude * pi / 180) *
+                  sin(dLng / 2) *
+                  sin(dLng / 2);
+          final distance = earthRadiusKm * 2 * atan2(sqrt(a), sqrt(1 - a));
+          if (distance > 20) {
+            emit(state.copyWith(addressOutOfZone: true, isResolvingZone: false, clearSelectedDeliveryZone: true));
+            return;
+          }
+        }
+      } catch (_) {
+        // Fall through to zone resolution if the branch lookup fails.
+      }
     }
 
     emit(state.copyWith(isResolvingZone: true));
@@ -363,6 +398,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         details: address.details,
         latitude: address.latitude,
         longitude: address.longitude,
+        isDefault: state.addresses.isEmpty,
       );
       if (isClosed) return;
       emit(

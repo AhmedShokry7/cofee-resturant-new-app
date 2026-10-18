@@ -13,13 +13,13 @@ class PrimaryBottomBar extends StatelessWidget {
     required this.text,
     required this.onPressed,
     this.isLoading = false,
+    this.enabled = true,
   });
 
   final String text;
   final VoidCallback onPressed;
-
-  /// Shows progress on the button and blocks taps while an async action runs.
   final bool isLoading;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,7 @@ class PrimaryBottomBar extends StatelessWidget {
         color: AppColor.whiteColor,
         border: Border(top: BorderSide(color: AppColor.borderColor)),
       ),
-      child: CustomBtn(text: text, onPressed: onPressed, isLoading: isLoading),
+      child: CustomBtn(text: text, onPressed: onPressed, isLoading: isLoading, enabled: enabled),
     );
   }
 }

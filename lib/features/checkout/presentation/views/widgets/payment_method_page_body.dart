@@ -23,67 +23,81 @@ class PaymentMethodPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CheckoutCubit, CheckoutState>(
-      builder: (context, state) {
-        return ListView(
-          padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            SpacingTokens.lg.w,
-          ),
-          children: [
-            const _PayableTotal(),
-            SizedBox(height: SpacingTokens.lg.h),
-            Text(S.creditDebitCard, style: AppFonts.semiBold16(context)),
-            SizedBox(height: SpacingTokens.md.h),
-            AddCardTile(
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AddCardPage.routeName),
-            ),
-            // Saved cards first, so a customer who already saved one sees it
-            // before anything else. Selecting one makes the checkout charge it
-            // directly instead of asking for the number again.
-            BlocBuilder<SavedCardsCubit, SavedCardsState>(
-              builder: (context, saved) {
-                if (saved.cards.isEmpty) return const SizedBox.shrink();
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(height: SpacingTokens.sm.h),
-                    Text(
-                      S.payWithSavedCard,
-                      style: AppFonts.medium14(context),
-                    ),
-                    SizedBox(height: SpacingTokens.sm.h),
-                    for (final card in saved.cards)
-                      _SavedCardRow(
-                        card: card,
-                        selected: state.selectedSavedCard?.id == card.id,
-                        onTap: () => context
-                            .read<CheckoutCubit>()
-                            .selectSavedCard(
-                              state.selectedSavedCard?.id == card.id ? null : card,
-                            ),
-                      ),
-                  ],
-                );
-              },
-            ),
-            SizedBox(height: SpacingTokens.xl.h),
-            Text(S.morePaymentOptions, style: AppFonts.semiBold16(context)),
-            SizedBox(height: SpacingTokens.md.h),
-            ...state.paymentMethods.map(
-              (method) => PaymentOptionTile(
-                method: method,
-                selected: state.selectedPaymentMethod?.id == method.id,
-                onTap: () =>
-                    context.read<CheckoutCubit>().selectPaymentMethod(method),
-              ),
-            ),
-          ],
+    return BlocListener<SavedCardsCubit, SavedCardsState>(
+      listenWhen: (previous, current) => previous.cards != current.cards,
+      listener: (context, saved) {
+        final checkout = context.read<CheckoutCubit>();
+        if (checkout.state.selectedSavedCard != null || saved.cards.isEmpty)
+          return;
+        final card = saved.cards.firstWhere(
+          (item) => item.isDefault,
+          orElse: () => saved.cards.first,
         );
+        checkout.selectSavedCard(card);
       },
+      child: BlocBuilder<CheckoutCubit, CheckoutState>(
+        builder: (context, state) {
+          return ListView(
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.lg.w,
+            ),
+            children: [
+              const _PayableTotal(),
+              SizedBox(height: SpacingTokens.lg.h),
+              Text(S.creditDebitCard, style: AppFonts.semiBold16(context)),
+              SizedBox(height: SpacingTokens.md.h),
+              AddCardTile(
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AddCardPage.routeName),
+              ),
+              // Saved cards first, so a customer who already saved one sees it
+              // before anything else. Selecting one makes the checkout charge it
+              // directly instead of asking for the number again.
+              BlocBuilder<SavedCardsCubit, SavedCardsState>(
+                builder: (context, saved) {
+                  if (saved.cards.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: SpacingTokens.sm.h),
+                      Text(
+                        S.payWithSavedCard,
+                        style: AppFonts.medium14(context),
+                      ),
+                      SizedBox(height: SpacingTokens.sm.h),
+                      for (final card in saved.cards)
+                        _SavedCardRow(
+                          card: card,
+                          selected: state.selectedSavedCard?.id == card.id,
+                          onTap: () =>
+                              context.read<CheckoutCubit>().selectSavedCard(
+                                state.selectedSavedCard?.id == card.id
+                                    ? null
+                                    : card,
+                              ),
+                        ),
+                    ],
+                  );
+                },
+              ),
+              SizedBox(height: SpacingTokens.xl.h),
+              Text(S.morePaymentOptions, style: AppFonts.semiBold16(context)),
+              SizedBox(height: SpacingTokens.md.h),
+              ...state.paymentMethods.map(
+                (method) => PaymentOptionTile(
+                  method: method,
+                  selected: state.selectedPaymentMethod?.id == method.id,
+                  onTap: () =>
+                      context.read<CheckoutCubit>().selectPaymentMethod(method),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -128,9 +142,8 @@ class _SavedCardRow extends StatelessWidget {
             SizedBox(width: SpacingTokens.xs.w),
             Text(
               '${S.cardExpires} ${card.expiry}',
-              style: AppFonts.regular12(context).copyWith(
-                color: AppColor.greyColor,
-              ),
+              style: AppFonts.regular12(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
           ],
         ),

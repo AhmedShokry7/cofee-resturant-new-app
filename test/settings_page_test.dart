@@ -55,6 +55,17 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() => throw UnimplementedError();
+
+  @override
+  Future<AuthUser> updateProfile({
+    required String fullName,
+    String? phone,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> changePassword({required String newPassword}) =>
+      throw UnimplementedError();
 }
 
 Future<void> _setSurface(WidgetTester tester) async {

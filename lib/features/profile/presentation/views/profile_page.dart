@@ -70,7 +70,7 @@ class _LanguageOption extends StatelessWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  late final Future<AuthUser?> _userFuture = _loadUser();
+  late Future<AuthUser?> _userFuture = _loadUser();
 
   /// Guards a second sign-out while the first is still in flight, so a double
   /// tap cannot run two sign-outs or navigate twice.
@@ -115,6 +115,76 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _pickImage(BuildContext context) =>
       showProfileImagePicker(context);
+
+  Future<void> _showChangePasswordDialog(BuildContext context) async {
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    try {
+      final changed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('تغيير كلمة المرور'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'كلمة المرور الجديدة'),
+                  validator: (value) =>
+                      (value == null || value.trim().length < 6)
+                          ? '6 أحرف على الأقل'
+                          : null,
+                ),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور'),
+                  validator: (value) =>
+                      value != newPasswordController.text
+                          ? 'غير متطابقة'
+                          : null,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('إلغاء'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) {
+                  Navigator.of(dialogContext).pop(true);
+                }
+              },
+              child: const Text('حفظ'),
+            ),
+          ],
+        ),
+      );
+      if (changed != true || !context.mounted) return;
+      await context.read<AuthRepository>().changePassword(
+        newPassword: newPasswordController.text.trim(),
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم تغيير كلمة المرور')),
+      );
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('فشل تغيير كلمة المرور')),
+      );
+    } finally {
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    }
+  }
 
   /// Lets the customer pick the UI language. The choice is written through
   /// [AppLocale.setLanguage], which persists it and notifies the whole app, so
@@ -231,8 +301,20 @@ class _SettingsPageState extends State<SettingsPage> {
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedUserCircle,
               label: S.yourProfile,
+              onTap: () async {
+                await Navigator.of(context).pushNamed(EditProfilePage.routeName);
+                if (!context.mounted) return;
+                final future = _loadUser();
+                setState(() {
+                  _userFuture = future;
+                });
+              },
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedLocation01,
+              label: S.myAddresses,
               onTap: () =>
-                  Navigator.of(context).pushNamed(EditProfilePage.routeName),
+                  Navigator.of(context).pushNamed(AddressesPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedCreditCard,
@@ -247,18 +329,6 @@ class _SettingsPageState extends State<SettingsPage> {
                   Navigator.of(context).pushNamed(OrdersPage.routeName),
             ),
             ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedCoupon01,
-              label: S.coupon,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(CouponPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedStar,
-              label: S.loyaltyPoints,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(LoyaltyPage.routeName),
-            ),
-            ProfileMenuTile(
               icon: HugeIcons.strokeRoundedPackage,
               label: AppLocale.instance.isArabic ? '\u0628\u0627\u0642\u0627\u062A \u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u0642\u0647\u0648\u0629' : 'Coffee subscription plans',
               onTap: () =>
@@ -269,6 +339,18 @@ class _SettingsPageState extends State<SettingsPage> {
               label: AppLocale.instance.isArabic ? '\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A\u064A' : 'My subscriptions',
               onTap: () =>
                   Navigator.of(context).pushNamed(SubscriptionDetailsPage.routeName),
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedCoupon01,
+              label: S.coupon,
+              onTap: () =>
+                  Navigator.of(context).pushNamed(CouponPage.routeName),
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedStar,
+              label: S.loyaltyPoints,
+              onTap: () =>
+                  Navigator.of(context).pushNamed(LoyaltyPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedNotification01,
@@ -292,12 +374,6 @@ class _SettingsPageState extends State<SettingsPage> {
               label: S.privacyPolicy,
               onTap: () =>
                   Navigator.of(context).pushNamed(PrivacyPolicyPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedLocation01,
-              label: S.myAddresses,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AddressesPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedLogout01,

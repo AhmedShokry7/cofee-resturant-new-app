@@ -101,6 +101,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
       builder: (context, state) => PrimaryBottomBar(
         text: S.confirmPayment,
         isLoading: state.isPlacingOrder,
+        enabled: !state.addressOutOfZone,
         onPressed: () => _confirm(context),
       ),
     );

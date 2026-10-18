@@ -131,118 +131,38 @@ class _CartSummary extends StatefulWidget {
 }
 
 class _CartSummaryState extends State<_CartSummary> {
-  final _promoController = TextEditingController();
-
-  @override
-  void dispose() {
-    _promoController.dispose();
-    super.dispose();
-  }
-
-  void _applyPromo() async {
-    FocusScope.of(context).unfocus();
-    final checkout = context.read<CheckoutCubit>();
-    final applied = await checkout.applyCoupon(
-      _promoController.text,
-      items: context.read<CartCubit>().state.items,
-    );
-    if (!mounted) return;
-    final message = applied
-        ? S.couponApplied
-        : checkout.state.couponError ?? S.invalidCouponCode;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
-    if (applied) _promoController.clear();
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CartCubit, CartState>(
       builder: (context, cart) {
-        return BlocBuilder<CheckoutCubit, CheckoutState>(
-          builder: (context, checkoutState) {
-            final checkout = context.read<CheckoutCubit>();
-            final summary = checkout.summary(cart.total);
-            final subtotal = summary.subtotal;
-            final discount = summary.discount;
-            final total = summary.total;
-            return Container(
-              padding: EdgeInsets.all(SpacingTokens.lg.w),
-              decoration: BoxDecoration(
-                color: AppColor.whiteColor,
-                border: Border.all(color: AppColor.borderColor),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(16.r),
-                  topRight: Radius.circular(16.r),
-                ),
+        final subtotal = cart.total;
+        return Container(
+          padding: EdgeInsets.all(SpacingTokens.lg.w),
+          decoration: BoxDecoration(
+            color: AppColor.whiteColor,
+            border: Border.all(color: AppColor.borderColor),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(16.r),
+              topRight: Radius.circular(16.r),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SummaryRow(label: S.subTotal, priceValue: subtotal),
+              SizedBox(height: SpacingTokens.sm.h),
+              const Divider(height: 1),
+              SizedBox(height: SpacingTokens.sm.h),
+              _SummaryRow(label: S.totalCost, priceValue: subtotal, total: true),
+              SizedBox(height: SpacingTokens.md.h),
+              CustomBtn(
+                text: S.proceedToCheckout,
+                borderRadius: 32.r,
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(CheckoutPage.routeName),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (checkoutState.appliedCoupon == null)
-                    PromoCodeField(
-                      controller: _promoController,
-                      onApply: _applyPromo,
-                      // Shown inline as well as in the snackbar: a refusal the
-                      // customer has to dismiss before re-reading is not a
-                      // reason. `couponError` persists until the next attempt.
-                      error: checkoutState.couponError,
-                      // Clearing the box must also drop the applied discount,
-                      // or the customer keeps paying it with nothing on screen
-                      // to explain it.
-                      onClear: () =>
-                          context.read<CheckoutCubit>().removeCoupon(),
-                    )
-else
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _AppliedCouponRow(
-                        code: checkoutState.appliedCoupon!.coupon.code,
-                        scopeLabel:
-                            checkoutState.appliedCoupon!.coupon.isScoped
-                            ? checkoutState.appliedCoupon!.coupon.scopeLabel
-                            : '',
-                        onRemove: () =>
-                            context.read<CheckoutCubit>().removeCoupon(),
-                      ),
-                      CouponBreakdown(coupon: checkoutState.appliedCoupon!),
-                    ],
-                  ),
-                  SizedBox(height: SpacingTokens.md.h),
-                  _SummaryRow(label: S.subTotal, priceValue: subtotal),
-                  SizedBox(height: SpacingTokens.xs.h),
-                  _SummaryRow(
-                    label: S.deliveryFee,
-                    priceValue: summary.deliveryFee,
-                  ),
-                  if (discount > 0) ...[
-                    SizedBox(height: SpacingTokens.xs.h),
-                    _SummaryRow(
-                      label: S.discount,
-                      priceValue: discount,
-                      pricePrefix: '-',
-                    ),
-                  ],
-                  SizedBox(height: SpacingTokens.sm.h),
-                  const Divider(height: 1),
-                  SizedBox(height: SpacingTokens.sm.h),
-                  _SummaryRow(
-                    label: S.totalCost,
-                    priceValue: total,
-                    total: true,
-                  ),
-                  SizedBox(height: SpacingTokens.md.h),
-                  CustomBtn(
-                    text: S.proceedToCheckout,
-                    borderRadius: 32.r,
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed(CheckoutPage.routeName),
-                  ),
-                ],
-              ),
-            );
-          },
+            ],
+          ),
         );
       },
     );

@@ -600,6 +600,9 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get profilePicture =>
       _ar ? 'الصورة الشخصية' : 'Profile Picture';
   static String get fullNameHint => _ar ? 'الاسم الكامل' : 'Full Name';
+  static String get firstNameHint => _ar ? '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0623\u0648\u0644' : 'First Name';
+  static String get lastNameHint => _ar ? '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u0623\u062E\u064A\u0631' : 'Last Name';
+  static String get profileUpdateFailed => _ar ? '\u0641\u0634\u0644 \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0644\u0641 \u0627\u0644\u0634\u062E\u0635\u064A' : 'Profile update failed';
   static String get phoneNumberHint => _ar ? 'رقم الهاتف' : 'Phone Number';
   static String get profileUpdated =>
       _ar ? 'تم تحديث الحساب بنجاح' : 'Profile updated successfully';

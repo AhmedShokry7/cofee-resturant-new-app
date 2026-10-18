@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
+
+import 'package:new_coffee/core/services/shared_pref.dart';
 
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -50,7 +53,7 @@ class SupabaseAuthRepository implements AuthRepository {
     final metadata = user.userMetadata;
     final localPart = user.email?.split('@').first;
     final name = metadata?['full_name'] ?? metadata?['name'] ?? localPart;
-    return AuthUser(id: user.id, name: name, email: user.email);
+    return AuthUser(id: user.id, name: name, email: user.email, phone: metadata?['phone']?.toString());
   }
 
   @override
@@ -67,7 +70,9 @@ class SupabaseAuthRepository implements AuthRepository {
     if (user == null) {
       throw const AuthException('Sign in failed: no user returned.');
     }
-    return _toDomain(user);
+    final domain = _toDomain(user);
+    await _cacheProfile(domain);
+    return domain;
   }
 
   @override
@@ -91,7 +96,9 @@ class SupabaseAuthRepository implements AuthRepository {
     if (user == null) {
       throw const AuthException('Sign up failed: no user returned.');
     }
-    return _toDomain(user);
+    final domain = _toDomain(user);
+    await _cacheProfile(domain);
+    return domain;
   }
 
   /// Whether the signed-up address still needs confirming.
@@ -177,12 +184,122 @@ Future<void> signOut() async {
   await _client.auth.signOut();
 }
 
+  @override
+  Future<AuthUser> updateProfile({
+    required String fullName,
+    String? phone,
+  }) async {
+    _guard;
+    final user = _client.auth.currentUser;
+    if (user == null) throw const AuthException('Not signed in.');
+    await _client.auth.updateUser(
+      UserAttributes(data: <String, dynamic>{'full_name': fullName.trim()}),
+    );
+    await _client.auth.refreshSession();
+    await _client.from('profiles').update(<String, dynamic>{
+      'full_name': fullName.trim(),
+      if (phone != null) 'phone': phone.trim(),
+      'updated_at': DateTime.now().toIso8601String(),
+    }).eq('id', user.id);
+    final refreshed = _client.auth.currentUser;
+    if (refreshed == null) throw const AuthException('Profile update failed.');
+    final result = AuthUser(
+      id: refreshed.id,
+      name: fullName.trim(),
+      email: refreshed.email,
+      phone: phone?.trim(),
+    );
+    await _cacheProfile(result);
+    return result;
+  }
+
+  @override
+  Future<void> changePassword({required String newPassword}) async {
+    _guard;
+    await _client.auth.updateUser(UserAttributes(password: newPassword.trim()));
+  }
+
   /// Previously hardcoded to null, so the app never knew who was signed in.
   @override
   Future<AuthUser?> currentUser() async {
     if (!SupabaseService.isReady) return null;
     final user = _client.auth.currentUser;
-    return user == null ? null : _toDomain(user);
+    if (user == null) {
+      await SharedPref.setValue(key: _profileCacheKey, value: '');
+      return null;
+    }
+    final cached = await _cachedProfile();
+    if (cached != null && cached.id == user.id) {
+      // Refresh in background without blocking the UI.
+      unawaited(_refreshProfileCache(user));
+      return cached;
+    }
+    final domain = _toDomain(user);
+    try {
+      final row = await _client
+          .from('profiles')
+          .select('phone')
+          .eq('id', user.id)
+          .maybeSingle();
+      final phone = row?['phone']?.toString();
+      final result = (phone != null && phone.isNotEmpty)
+          ? AuthUser(id: domain.id, name: domain.name, email: domain.email, phone: phone)
+          : domain;
+      await _cacheProfile(result);
+      return result;
+    } catch (_) {
+      await _cacheProfile(domain);
+      return domain;
+    }
+  }
+
+  static const String _profileCacheKey = 'cached_profile_v1';
+
+  Future<void> _cacheProfile(AuthUser user) async {
+    await SharedPref.setValue(
+      key: _profileCacheKey,
+      value: jsonEncode(<String, dynamic>{
+        'id': user.id,
+        'name': user.name,
+        'email': user.email,
+        'phone': user.phone,
+      }),
+    );
+  }
+
+  Future<AuthUser?> _cachedProfile() async {
+    final raw = await SharedPref.getValue(key: _profileCacheKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return AuthUser(
+        id: json['id']?.toString() ?? '',
+        name: json['name']?.toString(),
+        email: json['email']?.toString(),
+        phone: json['phone']?.toString(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _refreshProfileCache(User user) async {
+    try {
+      final row = await _client
+          .from('profiles')
+          .select('phone, full_name')
+          .eq('id', user.id)
+          .maybeSingle();
+      final domain = _toDomain(user);
+      final phone = row?['phone']?.toString();
+      final name = row?['full_name']?.toString();
+      await _cacheProfile(AuthUser(
+        id: domain.id,
+        name: (name != null && name.isNotEmpty) ? name : domain.name,
+        email: domain.email,
+        phone: (phone != null && phone.isNotEmpty) ? phone : domain.phone,
+      ));
+    } catch (_) {}
   }
 
   /// Auth state changes, for an app-wide session bloc later.

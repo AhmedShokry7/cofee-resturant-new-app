@@ -68,4 +68,18 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<AuthUser?> currentUser() async => null;
+
+  @override
+  Future<AuthUser> updateProfile({
+    required String fullName,
+    String? phone,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    return AuthUser(id: 'mock', name: fullName, phone: phone);
+  }
+
+  @override
+  Future<void> changePassword({required String newPassword}) async {
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+  }
 }

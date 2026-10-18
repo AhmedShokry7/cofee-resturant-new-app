@@ -64,7 +64,7 @@ class _SubscriptionPlansView extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 8,
               mainAxisSpacing: 8,
-              childAspectRatio: 0.62,
+              childAspectRatio: 0.5,
             ),
             itemCount: state.plans.length,
             itemBuilder: (context, index) {
@@ -92,8 +92,7 @@ class _SubscriptionPlansView extends StatelessWidget {
                       Text(plan.nameAr.isNotEmpty && AppLocale.instance.isArabic ? plan.nameAr : plan.nameEn, style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 8),
                       Text(_t('\u0627\u0644\u0633\u0639\u0631', 'Price') + ': ${plan.price} ${plan.currencyCode}'),
-                      Text(_t('\u0627\u0644\u0645\u062F\u0629', 'Duration') + ': ${plan.durationDays}'),
-                      Text(_t('\u0627\u0644\u0623\u0643\u0648\u0627\u0628 \u0641\u064A \u0643\u0644 \u062F\u0648\u0631\u0629', 'Cups per cycle') + ': ${plan.cupsPerCycle}'),
+                      Text(_t('\u0627\u0644\u0623\u0643\u0648\u0627\u0628', 'Cups') + ': ${plan.cupsPerCycle}'),
                       const SizedBox(height: 8),
                       FilledButton(
                         onPressed: () async {

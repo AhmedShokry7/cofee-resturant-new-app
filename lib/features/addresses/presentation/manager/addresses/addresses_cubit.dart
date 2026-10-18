@@ -126,13 +126,14 @@ class AddressesCubit extends Cubit<AddressesState> {
     double? longitude,
     bool isDefault = false,
   }) async {
+    final shouldBeDefault = isDefault || state.addresses.isEmpty;
     try {
       final saved = await _repository.addAddress(
         label: label,
         details: details,
         latitude: latitude,
         longitude: longitude,
-        isDefault: isDefault,
+        isDefault: shouldBeDefault,
       );
       if (isClosed) return;
       emit(

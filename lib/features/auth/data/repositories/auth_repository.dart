@@ -32,4 +32,11 @@ abstract class AuthRepository {
   Future<void> signOut();
 
   Future<AuthUser?> currentUser();
+
+  Future<AuthUser> updateProfile({
+    required String fullName,
+    String? phone,
+  });
+
+  Future<void> changePassword({required String newPassword});
 }

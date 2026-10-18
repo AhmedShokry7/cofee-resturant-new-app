@@ -21,14 +21,16 @@ class EditProfilePage extends StatefulWidget {
 
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+
+  bool _saving = false;
 
   @override
   void initState() {
     super.initState();
-    // Prefill from the signed-in account, never from demo constants.
     _fillFromAccount();
   }
 
@@ -36,27 +38,96 @@ class _EditProfilePageState extends State<EditProfilePage> {
     try {
       final user = await context.read<AuthRepository>().currentUser();
       if (!mounted) return;
-      _nameController.text = user?.name ?? '';
+      final parts = (user?.name ?? '').trim().split(RegExp(r'\s+'));
+      _firstNameController.text = parts.isNotEmpty ? parts.first : '';
+      _lastNameController.text = parts.length > 1 ? parts.sublist(1).join(' ') : '';
       _emailController.text = user?.email ?? '';
+      _phoneController.text = user?.phone ?? '';
     } catch (_) {
-      // Leave the fields empty rather than inventing values.
     }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _showChangePasswordDialog() async {
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    try {
+      final changed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('تغيير كلمة المرور'),
+          content: Form(
+            key: formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextFormField(
+                  controller: newPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'كلمة المرور الجديدة'),
+                  validator: (value) =>
+                      (value == null || value.trim().length < 6) ? '6 أحرف على الأقل' : null,
+                ),
+                TextFormField(
+                  controller: confirmPasswordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور'),
+                  validator: (value) => value != newPasswordController.text ? 'غير متطابقة' : null,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('إلغاء')),
+            TextButton(
+              onPressed: () {
+                if (formKey.currentState?.validate() ?? false) Navigator.of(dialogContext).pop(true);
+              },
+              child: const Text('حفظ'),
+            ),
+          ],
+        ),
+      );
+      if (changed != true || !mounted) return;
+      await context.read<AuthRepository>().changePassword(newPassword: newPasswordController.text.trim());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تغيير كلمة المرور')));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تغيير كلمة المرور')));
+    } finally {
+      newPasswordController.dispose();
+      confirmPasswordController.dispose();
+    }
+  }
+
+  Future<void> _save() async {
     FocusScope.of(context).unfocus();
-    if (_formKey.currentState?.validate() ?? false) {
-      final messenger = ScaffoldMessenger.of(context);
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() => _saving = true);
+    try {
+      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
+      await context.read<AuthRepository>().updateProfile(
+        fullName: fullName.isEmpty ? (_firstNameController.text.trim()) : fullName,
+        phone: _phoneController.text.trim(),
+      );
+      if (!mounted) return;
       Navigator.of(context).pop();
-      messenger.showSnackBar(SnackBar(content: Text(S.profileUpdated)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.profileUpdated)));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.profileUpdateFailed)));
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -74,70 +145,34 @@ class _EditProfilePageState extends State<EditProfilePage> {
             SpacingTokens.lg.w,
           ),
           children: [
-            Center(
-              child: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 52.w,
-                    backgroundColor: AppColor.lightGreyColor,
-                    child: Icon(
-                      HugeIcons.strokeRoundedUser,
-                      size: 52.w,
-                      color: AppColor.greyColor,
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 2,
-                    right: 2,
-                    child: Container(
-                      height: 36.w,
-                      width: 36.w,
-                      decoration: BoxDecoration(
-                        color: AppColor.primaryColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColor.whiteColor,
-                          width: 3,
-                        ),
-                      ),
-                      child: Icon(
-                        HugeIcons.strokeRoundedCamera01,
-                        size: 18.w,
-                        color: AppColor.whiteColor,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: SpacingTokens.xl.h),
             CustomTextFormField(
-              controller: _nameController,
-              hint: S.fullNameHint,
+              controller: _firstNameController,
+              hint: S.firstNameHint,
               keyboardType: TextInputType.name,
-              validator: (value) => (value == null || value.trim().isEmpty)
-                  ? S.nameRequired
-                  : null,
+              validator: (value) => (value == null || value.trim().isEmpty) ? S.nameRequired : null,
+            ),
+            CustomTextFormField(
+              controller: _lastNameController,
+              hint: S.lastNameHint,
+              keyboardType: TextInputType.name,
             ),
             CustomTextFormField(
               controller: _emailController,
               hint: S.emailHint,
               keyboardType: TextInputType.emailAddress,
-              validator: (value) => (value == null || value.trim().isEmpty)
-                  ? S.emailRequired
-                  : null,
             ),
             CustomTextFormField(
               controller: _phoneController,
               hint: S.phoneNumberHint,
               keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.done,
-              validator: (value) => (value == null || value.trim().isEmpty)
-                  ? S.phoneRequired
-                  : null,
             ),
             SizedBox(height: SpacingTokens.lg.h),
-            CustomBtn(text: S.save, onPressed: _save),
+            CustomBtn(text: S.save, onPressed: _saving ? null : _save),
+            SizedBox(height: SpacingTokens.md.h),
+            OutlinedButton(
+              onPressed: _showChangePasswordDialog,
+              child: const Text('تغيير كلمة المرور'),
+            ),
           ],
         ),
       ),
