@@ -75,13 +75,28 @@ class HomeCubit extends Cubit<HomeState> {
     // rule can filter it without a query per temperature change.
     final productsFuture = guard(
       'products',
-      () => _repository.getProducts(branchId: branchId, limit: 50),
+      () => _repository.getProducts(branchId: branchId, limit: 20),
       state.recommendationPool,
     );
 
+    // Critical sections first so the home renders quickly; heavier sections
+    // (bundles, featured, products) follow without blocking the first frame.
     final banners = await bannersFuture;
-    final bundles = await bundlesFuture;
     final categories = await categoriesFuture;
+    emit(
+      HomeState(
+        banners: banners,
+        bundles: const [],
+        categories: categories,
+        popular: const [],
+        recommendationPool: const [],
+        bundleProducts: const {},
+        isLoading: false,
+        error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
+      ),
+    );
+
+    final bundles = await bundlesFuture;
     final featured = await featuredFuture;
     final products = await productsFuture;
 

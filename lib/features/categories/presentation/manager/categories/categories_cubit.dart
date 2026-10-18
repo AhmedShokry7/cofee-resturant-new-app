@@ -38,15 +38,15 @@ class CategoriesCubit extends Cubit<CategoriesState> {
   Future<void> load() async {
     emit(state.copyWith(isLoading: true, error: null));
     try {
+      final categories = await _repository.getCategories();
+      emit(state.copyWith(categories: categories, isLoading: false));
+
       final results = await Future.wait([
-        _repository.getCategories(),
-        _repository.getProducts(branchId: branchId, limit: 200),
+        _repository.getProducts(branchId: branchId, limit: 60),
         _repository.getBundles(branchId: branchId),
       ]);
-
-      final categories = results[0] as List<CategoryModel>;
-      final products = results[1] as List<ProductModel>;
-      final bundles = results[2] as List<BundleModel>;
+      final products = results[0] as List<ProductModel>;
+      final bundles = results[1] as List<BundleModel>;
 
       // Keep the selected tab valid. The old code did
       // `index.clamp(0, categories.length - 1)`, which throws when the list is
