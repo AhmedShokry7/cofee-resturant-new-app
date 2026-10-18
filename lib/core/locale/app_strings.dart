@@ -391,6 +391,9 @@ class S {
   static String get yourProfile => _ar ? 'حسابك' : 'Your Profile';
   static String get help => _ar ? 'المساعدة' : 'Help';
   static String get privacyPolicy => _ar ? 'سياسة الخصوصية' : 'Privacy Policy';
+  static String get defaultAddress => _ar ? 'Default' : 'Default';
+  static String get setDefaultAddress => _ar ? 'Set default' : 'Set as default';
+  static String get editAddress => _ar ? 'Edit address' : 'Edit address';
   static String get logOut => _ar ? 'تسجيل الخروج' : 'Log Out';
   static String get confirmLogout => _ar ? 'نعم، تسجيل الخروج' : 'Yes, Logout';
   static String get logoutConfirm => _ar
@@ -416,6 +419,23 @@ class S {
   static String get language => _ar ? 'اللغة' : 'Language';
   static String languageValue(bool arabic) =>
       arabic ? 'اللغة: العربية' : 'Language: English';
+  static String get arabicLanguage => _ar ? 'العربية' : 'Arabic';
+  static String get englishLanguage => _ar ? 'الإنجليزية' : 'English';
+  static String get myAddresses => _ar ? 'عناويني' : 'My Addresses';
+  static String get noAddresses =>
+      _ar ? 'لا توجد عناوين محفوظة بعد' : 'No saved addresses yet';
+  static String get addressesHint => _ar
+      ? 'أضف عناوينك لإتمام طلبات التوصيل إليها بشكل أسرع'
+      : 'Add your addresses to check out delivery faster';
+  static String get delete => _ar ? 'حذف' : 'Delete';
+  static String get deleteAddress => _ar ? 'حذف العنوان' : 'Delete address';
+  static String get deleteAddressConfirm => _ar
+      ? 'هل تريد حذف هذا العنوان؟'
+      : 'Do you want to delete this address?';
+  static String get addressSaveFailed =>
+      _ar ? 'تعذر حفظ العنوان. حاول مرة أخرى.' : 'Could not save the address. Please try again.';
+  static String get addressDeleteFailed =>
+      _ar ? 'تعذر حذف العنوان. حاول مرة أخرى.' : 'Could not delete the address. Please try again.';
 
   // ---------- Help / FAQ / policy ----------
   static String faqsLoadError(String error) =>

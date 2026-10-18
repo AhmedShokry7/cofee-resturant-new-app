@@ -30,6 +30,11 @@ class OrderItemModel {
     this.deliveryZoneNameEn,
     this.deliveryAddressLabel,
     this.deliveryAddressDetails,
+    this.currencyCode = 'SAR',
+    this.subtotal,
+    this.discountTotal,
+    this.taxTotal,
+    this.grandTotal,
   });
 
   final String id;
@@ -61,6 +66,16 @@ class OrderItemModel {
   /// Delivery fee actually charged, frozen on the order header. Zero for
   /// pickup and for pre-delivery orders.
   final double deliveryFee;
+
+  /// Currency of the header amounts, frozen from the order row.
+  final String currencyCode;
+
+  /// Header money snapshots. Null only for pre-database models, where the
+  /// frozen line values are still the correct source.
+  final double? subtotal;
+  final double? discountTotal;
+  final double? taxTotal;
+  final double? grandTotal;
 
   /// Zone name frozen into the order's delivery snapshot at placement, so the
   /// invoice keeps showing the zone the customer chose even if it is later
@@ -164,6 +179,11 @@ class OrderItemModel {
       deliveryZoneNameEn: Db.textOrNull(snapshot['zone_name_en']),
       deliveryAddressLabel: Db.textOrNull(snapshot['label']),
       deliveryAddressDetails: Db.textOrNull(snapshot['details']),
+      currencyCode: Db.text(orderMap['currency_code'], 'SAR'),
+      subtotal: Db.asDoubleOrNull(orderMap['subtotal']),
+      discountTotal: Db.asDoubleOrNull(orderMap['discount_total']),
+      taxTotal: Db.asDoubleOrNull(orderMap['tax_total']),
+      grandTotal: Db.asDoubleOrNull(orderMap['grand_total']),
       placedAt: placedAtValue == null
           ? null
           : DateTime.tryParse(placedAtValue)?.toLocal(),

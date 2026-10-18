@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -14,7 +15,20 @@ class ShippingAddressesPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<CheckoutCubit, CheckoutState>(
+    // A failed save, delete or default change is recorded in
+    // `CheckoutState.error`; without this listener the shopper would see the
+    // tap do nothing. The message is cleared once shown so an unrelated
+    // rebuild cannot repeat it.
+    return BlocConsumer<CheckoutCubit, CheckoutState>(
+      listenWhen: (previous, current) =>
+          current.error != null && previous.error != current.error,
+      listener: (context, state) {
+        if (state.error == null) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(S.addressSaveFailed)),
+        );
+        context.read<CheckoutCubit>().clearError();
+      },
       builder: (context, state) {
         return ListView(
           padding: EdgeInsets.fromLTRB(
@@ -27,11 +41,21 @@ class ShippingAddressesPageBody extends StatelessWidget {
             for (var index = 0; index < state.addresses.length; index++) ...[
               AddressTile(
                 address: state.addresses[index],
-selected:
+                selected:
                     state.selectedAddress?.id == state.addresses[index].id,
                 onTap: () => context.read<CheckoutCubit>().selectAddress(
                   state.addresses[index],
                 ),
+                onSetDefault: () => context
+                    .read<CheckoutCubit>()
+                    .setDefaultAddress(state.addresses[index].id),
+                onEdit: () => Navigator.of(context).pushNamed(
+                  AddAddressPage.routeName,
+                  arguments: state.addresses[index],
+                ),
+                onDelete: () => context
+                    .read<CheckoutCubit>()
+                    .removeAddress(state.addresses[index].id),
               ),
               if (index != state.addresses.length - 1) const Divider(),
             ],

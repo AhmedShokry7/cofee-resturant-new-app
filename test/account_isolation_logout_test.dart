@@ -489,7 +489,9 @@ void main() {
     const authScreenKey = ValueKey('auth_screen');
 
     Future<void> pumpSettings(WidgetTester tester, AuthRepository auth) async {
-      tester.view.physicalSize = const Size(360, 900) * 3.0;
+      // Tall enough for the full settings list including the Language and
+      // My Addresses entries added below the privacy policy row.
+      tester.view.physicalSize = const Size(360, 1150) * 3.0;
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);

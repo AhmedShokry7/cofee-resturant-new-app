@@ -105,6 +105,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.3"
+  card_flutter:
+    dependency: "direct main"
+    description:
+      name: card_flutter
+      sha256: "83df1f500db5228174f5a0ad864e805b888279f342b88deaf645b3e45bc25340"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.23"
   characters:
     dependency: transitive
     description:

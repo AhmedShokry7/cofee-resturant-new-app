@@ -15,7 +15,9 @@ import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
 class AddAddressPageBody extends StatefulWidget {
-  const AddAddressPageBody({super.key});
+  const AddAddressPageBody({super.key, this.address});
+
+  final AddressModel? address;
 
   @override
   State<AddAddressPageBody> createState() => _AddAddressPageBodyState();
@@ -28,6 +30,19 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
   final _nameController = TextEditingController();
   final _locationController = TextEditingController();
   LatLng _selectedLocation = _currentLocation;
+
+  @override
+  void initState() {
+    super.initState();
+    final address = widget.address;
+    if (address != null) {
+      _nameController.text = address.label;
+      _locationController.text = address.details;
+      if (address.latitude != null && address.longitude != null) {
+        _selectedLocation = LatLng(address.latitude!, address.longitude!);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -57,13 +72,27 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
       return;
     }
 
-    context.read<CheckoutCubit>().addAddress(
-      AddressModel(
-        id: DateTime.now().microsecondsSinceEpoch.toString(),
-        label: label,
-        details: details,
-      ),
-    );
+    final cubit = context.read<CheckoutCubit>();
+    if (widget.address != null) {
+      cubit.updateAddress(
+        widget.address!.copyWith(
+          label: label,
+          details: details,
+          latitude: _selectedLocation.latitude,
+          longitude: _selectedLocation.longitude,
+        ),
+      );
+    } else {
+      cubit.addAddress(
+        AddressModel(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          label: label,
+          details: details,
+          latitude: _selectedLocation.latitude,
+          longitude: _selectedLocation.longitude,
+        ),
+      );
+    }
     Navigator.of(context).pop();
   }
 

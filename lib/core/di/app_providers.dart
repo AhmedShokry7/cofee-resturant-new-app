@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
@@ -27,6 +28,7 @@ import 'package:new_coffee/features/notifications/data/repositories/notification
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/supabase_order_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
@@ -160,7 +162,11 @@ class AppProviders extends StatelessWidget {
               orders: context.read<OrdersRepository>(),
             ),
           ),
-          BlocProvider(create: (context) => SavedCardsCubit()..load()),
+          BlocProvider(
+            create: (context) => SavedCardsCubit(
+              repository: SupabaseSavedCardsRepository(),
+            )..load(),
+          ),
           BlocProvider(
             create: (context) => SearchCubit(
               catalogRepository: context.read<CatalogRepository>(),
@@ -175,6 +181,11 @@ class AppProviders extends StatelessWidget {
           BlocProvider(
             create: (context) =>
                 CategoriesCubit(repository: context.read<CatalogRepository>()),
+          ),
+          BlocProvider(
+            create: (context) => AddressesCubit(
+              repository: context.read<AddressRepository>(),
+            ),
           ),
           BlocProvider(create: (context) => ProfileCubit()),
           BlocProvider(

@@ -61,23 +61,31 @@ class BundleDetailsPage extends StatelessWidget {
     );
   }
 
-  /// Adds every bundle component to the cart. The shared button owns the
-  /// success animation, so there is no separate SnackBar here.
+  /// Adds the bundle as one cart line. The shared button owns the success
+  /// animation, so there is no separate SnackBar here.
   Future<void> _addBundle(BuildContext context) async {
     final cubit = context.read<BundleDetailsCubit>();
     final shares = cubit.sharesFor();
     final cart = context.read<CartCubit>();
-    for (final product in cubit.state.products) {
-      final component = bundle.components.firstWhere(
-        (item) => item.productId == product.id,
-      );
-      cart.add(
-        product,
-        quantity: component.quantity,
-        note: S.bundleNote(bundle.title),
-        unitPrice: shares[product.id],
-      );
-    }
+    final components = <CartBundleComponent>[
+      for (final product in cubit.state.products)
+        CartBundleComponent(
+          productId: product.id,
+          quantity:
+              bundle.components
+                  .firstWhere((item) => item.productId == product.id)
+                  .quantity,
+          unitPrice: shares[product.id] ?? product.price,
+        ),
+    ];
+    cart.addBundle(
+      bundleId: bundle.id,
+      title: bundle.title,
+      image: bundle.image,
+      price: bundle.price,
+      components: components,
+      quantity: 1,
+    );
   }
 }
 

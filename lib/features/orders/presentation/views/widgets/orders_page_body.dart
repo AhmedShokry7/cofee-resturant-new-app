@@ -42,7 +42,7 @@ class OrdersPageBody extends StatelessWidget {
                   onRetry: () => context.read<OrdersCubit>().refresh(),
                 );
               }
-              final orders = state.filtered;
+              final orders = state.grouped;
               if (orders.isEmpty) {
                 return EmptyState(
                   icon: HugeIcons.strokeRoundedPackage,
@@ -50,16 +50,19 @@ class OrdersPageBody extends StatelessWidget {
                   subtitle: S.ordersEmptyHint,
                 );
               }
-              return ListView.builder(
-                padding: EdgeInsets.fromLTRB(
-                  SpacingTokens.lg.w,
-                  SpacingTokens.md.h,
-                  SpacingTokens.lg.w,
-                  SpacingTokens.lg.w,
+              return RefreshIndicator(
+                onRefresh: () => context.read<OrdersCubit>().refresh(),
+                child: ListView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    SpacingTokens.lg.w,
+                    SpacingTokens.md.h,
+                    SpacingTokens.lg.w,
+                    SpacingTokens.lg.w,
+                  ),
+                  itemCount: orders.length,
+                  itemBuilder: (context, index) =>
+                      OrderCard(order: orders[index]),
                 ),
-                itemCount: orders.length,
-                itemBuilder: (context, index) =>
-                    OrderCard(order: orders[index]),
               );
             },
           ),

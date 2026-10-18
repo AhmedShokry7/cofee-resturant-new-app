@@ -3,9 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
+
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -24,12 +26,45 @@ import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bottom_sheet.dart';
+import 'package:new_coffee/shared/widgets/selection_radio.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
   @override
   State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _LanguageOption extends StatelessWidget {
+  const _LanguageOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
+        child: Row(
+          children: [
+            SelectionRadio(selected: selected),
+            SizedBox(width: SpacingTokens.md.w),
+            Expanded(
+              child: Text(label, style: AppFonts.regular16(context)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SettingsPageState extends State<SettingsPage> {
@@ -78,6 +113,40 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _pickImage(BuildContext context) =>
       showProfileImagePicker(context);
+
+  /// Lets the customer pick the UI language. The choice is written through
+  /// [AppLocale.setLanguage], which persists it and notifies the whole app, so
+  /// every screen — including this one — re-renders in the new language and the
+  /// choice survives the next start.
+  Future<void> _showLanguageDialog(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.language),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LanguageOption(
+              label: S.arabicLanguage,
+              selected: AppLocale.instance.language == AppLanguage.arabic,
+              onTap: () {
+                AppLocale.instance.setLanguage(AppLanguage.arabic);
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            _LanguageOption(
+              label: S.englishLanguage,
+              selected: AppLocale.instance.language == AppLanguage.english,
+              onTap: () {
+                AppLocale.instance.setLanguage(AppLanguage.english);
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -158,11 +227,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             SizedBox(height: SpacingTokens.md.h),
             ProfileMenuTile(
-              icon: Icons.language,
-              label: S.languageValue(AppLocale.instance.isArabic),
-              onTap: () async => AppLocale.instance.toggle(),
-            ),
-            ProfileMenuTile(
               icon: HugeIcons.strokeRoundedUserCircle,
               label: S.yourProfile,
               onTap: () =>
@@ -199,6 +263,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   Navigator.of(context).pushNamed(NotificationsPage.routeName),
             ),
             ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedLanguageCircle,
+              label: S.language,
+              subtitle: S.languageValue(AppLocale.instance.isArabic),
+              onTap: () => _showLanguageDialog(context),
+            ),
+            ProfileMenuTile(
               icon: HugeIcons.strokeRoundedHelpCircle,
               label: S.help,
               onTap: () => Navigator.of(context).pushNamed(HelpPage.routeName),
@@ -208,6 +278,12 @@ class _SettingsPageState extends State<SettingsPage> {
               label: S.privacyPolicy,
               onTap: () =>
                   Navigator.of(context).pushNamed(PrivacyPolicyPage.routeName),
+            ),
+            ProfileMenuTile(
+              icon: HugeIcons.strokeRoundedLocation01,
+              label: S.myAddresses,
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AddressesPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedLogout01,

@@ -1,92 +1,53 @@
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
-import 'package:new_coffee/shared/utils/card_brand.dart';
+import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
 
 part 'saved_cards_state.dart';
 
-/// Saved payment cards, stored on the device.
+/// Saved payment cards, sourced from the Tap Payments backend.
 ///
-/// There is deliberately no server table for saved cards: no order references
-/// one, and a card number is not an address. These rows stay local, and the
-/// list starts empty: only cards the customer actually adds are ever shown.
+/// The Flutter app never stores PAN, CVV or raw card data. Tokens and card
+/// references are owned by the provider and persisted server-side; this cubit
+/// only mirrors the safe display fields returned by the backend.
 class SavedCardsCubit extends Cubit<SavedCardsState> {
-  SavedCardsCubit() : super(const SavedCardsState(cards: []));
+  SavedCardsCubit({SavedCardsRepository? repository})
+      : _repository = repository,
+        super(const SavedCardsState(cards: []));
 
-  static const _storageKey = 'saved_cards_v1';
+  final SavedCardsRepository? _repository;
 
   Future<void> load() async {
+    final repository = _repository;
+    if (repository == null) {
+      if (!isClosed) emit(const SavedCardsState(cards: []));
+      return;
+    }
     try {
-      final raw = await SharedPref.getValue(key: _storageKey);
-      if (raw == null || raw.isEmpty || isClosed) {
-        if (!isClosed) emit(const SavedCardsState(cards: []));
-        return;
-      }
-      final decoded = jsonDecode(raw);
-      if (decoded is! List) return;
-      final cards = decoded
-          .map(_cardFromJson)
-          .whereType<SavedCardModel>()
-          .toList();
+      final cards = await repository.listSavedCards();
+      if (isClosed) return;
       emit(SavedCardsState(cards: cards));
     } catch (_) {
-      // Best-effort: an unreadable store yields an empty list, never an error.
       if (!isClosed) emit(const SavedCardsState(cards: []));
     }
   }
 
+  /// Cards are saved only through the trusted payment flow, never from raw
+  /// card input collected in the app.
   void addCard(SavedCardModel card) {
-    emit(SavedCardsState(cards: [...state.cards, card]));
-    _persist();
+    // Backwards-compatible no-op: the backend is the source of truth.
+    load();
   }
 
-  void removeCard(String id) {
-    emit(
-      SavedCardsState(
-        cards: state.cards.where((card) => card.id != id).toList(),
-      ),
-    );
-    _persist();
-  }
-
-  static SavedCardModel? _cardFromJson(dynamic value) {
-    if (value is! Map) return null;
+  Future<void> removeCard(String id) async {
+    final repository = _repository;
+    if (repository == null) return;
     try {
-      return SavedCardModel(
-        id: value['id']?.toString() ?? '',
-        brand: CardBrand.values.firstWhere(
-          (brand) => brand.name == value['brand']?.toString(),
-          orElse: () => CardBrand.unknown,
-        ),
-        last4: value['last4']?.toString() ?? '',
-        holder: value['holder']?.toString() ?? '',
-        expiry: value['expiry']?.toString() ?? '',
-      );
+      await repository.deleteSavedCard(id);
     } catch (_) {
-      return null;
+      // Best-effort: keep UI responsive.
     }
-  }
-
-  static Map<String, dynamic> _cardToJson(SavedCardModel card) => {
-    'id': card.id,
-    'brand': card.brand.name,
-    'last4': card.last4,
-    'holder': card.holder,
-    'expiry': card.expiry,
-  };
-
-  Future<void> _persist() async {
-    try {
-      await SharedPref.setValue(
-        key: _storageKey,
-        value: jsonEncode(state.cards.map(_cardToJson).toList()),
-      );
-    } catch (_) {
-      // Best-effort: never break card management if storage fails.
-    }
+    await load();
   }
 }

@@ -22,6 +22,10 @@ class OrdersState {
   /// order without reclassifying rows in the UI.
   List<OrderItemModel> get filtered => orders;
 
+  /// Invoice lines grouped into orders, most recent first, so the list shows
+  /// one card per order with its real header totals.
+  List<OrderGroup> get grouped => OrderGroup.fromLines(orders);
+
   bool get isEmpty =>
       !isLoading && error == null && !signedOut && orders.isEmpty;
 

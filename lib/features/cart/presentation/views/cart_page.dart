@@ -33,13 +33,29 @@ class CartPage extends StatelessWidget {
         content: Text(S.removedFromCart(item.product.name)),
         action: SnackBarAction(
           label: S.undo,
-          onPressed: () => cart.add(
-            item.product,
-            quantity: item.quantity,
-            note: item.note,
-            optionValueIds: item.optionValueIds,
-            unitPrice: item.unitPrice,
-          ),
+          onPressed: () {
+            if (item.isBundle) {
+              cart.addBundle(
+                bundleId: item.bundleId!,
+                title: item.product.name,
+                image: item.product.image,
+                price: item.product.price,
+                components: item.bundleComponents,
+                quantity: item.quantity,
+                note: item.note,
+                optionValueIds: item.optionValueIds,
+              );
+            } else {
+              cart.add(
+                item.product,
+                quantity: item.quantity,
+                note: item.note,
+                optionValueIds: item.optionValueIds,
+                unitPrice: item.unitPrice,
+                bundleId: item.bundleId,
+              );
+            }
+          },
         ),
       ),
     );

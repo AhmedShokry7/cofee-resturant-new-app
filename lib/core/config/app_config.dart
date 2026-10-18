@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 
+import 'supabase_public_config.dart';
+
 /// Build-time configuration.
 ///
-/// Every value is injected at build time with `--dart-define`, so nothing is
-/// hard-coded in the repository and no key can be committed by accident:
+/// The app's public Supabase URL/key have safe project defaults, so ordinary
+/// IDE and CLI runs work without extra arguments. Build-time defines override
+/// those defaults when a different project is needed:
 ///
 ///   flutter run \
 ///     --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
@@ -13,18 +16,22 @@ import 'package:flutter/foundation.dart';
 /// `SUPABASE_PUBLISHABLE_KEY` is the public "anon" role and is safe to ship.
 /// The `service_role` key must never reach the client (DATABASE_SPEC.md 1.5).
 ///
-/// A build without the defines still runs: [isSupabaseConfigured] is false and
-/// the app falls back to its local data instead of serving fabricated results.
+/// A build without defines uses the public project defaults, so ordinary
+/// Debug launches remain connected to the configured Supabase project.
 class AppConfig {
   AppConfig._();
 
-  /// Supabase project URL. Injected with `--dart-define=SUPABASE_URL=...`.
-  static const String supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  /// Supabase project URL. A build-time define can override the app default.
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: SupabasePublicConfig.url,
+  );
 
-  /// Publishable (public) key. Injected with
-  /// `--dart-define=SUPABASE_PUBLISHABLE_KEY=...`.
-  static const String supabasePublishableKey =
-      String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+  /// Publishable (public) key. A build-time define can override the default.
+  static const String supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: SupabasePublicConfig.publishableKey,
+  );
 
   /// Where Supabase should send the user after they follow a password-reset
   /// link. Must be registered under Auth -> URL Configuration in the dashboard,
@@ -33,12 +40,10 @@ class AppConfig {
   static const String passwordRecoveryRedirect =
       String.fromEnvironment('PASSWORD_RECOVERY_REDIRECT');
 
-  /// Shown when the app was built without the Supabase defines. Names the
-  /// missing inputs, never any value.
+  /// Shown if public configuration was intentionally cleared. Never includes
+  /// a key value.
   static String get missingConfigurationMessage =>
-      'Missing configuration. Build with '
-      '--dart-define=SUPABASE_URL=... and '
-      '--dart-define=SUPABASE_PUBLISHABLE_KEY=...';
+      'Supabase public configuration is missing. Check the app configuration.';
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;

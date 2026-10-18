@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -12,6 +15,7 @@ import 'package:new_coffee/features/checkout/data/repositories/address_repositor
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_addresses_page_body.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -24,10 +28,11 @@ ProductModel _product(String id) =>
     ProductModel(id: id, name: id, price: 25, image: 'assets/images/p.png');
 
 class _FakeCoupons implements CouponRepository {
-  _FakeCoupons({this.result, this.error});
+  _FakeCoupons({this.result, this.error, this.syncError});
 
   final ValidatedCoupon Function(String code, double subtotal)? result;
   Object? error;
+  Object? syncError;
   int calls = 0;
   int cartValidationCalls = 0;
   List<PlaceOrderLine>? validatedCartLines;
@@ -57,6 +62,7 @@ class _FakeCoupons implements CouponRepository {
   }) {
     cartValidationCalls++;
     validatedCartLines = lines;
+    if (syncError != null) throw syncError!;
     return validate(code: code, subtotal: subtotal, branchId: branchId);
   }
 }
@@ -94,6 +100,12 @@ class _FakeAddresses implements AddressRepository {
 
   final List<AddressModel> addresses;
 
+  /// When non-null, `setDefaultAddress` throws this error. Defaults to null,
+  /// i.e. success, so existing tests keep passing.
+  Object? setDefaultError;
+
+  int setDefaultCalls = 0;
+
   @override
   Future<List<AddressModel>> listAddresses() async => addresses;
 
@@ -103,7 +115,24 @@ class _FakeAddresses implements AddressRepository {
     required String details,
     double? latitude,
     double? longitude,
+    bool isDefault = false,
   }) => throw UnimplementedError();
+
+  @override
+  Future<AddressModel> updateAddress({
+    required String id,
+    required String label,
+    required String details,
+    double? latitude,
+    double? longitude,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<void> setDefaultAddress(String id) async {
+    setDefaultCalls++;
+    final error = setDefaultError;
+    if (error != null) throw error;
+  }
 
   @override
   Future<void> removeAddress(String id) async {}
@@ -248,9 +277,10 @@ CheckoutCubit _cubit(
   List<AddressModel> addresses = const [],
   DeliveryZoneRepository? deliveryZones,
   CouponRepository? coupons,
+  _FakeAddresses? addressesRepository,
 }) => CheckoutCubit(
   coupons: coupons ?? _FakeCoupons(),
-  addresses: _FakeAddresses(addresses),
+  addresses: addressesRepository ?? _FakeAddresses(addresses),
   paymentMethods: _FakePaymentMethods(),
   deliveryZoneRepository: deliveryZones ?? _FakeDeliveryZones(zones),
   orders: orders,
@@ -281,6 +311,71 @@ ValidatedCoupon _validated(
 );
 
 void main() {
+  test(
+    'a successful setDefault updates the default flag without changing the list',
+    () async {
+      final addresses = [
+        AddressModel(id: 'a1', label: 'Home', details: 'Street 1'),
+        AddressModel(id: 'a2', label: 'Work', details: 'Street 2'),
+      ];
+      final repository = _FakeAddresses(addresses);
+      final orders = _FakeOrders(result: _placed());
+      final cubit = _cubit(orders, addressesRepository: repository);
+      await cubit.load();
+
+      await cubit.setDefaultAddress('a2');
+
+      expect(repository.setDefaultCalls, 1);
+      expect(cubit.state.addresses, hasLength(2));
+      expect(
+        cubit.state.addresses.firstWhere((a) => a.id == 'a2').isDefault,
+        isTrue,
+      );
+      expect(
+        cubit.state.addresses.firstWhere((a) => a.id == 'a1').isDefault,
+        isFalse,
+      );
+      expect(cubit.state.error, isNull);
+    },
+  );
+
+  test(
+    'a failed setDefault reports the error and keeps the previous default',
+    () async {
+      final addresses = [
+        AddressModel(
+          id: 'a1',
+          label: 'Home',
+          details: 'Street 1',
+          isDefault: true,
+        ),
+        AddressModel(id: 'a2', label: 'Work', details: 'Street 2'),
+      ];
+      final repository = _FakeAddresses(addresses)
+        ..setDefaultError = StateError('boom');
+      final orders = _FakeOrders(result: _placed());
+      final cubit = _cubit(orders, addressesRepository: repository);
+      await cubit.load();
+
+      await cubit.setDefaultAddress('a2');
+
+      expect(repository.setDefaultCalls, 1);
+      // The repository failure must not be swallowed.
+      expect(cubit.state.error, isNotNull);
+      // The address list is preserved unchanged.
+      expect(cubit.state.addresses, hasLength(2));
+      expect(
+        cubit.state.addresses.firstWhere((a) => a.id == 'a1').isDefault,
+        isTrue,
+        reason: 'a failed default change must not flip the local flag',
+      );
+      expect(
+        cubit.state.addresses.firstWhere((a) => a.id == 'a2').isDefault,
+        isFalse,
+      );
+    },
+  );
+
   test(
     'a successful placement maps every line and shows the server totals',
     () async {
@@ -717,13 +812,11 @@ void main() {
   );
 
   test('a failed cart sync leaves no coupon applied', () async {
-    final orders = _FakeOrders(
-      result: _placed(),
-      syncError: StateError('offline'),
-    );
+    final orders = _FakeOrders(result: _placed(), syncError: StateError('offline'));
     final coupons = _FakeCoupons(
       result: (code, subtotal) =>
           _validated(code, discount: 5, subtotal: subtotal),
+      syncError: StateError('offline'),
     );
     final cubit = _cubit(orders, branchId: 'branch-1', coupons: coupons);
     await cubit.load();
@@ -878,6 +971,41 @@ void main() {
 
       expect(orders.idempotencyKeys, hasLength(1));
       await cubit.close();
+    },
+  );
+
+  testWidgets(
+    'a failed set-default shows a snackbar on the shipping addresses screen',
+    (tester) async {
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(360, 690),
+          builder: (context, _) => MaterialApp(
+            home: BlocProvider<CheckoutCubit>(
+              create: (_) => _cubit(
+                _FakeOrders(result: _placed()),
+                addressesRepository: _FakeAddresses([
+                  const AddressModel(
+                    id: 'a1',
+                    label: 'Home',
+                    details: 'Street 1',
+                    isDefault: true,
+                  ),
+                  const AddressModel(id: 'a2', label: 'Work', details: 'Street 2'),
+                ])..setDefaultError = StateError('rpc failed'),
+              ),
+              child: const Scaffold(body: ShippingAddressesPageBody()),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text(S.setDefaultAddress));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SnackBar), findsOneWidget);
+      expect(find.text(S.addressSaveFailed), findsOneWidget);
     },
   );
 }

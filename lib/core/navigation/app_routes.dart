@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
+import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
+import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
@@ -8,6 +10,7 @@ import 'package:new_coffee/features/auth/presentation/views/reset_password_page.
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/add_address_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
+import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_method_page.dart';
@@ -45,6 +48,12 @@ class AppRoutes {
     AddAddressPage.routeName: (context) => const AddAddressPage(),
     PaymentMethodPage.routeName: (context) => const PaymentMethodPage(),
     AddCardPage.routeName: (context) => const AddCardPage(),
+    CardPaymentPage.routeName: (context) => const CardPaymentPage(
+      orderId: '',
+      idempotencyKey: '',
+      publicKey: '',
+      sdkConfiguration: {},
+    ),
     PaymentSuccessPage.routeName: (context) => const PaymentSuccessPage(),
     EReceiptPage.routeName: (context) => const EReceiptPage(),
     CouponPage.routeName: (context) => const CouponPage(),
@@ -56,6 +65,8 @@ class AppRoutes {
     PrivacyPolicyPage.routeName: (context) => const PrivacyPolicyPage(),
     NotificationsPage.routeName: (context) => const NotificationsPage(),
     SearchPage.routeName: (context) => const SearchPage(),
+    AddressesPage.routeName: (context) => const AddressesPage(),
+    AddressFormPage.routeName: (context) => const AddressFormPage(),
   };
 
   /// Maps the persisted session flag to the first route to show.

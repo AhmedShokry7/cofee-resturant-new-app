@@ -189,6 +189,30 @@ class CartCubit extends Cubit<CartState> {
             if (isClosed) return;
             if (generation != _loadGeneration) return;
             for (final entry in guestEntries) {
+              if (entry['isBundle'] == true) {
+                final bundleId = entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
+                if (bundleId.isEmpty) continue;
+                final components = <CartBundleComponent>[];
+                final rawComponents = entry['bundleComponents'];
+                if (rawComponents is List) {
+                  for (final raw in rawComponents) {
+                    if (raw is Map) components.add(CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)));
+                  }
+                }
+                if (isClosed) continue;
+                if (generation != _loadGeneration) return;
+                addBundle(
+                  bundleId: bundleId,
+                  title: entry['bundleTitle']?.toString() ?? 'Bundle',
+                  image: entry['bundleImage']?.toString() ?? '',
+                  price: (entry['bundlePrice'] as num?)?.toDouble() ?? (entry['unitPrice'] as num?)?.toDouble() ?? 0,
+                  components: components,
+                  quantity: entry['quantity'] as int? ?? 1,
+                  note: entry['note'] as String? ?? '',
+                  optionValueIds: (entry['optionValueIds'] as List?)?.map((e) => e.toString()).toList() ?? const <String>[],
+                );
+                continue;
+              }
               final guestProductId = entry['productId']?.toString() ?? '';
               if (guestProductId.isEmpty) continue;
               final product =
@@ -283,6 +307,77 @@ class CartCubit extends Cubit<CartState> {
         branchId: branchId,
       ),
     );
+  }
+
+  /// Adds an entire bundle as a single cart line.
+  ///
+  /// The bundle keeps its own identity, name, image and price; its components
+  /// are retained for checkout expansion but never become separate cart lines.
+  void addBundle({
+    required String bundleId,
+    required String title,
+    required String image,
+    required double price,
+    required List<CartBundleComponent> components,
+    int quantity = 1,
+    String note = '',
+    List<String> optionValueIds = const [],
+  }) {
+    final items = [...state.items];
+    final optionIds = [
+      for (final id in optionValueIds)
+        if (id.trim().isNotEmpty) id,
+    ]..sort();
+    final product = ProductModel(
+      id: 'bundle:$bundleId',
+      name: title,
+      price: price,
+      image: image,
+    );
+    final index = items.indexWhere(
+      (item) =>
+          item.isBundle &&
+          item.bundleId == bundleId &&
+          item.note == note &&
+          _sameOptions(item.optionValueIds, optionIds),
+    );
+    if (index == -1) {
+      items.add(
+        CartItem(
+          product: product,
+          quantity: quantity.clamp(1, 99),
+          note: note,
+          optionValueIds: optionIds,
+          unitPrice: price,
+          bundleId: bundleId,
+          bundleComponents: components,
+        ),
+      );
+    } else {
+      items[index] = items[index].copyWith(
+        quantity: (items[index].quantity + quantity).clamp(1, 99),
+        unitPrice: price,
+        bundleComponents: components,
+      );
+    }
+    emit(CartState(items: items));
+    _persist();
+
+    // Mirror best-effort into the per-branch server cart, expanding the bundle
+    // into its priced components so server-side checks see the same content.
+    for (final component in components) {
+      _mirror(
+        _cartRepository.addItem(
+          productId: component.productId,
+          quantity: component.quantity * quantity,
+          note: note,
+          optionValueIds: optionValueIds,
+          unitPrice: component.unitPrice,
+          bundleId: bundleId,
+          branchId: branchId,
+        ),
+      );
+    }
   }
 
   /// Kept for callers that only know a product. The cart page and stepper now
@@ -385,6 +480,27 @@ class CartCubit extends Cubit<CartState> {
   ) async {
     final items = <CartItem>[];
     for (final entry in entries) {
+      if (entry['isBundle'] == true) {
+        final bundleId = entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
+        if (bundleId.isEmpty) continue;
+        final title = entry['bundleTitle']?.toString() ?? 'Bundle';
+        final image = entry['bundleImage']?.toString() ?? '';
+        final price = (entry['bundlePrice'] as num?)?.toDouble() ?? (entry['unitPrice'] as num?)?.toDouble() ?? 0.0;
+        final product = ProductModel(id: 'bundle:$bundleId', name: title, price: price, image: image);
+        final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
+        final components = <CartBundleComponent>[];
+        final rawComponents = entry['bundleComponents'];
+        if (rawComponents is List) {
+          for (final raw in rawComponents) {
+            if (raw is Map) {
+              components.add(CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)));
+            }
+          }
+        }
+        items.add(CartItem(product: product, quantity: quantity, note: entry['note']?.toString() ?? '', optionValueIds: _optionIds(entry['optionValueIds']), unitPrice: price, bundleId: bundleId, bundleComponents: components));
+        if (items.length >= _maxItems) break;
+        continue;
+      }
       final productId = entry['productId']?.toString();
       if (productId == null || productId.isEmpty) continue;
       final product =
@@ -436,6 +552,14 @@ class CartCubit extends Cubit<CartState> {
                   if (item.unitPrice != null) 'unitPrice': item.unitPrice,
                   if (item.bundleId != null && item.bundleId!.isNotEmpty)
                     'bundleId': item.bundleId,
+                  if (item.isBundle) 'isBundle': true,
+                  if (item.isBundle) 'bundleTitle': item.product.name,
+                  if (item.isBundle) 'bundleImage': item.product.image,
+                  if (item.isBundle) 'bundlePrice': item.product.price,
+                  if (item.isBundle)
+                    'bundleComponents': item.bundleComponents
+                        .map((component) => component.toJson())
+                        .toList(),
                 },
               )
               .toList(),

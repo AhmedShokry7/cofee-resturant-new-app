@@ -6,6 +6,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
+import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 
 class PaymentMethodBottomBar extends StatelessWidget {
@@ -29,9 +30,27 @@ class PaymentMethodBottomBar extends StatelessWidget {
       return;
     }
 
-    // Only after the server persisted the order: award the local points view
-    // and clear the device cart. Clearing earlier would lose the cart if the
-    // placement had failed.
+    final orderId = checkout.state.lastOrder?.id ?? '';
+    final selectedMethod = checkout.state.selectedPaymentMethod;
+    final isOnline = selectedMethod?.isOnline ?? false;
+
+    if (isOnline && orderId.isNotEmpty) {
+      final publicKey = const String.fromEnvironment('TAP_PUBLIC_KEY');
+      final sdkConfig = <String, dynamic>{};
+      final result = await navigator.push<bool>(
+        MaterialPageRoute(
+          builder: (_) => CardPaymentPage(
+            orderId: orderId,
+            idempotencyKey: orderId,
+            publicKey: publicKey,
+            sdkConfiguration: sdkConfig,
+          ),
+        ),
+      );
+      if (!context.mounted) return;
+      if (result != true) return;
+    }
+
     context.read<LoyaltyCubit>().earnForOrder(total);
     cart.clear();
     navigator.pushNamedAndRemoveUntil(

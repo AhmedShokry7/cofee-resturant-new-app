@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -8,8 +7,6 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/card_preview.dart';
-import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
-import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/shared/utils/card_brand.dart';
 import 'package:new_coffee/shared/utils/input_formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -56,23 +53,17 @@ class _AddCardPageState extends State<AddCardPage> {
 
   void _submit() {
     FocusScope.of(context).unfocus();
-    if (_formKey.currentState?.validate() ?? false) {
-      final number = _numberController.text.replaceAll(' ', '');
-      context.read<SavedCardsCubit>().addCard(
-        SavedCardModel(
-          id: DateTime.now().microsecondsSinceEpoch.toString(),
-          brand: detectCardBrand(number),
-          last4: number.length >= 4
-              ? number.substring(number.length - 4)
-              : number,
-          holder: _nameController.text.trim(),
-          expiry: _expiryController.text,
+    // Raw card data is never stored locally. Cards are tokenized and stored
+    // by the payment provider only through the trusted checkout flow.
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.of(context).pop();
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Cards are saved securely during checkout. No card data is stored on this device.',
         ),
-      );
-      final messenger = ScaffoldMessenger.of(context);
-      Navigator.of(context).pop();
-      messenger.showSnackBar(SnackBar(content: Text(S.cardAdded)));
-    }
+      ),
+    );
   }
 
   @override

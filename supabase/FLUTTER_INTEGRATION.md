@@ -46,11 +46,29 @@ select count(*) from catalog.categories;
 
 ## 3. التشغيل
 
+التشغيل العادي من زر Debug أو من CLI يستخدم إعدادات Supabase العامة للمشروع تلقائيًا، فلا يحتاج تمرير أي قيم.
+على Windows، يمكنك اختياريًا مزامنة الإعدادات من `.env` قبل التشغيل:
+
+```powershell
+.\tools\run_flutter.ps1
+```
+
+ولإنشاء APK:
+
+```powershell
+.\tools\build_apk.ps1
+```
+
+يمكن أيضًا اختيار إعداد التشغيل **new_cofee (Supabase)** من VS Code؛ يُحدَّث ملف الإعداد المحلي تلقائيًا قبل كل تشغيل.
+الأدوات تقرأ من `.env` فقط `SUPABASE_URL` و`SUPABASE_PUBLISHABLE_KEY`، وتضعهما في `.env.flutter.json` المتجاهل بواسطة Git. لا تمرر `SUPABASE_SERVICE_ROLE_KEY` أو `SUPABASE_ACCESS_TOKEN` إلى Flutter.
+
+إذا غُيّر `.env`، تُحدَّث القيم تلقائيًا في التشغيل أو البناء التالي.
+
+التشغيل المباشر بأوامر Flutter لا يقرأ `.env` وحده، لكنه يستخدم إعدادات المشروع العامة الافتراضية المعرّفة في التطبيق.
+
 ```bash
-# مفاتيحك في .env (مُتجاهَل من Git)
-flutter run ^
-  --dart-define=SUPABASE_URL=%SUPABASE_URL% ^
-  --dart-define=SUPABASE_PUBLISHABLE_KEY=%SUPABASE_PUBLISHABLE_KEY%
+# المسار المباشر، عند الحاجة فقط:
+flutter run --dart-define-from-file=.env.flutter.json
 ```
 
 **أو بدون مفاتيح:** التطبيق يعمل كالمعتاد على البيانات الثابتة المحلية. لا ينهار.

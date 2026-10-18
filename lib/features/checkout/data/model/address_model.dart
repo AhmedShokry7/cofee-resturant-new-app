@@ -17,6 +17,23 @@ class AddressModel {
   final double? longitude;
   final bool isDefault;
 
+  AddressModel copyWith({
+    String? id,
+    String? label,
+    String? details,
+    double? latitude,
+    double? longitude,
+    bool? isDefault,
+  }) =>
+      AddressModel(
+        id: id ?? this.id,
+        label: label ?? this.label,
+        details: details ?? this.details,
+        latitude: latitude ?? this.latitude,
+        longitude: longitude ?? this.longitude,
+        isDefault: isDefault ?? this.isDefault,
+      );
+
   factory AddressModel.fromDatabase(Map<String, dynamic> json) {
     final map = Db.asMap(json);
     return AddressModel(

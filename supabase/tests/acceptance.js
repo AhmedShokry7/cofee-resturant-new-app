@@ -624,7 +624,6 @@ async function cleanupOrders(whereSql, params = []) {
       ['orders.order_items', 'order_id', 'orders.orders'],
       ['catalog.products', 'category_id', 'catalog.categories'],
       ['inventory.branch_stock', 'product_id', 'catalog.products'],
-      ['marketing.banners', 'target_id', 'catalog.categories'],
       ['loyalty.loyalty_transactions', 'user_id', 'identity.profiles'],
     ];
     const bad = [];
@@ -633,6 +632,19 @@ async function cleanupOrders(whereSql, params = []) {
         where a.${c1} is not null and not exists (select 1 from ${t2} b where b.id = a.${c1})`);
       if (r.rows[0].n > 0) bad.push(`${t1}.${c1}=${r.rows[0].n}`);
     }
+    // Banner targets are polymorphic: target_id points to categories, products,
+    // or bundles according to target_type. Checking every id against categories
+    // alone incorrectly reports valid product and bundle banners as orphans.
+    const banners = await admin.query(`select count(*)::int n from marketing.banners b
+      where b.target_id is not null and not (
+        (b.target_type = 'category' and exists (
+          select 1 from catalog.categories c where c.id = b.target_id))
+        or (b.target_type = 'product' and exists (
+          select 1 from catalog.products p where p.id = b.target_id))
+        or (b.target_type = 'bundle' and exists (
+          select 1 from catalog.bundles bu where bu.id = b.target_id))
+      )`);
+    if (banners.rows[0].n > 0) bad.push(`marketing.banners.target_id=${banners.rows[0].n}`);
     return { good: bad.length === 0, detail: bad.length ? bad.join(' ') : 'no orphans across 6 FK columns' };
   });
 

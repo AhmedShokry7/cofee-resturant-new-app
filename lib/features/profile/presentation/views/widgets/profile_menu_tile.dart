@@ -12,10 +12,14 @@ class ProfileMenuTile extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
+    this.subtitle,
   });
 
   final IconData icon;
   final String label;
+
+  /// Secondary line under [label], e.g. the currently selected value.
+  final String? subtitle;
   final VoidCallback onTap;
 
   @override
@@ -34,7 +38,22 @@ class ProfileMenuTile extends StatelessWidget {
                 Icon(icon, size: 24.w, color: AppColor.primaryColor),
                 SizedBox(width: SpacingTokens.md.w),
                 Expanded(
-                  child: Text(label, style: AppFonts.regular16(context)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(label, style: AppFonts.regular16(context)),
+                      if (subtitle != null) ...[
+                        SizedBox(height: 2.h),
+                        Text(
+                          subtitle!,
+                          style: AppFonts.regular12(
+                            context,
+                          ).copyWith(color: AppColor.greyColor),
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
                 Icon(
                   HugeIcons.strokeRoundedArrowRight01,

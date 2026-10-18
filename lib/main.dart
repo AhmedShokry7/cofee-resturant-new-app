@@ -60,6 +60,10 @@ class MyApp extends StatelessWidget {
               ],
               debugShowCheckedModeBanner: false,
               theme: ThemeClass.light(),
+              builder: (context, child) => Directionality(
+                textDirection: AppLocale.instance.textDirection,
+                child: child ?? const SizedBox.shrink(),
+              ),
               navigatorKey: rootNavigatorKey,
               navigatorObservers: [AppRouteObserver.instance],
               // The assistant FAB is owned by the Home page scaffold, not by

@@ -1,0 +1,9 @@
+{
+  "customer.a@test.local": "f8d1e86b-641a-4999-80bc-60ab3941136d",
+  "customer.b@test.local": "c0d9cd9c-3570-4d4b-9089-744f8cbc8489",
+  "owner@test.local": "1e391c6e-6db9-4dc3-9367-fe24c11f9ccc",
+  "manager.main@test.local": "e0a9ab50-022b-46af-94cd-8ae87580ead4",
+  "manager.jed@test.local": "c48d98e1-271d-4ba3-b962-9ca1e04066c7",
+  "cashier.main@test.local": "d62168b8-dc49-4113-b02e-596b58193421",
+  "suspended@test.local": "a91abba4-bfcf-46c0-8d44-44d26e44af91"
+}

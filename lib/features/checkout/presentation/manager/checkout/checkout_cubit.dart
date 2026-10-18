@@ -82,7 +82,12 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           addresses: addresses,
           paymentMethods: paymentMethods,
           availableCoupons: coupons,
-          selectedAddress: addresses.isEmpty ? null : addresses.first,
+          selectedAddress: addresses.isEmpty
+              ? null
+              : addresses.firstWhere(
+                  (address) => address.isDefault,
+                  orElse: () => addresses.first,
+                ),
           selectedPaymentMethod: paymentMethods.isEmpty
               ? null
               : paymentMethods.firstWhere(
@@ -256,15 +261,71 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   Future<void> removeAddress(String id) async {
-    await _addresses.removeAddress(id);
-    if (isClosed) return;
-    final remaining = state.addresses.where((a) => a.id != id).toList();
-    emit(
-      state.copyWith(
-        addresses: remaining,
-        selectedAddress: remaining.isEmpty ? null : remaining.first,
-      ),
-    );
+    try {
+      await _addresses.removeAddress(id);
+      if (isClosed) return;
+      final remaining = state.addresses.where((a) => a.id != id).toList();
+      emit(
+        state.copyWith(
+          addresses: remaining,
+          selectedAddress: remaining.isEmpty
+              ? null
+              : remaining.firstWhere(
+                  (address) => address.isDefault,
+                  orElse: () => remaining.first,
+                ),
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  Future<void> setDefaultAddress(String id) async {
+    try {
+      await _addresses.setDefaultAddress(id);
+      if (isClosed) return;
+      final updated = state.addresses
+          .map((address) => address.copyWith(isDefault: address.id == id))
+          .toList();
+      emit(state.copyWith(addresses: updated));
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  /// Clears a consumed error so a later rebuild cannot resurface it.
+  ///
+  /// The failure was already shown once; keeping it would repeat the same
+  /// message on every unrelated rebuild.
+  void clearError() {
+    if (state.error == null) return;
+    emit(state.copyWith(clearError: true));
+  }
+
+  Future<void> updateAddress(AddressModel address) async {
+    try {
+      final saved = await _addresses.updateAddress(
+        id: address.id,
+        label: address.label,
+        details: address.details,
+        latitude: address.latitude,
+        longitude: address.longitude,
+      );
+      if (isClosed) return;
+      final updated = state.addresses
+          .map((item) => item.id == saved.id ? saved : item)
+          .toList();
+      emit(state.copyWith(addresses: updated));
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(error: error.toString()));
+      addError(error, stackTrace);
+    }
   }
 
   void selectPaymentMethod(PaymentMethodModel method) {
@@ -378,15 +439,28 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   /// Maps device cart lines to the price-free lines the server re-prices.
+  ///
+  /// A bundle is sold as one device line but persists as its component lines,
+  /// each carrying the bundle id so the server keeps charging the bundle share.
   List<PlaceOrderLine> _lines(List<CartItem> items) => [
     for (final item in items)
-      PlaceOrderLine(
-        productId: item.product.id,
-        quantity: item.quantity,
-        note: item.note,
-        optionValueIds: item.optionValueIds,
-        bundleId: item.bundleId,
-      ),
+      if (item.isBundle)
+        for (final component in item.bundleComponents)
+          PlaceOrderLine(
+            productId: component.productId,
+            quantity: component.quantity * item.quantity,
+            note: item.note,
+            optionValueIds: item.optionValueIds,
+            bundleId: item.bundleId,
+          )
+      else
+        PlaceOrderLine(
+          productId: item.product.id,
+          quantity: item.quantity,
+          note: item.note,
+          optionValueIds: item.optionValueIds,
+          bundleId: item.bundleId,
+        ),
   ];
 
   /// Places the order on the server. Returns true only when the server
