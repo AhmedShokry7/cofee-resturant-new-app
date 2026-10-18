@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -35,7 +34,7 @@ class ProductDetailsBody extends StatelessWidget {
           }
           return Center(
             child: Text(
-              state.error ?? 'Product unavailable',
+              state.error ?? S.productUnavailable,
               style: AppFonts.regular14(context),
             ),
           );
@@ -159,7 +158,6 @@ class _UnavailableBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ar = AppLocale.instance.isArabic;
     return Container(
       padding: EdgeInsets.all(SpacingTokens.md.w),
       decoration: BoxDecoration(
@@ -172,10 +170,7 @@ class _UnavailableBanner extends StatelessWidget {
           SizedBox(width: SpacingTokens.sm.w),
           Expanded(
             child: Text(
-              reason ??
-                  (ar
-                      ? 'هذا الخيار غير متوفر حاليًا'
-                      : 'This combination is not available right now'),
+              reason ?? S.unavailableNow,
               style: AppFonts.medium14(context)
                   .copyWith(color: AppColor.errorColor),
             ),
@@ -201,7 +196,6 @@ class _OptionGroupSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ar = AppLocale.instance.isArabic;
     final name = group.name;
 
     return Column(
@@ -212,7 +206,7 @@ class _OptionGroupSection extends StatelessWidget {
           Padding(
             padding: EdgeInsets.only(top: 2.h, bottom: SpacingTokens.xs.h),
             child: Text(
-              ar ? 'مطلوب' : 'Required',
+              S.required,
               style: AppFonts.regular12(context)
                   .copyWith(color: AppColor.greyColor),
             ),

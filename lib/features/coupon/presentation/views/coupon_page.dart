@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
 import 'package:new_coffee/features/coupon/presentation/views/widgets/coupon_card.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -16,6 +17,9 @@ class CouponPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Held in state so the list is fetched once and can be refreshed after a
+    // coupon is applied from here, instead of re-issuing the query on every
+    // rebuild.
     return Scaffold(
       appBar: AppBar(title: Text(S.coupon)),
       body: FutureBuilder(
@@ -31,6 +35,14 @@ class CouponPage extends StatelessWidget {
           if (coupons.isEmpty) {
             return Center(child: Text(S.noCoupons));
           }
+          // Highlights the code already attached to the cart so the customer
+          // can see which offer they are actually getting.
+          final appliedCode = context
+              .watch<CheckoutCubit>()
+              .state
+              .appliedCoupon
+              ?.coupon
+              .code;
           return ListView(
             padding: EdgeInsets.fromLTRB(
               SpacingTokens.lg.w,
@@ -41,7 +53,12 @@ class CouponPage extends StatelessWidget {
             children: [
               Text(S.bestOffers, style: AppFonts.semiBold18(context)),
               SizedBox(height: SpacingTokens.lg.h),
-              ...coupons.map((coupon) => CouponCard(coupon: coupon)),
+              ...coupons.map(
+                (coupon) => CouponCard(
+                  coupon: coupon,
+                  isApplied: coupon.code == appliedCode,
+                ),
+              ),
             ],
           );
         },

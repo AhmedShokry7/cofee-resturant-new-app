@@ -30,17 +30,18 @@ class DeliveryZonesException implements Exception {
   String toString() => 'DeliveryZonesException(${failure.name})';
 }
 
-/// True when PostgREST reported the delivery-zones bridge as absent, so callers
-/// can classify the failure instead of mistaking it for "no zones".
+/// True when PostgREST reported [name] as absent, so callers can classify the
+/// failure instead of mistaking it for "no zones".
 ///
-/// PostgREST answers a missing RPC with `PGRST202` (schema-cache miss) and
+/// PostgREST answers a missing function with `PGRST202` (schema-cache miss) and
 /// Postgres uses `42883` (`undefined_function`); the message check covers
 /// older/self-hosted gateways that omit the code.
 @visibleForTesting
-bool isMissingDeliveryZonesRpc(PostgrestException error) {
+bool isMissingDeliveryZonesRpc(PostgrestException error, {String name = 'delivery_zones_for_branch'}) {
   final code = error.code;
   if (code == 'PGRST202' || code == '42883') return true;
-  return error.message.contains('Could not find the function');
+  return error.message.contains('Could not find the function') &&
+      error.message.contains(name);
 }
 
 /// Delivery zones a branch delivers to.
@@ -51,6 +52,21 @@ bool isMissingDeliveryZonesRpc(PostgrestException error) {
 /// rather than a fabricated fee.
 abstract class DeliveryZoneRepository {
   Future<List<DeliveryZone>> zonesForBranch(String branchId);
+
+  /// The zone that serves [latitude]/[longitude], nearest first.
+  ///
+  /// An empty list means the address is outside every zone this branch serves —
+  /// the answer to "no delivery to your area". That is a real answer and is not
+  /// an error; a thrown [DeliveryZonesException] means we could not tell, and
+  /// the two must not be confused.
+  ///
+  /// The fee comes back priced for this address, so the number the customer
+  /// sees is the one the server will charge.
+  Future<List<DeliveryZone>> zonesForPoint({
+    required String branchId,
+    required double latitude,
+    required double longitude,
+  });
 }
 
 class SupabaseDeliveryZoneRepository implements DeliveryZoneRepository {
@@ -84,6 +100,45 @@ class SupabaseDeliveryZoneRepository implements DeliveryZoneRepository {
       // so instead of silently dropping delivery.
       throw DeliveryZonesException(
         isMissingDeliveryZonesRpc(error)
+            ? DeliveryZonesFailure.bridgeMissing
+            : DeliveryZonesFailure.backendError,
+        error,
+      );
+    } catch (error) {
+      throw DeliveryZonesException(DeliveryZonesFailure.backendError, error);
+    }
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>) DeliveryZone.fromDatabase(row),
+    ];
+  }
+
+  @override
+  Future<List<DeliveryZone>> zonesForPoint({
+    required String branchId,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final client = _client;
+    final branch = branchId.trim();
+    if (client == null) {
+      throw const DeliveryZonesException(DeliveryZonesFailure.backendError);
+    }
+    if (branch.isEmpty) return const [];
+
+    final List<dynamic> rows;
+    try {
+      rows = await client.rpc(
+        'resolve_delivery_zone',
+        params: <String, dynamic>{
+          'p_branch_id': branch,
+          'p_lat': latitude,
+          'p_lng': longitude,
+        },
+      ) as List;
+    } on PostgrestException catch (error) {
+      throw DeliveryZonesException(
+        isMissingDeliveryZonesRpc(error, name: 'resolve_delivery_zone')
             ? DeliveryZonesFailure.bridgeMissing
             : DeliveryZonesFailure.backendError,
         error,

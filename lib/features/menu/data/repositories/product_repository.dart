@@ -235,6 +235,8 @@ class FeaturedProduct {
     this.imageUrl,
     required this.effectivePrice,
     required this.source,
+    this.categoryAr,
+    this.categoryEn,
   });
 
   final String productId;
@@ -242,6 +244,11 @@ class FeaturedProduct {
   final String nameEn;
   final String? imageUrl;
   final double effectivePrice;
+
+  /// Category name, so a card can label itself without a second query. Null
+  /// when the product has no category.
+  final String? categoryAr;
+  final String? categoryEn;
 
   String get name =>
       pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);

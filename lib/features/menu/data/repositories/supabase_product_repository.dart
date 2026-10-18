@@ -350,6 +350,8 @@ class SupabaseProductRepository implements CatalogRepository {
         imageUrl: Db.textOrNull(m['image_url']),
         effectivePrice: Db.asDouble(m['effective_price']),
         source: Db.text(m['source'], 'manual'),
+        categoryAr: Db.textOrNull(m['category_name_ar']),
+        categoryEn: Db.textOrNull(m['category_name_en']),
       );
     }).toList();
   }

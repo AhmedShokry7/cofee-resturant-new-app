@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
+
 /// Standard Saudi Riyal symbol used everywhere a currency icon is shown.
 ///
 /// Renders `assets/icons/sar_currency.svg` (the official SAR glyph). The SVG
@@ -33,7 +35,7 @@ class CurrencyIcon extends StatelessWidget {
       height: size.w,
       fit: BoxFit.contain,
       colorFilter: ColorFilter.mode(resolved, BlendMode.srcIn),
-      semanticsLabel: 'Saudi Riyal',
+      semanticsLabel: S.saudiRiyal,
     );
   }
 }

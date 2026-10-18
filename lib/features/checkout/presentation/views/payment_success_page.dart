@@ -62,7 +62,7 @@ class PaymentSuccessPage extends StatelessWidget {
                       return Padding(
                         padding: EdgeInsets.only(top: SpacingTokens.sm.h),
                         child: Text(
-                          "You earned ${state.lastEarned} loyalty points!",
+                          S.loyaltyPointsEarned(state.lastEarned),
                           textAlign: TextAlign.center,
                           style: AppFonts.medium14(context)
                               .copyWith(color: AppColor.primaryColor),

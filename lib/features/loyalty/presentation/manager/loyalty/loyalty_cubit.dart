@@ -166,7 +166,10 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   /// method deliberately does not touch the server ledger.
   Future<int> earnForOrder(
     double orderTotal, {
-    String title = 'Order purchase',
+    // Null rather than `S.orderPurchaseLabel`: a localized getter is not a
+    // compile-time constant, so it cannot be a default value. Resolved inside
+    // so it still resolves in the *current* language.
+    String? title,
   }) async {
     final rule = state.rules.isEmpty ? null : state.rules.first;
     final points = rule?.pointsFor(orderTotal) ?? 0;
@@ -181,7 +184,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
 
     final transaction = LoyaltyTransaction(
       id: _nextId(),
-      title: title,
+      title: title ?? S.orderPurchaseLabel,
       points: points,
       date: DateTime.now(),
     );
@@ -213,7 +216,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     final branch = branchId;
     if (branch == null || branch.isEmpty) {
       emit(
-        state.copyWith(error: 'Select a branch before redeeming this reward.'),
+        state.copyWith(error: S.selectBranchBeforeRedeeming),
       );
       return false;
     }

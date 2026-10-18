@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
@@ -48,36 +49,37 @@ class AuthCubit extends Cubit<AuthState> {
       print('[Auth] ✅ Authentication successful!');
     } on AuthException catch (error) {
       print('[Auth] ❌ AuthException caught: ${error.message}');
-      // Clear Arabic messages for common auth errors
-      String arabicMessage;
-      switch (error.message.toLowerCase()) {
-        case 'invalid login credentials':
-        case 'invalid password':
-          arabicMessage = 'بيانات الدخول غير صحيحة، برجاء التحقق من الإيميل وكلمة المرور';
-          break;
-        case 'user not found':
-          arabicMessage = 'هذا الإيميل غير مسجل في قاعدة البيانات، برجاء التسجيل أولًا';
-          break;
-        case 'user disabled':
-          arabicMessage = 'هذا الحساب已被已被禁用، برجاء التواصل مع الدعم';
-          break;
-        case 'email already in use':
-        case 'email already exists':
-          arabicMessage = 'هذا الإيميلAlready مسجل، برجاء استخدام إيميل مختلف أو الدخول';
-          break;
-        case 'weak password':
-          arabicMessage = 'كلمة المرور ضعيفة، برجاء استخدام كلمة مرور أطول وأكثر أمانًا';
-          break;
-        case 'invalid email':
-          arabicMessage = 'إيميل غير صحيح، برجاء إدخال إيميل صحيح';
-          break;
-        default:
-          arabicMessage = 'حدث خطأ أثناء الدخول: ${error.message}';
-      }
-      emit(AuthFailure(arabicMessage));
+      // The provider's English never reaches the customer; each known cause
+      // maps to one message in the app's current language.
+      emit(AuthFailure(_messageFor(error.message)));
     } catch (exception) {
       print('[Auth] ❌ Unexpected exception caught: $exception');
-      emit(AuthFailure('حدث خطأ غير متوقع، برجاء المحاولة senare'));
+      emit(AuthFailure(S.authUnexpected));
+    }
+  }
+
+  /// Maps a provider error onto a customer-facing message.
+  ///
+  /// Anything unrecognised becomes [S.authFailed] rather than echoing the raw
+  /// text, which would put English (or provider jargon) into an Arabic screen.
+  static String _messageFor(String message) {
+    switch (message.toLowerCase()) {
+      case 'invalid login credentials':
+      case 'invalid password':
+        return S.authInvalidCredentials;
+      case 'user not found':
+        return S.authUserNotFound;
+      case 'user disabled':
+        return S.authUserDisabled;
+      case 'email already in use':
+      case 'email already exists':
+        return S.authEmailInUse;
+      case 'weak password':
+        return S.authWeakPassword;
+      case 'invalid email':
+        return S.authInvalidEmail;
+      default:
+        return S.authFailed;
     }
   }
 }

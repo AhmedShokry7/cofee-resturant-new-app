@@ -71,11 +71,7 @@ void main() {
       chargeError: chargeError,
       verifyError: verifyError,
     );
-    return CardPaymentCubit(
-      repository: repository,
-      sourceTokenProvider: () async => token,
-      chargeId: orderId,
-    );
+    return CardPaymentCubit(repository: repository, sourceTokenProvider: () async => token)..start(orderId: orderId);
   }
 
   group('CardPaymentCubit', () {
@@ -180,11 +176,7 @@ void main() {
           orderPaymentStatus: 'pending',
         ),
       );
-      cubit = CardPaymentCubit(
-        repository: repository,
-        sourceTokenProvider: () async => tokenJson,
-        chargeId: orderId,
-      );
+      cubit = CardPaymentCubit(repository: repository, sourceTokenProvider: () async => tokenJson)..start(orderId: orderId);
       cubit.onCardValidInput(true);
       await cubit.createCharge();
       final result = await cubit.verifyCharge();
@@ -206,11 +198,7 @@ void main() {
           orderPaymentStatus: 'failed',
         ),
       );
-      cubit = CardPaymentCubit(
-        repository: repository,
-        sourceTokenProvider: () async => tokenJson,
-        chargeId: orderId,
-      );
+      cubit = CardPaymentCubit(repository: repository, sourceTokenProvider: () async => tokenJson)..start(orderId: orderId);
       cubit.onCardValidInput(true);
       await cubit.createCharge();
       final result = await cubit.verifyCharge();

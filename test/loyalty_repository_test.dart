@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
@@ -44,8 +45,11 @@ void main() {
     });
     expect(redeemed.title, 'Reward redeemed');
 
+    // A reason-coded row is labelled on read, so switching language relabels
+    // history that was loaded in the other language.
     AppLocale.instance.debugSet(AppLanguage.arabic);
-    expect(redeemed.title, 'استبدال مكافأة');
+    expect(redeemed.title, S.rewardRedeemedLabel);
+    expect(redeemed.title, isNot('Reward redeemed'));
   });
 
   test('guest wallet starts empty and persists', () async {

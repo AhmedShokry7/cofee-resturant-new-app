@@ -12,6 +12,7 @@ import 'package:new_coffee/features/checkout/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/checkout/data/model/payment_method_model.dart';
+import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
@@ -98,6 +99,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         ),
       );
       await _loadDeliveryZones();
+      // Zones only tell us what the branch serves; which one covers this
+      // customer's address is a second question, asked once the address is
+      // known.
+      await resolveZoneForSelectedAddress();
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
@@ -181,6 +186,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     // true for delivery zones, which are branch-specific.
     if (state.appliedCoupon != null) removeCoupon();
     _loadDeliveryZones();
+    // Another branch serves different areas, so "outside the zone" is an answer
+    // about the previous branch and must not be carried over.
+    emit(state.copyWith(addressOutOfZone: false, isResolvingZone: false));
+    resolveZoneForSelectedAddress();
   }
 
   /// Switches between pickup and delivery. Delivery is refused when the branch
@@ -228,14 +237,123 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       state.copyWith(
         fulfillment: FulfillmentType.delivery,
         deliveryBlocked: false,
+        // A hand-picked zone overrides the automatic answer, so the out-of-area
+        // flag is cleared: the customer has said which zone they mean.
+        addressOutOfZone: false,
         selectedDeliveryZone: zone,
         clearOrderError: true,
       ),
     );
   }
 
+  /// Which zone serves the selected address.
+  ///
+  /// Called whenever the address changes. The answer drives three things: the
+  /// fee shown in the summary, whether delivery is offered at all for this
+  /// address, and whether the zone dropdown is still needed.
+  ///
+  /// An address with no coordinates cannot be placed on a map, so it keeps the
+  /// manual choice — that is the documented fallback for addresses saved before
+  /// the map picker existed, and refusing them would strand those customers.
+  Future<void> resolveZoneForSelectedAddress() async {
+    final address = state.selectedAddress;
+    final latitude = address?.latitude;
+    final longitude = address?.longitude;
+    final branch = branchId?.trim() ?? '';
+
+    if (address == null || latitude == null || longitude == null || branch.isEmpty) {
+      emit(state.copyWith(addressOutOfZone: false, isResolvingZone: false));
+      return;
+    }
+
+    emit(state.copyWith(isResolvingZone: true));
+    try {
+      final zones = await _deliveryZoneRepository.zonesForPoint(
+        branchId: branch,
+        latitude: latitude,
+        longitude: longitude,
+      );
+      if (isClosed) return;
+      // The address or branch moved on while this was in flight; a newer
+      // resolution owns the state.
+      if (state.selectedAddress?.id != address.id || branchId?.trim() != branch) {
+        return;
+      }
+      emit(
+        state.copyWith(
+          isResolvingZone: false,
+          addressOutOfZone: zones.isEmpty,
+          // Nearest zone wins. `deliveryZones` still holds the full list so a
+          // customer outside every zone can pick one by hand if they insist.
+          selectedDeliveryZone: zones.isEmpty
+              ? null
+              : (zones.contains(state.selectedDeliveryZone)
+                    ? state.selectedDeliveryZone
+                    : zones.first),
+          clearSelectedDeliveryZone: zones.isEmpty,
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      // We could not tell. Not the same as "out of area", so the previous
+      // selection stands and the customer keeps manual choice.
+      emit(state.copyWith(isResolvingZone: false, addressOutOfZone: false));
+      addError(error, stackTrace);
+    }
+  }
+
+  /// Chooses which saved card pays for this order.
+  ///
+  /// Null clears the choice and the hosted card form opens at payment time as
+  /// before. Setting a card means the checkout charges it directly, so a
+  /// customer who saved a card is never asked to type it again.
+  void selectSavedCard(SavedCardModel? card) {
+    emit(state.copyWith(selectedSavedCard: card));
+  }
+
+  /// Adopts an address list owned by someone else.
+  ///
+  /// `identity.customer_addresses` is currently mirrored into two cubits: this
+  /// one and `AddressesCubit`, both built from the same repository. Nothing told
+  /// this cubit when the other one changed, so an address added or made default
+  /// in Settings simply never arrived here — the checkout kept the snapshot it
+  /// took at construction, and the customer was offered a stale list (or worse,
+  /// an address that had since been deleted).
+  ///
+  /// The same pattern `CartCubit` uses via `onCartChanged`: one writer, the
+  /// other side folds the change in rather than keeping its own copy in sync.
+  void onAddressesChanged(List<AddressModel> addresses) {
+    final currentId = state.selectedAddress?.id;
+    // The checkout's selection is not the default flag: the customer may have
+    // deliberately picked a different address for this order. So the id is
+    // matched, and a default change alone must not move the selection.
+    AddressModel? keep;
+    for (final address in addresses) {
+      if (address.id == currentId) {
+        keep = address;
+        break;
+      }
+    }
+    // Gone from the list — deleted elsewhere, or the account changed. Fall back
+    // to the default rather than keeping an address the server no longer serves.
+    final selected = keep ?? _pickInitial(addresses);
+
+    emit(state.copyWith(addresses: addresses, selectedAddress: selected));
+    if (selected?.id != currentId) resolveZoneForSelectedAddress();
+  }
+
+  /// Prefers the default, else the first — the same choice `load` makes.
+  static AddressModel? _pickInitial(List<AddressModel> addresses) {
+    if (addresses.isEmpty) return null;
+    return addresses.firstWhere(
+      (address) => address.isDefault,
+      orElse: () => addresses.first,
+    );
+  }
+
   void selectAddress(AddressModel address) {
     emit(state.copyWith(selectedAddress: address));
+    resolveZoneForSelectedAddress();
   }
 
   Future<void> addAddress(AddressModel address) async {
@@ -253,6 +371,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           selectedAddress: saved,
         ),
       );
+      resolveZoneForSelectedAddress();
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(error: error.toString()));
@@ -276,6 +395,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
                 ),
         ),
       );
+      resolveZoneForSelectedAddress();
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(error: error.toString()));
@@ -362,7 +482,22 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       // cart the shopper no longer has, so it is not applied.
       if (_latestCartSignature != signature) return false;
       _appliedCartSignature = signature;
-      emit(state.copyWith(appliedCoupon: validated, clearCouponError: true));
+
+      // The approval lands first so the discount shows immediately; the
+      // per-line explanation follows. Losing it must not lose the discount.
+      emit(
+        state.copyWith(appliedCoupon: validated, clearCouponError: true),
+      );
+      final breakdown = await _coupons.lineBreakdown(
+        code: normalized,
+        branchId: branch,
+        subtotal: subtotal,
+        lines: _lines(items),
+      );
+      if (isClosed || generation != _couponGeneration) return true;
+      // Only meaningful while the same coupon is still applied.
+      if (state.appliedCoupon?.coupon.code != validated.coupon.code) return true;
+      emit(state.copyWith(appliedCoupon: validated.copyWithLines(breakdown)));
       return true;
     } on CouponRejectedException catch (error) {
       if (isClosed) return false;
@@ -470,15 +605,18 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   /// Delivery requires a zone the branch serves and a saved address; the server
   /// re-validates both and snapshots the address from `customer_addresses`.
   /// Pickup is the default and is priced without a delivery fee.
-  Future<bool> placeOrder({required List<CartItem> items}) async {
+  Future<bool> placeOrder({
+    required List<CartItem> items,
+    String? savedCardId,
+  }) async {
     if (state.isPlacingOrder || _orderSubmissionInProgress) return false;
     final branch = branchId?.trim() ?? '';
     if (branch.isEmpty) {
-      emit(state.copyWith(orderError: 'Select a branch before paying.'));
+      emit(state.copyWith(orderError: S.selectBranchBeforePaying));
       return false;
     }
     if (items.isEmpty) {
-      emit(state.copyWith(orderError: 'Your cart is empty.'));
+      emit(state.copyWith(orderError: S.cartEmpty));
       return false;
     }
     // A shopper who asked for delivery but got "unavailable" must explicitly
@@ -491,6 +629,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     final isDelivery = state.fulfillment.isDelivery;
     final selectedZone = state.selectedDeliveryZone;
     if (isDelivery) {
+      // The address has coordinates and no zone covers it. The server would
+      // refuse this too; refusing here means the customer is told before they
+      // reach a payment screen.
+      if (state.addressOutOfZone) {
+        emit(state.copyWith(orderError: S.deliveryOutOfZone));
+        return false;
+      }
       if (selectedZone == null) {
         emit(state.copyWith(orderError: S.deliveryZoneRequired));
         return false;
@@ -512,6 +657,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       fulfillmentType: state.fulfillment.value,
       deliveryZoneId: isDelivery ? selectedZone!.id : null,
       addressId: isDelivery ? state.selectedAddress!.id : null,
+      savedCardId: state.selectedSavedCard?.id,
       couponCode: state.appliedCoupon?.coupon.code,
     );
     _orderSubmissionInProgress = true;
@@ -561,6 +707,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
             deliveryAddress: isDelivery && address != null
                 ? '${address.label} - ${address.details}'
                 : null,
+            discountLines: state.appliedCoupon?.lines ?? const [],
           ),
         ),
       );
@@ -633,6 +780,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     required String fulfillmentType,
     required String? deliveryZoneId,
     required String? addressId,
+    required String? savedCardId,
     required String? couponCode,
   }) {
     final canonical = jsonEncode([
@@ -640,6 +788,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       fulfillmentType,
       deliveryZoneId,
       addressId,
+      savedCardId,
       couponCode?.trim().toUpperCase(),
       for (final item in items)
         [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
@@ -50,7 +51,7 @@ class ProductDescription extends StatelessWidget {
                 child: Padding(
                   padding: EdgeInsets.only(top: 4.h),
                   child: Text(
-                    isExpanded ? "Read less" : "Read more",
+                    isExpanded ? S.readLess : S.readMore,
                     style: AppFonts.medium14(context).copyWith(
                       color: AppColor.primaryColor,
                       decoration: TextDecoration.underline,

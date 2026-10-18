@@ -10,6 +10,7 @@ import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cu
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/bundle_details_cubit.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
@@ -81,11 +82,26 @@ class BundleDetailsPage extends StatelessWidget {
     cart.addBundle(
       bundleId: bundle.id,
       title: bundle.title,
-      image: bundle.image,
+      image: _cartImage(cubit.state.products),
       price: bundle.price,
       components: components,
       quantity: 1,
     );
+  }
+
+  /// Picture shown for the cart line.
+  ///
+  /// `catalog.bundles.image_url` is usually null, and the bundle pages
+  /// themselves already fall back to the first component's picture — so the
+  /// cart must do the same or the line renders the "no image" placeholder.
+  String _cartImage(List<ProductModel> products) {
+    final own = bundle.image.trim();
+    if (own.isNotEmpty) return own;
+    for (final product in products) {
+      final fallback = product.displayImageUrl;
+      if (fallback != null && fallback.trim().isNotEmpty) return fallback;
+    }
+    return '';
   }
 }
 

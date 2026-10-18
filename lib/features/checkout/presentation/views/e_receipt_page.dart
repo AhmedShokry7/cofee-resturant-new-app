@@ -123,19 +123,63 @@ class _ReceiptCard extends StatelessWidget {
           ...order.items.map(
             (item) => Padding(
               padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: Text(
-                      "${item.quantity} × ${item.product.name}",
-                      style: AppFonts.regular14(context),
-                    ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          "${item.quantity} × ${item.product.name}",
+                          style: AppFonts.regular14(context),
+                        ),
+                      ),
+                      PriceLabel(
+                        amount: item.total,
+                        style: AppFonts.medium14(context),
+                        iconSize: 14,
+                      ),
+                    ],
                   ),
-                  PriceLabel(
-                    amount: item.total,
-                    style: AppFonts.medium14(context),
-                    iconSize: 14,
-                  ),
+                  // Per-line coupon attribution, when the server could break
+                  // the discount down. Only lines that actually got a share are
+                  // shown, so a normal coupon costs no extra space.
+                  if (order.discountLines.isNotEmpty) ...[
+                    for (final line in order.discountLines)
+                      if (line.productId == item.product.id &&
+                          line.discount > 0)
+                        Padding(
+                          padding: EdgeInsets.only(
+                            top: 2.h,
+                            left: SpacingTokens.md.w,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                HugeIcons.strokeRoundedDiscount01,
+                                size: 12.w,
+                                color: AppColor.primaryColor,
+                              ),
+                              SizedBox(width: SpacingTokens.xs.w),
+                              Expanded(
+                                child: Text(
+                                  S.lineDiscount,
+                                  style: AppFonts.regular12(context)
+                                      .copyWith(color: AppColor.primaryColor),
+                                ),
+                              ),
+                              PriceLabel(
+                                amount: line.discount,
+                                prefix: '-',
+                                style: AppFonts.regular12(context)
+                                    .copyWith(color: AppColor.primaryColor),
+                                iconSize: 11,
+                                iconColor: AppColor.primaryColor,
+                              ),
+                            ],
+                          ),
+                        ),
+                  ],
                 ],
               ),
             ),

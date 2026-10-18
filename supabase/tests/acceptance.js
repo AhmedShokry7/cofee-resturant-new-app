@@ -801,6 +801,522 @@ async function cleanupOrders(whereSql, params = []) {
              detail: `product update ok=${upP.ok}, doc got token=${!!afterP.rows[0] && /zqtoken/.test(afterP.rows[0].body_norm)}, restored ok=${restored.ok}; category update ok=${upC.ok}, doc got token=${!!catAfter.rows[0] && /zqcat/.test(catAfter.rows[0].body_norm)}` };
   });
 
+  // 38. (G1) Distance helpers. core.geo_distance_km is the primitive every
+  // per-km zone depends on, so it is checked against known separations rather
+  // than against itself.
+  await t('I', '38. (G1) the distance helper agrees with known separations', async () => {
+    const r = await admin.query(`
+      select
+        core.geo_distance_km(24.7136, 46.6753, 24.7136, 46.6753)          as same_point,
+        core.geo_distance_km(24.7136, 46.6753, 21.4858, 39.1925)          as riyadh_jeddah,
+        core.geo_distance_km(0, 0, 0, 1)                                  as one_degree_equator,
+        core.geo_distance_km(0, 0, 1, 0)                                  as one_degree_meridian,
+        core.geo_distance_km(24.7136, null, 24.7136, 46.6753)             as unknown_point
+    `);
+    const row = r.rows[0];
+    const same = Number(row.same_point) === 0;
+    // Riyadh -> Jeddah is ~850 km; allow a wide band, the point is the order of
+    // magnitude and that it is not symmetric nonsense.
+    const rj = Number(row.riyadh_jeddah);
+    const rjOk = rj > 700 && rj < 1000;
+    // One degree of latitude is ~111.2 km everywhere; one degree of longitude
+    // at the equator is the same. Both are the haversine sanity anchors.
+    const lat = Number(row.one_degree_meridian);
+    const lng = Number(row.one_degree_equator);
+    const degOk = Math.abs(lat - 111.2) < 1 && Math.abs(lng - 111.2) < 1;
+    // An unknown coordinate must stay null so callers can tell "no idea" from
+    // "zero kilometres away".
+    const unknown = row.unknown_point === null;
+    return { good: same && rjOk && degOk && unknown,
+             detail: `same=${row.same_point} riyadh_jeddah=${rj} 1deg_lat=${lat} 1deg_lng=${lng} unknown=${row.unknown_point}` };
+  });
+
+  // 39. (G2) Polygon coverage. A square around the Riyadh branch: inside, in a
+  // hole, and far away.
+  await t('I', '39. (G2) a polygon zone covers its inside and excludes its hole', async () => {
+    const zoneId = '00000000-0000-4000-8000-0000000009a1';
+    // 1 degree square around Riyadh, with a 0.2 degree hole in the middle.
+    const outer = JSON.stringify([[
+      [46.5, 24.5], [46.5, 24.9], [46.9, 24.9], [46.9, 24.5], [46.5, 24.5]
+    ]]);
+    const withHole = JSON.stringify([[
+      [46.5, 24.5], [46.5, 24.9], [46.9, 24.9], [46.9, 24.5], [46.5, 24.5]
+    ], [
+      [46.65, 24.65], [46.65, 24.75], [46.75, 24.75], [46.75, 24.65], [46.65, 24.65]
+    ]]);
+    await admin.query(`
+      insert into core.delivery_zones
+        (id, brand_id, name_ar, name_en, delivery_fee, min_order_amount,
+         polygon, fee_method, is_active)
+      values ($1, '00000000-0000-4000-8000-000000000001','منطقة اختبار','Test area',10,0,$2,'fixed',true)
+      on conflict (id) do update set polygon=$2`, [zoneId, outer]);
+
+    const inside = await admin.query(`select core.zone_covers_point($1,24.7,46.7) v`, [zoneId]);
+    const outside = await admin.query(`select core.zone_covers_point($1,25.5,47.5) v`, [zoneId]);
+    await admin.query(`update core.delivery_zones set polygon=$2 where id=$1`, [zoneId, withHole]);
+    const inHole = await admin.query(`select core.zone_covers_point($1,24.7,46.7) v`, [zoneId]);
+    const stillInside = await admin.query(`select core.zone_covers_point($1,24.6,46.6) v`, [zoneId]);
+    const unknown = await admin.query(`select core.zone_covers_point($1,null,null) v`, [zoneId]);
+
+    // A legacy zone with no geometry must keep covering everywhere, otherwise
+    // every existing branch would silently stop delivering.
+    const legacy = await admin.query(
+      `select core.zone_covers_point('00000000-0000-4000-8000-000000000201',25.5,47.5) v`);
+    const missing = await admin.query(
+      `select core.zone_covers_point('00000000-0000-4000-8000-00000000dead',25.5,47.5) v`);
+
+    const ok = inside.rows[0].v === true
+      && outside.rows[0].v === false
+      && inHole.rows[0].v === false
+      && stillInside.rows[0].v === true
+      && legacy.rows[0].v === true
+      && missing.rows[0].v === null;
+    await admin.query('delete from core.delivery_zones where id=$1', [zoneId]);
+    return { good: ok,
+             detail: `inside=${inside.rows[0].v} outside=${outside.rows[0].v} inHole=${inHole.rows[0].v} outsideHole=${stillInside.rows[0].v} legacy=${legacy.rows[0].v} missing=${missing.rows[0].v}` };
+  });
+
+  // 40. (G3) Radius coverage and the fee rules. The branch coordinates are the
+  // distance anchor, so the expected fee is computed from the same helper.
+  await t('I', '40. (G3) radius coverage and the three fee methods price correctly', async () => {
+    const zoneId = '00000000-0000-4000-8000-0000000009a2';
+    const br = (await admin.query('select latitude, longitude from core.branches where id=$1', [BR_MAIN])).rows[0];
+    const lat = Number(br.latitude), lng = Number(br.longitude);
+
+    // Radius zone, per_km fee, no cap.
+    await admin.query(`
+      insert into core.delivery_zones
+        (id, brand_id, name_ar, name_en, delivery_fee, min_order_amount,
+         center_latitude, center_longitude, radius_km,
+         fee_method, fee_per_km, is_active)
+      values ($1,'00000000-0000-4000-8000-000000000001','نطاق','Radius',999,0,
+              $2,$3,5,'per_km',2,true)
+      on conflict (id) do update set center_latitude=$2, center_longitude=$3,
+        radius_km=5, fee_method='per_km', fee_per_km=2, delivery_fee=999`,
+      [zoneId, lat, lng]);
+
+    // 0.1 degree north is ~11.1 km: outside the 5 km radius.
+    const near = await admin.query(`select core.zone_covers_point($1,$2+0.02,$3) v`, [zoneId, lat, lng]);
+    const far  = await admin.query(`select core.zone_covers_point($1,$2+0.1,$3) v`, [zoneId, lat, lng]);
+    const feeNear = await admin.query(
+      `select core.delivery_zone_fee($1,$2,$3,$4,0) f`, [zoneId, BR_MAIN, lat, lng]);
+    const expected = Math.round(2 * 2.2 * 100) / 100;  // ~2.2 km at 2/km
+
+    // A capped per_km zone.
+    await admin.query(`update core.delivery_zones set max_delivery_fee=3 where id=$1`, [zoneId]);
+    const capped = await admin.query(
+      `select core.delivery_zone_fee($1,$2,$3,$4,0) f`, [zoneId, BR_MAIN, lat, lng]);
+    // Free above the threshold, whatever the method.
+    await admin.query(`update core.delivery_zones set free_delivery_over=100 where id=$1`, [zoneId]);
+    const waived = await admin.query(
+      `select core.delivery_zone_fee($1,$2,$3,$4,150) f`, [zoneId, BR_MAIN, lat, lng]);
+    // Not waived below it.
+    const charged = await admin.query(
+      `select core.delivery_zone_fee($1,$2,$3,$4,40) f`, [zoneId, BR_MAIN, lat, lng]);
+    // An unknown distance falls back to the flat fee, never to zero.
+    await admin.query(`update core.delivery_zones set free_delivery_over=null where id=$1`, [zoneId]);
+    const unknownDist = await admin.query(
+      `select core.delivery_zone_fee($1,$2,null,null,0) f`, [zoneId, BR_MAIN]);
+
+    const nearOk = near.rows[0].v === true && far.rows[0].v === false;
+    const feeOk = Number(feeNear.rows[0].f) > 0
+      && Math.abs(Number(feeNear.rows[0].f) - expected) < 0.2;
+    const capOk = Number(capped.rows[0].f) === 3;
+    const waiveOk = Number(waived.rows[0].f) === 0 && Number(charged.rows[0].f) > 0;
+    const fallbackOk = Number(unknownDist.rows[0].f) === 999;
+
+    await admin.query('delete from core.delivery_zones where id=$1', [zoneId]);
+    return { good: nearOk && feeOk && capOk && waiveOk && fallbackOk,
+             detail: `near=${near.rows[0].v} far=${far.rows[0].v} fee=${feeNear.rows[0].f} (expected ~${expected}) capped=${capped.rows[0].f} waived=${waived.rows[0].f} charged=${charged.rows[0].f} unknownDist=${unknownDist.rows[0].f}` };
+  });
+
+  // 41. (G4) resolve_delivery_zone: the "we do not deliver to your area"
+  // answer, and its absence. Zero rows must mean out of area, not an error.
+  await t('I', '41. (G4) resolving a zone answers out-of-area with zero rows', async () => {
+    const zoneId = '00000000-0000-4000-8000-0000000009a3';
+    const br = (await admin.query('select latitude, longitude from core.branches where id=$1', [BR_MAIN])).rows[0];
+    const lat = Number(br.latitude), lng = Number(br.longitude);
+    await admin.query(`
+      insert into core.delivery_zones
+        (id, brand_id, name_ar, name_en, delivery_fee, min_order_amount,
+         center_latitude, center_longitude, radius_km, fee_method, is_active)
+      values ($1,'00000000-0000-4000-8000-000000000001','حلقة','Ring',12,0,$2,$3,3,'fixed',true)
+      on conflict (id) do update set center_latitude=$2, center_longitude=$3, radius_km=3, fee_method='fixed'`,
+      [zoneId, lat, lng]);
+    await admin.query(
+      `insert into core.delivery_zone_branches (zone_id, branch_id) values ($1,$2)
+       on conflict do nothing`, [zoneId, BR_MAIN]);
+
+    const inside = await asUserCommit(A, `select * from public.resolve_delivery_zone($1,$2,$3)`, [BR_MAIN, lat, lng]);
+    const outside = await asUserCommit(A, `select * from public.resolve_delivery_zone($1,$2,$3)`, [BR_MAIN, lat + 1, lng]);
+    // The other branch serves a different zone set.
+    const otherBranch = await asUserCommit(A, `select * from public.resolve_delivery_zone($1,$2,$3)`, [BR_JED, lat, lng]);
+
+    const gotRow = inside.ok && inside.rows.length === 1
+      && inside.rows[0].id === zoneId
+      && Number(inside.rows[0].delivery_fee) === 12;
+    // Zero rows, not an exception: that is the whole contract of this function.
+    const noRows = outside.ok && outside.rows.length === 0;
+    const branchScoped = otherBranch.ok && otherBranch.rows.length === 0;
+
+    await admin.query('delete from core.delivery_zone_branches where zone_id=$1', [zoneId]);
+    await admin.query('delete from core.delivery_zones where id=$1', [zoneId]);
+    return { good: gotRow && noRows && branchScoped,
+             detail: `inside rows=${inside.ok ? inside.rows.length : 'err'} fee=${inside.ok && inside.rows[0] ? inside.rows[0].delivery_fee : '?'}; outside rows=${outside.ok ? outside.rows.length : 'err'}; otherBranch rows=${otherBranch.ok ? otherBranch.rows.length : 'err'}` };
+  });
+
+  // 42. (G5) place_order must refuse an address outside the chosen zone, and
+  // must charge the zone's own fee rather than the client-quoted one.
+  await t('I', '42. (G5) place_order enforces coverage and prices the fee itself', async () => {
+    await cleanupOrders(`idempotency_key like 'idem-geo-%'`);
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+
+    const zoneId = '00000000-0000-4000-8000-0000000009a4';
+    const addrIn = '00000000-0000-4000-8000-0000000009b1';
+    const addrOut = '00000000-0000-4000-8000-0000000009b2';
+    const br = (await admin.query('select latitude, longitude from core.branches where id=$1', [BR_MAIN])).rows[0];
+    const lat = Number(br.latitude), lng = Number(br.longitude);
+
+    await admin.query(`
+      insert into core.delivery_zones
+        (id, brand_id, name_ar, name_en, delivery_fee, min_order_amount,
+         center_latitude, center_longitude, radius_km, fee_method, is_active)
+      values ($1,'00000000-0000-4000-8000-000000000001','جغرافية','Geographic',17,0,$2,$3,4,'fixed',true)
+      on conflict (id) do update set center_latitude=$2, center_longitude=$3,
+        radius_km=4, fee_method='fixed', delivery_fee=17, min_order_amount=0`,
+      [zoneId, lat, lng]);
+    await admin.query(
+      `insert into core.delivery_zone_branches (zone_id, branch_id) values ($1,$2) on conflict do nothing`,
+      [zoneId, BR_MAIN]);
+
+    for (const [addrId, aLat, aLng] of [[addrIn, lat, lng], [addrOut, lat + 2, lng]]) {
+      await admin.query(`
+        insert into identity.customer_addresses
+          (id, user_id, label, details, latitude, longitude, is_default)
+        values ($1,$2,'t','t',$3,$4,true)
+        on conflict (id) do update set latitude=$3, longitude=$4`, [addrId, A, aLat, aLng]);
+    }
+
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+
+    const inside = await asUserCommit(A, `select * from orders.place_order($1,$2,'delivery',$3,'','',$4)`,
+      [cart.rows[0].id, 'idem-geo-in-' + Date.now(), zoneId, addrIn]);
+    const cart2 = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    const outside = await asUserCommit(A, `select * from orders.place_order($1,$2,'delivery',$3,'','',$4)`,
+      [cart2.rows[0].id, 'idem-geo-out-' + Date.now(), zoneId, addrOut]);
+
+    // The fee comes from the zone, not from whatever the client believed.
+    const feeOk = inside.ok && Number(inside.rows[0].delivery_fee) === 17;
+    // The refusal must name the reason rather than fail obscurely.
+    const refused = !outside.ok && /outside the selected delivery zone/i.test(outside.error || '');
+
+    await cleanupOrders(`idempotency_key like 'idem-geo-%'`);
+    await admin.query('delete from core.delivery_zone_branches where zone_id=$1', [zoneId]);
+    await admin.query('delete from core.delivery_zones where id=$1', [zoneId]);
+    await admin.query('delete from identity.customer_addresses where id=any($1)', [[addrIn, addrOut]]);
+    return { good: feeOk && refused,
+             detail: `placed inside fee=${inside.ok ? inside.rows[0].delivery_fee : '?'}; outside error=${outside.error ? outside.error.slice(0, 80) : 'PLACED (!)'}` };
+  });
+
+  // 43. (G6) Coupon rejection reasons must be distinguishable, and the scope
+  // must be readable. Before 070 both scope failures returned the identical
+  // string and nothing exposed coupons_categories / coupons_products.
+  await t('I', '43. (G6) scope rejections are distinguishable and name the scope', async () => {
+    const prodCode = 'SCOPEP' + Date.now().toString(36).toUpperCase();
+    const catCode = 'SCOPEC' + Date.now().toString(36).toUpperCase();
+    const catId = (await admin.query('select category_id from catalog.products where id=$1', [LATTE])).rows[0].category_id;
+
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'p','p','percentage',50,'product',99,true)`, [prodCode]);
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'c','c','percentage',50,'category',99,true)`, [catCode]);
+    const pid_ = (await admin.query('select id from marketing.coupons where code=$1', [prodCode])).rows[0].id;
+    const cid_ = (await admin.query('select id from marketing.coupons where code=$1', [catCode])).rows[0].id;
+    await admin.query('insert into marketing.coupons_products (coupon_id,product_id) values ($1,$2)', [pid_, ESPRESSO]);
+    await admin.query('insert into marketing.coupons_categories (coupon_id,category_id) values ($1,$2)', [cid_, catId]);
+
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    // Only latte: eligible for neither the espresso nor the category coupon.
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    const sub = Number((await admin.query(
+      'select coalesce(sum(line_total),0) s from orders.cart_items where cart_id=$1', [cart.rows[0].id])).rows[0].s);
+
+    const prodRes = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [prodCode, sub, BR_MAIN]);
+    const catRes = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [catCode, sub, BR_MAIN]);
+    const missing = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, ['NOSUCHCODE', sub, BR_MAIN]);
+
+    const prodReason = prodRes.ok ? prodRes.rows[0].reason_code : null;
+    const catReason = catRes.ok ? catRes.rows[0].reason_code : null;
+    const missReason = missing.ok ? missing.rows[0].reason_code : null;
+
+    // Scope names must be readable by the client.
+    const prodScope = await asUserCommit(A, `select * from public.coupon_scope($1)`, [prodCode]);
+    const catScope = await asUserCommit(A, `select * from public.coupon_scope($1)`, [catCode]);
+    const allScope = await asUserCommit(A, `select * from public.coupon_scope($1)`, ['WELCOME200']);
+
+    const distinct = prodReason === 'scope_product_no_match' && catReason === 'scope_category_no_match';
+    const notFound = missReason === 'not_found';
+    const prodNamed = prodScope.ok && prodScope.rows.some(r => r.scope_id === ESPRESSO && r.scope_kind === 'product');
+    const catNamed = catScope.ok && catScope.rows.some(r => r.scope_id === catId && r.scope_kind === 'category');
+    // An unscoped coupon must produce no rows, not a bogus scope.
+    const allEmpty = allScope.ok && allScope.rows.length === 0;
+
+    await admin.query('delete from marketing.coupons where id=any($1)', [[pid_, cid_]]);
+    return { good: distinct && notFound && prodNamed && catNamed && allEmpty,
+             detail: `product=${prodReason} category=${catReason} missing=${missReason}; scope rows prod=${prodScope.ok ? prodScope.rows.length : 'err'} cat=${catScope.ok ? catScope.rows.length : 'err'} all=${allScope.ok ? allScope.rows.length : 'err'}` };
+  });
+
+  // 44. (G7) The category scope check must survive a null branch id. Its filter
+  // was `ca.branch_id = p_branch_id`, and with a null branch that comparison is
+  // null, so a category coupon was rejected for every branch-less caller — and
+  // the product block already used the null-tolerant form.
+  await t('I', '44. (G7) a null branch id does not blanket-reject a category coupon', async () => {
+    const catCode = 'NB' + Date.now().toString(36).toUpperCase();
+    const catId = (await admin.query('select category_id from catalog.products where id=$1', [LATTE])).rows[0].category_id;
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'c','c','percentage',50,'category',99,true)`, [catCode]);
+    const cid_ = (await admin.query('select id from marketing.coupons where code=$1', [catCode])).rows[0].id;
+    await admin.query('insert into marketing.coupons_categories (coupon_id,category_id) values ($1,$2)', [cid_, catId]);
+
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    const sub = Number((await admin.query(
+      'select coalesce(sum(line_total),0) s from orders.cart_items where cart_id=$1', [cart.rows[0].id])).rows[0].s);
+
+    const withBranch = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [catCode, sub, BR_MAIN]);
+    const nullBranch = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,null)`, [catCode, sub]);
+
+    // The cart holds a latte, which IS in the scoped category, so both must pass.
+    const both = withBranch.ok && Number(withBranch.rows[0].discount) > 0
+      && nullBranch.ok && Number(nullBranch.rows[0].discount) > 0;
+
+    await admin.query('delete from marketing.coupons where id=$1', [cid_]);
+    return { good: both,
+             detail: `withBranch=${withBranch.ok ? withBranch.rows[0].discount : 'err'} nullBranch=${nullBranch.ok ? nullBranch.rows[0].discount : 'err'} (reason=${nullBranch.ok ? nullBranch.rows[0].reason_code : '?'})` };
+  });
+
+  // 45. (G8) A category-scoped coupon must discount the eligible lines only,
+  // not the whole cart. Before 071 the category branch ran an existence check
+  // and then priced off p_subtotal, so a coupon limited to cold drinks took 20%
+  // off an unrelated basket too.
+  await t('I', '45. (G8) a category coupon discounts the eligible lines only', async () => {
+    await cleanupOrders(`idempotency_key like 'idem-cat-%'`);
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+
+    // Scope the coupon to the category the latte lives in, and put a product
+    // from a *different* category in the cart next to it.
+    const code = 'CAT' + Date.now().toString(36).toUpperCase();
+    const latteCat = (await admin.query('select category_id from catalog.products where id=$1', [LATTE])).rows[0].category_id;
+    const otherProduct = (await admin.query(
+      'select id from catalog.products where category_id is distinct from $1 and is_active and archived_at is null and id <> $2 limit 1',
+      [latteCat, LATTE])).rows[0];
+    if (!otherProduct) return { good: false, detail: 'no second-category product to test with' };
+
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'قسم','Category','percentage',50,'category',99,true)`, [code]);
+    const cid_ = (await admin.query('select id from marketing.coupons where code=$1', [code])).rows[0].id;
+    await admin.query('insert into marketing.coupons_categories (coupon_id,category_id) values ($1,$2)', [cid_, latteCat]);
+
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, otherProduct.id]);
+    const lines = (await admin.query(
+      'select product_id, line_total from orders.cart_items where cart_id=$1', [cart.rows[0].id])).rows;
+    const subtotal = lines.reduce((s, r) => s + Number(r.line_total), 0);
+    const eligible = Number(lines.find(r => r.product_id === LATTE).line_total);
+    const expDisc = Math.round(eligible * 50) / 100;
+    const scopeBlind = Math.round(subtotal * 50) / 100;
+
+    const v = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+
+    // Placed as a real delivery order, so the invoice is checked against the
+    // quote: place_order re-validates, and the two figures must agree.
+    const addrId = '00000000-0000-4000-8000-0000000009b3';
+    const br = (await admin.query('select latitude, longitude from core.branches where id=$1', [BR_MAIN])).rows[0];
+    await admin.query(`insert into identity.customer_addresses
+        (id, user_id, label, details, latitude, longitude, is_default)
+        values ($1,$2,'t','t',$3,$4,true)
+        on conflict (id) do update set latitude=$3, longitude=$4`,
+      [addrId, A, Number(br.latitude), Number(br.longitude)]);
+    const placed = await asUserCommit(A, `select * from orders.place_order($1,$2,'delivery',$3,$4,'',$5)`,
+      [cart.rows[0].id, 'idem-cat-' + Date.now(), ZONE_MAIN, code, addrId]);
+
+    // The two figures must actually differ, or this test proves nothing.
+    const distinguishable = expDisc < scopeBlind;
+    const okV = v.ok && Math.abs(Number(v.rows[0].discount) - expDisc) < 0.005;
+    const okP = placed.ok && Math.abs(Number(placed.rows[0].discount_total) - expDisc) < 0.005;
+
+    // A fixed-amount category coupon may not exceed the eligible slice either.
+    await admin.query(`update marketing.coupons set discount_type='fixed_amount', discount_value=1000 where id=$1`, [cid_]);
+    const capped = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+    const capOk = capped.ok && Math.abs(Number(capped.rows[0].discount) - eligible) < 0.005;
+
+    await cleanupOrders(`idempotency_key like 'idem-cat-%'`);
+    await admin.query('delete from marketing.coupons where id=$1', [cid_]);
+    await admin.query('delete from identity.customer_addresses where id=$1', [addrId]);
+    return { good: distinguishable && okV && okP && capOk,
+             detail: `subtotal=${subtotal} eligible=${eligible} discount=${v.ok ? v.rows[0].discount : '?'} (scope-blind would be ${scopeBlind}); order discount_total=${placed.ok ? placed.rows[0].discount_total : '?'}; fixed capped at=${capped.ok ? capped.rows[0].discount : '?'} (eligible ${eligible})` };
+  });
+
+  // 46. (G9) An unscoped coupon must still discount the whole cart, and the
+  // per-user minimum still measured against the whole cart. 071 narrowed the
+  // scope pricing; it must not have narrowed anything else.
+  await t('I', '46. (G9) an unscoped coupon still discounts the whole cart', async () => {
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+    const code = 'ALLSC' + Date.now().toString(36).toUpperCase();
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,min_order_amount,applies_to,per_user_limit,is_active)
+        values ($1,'a','a','percentage',50,0,'all',99,true)`, [code]);
+
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, ESPRESSO]);
+    const subtotal = Number((await admin.query(
+      'select coalesce(sum(line_total),0) s from orders.cart_items where cart_id=$1', [cart.rows[0].id])).rows[0].s);
+
+    const v = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+    const exp = Math.round(subtotal * 50) / 100;
+    const okAll = v.ok && v.rows[0].reason_code === 'applied'
+      && Math.abs(Number(v.rows[0].discount) - exp) < 0.005;
+
+    // min_order_amount is a whole-cart condition: a cart that clears it must
+    // pass even when a scope would have covered only part of it.
+    await admin.query(`update marketing.coupons set min_order_amount=$2 where id=(select id from marketing.coupons where code=$1)`, [code, subtotal]);
+    const atMin = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+    const minOk = atMin.ok && atMin.rows[0].reason_code === 'applied';
+    await admin.query(`update marketing.coupons set min_order_amount=$2 where id=(select id from marketing.coupons where code=$1)`, [code, subtotal + 1]);
+    const belowMin = await asUserCommit(A, `select * from marketing.validate_coupon($1,$2,$3)`, [code, subtotal, BR_MAIN]);
+    const minRejects = belowMin.ok && belowMin.rows[0].reason_code === 'min_order_not_met';
+
+    await admin.query('delete from marketing.coupons where code=$1', [code]);
+    return { good: okAll && minOk && minRejects,
+             detail: `all discount=${v.ok ? v.rows[0].discount : '?'} (expected ${exp}); atMin=${atMin.ok ? atMin.rows[0].reason_code : 'err'}; belowMin=${belowMin.ok ? belowMin.rows[0].reason_code : 'err'}` };
+  });
+
+  // 47. (G10) Discount allocation. The shares must sum to exactly the approved
+  // amount and never exceed any line — the two properties that make the
+  // per-line breakdown trustworthy rather than decorative.
+  await t('I', '47. (G10) allocation sums exactly and never over-refunds a line', async () => {
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+    const code = 'ALLOC' + Date.now().toString(36).toUpperCase();
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'a','a','percentage',33,'all',99,true)`, [code]);
+    const cid_ = (await admin.query('select id from marketing.coupons where code=$1', [code])).rows[0].id;
+
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    // Amounts chosen so independent rounding would drift: 33% of each is not a
+    // round number of cents.
+    for (const [id, qty] of [[LATTE, 1], [ESPRESSO, 3], [LATTE, 2]]) {
+      await asUserCommit(A, `select orders.upsert_cart_item($1,$2,$3,'',$4)`,
+        [BR_MAIN, id, qty, JSON.stringify(Array(qty).fill({ name: 'x', values: [] }))]);
+    }
+    const lines = (await admin.query(
+      'select id, line_total from orders.cart_items where cart_id=$1 order by id', [cart.rows[0].id])).rows;
+    const subtotal = Number(lines.reduce((s, r) => s + Number(r.line_total), 0).toFixed(2));
+    const approved = Math.round(subtotal * 33) / 100;
+
+    const alloc = await admin.query(
+      'select * from marketing.allocate_coupon_discount($1,$2,$3)', [cid_, cart.rows[0].id, approved]);
+    const shares = alloc.rows;
+    const sum = Number(shares.reduce((s, r) => s + Number(r.discount), 0).toFixed(2));
+    const overRefunded = shares.some(r => {
+      const line = lines.find(l => l.id === r.cart_item_id);
+      return Number(r.discount) > Number(line.line_total) + 0.005;
+    });
+    const anyNegative = shares.some(r => Number(r.discount) < 0);
+
+    const sumsExactly = Math.abs(sum - approved) < 0.005;
+    // Every eligible line gets a row; the count matches the cart.
+    const coversAll = shares.length === lines.length;
+
+    // A zero amount must produce nothing at all, not zero rows per line.
+    const zero = await admin.query(
+      'select * from marketing.allocate_coupon_discount($1,$2,0)', [cid_, cart.rows[0].id]);
+
+    await admin.query('delete from marketing.coupons where id=$1', [cid_]);
+    return { good: sumsExactly && coversAll && !overRefunded && !anyNegative && zero.rows.length === 0,
+             detail: `approved=${approved} sum=${sum} lines=${lines.length} shares=${shares.length} overRefunded=${overRefunded} negative=${anyNegative} zeroRows=${zero.rows.length}` };
+  });
+
+  // 48. (G11) The invoice itself must carry the breakdown, and the parts must
+  // reconcile to the order total. This is what order history renders later, and
+  // what a customer checks when they think the discount is wrong.
+  await t('I', '48. (G11) the invoice carries a breakdown that reconciles', async () => {
+    await cleanupOrders(`idempotency_key like 'idem-bd-%'`);
+    await admin.query('delete from orders.cart_item_options');
+    await admin.query('delete from orders.cart_items');
+    await admin.query('delete from orders.carts');
+
+    const code = 'BILL' + Date.now().toString(36).toUpperCase();
+    const latteCat = (await admin.query('select category_id from catalog.products where id=$1', [LATTE])).rows[0].category_id;
+    await admin.query(`insert into marketing.coupons
+        (code,title_ar,title_en,discount_type,discount_value,applies_to,per_user_limit,is_active)
+        values ($1,'b','b','percentage',50,'category',99,true)`, [code]);
+    const cid_ = (await admin.query('select id from marketing.coupons where code=$1', [code])).rows[0].id;
+    await admin.query('insert into marketing.coupons_categories (coupon_id,category_id) values ($1,$2)', [cid_, latteCat]);
+    const other = (await admin.query(
+      'select id from catalog.products where category_id is distinct from $1 and is_active and archived_at is null and id <> $2 limit 1',
+      [latteCat, LATTE])).rows[0];
+    if (!other) return { good: false, detail: 'no second-category product to test with' };
+
+    const cart = await asUserCommit(A, 'select orders.get_or_create_cart($1) id', [BR_MAIN]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, LATTE]);
+    await asUserCommit(A, `select orders.upsert_cart_item($1,$2,1,'','{}')`, [BR_MAIN, other.id]);
+
+    const placed = await asUserCommit(A, `select * from orders.place_order($1,$2,'pickup',null,$3,'')`,
+      [cart.rows[0].id, 'idem-bd-' + Date.now(), code]);
+    if (!placed.ok) return { good: false, detail: 'place_order failed: ' + (placed.error || '').slice(0, 120) };
+
+    const items = (await admin.query(
+      'select product_id, line_total, discount_total from orders.order_items where order_id=$1 order by id',
+      [placed.rows[0].order_id])).rows;
+    const discountTotal = Number(placed.rows[0].discount_total);
+    const partsSum = Number(items.reduce((s, r) => s + Number(r.discount_total), 0).toFixed(2));
+
+    const reconciles = Math.abs(partsSum - discountTotal) < 0.005;
+    // Only the scoped category carries a discount.
+    const latteRow = items.find(r => r.product_id === LATTE);
+    const otherRow = items.find(r => r.product_id === other.id);
+    const scopedOnly = Number(latteRow.discount_total) > 0 && Number(otherRow.discount_total) === 0;
+    // The database constraint must hold on every line.
+    const capped = items.every(r => Number(r.discount_total) <= Number(r.line_total) + 0.005);
+
+    // The client-facing breakdown must agree with what was written.
+    const bd = await asUserCommit(A, `select * from public.coupon_line_breakdown($1,$2,$3)`,
+      [BR_MAIN, code, JSON.stringify([
+        { product_id: LATTE, quantity: 1, note: '', option_value_ids: [] },
+        { product_id: other.id, quantity: 1, note: '', option_value_ids: [] },
+      ])]);
+    const bdSums = bd.ok && Math.abs(
+      Number(bd.rows.reduce((s, r) => s + Number(r.discount), 0).toFixed(2)) - partsSum) < 0.01;
+
+    await cleanupOrders(`idempotency_key like 'idem-bd-%'`);
+    await admin.query('delete from marketing.coupons where id=$1', [cid_]);
+    return { good: reconciles && scopedOnly && capped && bdSums,
+             detail: `discount_total=${discountTotal} parts=${partsSum} latte=${latteRow.discount_total} other=${otherRow.discount_total}; breakdownSumsSame=${bdSums} (${bd.ok ? bd.rows.length : 'err'} rows)` };
+  });
+
   await admin.end();
 
   console.log('\n================ SUMMARY ================');

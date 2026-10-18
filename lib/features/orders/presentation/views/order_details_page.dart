@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -89,7 +90,7 @@ class _DetailsScaffold extends StatelessWidget {
           Row(
             children: [
               Text(
-                "Order #${order.displayNumber}",
+                S.orderNumber(order.displayNumber),
                 style: AppFonts.semiBold18(context),
               ),
               const Spacer(),
@@ -145,7 +146,7 @@ class _DetailsScaffold extends StatelessWidget {
                       ),
                       SizedBox(height: 4.h),
                       Text(
-                        "Qty: ${order.quantity}",
+                        S.quantityLabel(order.quantity),
                         style: AppFonts.regular14(context)
                             .copyWith(color: AppColor.greyColor),
                       ),
@@ -159,6 +160,38 @@ class _DetailsScaffold extends StatelessWidget {
                   iconSize: 16,
                   iconColor: AppColor.primaryColor,
                 ),
+                // Per-line coupon attribution, when the server could break
+                // the discount down. Only lines that actually got a share are
+                // shown, so a normal coupon costs no extra space.
+                if (order.lineDiscountTotal != null &&
+                    order.lineDiscountTotal! > 0) ...[
+                  SizedBox(height: SpacingTokens.xs.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Icon(
+                        HugeIcons.strokeRoundedDiscount01,
+                        size: 12.w,
+                        color: AppColor.primaryColor,
+                      ),
+                      SizedBox(width: SpacingTokens.xs.w),
+                      Text(
+                        S.lineDiscount,
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.primaryColor),
+                      ),
+                      SizedBox(width: SpacingTokens.xs.w),
+                      PriceLabel(
+                        amount: order.lineDiscountTotal!,
+                        prefix: '-',
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.primaryColor),
+                        iconSize: 11,
+                        iconColor: AppColor.primaryColor,
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -202,11 +235,21 @@ class _DetailsScaffold extends StatelessWidget {
             label: S.itemsCount,
             value: "${order.quantity}",
             valueSize: 16,
+            labelExpanded: true,
           ),
+          if (order.lineDiscountTotal != null && order.lineDiscountTotal! > 0) ...[
+            SizedBox(height: SpacingTokens.sm.h),
+            LabeledValueRow(
+              label: S.couponDiscount,
+              priceValue: order.lineDiscountTotal!,
+              pricePrefix: '-',
+              valueSize: 16,
+            ),
+          ],
           SizedBox(height: SpacingTokens.sm.h),
           LabeledValueRow(
             label: S.total,
-            priceValue: total,
+            priceValue: total - (order.lineDiscountTotal ?? 0),
             emphasized: true,
             valueSize: 16,
           ),

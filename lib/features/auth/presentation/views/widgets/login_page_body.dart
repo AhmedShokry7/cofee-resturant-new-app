@@ -94,7 +94,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       ),
                       SizedBox(height: AuthSpacings.titleGap.h),
                       Text(
-                        "Hi welcome back, you've been missed",
+                        S.welcomeBackSubtitle,
                         textAlign: TextAlign.center,
                         style: AppFonts.regular14(context)
                             .copyWith(color: AppColor.greyColor),

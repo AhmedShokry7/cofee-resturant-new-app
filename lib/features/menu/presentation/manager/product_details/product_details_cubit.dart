@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -63,7 +64,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         emit(
           state.copyWith(
             isLoading: false,
-            error: 'This product is no longer available',
+            error: S.productNoLongerAvailable,
             clearProduct: true,
           ),
         );

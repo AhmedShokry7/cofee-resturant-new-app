@@ -112,7 +112,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                 ),
                 SizedBox(height: AuthSpacings.titleGap.h),
                 Text(
-                  "We sent a 6-digit code to ${widget.phone}",
+                  S.otpSentTo(widget.phone),
                   textAlign: TextAlign.center,
                   style: AppFonts.regular14(context)
                       .copyWith(color: AppColor.greyColor),

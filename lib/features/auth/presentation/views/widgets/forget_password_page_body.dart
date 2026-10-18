@@ -69,7 +69,7 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                   ),
                   SizedBox(height: AuthSpacings.titleGap.h),
                   Text(
-                    "Enter your email and we'll send you a link to reset your password",
+                    S.forgotPasswordSubtitle,
                     textAlign: TextAlign.center,
                     style: AppFonts.regular14(context)
                         .copyWith(color: AppColor.greyColor),

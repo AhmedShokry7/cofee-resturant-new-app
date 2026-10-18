@@ -89,7 +89,7 @@ class _AddAddressButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(8.r),
         ),
         child: Text(
-          "+ Add new shipping address",
+          S.addNewShippingAddress,
           style: AppFonts.medium12(
             context,
           ).copyWith(color: AppColor.primaryColor),

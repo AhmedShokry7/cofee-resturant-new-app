@@ -36,6 +36,15 @@ class _BannerCarousel extends StatefulWidget {
 class _BannerCarouselState extends State<_BannerCarousel> {
   final PageController _controller = PageController();
 
+  /// How long one auto-advance takes.
+  ///
+  /// This is the perceived "transition time" of the carousel, so it is kept
+  /// short: past roughly a third of a second the slide starts to feel like a
+  /// wait rather than a cut. The curve is `easeOutCubic` rather than
+  /// `easeInOut` because it moves the moment it starts instead of easing in,
+  /// which reads as noticeably snappier at the same duration.
+  static const _transition = Duration(milliseconds: 280);
+
   @override
   void dispose() {
     _controller.dispose();
@@ -51,8 +60,8 @@ class _BannerCarouselState extends State<_BannerCarousel> {
         if (_controller.page?.round() == state.index) return;
         _controller.animateToPage(
           state.index,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
+          duration: _transition,
+          curve: Curves.easeOutCubic,
         );
       },
       child: Column(

@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 /// One loyalty wallet movement. Positive = earned, negative = spent.
 class LoyaltyTransaction {
@@ -21,12 +22,28 @@ class LoyaltyTransaction {
   final String _legacyTitle;
 
   String get title {
+    // An operator note exists in one language only and is shown as written.
     final localized = pickText((
       ar: titleAr ?? '',
       en: titleEn ?? '',
     ), isArabic: AppLocale.instance.isArabic);
-    return localized.isEmpty ? _legacyTitle : localized;
+    if (localized.isNotEmpty) return localized;
+    // A reason-coded row has no note, so its wording comes from `S` — resolved
+    // on *read*, not at load, so switching language relabels history rows that
+    // were loaded while the app was in the other language.
+    final labelled = reasonLabel(reason);
+    return labelled.isEmpty ? _legacyTitle : labelled;
   }
+
+  /// Wording for a ledger reason code, in the app's current language.
+  static String reasonLabel(String? reason) => switch (reason) {
+    'earn_order' => S.orderPurchaseLabel,
+    'redeem_reward' => S.rewardRedeemedLabel,
+    'refund' => S.pointsRefundedLabel,
+    'expire' => S.pointsExpiredLabel,
+    'adjustment' => S.balanceAdjustmentLabel,
+    _ => S.loyaltyActivityLabel,
+  };
 
   /// Ledger reason (`earn_order`, `redeem_reward`, ...). Null for legacy local
   /// rows, which stored only display text.
@@ -69,28 +86,13 @@ class LoyaltyTransaction {
   factory LoyaltyTransaction.fromDatabase(Map<String, dynamic> json) {
     final reason = json['reason']?.toString() ?? '';
     final note = json['note']?.toString() ?? '';
-    final englishTitle = switch (reason) {
-      'earn_order' => 'Order purchase',
-      'redeem_reward' => 'Reward redeemed',
-      'refund' => 'Points refunded',
-      'expire' => 'Points expired',
-      'adjustment' => 'Balance adjustment',
-      _ => 'Loyalty activity',
-    };
-    final arabicTitle = switch (reason) {
-      'earn_order' => 'شراء طلب',
-      'redeem_reward' => 'استبدال مكافأة',
-      'refund' => 'استرداد النقاط',
-      'expire' => 'انتهاء صلاحية النقاط',
-      'adjustment' => 'تعديل الرصيد',
-      _ => 'نشاط الولاء',
-    };
-    final title = note.isNotEmpty ? note : englishTitle;
     return LoyaltyTransaction(
       id: json['id']?.toString() ?? '',
-      title: title,
-      titleAr: note.isNotEmpty ? note : arabicTitle,
-      titleEn: note.isNotEmpty ? note : englishTitle,
+      // Only an operator note needs to be carried: a reason-coded row is
+      // labelled from `reason` when it is read.
+      title: note,
+      titleAr: note,
+      titleEn: note,
       points: (json['points'] as num?)?.toInt() ?? 0,
       date:
           DateTime.tryParse(json['created_at']?.toString() ?? '') ??

@@ -18,12 +18,17 @@ class CardPaymentPage extends StatefulWidget {
     required this.idempotencyKey,
     required this.publicKey,
     required this.sdkConfiguration,
+    this.savedCardId,
   });
 
   final String orderId;
   final String idempotencyKey;
   final String publicKey;
   final Map<String, dynamic> sdkConfiguration;
+
+  /// When set, the page charges this saved card instead of showing the hosted
+  /// form. The bottom bar sets it after placing the order.
+  final String? savedCardId;
 
   static const routeName = "cardPaymentRoute";
 
@@ -134,23 +139,21 @@ class _CardPaymentPageState extends State<CardPaymentPage> {
       );
     } else if (result == 'pending') {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment is being processed. We will update you soon.')),
+        SnackBar(content: Text(S.paymentProcessing)),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Payment could not be completed. Please try again.')),
+        SnackBar(content: Text(S.paymentFailed)),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CardPaymentCubit(
-        repository: context.read(),
-        sourceTokenProvider: _tokenSource,
-        chargeId: widget.orderId,
-      ),
+    final cubit = context.read<CardPaymentCubit>();
+    cubit.start(orderId: widget.orderId, savedCardId: widget.savedCardId);
+    return BlocProvider.value(
+      value: cubit,
       child: _CardPaymentView(
         generateToken: _generateToken,
         onPayPressed: _onPayPressed,

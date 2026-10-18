@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -15,6 +16,7 @@ import 'package:new_coffee/features/checkout/data/repositories/payment_method_re
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
+import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
@@ -29,6 +31,8 @@ import 'package:new_coffee/features/notifications/presentation/manager/notificat
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/supabase_order_repository.dart';
 import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
+import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
@@ -127,11 +131,20 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<PaymentMethodRepository>(
           create: (_) => SupabasePaymentMethodRepository(),
         ),
+        // The charge repository. Not tied to one checkout — the same cubit can
+        // be started for any order, so it is resolved from here rather than
+        // created per payment page.
+        RepositoryProvider<TapPaymentRepository>(
+          create: (_) => SupabaseTapPaymentRepository(),
+        ),
         RepositoryProvider<DeliveryZoneRepository>(
           create: (_) => SupabaseDeliveryZoneRepository(),
         ),
         RepositoryProvider<ContentRepository>(
           create: (_) => SupabaseContentRepository(),
+        ),
+        RepositoryProvider<PlaceSearchRepository>(
+          create: (_) => NominatimPlaceSearchRepository(),
         ),
       ],
       child: MultiBlocProvider(
@@ -243,7 +256,18 @@ class _BranchSync extends StatelessWidget {
       child: BlocListener<CartCubit, CartState>(
         listener: (context, cart) =>
             context.read<CheckoutCubit>().onCartChanged(cart.items),
-        child: child,
+        // Addresses are mirrored into two cubits: AddressesCubit owns them,
+        // and CheckoutCubit keeps the copy the checkout screens render. Without
+        // this the checkout kept the snapshot it took at construction, so an
+        // address added — or made default — in Settings never reached it.
+        child: BlocListener<AddressesCubit, AddressesState>(
+          listenWhen: (previous, current) =>
+              !listEquals(previous.addresses, current.addresses),
+          listener: (context, addresses) => context
+              .read<CheckoutCubit>()
+              .onAddressesChanged(addresses.addresses),
+          child: child,
+        ),
       ),
     );
   }

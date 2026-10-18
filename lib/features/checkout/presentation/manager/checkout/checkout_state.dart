@@ -43,6 +43,9 @@ class CheckoutState {
     this.isLoading = true,
     this.isPlacingOrder = false,
     this.orderError,
+    this.addressOutOfZone = false,
+    this.isResolvingZone = false,
+    this.selectedSavedCard,
     this.error,
     this.fulfillment = FulfillmentType.pickup,
     this.deliveryZones = const [],
@@ -88,6 +91,13 @@ class CheckoutState {
   /// Zones the selected branch serves. Empty means delivery is unavailable.
   final List<DeliveryZone> deliveryZones;
 
+  /// The saved card the customer has chosen to pay with this order.
+  ///
+  /// Null means "ask for a card at payment time". When set, the checkout charges
+  /// it directly instead of opening the hosted card form, so a customer who
+  /// saved a card is never asked to type it again.
+  final SavedCardModel? selectedSavedCard;
+
   /// The zone whose fee and minimum apply when [fulfillment] is delivery.
   final DeliveryZone? selectedDeliveryZone;
 
@@ -102,8 +112,25 @@ class CheckoutState {
   /// so an attempted delivery can never be silently completed as a pickup.
   final bool deliveryBlocked;
 
+  /// True when the selected address has coordinates and none of the branch's
+  /// zones covers it.
+  ///
+  /// This is the "we do not deliver to your area" answer. It is distinct from
+  /// [deliveryBlocked] (delivery was requested but is unavailable at all) and
+  /// from [deliveryZonesLoadFailed] (we could not tell) because each one needs a
+  /// different message and a different way out.
+  final bool addressOutOfZone;
+
+  /// True while a zone lookup for the selected address is in flight, so the UI
+  /// does not flash "out of area" before the answer arrives.
+  final bool isResolvingZone;
+
   /// The fee the server will charge for the current selection: the chosen
   /// zone's fee for delivery, and nothing for pickup.
+  ///
+  /// Read from the zone, which the server priced for this exact address — a
+  /// per-km zone carries its own distance-based figure rather than the flat
+  /// column value.
   double get payableDeliveryFee =>
       fulfillment.isDelivery ? (selectedDeliveryZone?.deliveryFee ?? 0) : 0;
 
@@ -135,6 +162,9 @@ class CheckoutState {
     bool clearSelectedDeliveryZone = false,
     bool? deliveryZonesLoadFailed,
     bool? deliveryBlocked,
+    bool? addressOutOfZone,
+    bool? isResolvingZone,
+    SavedCardModel? selectedSavedCard,
   }) {
     return CheckoutState(
       addresses: addresses ?? this.addresses,
@@ -158,6 +188,9 @@ class CheckoutState {
       deliveryZonesLoadFailed:
           deliveryZonesLoadFailed ?? this.deliveryZonesLoadFailed,
       deliveryBlocked: deliveryBlocked ?? this.deliveryBlocked,
+      addressOutOfZone: addressOutOfZone ?? this.addressOutOfZone,
+      selectedSavedCard: selectedSavedCard ?? this.selectedSavedCard,
+      isResolvingZone: isResolvingZone ?? this.isResolvingZone,
     );
   }
 }

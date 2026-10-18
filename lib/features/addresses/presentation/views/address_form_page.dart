@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
-import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/checkout/data/model/address_model.dart';
+import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
+import 'package:new_coffee/features/location/presentation/widgets/location_picker.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -45,12 +43,15 @@ class _AddressFormBody extends StatefulWidget {
 }
 
 class _AddressFormBodyState extends State<_AddressFormBody> {
-  static const LatLng _currentLocation = LatLng(16.8892, 42.5511);
-
-  final MapController _mapController = MapController();
   final _nameController = TextEditingController();
-  final _locationController = TextEditingController();
-  LatLng _selectedLocation = _currentLocation;
+
+  /// Owned here rather than inside the picker so confirming can read it: a
+  /// customer who types a place name and confirms without tapping a suggestion
+  /// must still get real coordinates.
+  final _searchController = TextEditingController();
+
+  /// Null until the customer picks a spot.
+  PickedLocation? _picked;
 
   @override
   void initState() {
@@ -58,40 +59,75 @@ class _AddressFormBodyState extends State<_AddressFormBody> {
     final address = widget.address;
     if (address != null) {
       _nameController.text = address.label;
-      _locationController.text = address.details;
+      _searchController.text = address.details;
       if (address.latitude != null && address.longitude != null) {
-        _selectedLocation = LatLng(address.latitude!, address.longitude!);
+        _picked = PickedLocation(
+          LatLng(address.latitude!, address.longitude!),
+          address.details,
+        );
       }
     }
   }
 
   @override
   void dispose() {
-    _mapController.dispose();
     _nameController.dispose();
-    _locationController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
-  void _useCurrentLocation() {
-    setState(() => _selectedLocation = _currentLocation);
-    _mapController.move(_currentLocation, 15);
+  /// Turns what is on screen into a location.
+  ///
+  /// A pin is already a complete answer, so it is preferred. Free text is only
+  /// resolved when there is no pin — or when the customer edited the text after
+  /// picking — and a name the geocoder does not recognise falls back to the pin
+  /// rather than discarding a deliberate choice.
+  Future<PickedLocation?> _resolveLocation() async {
+    final typed = _searchController.text.trim();
+    final picked = _picked;
+    if (typed.isEmpty) return picked;
+    if (picked != null && typed == picked.label) return picked;
+
+    try {
+      final places = await context
+          .read<PlaceSearchRepository>()
+          .search(typed, limit: 1);
+      if (!mounted || places.isEmpty) return picked;
+      final resolved = PickedLocation(places.first.latLng, places.first.label);
+      setState(() => _picked = resolved);
+      return resolved;
+    } on PlaceSearchException {
+      return picked;
+    }
   }
 
-  void _confirm() {
-    final label = _nameController.text.trim();
-    final details = _locationController.text.trim();
+  /// A reverse-geocoded label that is only numbers is not an address.
+  ///
+  /// The picker falls back to `"24.71360, 46.67530"` when OpenStreetMap has no
+  /// name, and that string used to be saved as the customer's `details` with no
+  /// error anywhere — an address that is literally coordinates. Anything
+  /// numeric-looking is rejected here so it cannot be persisted.
+  static bool _looksLikeCoordinates(String value) {
+    final compact = value.replaceAll(RegExp(r'[\s.,-]'), '');
+    return compact.isNotEmpty && RegExp(r'^\d+$').hasMatch(compact);
+  }
 
+  Future<void> _confirm() async {
+    final label = _nameController.text.trim();
     if (label.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.addAddressName)),
-      );
+      _warn(S.addAddressName);
       return;
     }
-    if (details.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.addAddressLocation)),
-      );
+    final picked = await _resolveLocation();
+    if (!mounted) return;
+    if (picked == null) {
+      _warn(S.addAddressLocation);
+      return;
+    }
+    // An address that is only digits is a coordinate fallback, not a place.
+    // Saving it wrote "24.71360, 46.67530" into the customer's address book.
+    if (_looksLikeCoordinates(picked.label)) {
+      _warn(S.locationUnavailable);
       return;
     }
 
@@ -101,21 +137,25 @@ class _AddressFormBodyState extends State<_AddressFormBody> {
       cubit.updateAddress(
         existing.copyWith(
           label: label,
-          details: details,
-          latitude: _selectedLocation.latitude,
-          longitude: _selectedLocation.longitude,
+          details: picked.label,
+          latitude: picked.point.latitude,
+          longitude: picked.point.longitude,
         ),
       );
     } else {
       cubit.addAddress(
         label: label,
-        details: details,
-        latitude: _selectedLocation.latitude,
-        longitude: _selectedLocation.longitude,
+        details: picked.label,
+        latitude: picked.point.latitude,
+        longitude: picked.point.longitude,
       );
     }
     Navigator.of(context).pop();
   }
+
+  void _warn(String message) => ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -129,87 +169,33 @@ class _AddressFormBodyState extends State<_AddressFormBody> {
               SpacingTokens.lg.w,
               SpacingTokens.sm.h,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CustomTextFormField(
-                  controller: _nameController,
-                  hint: S.addressNameHint,
-                  textInputAction: TextInputAction.next,
-                  bottomPadding: 8,
-                ),
-                CustomTextFormField(
-                  controller: _locationController,
-                  hint: S.searchLocation,
-                  prefixIcon: Icon(
-                    HugeIcons.strokeRoundedSearch01,
-                    color: AppColor.greyColor,
-                  ),
-                  textInputAction: TextInputAction.done,
-                  bottomPadding: 8,
-                ),
-                GestureDetector(
-                  onTap: _useCurrentLocation,
-                  behavior: HitTestBehavior.opaque,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: SpacingTokens.xs.h),
-                    child: Row(
-                      children: [
-                        Icon(
-                          HugeIcons.strokeRoundedLocation01,
-                          size: 24.w,
-                          color: AppColor.primaryColor,
-                        ),
-                        SizedBox(width: SpacingTokens.sm.w),
-                        Expanded(
-                          child: Text(
-                            S.useCurrentLocation,
-                            style: AppFonts.medium16(context),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const Divider(height: 1),
-                SizedBox(height: SpacingTokens.sm.h),
-                CustomBtn(text: S.confirm, onPressed: _confirm),
-              ],
+            child: CustomTextFormField(
+              controller: _nameController,
+              hint: S.addressNameHint,
+              textInputAction: TextInputAction.next,
+              bottomPadding: 8,
             ),
           ),
           Expanded(
-            child: FlutterMap(
-              mapController: _mapController,
-              options: MapOptions(
-                initialCenter: _selectedLocation,
-                initialZoom: 14,
-                onTap: (tapPosition, point) =>
-                    setState(() => _selectedLocation = point),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: SpacingTokens.lg.w),
+              child: LocationPicker(
+                repository: context.read<PlaceSearchRepository>(),
+                controller: _searchController,
+                initialPoint: _picked?.point,
+                onPicked: (location) => setState(() => _picked = location),
+                onLocationFailure: (_) {},
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.new_cofee',
-                  tileProvider: NetworkTileProvider(
-                    cachingProvider: const DisabledMapCachingProvider(),
-                  ),
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: _selectedLocation,
-                      width: 40,
-                      height: 40,
-                      child: Icon(
-                        HugeIcons.strokeRoundedLocation01,
-                        size: 36.w,
-                        color: AppColor.primaryColor,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ),
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.sm.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
+            ),
+            child: CustomBtn(text: S.confirm, onPressed: _confirm),
           ),
         ],
       ),

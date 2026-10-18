@@ -82,7 +82,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                   ),
                   SizedBox(height: AuthSpacings.titleGap.h),
                   Text(
-                    "Enter your phone number and we'll send you a verification code",
+                    S.phoneAuthSubtitle,
                     textAlign: TextAlign.center,
                     style: AppFonts.regular14(context)
                         .copyWith(color: AppColor.greyColor),

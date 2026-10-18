@@ -4,11 +4,16 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final String hint;
   final String? label;
   final TextEditingController? controller;
+
+  /// Supplied when something outside the field has to react to focus, e.g. to
+  /// show a suggestion list while typing.
+  final FocusNode? focusNode;
   final String? Function(String?)? validator;
   final void Function(String?)? onSaved;
   final AutovalidateMode? autovalidateMode;
@@ -29,6 +34,7 @@ class CustomTextFormField extends StatefulWidget {
     required this.hint,
     this.label,
     this.controller,
+    this.focusNode,
     this.validator,
     this.onSaved,
     this.autovalidateMode,
@@ -121,6 +127,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               },
               child: TextFormField(
                 controller: widget.controller,
+                focusNode: widget.focusNode,
                 obscureText: _isObscure,
                 keyboardType: widget.keyboardType,
             textInputAction: widget.textInputAction,
@@ -195,7 +202,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
   Widget? _buildSuffixIcon() {
     if (widget.obscureText) {
       return IconButton(
-        tooltip: _isObscure ? 'Show password' : 'Hide password',
+        tooltip: _isObscure ? S.showPassword : S.hidePassword,
         onPressed: () {
           setState(() => _isObscure = !_isObscure);
         },

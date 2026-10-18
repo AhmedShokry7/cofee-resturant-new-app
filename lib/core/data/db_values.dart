@@ -40,6 +40,18 @@ class Db {
     return fallback;
   }
 
+  /// Same as [asInt] but null-preserving, for nullable count columns.
+  ///
+  /// Needed wherever "no limit" and "a limit of zero" mean different things —
+  /// a null `usage_limit` is unlimited, a zero one is never usable.
+  static int? asIntOrNull(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   static bool asBool(dynamic value, {bool fallback = false}) {
     if (value == null) return fallback;
     if (value is bool) return value;

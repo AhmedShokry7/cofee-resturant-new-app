@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
@@ -201,10 +202,13 @@ class CartCubit extends Cubit<CartState> {
                 }
                 if (isClosed) continue;
                 if (generation != _loadGeneration) return;
+                final guestImage = entry['bundleImage']?.toString().trim() ?? '';
                 addBundle(
                   bundleId: bundleId,
-                  title: entry['bundleTitle']?.toString() ?? 'Bundle',
-                  image: entry['bundleImage']?.toString() ?? '',
+                  title: entry['bundleTitle']?.toString() ?? S.bundleLabel,
+                  image: guestImage.isEmpty
+                      ? await _bundleFallbackImage(components, catalog)
+                      : guestImage,
                   price: (entry['bundlePrice'] as num?)?.toDouble() ?? (entry['unitPrice'] as num?)?.toDouble() ?? 0,
                   components: components,
                   quantity: entry['quantity'] as int? ?? 1,
@@ -483,10 +487,8 @@ class CartCubit extends Cubit<CartState> {
       if (entry['isBundle'] == true) {
         final bundleId = entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
         if (bundleId.isEmpty) continue;
-        final title = entry['bundleTitle']?.toString() ?? 'Bundle';
-        final image = entry['bundleImage']?.toString() ?? '';
+        final title = entry['bundleTitle']?.toString() ?? S.bundleLabel;
         final price = (entry['bundlePrice'] as num?)?.toDouble() ?? (entry['unitPrice'] as num?)?.toDouble() ?? 0.0;
-        final product = ProductModel(id: 'bundle:$bundleId', name: title, price: price, image: image);
         final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
         final components = <CartBundleComponent>[];
         final rawComponents = entry['bundleComponents'];
@@ -497,6 +499,11 @@ class CartCubit extends Cubit<CartState> {
             }
           }
         }
+        var image = entry['bundleImage']?.toString().trim() ?? '';
+        if (image.isEmpty) {
+          image = await _bundleFallbackImage(components, catalog);
+        }
+        final product = ProductModel(id: 'bundle:$bundleId', name: title, price: price, image: image);
         items.add(CartItem(product: product, quantity: quantity, note: entry['note']?.toString() ?? '', optionValueIds: _optionIds(entry['optionValueIds']), unitPrice: price, bundleId: bundleId, bundleComponents: components));
         if (items.length >= _maxItems) break;
         continue;
@@ -522,6 +529,29 @@ class CartCubit extends Cubit<CartState> {
       if (items.length >= _maxItems) break;
     }
     return items;
+  }
+
+  /// Picture for a bundle line whose own `image_url` column is empty.
+  ///
+  /// `catalog.bundles.image_url` is nullable and usually unset, and every
+  /// bundle screen outside the cart already borrows the first component's
+  /// picture. Reusing the same rule here means a restored cart line shows the
+  /// same picture the customer just saw, instead of the "no image" tile.
+  Future<String> _bundleFallbackImage(
+    List<CartBundleComponent> components,
+    Future<Map<String, ProductModel>> Function() catalog,
+  ) async {
+    for (final component in components) {
+      final product =
+          (await catalog())[component.productId] ??
+          await _catalogRepository.getById(
+            component.productId,
+            branchId: branchId,
+          );
+      final image = product?.displayImageUrl;
+      if (image != null && image.trim().isNotEmpty) return image.trim();
+    }
+    return '';
   }
 
   static List<String> _optionIds(dynamic raw) {

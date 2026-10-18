@@ -28,9 +28,12 @@ ProductModel _product(String id) =>
     ProductModel(id: id, name: id, price: 25, image: 'assets/images/p.png');
 
 class _FakeCoupons implements CouponRepository {
-  _FakeCoupons({this.result, this.error, this.syncError});
+  _FakeCoupons({this.result, this.error, this.syncError, this.breakdown = const []});
 
   final ValidatedCoupon Function(String code, double subtotal)? result;
+
+  /// Per-line attribution the fake server hands back on apply.
+  List<CouponLineDiscount> breakdown;
   Object? error;
   Object? syncError;
   int calls = 0;
@@ -39,6 +42,17 @@ class _FakeCoupons implements CouponRepository {
 
   @override
   Future<List<CouponModel>> activeCoupons() async => const [];
+  @override
+  Future<Map<String, CouponUsage>> usageForCustomer() async => const {};
+  @override
+  Future<Map<String, CouponScope>> scopeForCoupons(List<CouponModel> coupons) async => const {};
+  @override
+  Future<List<CouponLineDiscount>> lineBreakdown({
+    required String code,
+    required String branchId,
+    required double subtotal,
+    required List<PlaceOrderLine> lines,
+  }) async => breakdown;
 
   @override
   Future<ValidatedCoupon> validate({
@@ -74,6 +88,17 @@ class _DeferredCoupons implements CouponRepository {
 
   @override
   Future<List<CouponModel>> activeCoupons() async => const [];
+  @override
+  Future<Map<String, CouponUsage>> usageForCustomer() async => const {};
+  @override
+  Future<Map<String, CouponScope>> scopeForCoupons(List<CouponModel> coupons) async => const {};
+  @override
+  Future<List<CouponLineDiscount>> lineBreakdown({
+    required String code,
+    required String branchId,
+    required double subtotal,
+    required List<PlaceOrderLine> lines,
+  }) async => const [];
 
   @override
   Future<ValidatedCoupon> validate({
@@ -150,6 +175,12 @@ class _FakeDeliveryZones implements DeliveryZoneRepository {
 
   @override
   Future<List<DeliveryZone>> zonesForBranch(String branchId) async => zones;
+  @override
+  Future<List<DeliveryZone>> zonesForPoint({
+    required String branchId,
+    required double latitude,
+    required double longitude,
+  }) async => zones;
 }
 
 class _ThrowingDeliveryZones implements DeliveryZoneRepository {
@@ -160,6 +191,13 @@ class _ThrowingDeliveryZones implements DeliveryZoneRepository {
   @override
   Future<List<DeliveryZone>> zonesForBranch(String branchId) async =>
       throw DeliveryZonesException(failure);
+
+  @override
+  Future<List<DeliveryZone>> zonesForPoint({
+    required String branchId,
+    required double latitude,
+    required double longitude,
+  }) async => throw DeliveryZonesException(failure);
 }
 
 class _FakeOrders implements OrdersRepository {
@@ -311,6 +349,97 @@ ValidatedCoupon _validated(
 );
 
 void main() {
+  // ---------- Per-line discount breakdown ----------
+
+  test('applying a coupon fetches the per-line breakdown', () async {
+    final orders = _FakeOrders(result: _placed());
+    final coupons = _FakeCoupons(
+      result: (code, subtotal) =>
+          _validated(code, discount: 6, subtotal: subtotal),
+      // _line builds a 25.00 line; quantity 2 is the eligible one.
+      breakdown: const [
+        CouponLineDiscount(
+          productId: 'p1',
+          nameEn: 'Latte',
+          lineTotal: 50,
+          discount: 6,
+        ),
+        CouponLineDiscount(
+          productId: 'p2',
+          nameEn: 'Cookie',
+          lineTotal: 25,
+          discount: 0,
+          isEligible: false,
+        ),
+      ],
+    );
+    final cubit = _cubit(orders, branchId: 'branch-1', coupons: coupons);
+    await cubit.load();
+
+    final applied = await cubit.applyCoupon(
+      'COLD',
+      items: [_line('p1', quantity: 2), _line('p2')],
+    );
+
+    expect(applied, isTrue);
+    final state = cubit.state.appliedCoupon!;
+    expect(state.lines, hasLength(2));
+    // The explanation never changes the money.
+    expect(state.discount, 6);
+    expect(cubit.summary(75).discount, 6);
+    expect(cubit.summary(75).total, 69);
+    expect(state.discountedLines.single.productId, 'p1');
+    expect(state.isPartial, isTrue);
+    await cubit.close();
+  });
+
+  test('a missing breakdown still applies the discount', () async {
+    // An older deployment has no breakdown RPC. The total is already approved
+    // and correct, so losing the explanation must not lose the discount.
+    final orders = _FakeOrders(result: _placed());
+    final coupons = _FakeCoupons(
+      result: (code, subtotal) =>
+          _validated(code, discount: 6.25, subtotal: subtotal),
+    );
+    final cubit = _cubit(orders, branchId: 'branch-1', coupons: coupons);
+    await cubit.load();
+
+    final applied = await cubit.applyCoupon('SAVE25', items: [_line('p1')]);
+
+    expect(applied, isTrue);
+    expect(cubit.state.appliedCoupon!.discount, 6.25);
+    expect(cubit.state.appliedCoupon!.lines, isEmpty);
+    // _line is a 25.00 line, and the approval is priced for exactly that cart.
+    expect(cubit.summary(25).discount, 6.25);
+    await cubit.close();
+  });
+
+  test('removing the coupon drops the breakdown with it', () async {
+    final orders = _FakeOrders(result: _placed());
+    final coupons = _FakeCoupons(
+      result: (code, subtotal) =>
+          _validated(code, discount: 2.4, subtotal: subtotal),
+      breakdown: const [
+        CouponLineDiscount(
+          productId: 'p1',
+          lineTotal: 12,
+          discount: 2.4,
+        ),
+      ],
+    );
+    final cubit = _cubit(orders, branchId: 'branch-1', coupons: coupons);
+    await cubit.load();
+    await cubit.applyCoupon('COLD', items: [_line('p1')]);
+    expect(cubit.state.appliedCoupon!.lines, isNotEmpty);
+
+    cubit.removeCoupon();
+
+    expect(cubit.state.appliedCoupon, isNull);
+    // The approval only ever applied to the cart it was priced for.
+    expect(cubit.summary(25).discount, 0);
+    await cubit.close();
+  });
+
   test(
     'a successful setDefault updates the default flag without changing the list',
     () async {

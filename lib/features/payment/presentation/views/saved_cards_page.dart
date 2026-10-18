@@ -44,6 +44,9 @@ class SavedCardsPage extends StatelessWidget {
                   card: card,
                   onDelete: () =>
                       context.read<SavedCardsCubit>().removeCard(card.id),
+                  onSetDefault: () => context
+                      .read<SavedCardsCubit>()
+                      .setDefaultCard(card.id),
                 ),
               ),
               SizedBox(height: SpacingTokens.md.h),
@@ -58,7 +61,7 @@ class SavedCardsPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8.r),
                   ),
                   child: Text(
-                    "+ Add new card",
+                    S.addNewCard,
                     style: AppFonts.medium14(context)
                         .copyWith(color: AppColor.primaryColor),
                   ),

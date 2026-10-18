@@ -83,8 +83,10 @@ class _TrackOrderPageBodyState extends State<TrackOrderPageBody> {
               return const TrackTimelineSkeleton();
             }
             if (snapshot.hasError) {
+              // The provider's error text is English and technical; the
+              // customer only needs to know it did not load.
               return Text(
-                'Could not load live status: ${snapshot.error}',
+                S.liveStatusFailed,
                 style: AppFonts.regular14(context),
               );
             }

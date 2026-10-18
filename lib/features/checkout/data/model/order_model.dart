@@ -1,4 +1,5 @@
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 
 /// The just-placed order shown on the success screen and e-receipt.
 ///
@@ -15,24 +16,31 @@ class OrderModel {
     this.deliveryFee = 0,
     this.deliveryZoneName,
     this.deliveryAddress,
+    this.discountLines = const [],
   });
 
   final String id;
   final DateTime date;
   final List<CartItem> items;
   final double total;
-
-  /// `pickup` or `delivery`, frozen from the server answer.
   final String fulfillmentType;
-
-  /// Delivery fee charged by the server (zero for pickup).
   final double deliveryFee;
-
-  /// The chosen zone's display name, when delivered.
   final String? deliveryZoneName;
-
-  /// The delivery address as one line (`label - details`), when delivered.
   final String? deliveryAddress;
 
+  /// Per-line attribution of the coupon discount, when one was applied.
+  ///
+  /// Empty when no coupon was applied, or when the server could not break it
+  /// down (older deployment): the total is still correct in both cases, only
+  /// the explanation is missing.
+  final List<CouponLineDiscount> discountLines;
+
   bool get isDelivery => fulfillmentType == 'delivery';
+
+  /// True when some lines were excluded from the discount, which is the case
+  /// worth explaining on the receipt.
+  bool get hasPartialDiscount =>
+      discountLines.isNotEmpty &&
+      discountLines.any((line) => line.discount > 0) &&
+      discountLines.any((line) => line.discount <= 0);
 }

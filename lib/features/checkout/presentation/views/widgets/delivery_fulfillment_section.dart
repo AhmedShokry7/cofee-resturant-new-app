@@ -7,7 +7,10 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
+import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/delivery_zone_status.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 
 /// Pickup vs delivery, and the delivery zone when delivery is chosen.
 ///
@@ -62,7 +65,31 @@ class DeliveryFulfillmentSection extends StatelessWidget {
               ),
             ] else if (state.fulfillment.isDelivery) ...[
               SizedBox(height: SpacingTokens.md.h),
-              _DeliveryZoneField(zones: state.deliveryZones),
+              // The address decides the zone. Three distinct answers, in the
+              // order they can occur. Picking a zone by hand clears
+              // addressOutOfZone in the cubit, which is what makes the manual
+              // escape hatch below work without extra state here.
+              if (state.isResolvingZone)
+                const _ZoneResolvingRow()
+              else if (state.addressOutOfZone)
+                OutOfZoneNotice(
+                  canChooseManually: state.deliveryZones.length > 1,
+                  onChooseManually: () => _chooseZoneManually(
+                    context,
+                    cubit,
+                    state.deliveryZones,
+                  ),
+                )
+              else if (state.selectedDeliveryZone != null)
+                ResolvedZoneCard(zone: state.selectedDeliveryZone!),
+              // The dropdown stays available alongside the resolved card so a
+              // customer who believes the area was detected wrongly can correct
+              // it instead of being told they cannot order.
+              if (state.selectedAddress?.latitude != null &&
+                  !state.addressOutOfZone) ...[
+                SizedBox(height: SpacingTokens.sm.h),
+                _DeliveryZoneField(zones: state.deliveryZones),
+              ],
             ],
           ],
         );
@@ -82,6 +109,79 @@ class DeliveryFulfillmentSection extends StatelessWidget {
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(message)));
     }
+  }
+
+  /// Offers the branch's zones when the automatic match found none.
+  ///
+  /// The server still refuses an order whose address is outside the chosen
+  /// zone, so this is an escape hatch for a genuinely wrong detection, not a way
+  /// around the coverage rule.
+  Future<void> _chooseZoneManually(
+    BuildContext context,
+    CheckoutCubit cubit,
+    List<DeliveryZone> zones,
+  ) async {
+    final chosen = await showModalBottomSheet<DeliveryZone>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: EdgeInsets.fromLTRB(
+            SpacingTokens.lg.w,
+            0,
+            SpacingTokens.lg.w,
+            SpacingTokens.lg.h,
+          ),
+          children: [
+            Text(
+              S.deliveryChooseZoneManually,
+              style: AppFonts.semiBold16(context),
+            ),
+            SizedBox(height: SpacingTokens.md.h),
+            for (final zone in zones)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(zone.name, style: AppFonts.medium14(context)),
+                subtitle: Text(
+                  '${deliveryFeeLabel(zone)}  •  ${Formatters.price(zone.deliveryFee)}',
+                  style: AppFonts.regular12(context).copyWith(
+                    color: AppColor.greyColor,
+                  ),
+                ),
+                onTap: () => Navigator.of(sheetContext).pop(zone),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (chosen != null) cubit.selectDeliveryZone(chosen);
+  }
+}
+
+class _ZoneResolvingRow extends StatelessWidget {
+  const _ZoneResolvingRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const SizedBox(
+          height: 16,
+          width: 16,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        SizedBox(width: SpacingTokens.sm.w),
+        Expanded(
+          child: Text(
+            S.deliveryZoneFromAddress,
+            style: AppFonts.regular12(context).copyWith(
+              color: AppColor.greyColor,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

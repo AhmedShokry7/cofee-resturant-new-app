@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
 
 import 'card_payment_state.dart';
@@ -8,13 +9,28 @@ import 'card_payment_state.dart';
 class CardPaymentCubit extends Cubit<CardPaymentState> {
   CardPaymentCubit({
     required this.repository,
-    required this.sourceTokenProvider,
-    required this.chargeId,
+    this.sourceTokenProvider,
   }) : super(const CardPaymentState());
 
   final TapPaymentRepository repository;
-  final Future<String?> Function() sourceTokenProvider;
-  final String chargeId;
+
+  /// Provides a one-time token from the hosted card form. Null when the cubit
+  /// was built to charge a saved card instead.
+  final Future<String?> Function()? sourceTokenProvider;
+
+  /// The order being paid. Set once the order has been placed.
+  String? _orderId;
+
+  /// When set, [createCharge] charges this saved card instead of asking for a
+  /// token — the server mints a single-use token from the card id, so no card
+  /// number crosses the client a second time.
+  String? _savedCardId;
+
+  /// Binds the cubit to an order and, optionally, a saved card to charge.
+  void start({required String orderId, String? savedCardId}) {
+    _orderId = orderId;
+    _savedCardId = savedCardId;
+  }
 
   void onCardValidInput(bool isValid) {
     if (state.isBusy) return;
@@ -31,23 +47,34 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
 
   Future<void> createCharge() async {
     if (state.isBusy) return;
+    final orderId = _orderId;
+    if (orderId == null || orderId.isEmpty) return;
+
+    // A saved card needs no token: the server mints one from the card id.
+    final savedCard = _savedCardId;
+    if (savedCard != null && savedCard.isNotEmpty) {
+      return createChargeFromSavedCard(savedCard);
+    }
+
     if (state.status != CardPaymentStatus.cardInputValid) {
       emit(state.copyWith(
         status: CardPaymentStatus.cardInputInvalid,
-        errorMessage: 'Please enter valid card details',
+        errorMessage: S.invalidCardDetails,
       ));
       return;
     }
 
     emit(state.copyWith(status: CardPaymentStatus.tokenizing, clearError: true));
 
-    final token = await sourceTokenProvider();
+    final provider = sourceTokenProvider;
+    if (provider == null) return;
+    final token = await provider();
     if (isClosed) return;
 
     if (token == null || token.isEmpty) {
       emit(state.copyWith(
         status: CardPaymentStatus.tokenizationFailed,
-        errorMessage: 'Tokenization failed. Please try again.',
+        errorMessage: S.tokenizationFailed,
       ));
       return;
     }
@@ -56,8 +83,8 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
 
     try {
       final result = await repository.createCharge(
-        orderId: chargeId,
-        idempotencyKey: chargeId,
+        orderId: orderId,
+        idempotencyKey: orderId,
         sourceToken: token,
       );
       if (isClosed) return;
@@ -71,7 +98,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       if (isClosed) return;
       emit(state.copyWith(
         status: CardPaymentStatus.paymentFailed,
-        errorMessage: 'Payment failed. Please try again.',
+        errorMessage: S.paymentRetryLater,
       ));
     }
   }
@@ -95,7 +122,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       } else {
         emit(state.copyWith(
           status: CardPaymentStatus.paymentFailed,
-          errorMessage: 'Payment was not completed.',
+          errorMessage: S.paymentNotCompleted,
         ));
         return 'failed';
       }
@@ -103,9 +130,48 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       if (isClosed) return null;
       emit(state.copyWith(
         status: CardPaymentStatus.paymentFailed,
-        errorMessage: 'Payment verification failed.',
+        errorMessage: S.paymentVerificationFailed,
       ));
       return 'failed';
+    }
+  }
+
+/// Charges a card the customer already saved, without opening the hosted form.
+  ///
+  /// The server mints a single-use token from the saved card id and charges that,
+  /// so no card number ever crosses the client a second time.
+  Future<void> createChargeFromSavedCard(String savedCardId) async {
+    if (state.isBusy) return;
+    final orderId = _orderId;
+    if (orderId == null || orderId.isEmpty) return;
+    emit(
+      state.copyWith(
+        status: CardPaymentStatus.creatingCharge,
+        clearError: true,
+      ),
+    );
+    try {
+      final result = await repository.createCharge(
+        orderId: orderId,
+        idempotencyKey: orderId,
+        savedCardId: savedCardId,
+      );
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.chargeCreated,
+          chargeId: result.chargeId,
+          transactionUrl: result.transactionUrl,
+        ),
+      );
+    } catch (error) {
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.paymentFailed,
+          errorMessage: S.paymentRetryLater,
+        ),
+      );
     }
   }
 

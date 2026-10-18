@@ -8,6 +8,8 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
+import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
@@ -146,8 +148,8 @@ class _CartSummaryState extends State<_CartSummary> {
     );
     if (!mounted) return;
     final message = applied
-        ? 'Coupon applied'
-        : checkout.state.couponError ?? 'Invalid coupon code';
+        ? S.couponApplied
+        : checkout.state.couponError ?? S.invalidCouponCode;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
     if (applied) _promoController.clear();
@@ -178,64 +180,35 @@ class _CartSummaryState extends State<_CartSummary> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (checkoutState.appliedCoupon == null)
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _promoController,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _applyPromo(),
-                            style: AppFonts.regular14(context),
-                            decoration: InputDecoration(
-                              hintText: S.promoCode,
-                              hintStyle: AppFonts.regular14(context)
-                                  .copyWith(color: AppColor.greyColor),
-                              contentPadding: EdgeInsets.symmetric(
-                                horizontal: SpacingTokens.lg.w,
-                                vertical: SpacingTokens.sm.h,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.r),
-                                borderSide: const BorderSide(
-                                  color: AppColor.borderColor,
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(100.r),
-                                borderSide: const BorderSide(
-                                  color: AppColor.primaryColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: SpacingTokens.sm.w),
-                        GestureDetector(
-                          onTap: _applyPromo,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: SpacingTokens.xl.w,
-                              vertical: SpacingTokens.sm.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColor.primaryColor,
-                              borderRadius: BorderRadius.circular(100.r),
-                            ),
-                            child: Text(
-                              S.apply,
-                              style: AppFonts.medium14(context)
-                                  .copyWith(color: AppColor.whiteColor),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    _AppliedCouponRow(
-                      code: checkoutState.appliedCoupon!.coupon.code,
-                      onRemove: () =>
+                    PromoCodeField(
+                      controller: _promoController,
+                      onApply: _applyPromo,
+                      // Shown inline as well as in the snackbar: a refusal the
+                      // customer has to dismiss before re-reading is not a
+                      // reason. `couponError` persists until the next attempt.
+                      error: checkoutState.couponError,
+                      // Clearing the box must also drop the applied discount,
+                      // or the customer keeps paying it with nothing on screen
+                      // to explain it.
+                      onClear: () =>
                           context.read<CheckoutCubit>().removeCoupon(),
-                    ),
+                    )
+else
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _AppliedCouponRow(
+                        code: checkoutState.appliedCoupon!.coupon.code,
+                        scopeLabel:
+                            checkoutState.appliedCoupon!.coupon.isScoped
+                            ? checkoutState.appliedCoupon!.coupon.scopeLabel
+                            : '',
+                        onRemove: () =>
+                            context.read<CheckoutCubit>().removeCoupon(),
+                      ),
+                      CouponBreakdown(coupon: checkoutState.appliedCoupon!),
+                    ],
+                  ),
                   SizedBox(height: SpacingTokens.md.h),
                   _SummaryRow(label: S.subTotal, priceValue: subtotal),
                   SizedBox(height: SpacingTokens.xs.h),
@@ -277,10 +250,18 @@ class _CartSummaryState extends State<_CartSummary> {
 }
 
 class _AppliedCouponRow extends StatelessWidget {
-  const _AppliedCouponRow({required this.code, required this.onRemove});
+  const _AppliedCouponRow({
+    required this.code,
+    required this.onRemove,
+    this.scopeLabel = '',
+  });
 
   final String code;
   final VoidCallback onRemove;
+
+  /// What the coupon is limited to, when it is limited. Empty for an unscoped
+  /// coupon, which needs no explanation.
+  final String scopeLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -296,10 +277,28 @@ class _AppliedCouponRow extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              code,
-              style: AppFonts.medium14(context)
-                  .copyWith(color: AppColor.primaryColor),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  code,
+                  style: AppFonts.medium14(context)
+                      .copyWith(color: AppColor.primaryColor),
+                ),
+                // The discount below is a share of these items only, so the
+                // figure looks small next to the subtotal. Naming the scope
+                // here is the difference between "the coupon worked" and "the
+                // coupon is broken".
+                if (scopeLabel.isNotEmpty) ...[
+                  SizedBox(height: 2.h),
+                  Text(
+                    '$scopeLabel — ${S.couponScopeDiscountNote}',
+                    style: AppFonts.regular12(context).copyWith(
+                      color: AppColor.greyColor,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
           GestureDetector(

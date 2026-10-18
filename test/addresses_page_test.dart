@@ -9,6 +9,8 @@ import 'package:new_coffee/features/addresses/presentation/views/address_form_pa
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 import 'package:new_coffee/features/checkout/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/location/data/model/place_suggestion.dart';
+import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 
 class _FakeAddressRepository implements AddressRepository {
   _FakeAddressRepository({
@@ -97,6 +99,35 @@ AddressModel _address(String id, {bool isDefault = false}) => AddressModel(
   isDefault: isDefault,
 );
 
+/// Stands in for the geocoder. The address form resolves a typed place name
+/// through it on confirm, so it must be reachable from the pushed route.
+class _FakePlaceSearch implements PlaceSearchRepository {
+  _FakePlaceSearch({this.results = const []});
+
+  List<PlaceSuggestion> results;
+  List<String> queries = [];
+
+  @override
+  Future<List<PlaceSuggestion>> search(String query, {int limit = 8}) async {
+    queries.add(query);
+    return results.take(limit).toList();
+  }
+
+  @override
+  Future<PlaceSuggestion?> reverse({
+    required double latitude,
+    required double longitude,
+  }) async => null;
+}
+
+PlaceSuggestion _place(String title, String subtitle) => PlaceSuggestion(
+  label: '$title, $subtitle',
+  title: title,
+  subtitle: subtitle,
+  latitude: 40.712776,
+  longitude: -74.005974,
+);
+
 Future<void> _setSurface(WidgetTester tester) async {
   tester.view.physicalSize = const Size(360, 1200) * 3.0;
   tester.view.devicePixelRatio = 3.0;
@@ -106,16 +137,24 @@ Future<void> _setSurface(WidgetTester tester) async {
 
 Future<void> _pumpPage(
   WidgetTester tester,
-  AddressRepository repository,
-) {
+  AddressRepository repository, {
+  PlaceSearchRepository? places,
+}) {
   return tester.pumpWidget(
     ScreenUtilInit(
       // Match the app's own configuration (main.dart) so text metrics in the
       // test match the real layout.
       designSize: const Size(360, 690),
       minTextAdapt: true,
-      builder: (context, _) => RepositoryProvider<AddressRepository>.value(
-        value: repository,
+      builder: (context, _) => MultiRepositoryProvider(
+        providers: [
+          RepositoryProvider<AddressRepository>.value(value: repository),
+          // Mirrors AppProviders: the geocoder sits above the Navigator so the
+          // pushed form can resolve a typed place name on confirm.
+          RepositoryProvider<PlaceSearchRepository>.value(
+            value: places ?? _FakePlaceSearch(),
+          ),
+        ],
         // Mirrors AppProviders: both providers sit above the Navigator, so a
         // pushed route (the add/edit form) can read the same cubit instance.
         child: BlocProvider(
@@ -294,8 +333,13 @@ void main() {
   ) async {
     await _setSurface(tester);
     final repository = _FakeAddressRepository(addresses: [_address('a1')]);
+    // "Office tower" is free text: the form resolves it through the geocoder
+    // so the saved address carries real coordinates instead of a default point.
+    final places = _FakePlaceSearch(
+      results: [_place('Office Tower', 'New York, United States')],
+    );
 
-    await _pumpPage(tester, repository);
+    await _pumpPage(tester, repository, places: places);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('+ ${S.enterLocation}'));
@@ -307,10 +351,62 @@ void main() {
     await tester.tap(find.text(S.confirm));
     await tester.pumpAndSettle();
 
+    // Typed once for the debounced suggestion search and once on confirm: the
+// customer never tapped a suggestion, so the pick itself is still unset.
+    expect(places.queries, contains('Office tower'));
     expect(find.text('Work'), findsOneWidget);
-    expect(find.text('Office tower'), findsOneWidget);
+    expect(find.text('Office Tower, New York, United States'), findsOneWidget);
     // The pre-existing address is still there.
     expect(find.text('Home a1'), findsOneWidget);
+  });
+
+  testWidgets('a pin alone is a complete answer, not "please enter your location"', (
+    tester,
+  ) async {
+    await _setSurface(tester);
+    final repository = _FakeAddressRepository();
+    // Nothing to resolve: the pick itself carries the label.
+    final places = _FakePlaceSearch(
+      results: [_place('Empire State Building', 'New York')],
+    );
+
+    await _pumpPage(tester, repository, places: places);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+ ${S.enterLocation}'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField).first, 'Work');
+    // Search, then pick a suggestion the way a customer does.
+    await tester.enterText(find.byType(TextField).last, 'Empire');
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump();
+    await tester.tap(find.text('Empire State Building'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(S.confirm));
+    await tester.pumpAndSettle();
+
+    // The picker wrote the resolved place name into the field, so confirming
+    // must not warn about a missing location.
+    expect(find.text(S.addAddressLocation), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
+    expect(find.text('Work'), findsOneWidget);
+  });
+
+  testWidgets('confirming with no name and no place warns about the name', (
+    tester,
+  ) async {
+    await _setSurface(tester);
+    await _pumpPage(tester, _FakeAddressRepository());
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('+ ${S.enterLocation}'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(S.confirm));
+    await tester.pumpAndSettle();
+
+    expect(find.text(S.addAddressName), findsOneWidget);
+    await _expireSnackBar(tester);
   });
 
   testWidgets('editing an address through the form updates the list entry', (
@@ -318,19 +414,24 @@ void main() {
   ) async {
     await _setSurface(tester);
     final repository = _FakeAddressRepository(addresses: [_address('a1')]);
+    final places = _FakePlaceSearch(
+      results: [_place('Street a1', 'New York, United States')],
+    );
 
-    await _pumpPage(tester, repository);
+    await _pumpPage(tester, repository, places: places);
     await tester.pumpAndSettle();
 
     await tester.tap(find.byIcon(Icons.edit_outlined));
     await tester.pumpAndSettle();
 
     // The form opens pre-filled; replacing the name and confirming routes the
-    // update through the shared cubit.
+    // update through the shared cubit. The pre-filled details are resolved
+    // through the geocoder so the update keeps real coordinates.
     await tester.enterText(find.byType(TextField).first, 'Home updated');
     await tester.tap(find.text(S.confirm));
     await tester.pumpAndSettle();
 
+    expect(find.text(S.addAddressLocation), findsNothing);
     expect(find.text('Home updated'), findsOneWidget);
     expect(find.text('Home a1'), findsNothing);
   });

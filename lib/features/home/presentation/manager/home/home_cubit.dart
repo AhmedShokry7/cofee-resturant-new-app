@@ -157,6 +157,10 @@ class HomeCubit extends Cubit<HomeState> {
 
   /// Featured rows carry the fields a card needs, so no second query is needed
   /// to render the carousel.
+  ///
+  /// The category name is included because [ProductCard] shows it in the
+  /// subtitle slot; passing an empty string here left every "Popular" card with
+  /// a blank subtitle even though the products are all categorised.
   static List<ProductModel> _toProducts(List<FeaturedProduct> featured) =>
       featured
           .map(
@@ -165,7 +169,8 @@ class HomeCubit extends Cubit<HomeState> {
               name: f.nameEn,
               nameAr: f.nameAr,
               nameEn: f.nameEn,
-              category: '',
+              categoryAr: f.categoryAr,
+              categoryEn: f.categoryEn,
               description: '',
               price: f.effectivePrice,
               image: f.imageUrl ?? '',

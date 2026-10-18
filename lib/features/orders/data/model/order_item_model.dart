@@ -1,6 +1,7 @@
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 
@@ -33,6 +34,7 @@ class OrderItemModel {
     this.currencyCode = 'SAR',
     this.subtotal,
     this.discountTotal,
+    this.lineDiscountTotal,
     this.taxTotal,
     this.grandTotal,
   });
@@ -74,6 +76,7 @@ class OrderItemModel {
   /// frozen line values are still the correct source.
   final double? subtotal;
   final double? discountTotal;
+  final double? lineDiscountTotal;
   final double? taxTotal;
   final double? grandTotal;
 
@@ -158,7 +161,7 @@ class OrderItemModel {
       product: ProductModel(
         id: productId ??
             'removed-product-${lineId.isEmpty ? itemMap.hashCode : lineId}',
-        name: nameEn ?? nameAr ?? 'Removed product',
+        name: nameEn ?? nameAr ?? S.removedProduct,
         nameAr: nameAr,
         nameEn: nameEn,
         description: '',
@@ -182,6 +185,7 @@ class OrderItemModel {
       currencyCode: Db.text(orderMap['currency_code'], 'SAR'),
       subtotal: Db.asDoubleOrNull(orderMap['subtotal']),
       discountTotal: Db.asDoubleOrNull(orderMap['discount_total']),
+      lineDiscountTotal: Db.asDoubleOrNull(itemMap['discount_total']),
       taxTotal: Db.asDoubleOrNull(orderMap['tax_total']),
       grandTotal: Db.asDoubleOrNull(orderMap['grand_total']),
       placedAt: placedAtValue == null
