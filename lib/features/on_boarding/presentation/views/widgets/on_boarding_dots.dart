@@ -16,8 +16,8 @@ class OnBoardingDots extends StatelessWidget {
           getOnBoardingList(context).length,
           (index) => AnimatedContainer(
             margin: const EdgeInsets.only(right: 8),
-            height: currentPage == index ? 12.h : 8.h,
-            width: currentPage == index ? 12.h : 8.h,
+            height: currentPage == index ? 10.h : 6.h,
+            width: currentPage == index ? 10.h : 6.h,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(100),
               color: currentPage == index

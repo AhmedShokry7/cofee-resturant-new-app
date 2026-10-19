@@ -17,15 +17,18 @@ class OnBoardingButtonsAndSliderDotes extends StatelessWidget {
         if (state is OnBoardingPageChanged) {
           currentPage = state.currentPage;
         }
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            currentPage != 0
-                ? const OnBoardingBackBtn()
-                : SizedBox(width: AppConstant.btnHeight(context)),
-            OnBoardingDots(currentPage: currentPage),
-            const OnBoardingNextBtn(),
-          ],
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              currentPage != 0
+                  ? const OnBoardingBackBtn()
+                  : SizedBox(width: AppConstant.btnHeight(context)),
+              OnBoardingDots(currentPage: currentPage),
+              const OnBoardingNextBtn(),
+            ],
+          ),
         );
       },
     );

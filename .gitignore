@@ -63,3 +63,6 @@ secrets.json
 .supabase/
 .branches/
 .temp/
+
+# Scratch output from analyze/test runs
+tool_output/

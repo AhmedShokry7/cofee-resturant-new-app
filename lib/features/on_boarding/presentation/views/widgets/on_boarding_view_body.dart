@@ -26,7 +26,7 @@ class OnBoardingViewBody extends StatelessWidget {
               },
             ),
             SizedBox(height: 4.h),
-            const Expanded(flex: 5, child: OnBoardingPageViewData()),
+            const Expanded(flex: 6, child: OnBoardingPageViewData()),
             const Expanded(child: OnBoardingButtonsAndSliderDotes()),
           ],
         ),

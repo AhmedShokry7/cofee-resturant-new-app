@@ -6,21 +6,10 @@ class CustomWelcomeImages extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              image: const DecorationImage(
-                image: AssetImage(AppImages.welcomeImage),
-                fit: BoxFit.fill,
-              ),
-            ),
-          ),
-        ),
-       
-      ],
+    return Image(
+      image: const AssetImage(AppImages.welcomeImage),
+      fit: BoxFit.cover,
+      alignment: Alignment.topCenter,
     );
   }
 }
