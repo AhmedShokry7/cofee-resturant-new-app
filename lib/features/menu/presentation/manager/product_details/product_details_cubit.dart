@@ -167,19 +167,34 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
   /// still appears when no explicit pairing exists.
   Future<void> _loadPairs(ProductModel product) async {
     try {
+      // Cards built from the featured RPC carry neither a category id nor
+      // explicit pairs. Resolve the stored row first, because filtering on the
+      // category uuid with a display name never matches anything.
+      var source = product;
+      if (source.relatedProductIds.isEmpty &&
+          (source.categoryId?.isEmpty ?? true)) {
+        final stored = await _repository.getById(
+          product.id,
+          branchId: branchId,
+        );
+        if (stored != null) source = stored;
+      }
+
       List<ProductModel> rows = const [];
-      if (product.relatedProductIds.isNotEmpty) {
+      if (source.relatedProductIds.isNotEmpty) {
         final fetched = <ProductModel>[];
-        for (final id in product.relatedProductIds) {
+        for (final id in source.relatedProductIds) {
           if (id == productId) continue;
           final resolved = await _repository.getById(id, branchId: branchId);
           if (resolved != null) fetched.add(resolved);
         }
         rows = fetched;
       } else {
-        final categoryKey = product.categoryId?.isNotEmpty == true
-            ? product.categoryId!
-            : product.category.trim();
+        // Legacy rows carry only a display label, so fall back to the name the
+        // way the offline catalogue matches it.
+        final categoryKey = source.categoryId?.isNotEmpty == true
+            ? source.categoryId!
+            : source.category.trim();
         if (categoryKey.isEmpty) return;
         rows = await _repository.getProducts(
           branchId: branchId,

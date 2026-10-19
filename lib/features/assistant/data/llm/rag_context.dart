@@ -6,10 +6,13 @@ import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 String buildSystemPrompt({required AssistantMemory memory}) {
   final buffer = StringBuffer(
     'You are the friendly in-app assistant of a coffee shop app. '
-    'Answer briefly in the user language (Egyptian Arabic if they write Arabic, else English), '
-    'max 3 short sentences. '
-    'Only use the provided local knowledge and live app data; never invent prices, hours or policies. '
-    'If you are not sure, say so and offer the in-app help options. ',
+    'Understand natural, colloquial Arabic (Iraqi/Gulf, Saudi, Egyptian, Levantine), '
+    'English, and mixed Arabic/English, including typos and informal wording. '
+    'Answer in the customer language. Keep replies concise (max 3 short sentences). '
+    'Use only provided local knowledge and live app data; never invent products, prices, '
+    'ingredients, allergens, stock, hours, or fees. '
+    'Ask one short clarification question when the request is genuinely ambiguous. '
+    'For follow-ups, use recent conversation context. ',
   );
   final top = memory.topCategory();
   if (top != null) buffer.write('The user enjoys $top. ');

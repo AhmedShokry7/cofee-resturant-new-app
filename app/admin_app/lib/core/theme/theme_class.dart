@@ -8,7 +8,10 @@ class ThemeClass {
 
   static const double _radius = 14;
 
-  static ThemeData light() {
+  /// Builds the light theme for the active language: Cairo for Arabic and
+  /// Poppins for English. Every [AppFonts] style leaves its family unset, so the
+  /// whole UI follows whichever family is chosen here.
+  static ThemeData light({bool isArabic = true}) {
     const colorScheme = ColorScheme.light(
       primary: AppColor.primaryColor,
       onPrimary: AppColor.whiteColor,
@@ -23,9 +26,8 @@ class ThemeClass {
 
     return ThemeData(
       colorScheme: colorScheme,
-      // Cairo renders both Arabic and Latin, so one family covers the
-      // whole bilingual UI. Every AppFonts style inherits it.
-      fontFamily: 'Cairo',
+      // Cairo for Arabic, Poppins for English. Every AppFonts style inherits it.
+      fontFamily: isArabic ? 'Cairo' : 'Poppins',
       scaffoldBackgroundColor: AppColor.whiteColor,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColor.whiteColor,

@@ -27,7 +27,7 @@ class OrderVariants {
   };
 
   static const Map<String, String> sugarPhrases = {
-    'من غير سكر': 'none',
+    'من غير سكر': 'none', 'لا سكر': 'none', 'بدون': 'none',
     'بدون سكر': 'none',
     'منغير سكر': 'none',
     'no sugar': 'none',
@@ -85,6 +85,26 @@ class OrderVariants {
       'medium' => 'وسط',
       _ => 'كبير',
     };
+  }
+
+  static String? sizeFromQuery(String query) {
+    final n = normalizeText(query);
+    String? found;
+    for (final entry in sizeWords.entries) {
+      if (n.contains(normalizeText(entry.key))) found = entry.value;
+    }
+    return found;
+  }
+
+  static String? sugarFromQuery(String query) {
+    final n = normalizeText(query);
+    // Longer phrases first.
+    final entries = sugarPhrases.entries.toList()
+      ..sort((a, b) => b.key.length.compareTo(a.key.length));
+    for (final entry in entries) {
+      if (n.contains(normalizeText(entry.key))) return entry.value;
+    }
+    return null;
   }
 
   static String sugarLabel(String sugar, {required bool arabic}) {
@@ -155,6 +175,19 @@ class OrderDraft {
 
   bool get isEmpty => items.isEmpty;
   int get totalCount => items.fold(0, (sum, item) => sum + item.quantity);
+
+  void updateLast({String? size, String? sugar}) {
+    if (items.isEmpty) return;
+    final last = items.removeLast();
+    items.add(
+      OrderDraftItem(
+        productId: last.productId,
+        quantity: last.quantity,
+        size: size ?? last.size,
+        sugar: sugar ?? last.sugar,
+      ),
+    );
+  }
 
   void add(OrderDraftItem item) {
     for (var i = 0; i < items.length; i++) {

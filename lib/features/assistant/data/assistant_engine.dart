@@ -9,6 +9,7 @@ import 'package:new_coffee/features/assistant/data/assistant_order.dart';
 import 'package:new_coffee/features/assistant/data/assistant_phrases.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -89,8 +90,15 @@ class AssistantEngine {
       memory.dismissProduct(id);
     }
     // LLM-style accommodation: answer in the user's own language and
-    // remember it for the next greeting.
-    final arabic = prefersArabic(query);
+    // remember it for the next greeting. Falls back to the app language
+    // when the message carries no detectable script (adaptive to customer).
+    final hasArabicScript = prefersArabic(query);
+    final hasLatinScript = RegExp(r'[A-Za-z]').hasMatch(query);
+    final arabic = hasArabicScript
+        ? true
+        : hasLatinScript
+            ? false
+            : AppLocale.instance.isArabic;
     memory.replyArabic = arabic;
     var leadPrefix = '';
     if (negatedIds.isNotEmpty) {
@@ -105,6 +113,62 @@ class AssistantEngine {
           : (names.isEmpty
                 ? 'Got it — not that one. How about these instead? '
                 : 'Got it — no $names. How about these instead? ');
+    }
+    // Refine an in-progress draft ("لا قصدي كبير", "خليه صغير", "من غير سكر")
+    // without starting a new order.
+    if (memory.draft.items.isNotEmpty) {
+      final wanted = _expandAll(query, tokenize(query).toSet()).wanted;
+      if (wanted.isEmpty) {
+        final normalized = normalizeText(query);
+        final cold = normalized.contains('ساقع') ||
+            normalized.contains('بارد') ||
+            normalized.contains('متلج') ||
+            normalized.contains('مثلج') ||
+            normalized.contains('ثلج') ||
+            normalized.contains('cold') ||
+            normalized.contains('iced');
+        final hot = normalized.contains('سخن') ||
+            normalized.contains('دافي') ||
+            normalized.contains('حار') ||
+            normalized.contains('hot');
+        if (cold || hot) {
+          final last = memory.draft.items.last;
+          final lastProduct =
+              AssistantSnapshot.current.productById(last.productId);
+          if (lastProduct != null) {
+            final lastName = AssistantSnapshot.canonicalName(lastProduct);
+            final base = normalizeText(lastName).replaceAll('iced', '').trim();
+            for (final product in AssistantSnapshot.current.products) {
+              final candidate = AssistantSnapshot.canonicalName(product);
+              final candidateCold = normalizeText(candidate).contains('iced') ||
+                  normalizeText(candidate).contains('cold');
+              final candidateBase =
+                  normalizeText(candidate).replaceAll('iced', '').trim();
+              final match = cold
+                  ? (candidateCold && candidateBase == base)
+                  : (!candidateCold && candidateBase == base);
+              if (match) {
+                memory.draft.items.removeLast();
+                memory.draft.add(
+                  OrderDraftItem(
+                    productId: product.id,
+                    quantity: last.quantity,
+                    size: last.size,
+                    sugar: last.sugar,
+                  ),
+                );
+                return _draftTotal(memory, arabic: arabic);
+              }
+            }
+          }
+        }
+        final newSize = OrderVariants.sizeFromQuery(query);
+        final newSugar = OrderVariants.sugarFromQuery(query);
+        if (newSize != null || newSugar != null) {
+          memory.draft.updateLast(size: newSize, sugar: newSugar);
+          return _draftTotal(memory, arabic: arabic);
+        }
+      }
     }
     // Draft follow-ups shortcut intent detection (price / clarification).
     if (memory.draft.items.isNotEmpty && _asksPrice(query)) {
@@ -941,6 +1005,15 @@ class AssistantEngine {
           AssistantPhrases.categoryBoosts[span.value] ?? const {},
         );
       }
+    }
+    // Typo recovery: a misspelled product token ("لاتي" / "latteh") that did
+    // not match any exact span still resolves to the closest menu name.
+    for (final token in tokens) {
+      if (token.length < 4) continue;
+      final candidates = AssistantSnapshot.current.products
+          .map(AssistantSnapshot.canonicalName);
+      final match = closestMatch(token, candidates);
+      if (match != null) wanted.add(match);
     }
     return (wanted: wanted, categories: categories);
   }

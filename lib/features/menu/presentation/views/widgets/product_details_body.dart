@@ -6,7 +6,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
@@ -18,8 +18,20 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_ste
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
+/// Premium collapsing product page.
+///
+/// The hero picture is pinned behind the content; the details sheet is a
+/// rounded card that scrolls up and progressively covers the picture. The
+/// header controls live in the transparent [AppBar] that overlays the hero.
 class ProductDetailsBody extends StatelessWidget {
-  const ProductDetailsBody({super.key});
+  const ProductDetailsBody({super.key, required this.controller});
+
+  /// Owned by the page so the app bar can react to the same scroll position
+  /// (it fades the product name in as the hero is covered).
+  final ScrollController controller;
+
+  /// How far the details sheet climbs over the hero when the page is at rest.
+  static const double _overlap = 28.0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,133 +50,45 @@ class ProductDetailsBody extends StatelessWidget {
           );
         }
 
-        final groups = state.groups;
         final surface = Theme.of(context).brightness == Brightness.dark
             ? AppColor.darkSurface
             : AppColor.whiteColor;
-        const overlap = 28.0;
+        final heroHeight = 300.h;
 
-        return CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverToBoxAdapter(
-              child: SizedBox(
-                width: double.infinity,
-                height: 300.h,
-                child: ProductImageView(product: product),
+        return Stack(
+          children: [
+            // The picture stays put behind the sheet; only the sheet moves, so
+            // the hero is covered from the bottom up instead of scrolling away.
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: _CollapsingHero(
+                product: product,
+                height: heroHeight,
+                controller: controller,
               ),
             ),
-            SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: Offset(0, -overlap),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: surface,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(24.r),
+            Positioned.fill(
+              child: CustomScrollView(
+                controller: controller,
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Transparent strip the height of the visible hero, so the
+                  // sheet starts life overlapping the picture by [_overlap].
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: heroHeight - _overlap),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _DetailsSheet(
+                      product: product,
+                      state: state,
+                      groups: state.groups,
+                      surface: surface,
                     ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.08),
-                        blurRadius: 16,
-                        offset: const Offset(0, -4),
-                      ),
-                    ],
                   ),
-                  padding: EdgeInsets.fromLTRB(
-                    SpacingTokens.lg.w,
-                    SpacingTokens.lg.h,
-                    SpacingTokens.lg.w,
-                    SpacingTokens.lg.h,
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        product.category,
-                        style: AppFonts.regular14(context)
-                            .copyWith(color: AppColor.greyColor),
-                      ),
-                      SizedBox(height: 4.h),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              product.name,
-                              style: AppFonts.semiBold20(context),
-                            ),
-                          ),
-                          SizedBox(width: SpacingTokens.sm.w),
-                          PriceLabel(
-                            amount: context.read<ProductDetailsCubit>().unitPrice,
-                            style: AppFonts.semiBold18(context)
-                                .copyWith(color: AppColor.primaryColor),
-                            iconSize: 18,
-                            iconColor: AppColor.primaryColor,
-                          ),
-                        ],
-                      ),
-                      if (!state.isAvailable) ...[
-                        SizedBox(height: SpacingTokens.sm.h),
-                        _UnavailableBanner(reason: state.unavailableReason),
-                      ],
-                      SizedBox(height: SpacingTokens.lg.h),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(
-                            child: Text(
-                              S.quantity,
-                              style: AppFonts.semiBold16(context),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          QuantityStepper(
-                            quantity: state.quantity,
-                            onIncrement: () => context
-                                .read<ProductDetailsCubit>()
-                                .incrementQuantity(),
-                            onDecrement: () => context
-                                .read<ProductDetailsCubit>()
-                                .decrementQuantity(),
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: SpacingTokens.lg.h),
-                      Text(S.productDetails, style: AppFonts.semiBold16(context)),
-                      SizedBox(height: SpacingTokens.sm.h),
-                      ProductDescription(description: product.description),
-
-                      for (final group in groups) ...[
-                        SizedBox(height: SpacingTokens.lg.h),
-                        _OptionGroupSection(
-                          group: group,
-                          selection: state.selection,
-                          showCupArt: group.code == 'size',
-                          cupSize: cupSizeFor(groups, state.selection),
-                        ),
-                      ],
-
-                      if (state.pairs.isNotEmpty) ...[
-                        SizedBox(height: SpacingTokens.xl.h),
-                        HomeProductsCarousel(
-                          title: S.goesWellWith,
-                          products: state.pairs,
-                          maxItems: 5,
-                        ),
-                      ],
-
-                      SizedBox(height: SpacingTokens.xxl.h),
-                    ],
-                  ),
-                ),
+                ],
               ),
-            ),
-            SliverToBoxAdapter(
-              child: SizedBox(height: overlap + SpacingTokens.xxl.h),
             ),
           ],
         );
@@ -173,29 +97,165 @@ class ProductDetailsBody extends StatelessWidget {
   }
 }
 
-class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.icon, required this.onTap, this.color});
+/// Full-bleed hero that drifts up slightly as the sheet scrolls over it, so
+/// the picture feels like a backdrop rather than a static block.
+class _CollapsingHero extends StatelessWidget {
+  const _CollapsingHero({
+    required this.product,
+    required this.height,
+    required this.controller,
+  });
 
-  final IconData icon;
-  final VoidCallback onTap;
-  final Color? color;
+  final ProductModel product;
+  final double height;
+  final ScrollController controller;
+
+  /// Fraction of the scroll distance the picture drifts by. Kept low so the
+  /// movement reads as subtle depth, not a sliding panel.
+  static const double _parallaxFactor = 0.35;
+
+  /// Upper bound on the drift so the picture can never expose a gap below it.
+  static const double _maxParallaxRatio = 0.2;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.all(SpacingTokens.xs.w),
-      child: Material(
-        color: Colors.black.withValues(alpha: 0.35),
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
+    final maxParallax = height * _maxParallaxRatio;
+    return SizedBox(
+      width: double.infinity,
+      height: height,
+      child: ClipRect(
+        child: AnimatedBuilder(
+          animation: controller,
+          builder: (context, child) {
+            final offset = controller.hasClients ? controller.offset : 0.0;
+            final shift = (offset * _parallaxFactor).clamp(0.0, maxParallax);
+            return Transform.translate(offset: Offset(0, -shift), child: child);
+          },
+          // Taller than the box so the drift never reveals empty space.
           child: SizedBox(
-            width: 40.w,
-            height: 40.w,
-            child: Icon(icon, size: 20.w, color: color ?? Colors.white),
+            width: double.infinity,
+            height: height + maxParallax,
+            child: ProductImageView(product: product),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// The rounded info card that overlaps the hero and holds everything the user
+/// configures: category, title, price, quantity, description, options and the
+/// companion products carousel.
+class _DetailsSheet extends StatelessWidget {
+  const _DetailsSheet({
+    required this.product,
+    required this.state,
+    required this.groups,
+    required this.surface,
+  });
+
+  final ProductModel product;
+  final ProductDetailsState state;
+  final List<OptionGroup> groups;
+  final Color surface;
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.read<ProductDetailsCubit>();
+
+    return Container(
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(
+        SpacingTokens.lg.w,
+        SpacingTokens.lg.h,
+        SpacingTokens.lg.w,
+        SpacingTokens.xxl.h,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            product.category,
+            style: AppFonts.regular14(context)
+                .copyWith(color: AppColor.greyColor),
+          ),
+          SizedBox(height: 4.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(product.name, style: AppFonts.semiBold20(context)),
+              ),
+              SizedBox(width: SpacingTokens.sm.w),
+              PriceLabel(
+                amount: cubit.unitPrice,
+                style: AppFonts.semiBold18(context)
+                    .copyWith(color: AppColor.primaryColor),
+                iconSize: 18,
+                iconColor: AppColor.primaryColor,
+              ),
+            ],
+          ),
+          if (!state.isAvailable) ...[
+            SizedBox(height: SpacingTokens.sm.h),
+            _UnavailableBanner(reason: state.unavailableReason),
+          ],
+          SizedBox(height: SpacingTokens.lg.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Flexible(
+                child: Text(
+                  S.quantity,
+                  style: AppFonts.semiBold16(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              QuantityStepper(
+                quantity: state.quantity,
+                onIncrement: () =>
+                    context.read<ProductDetailsCubit>().incrementQuantity(),
+                onDecrement: () =>
+                    context.read<ProductDetailsCubit>().decrementQuantity(),
+              ),
+            ],
+          ),
+          SizedBox(height: SpacingTokens.lg.h),
+          Text(S.productDetails, style: AppFonts.semiBold16(context)),
+          SizedBox(height: SpacingTokens.sm.h),
+          ProductDescription(description: product.description),
+
+          for (final group in groups) ...[
+            SizedBox(height: SpacingTokens.lg.h),
+            _OptionGroupSection(
+              group: group,
+              selection: state.selection,
+              showCupArt: group.code == 'size',
+              cupSize: cupSizeFor(groups, state.selection),
+            ),
+          ],
+
+          if (state.pairs.isNotEmpty) ...[
+            SizedBox(height: SpacingTokens.xl.h),
+            HomeProductsCarousel(
+              title: S.goesWellWith,
+              products: state.pairs,
+              maxItems: 5,
+            ),
+          ],
+        ],
       ),
     );
   }

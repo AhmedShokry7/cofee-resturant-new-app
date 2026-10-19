@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/assistant/data/assistant_order.dart';
 
@@ -14,7 +15,7 @@ class AssistantMemory {
     this.totalChats = 0,
     this.lastTopic,
     this.pendingQuestion,
-    this.replyArabic = false,
+    bool? replyArabic,
     this.pendingDessertSize,
     List<String>? recentQueries,
     List<String>? lastSuggestedIds,
@@ -26,8 +27,9 @@ class AssistantMemory {
         productScores = productScores ?? {},
         recentQueries = recentQueries ?? [],
         lastSuggestedIds = lastSuggestedIds ?? [],
-        dismissedIds = dismissedIds ?? [],
-        draft = draft ?? OrderDraft();
+         dismissedIds = dismissedIds ?? [],
+         draft = draft ?? OrderDraft(),
+         replyArabic = replyArabic ?? AppLocale.instance.isArabic;
 
   static const _storageKey = 'assistant_memory_v1';
   static const _maxRecent = 10;
@@ -70,7 +72,9 @@ class AssistantMemory {
   static Future<AssistantMemory> load() async {
     try {
       final raw = await SharedPref.getValue(key: _storageKey);
-      if (raw == null || raw.isEmpty) return AssistantMemory();
+      if (raw == null || raw.isEmpty) {
+        return AssistantMemory(replyArabic: AppLocale.instance.isArabic);
+      }
       final json = jsonDecode(raw) as Map<String, dynamic>;
       return AssistantMemory(
         categoryScores: _toDoubleMap(json['categoryScores']),
@@ -80,7 +84,7 @@ class AssistantMemory {
         totalChats: (json['totalChats'] as num?)?.toInt() ?? 0,
         lastTopic: json['lastTopic']?.toString(),
         pendingQuestion: json['pendingQuestion']?.toString(),
-        replyArabic: (json['replyArabic'] as bool?) ?? false,
+        replyArabic: (json['replyArabic'] as bool?) ?? AppLocale.instance.isArabic,
         pendingDessertSize: json['pendingDessertSize']?.toString(),
         recentQueries: (json['recentQueries'] as List?)
                 ?.map((dynamic item) => item.toString())
@@ -97,7 +101,7 @@ class AssistantMemory {
         draft: OrderDraft.fromJson(json['draft']),
       );
     } catch (_) {
-      return AssistantMemory();
+      return AssistantMemory(replyArabic: AppLocale.instance.isArabic);
     }
   }
 

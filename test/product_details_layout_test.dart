@@ -141,15 +141,14 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      // Header with title + favorite sits above the image (back navigation
-      // is provided by the pushing route and is untouched by this change).
+      // Header overlays the hero with two round controls: back + favourite.
       expect(find.byType(AppBar), findsOneWidget);
       expect(
         find.descendant(
           of: find.byType(AppBar),
           matching: find.byType(IconButton),
         ),
-        findsOneWidget,
+        findsNWidgets(2),
       );
 
       // The product image is the first body child and spans edge to edge.
@@ -286,6 +285,111 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       expect(cart.state.count, 3);
     });
+
+    testWidgets('header fades the product name in once the hero is covered', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      await _setSurface(tester);
+      final product = await _firstProduct();
+      final favorites = await _readyFavorites();
+      final cart = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: MockProductRepository(),
+      );
+      final branch = BranchCubit(repository: _FakeBranchRepository());
+      addTearDown(favorites.close);
+      addTearDown(cart.close);
+      addTearDown(branch.close);
+
+      await _pumpDetailsPage(
+        tester,
+        product,
+        favorites: favorites,
+        cart: cart,
+        branch: branch,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      final name = _detailsOf(tester).state.product!.name;
+
+      double titleOpacity() {
+        final opacity = tester.widget<Opacity>(
+          find
+              .ancestor(
+                of: find.descendant(
+                  of: find.byType(AppBar),
+                  matching: find.text(name),
+                ),
+                matching: find.byType(Opacity),
+              )
+              .first,
+        );
+        return opacity.opacity;
+      }
+
+      double headerBackgroundAlpha() {
+        final box = tester.widget<DecoratedBox>(
+          find.byKey(ProductDetailsPage.headerBackgroundKey),
+        );
+        final decoration = box.decoration as BoxDecoration;
+        return decoration.color!.a;
+      }
+
+      // Hidden while the picture fills the header; nothing covers the photo.
+      expect(titleOpacity(), 0);
+      expect(headerBackgroundAlpha(), 0);
+
+      // Scrolling the sheet up over the hero reveals the name on a solid bar.
+      await tester.drag(find.byType(ProductDetailsBody), const Offset(0, -400));
+      await tester.pumpAndSettle();
+      expect(titleOpacity(), 1);
+      expect(headerBackgroundAlpha(), 1);
+    });
+
+    testWidgets('header back and favourite keep the same edge gap', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      await _setSurface(tester);
+      final product = await _firstProduct();
+      final favorites = await _readyFavorites();
+      final cart = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: MockProductRepository(),
+      );
+      final branch = BranchCubit(repository: _FakeBranchRepository());
+      addTearDown(favorites.close);
+      addTearDown(cart.close);
+      addTearDown(branch.close);
+
+      await _pumpDetailsPage(
+        tester,
+        product,
+        favorites: favorites,
+        cart: cart,
+        branch: branch,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
+
+      final appBar = tester.getRect(find.byType(AppBar));
+      final buttons = find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byType(IconButton),
+      );
+      expect(buttons, findsNWidgets(2));
+
+      final back = tester.getRect(buttons.first);
+      final favourite = tester.getRect(buttons.last);
+
+      // Both controls sit the same distance from their screen edge.
+      expect(
+        back.left - appBar.left,
+        closeTo(appBar.right - favourite.right, 0.5),
+      );
+    });
   });
 
   group('goes well with', () {
@@ -414,19 +518,25 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
 
-      Icon headerHeart() => tester.widget<Icon>(
-        find.descendant(of: find.byType(AppBar), matching: find.byType(Icon)),
+      // The header now also holds a back arrow, so target the heart icon
+      // specifically instead of assuming the bar contains a single icon.
+      Finder headerHeartIcon() => find.descendant(
+        of: find.byType(AppBar),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Icon &&
+              (widget.icon == HugeIcons.strokeRoundedFavourite ||
+                  widget.icon == Icons.favorite),
+        ),
       );
+      Icon headerHeart() => tester.widget<Icon>(headerHeartIcon());
 
       // Idle: outlined heart, existing grey styling.
       expect(headerHeart().icon, HugeIcons.strokeRoundedFavourite);
       expect(headerHeart().color, AppColor.greyColor);
 
       await tester.tap(
-        find.descendant(
-          of: find.byType(AppBar),
-          matching: find.byType(IconButton),
-        ),
+        find.ancestor(of: headerHeartIcon(), matching: find.byType(IconButton)),
       );
       await tester.pumpAndSettle();
 

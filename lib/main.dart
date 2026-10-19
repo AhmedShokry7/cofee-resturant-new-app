@@ -60,7 +60,9 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               debugShowCheckedModeBanner: false,
-              theme: ThemeClass.light(),
+              theme: ThemeClass.light(
+                isArabic: AppLocale.instance.isArabic,
+              ),
               builder: (context, child) => Directionality(
                 textDirection: AppLocale.instance.textDirection,
                 child: child ?? const SizedBox.shrink(),

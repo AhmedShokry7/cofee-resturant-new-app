@@ -282,8 +282,8 @@ class AssistantPhrases {
   static const Map<String, String> productSynonyms = {
     'اسبريسو': 'Espresso', 'اسبرسو': 'Espresso', 'إسبريسو': 'Espresso',
     'كابتشينو': 'Cappuccino', 'كبتشينو': 'Cappuccino',
-    'لاتيه': 'Latte', 'لاته': 'Latte',
-    'موكا': 'Mocha', 'موكة': 'Mocha',
+    'لاتيه': 'Latte', 'لاته': 'Latte', 'لاتي': 'Latte', 'لا تيه': 'Latte',
+    'موكا': 'Mocha', 'موكة': 'Mocha', 'موك': 'Mocha', 'موكہ': 'Mocha',
     'امريكانو': 'Americano', 'أمريكانو': 'Americano',
     'ايس لاتيه': 'Iced Latte', 'لاتيه مثلج': 'Iced Latte', 'ايس كوفي': 'Iced Latte',
     'شاي اخضر': 'Green Tea', 'جرين تي': 'Green Tea',

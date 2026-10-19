@@ -5,10 +5,13 @@ import 'package:new_coffee/features/assistant/data/assistant_catalog.dart';
 import 'package:new_coffee/features/assistant/data/assistant_composer.dart';
 import 'package:new_coffee/features/assistant/data/assistant_conversation_log.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
+import 'package:new_coffee/features/assistant/data/assistant_improvement_log.dart';
 import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/assistant/data/llm/http_llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
@@ -62,6 +65,7 @@ class AssistantCubit extends Cubit<AssistantState> {
   bool _isReturning = false;
   String? _firstName;
   Set<String> _lastCartIds = const {};
+  AssistantImprovementLog _improvementLog = AssistantImprovementLog();
 
   String _nextId() =>
       '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
@@ -76,6 +80,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     _firstName = firstName;
     _memory = await AssistantMemory.load();
     _log = await ConversationLog.load();
+    _improvementLog = await AssistantImprovementLog.load();
     await AssistantCatalog.load();
     _snapshot = await AssistantSnapshot.load(
       catalog: _catalog,
@@ -83,7 +88,9 @@ class AssistantCubit extends Cubit<AssistantState> {
       branchId: branchId,
     );
     if (isClosed) return;
-    final arabic = _memory.replyArabic;
+    final arabic = _memory.totalChats > 0
+        ? _memory.replyArabic
+        : AppLocale.instance.isArabic;
     final returning = isReturning || _memory.totalChats > 0;
     emit(
       state.copyWith(
@@ -148,6 +155,12 @@ class AssistantCubit extends Cubit<AssistantState> {
       firstName: _firstName,
     );
     _memory.recordTopic(answer.topic);
+    if (answer.topic == 'unknown') {
+      await _improvementLog.recordUnknown(
+        text,
+        locale: AppLocale.instance.language.code,
+      );
+    }
     await _memory.save();
     await _log.logAssistant(
       answer.text,
@@ -179,7 +192,9 @@ class AssistantCubit extends Cubit<AssistantState> {
         cartActions: answer.actions,
       ),
     );
-    if (answer.topic == 'fallback' && llmConfig.enabled) {
+    final llmAvailable =
+        llmConfig.enabled || SupabaseService.isConfigured;
+    if (answer.topic == 'fallback' && llmAvailable) {
       await _tryLlmUpgrade(text, fallbackId);
     }
   }
@@ -227,6 +242,24 @@ class AssistantCubit extends Cubit<AssistantState> {
         ),
         typing: false,
       ),
+    );
+  }
+
+  /// Re-sends the last user message (best-effort retry). Avoids duplicate
+  /// side effects by relying on the existing sendMessage guards.
+  Future<void> retryLast({
+    Set<String> favoriteIds = const {},
+    Set<String> cartProductIds = const {},
+  }) async {
+    final lastUser = state.messages.lastWhere(
+      (message) => message.role == MessageRole.user,
+      orElse: () => const ChatMessage(id: '', role: MessageRole.user, text: ''),
+    );
+    if (lastUser.text.trim().isEmpty || state.typing) return;
+    await sendMessage(
+      lastUser.text,
+      favoriteIds: favoriteIds,
+      cartProductIds: cartProductIds,
     );
   }
 

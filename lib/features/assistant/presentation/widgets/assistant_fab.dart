@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
@@ -15,6 +16,10 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/assistant/data/llm/http_llm_client.dart';
+import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
+import 'package:new_coffee/features/assistant/data/llm/supabase_llm_client.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_sheet.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
@@ -114,8 +119,10 @@ class _AssistantFabState extends State<AssistantFab> {
       setState(() {
         _isReturningUser = isReturning;
         _firstName = firstName;
-        _replyArabic = memory.replyArabic;
-        _welcomeText = memory.replyArabic
+        _replyArabic = memory.totalChats > 0
+            ? memory.replyArabic
+            : AppLocale.instance.isArabic;
+        _welcomeText = _replyArabic
             ? AssistantGreetings.welcomeBubbleAr(
                 isReturning: isReturning,
                 firstName: firstName,
@@ -177,6 +184,9 @@ class _AssistantFabState extends State<AssistantFab> {
           catalog: navContext.read<CatalogRepository>(),
           orders: navContext.read<OrdersRepository>(),
           branchId: navContext.read<BranchCubit>().state.selected?.id,
+          llmClient: SupabaseService.isConfigured
+              ? const SupabaseLlmClient()
+              : const HttpLlmClient(LlmConfig()),
         )..start(isReturning: _isReturningUser, firstName: _firstName),
         child: const AssistantSheet(),
       ),

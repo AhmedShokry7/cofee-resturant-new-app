@@ -3,10 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/main.dart';
 
 void main() {
-  testWidgets('admin app boots to the startup page', (tester) async {
+  testWidgets('admin app boots to the staff sign in page when unauthenticated',
+      (tester) async {
     await tester.pumpWidget(const AdminApp());
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Admin'), findsOneWidget);
+    expect(find.text('Staff sign in'), findsOneWidget);
   });
 }

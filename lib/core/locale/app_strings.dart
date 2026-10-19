@@ -18,6 +18,17 @@ class S {
   // ---------- Common ----------
   static String get retry => _ar ? 'إعادة المحاولة' : 'Retry';
   static String get cancel => _ar ? 'إلغاء' : 'Cancel';
+  static String get locationPermissionTitle =>
+      _ar ? 'السماح بالوصول إلى الموقع' : 'Allow location access';
+  static String get locationPermissionBody => _ar
+      ? 'يمكن أن يحسّن الموقع دقة التوصيل والخدمات المرتبطة بالموقع. يمكنك المتابعة دون منح الإذن.'
+      : 'Location can improve delivery and location-related features. You can continue without granting permission.';
+  static String get enableLocation => _ar ? 'تفعيل الموقع' : 'Enable location';
+  static String get notNow => _ar ? 'ليس الآن' : 'Not now';
+  static String get locationPermissionDenied => _ar
+      ? 'تم رفض الإذن. يمكنك تفعيله لاحقاً من الإعدادات.'
+      : 'Permission denied. You can enable it later in settings.';
+  static String get ok => _ar ? 'حسناً' : 'OK';
   static String get submit => _ar ? 'إرسال' : 'Submit';
   static String get save => _ar ? 'حفظ' : 'Save';
   static String get apply => _ar ? 'تطبيق' : 'Apply';
@@ -427,6 +438,11 @@ static String get clearPromoCode =>
   static String get earnRateUnavailable =>
       _ar ? 'معدل الكسب غير متوفر' : 'Earn rate unavailable';
 
+  static String get authEmailNotConfirmed =>
+      _ar ? 'يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.' : 'Please confirm your email address before signing in.';
+  static String get authTooManyRequests =>
+      _ar ? 'محاولات كثيرة جداً. يرجى الانتظار قليلاً والمحاولة مرة أخرى.' : 'Too many attempts. Please wait a moment and try again.';
+
   // ---------- Coupons ----------
   static String get coupon => _ar ? 'الكوبون' : 'Coupon';
   static String get copyCode => _ar ? 'نسخ الكود' : 'Copy Code';
@@ -723,6 +739,14 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       _ar ? 'حدث خطأ أثناء الدخول. حاول مرة أخرى.' : 'Something went wrong signing in. Please try again.';
   static String get authUnexpected =>
       _ar ? 'حدث خطأ غير متوقع، برجاء المحاولة مرة أخرى.' : 'Something unexpected happened. Please try again.';
+  static String get signUpEmailVerification => _ar
+      ? 'تم إنشاء الحساب. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك.'
+      : 'Account created. Please check your email to verify your account.';
+  static String get passwordResetEmailSent => _ar
+      ? 'إذا كان هذا البريد مسجلاً، فقد أرسلنا رابط إعادة تعيين كلمة المرور.'
+      : 'If that email is registered, we sent a password reset link.';
+  static String get passwordResetSuccess =>
+      _ar ? 'تم تحديث كلمة المرور.' : 'Your password has been updated.';
 
   // ---------- Coupons ----------
   static String get couponApplied =>

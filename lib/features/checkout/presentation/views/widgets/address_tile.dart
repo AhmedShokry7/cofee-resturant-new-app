@@ -57,10 +57,14 @@ class AddressTile extends StatelessWidget {
                       ),
                       if (address.isDefault) ...[
                         SizedBox(width: 8.w),
-                        Text(
-                          S.defaultAddress,
-                          style: AppFonts.regular12(context)
-                              .copyWith(color: AppColor.primaryColor),
+                        Flexible(
+                          child: Text(
+                            S.defaultAddress,
+                            style: AppFonts.regular12(context)
+                                .copyWith(color: AppColor.primaryColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ],

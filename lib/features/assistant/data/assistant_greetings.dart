@@ -1,4 +1,3 @@
-import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
 /// Smart assistant greetings: first-time visitors get a warm welcome,
@@ -13,7 +12,11 @@ class AssistantGreetings {
     required DateTime now,
     List<OrderItemModel> activeOrders = const [],
   }) {
-    final day = getGreeting(now);
+    final day = now.hour < 12
+        ? 'Good Morning'
+        : now.hour < 17
+            ? 'Good Afternoon'
+            : 'Good Evening';
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' $name';
     final base = isReturning
@@ -32,7 +35,11 @@ class AssistantGreetings {
     String? firstName,
     required DateTime now,
   }) {
-    final day = getGreeting(now);
+    final day = now.hour < 12
+        ? 'Good Morning'
+        : now.hour < 17
+            ? 'Good Afternoon'
+            : 'Good Evening';
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' $name';
     if (isReturning) {

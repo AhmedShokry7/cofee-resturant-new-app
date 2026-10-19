@@ -16,101 +16,114 @@ class ProductDetailsSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final surface = Theme.of(context).brightness == Brightness.dark
+        ? AppColor.darkSurface
+        : AppColor.whiteColor;
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.only(bottom: SpacingTokens.lg.h),
+      padding: EdgeInsets.zero,
       children: [
+        // Full-bleed hero, unchanged.
         Shimmer(
           child: ShimmerBox(width: double.infinity, height: 300.h),
         ),
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            0,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Shimmer(child: ShimmerLine(width: 100, height: 13)),
-              SizedBox(height: 4.h),
-              Shimmer(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Expanded(
-                      child: ShimmerLine(widthFactor: 0.9, height: 19),
-                    ),
-                    SizedBox(width: SpacingTokens.sm.w),
-                    ShimmerBox(
-                      width: 72.w,
-                      height: 18.h,
-                      borderRadius: BorderRadius.circular(8.r),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: SpacingTokens.lg.h),
-              Shimmer(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const ShimmerLine(width: 90, height: 15),
-                    ShimmerBox(
-                      width: 120.w,
-                      height: 36.h,
-                      borderRadius: BorderRadius.circular(100.r),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: SpacingTokens.lg.h),
-              const Shimmer(child: ShimmerLine(width: 140, height: 15)),
-              SizedBox(height: SpacingTokens.sm.h),
-              const Shimmer(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShimmerLine(widthFactor: 1, height: 13),
-                    SizedBox(height: 6),
-                    ShimmerLine(widthFactor: 1, height: 13),
-                    SizedBox(height: 6),
-                    ShimmerLine(widthFactor: 0.6, height: 13),
-                  ],
-                ),
-              ),
-              for (var group = 0; group < 2; group++) ...[
-                SizedBox(height: SpacingTokens.lg.h),
+        // Rounded sheet that overlaps the hero, mirroring the loaded page so
+        // real content drops in without a layout shift.
+        Transform.translate(
+          offset: const Offset(0, -28),
+          child: Container(
+            decoration: BoxDecoration(
+              color: surface,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.lg.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.lg.h,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Shimmer(child: ShimmerLine(width: 100, height: 13)),
+                SizedBox(height: 4.h),
                 Shimmer(
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const ShimmerLine(width: 110, height: 15),
-                      SizedBox(height: SpacingTokens.xs.h),
-                      Row(
-                        children: [
-                          for (var i = 0; i < 3; i++) ...[
-                            if (i > 0) SizedBox(width: SpacingTokens.sm.w),
-                            Expanded(
-                              child: ShimmerBox(
-                                height: 52.h,
-                                borderRadius: BorderRadius.circular(12.r),
-                              ),
-                            ),
-                          ],
-                        ],
+                      const Expanded(
+                        child: ShimmerLine(widthFactor: 0.9, height: 19),
+                      ),
+                      SizedBox(width: SpacingTokens.sm.w),
+                      ShimmerBox(
+                        width: 72.w,
+                        height: 18.h,
+                        borderRadius: BorderRadius.circular(8.r),
                       ),
                     ],
                   ),
                 ),
+                SizedBox(height: SpacingTokens.lg.h),
+                Shimmer(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const ShimmerLine(width: 90, height: 15),
+                      ShimmerBox(
+                        width: 120.w,
+                        height: 36.h,
+                        borderRadius: BorderRadius.circular(100.r),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: SpacingTokens.lg.h),
+                const Shimmer(child: ShimmerLine(width: 140, height: 15)),
+                SizedBox(height: SpacingTokens.sm.h),
+                const Shimmer(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerLine(widthFactor: 1, height: 13),
+                      SizedBox(height: 6),
+                      ShimmerLine(widthFactor: 1, height: 13),
+                      SizedBox(height: 6),
+                      ShimmerLine(widthFactor: 0.6, height: 13),
+                    ],
+                  ),
+                ),
+                for (var group = 0; group < 2; group++) ...[
+                  SizedBox(height: SpacingTokens.lg.h),
+                  Shimmer(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const ShimmerLine(width: 110, height: 15),
+                        SizedBox(height: SpacingTokens.xs.h),
+                        Row(
+                          children: [
+                            for (var i = 0; i < 3; i++) ...[
+                              if (i > 0) SizedBox(width: SpacingTokens.sm.w),
+                              Expanded(
+                                child: ShimmerBox(
+                                  height: 52.h,
+                                  borderRadius: BorderRadius.circular(12.r),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                SizedBox(height: SpacingTokens.xl.h),
+                const ProductsCarouselSkeleton(itemCount: 3),
+                SizedBox(height: SpacingTokens.lg.h),
+                const Divider(),
               ],
-              SizedBox(height: SpacingTokens.xl.h),
-              const ProductsCarouselSkeleton(itemCount: 3),
-              SizedBox(height: SpacingTokens.lg.h),
-              const Divider(),
-            ],
+            ),
           ),
         ),
       ],

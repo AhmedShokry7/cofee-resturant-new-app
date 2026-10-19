@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/theme/app_color.dart';
@@ -17,21 +16,42 @@ class StartupPage extends StatelessWidget {
       backgroundColor: AppColor.whiteColor,
       body: Center(
         child: Padding(
-          padding: EdgeInsets.all(SpacingTokens.xl.w),
+          padding: const EdgeInsets.all(SpacingTokens.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColor.primaryColor,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: const Icon(
+                  Icons.local_cafe,
+                  color: Colors.white,
+                  size: 34,
+                ),
+              ),
+              const SizedBox(height: SpacingTokens.lg),
               Text(
                 'Admin',
-                style: Theme.of(context).textTheme.headlineMedium,
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-              SizedBox(height: SpacingTokens.md.h),
-              Text(
-                configured
-                    ? 'Supabase configuration detected.'
-                    : AppConfig.missingConfigurationMessage,
-                textAlign: TextAlign.center,
-              ),
+              const SizedBox(height: SpacingTokens.lg),
+              if (!configured)
+                Text(
+                  AppConfig.missingConfigurationMessage,
+                  textAlign: TextAlign.center,
+                )
+              else
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2.4),
+                ),
             ],
           ),
         ),
