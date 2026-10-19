@@ -39,16 +39,18 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     if (isClosed) return;
     emit(state.copyWith(isLoading: true, error: null));
     try {
-      final categories = await _repository.getCategories();
-      if (isClosed) return;
-    emit(state.copyWith(categories: categories, isLoading: false));
-
+      // All three queries resolve before isLoading drops. Emitting the
+      // categories on their own marked the load finished while products and
+      // bundles were still in flight, so the page briefly rendered "no
+      // products" for a category it had simply not fetched yet.
       final results = await Future.wait([
+        _repository.getCategories(),
         _repository.getProducts(branchId: branchId, limit: 60),
         _repository.getBundles(branchId: branchId),
       ]);
-      final products = results[0] as List<ProductModel>;
-      final bundles = results[1] as List<BundleModel>;
+      final categories = results[0] as List<CategoryModel>;
+      final products = results[1] as List<ProductModel>;
+      final bundles = results[2] as List<BundleModel>;
 
       if (isClosed) return;
 

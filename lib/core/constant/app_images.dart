@@ -12,10 +12,10 @@ class AppImages {
   static const String moon = "assets/images/moon.png";
   // =========== Splash Image ===========
       // static const String splashImage = "assets/images/splash_screen.png";
-      // // =========== Welcome View Image ===========
-      // static const String welcomeImage1 = "assets/images/welcome1.png";
-      // static const String welcomeImage2 = "assets/images/welcome2.png";
-      // static const String welcomeImage3 = "assets/images/welcome3.png";
+      // // =========== onboarding View Image ===========
+      static const String onboardingImage1 = "assets/images/onboarding_1.png";
+      static const String onboardingImage2 = "assets/images/onboarding_2.png";
+      static const String onboardingImage3 = "assets/icons/ai_bot.png";
       // =========== Welcome View Image ===========
   static const String welcomeImage = "assets/images/welcome_page.png";
 

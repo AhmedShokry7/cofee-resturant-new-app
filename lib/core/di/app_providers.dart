@@ -34,6 +34,7 @@ import 'package:new_coffee/features/payment/data/repositories/saved_cards_reposi
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
+import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
@@ -147,6 +148,9 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<PlaceSearchRepository>(
           create: (_) => NominatimPlaceSearchRepository(),
         ),
+        RepositoryProvider<ProfilePhotoRepository>(
+          create: (_) => SupabaseProfilePhotoRepository(),
+        ),
         RepositoryProvider<SubscriptionRepository>(
           create: (_) => SubscriptionRepositoryImpl(),
         ),
@@ -204,7 +208,11 @@ class AppProviders extends StatelessWidget {
               repository: context.read<AddressRepository>(),
             ),
           ),
-          BlocProvider(create: (context) => ProfileCubit()),
+          BlocProvider(
+            create: (context) => ProfileCubit(
+              repository: context.read<ProfilePhotoRepository>(),
+            ),
+          ),
           BlocProvider(
             create: (context) =>
                 HomeCubit(repository: context.read<CatalogRepository>()),

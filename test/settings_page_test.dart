@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +8,7 @@ import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
+import 'support/in_memory_profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -104,7 +105,7 @@ void main() {
     await tester.pumpWidget(
       _settingsApp(
         child: MultiBlocProvider(
-          providers: [BlocProvider(create: (_) => ProfileCubit())],
+          providers: [BlocProvider(create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()))],
           child: RepositoryProvider<AuthRepository>(
             create: (_) => _FakeAuthRepository(),
             child: const SettingsPage(),
@@ -129,7 +130,7 @@ void main() {
         child: AnimatedBuilder(
           animation: AppLocale.instance,
           builder: (context, _) => MultiBlocProvider(
-            providers: [BlocProvider(create: (_) => ProfileCubit())],
+            providers: [BlocProvider(create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()))],
             child: RepositoryProvider<AuthRepository>(
               create: (_) => _FakeAuthRepository(),
               // Not const: a const instance is canonicalized, so Flutter would
@@ -169,7 +170,7 @@ void main() {
     await tester.pumpWidget(
       _settingsApp(
         child: MultiBlocProvider(
-          providers: [BlocProvider(create: (_) => ProfileCubit())],
+          providers: [BlocProvider(create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()))],
           child: RepositoryProvider<AuthRepository>(
             create: (_) => _FakeAuthRepository(),
             child: const SettingsPage(),

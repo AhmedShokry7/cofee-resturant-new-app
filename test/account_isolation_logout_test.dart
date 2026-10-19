@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -26,6 +26,7 @@ import 'package:new_coffee/features/notifications/data/model/notification_model.
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
+import 'support/in_memory_profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 
 // ---------------------------------------------------------------- fakes ----
@@ -199,9 +200,9 @@ class _FailingOnceFavorites implements FavoritesRepository {
 
 NotificationModel _row(String id) => NotificationModel(
   id: id,
-  titleAr: 'عنوان $id',
+  titleAr: 'ط¹ظ†ظˆط§ظ† $id',
   titleEn: 'Title $id',
-  bodyAr: 'نص $id',
+  bodyAr: 'ظ†طµ $id',
   bodyEn: 'Body $id',
   type: 'order_status',
   createdAt: DateTime.now(),
@@ -521,7 +522,7 @@ void main() {
             home: RepositoryProvider<AuthRepository>.value(
               value: auth,
               child: BlocProvider(
-                create: (_) => ProfileCubit(),
+                create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()),
                 child: const SettingsPage(),
               ),
             ),

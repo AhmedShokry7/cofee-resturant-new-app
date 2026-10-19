@@ -10,6 +10,7 @@ import 'package:new_coffee/features/categories/presentation/manager/categories/c
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -44,6 +45,30 @@ class CategoriesPage extends StatelessWidget {
                 builder: (context, state) {
                   if (state.isLoading && state.categories.isEmpty) {
                     return const CategoriesLoadingView();
+                  }
+                  // A failed load is not an empty list. Reporting "no
+                  // categories" after an error claimed the catalogue was empty
+                  // when it was in fact unreachable.
+                  if (state.error != null && state.categories.isEmpty) {
+                    return Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(SpacingTokens.lg.w),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            EmptyState(
+                              icon: Icons.cloud_off_outlined,
+                              title: S.couldNotLoadCategories,
+                            ),
+                            SizedBox(height: SpacingTokens.md.h),
+                            CustomBtn(
+                              text: S.retry,
+                              onPressed: () => cubit.load(),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
                   }
                   if (state.categories.isEmpty) {
                     return EmptyState(

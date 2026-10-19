@@ -93,6 +93,8 @@ class S {
   static String productsIn(String label) => _ar
       ? 'ستظهر المنتجات في $label هنا'
       : 'Products in $label will appear here';
+  static String get couldNotLoadCategories =>
+      _ar ? 'تعذر تحميل التصنيفات' : 'Could not load categories';
 
   // ---------- Product details ----------
   static String get productDetails => _ar ? 'تفاصيل المنتج' : 'Product Details';
@@ -613,6 +615,16 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get takePhoto => _ar ? 'التقط صورة' : 'Take a photo';
   static String get imagePickerFailed =>
       _ar ? 'تعذر فتح اختيار الصور' : "Couldn't open the image picker";
+  static String get photoUploadFailed =>
+      _ar ? 'تعذر حفظ الصورة. حاول مرة أخرى.' : "Couldn't save the photo. Please try again.";
+  static String get photoFormatUnsupported => _ar
+      ? 'صيغة الصورة غير مدعومة. اختر صورة بصيغة مدعومة.'
+      : 'That image format is not supported. Choose a JPG, PNG or WebP image.';
+  static String get photoSaveFailed => _ar
+      ? 'تم رفع الصورة لكن تعذر ربطها بالحساب.'
+      : 'The photo was uploaded but could not be linked to your account.';
+  static String get photoLoadFailed =>
+      _ar ? 'تعذر تحميل الصورة' : "Couldn't load the photo";
   static String get language => _ar ? 'اللغة' : 'Language';
   static String languageValue(bool arabic) =>
       arabic ? 'اللغة: العربية' : 'Language: English';

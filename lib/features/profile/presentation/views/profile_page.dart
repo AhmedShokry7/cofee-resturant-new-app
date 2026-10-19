@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -21,8 +23,10 @@ import 'package:new_coffee/features/subscriptions/presentation/views/subscriptio
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
+import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
+import 'package:new_coffee/features/profile/presentation/views/widgets/profile_avatar.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_image_source_sheet.dart';
 import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
@@ -154,7 +158,15 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: ListView(
+        child: BlocListener<ProfileCubit, ProfileState>(
+          listenWhen: (previous, current) =>
+              current.error != null && current.error != previous.error,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(_photoErrorMessage(state.error!))),
+            );
+          },
+          child: ListView(
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(
@@ -167,25 +179,16 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   BlocBuilder<ProfileCubit, ProfileState>(
                     builder: (context, state) {
-                      final bytes = state.imageBytes;
+                      // Re-resolve before the current signed URL lapses, so a
+                      // long-lived session does not end up with a dead image.
+                      unawaited(
+                        context.read<ProfileCubit>().ensureFreshSignedUrl(),
+                      );
                       return GestureDetector(
                         onTap: () => _pickImage(context),
                         child: Stack(
                           children: [
-                            CircleAvatar(
-                              radius: 52.w,
-                              backgroundColor: AppColor.lightGreyColor,
-                              backgroundImage: bytes != null
-                                  ? MemoryImage(bytes)
-                                  : null,
-                              child: bytes == null
-                                  ? Icon(
-                                      HugeIcons.strokeRoundedUser,
-                                      size: 52.w,
-                                      color: AppColor.greyColor,
-                                    )
-                                  : null,
-                            ),
+                            ProfileAvatar(state: state, radius: 52.w),
                             Positioned(
                               bottom: 2,
                               right: 2,
@@ -312,8 +315,28 @@ class _SettingsPageState extends State<SettingsPage> {
                   showLogoutSheet(context, onConfirm: () => _logout(context)),
             ),
           ],
+          ),
         ),
       ),
     );
   }
+}
+
+/// Turns a [ProfilePhotoFailure] token into a sentence a customer can act on.
+///
+/// Every failure is reported. A photo that did not save is never presented as
+/// one that did.
+String _photoErrorMessage(String failure) {
+  if (failure == ProfilePhotoFailure.unsupportedFormat.name) {
+    return S.photoFormatUnsupported;
+  }
+  if (failure == ProfilePhotoFailure.profileUpdateFailed.name ||
+      failure == ProfilePhotoFailure.profileRowMissing.name) {
+    return S.photoSaveFailed;
+  }
+  if (failure == ProfilePhotoFailure.photoLoadFailed.name ||
+      failure == ProfilePhotoFailure.signedUrlFailed.name) {
+    return S.photoLoadFailed;
+  }
+  return S.photoUploadFailed;
 }

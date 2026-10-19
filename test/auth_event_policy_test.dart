@@ -1,4 +1,4 @@
-import 'dart:convert';
+﻿import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -15,6 +15,9 @@ import 'package:new_coffee/features/menu/data/repositories/mock_product_reposito
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
+import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
+
+import 'support/in_memory_profile_photo_repository.dart';
 
 /// Minimal stand-in for what a signed-out customer sees.
 class _SignedOutNotifications implements NotificationsRepository {
@@ -45,7 +48,7 @@ class _NeverFiresLoyaltyRepository implements LoyaltyRepository {
 
 /// Auth-event policy tests.
 ///
-/// **Coverage boundary — read before trusting a green run here.** These tests
+/// **Coverage boundary â€” read before trusting a green run here.** These tests
 /// call each cubit's `shouldReloadOnAuthEvent` directly. They therefore prove
 /// the policy table, and nothing more. They do NOT prove that
 /// `onAuthStateChange` is subscribed, that GoTrue replays `initialSession` to a
@@ -78,16 +81,21 @@ void main() {
         repository: _SignedOutNotifications(),
       );
       final loyalty = LoyaltyCubit(repository: _NeverFiresLoyaltyRepository());
+      final profile = ProfileCubit(
+        repository: InMemoryProfilePhotoRepository(),
+      );
       addTearDown(cart.close);
       addTearDown(favorites.close);
       addTearDown(notifications.close);
       addTearDown(loyalty.close);
+      addTearDown(profile.close);
 
       final cubits = <bool Function(AuthState)>[
         cart.shouldReloadOnAuthEvent,
         favorites.shouldReloadOnAuthEvent,
         notifications.shouldReloadOnAuthEvent,
         loyalty.shouldReloadOnAuthEvent,
+        profile.shouldReloadOnAuthEvent,
       ];
 
       for (final event in ignored) {
@@ -116,16 +124,21 @@ void main() {
         repository: _SignedOutNotifications(),
       );
       final loyalty = LoyaltyCubit(repository: _NeverFiresLoyaltyRepository());
+      final profile = ProfileCubit(
+        repository: InMemoryProfilePhotoRepository(),
+      );
       addTearDown(cart.close);
       addTearDown(favorites.close);
       addTearDown(notifications.close);
       addTearDown(loyalty.close);
+      addTearDown(profile.close);
 
       final cubits = <bool Function(AuthState)>[
         cart.shouldReloadOnAuthEvent,
         favorites.shouldReloadOnAuthEvent,
         notifications.shouldReloadOnAuthEvent,
         loyalty.shouldReloadOnAuthEvent,
+        profile.shouldReloadOnAuthEvent,
       ];
 
       for (final event in const [
@@ -162,16 +175,21 @@ void main() {
         repository: _SignedOutNotifications(),
       );
       final loyalty = LoyaltyCubit(repository: _NeverFiresLoyaltyRepository());
+      final profile = ProfileCubit(
+        repository: InMemoryProfilePhotoRepository(),
+      );
       addTearDown(cart.close);
       addTearDown(favorites.close);
       addTearDown(notifications.close);
       addTearDown(loyalty.close);
+      addTearDown(profile.close);
 
       final recovery = _event(AuthChangeEvent.passwordRecovery);
       expect(cart.shouldReloadOnAuthEvent(recovery), isTrue);
       expect(favorites.shouldReloadOnAuthEvent(recovery), isTrue);
       expect(notifications.shouldReloadOnAuthEvent(recovery), isTrue);
-      expect(loyalty.shouldReloadOnAuthEvent(recovery), isTrue);
+expect(loyalty.shouldReloadOnAuthEvent(recovery), isTrue);
+      expect(profile.shouldReloadOnAuthEvent(recovery), isTrue);
     });
 
     test('it stays distinct from the events that must not reload', () async {

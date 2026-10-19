@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +28,9 @@ Future<void> showProfileImagePicker(BuildContext context) async {
   try {
     final bytes = await pickProfileImage(source: source);
     if (bytes == null || !context.mounted) return;
-    context.read<ProfileCubit>().setImage(bytes);
+    // Uploads to Storage and records the path on the profile. The cubit keeps
+    // the picked bytes on screen meanwhile, so the avatar never blanks.
+    unawaited(context.read<ProfileCubit>().upload(bytes));
   } on PlatformException {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context)
