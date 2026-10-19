@@ -24,7 +24,7 @@ class OnBoardingDots extends StatelessWidget {
                   ? AppColor.primaryColor
                   : AppColor.greyColor.withValues(alpha: .5),
             ),
-            duration: const Duration(milliseconds: 300),
+            duration: const Duration(milliseconds: 250),
           ),
         ),
       ],

@@ -32,6 +32,7 @@ import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bottom_sheet.dart';
+import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
 
 class SettingsPage extends StatefulWidget {

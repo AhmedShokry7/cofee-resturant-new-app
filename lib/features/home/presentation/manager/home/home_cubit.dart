@@ -75,7 +75,7 @@ class HomeCubit extends Cubit<HomeState> {
     // rule can filter it without a query per temperature change.
     final productsFuture = guard(
       'products',
-      () => _repository.getProducts(branchId: branchId, limit: 20),
+      () => _repository.getProducts(branchId: branchId, limit: 10),
       state.recommendationPool,
     );
 
@@ -100,12 +100,23 @@ class HomeCubit extends Cubit<HomeState> {
       for (final p in products) p.id: p,
     };
 
-    // Only keep components we actually resolved. A dangling component id
-    // would otherwise crash the card when it reads the map.
+    // Resolve every bundle component, fetching any that the recommendation
+    // pool did not already include so prices (and the discount badge) stay
+    // accurate instead of silently dropping bundles with a discount.
     final bundleProducts = <String, ProductModel>{};
     for (final id in componentIds) {
-      final product = productsById[id];
-      if (product != null) bundleProducts[id] = product;
+      var product = productsById[id];
+      if (product == null) {
+        try {
+          product = await _repository.getById(id, branchId: branchId);
+        } catch (_) {
+          product = null;
+        }
+      }
+      if (product != null) {
+        productsById[id] = product;
+        bundleProducts[id] = product;
+      }
     }
 
     if (isClosed) return;

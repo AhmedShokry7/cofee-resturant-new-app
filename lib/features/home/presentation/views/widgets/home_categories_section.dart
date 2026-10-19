@@ -26,13 +26,24 @@ class HomeCategoriesSection extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(S.categories, style: AppFonts.semiBold18(context)),
-            GestureDetector(
-              onTap: () => context.read<MainCubit>().changeTab(1),
+            Expanded(
               child: Text(
-                S.seeAll,
-                style: AppFonts.medium12(context)
-                    .copyWith(decoration: TextDecoration.underline),
+                S.categories,
+                style: AppFonts.semiBold18(context),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            Flexible(
+              child: GestureDetector(
+                onTap: () => context.read<MainCubit>().changeTab(1),
+                child: Text(
+                  S.seeAll,
+                  style: AppFonts.medium12(context)
+                      .copyWith(decoration: TextDecoration.underline),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ),
           ],

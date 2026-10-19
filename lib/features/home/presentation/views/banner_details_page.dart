@@ -10,18 +10,65 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
-class BannerDetailsPage extends StatelessWidget {
+class BannerDetailsPage extends StatefulWidget {
   const BannerDetailsPage({super.key, required this.banner});
 
   static const routeName = "bannerDetailsRoute";
 
   final BannerModel banner;
+
+  @override
+  State<BannerDetailsPage> createState() => _BannerDetailsPageState();
+}
+
+class _BannerDetailsPageState extends State<BannerDetailsPage> {
+  late BannerModel _banner;
+  bool _resolving = false;
+
+  BannerModel get banner => _banner;
+
+  @override
+  void initState() {
+    super.initState();
+    _banner = widget.banner;
+    _resolveIfNeeded();
+  }
+
+  Future<void> _resolveIfNeeded() async {
+    final needsProduct = banner.targetType == 'product' &&
+        banner.targetProduct == null &&
+        banner.targetId != null;
+    final needsBundle = banner.targetType == 'bundle' &&
+        banner.targetBundle == null &&
+        banner.targetId != null;
+    if (!needsProduct && !needsBundle) return;
+    if (_resolving) return;
+    _resolving = true;
+    try {
+      final repo = context.read<CatalogRepository>();
+      var next = banner;
+      if (needsProduct) {
+        final product = await repo.getById(banner.targetId!);
+        if (product != null) next = next.copyWith(targetProduct: product);
+      }
+      if (needsBundle) {
+        final bundle = await repo.getBundleById(banner.targetId!);
+        if (bundle != null) next = next.copyWith(targetBundle: bundle);
+      }
+      if (mounted) setState(() => _banner = next);
+    } catch (_) {
+      // Keep the (possibly partial) banner; navigation degrades gracefully.
+    } finally {
+      _resolving = false;
+    }
+  }
 
   Future<void> _onCta(BuildContext context) async {
     switch (banner.targetType) {

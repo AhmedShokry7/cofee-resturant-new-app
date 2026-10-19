@@ -13,6 +13,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
+import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,13 +66,21 @@ class MyApp extends StatelessWidget {
                 child: child ?? const SizedBox.shrink(),
               ),
               navigatorKey: rootNavigatorKey,
-              navigatorObservers: [AppRouteObserver.instance],
               // The assistant FAB is owned by the Home page scaffold, not by
               // a global overlay, so it can never duplicate or leak onto
               // other screens.
-              initialRoute: AppRoutes.initialRouteName(currentRoute),
+              navigatorObservers: [AppRouteObserver.instance],
+              // The splash owns the brand mark because the Android 12+ system
+              // splash clamps its icon to a fixed circle. It hands over to the
+              // saved entry route once it is done.
+              initialRoute: SplashView.routeName,
               onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-              routes: AppRoutes.routes,
+              routes: {
+                SplashView.routeName: (context) => SplashView(
+                  targetRoute: AppRoutes.initialRouteName(currentRoute),
+                ),
+                ...AppRoutes.routes,
+              },
             ),
           ),
         );

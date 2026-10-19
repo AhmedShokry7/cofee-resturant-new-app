@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
 class HomeSectionTitle extends StatelessWidget {
@@ -13,7 +15,7 @@ class HomeSectionTitle extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Flexible(
+        Expanded(
           child: Text(
             title,
             style: AppFonts.semiBold16(context),
@@ -21,7 +23,10 @@ class HomeSectionTitle extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        ?trailing,
+        if (trailing != null) ...[
+          SizedBox(width: SpacingTokens.sm.w),
+          Flexible(child: trailing!),
+        ],
       ],
     );
   }

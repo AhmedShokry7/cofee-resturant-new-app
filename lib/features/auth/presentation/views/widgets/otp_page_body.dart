@@ -13,6 +13,8 @@ import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_a
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
+import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 class OtpPageBody extends StatefulWidget {
@@ -63,8 +65,11 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   void _submit() {
     FocusScope.of(context).unfocus();
     if (_code.length < _codeLength) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(S.enterSixDigitCode)));
+      AuthMessageDialog.show(
+        context,
+        type: AuthMessageType.error,
+        message: S.enterSixDigitCode,
+      );
       return;
     }
     context.read<PhoneAuthCubit>().verifyCode(phone: widget.phone, code: _code);
@@ -78,8 +83,9 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   Future<void> _onAuthenticated() async {
     await const SessionRepository().markAuthenticated();
     if (!mounted) return;
-    Navigator.of(context)
-        .pushNamedAndRemoveUntil(MainPage.routeName, (route) => false);
+    await LocationPermissionService.requestOnFirstLaunch();
+    if (!mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(MainPage.routeName, (route) => false);
   }
 
   @override
@@ -90,11 +96,17 @@ class _OtpPageBodyState extends State<OtpPageBody> {
         child: BlocConsumer<PhoneAuthCubit, PhoneAuthState>(
           listener: (context, state) {
             if (state is PhoneAuthFailure) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.message)));
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.error,
+                message: state.message,
+              );
             } else if (state is PhoneAuthCodeSent) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(S.codeSent)));
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.info,
+                message: S.codeSent,
+              );
             } else if (state is PhoneAuthSuccess) {
               _onAuthenticated();
             }

@@ -6,6 +6,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
@@ -24,14 +25,11 @@ class ProductDetailsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProductDetailsCubit, ProductDetailsState>(
       builder: (context, state) {
+        if (state.isLoading) {
+          return const ProductDetailsSkeleton();
+        }
         final product = state.product;
         if (product == null) {
-          // Loading and failing are different states: the first shows a
-          // skeleton mirroring the gallery, title, price, description and
-          // option groups; only the second shows a message.
-          if (state.isLoading) {
-            return const ProductDetailsSkeleton();
-          }
           return Center(
             child: Text(
               state.error ?? S.productUnavailable,
@@ -41,112 +39,164 @@ class ProductDetailsBody extends StatelessWidget {
         }
 
         final groups = state.groups;
+        final surface = Theme.of(context).brightness == Brightness.dark
+            ? AppColor.darkSurface
+            : AppColor.whiteColor;
+        const overlap = 28.0;
 
-        // Order on screen: full-bleed image first (flush under the AppBar,
-        // which already carries back + favorite), then the padded product
-        // information: title, price, quantity, description and options.
-        return ListView(
-          padding: EdgeInsets.only(bottom: SpacingTokens.lg.h),
-          children: [
-            SizedBox(
-              width: double.infinity,
-              height: 300.h,
-              child: ProductImageView(product: product),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                SpacingTokens.lg.w,
-                SpacingTokens.md.h,
-                SpacingTokens.lg.w,
-                0,
+        return CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(
+              child: SizedBox(
+                width: double.infinity,
+                height: 300.h,
+                child: ProductImageView(product: product),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.category,
-                    style: AppFonts.regular14(context)
-                        .copyWith(color: AppColor.greyColor),
+            ),
+            SliverToBoxAdapter(
+              child: Transform.translate(
+                offset: Offset(0, -overlap),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: surface,
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24.r),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 4.h),
-                  Row(
+                  padding: EdgeInsets.fromLTRB(
+                    SpacingTokens.lg.w,
+                    SpacingTokens.lg.h,
+                    SpacingTokens.lg.w,
+                    SpacingTokens.lg.h,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          product.name,
-                          style: AppFonts.semiBold20(context),
+                      Text(
+                        product.category,
+                        style: AppFonts.regular14(context)
+                            .copyWith(color: AppColor.greyColor),
+                      ),
+                      SizedBox(height: 4.h),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              product.name,
+                              style: AppFonts.semiBold20(context),
+                            ),
+                          ),
+                          SizedBox(width: SpacingTokens.sm.w),
+                          PriceLabel(
+                            amount: context.read<ProductDetailsCubit>().unitPrice,
+                            style: AppFonts.semiBold18(context)
+                                .copyWith(color: AppColor.primaryColor),
+                            iconSize: 18,
+                            iconColor: AppColor.primaryColor,
+                          ),
+                        ],
+                      ),
+                      if (!state.isAvailable) ...[
+                        SizedBox(height: SpacingTokens.sm.h),
+                        _UnavailableBanner(reason: state.unavailableReason),
+                      ],
+                      SizedBox(height: SpacingTokens.lg.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              S.quantity,
+                              style: AppFonts.semiBold16(context),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          QuantityStepper(
+                            quantity: state.quantity,
+                            onIncrement: () => context
+                                .read<ProductDetailsCubit>()
+                                .incrementQuantity(),
+                            onDecrement: () => context
+                                .read<ProductDetailsCubit>()
+                                .decrementQuantity(),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: SpacingTokens.lg.h),
+                      Text(S.productDetails, style: AppFonts.semiBold16(context)),
+                      SizedBox(height: SpacingTokens.sm.h),
+                      ProductDescription(description: product.description),
+
+                      for (final group in groups) ...[
+                        SizedBox(height: SpacingTokens.lg.h),
+                        _OptionGroupSection(
+                          group: group,
+                          selection: state.selection,
+                          showCupArt: group.code == 'size',
+                          cupSize: cupSizeFor(groups, state.selection),
                         ),
-                      ),
-                      SizedBox(width: SpacingTokens.sm.w),
-                      PriceLabel(
-                        amount: context.read<ProductDetailsCubit>().unitPrice,
-                        style: AppFonts.semiBold18(context)
-                            .copyWith(color: AppColor.primaryColor),
-                        iconSize: 18,
-                        iconColor: AppColor.primaryColor,
-                      ),
+                      ],
+
+                      if (state.pairs.isNotEmpty) ...[
+                        SizedBox(height: SpacingTokens.xl.h),
+                        HomeProductsCarousel(
+                          title: S.goesWellWith,
+                          products: state.pairs,
+                          maxItems: 5,
+                        ),
+                      ],
+
+                      SizedBox(height: SpacingTokens.xxl.h),
                     ],
                   ),
-                  if (!state.isAvailable) ...[
-                    SizedBox(height: SpacingTokens.sm.h),
-                    _UnavailableBanner(reason: state.unavailableReason),
-                  ],
-                  SizedBox(height: SpacingTokens.lg.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(S.quantity, style: AppFonts.semiBold16(context)),
-                      QuantityStepper(
-                        quantity: state.quantity,
-                        onIncrement: () => context
-                            .read<ProductDetailsCubit>()
-                            .incrementQuantity(),
-                        onDecrement: () => context
-                            .read<ProductDetailsCubit>()
-                            .decrementQuantity(),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: SpacingTokens.lg.h),
-                  Text(S.productDetails, style: AppFonts.semiBold16(context)),
-                  SizedBox(height: SpacingTokens.sm.h),
-                  ProductDescription(description: product.description),
-
-                  // Every group is rendered from what the admin configured. The old
-                  // page had exactly three hardcoded sections and matched them on
-                  // category names, so a product with a different set of options could
-                  // not be configured at all.
-                  for (final group in groups) ...[
-                    SizedBox(height: SpacingTokens.lg.h),
-                    _OptionGroupSection(
-                      group: group,
-                      selection: state.selection,
-                      showCupArt: group.code == 'size',
-                      cupSize: cupSizeFor(groups, state.selection),
-                    ),
-                  ],
-
-                  // Same-category companions. Hidden until loaded; the same
-                  // carousel the home sections use, so cards behave alike.
-                  if (state.pairs.isNotEmpty) ...[
-                    SizedBox(height: SpacingTokens.xl.h),
-                    HomeProductsCarousel(
-                      title: S.goesWellWith,
-                      products: state.pairs,
-                      maxItems: 5,
-                    ),
-                  ],
-
-                  SizedBox(height: SpacingTokens.lg.h),
-                  const Divider(),
-                ],
+                ),
               ),
+            ),
+            SliverToBoxAdapter(
+              child: SizedBox(height: overlap + SpacingTokens.xxl.h),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _CircleButton extends StatelessWidget {
+  const _CircleButton({required this.icon, required this.onTap, this.color});
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.all(SpacingTokens.xs.w),
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.35),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            width: 40.w,
+            height: 40.w,
+            child: Icon(icon, size: 20.w, color: color ?? Colors.white),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -213,8 +263,6 @@ class _OptionGroupSection extends StatelessWidget {
           )
         else
           SizedBox(height: SpacingTokens.xs.h),
-        // A single-select group with a handful of values reads better as chips
-        // in a row; multi-select groups are a checklist.
         if (group.isSingleSelect)
           Row(
             children: [

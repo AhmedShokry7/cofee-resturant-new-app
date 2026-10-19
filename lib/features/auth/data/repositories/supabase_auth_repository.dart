@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -17,7 +17,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 // reference unambiguous.
 import 'package:supabase_flutter/supabase_flutter.dart'
     hide AuthUser, AuthException;
-
 /// The real authentication layer.
 ///
 /// Implements the same [AuthRepository] contract that AuthRepositoryImpl
@@ -53,11 +52,59 @@ class SupabaseAuthRepository implements AuthRepository {
     return SupabaseService.client;
   }
 
+  /// Translates a Supabase auth error into a stable, lowercased token the
+  /// cubit can map onto a customer-facing message. Prefers the SDK's code
+  /// (stable) and falls back to the message text.
+  static String _mapAuthError(Object error) {
+    String code = '';
+    String message = error.toString();
+    try {
+      final dynamic e = error;
+      final c = e.code;
+      if (c is String) code = c;
+      final m = e.message;
+      if (m is String && m.isNotEmpty) message = m;
+    } catch (_) {}
+    final lowerCode = code.toLowerCase();
+    final lowerMessage = message.toLowerCase();
+    if (lowerCode.isNotEmpty) {
+      if (lowerCode == 'invalid_credentials' ||
+          lowerCode == 'invalid_grant') {
+        return 'invalid login credentials';
+      }
+      return lowerCode;
+    }
+    if (lowerMessage.contains('invalid login credentials') ||
+        lowerMessage.contains('invalid password') ||
+        lowerMessage.contains('invalid email or password')) {
+      return 'invalid login credentials';
+    }
+    if (lowerMessage.contains('user not found')) return 'user not found';
+    if (lowerMessage.contains('email not confirmed')) return 'email not confirmed';
+    if (lowerMessage.contains('already') &&
+        (lowerMessage.contains('registered') ||
+            lowerMessage.contains('exists'))) {
+      return 'user already exists';
+    }
+    if (lowerMessage.contains('weak password')) return 'weak password';
+    if (lowerMessage.contains('invalid email')) return 'invalid email';
+    if (lowerMessage.contains('too many') ||
+        lowerMessage.contains('rate limit')) {
+      return 'over_request_rate_limit';
+    }
+    return lowerMessage.isNotEmpty ? lowerMessage : 'auth failed';
+  }
+
   AuthUser _toDomain(User user) {
     final metadata = user.userMetadata;
     final localPart = user.email?.split('@').first;
     final name = metadata?['full_name'] ?? metadata?['name'] ?? localPart;
-    return AuthUser(id: user.id, name: name, email: user.email, phone: metadata?['phone']?.toString());
+    return AuthUser(
+      id: user.id,
+      name: name,
+      email: user.email,
+      phone: metadata?['phone']?.toString(),
+    );
   }
 
   @override
@@ -66,17 +113,22 @@ class SupabaseAuthRepository implements AuthRepository {
     required String password,
   }) async {
     _guard;
-    final response = await _client.auth.signInWithPassword(
-      email: email.trim(),
-      password: password,
-    );
-    final user = response.user;
-    if (user == null) {
-      throw const AuthException('Sign in failed: no user returned.');
+    try {
+      final response = await _client.auth.signInWithPassword(
+        email: email.trim(),
+        password: password,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('Sign in failed: no user returned.');
+      }
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } catch (error) {
+      if (error is AuthException) rethrow;
+      throw AuthException(_mapAuthError(error));
     }
-    final domain = _toDomain(user);
-    await _cacheProfile(domain);
-    return domain;
   }
 
   @override
@@ -86,23 +138,34 @@ class SupabaseAuthRepository implements AuthRepository {
     required String password,
   }) async {
     _guard;
-    final response = await _client.auth.signUp(
-      email: email.trim(),
-      password: password,
-      // identity.handle_new_user() reads this to create identity.profiles.
-      data: {'full_name': name.trim()},
-      // With email confirmation on, Supabase returns the user but no session.
-      emailRedirectTo: AppConfig.passwordRecoveryRedirect.isEmpty
-          ? null
-          : AppConfig.passwordRecoveryRedirect,
-    );
-    final user = response.user;
-    if (user == null) {
-      throw const AuthException('Sign up failed: no user returned.');
+    try {
+      final response = await _client.auth.signUp(
+        email: email.trim(),
+        password: password,
+        // identity.handle_new_user() reads this to create identity.profiles.
+        data: {'full_name': name.trim()},
+        // With email confirmation on, Supabase returns the user but no session.
+        emailRedirectTo: AppConfig.passwordRecoveryRedirect.isEmpty
+            ? null
+            : AppConfig.passwordRecoveryRedirect,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('Sign up failed: no user returned.');
+      }
+      // Supabase returns the user with an empty identities list when the
+      // address is already registered (email confirmation on), instead of
+      // throwing. Surface that as a clear "already registered" error.
+      if (user.identities == null || user.identities!.isEmpty) {
+        throw const AuthException('user already exists');
+      }
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } catch (error) {
+      if (error is AuthException) rethrow;
+      throw AuthException(_mapAuthError(error));
     }
-    final domain = _toDomain(user);
-    await _cacheProfile(domain);
-    return domain;
   }
 
   /// Whether the signed-up address still needs confirming.
@@ -173,20 +236,20 @@ class SupabaseAuthRepository implements AuthRepository {
     }
   }
 
-@override
-Future<void> signOut() async {
-  // Returning quietly used to let the settings screen navigate to the auth page
-  // as if the session had ended, while the client still held a live one and
-  // the customer was never actually signed out. Failing loudly keeps them
-  // signed in knowingly instead.
-  if (!SupabaseService.isReady) {
-    throw AuthException(
-      'Signing out needs a configured Supabase backend.\n'
-      '${AppConfig.missingConfigurationMessage}',
-    );
+  @override
+  Future<void> signOut() async {
+    // Returning quietly used to let the settings screen navigate to the auth page
+    // as if the session had ended, while the client still held a live one and
+    // the customer was never actually signed out. Failing loudly keeps them
+    // signed in knowingly instead.
+    if (!SupabaseService.isReady) {
+      throw AuthException(
+        'Signing out needs a configured Supabase backend.\n'
+        '${AppConfig.missingConfigurationMessage}',
+      );
+    }
+    await _client.auth.signOut();
   }
-  await _client.auth.signOut();
-}
 
   @override
   Future<AuthUser> updateProfile({
@@ -200,11 +263,14 @@ Future<void> signOut() async {
       UserAttributes(data: <String, dynamic>{'full_name': fullName.trim()}),
     );
     await _client.auth.refreshSession();
-    await _client.from('profiles').update(<String, dynamic>{
-      'full_name': fullName.trim(),
-      if (phone != null) 'phone': phone.trim(),
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', user.id);
+    await _client
+        .from('profiles')
+        .update(<String, dynamic>{
+          'full_name': fullName.trim(),
+          if (phone != null) 'phone': phone.trim(),
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', user.id);
     final refreshed = _client.auth.currentUser;
     if (refreshed == null) throw const AuthException('Profile update failed.');
     final result = AuthUser(
@@ -260,7 +326,12 @@ Future<void> signOut() async {
           .maybeSingle();
       final phone = row?['phone']?.toString();
       final result = (phone != null && phone.isNotEmpty)
-          ? AuthUser(id: domain.id, name: domain.name, email: domain.email, phone: phone)
+          ? AuthUser(
+              id: domain.id,
+              name: domain.name,
+              email: domain.email,
+              phone: phone,
+            )
           : domain;
       await _cacheProfile(result);
       return result;
@@ -310,12 +381,14 @@ Future<void> signOut() async {
       final domain = _toDomain(user);
       final phone = row?['phone']?.toString();
       final name = row?['full_name']?.toString();
-      await _cacheProfile(AuthUser(
-        id: domain.id,
-        name: (name != null && name.isNotEmpty) ? name : domain.name,
-        email: domain.email,
-        phone: (phone != null && phone.isNotEmpty) ? phone : domain.phone,
-      ));
+      await _cacheProfile(
+        AuthUser(
+          id: domain.id,
+          name: (name != null && name.isNotEmpty) ? name : domain.name,
+          email: domain.email,
+          phone: (phone != null && phone.isNotEmpty) ? phone : domain.phone,
+        ),
+      );
     } catch (_) {}
   }
 
@@ -337,7 +410,9 @@ Future<void> signOut() async {
     try {
       account = await GoogleSignIn.instance.authenticate();
     } on GoogleSignInException catch (error) {
-      debugPrint('GoogleSignInException: code=${error.code.name} desc=${error.description}');
+      debugPrint(
+        'GoogleSignInException: code=${error.code.name} desc=${error.description}',
+      );
       if (error.code == GoogleSignInExceptionCode.canceled) {
         throw const AuthException('google_sign_in_canceled');
       }
@@ -402,8 +477,7 @@ Future<void> signOut() async {
   Future<AuthUser> verifyPhoneCode({
     required String phone,
     required String code,
-  }) =>
-      Future.error(AuthException(_phoneMessage));
+  }) => Future.error(AuthException(_phoneMessage));
 
   static const String _phoneMessage =
       'Phone sign-in is deferred (DATABASE_SPEC.md section 10.4). It needs an '
@@ -415,3 +489,5 @@ Future<void> signOut() async {
     _recoveryCompleter = null;
   }
 }
+
+

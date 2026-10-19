@@ -11,6 +11,7 @@ import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_a
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
+import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -57,8 +58,11 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
         child: BlocConsumer<PhoneAuthCubit, PhoneAuthState>(
           listener: (context, state) {
             if (state is PhoneAuthFailure) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.message)));
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.error,
+                message: state.message,
+              );
             } else if (state is PhoneAuthCodeSent) {
               Navigator.of(context).pushNamed(
                 OtpPage.routeName,

@@ -13,6 +13,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
@@ -133,13 +134,27 @@ class _BundleDetailsBody extends StatelessWidget {
           children: [
             if (imageProduct != null)
               Center(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(16.r),
-                  child: SizedBox(
-                    height: 200.h,
-                    width: double.infinity,
-                    child: ProductImageView(product: imageProduct),
-                  ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16.r),
+                      child: SizedBox(
+                        height: 200.h,
+                        width: double.infinity,
+                        child: ProductImageView(product: imageProduct),
+                      ),
+                    ),
+                    if (cubit.originalTotalFor() > state.bundle.price)
+                      Positioned(
+                        top: -12,
+                        right: 8,
+                        child: DiscountBadge(
+                          percent: (((cubit.originalTotalFor() - state.bundle.price) / cubit.originalTotalFor()) * 100).round(),
+                          size: 52,
+                        ),
+                      ),
+                  ],
                 ),
               ),
             SizedBox(height: SpacingTokens.lg.h),
@@ -248,16 +263,22 @@ class _PriceRow extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: AppFonts.regular14(context)
-              .copyWith(color: AppColor.greyColor),
+        Flexible(
+          child: Text(
+            label,
+            style: AppFonts.regular14(context)
+                .copyWith(color: AppColor.greyColor),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-        PriceLabel(
-          amount: amount,
-          style: valueStyle,
-          iconSize: valueStyle.fontSize,
-          iconColor: valueStyle.color,
+        Flexible(
+          child: PriceLabel(
+            amount: amount,
+            style: valueStyle,
+            iconSize: valueStyle.fontSize,
+            iconColor: valueStyle.color,
+          ),
         ),
       ],
     );

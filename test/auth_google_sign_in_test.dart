@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -162,6 +163,16 @@ void main() {
       expect(cubit.state, isA<AuthSuccess>());
       expect((cubit.state as AuthSuccess).user.id, 'u-1');
       expect(repo.signInCalls, 1);
+    });
+  });
+
+  group('Google Sign-In configuration', () {
+    test('server client ID is never empty', () {
+      expect(AppConfig.googleServerClientId, isNotEmpty);
+      expect(
+        AppConfig.googleServerClientId,
+        '496541472556-j23g42irr9r93rmeuo078513nj6skiu7.apps.googleusercontent.com',
+      );
     });
   });
 

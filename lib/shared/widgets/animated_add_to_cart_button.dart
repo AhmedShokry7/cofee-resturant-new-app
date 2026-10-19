@@ -302,7 +302,14 @@ class _AddToCartButtonVisual extends StatelessWidget {
             _AddingIcon(icon: idleIcon, size: iconSize, color: color),
             if (!compact) ...[
               SizedBox(width: 8.w),
-              Text(S.adding, style: textStyle),
+              Flexible(
+                child: Text(
+                  S.adding,
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ],
         );
@@ -314,7 +321,14 @@ class _AddToCartButtonVisual extends StatelessWidget {
             Icon(Icons.check_rounded, size: iconSize, color: color),
             if (!compact) ...[
               SizedBox(width: 8.w),
-              Text(S.added, style: textStyle),
+              Flexible(
+                child: Text(
+                  S.added,
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ],
         );
@@ -326,7 +340,14 @@ class _AddToCartButtonVisual extends StatelessWidget {
             Icon(Icons.error_outline_rounded, size: iconSize, color: color),
             if (!compact) ...[
               SizedBox(width: 8.w),
-              Text(label, style: textStyle),
+              Flexible(
+                child: Text(
+                  label,
+                  style: textStyle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ],
         );

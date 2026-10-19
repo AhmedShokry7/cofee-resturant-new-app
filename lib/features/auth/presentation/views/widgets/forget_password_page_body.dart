@@ -11,6 +11,7 @@ import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
+import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -48,10 +49,20 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
         child: BlocConsumer<PasswordResetCubit, PasswordResetState>(
           listener: (context, state) {
             if (state is PasswordResetFailure) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.message)));
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.error,
+                message: state.message,
+              );
             } else if (state is PasswordResetEmailSent) {
-              Navigator.of(context).pushNamed(ResetPasswordPage.routeName);
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.info,
+                message: S.passwordResetEmailSent,
+                onAction: () => Navigator.of(context).pushNamed(
+                  ResetPasswordPage.routeName,
+                ),
+              );
             }
           },
           builder: (context, state) {

@@ -9,6 +9,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
+import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
@@ -48,8 +49,11 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
         child: BlocConsumer<PasswordResetCubit, PasswordResetState>(
           listener: (context, state) {
             if (state is PasswordResetFailure) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.message)));
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.error,
+                message: state.message,
+              );
             } else if (state is PasswordResetSuccess) {
               Navigator.of(
                 context,

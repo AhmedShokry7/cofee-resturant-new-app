@@ -15,7 +15,9 @@ import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
+import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
@@ -54,6 +56,8 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     if (!mounted) return;
     // Return to the page that asked for authentication when possible, instead
     // of always replacing it with the home page.
+    await LocationPermissionService.requestOnFirstLaunch();
+    if (!mounted) return;
     final origin = ModalRoute.of(context)?.settings.arguments;
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
@@ -72,8 +76,11 @@ class _LoginPageBodyState extends State<LoginPageBody> {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthFailure) {
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text(state.message)));
+              AuthMessageDialog.show(
+                context,
+                type: AuthMessageType.error,
+                message: state.message,
+              );
             } else if (state is AuthSuccess) {
               _onAuthenticated();
             }
@@ -86,8 +93,9 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                   onTap: () async {
                     await const SessionRepository().markAuthenticated();
                     if (!context.mounted) return;
-                    Navigator.of(context)
-                        .pushReplacementNamed(MainPage.routeName);
+                    await LocationPermissionService.requestOnFirstLaunch();
+                    if (!context.mounted) return;
+                    Navigator.of(context).pushReplacementNamed(MainPage.routeName);
                   },
                 ),
                 Form(

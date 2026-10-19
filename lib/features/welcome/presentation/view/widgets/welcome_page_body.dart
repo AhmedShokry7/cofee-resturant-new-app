@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
@@ -15,15 +15,15 @@ class WelcomePageBody extends StatelessWidget {
 
   /// Image height as a share of the screen; the curved panel overlaps its
   /// bottom edge.
-  static const double _imageRatio = 0.61;
-  static const double _compactImageRatio = 0.54;
+  static const double _imageRatio = 0.55;
+  static const double _compactImageRatio = 0.48;
 
   /// Height of the curve in the design, so the panel starts at that depth.
   static const double _curveHeight = 55;
 
   /// Deepest point of the curve plus breathing room, so the panel content
   /// starts below the curve.
-  static const double _curveClearance = 76;
+  static const double _curveClearance = 44;
 
   @override
   Widget build(BuildContext context) {
@@ -78,48 +78,42 @@ class _WelcomePanelContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Scrollable so the panel never overflows on short screens or with a
-    // large text scale, while keeping the top spacer on tall ones.
-    return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: IntrinsicHeight(
-            child: Column(
-              children: [
-                const Spacer(flex: 3),
+    // The panel is laid out inside a Positioned with `bottom: 0`, so its height
+    // is already bounded and the column lays out directly, without scrolling.
+    // Nothing scales the copy: the title and body render at their real size.
+    return Column(
+      children: [
+        // const Spacer(flex: 4),
 
-                const WelcomeViewTextTitle(),
+        const WelcomeViewTextTitle(),
 
-                SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: SpacingTokens.md.h),
 
-                const WelcomeViewTextBody(),
+        const WelcomeViewTextBody(),
 
-                SizedBox(
-                  height: ( SpacingTokens.xl).h,
-                ),
+        SizedBox(height: SpacingTokens.md.h),
 
-                SizedBox(
-                  width: double.infinity,
-                  child: CustomBtn(
-                    text: S.letsGetStarted,
-                    onPressed: () {
-                      const SessionRepository().markOnboardingSeen();
+        SizedBox(
+          width: double.infinity,
+          child: CustomBtn(
+            text: S.letsGetStarted,
+            onPressed: () {
+              const SessionRepository().markOnboardingSeen();
 
-                      Navigator.pushReplacementNamed(
-                        context,
-                        OnBoardingView.routeName,
-                      );
-                    },
-                  ),
-                ),
-
-                SizedBox(height: SpacingTokens.xxl.h),
-              ],
-            ),
+              Navigator.pushReplacementNamed(context, OnBoardingView.routeName);
+            },
           ),
         ),
-      ),
+
+        // SizedBox(height: SpacingTokens.xxl.h),
+      ],
     );
   }
 }
+
+
+
+
+
+
+

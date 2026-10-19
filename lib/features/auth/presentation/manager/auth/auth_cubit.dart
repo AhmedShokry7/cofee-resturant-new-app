@@ -43,7 +43,7 @@ class AuthCubit extends Cubit<AuthState> {
         emit(AuthInitial());
         return;
       }
-      emit(AuthFailure(_messageFor(error.message)));
+      emit(AuthFailure(messageFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected Google sign-in error: $error\n$stackTrace');
       emit(AuthFailure(S.authUnexpected));
@@ -61,6 +61,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> _authenticate(Future<AuthUser> Function() action) async {
+    if (state is AuthLoading) return;
     emit(AuthLoading());
     try {
       final user = await action();
@@ -68,7 +69,7 @@ class AuthCubit extends Cubit<AuthState> {
     } on AuthException catch (error) {
       // The provider's English never reaches the customer; each known cause
       // maps to one message in the app's current language.
-      emit(AuthFailure(_messageFor(error.message)));
+      emit(AuthFailure(messageFor(error.message)));
     } catch (_) {
       emit(AuthFailure(S.authUnexpected));
     }
@@ -78,24 +79,56 @@ class AuthCubit extends Cubit<AuthState> {
   ///
   /// Anything unrecognised becomes [S.authFailed] rather than echoing the raw
   /// text, which would put English (or provider jargon) into an Arabic screen.
-  static String _messageFor(String message) {
-    switch (message.toLowerCase()) {
-      case 'invalid login credentials':
-      case 'invalid password':
-        return S.authInvalidCredentials;
-      case 'user not found':
-        return S.authUserNotFound;
-      case 'user disabled':
-        return S.authUserDisabled;
-      case 'email already in use':
-      case 'email already exists':
-        return S.authEmailInUse;
-      case 'weak password':
-        return S.authWeakPassword;
-      case 'invalid email':
-        return S.authInvalidEmail;
-      default:
-        return S.authFailed;
+  /// Matching is done on the lowercased input with `contains`, so both the
+  /// stable codes returned by Supabase (e.g. `invalid_credentials`) and the
+  /// legacy English messages are handled.
+  static String messageFor(String message) {
+    final lower = message.toLowerCase().trim();
+    if (lower.contains('invalid_credentials') ||
+        lower.contains('invalid_grant') ||
+        lower.contains('invalid login credentials') ||
+        lower.contains('invalid password') ||
+        lower.contains('invalid email or password') ||
+        lower.contains('wrong password')) {
+      return S.authInvalidCredentials;
     }
+    if (lower.contains('user_not_found') ||
+        lower.contains('user not found') ||
+        lower.contains('no user')) {
+      return S.authUserNotFound;
+    }
+    if (lower.contains('user_banned') ||
+        lower.contains('user disabled') ||
+        lower.contains('disabled')) {
+      return S.authUserDisabled;
+    }
+    if (lower.contains('email_exists') ||
+        lower.contains('user_already_exists') ||
+        lower.contains('already') && lower.contains('registered') ||
+        lower.contains('already') && lower.contains('exists') ||
+        lower.contains('already in use') ||
+        lower.contains('email already')) {
+      return S.authEmailInUse;
+    }
+    if (lower.contains('weak_password') ||
+        lower.contains('weak password')) {
+      return S.authWeakPassword;
+    }
+    if (lower.contains('invalid_email') ||
+        lower.contains('invalid email') ||
+        lower.contains('validation_failed')) {
+      return S.authInvalidEmail;
+    }
+    if (lower.contains('email_not_confirmed') ||
+        lower.contains('email not confirmed')) {
+      return S.authEmailNotConfirmed;
+    }
+    if (lower.contains('over_request_rate_limit') ||
+        lower.contains('over_email_send_rate_limit') ||
+        lower.contains('too many') ||
+        lower.contains('rate limit')) {
+      return S.authTooManyRequests;
+    }
+    return S.authFailed;
   }
 }

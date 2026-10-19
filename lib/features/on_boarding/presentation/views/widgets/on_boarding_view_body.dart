@@ -25,7 +25,7 @@ class OnBoardingViewBody extends StatelessWidget {
                 Navigator.of(context).pushReplacementNamed(AuthPage.routeName);
               },
             ),
-            SizedBox(height: 4.h),
+            SizedBox(height: 10.h),
             const Expanded(flex: 6, child: OnBoardingPageViewData()),
             const Expanded(child: OnBoardingButtonsAndSliderDotes()),
           ],

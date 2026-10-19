@@ -42,9 +42,13 @@ class AppConfig {
 
   /// Web OAuth client ID used as the Google Sign-In server client ID on
   /// Android. Supplied via --dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>.
-  /// Leave empty to rely on google-services.json / Android manifest config.
-  static const String googleServerClientId =
-      String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+  /// Defaults to the project's confirmed Web OAuth client so the value is never
+  /// empty at runtime, even when no dart-define is passed.
+  static const String googleServerClientId = String.fromEnvironment(
+    'GOOGLE_SERVER_CLIENT_ID',
+    defaultValue:
+        '496541472556-j23g42irr9r93rmeuo078513nj6skiu7.apps.googleusercontent.com',
+  );
 
   /// Shown if public configuration was intentionally cleared. Never includes
   /// a key value.

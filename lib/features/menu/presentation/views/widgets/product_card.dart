@@ -13,6 +13,7 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_pric
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
+import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// Shared reusable product card used across the entire application.
@@ -65,9 +66,12 @@ class ProductCard extends StatelessWidget {
             : 150.w;
         return SizedBox(
           width: width,
-          child: AspectRatio(
-            aspectRatio: cardAspectRatio,
-            child: GestureDetector(
+      child: AspectRatio(
+        aspectRatio: cardAspectRatio,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            GestureDetector(
               onTap: () => _openDetails(context),
               child: Container(
                 padding: EdgeInsets.all(SpacingTokens.md.w),
@@ -93,6 +97,7 @@ class ProductCard extends StatelessWidget {
                                 size: 28,
                               ),
                             ),
+
                         ],
                       ),
                     ),
@@ -129,8 +134,19 @@ class ProductCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (product.hasDiscount)
+              Positioned(
+                top: DiscountBadge.cardTop,
+                right: DiscountBadge.cardRight,
+                child: DiscountBadge(
+                  percent: (((product.oldPrice! - product.price) / product.oldPrice!) * 100).round(),
+                  size: DiscountBadge.cardSize,
+                ),
+              ),
+            ],
           ),
-        );
+        ),
+    );
       },
     );
   }

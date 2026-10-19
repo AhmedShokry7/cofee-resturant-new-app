@@ -11,6 +11,7 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class HomeBundlesSection extends StatelessWidget {
@@ -54,9 +55,12 @@ class _BundleCard extends StatelessWidget {
       onTap: () =>
           Navigator.of(context)
               .pushNamed(BundleDetailsPage.routeName, arguments: bundle),
-      child: Container(
-        width: 170.w,
-        padding: EdgeInsets.all(SpacingTokens.md.w),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 170.w,
+            padding: EdgeInsets.all(SpacingTokens.md.w),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
           borderRadius: BorderRadius.circular(16.r),
@@ -70,7 +74,9 @@ class _BundleCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.r),
                 child: imageProduct == null
                     ? const SizedBox.shrink()
-                    : ProductImageView(product: imageProduct),
+                    : SizedBox.expand(
+                        child: ProductImageView(product: imageProduct),
+                      ),
               ),
             ),
             SizedBox(height: SpacingTokens.sm.h),
@@ -117,6 +123,20 @@ class _BundleCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+        if (context.read<HomeCubit>().originalTotalFor(bundle) > bundle.price)
+          Positioned(
+            top: DiscountBadge.cardTop,
+            right: DiscountBadge.cardRight,
+            child: DiscountBadge(
+              percent: (((context.read<HomeCubit>().originalTotalFor(bundle) - bundle.price) /
+                      context.read<HomeCubit>().originalTotalFor(bundle)) *
+                  100)
+                  .round(),
+              size: DiscountBadge.cardSize,
+            ),
+          ),
+      ],
+    ),
+  );
   }
 }

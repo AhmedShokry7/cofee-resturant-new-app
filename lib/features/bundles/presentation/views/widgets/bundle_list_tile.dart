@@ -11,6 +11,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 /// Full-width bundle row for vertical lists (e.g. the Bundles tab).
@@ -37,9 +38,12 @@ class BundleListTile extends StatelessWidget {
           Navigator.of(context)
               .pushNamed(BundleDetailsPage.routeName, arguments: bundle),
       behavior: HitTestBehavior.opaque,
-      child: Container(
-        margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-        padding: EdgeInsets.all(SpacingTokens.md.w),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
+            padding: EdgeInsets.all(SpacingTokens.md.w),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
           borderRadius: BorderRadius.circular(16.r),
@@ -47,15 +51,20 @@ class BundleListTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12.r),
-              child: imageProduct == null
-                  ? SizedBox(width: 64.w, height: 64.w)
-                  : SizedBox(
-                      height: 64.w,
-                      width: 64.w,
-                      child: ProductImageView(product: imageProduct),
-                    ),
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12.r),
+                  child: imageProduct == null
+                      ? SizedBox(width: 64.w, height: 64.w)
+                      : SizedBox(
+                          height: 64.w,
+                          width: 64.w,
+                          child: ProductImageView(product: imageProduct),
+                        ),
+                ),
+              ],
             ),
             SizedBox(width: SpacingTokens.md.w),
             Expanded(
@@ -113,6 +122,17 @@ class BundleListTile extends StatelessWidget {
           ],
         ),
       ),
-    );
+      if (original > bundle.price)
+        Positioned(
+          top: DiscountBadge.cardTop,
+          right: DiscountBadge.cardRight,
+          child: DiscountBadge(
+            percent: (((original - bundle.price) / original) * 100).round(),
+            size: DiscountBadge.cardSize,
+          ),
+        ),
+    ],
+  ),
+  );
   }
 }

@@ -37,10 +37,14 @@ class HomeSearchBar extends StatelessWidget {
               color: AppColor.greyColor,
             ),
             SizedBox(width: SpacingTokens.sm.w),
-            Text(
-              S.searchHint,
-              style: AppFonts.regular14(context)
-                  .copyWith(color: AppColor.greyColor),
+            Expanded(
+              child: Text(
+                S.searchHint,
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
         ),

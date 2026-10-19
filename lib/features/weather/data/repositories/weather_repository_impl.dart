@@ -35,10 +35,9 @@ class WeatherRepositoryImpl implements WeatherRepository {
       if (!await Geolocator.isLocationServiceEnabled()) {
         return (_fallbackLatitude, _fallbackLongitude);
       }
+      // Location is optional for weather: never prompt here. The permission is
+      // requested only where the user explicitly needs device location.
       var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         return (_fallbackLatitude, _fallbackLongitude);

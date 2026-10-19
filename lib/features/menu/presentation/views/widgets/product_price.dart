@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
 class ProductPrice extends StatelessWidget {

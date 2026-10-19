@@ -31,6 +31,7 @@ class ProductModel {
     this.imageUrls = const [],
     this.isPrimaryImageAvailable = false,
     this.primaryImageUrl,
+    this.relatedProductIds = const [],
   }) : _legacyName = name ?? '',
        _legacyCategory = category ?? '',
        _legacyDescription = description ?? '';
@@ -85,6 +86,9 @@ class ProductModel {
 
   /// The primary image URL, determined by priority: explicit is_primary → lowest sort_order → product-level image → null.
   final String? primaryImageUrl;
+
+  /// Admin-defined companion products for "Goes well with".
+  final List<String> relatedProductIds;
 
   /// First usable product image, with legacy and secondary-image fallbacks.
   String? get displayImageUrl {
@@ -183,6 +187,10 @@ class ProductModel {
       prepMinutes: json['prep_minutes'] == null
           ? null
           : Db.asInt(json['prep_minutes']),
+      relatedProductIds: (json['related_product_ids'] as List?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 

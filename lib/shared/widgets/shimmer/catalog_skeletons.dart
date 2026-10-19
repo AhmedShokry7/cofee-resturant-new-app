@@ -24,7 +24,7 @@ class ProductCardSkeleton extends StatelessWidget {
       builder: (context, constraints) {
         final resolved =
             width ??
-            (constraints.maxWidth.isFinite ? constraints.maxWidth : 150.w);
+            (constraints.maxWidth.isFinite ? constraints.maxWidth : 170.w);
         return SizedBox(
           width: resolved,
           child: AspectRatio(
