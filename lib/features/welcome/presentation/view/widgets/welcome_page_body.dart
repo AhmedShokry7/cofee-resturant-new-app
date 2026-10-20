@@ -13,17 +13,17 @@ import 'package:new_coffee/shared/widgets/wavy_container.dart';
 class WelcomePageBody extends StatelessWidget {
   const WelcomePageBody({super.key});
 
-  /// Image height as a share of the screen; the curved panel overlaps its
-  /// bottom edge.
-  static const double _imageRatio = 0.55;
-  static const double _compactImageRatio = 0.48;
+  /// Image height as a share of the screen. The photo is tall enough for the
+  /// wave to sink down close to the copy instead of leaving a dead gap.
+  static const double _imageRatio = 0.66;
+  static const double _compactImageRatio = 0.62;
 
-  /// Height of the curve in the design, so the panel starts at that depth.
+  /// Depth of the wave. The panel overlaps the photo by the same amount, so
+  /// the wave always meets the bottom edge of the photo.
   static const double _curveHeight = 55;
 
-  /// Deepest point of the curve plus breathing room, so the panel content
-  /// starts below the curve.
-  static const double _curveClearance = 44;
+  /// Reduce the gap between the curve and the content.
+  static const double _curveClearance = 20;
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +83,7 @@ class _WelcomePanelContent extends StatelessWidget {
     // Nothing scales the copy: the title and body render at their real size.
     return Column(
       children: [
-        // const Spacer(flex: 4),
+        const Spacer(flex: 1),
 
         const WelcomeViewTextTitle(),
 
@@ -91,29 +91,29 @@ class _WelcomePanelContent extends StatelessWidget {
 
         const WelcomeViewTextBody(),
 
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: SpacingTokens.xl.h),
 
         SizedBox(
           width: double.infinity,
           child: CustomBtn(
             text: S.letsGetStarted,
-            onPressed: () {
-              const SessionRepository().markOnboardingSeen();
-
+            onPressed: () async {
+              // The marker is written before navigating: a fire-and-forget
+              // write could still be in flight when the app is killed, and the
+              // customer would then meet the onboarding again on the next
+              // launch.
+              await const SessionRepository().markOnboardingSeen();
+              if (!context.mounted) return;
               Navigator.pushReplacementNamed(context, OnBoardingView.routeName);
             },
           ),
         ),
 
-        // SizedBox(height: SpacingTokens.xxl.h),
+        SizedBox(height: SpacingTokens.md.h),
       ],
     );
   }
 }
-
-
-
-
 
 
 

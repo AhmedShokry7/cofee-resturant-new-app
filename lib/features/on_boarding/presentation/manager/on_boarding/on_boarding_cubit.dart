@@ -1,11 +1,8 @@
-import 'package:bloc/bloc.dart';
-import 'package:new_coffee/core/constant/app_constant.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
-import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/on_boarding/data/on_boarding_list.dart';
-
-import 'package:flutter/material.dart';
 
 part 'on_boarding_state.dart';
 
@@ -31,7 +28,12 @@ class OnBoardingCubit extends Cubit<OnBoardingState> {
       );
       return;
     }
-    await const SessionRepository().markOnboardingSkipped();
+    // Confirmed write, so the onboarding really is done once the app leaves
+    // this screen.
+    final saved = await const SessionRepository().markOnboardingSkippedConfirmed();
+    if (!saved) {
+      debugPrint('[OnBoarding] completion marker could not be persisted.');
+    }
     if (!context.mounted) return;
     Navigator.of(context).pushReplacementNamed(AuthPage.routeName);
   }

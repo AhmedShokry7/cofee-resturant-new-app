@@ -100,7 +100,7 @@ void main() {
   });
 
   group('shared price components', () {
-    testWidgets('ProductPrice shows current and struck prices with icons', (
+    testWidgets('ProductPrice shows the current price with an icon and the struck old price without one', (
       tester,
     ) async {
       final products = await MockProductRepository().getProducts();
@@ -108,7 +108,15 @@ void main() {
 
       await _pump(tester, ProductPrice(product: discounted));
 
-      expect(find.byType(PriceLabel), findsNWidgets(2));
+      // Only the price the customer actually pays carries the currency
+      // symbol; the pre-discount price is plain struck text.
+      expect(find.byType(PriceLabel), findsOneWidget);
+      expect(find.byType(CurrencyIcon), findsOneWidget);
+
+      final old = tester.widget<Text>(
+        find.text(Formatters.amount(discounted.oldPrice!)),
+      );
+      expect(old.style?.decoration, TextDecoration.lineThrough);
       expect(find.textContaining('SAR'), findsNothing);
     });
 

@@ -16,6 +16,7 @@ class ProductPrice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Flexible(
           child: PriceLabel(
@@ -29,14 +30,14 @@ class ProductPrice extends StatelessWidget {
         if (product.hasDiscount) ...[
           SizedBox(width: 6.w),
           Flexible(
-            child: PriceLabel(
-              amount: product.oldPrice!,
+            child: Text(
+              Formatters.amount(product.oldPrice!),
               style: AppFonts.regular12(context).copyWith(
                 color: AppColor.greyColor,
                 decoration: TextDecoration.lineThrough,
               ),
-              iconSize: 12,
-              iconColor: AppColor.greyColor,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

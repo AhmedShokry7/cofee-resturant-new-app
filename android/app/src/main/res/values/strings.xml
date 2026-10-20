@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher name. Matches the in-app title so the icon on the home
+         screen does not show the Flutter project name. -->
+    <string name="app_name">New Coffee</string>
+</resources>

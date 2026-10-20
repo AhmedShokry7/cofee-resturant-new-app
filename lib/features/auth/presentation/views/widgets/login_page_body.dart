@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -56,8 +58,6 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     if (!mounted) return;
     // Return to the page that asked for authentication when possible, instead
     // of always replacing it with the home page.
-    await LocationPermissionService.requestOnFirstLaunch();
-    if (!mounted) return;
     final origin = ModalRoute.of(context)?.settings.arguments;
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
@@ -66,6 +66,10 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     } else {
       Navigator.of(context).pushReplacementNamed(MainPage.routeName);
     }
+    // The location prompt is asked for after the handover: it is a system
+    // dialog, and waiting for it before navigating left the app on the login
+    // screen until the customer answered it.
+    unawaited(LocationPermissionService.requestOnFirstLaunch());
   }
 
   @override
@@ -93,9 +97,10 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                   onTap: () async {
                     await const SessionRepository().markAuthenticated();
                     if (!context.mounted) return;
-                    await LocationPermissionService.requestOnFirstLaunch();
-                    if (!context.mounted) return;
                     Navigator.of(context).pushReplacementNamed(MainPage.routeName);
+                    unawaited(
+                      LocationPermissionService.requestOnFirstLaunch(),
+                    );
                   },
                 ),
                 Form(

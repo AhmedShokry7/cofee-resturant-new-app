@@ -76,7 +76,14 @@ class AppRoutes {
   };
 
   /// Maps the persisted session flag to the first route to show.
-  static String initialRouteName(String? savedRoute) {
+  ///
+  /// [onboardingDone] guards the default branch: a customer who already went
+  /// through the onboarding must never be sent back to the welcome screen just
+  /// because the route value is missing or unreadable.
+  static String initialRouteName(
+    String? savedRoute, {
+    bool onboardingDone = false,
+  }) {
     switch (savedRoute) {
       case AppConstant.homeRoute:
         return MainPage.routeName;
@@ -85,7 +92,7 @@ class AppRoutes {
       case AppConstant.onBoardingRoute:
         return OnBoardingView.routeName;
       default:
-        return WelcomePage.routeName;
+        return onboardingDone ? AuthPage.routeName : WelcomePage.routeName;
     }
   }
 }

@@ -84,6 +84,9 @@ class AuthCubit extends Cubit<AuthState> {
   /// legacy English messages are handled.
   static String messageFor(String message) {
     final lower = message.toLowerCase().trim();
+    if (lower == 'service_unavailable') {
+      return S.authServiceUnavailable;
+    }
     if (lower.contains('invalid_credentials') ||
         lower.contains('invalid_grant') ||
         lower.contains('invalid login credentials') ||

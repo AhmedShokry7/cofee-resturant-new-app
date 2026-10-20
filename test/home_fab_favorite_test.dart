@@ -190,7 +190,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(ProductCard.cardAspectRatio, 0.60);
+      expect(ProductCard.cardAspectRatio, 0.75);
       expect(
         tester.widget<AspectRatio>(find.byType(AspectRatio)).aspectRatio,
         ProductCard.cardAspectRatio,
@@ -199,10 +199,10 @@ void main() {
       // carries "Hot Coffee"), falling back to the description only when
       // the row has no category.
       expect(find.text('Hot Coffee'), findsOneWidget);
-      // ~7% taller than the previous 0.64 card at the same width.
+      // Wider than the previous 0.60 card at the same width.
       final size = tester.getSize(find.byType(ProductCard));
-      expect(size.height, closeTo(170 / 0.60, 1));
-      expect(size.height, greaterThan(170 / 0.64));
+      expect(size.height, closeTo(170 / 0.75, 1));
+      expect(size.height, lessThan(170 / 0.60));
     });
 
     testWidgets('grid delegate matches the card aspect ratio', (tester) async {
@@ -270,7 +270,7 @@ void main() {
       await tester.pump();
 
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(150 / 0.60, 1));
+      expect(strip.height, closeTo(150 / 0.75, 1));
       expect(find.byType(ProductCard), findsWidgets);
     });
   });

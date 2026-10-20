@@ -20,7 +20,15 @@ class OnBoardingViewBody extends StatelessWidget {
           children: [
             SkipBtn(
               onTap: () async {
-                await const SessionRepository().markOnboardingSkipped();
+                // Confirmed write: the whole point of skipping is that the
+                // onboarding must not come back on the next launch.
+                final saved = await const SessionRepository()
+                    .markOnboardingSkippedConfirmed();
+                if (!saved) {
+                  debugPrint(
+                    '[OnBoarding] skip marker could not be persisted.',
+                  );
+                }
                 if (!context.mounted) return;
                 Navigator.of(context).pushReplacementNamed(AuthPage.routeName);
               },

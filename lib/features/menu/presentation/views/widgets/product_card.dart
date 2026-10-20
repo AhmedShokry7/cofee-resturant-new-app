@@ -28,7 +28,7 @@ class ProductCard extends StatelessWidget {
   /// [Expanded], so growing the card height flows entirely into a larger
   /// product image while title, description, price and actions keep their
   /// fixed slots.
-  static const double cardAspectRatio = 0.60;
+  static const double cardAspectRatio = 0.75;
 
   const ProductCard({
     super.key,

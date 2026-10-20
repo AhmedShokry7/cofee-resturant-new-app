@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
@@ -62,14 +61,20 @@ class _SplashViewState extends State<SplashView> {
   /// before `mounted` so a rebuild cannot reset the decision, and the target
   /// route is read at call time rather than captured, so a rebuilt widget
   /// navigates to its current destination instead of a stale one.
+  ///
+  /// The handover happens first and the location prompt is fired afterwards,
+  /// off the critical path. Asking for permission before navigating meant the
+  /// first screen was blocked on a system dialog: on a device where that
+  /// dialog never came back, the app stayed frozen on the splash forever.
   Future<void> _openTargetRoute() async {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
-    if (widget.targetRoute == MainPage.routeName) {
-      await LocationPermissionService.requestOnFirstLaunch();
-    }
-    if (!mounted) return;
     Navigator.of(context).pushReplacementNamed(widget.targetRoute);
+    if (widget.targetRoute == MainPage.routeName) {
+      // The service never throws, so the request cannot break the app. It
+      // only marks itself as prompted, so it asks at most once per install.
+      unawaited(LocationPermissionService.requestOnFirstLaunch());
+    }
   }
 
   @override

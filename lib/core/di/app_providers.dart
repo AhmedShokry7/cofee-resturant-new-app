@@ -6,7 +6,9 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/unavailable_auth_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
+import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
@@ -26,13 +28,16 @@ import 'package:new_coffee/features/content/data/repositories/content_repository
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/unavailable_catalog_repository.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/supabase_order_repository.dart';
+import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
+import 'package:new_coffee/features/orders/data/model/order_status.dart';
+import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
-import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
@@ -49,57 +54,36 @@ class AppProviders extends StatelessWidget {
 
   /// The one place that decides which auth implementation runs.
   ///
-  /// Supabase Auth is used exclusively. If Supabase is not configured, the app
-  /// will fail to start rather than falling back to a fake authentication flow,
-  /// ensuring all users must be registered in the database to log in.
+  /// Supabase Auth is used exclusively. If Supabase is not configured, the
+  /// fallback refuses every sign-in instead of pretending it worked: a mock
+  /// that accepted any password would let a customer believe they were
+  /// signed in while no account exists.
   AuthRepository _buildAuthRepository() {
     if (SupabaseService.isReady) return SupabaseAuthRepository();
-    throw StateError(
-      'Supabase authentication is required but not configured.\n'
-      'Run with:\n'
-      '  flutter run --dart-define=SUPABASE_URL=<url> '
-      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
-      'Without Supabase, the app cannot authenticate users.',
-    );
+    return const UnavailableAuthRepository();
   }
 
   /// The one place that decides which catalogue source runs.
   ///
   /// The database is the only source. There is deliberately no mock fallback:
   /// fabricated products, prices and banners must never reach the customer.
+  /// The offline fallback serves an empty catalogue instead, so the app
+  /// renders its own "no results" state rather than a made-up menu.
   CatalogRepository _buildCatalogRepository() {
     if (SupabaseService.isReady) return SupabaseProductRepository();
-    throw StateError(
-      'Supabase catalogue is required but not configured.\n'
-      'Run with:\n'
-      '  flutter run --dart-define=SUPABASE_URL=<url> '
-      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
-      'Without Supabase, the app cannot load its catalogue.',
-    );
+    return const UnavailableCatalogRepository();
   }
 
   /// The server cart is authoritative. There is no local-only fallback: an
   /// order must always price and validate against the database.
   CartRepository _buildCartRepository() {
     if (SupabaseService.isReady) return SupabaseCartRepository();
-    throw StateError(
-      'Supabase cart is required but not configured.\n'
-      'Run with:\n'
-      '  flutter run --dart-define=SUPABASE_URL=<url> '
-      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
-      'Without Supabase, the app cannot manage a cart.',
-    );
+    return LocalCartRepository();
   }
 
   OrdersRepository _buildOrdersRepository() {
     if (SupabaseService.isReady) return SupabaseOrdersRepository();
-    throw StateError(
-      'Supabase orders are required but not configured.\n'
-      'Run with:\n'
-      '  flutter run --dart-define=SUPABASE_URL=<url> '
-      '--dart-define=SUPABASE_PUBLISHABLE_KEY=<key>\n'
-      'Without Supabase, the app cannot load order history.',
-    );
+    return _UnavailableOrdersRepository();
   }
 
   @override
@@ -233,6 +217,50 @@ class AppProviders extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Orders used when the backend could not be reached at startup.
+///
+/// Reads answer with an empty history, so the orders page renders its own
+/// empty state instead of crashing. Writes refuse: an order must be priced
+/// and validated by the server, and a locally "successful" order would be an
+/// order nobody fulfils.
+class _UnavailableOrdersRepository implements OrdersRepository {
+  const _UnavailableOrdersRepository();
+
+  static const String _message = 'Orders are not available without a backend.';
+
+  @override
+  Future<List<OrderItemModel>> listOrders({
+    OrderStatus? status,
+    int limit = 100,
+  }) async => const [];
+
+  @override
+  Future<void> syncCart({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+  }) async => throw StateError(_message);
+
+  @override
+  Future<PlacedOrder> placeOrder({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String idempotencyKey,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+    String? note,
+  }) async => throw StateError(_message);
+
+  @override
+  Future<void> cancelOrder(String orderId, {String? reason}) async =>
+      throw StateError(_message);
+
+  @override
+  Future<List<OrderStatusEvent>> orderHistory(String orderId) async =>
+      const [];
 }
 
 /// Propagates the customer's explicit branch choice to every branch-aware

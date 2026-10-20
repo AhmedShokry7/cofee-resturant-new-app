@@ -64,5 +64,10 @@ secrets.json
 .branches/
 .temp/
 
+# Android release signing (contains keystore passwords)
+android/key.properties
+*.jks
+*.keystore
+
 # Scratch output from analyze/test runs
 tool_output/

@@ -739,6 +739,12 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       _ar ? 'حدث خطأ أثناء الدخول. حاول مرة أخرى.' : 'Something went wrong signing in. Please try again.';
   static String get authUnexpected =>
       _ar ? 'حدث خطأ غير متوقع، برجاء المحاولة مرة أخرى.' : 'Something unexpected happened. Please try again.';
+
+  /// Shown when the backend could not be reached at all. Distinct from
+  /// [authFailed], which means the request itself was rejected.
+  static String get authServiceUnavailable => _ar
+      ? 'الخدمة غير متاحة حالياً. برجاء المحاولة لاحقاً.'
+      : 'The service is unavailable right now. Please try again later.';
   static String get signUpEmailVerification => _ar
       ? 'تم إنشاء الحساب. يرجى التحقق من بريدك الإلكتروني لتأكيد حسابك.'
       : 'Account created. Please check your email to verify your account.';

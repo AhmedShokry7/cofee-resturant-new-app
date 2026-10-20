@@ -1,0 +1,15 @@
+# Release signing configuration.
+#
+# Copy this file to `key.properties` (same folder) and fill in the values for
+# your own keystore. `key.properties` is ignored by git, so the passwords
+# never reach the repository.
+#
+# Create the keystore once with:
+#   keytool -genkey -v -keystore ~/new-coffee-release.jks \
+#           -keyalg RSA -keysize 2048 -validity 10000 -alias release
+#
+# The storeFile path is relative to the `android/` folder.
+storePassword=your-store-password
+keyPassword=your-key-password
+keyAlias=release
+storeFile=../new-coffee-release.jks
