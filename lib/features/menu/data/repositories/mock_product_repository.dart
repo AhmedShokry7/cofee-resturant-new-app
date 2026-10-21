@@ -202,6 +202,23 @@ class MockProductRepository implements CatalogRepository {
   }
 
   @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) async {
+    final byProduct = <String, List<OptionGroup>>{};
+    for (final product in _legacyMenu) {
+      // An empty list asks for every product.
+      if (productIds.isNotEmpty && !productIds.contains(product.id)) continue;
+      byProduct[product.id] = _legacyOptionGroups(
+        product.categorySlug.isNotEmpty
+            ? product.categorySlug
+            : product.category.toLowerCase().replaceAll(' ', '-'),
+      );
+    }
+    return byProduct;
+  }
+
+  @override
   Future<List<ProductModel>> search(
     String query, {
     String? branchId,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/assistant/data/assistant_actions.dart';
@@ -9,6 +11,7 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_improvement_log.dart';
 import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
+import 'package:new_coffee/features/assistant/data/assistant_language.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -46,18 +49,44 @@ class AssistantCubit extends Cubit<AssistantState> {
   Future<void> setBranch(String? branchId) async {
     if (branchId == this.branchId) return;
     this.branchId = branchId;
-    _snapshot = await AssistantSnapshot.load(
-      catalog: _catalog,
-      activeOrders: () => _orders.listOrders(status: OrderStatus.active),
-      branchId: branchId,
-    );
+    // The prices changed, so the catalogue has to be read again.
+    _snapshotFuture = null;
+    _snapshot = await _ensureSnapshot();
   }
   final LlmClient _llmClient;
   final LlmConfig llmConfig;
   late AssistantSnapshot _snapshot;
 
+  /// The catalogue load that is on its way, if any.
+  ///
+  /// Opening the assistant must never wait for the network: the greeting goes
+  /// out first and the catalogue arrives while the customer reads it. A
+  /// question that arrives before the catalogue does waits for it, because an
+  /// answer computed against an empty menu would be worse than a short wait.
+  Future<AssistantSnapshot>? _snapshotFuture;
+
   /// Repository-backed catalogue context used for the current chat session.
   AssistantSnapshot get snapshot => _snapshot;
+
+  /// Loads the catalogue and the order history, once.
+  Future<AssistantSnapshot> _ensureSnapshot() {
+    final pending = _snapshotFuture;
+    if (pending != null) return pending;
+    final future = AssistantSnapshot.load(
+      catalog: _catalog,
+      activeOrders: () => _orders.listOrders(status: OrderStatus.active),
+      branchId: branchId,
+    );
+    _snapshotFuture = future;
+    future.then((loaded) {
+      if (!isClosed) _snapshot = loaded;
+    }).catchError((_) {
+      // A catalogue that cannot be read leaves the assistant with an empty
+      // menu, which is a valid answer rather than a crash.
+      if (!isClosed) _snapshot = const AssistantSnapshot.empty();
+    });
+    return future;
+  }
 
   AssistantMemory _memory = AssistantMemory();
   ConversationLog _log = ConversationLog();
@@ -66,6 +95,12 @@ class AssistantCubit extends Cubit<AssistantState> {
   String? _firstName;
   Set<String> _lastCartIds = const {};
   AssistantImprovementLog _improvementLog = AssistantImprovementLog();
+
+  /// Guards against a second message while one is being answered.
+  ///
+  /// The chat's "typing" bubble is not used for this: it now means "waiting
+  /// for the language model", and the local answer is instant.
+  bool _answering = false;
 
   String _nextId() =>
       '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
@@ -78,16 +113,16 @@ class AssistantCubit extends Cubit<AssistantState> {
   Future<void> start({bool isReturning = false, String? firstName}) async {
     _isReturning = isReturning;
     _firstName = firstName;
+
+    // Everything here is on the device: SharedPreferences and the in-app
+    // knowledge table. It costs milliseconds, so the greeting can honour the
+    // language the customer learned without making them wait.
     _memory = await AssistantMemory.load();
     _log = await ConversationLog.load();
     _improvementLog = await AssistantImprovementLog.load();
     await AssistantCatalog.load();
-    _snapshot = await AssistantSnapshot.load(
-      catalog: _catalog,
-      activeOrders: () => _orders.listOrders(status: OrderStatus.active),
-      branchId: branchId,
-    );
     if (isClosed) return;
+
     final arabic = _memory.totalChats > 0
         ? _memory.replyArabic
         : AppLocale.instance.isArabic;
@@ -117,6 +152,9 @@ class AssistantCubit extends Cubit<AssistantState> {
             : AssistantEngine.defaultQuickReplies,
       ),
     );
+
+    // The catalogue and the order history follow in the background.
+    unawaited(_ensureSnapshot());
   }
 
   Future<void> sendMessage(
@@ -126,24 +164,57 @@ class AssistantCubit extends Cubit<AssistantState> {
     MessageChannel channel = MessageChannel.text,
   }) async {
     final text = raw.trim();
-    if (text.isEmpty || state.typing) return;
+    if (text.isEmpty || _answering) return;
+    _answering = true;
+    try {
+      await _send(
+        raw,
+        text,
+        favoriteIds: favoriteIds,
+        cartProductIds: cartProductIds,
+        channel: channel,
+      );
+    } finally {
+      _answering = false;
+    }
+  }
+
+  Future<void> _send(
+    String raw,
+    String text, {
+    required Set<String> favoriteIds,
+    required Set<String> cartProductIds,
+    required MessageChannel channel,
+  }) async {
     _memory.recordQuery(text);
     _lastCartIds = cartProductIds;
-    // Stored verbatim: the exact user wording, ready for future learning.
-    await _log.logUser(raw, channel: channel);
+
+    // The customer's own message appears at once. Everything after this point
+    // is the answer, and the answer is local.
     emit(
       state.copyWith(
         messages: [
           ...state.messages,
           ChatMessage(id: _nextId(), role: MessageRole.user, text: text),
         ],
-        typing: true,
         quickReplies: const [],
         clearAction: true,
       ),
     );
-    await Future<void>.delayed(const Duration(milliseconds: 450));
+
+    // Stored verbatim: the exact user wording, ready for future learning.
+    // Writing to disk must never delay the answer.
+    unawaited(_log.logUser(raw, channel: channel));
+
+    // The catalogue may still be on its way. Answering against an empty menu
+    // would be worse than the short wait.
+    try {
+      await _ensureSnapshot();
+    } catch (_) {
+      // An empty catalogue still answers, just with less to say.
+    }
     if (isClosed) return;
+
     final answer = AssistantEngine.answer(
       text,
       snapshot: _snapshot,
@@ -155,30 +226,39 @@ class AssistantCubit extends Cubit<AssistantState> {
       firstName: _firstName,
     );
     _memory.recordTopic(answer.topic);
-    if (answer.topic == 'unknown') {
-      await _improvementLog.recordUnknown(
-        text,
-        locale: AppLocale.instance.language.code,
+    // The questions the local engine could not answer are the ones the
+    // language model had to take, and they are exactly the list of what the
+    // local engine still needs to learn.
+    //
+    // The topic is 'fallback', not 'unknown': the engine never reports
+    // 'unknown', so the log used to stay empty and the loop never started.
+    if (answer.topic == 'fallback') {
+      unawaited(
+        _improvementLog.recordUnknown(
+          text,
+          locale: AppLocale.instance.language.code,
+        ),
       );
     }
-    await _memory.save();
-    await _log.logAssistant(
-      answer.text,
-      intent: detectIntent(
-        text,
-        recentQueries: _memory.recentQueries,
-        lastTopic: _memory.lastTopic,
-      ).name,
-      topic: answer.topic,
+    unawaited(_memory.save());
+    unawaited(
+      _log.logAssistant(
+        answer.text,
+        intent: detectIntent(
+          text,
+          recentQueries: _memory.recentQueries,
+          lastTopic: _memory.lastTopic,
+        ).name,
+        topic: answer.topic,
+      ),
     );
     if (isClosed) return;
-    final fallbackId = _nextId();
     emit(
       state.copyWith(
         messages: _bounded([
           ...state.messages,
           ChatMessage(
-            id: fallbackId,
+            id: _nextId(),
             role: MessageRole.assistant,
             text: answer.text,
             sourceId: answer.sourceId,
@@ -195,7 +275,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     final llmAvailable =
         llmConfig.enabled || SupabaseService.isConfigured;
     if (answer.topic == 'fallback' && llmAvailable) {
-      await _tryLlmUpgrade(text, fallbackId);
+      unawaited(_tryLlmUpgrade(text));
     }
   }
 
@@ -207,14 +287,25 @@ class AssistantCubit extends Cubit<AssistantState> {
   }
 
   /// Hybrid escalation: only unknown queries reach the LLM, and only when a
-  /// backend is configured. Any failure keeps the local fallback answer.
-  Future<void> _tryLlmUpgrade(String text, String fallbackId) async {
+  /// backend is configured.
+  ///
+  /// The local answer stays on screen. The model's reply arrives as its own
+  /// message, so nothing the customer already read is taken away: the model
+  /// adds to the answer instead of overwriting it. It is a fallback, not the
+  /// main path — it is slow, and it does not understand everyday Arabic.
+  Future<void> _tryLlmUpgrade(String text) async {
     emit(state.copyWith(typing: true));
     final reply = await _llmClient.complete(
       system:
           '${buildSystemPrompt(memory: _memory)}\n${buildLocalContext(text, _memory)}\n${buildLiveContext(_memory, snapshot: _snapshot, cartProductIds: _lastCartIds)}',
       history: buildHistory(state.messages),
       query: text,
+      // The question is remembered by the function, never by the app: a client
+      // that could write the memory could poison it for every customer.
+      questionKey: normalizeText(text),
+      // An answer about the customer's own order goes stale the moment it is
+      // served, so it is never learned.
+      learn: !AssistantEngine.isPerishableQuestion(text),
     );
     if (isClosed) return;
     if (reply == null) {
@@ -222,24 +313,19 @@ class AssistantCubit extends Cubit<AssistantState> {
       return;
     }
     _memory.recordTopic(reply.topic);
-    await _memory.save();
+    unawaited(_memory.save());
     if (isClosed) return;
     emit(
       state.copyWith(
-        messages: _bounded(
-          state.messages
-              .map(
-                (message) => message.id == fallbackId
-                    ? ChatMessage(
-                        id: message.id,
-                        role: MessageRole.assistant,
-                        text: reply.text,
-                        sourceId: 'llm',
-                      )
-                    : message,
-              )
-              .toList(),
-        ),
+        messages: _bounded([
+          ...state.messages,
+          ChatMessage(
+            id: _nextId(),
+            role: MessageRole.assistant,
+            text: reply.text,
+            sourceId: reply.fromMemory ? 'memory' : 'llm',
+          ),
+        ]),
         typing: false,
       ),
     );
@@ -255,7 +341,7 @@ class AssistantCubit extends Cubit<AssistantState> {
       (message) => message.role == MessageRole.user,
       orElse: () => const ChatMessage(id: '', role: MessageRole.user, text: ''),
     );
-    if (lastUser.text.trim().isEmpty || state.typing) return;
+    if (lastUser.text.trim().isEmpty || _answering) return;
     await sendMessage(
       lastUser.text,
       favoriteIds: favoriteIds,

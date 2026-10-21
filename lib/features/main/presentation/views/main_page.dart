@@ -11,6 +11,7 @@ import 'package:new_coffee/features/categories/presentation/views/categories_pag
 import 'package:new_coffee/features/favorites/presentation/views/favorites_page.dart';
 import 'package:new_coffee/features/home/presentation/views/home_page.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
+import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 
 class MainPage extends StatelessWidget {
@@ -48,6 +49,20 @@ class _MainScaffoldState extends State<_MainScaffold> {
     FavoritesPage(),
     SettingsPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // A push that opened the app waits here, because there was no navigator
+    // to show its screen when the tap arrived. The main page is the last stop
+    // of the splash, so this is the first moment the screen can be shown.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = PushService.takePendingRoute();
+      if (route == null) return;
+      Navigator.of(context).pushNamed(route);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

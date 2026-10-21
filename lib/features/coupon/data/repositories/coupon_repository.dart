@@ -4,6 +4,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/shared/utils/rate_limit_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Server-validated coupons.
@@ -139,7 +140,10 @@ class CouponRepositoryImpl implements CouponRepository {
     final result = <String, CouponScope>{};
     for (final coupon in coupons) {
       try {
-        final rows = await client.rpc('coupon_scope', params: {'p_code': coupon.code});
+        final rows = await client.rpc(
+          'coupon_scope',
+          params: {'p_code': coupon.code},
+        );
         if (rows is! List) continue;
         final categoryIds = <String>[];
         final productIds = <String>[];
@@ -250,6 +254,12 @@ class CouponRepositoryImpl implements CouponRepository {
     final client = _client;
     if (client == null) {
       throw StateError('Coupons need a configured Supabase backend.');
+    }
+    final allowed = await RateLimitClient().check('replace_cart');
+    if (!allowed) {
+      throw StateError(
+        'Coupon validation rate limit exceeded. Try again later.',
+      );
     }
     final rows = await client.rpc(
       'validate_coupon_for_cart',

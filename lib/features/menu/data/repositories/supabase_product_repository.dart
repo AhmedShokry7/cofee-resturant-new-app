@@ -1,5 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
-import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/services/supabase_read_service.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
@@ -16,7 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// referenced.
 class SupabaseProductRepository implements CatalogRepository {
   SupabaseProductRepository([SupabaseClient? client])
-    : _client = client ?? SupabaseService.client;
+    : _client = client ?? SupabaseReadService.read;
 
   final SupabaseClient _client;
 
@@ -137,12 +137,31 @@ class SupabaseProductRepository implements CatalogRepository {
 
     final productIds = rows.map((r) => r['id'].toString()).toList();
 
+    // The images and the branch prices are independent of each other: both
+    // only need the product ids the query above just returned, and neither
+    // reads the other's result. They are therefore requested together, so a
+    // catalogue read costs two round trips instead of three.
+    //
     // Batch-fetch all product images in a single query to avoid N+1.
-    final imageRows = await _client
+    final imageRowsFuture = _client
         .from('product_images')
         .select(_productImageColumns)
         .inFilter('product_id', productIds)
         .order('sort_order', ascending: true);
+
+    // _branchPrices still issues no request when there is no branch, so a
+    // catalogue read without a selected branch stays at a single follow-up.
+    final pricesFuture = _branchPrices(productIds, branchId);
+
+    // eagerError keeps the previous error semantics: the first failure is
+    // reported straight away, and the sibling's rejection is absorbed here
+    // instead of surfacing as an unhandled asynchronous error.
+    final results = await Future.wait<Object>(
+      <Future<Object>>[imageRowsFuture, pricesFuture],
+      eagerError: true,
+    );
+    final imageRows = results[0] as List<Map<String, dynamic>>;
+    final prices = results[1] as Map<String, _BranchPrice>;
 
     // Map image records to product IDs as ProductImage objects.
     final imageMap = <String, List<ProductImage>>{};
@@ -153,7 +172,6 @@ class SupabaseProductRepository implements CatalogRepository {
           .add(ProductImage.fromJson(Map<String, dynamic>.from(row)));
     }
 
-    final prices = await _branchPrices(productIds, branchId);
     return rows
         .map((r) {
           final product = ProductModel.fromJson(r);
@@ -204,8 +222,7 @@ class SupabaseProductRepository implements CatalogRepository {
     if (product == null) return null;
 
     final bindingByGroup = {
-      for (final link in links)
-        link['group_id'].toString(): link,
+      for (final link in links) link['group_id'].toString(): link,
     };
     final groupIds = bindingByGroup.keys.toList();
     if (groupIds.isEmpty) {
@@ -257,6 +274,96 @@ class SupabaseProductRepository implements CatalogRepository {
       groups: groups,
       images: await _productImages(id),
     );
+  }
+
+  /// Option groups for many products, in three parallel queries instead of
+  /// six per product.
+  ///
+  /// The assistant reads this for the whole menu at once when it opens. The
+  /// groups themselves (size, sugar, extras) are a small shared catalogue, so
+  /// one pass over the bindings is enough to rebuild every product's list.
+  ///
+  /// The three reads do not depend on each other, so they run together: the
+  /// bindings only need the product ids when the caller has them, and the
+  /// groups and values are global.
+  @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) async {
+    if (productIds.isEmpty) {
+      final all = await _optionsFor(const []);
+      return all;
+    }
+    return _optionsFor(productIds);
+  }
+
+  /// The three option reads, side by side.
+  Future<Map<String, List<OptionGroup>>> _optionsFor(
+    List<String> productIds,
+  ) async {
+    final linksFuture = _client
+        .from('product_option_groups')
+        .select('product_id, group_id, sort_order, is_required')
+        .limit(2000);
+    final groupsFuture = _client
+        .from('option_groups')
+        .select(_optionGroupColumns)
+        .eq('is_active', true);
+    final valuesFuture = _client
+        .from('option_values')
+        .select(_optionValueColumns)
+        .eq('is_active', true);
+
+    final links = await linksFuture;
+    final groupRows = await groupsFuture;
+    final valueRows = await valuesFuture;
+
+    final wanted = productIds.isEmpty ? null : productIds.toSet();
+    final groupsById = <String, OptionGroup>{};
+    for (final g in groupRows) {
+      final parsed = OptionGroup.fromJson(g);
+      groupsById[parsed.id] = OptionGroup(
+        id: parsed.id,
+        code: parsed.code,
+        nameAr: parsed.nameAr,
+        nameEn: parsed.nameEn,
+        isSingleSelect: parsed.isSingleSelect,
+        minSelect: parsed.minSelect,
+        maxSelect: parsed.maxSelect,
+        isRequired: parsed.isRequired,
+        sortOrder: parsed.sortOrder,
+        values: const [],
+      );
+    }
+    final valuesByGroup = <String, List<OptionValue>>{};
+    for (final v in valueRows) {
+      final gid = v['group_id'].toString();
+      valuesByGroup.putIfAbsent(gid, () => []).add(OptionValue.fromJson(v));
+    }
+    for (final list in valuesByGroup.values) {
+      list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
+
+    final byProduct = <String, List<OptionGroup>>{};
+    for (final link in links) {
+      final productId = link['product_id'].toString();
+      if (wanted != null && !wanted.contains(productId)) continue;
+      final group = groupsById[link['group_id'].toString()];
+      if (group == null) continue;
+      final values = valuesByGroup[group.id] ?? const [];
+      byProduct.putIfAbsent(productId, () => []).add(
+        effectiveProductOptionGroup(
+          group: group,
+          bindingIsRequired: link['is_required'] == true,
+          bindingSortOrder: (link['sort_order'] as num?)?.toInt() ?? 0,
+          values: values,
+        ),
+      );
+    }
+    for (final list in byProduct.values) {
+      list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    }
+    return byProduct;
   }
 
   Future<List<ProductImage>> _productImages(String productId) async {
@@ -538,7 +645,10 @@ class SupabaseProductRepository implements CatalogRepository {
     // Built in one expression: the PostgREST builder changes type after each
     // filter, so reassigning a `var` across filters does not type check.
     final rows = await (includeInactive
-        ? _client.from('categories').select(_categoryColumns).order('sort_order')
+        ? _client
+              .from('categories')
+              .select(_categoryColumns)
+              .order('sort_order')
         : _client
               .from('categories')
               .select(_categoryColumns)

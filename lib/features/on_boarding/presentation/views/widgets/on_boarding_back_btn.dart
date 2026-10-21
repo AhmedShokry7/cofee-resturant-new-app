@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
+import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 
 class OnBoardingBackBtn extends StatelessWidget {
   const OnBoardingBackBtn({super.key});
@@ -23,7 +23,7 @@ class OnBoardingBackBtn extends StatelessWidget {
           shape: BoxShape.circle,
         ),
         child: Icon(
-                 HugeIcons.strokeRoundedArrowLeft01,
+          DirectionAwareIcons.back(context),
           size: myHight * .03,
           color: AppColor.primaryColor,
         ),

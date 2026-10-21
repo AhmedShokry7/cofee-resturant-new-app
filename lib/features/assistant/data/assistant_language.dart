@@ -33,8 +33,12 @@ String normalizeText(String input) {
   // Strip the Arabic definite article (اللاتيه -> لاتيه) so "the X" and "X"
   // match the same stock. Applied to both queries and keywords, so it is
   // always consistent. Requires 2+ letters after ال (bare ال stays).
+  //
+  // The preposition is included because the article follows it in the written
+  // form: "بالمكسرات" (with nuts) is ب + ال + مكسرات, and the article has to
+  // go as well for the ingredient to be found.
   text = text.replaceAllMapped(
-    RegExp('(^| )ال(?=\\p{L}{2,})', unicode: true),
+    RegExp('(^| |ب)ال(?=\\p{L}{2,})', unicode: true),
     (match) => match.group(1)!,
   );
   // Collapse emphatic elongation (3+ repeats: حلووو -> حلو). Normal

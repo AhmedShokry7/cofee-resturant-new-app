@@ -18,14 +18,15 @@ class ProductPrice extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Flexible(
-          child: PriceLabel(
-            amount: product.price,
-            style: AppFonts.semiBold14(context)
-                .copyWith(color: AppColor.primaryColor),
-            iconSize: 14,
-            iconColor: AppColor.primaryColor,
-          ),
+        // The live price keeps its natural width: it is the number the
+        // customer reads, so it must never be squeezed out. Only the
+        // struck-through old price is allowed to shrink.
+        PriceLabel(
+          amount: product.price,
+          style: AppFonts.semiBold14(context)
+              .copyWith(color: AppColor.primaryColor),
+          iconSize: 14,
+          iconColor: AppColor.primaryColor,
         ),
         if (product.hasDiscount) ...[
           SizedBox(width: 6.w),

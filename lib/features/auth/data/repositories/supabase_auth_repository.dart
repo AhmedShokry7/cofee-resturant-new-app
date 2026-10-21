@@ -1,8 +1,9 @@
 ﻿import 'dart:async';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'dart:math';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
 
@@ -11,6 +12,7 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 // The Supabase SDK ships its own AuthUser and AuthException. This layer deals
 // in the app's domain types, so the SDK's copies are hidden to keep every
@@ -248,6 +250,11 @@ class SupabaseAuthRepository implements AuthRepository {
         '${AppConfig.missingConfigurationMessage}',
       );
     }
+    // The token of this device is removed while the session still exists:
+    // the server can only give the token back to the customer it belongs to.
+    // Without this the notifications of the customer who signs out would keep
+    // arriving on a phone the next person uses.
+    await PushService.unregister();
     await _client.auth.signOut();
   }
 
@@ -410,15 +417,31 @@ class SupabaseAuthRepository implements AuthRepository {
     try {
       account = await GoogleSignIn.instance.authenticate();
     } on GoogleSignInException catch (error) {
-      debugPrint(
-        'GoogleSignInException: code=${error.code.name} desc=${error.description}',
+      _logGoogleFailure(
+        'GoogleSignInException',
+        error.code.name,
+        error.description,
       );
       if (error.code == GoogleSignInExceptionCode.canceled) {
         throw const AuthException('google_sign_in_canceled');
       }
+      if (error.code == GoogleSignInExceptionCode.clientConfigurationError ||
+          error.code == GoogleSignInExceptionCode.providerConfigurationError) {
+        // The OAuth client that matches this build's signing certificate is
+        // missing or wrong. Debug and release are signed with different
+        // certificates, so each one needs its own SHA-1 registered with the
+        // Android OAuth client.
+        throw const AuthException('google_client_configuration_error');
+      }
       throw AuthException(
         'Google sign-in failed: ${error.description ?? error.code.name}',
       );
+    } on PlatformException catch (error) {
+      // Credential Manager reports a misconfigured client as a platform error
+      // rather than a GoogleSignInException, so this branch is what a release
+      // build actually hits.
+      _logGoogleFailure('PlatformException', error.code, error.message);
+      throw AuthException('google_sign_in_failed: ${error.code}');
     }
     final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
@@ -436,6 +459,24 @@ class SupabaseAuthRepository implements AuthRepository {
     final domain = _toDomain(user);
     await _cacheProfile(domain);
     return domain;
+  }
+
+  /// Writes a Google Sign-In failure where a release build can still read it.
+  ///
+  /// A release build has no debugger attached, and `debugPrint` throttles
+  /// long output, so the one line that explains why sign-in failed could
+  /// easily be dropped. [developer.log] writes straight to logcat and is not
+  /// stripped in release mode.
+  static void _logGoogleFailure(
+    String kind,
+    String code,
+    String? description,
+  ) {
+    developer.log(
+      'Google sign-in failed: kind=$kind code=$code'
+      '${description == null || description.isEmpty ? '' : ' description=$description'}',
+      name: 'GoogleSignIn',
+    );
   }
 
   Future<void> _ensureGoogleInitialized() async {

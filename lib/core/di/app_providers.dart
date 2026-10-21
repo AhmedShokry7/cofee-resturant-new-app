@@ -5,8 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
-import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
-import 'package:new_coffee/features/auth/data/repositories/unavailable_auth_repository.dart';
+import 'package:new_coffee/features/auth/data/repositories/resilient_auth_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
@@ -54,13 +53,13 @@ class AppProviders extends StatelessWidget {
 
   /// The one place that decides which auth implementation runs.
   ///
-  /// Supabase Auth is used exclusively. If Supabase is not configured, the
-  /// fallback refuses every sign-in instead of pretending it worked: a mock
-  /// that accepted any password would let a customer believe they were
-  /// signed in while no account exists.
+  /// Supabase Auth is used exclusively. The repository is resilient: if the
+  /// backend was not reachable when the app started, it reconnects on the
+  /// next attempt instead of refusing every sign-in for the rest of the
+  /// session. A mock that accepted any password would let a customer believe
+  /// they were signed in while no account exists, so there is no mock.
   AuthRepository _buildAuthRepository() {
-    if (SupabaseService.isReady) return SupabaseAuthRepository();
-    return const UnavailableAuthRepository();
+    return ResilientAuthRepository();
   }
 
   /// The one place that decides which catalogue source runs.

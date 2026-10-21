@@ -15,6 +15,7 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_body.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_bottom_bar.dart';
+import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 
 class ProductDetailsPage extends StatefulWidget {
   const ProductDetailsPage({super.key, required this.product});
@@ -91,9 +92,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
               leading: Padding(
                 padding: EdgeInsetsDirectional.only(start: SpacingTokens.lg),
                 child: _HeaderIconButton(
-                  icon: Directionality.of(context) == TextDirection.rtl
-                      ? HugeIcons.strokeRoundedArrowRight01
-                      : HugeIcons.strokeRoundedArrowLeft01,
+                  icon: DirectionAwareIcons.back(context),
                   tooltip: S.back,
                   onPressed: () => Navigator.maybePop(context),
                 ),

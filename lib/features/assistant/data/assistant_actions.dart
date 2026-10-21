@@ -10,6 +10,7 @@ class CartAction {
     this.note = '',
     this.optionValueIds = const [],
     this.unitPrice,
+    this.remove = false,
   });
 
   final String productId;
@@ -23,8 +24,12 @@ class CartAction {
   /// Variant-adjusted unit price (size + extras). Null = base price.
   final double? unitPrice;
 
+  /// True when the action takes the product out of the cart instead of
+  /// putting it in.
+  final bool remove;
+
   Map<String, dynamic> toJson() => {
-    'type': 'add_to_cart',
+    'type': remove ? 'remove_from_cart' : 'add_to_cart',
     'productId': productId,
     'quantity': quantity,
     if (note.isNotEmpty) 'note': note,

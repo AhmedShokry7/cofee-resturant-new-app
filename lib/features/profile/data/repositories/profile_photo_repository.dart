@@ -52,10 +52,6 @@ abstract class ProfilePhotoRepository {
   /// anyone holding the object path.
   static const String bucket = 'avatars';
 
-  /// Signed URLs are short-lived, so the app refreshes rather than persisting
-  /// one. The path in `avatar_url` is what outlives a session.
-  static const Duration signedUrlTtl = Duration(hours: 1);
-
   /// Path of the saved photo, or null when none is saved.
   ///
   /// Returns the Storage path, never a URL.
@@ -66,8 +62,13 @@ abstract class ProfilePhotoRepository {
   /// Returns the persisted path.
   Future<String> uploadAvatar(Uint8List bytes);
 
-  /// Creates a displayable URL for a stored [path].
-  Future<String> resolveSignedUrl(String path);
+  /// Reads the stored photo back as image bytes.
+  ///
+  /// The bucket is private, so the bytes are fetched with the caller's own
+  /// session rather than through a signed URL. A signed URL would have to be
+  /// minted first, would expire, and would change on every refresh, which
+  /// defeats every image cache in the app.
+  Future<Uint8List> downloadAvatar(String path);
 
   /// Deletes the stored photo and clears the profile's path.
   Future<void> removeAvatar();
@@ -144,20 +145,19 @@ class SupabaseProfilePhotoRepository implements ProfilePhotoRepository {
   }
 
   @override
-  Future<String> resolveSignedUrl(String path) async {
+  Future<Uint8List> downloadAvatar(String path) async {
     if (path.trim().isEmpty) {
-      throw const ProfilePhotoException(ProfilePhotoFailure.signedUrlFailed);
+      throw const ProfilePhotoException(ProfilePhotoFailure.photoLoadFailed);
     }
     try {
+      // The caller's own session authorises the read: the bucket is private
+      // and the policies are keyed on the same `auth.uid()` the object path is.
       return await _client.storage
           .from(ProfilePhotoRepository.bucket)
-          .createSignedUrl(
-            path,
-            ProfilePhotoRepository.signedUrlTtl.inSeconds,
-          );
+          .download(path);
     } catch (error) {
       throw ProfilePhotoException(
-        ProfilePhotoFailure.signedUrlFailed,
+        ProfilePhotoFailure.photoLoadFailed,
         error.toString(),
       );
     }

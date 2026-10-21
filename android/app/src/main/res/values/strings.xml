@@ -3,4 +3,7 @@
     <!-- Launcher name. Matches the in-app title so the icon on the home
          screen does not show the Flutter project name. -->
     <string name="app_name">New Coffee</string>
+
+    <!-- Shown under the notification channel in the settings of the phone. -->
+    <string name="notification_channel_description">Order updates, offers and rewards</string>
 </resources>

@@ -7,7 +7,6 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
-import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/delivery_zone_status.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -28,7 +27,13 @@ class DeliveryFulfillmentSection extends StatelessWidget {
       builder: (context, state) {
         final cubit = context.read<CheckoutCubit>();
         final deliveryUnavailable = state.deliveryZones.isEmpty;
-        final unavailableMessage = state.deliveryZonesLoadFailed
+        // Without a branch there is nothing to judge yet: the zones belong to a
+        // branch, so the honest answer is "choose a branch", not "delivery is
+        // unavailable for this branch".
+        final hasBranch = (cubit.branchId ?? '').trim().isNotEmpty;
+        final unavailableMessage = !hasBranch
+            ? S.deliveryNeedsBranch
+            : state.deliveryZonesLoadFailed
             ? S.deliveryUnavailableError
             : S.deliveryUnavailable;
         return Column(

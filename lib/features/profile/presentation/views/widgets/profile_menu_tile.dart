@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
-
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 
 class ProfileMenuTile extends StatelessWidget {
   const ProfileMenuTile({
@@ -47,16 +46,15 @@ class ProfileMenuTile extends StatelessWidget {
                         SizedBox(height: 2.h),
                         Text(
                           subtitle!,
-                          style: AppFonts.regular12(
-                            context,
-                          ).copyWith(color: AppColor.greyColor),
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.greyColor),
                         ),
                       ],
                     ],
                   ),
                 ),
                 Icon(
-                  HugeIcons.strokeRoundedArrowRight01,
+                  DirectionAwareIcons.forward(context),
                   size: 20.w,
                   color: AppColor.greyColor,
                 ),
@@ -69,4 +67,3 @@ class ProfileMenuTile extends StatelessWidget {
     );
   }
 }
-

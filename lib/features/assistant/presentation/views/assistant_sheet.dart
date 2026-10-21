@@ -8,6 +8,7 @@ import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
@@ -84,6 +85,10 @@ class _AssistantSheetState extends State<AssistantSheet> {
     for (final action in state.cartActions) {
       final product = snapshot.productById(action.productId);
       if (product == null) continue;
+      if (action.remove) {
+        cart.remove(product.id);
+        continue;
+      }
       cart.add(
         product,
         quantity: action.quantity,
@@ -343,7 +348,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
                   ),
                   SizedBox(width: SpacingTokens.xs.w),
                   Icon(
-                    HugeIcons.strokeRoundedArrowRight01,
+                    DirectionAwareIcons.forward(context),
                     size: 18.w,
                     color: AppColor.greyColor,
                   ),

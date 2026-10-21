@@ -5,6 +5,18 @@ allprojects {
     }
 }
 
+// The Firebase BoM version used by the FlutterFire plugins.
+//
+// firebase_core and the other Firebase plugins import the BoM themselves
+// (see firebase_core/android/build.gradle), so the version is set here once
+// instead of being repeated as a `platform(...)` dependency in the app
+// module. Every native Firebase library in the app then resolves to the same
+// BoM.
+ext {
+    set("FirebaseSDKVersion", "35.0.2")
+    set("FlutterFire", mapOf("FirebaseSDKVersion" to "35.0.2"))
+}
+
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")

@@ -1,84 +1,245 @@
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 
+/// The shop's own facts, in both languages.
+///
+/// An Arabic question has to find its article too: the matching is word based,
+/// so English keywords alone meant an Arabic customer asking "امتى بتقفلوا؟"
+/// got nothing from the local engine and had to wait for the language model.
 const List<KnowledgeArticle> faqKnowledge = [
   KnowledgeArticle(
     id: 'faq-hours',
     title: 'Opening hours',
+    titleAr: 'مواعيد العمل',
     keywords: ['hours', 'open', 'close', 'timing', 'when'],
+    keywordsAr: [
+      'امتى',
+      'الوقت',
+      'بتقفلوا',
+      'بتفتحوا',
+      'تقفلوا',
+      'تفتحوا',
+      'ساعات',
+      'مواعيد',
+      'مفتوح',
+      'مفتوحين',
+      'قافلا',
+      'باقص',
+    ],
     body:
         'We are open every day from 7:00 AM to 11:00 PM. The kitchen closes 30 minutes before closing time.',
+    bodyAr:
+        'بنفتح كل يوم من 7:00 الصبح لحد 11:00 بالليل، والمطبخ بيقفل نص ساعة قبل ما نقفل.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-delivery',
     title: 'Delivery info',
+    titleAr: 'التوصيل',
     keywords: ['delivery', 'deliver', 'shipping', 'arrive', 'long', 'fast'],
+    keywordsAr: [
+      'توصيل',
+      'بتوصلي',
+      'بتعملوا توصيل',
+      'توصل',
+      'بتوصل',
+      'دليفري',
+      'ياخد وقت',
+      'كم ياخد',
+      'بياخد وقت',
+      'بتاخد كام وقت',
+      'بياخد كام وقت',
+      'الطلب بياخد',
+      'اخد كام وقت',
+      'كام وقت',
+      'قد ايه',
+      'الطلب بياخد قد ايه',
+      'هتوصل امتي',
+      'بيوصل امتي',
+    ],
     body:
         'Delivery usually takes 25 to 45 minutes depending on your area. You can follow every step from the Track Order screen.',
+    bodyAr:
+        'التوصيل بياخد من 25 لـ 45 دقيقة حسب منطقتك، وتقدر تتابع كل خطوة من صفحة تتبع الطلب.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-payment',
     title: 'Payment methods',
+    titleAr: 'طرق الدفع',
     keywords: ['pay', 'payment', 'card', 'cash', 'apple pay', 'visa', 'price'],
+    keywordsAr: [
+      'ادفع',
+      'بدفع',
+      'دفع',
+      'طرق الدفع',
+      'كيف ادفع',
+      'كيف بدفع',
+      'بدفع ازاي',
+      'ادفع ازاي',
+      'فيزا',
+      'ماستركارد',
+      'apple pay',
+      'جوجل pay',
+      'كاش',
+      'عند الاستلام',
+      'ادفع امتي',
+    ],
     body:
         'We accept credit and debit cards, Apple Pay, Google Pay and cash on delivery. You can manage your saved cards anytime from Payment Method.',
+    bodyAr:
+        'بنقبل الكروت الدائنة والمدفوعة، وApple Pay وGoogle Pay، والدفع كاش عند الاستلام. وتقدر تدير بطاقاتك المحفوظة من صفحة وسيلة الدفع في أي وقت.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-track',
     title: 'Tracking an order',
+    titleAr: 'تتبع الطلب',
     keywords: ['track', 'status', 'package', 'arrived'],
+    keywordsAr: [
+      'تتبع',
+      'اتابع',
+      'ازاي اتابع',
+      'حاله الطلب',
+      'فين الطلب',
+      'الطلب فين',
+    ],
     body:
         'Open My Orders, pick the active order and tap Track Order to see exactly where it is right now.',
+    bodyAr:
+        'افتح صفحة طلباتي، اختار الطلب النشط، ودوس على «تتبع الطلب» عشان تشوف مكانه بالظبط في الوقت الحالي.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-coupon',
     title: 'Coupons and discounts',
+    titleAr: 'الكوبونات والخصومات',
     keywords: ['coupon', 'discount', 'promo', 'offer', 'code', 'deal', 'sale'],
+    keywordsAr: [
+      'كوبون',
+      'كوبونات',
+      'كود',
+      'عروض',
+      'عرض',
+      'خصم',
+      'خصومات',
+      'تخفيض',
+      'بتنزل',
+      'عرض ايه',
+    ],
     body:
         'Open the Coupon page from the home header to see active offers. Tap Copy Code and apply it at checkout to get your discount.',
+    bodyAr:
+        'افتح صفحة العروض من هيدر الصفحة الرئيسية عشان تشوف العروض النشطة. دوس «نسخ الكود» واستخدمه عند الدفع عشان الخصم يطبّق.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-account',
     title: 'Account and password',
+    titleAr: 'الحساب وكلمة المرور',
     keywords: ['account', 'sign up', 'login', 'password', 'register', 'profile'],
+    keywordsAr: [
+      'حساب',
+      'تسجيل',
+      'تسجيل دخول',
+      'انشاء حساب',
+      'كلمه المرور',
+      'نسيت كلمه',
+      'اعاده تعيين',
+      'بروفايل',
+    ],
     body:
         'Create an account from the Sign Up page, and if you forget your password use Forget Password on the Sign In page to reset it by email.',
+    bodyAr:
+        'اعمل حساب من صفحة إنشاء حساب، ولو نسيت كلمة المرور استخدم «نسيت كلمة المرور» في صفحة الدخول لتعيد تعيينها من إيميلك.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-refund',
     title: 'Refunds and complaints',
+    titleAr: 'الاسترجاع والشكاوى',
     keywords: ['refund', 'return', 'wrong', 'complaint', 'problem', 'cold', 'late'],
+    keywordsAr: [
+      'استرجاع',
+      'استرداد',
+      'راجع فلوسي',
+      'شكوي',
+      'شكوى',
+      'مش كويس',
+      'اتأخر',
+      'الطلب اتأخر',
+      'الطلب متأخر',
+      'ناقص',
+      'غلط',
+      'بارد',
+    ],
     body:
         'If anything arrives wrong, cold or late, tell us from the Help page and we will make it right with a remake or a refund.',
+    bodyAr:
+        'لو أي حاجة وصلتك غلط أو باردة أو متأخرة، قولها لنا من صفحة المساعدة وهنعملها كويس: إعادة تحضير أو استرجاع الفلوس.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-prices',
     title: 'Prices',
+    titleAr: 'الأسعار',
     keywords: ['price', 'cost', 'expensive', 'cheap', 'how much'],
+    keywordsAr: [
+      'اسعار',
+      'الاسعار',
+      'بكام',
+      'بتكلف كام',
+      'رخيص',
+      'غالي',
+      'الاسعار كام',
+    ],
     body:
         'Most drinks are between 15 and 55. Items on sale show the old price struck through next to the new price on every product card.',
+    bodyAr:
+        'معظم المشروبات بين 15 و 55 ريال. وأي حاجة عليها عرض بتعرض السعر القديم مشطوب جنب السعر الجديد على كارت المنتج.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-contact',
     title: 'Contact support',
+    titleAr: 'تواصل مع الدعم',
     keywords: ['help', 'support', 'contact', 'call', 'human', 'someone', 'phone'],
+    keywordsAr: [
+      'مساعده',
+      'مساعدة',
+      'دعم',
+      'كلموني',
+      'بتكلم',
+      'رقم',
+      'تليفون',
+      'حد يكلمني',
+      'حد',
+      'مشكلة',
+      'في حد',
+    ],
     body:
         'You can reach our support team from the Help page. We reply as fast as we can, usually within a few hours.',
+    bodyAr:
+        'تقدر توصل لفريق الدعم من صفحة المساعدة. بنرد في أسرع وقت ممكن، غالبًا خلال ساعات قليلة.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-favorites',
     title: 'Saving favorites',
+    titleAr: 'حفظ المفضلة',
     keywords: ['favorite', 'favourite', 'save', 'heart', 'like', 'later'],
+    keywordsAr: [
+      'مفضله',
+      'المفضله',
+      'احفظ',
+      'القلب',
+      'حفظت',
+      'حفظها',
+      'عايز اجربها بعدين',
+    ],
     body:
         'Tap the heart on any product card to save it. Everything you save waits for you on the Favorites tab.',
+    bodyAr:
+        'دوس على القلب في أي كارت منتج علشان تحفظه. كل اللي حفظته بيفضل مستنيك في تبويب «المفضلة».',
     topic: 'faq',
   ),
 ];

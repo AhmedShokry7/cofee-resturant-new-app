@@ -74,7 +74,7 @@ class HomeProductsCarousel extends StatelessWidget {
         // instead of a fixed value, so taller cards always fit exactly on
         // every screen size without clipping or dead space.
         SizedBox(
-          height: 150.w / ProductCard.cardAspectRatio,
+          height: ProductCard.stripWidth.w / ProductCard.cardAspectRatio,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: displayed.length,

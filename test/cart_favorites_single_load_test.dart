@@ -50,6 +50,11 @@ class _CountingCatalog implements CatalogRepository {
       _inner.getWithOptions(id, branchId: branchId);
 
   @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) => _inner.getOptionsByProduct(productIds);
+
+  @override
   Future<List<ProductModel>> search(
     String query, {
     String? branchId,

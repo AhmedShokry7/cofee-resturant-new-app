@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -180,11 +178,6 @@ class _SettingsPageState extends State<SettingsPage> {
                 children: [
                   BlocBuilder<ProfileCubit, ProfileState>(
                     builder: (context, state) {
-                      // Re-resolve before the current signed URL lapses, so a
-                      // long-lived session does not end up with a dead image.
-                      unawaited(
-                        context.read<ProfileCubit>().ensureFreshSignedUrl(),
-                      );
                       return GestureDetector(
                         onTap: () => _pickImage(context),
                         child: Stack(
@@ -331,12 +324,16 @@ String _photoErrorMessage(String failure) {
   if (failure == ProfilePhotoFailure.unsupportedFormat.name) {
     return S.photoFormatUnsupported;
   }
+  if (failure == ProfilePhotoFailure.notSignedIn.name) {
+    // The photo belongs to an account, so there is nothing to attach it to
+    // without one. This is not a failed save.
+    return S.photoSignInRequired;
+  }
   if (failure == ProfilePhotoFailure.profileUpdateFailed.name ||
       failure == ProfilePhotoFailure.profileRowMissing.name) {
     return S.photoSaveFailed;
   }
-  if (failure == ProfilePhotoFailure.photoLoadFailed.name ||
-      failure == ProfilePhotoFailure.signedUrlFailed.name) {
+  if (failure == ProfilePhotoFailure.photoLoadFailed.name) {
     return S.photoLoadFailed;
   }
   return S.photoUploadFailed;

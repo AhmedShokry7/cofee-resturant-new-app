@@ -13,7 +13,12 @@ $script:SbUri = 'https://api.supabase.com/v1/projects/webzzasosevzymftgszn/datab
 
 function Get-SbToken {
   if (-not $script:SbToken) {
-    $script:SbToken = (Select-String -Path 'D:\new_cofee\.env' -Pattern '^SUPABASE_ACCESS_TOKEN=(.+)$').Matches[0].Groups[1].Value
+    # The .env sits next to this script's project root, wherever it is checked out.
+    $envFile = Join-Path (Split-Path -Parent $PSScriptRoot) '.env'
+    if (-not (Test-Path -LiteralPath $envFile)) {
+      throw "Missing $envFile"
+    }
+    $script:SbToken = (Select-String -Path $envFile -Pattern '^SUPABASE_ACCESS_TOKEN=(.+)$').Matches[0].Groups[1].Value
   }
   return $script:SbToken
 }

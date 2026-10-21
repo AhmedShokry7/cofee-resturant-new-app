@@ -15,7 +15,7 @@ class WelcomePageBody extends StatelessWidget {
 
   /// Image height as a share of the screen. The photo is tall enough for the
   /// wave to sink down close to the copy instead of leaving a dead gap.
-  static const double _imageRatio = 0.66;
+  static const double _imageRatio = 0.63;
   static const double _compactImageRatio = 0.62;
 
   /// Depth of the wave. The panel overlaps the photo by the same amount, so
@@ -83,7 +83,7 @@ class _WelcomePanelContent extends StatelessWidget {
     // Nothing scales the copy: the title and body render at their real size.
     return Column(
       children: [
-        const Spacer(flex: 1),
+        const Spacer(flex: 2),
 
         const WelcomeViewTextTitle(),
 
@@ -109,7 +109,7 @@ class _WelcomePanelContent extends StatelessWidget {
           ),
         ),
 
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: SpacingTokens.sm.h),
       ],
     );
   }

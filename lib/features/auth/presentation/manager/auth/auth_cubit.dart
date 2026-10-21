@@ -132,6 +132,10 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('rate limit')) {
       return S.authTooManyRequests;
     }
+    if (lower.contains('google_client_configuration_error') ||
+        lower.contains('google_sign_in_failed')) {
+      return S.authGoogleUnavailable;
+    }
     return S.authFailed;
   }
 }

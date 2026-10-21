@@ -9,6 +9,7 @@ import 'package:new_coffee/features/assistant/data/assistant_order.dart';
 import 'package:new_coffee/features/assistant/data/assistant_phrases.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
+import 'package:new_coffee/features/assistant/data/product_knowledge.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
@@ -174,8 +175,48 @@ class AssistantEngine {
     if (memory.draft.items.isNotEmpty && _asksPrice(query)) {
       return _draftTotal(memory, arabic: arabic);
     }
-    final priceAnswer = _productPriceAnswer(query, arabic: arabic);
+    // The subject of the conversation. A follow-up rarely names it: "كام
+    // سعره؟" after a suggestion means the thing that was just suggested, and
+    // answering about coupons instead was the worst of it.
+    final contextProducts = _contextProducts(memory);
+    final priceAnswer = _productPriceAnswer(
+      query,
+      arabic: arabic,
+      context: contextProducts,
+    );
     if (priceAnswer != null) return priceAnswer;
+    final optionsAnswer = _contextOptionsAnswer(
+      query,
+      contextProducts,
+      arabic: arabic,
+    );
+    if (optionsAnswer != null) return optionsAnswer;
+    final confirmAnswer = _confirmSuggestionAnswer(
+      query,
+      contextProducts,
+      arabic: arabic,
+    );
+    if (confirmAnswer != null) return confirmAnswer;
+    // The knowledge base holds the shop's facts: the hours, the delivery, the
+    // payment, what each drink is. A question about a fact has to reach it
+    // before the intent matcher turns "بتعملوا توصيل؟" into an order status
+    // and "كيف بدفع؟" into a greeting.
+    final knowledgeAnswer = _knowledgeAnswer(query, memory, arabic: arabic);
+    if (knowledgeAnswer != null) return knowledgeAnswer;
+    // The cart is asked about in its own words, and the intent matcher reads
+    // "شيل اللاتيه من السلة" as an order to place. The cart is checked first.
+    final cartAnswer = _cartRequest(
+      query,
+      memory,
+      arabic: arabic,
+      cartProductIds: cartProductIds,
+    );
+    if (cartAnswer != null) return cartAnswer;
+    // "Do you have anything with nuts?" - the shop's ingredients are known
+    // exactly, so "we have none" is a fact the local engine can give. Letting
+    // the language model answer it would be a guess.
+    final missingIngredient = _missingIngredientAnswer(query, memory, arabic: arabic);
+    if (missingIngredient != null) return missingIngredient;
     if (memory.pendingQuestion == 'order_clarify') {
       final resolved = _resolveClarify(query, memory: memory, arabic: arabic);
       if (resolved != null) return resolved;
@@ -188,6 +229,14 @@ class AssistantEngine {
     if (negatedIds.isNotEmpty &&
         (intent == AssistantIntent.deny ||
             intent == AssistantIntent.unknown)) {
+      intent = AssistantIntent.suggestDrink;
+    }
+    // "وكمان هو؟" continues the conversation about what is on screen. Without
+    // this the bot answered a question about its own menu instead of the
+    // product the customer was looking at.
+    if (intent == AssistantIntent.unknown &&
+        contextProducts.isNotEmpty &&
+        isFollowUpMessage(query)) {
       intent = AssistantIntent.suggestDrink;
     }
     return respond(
@@ -640,6 +689,220 @@ class AssistantEngine {
 
   /// "Is this the one?" — confirms an ingredient match WITH its picture
   /// (the card below shows the product image).
+  /// Answers from the knowledge base when the question is clearly about a
+  /// fact the shop has written down.
+  ///
+  /// Only a strong match counts: the intents own the actions ("فين طلبي؟"),
+  /// and the knowledge base only takes the question when it is unmistakably
+  /// about a fact.
+  /// True when the query asks the bot to DO something.
+  ///
+  /// The knowledge base holds facts and the intents handle actions. "عايز
+  /// اطلب لاتيه كبير" is an order, not a question about lattes, so the
+  /// knowledge base must stay out of it.
+  static bool _isActionRequest(String query) {
+    final normalized = normalizeText(query);
+    const markers = [
+      'اطلب', 'اعمل', 'اعملي', 'عايز', 'عاوز', 'حط', 'ضيف', 'زود',
+      'الغي', 'كنسل', 'امسح', 'ادفع', 'هات', 'جيب', 'عطني', 'نطلب',
+      'محتاج', 'ابغى', 'ابي', 'بدي', 'ودي', 'عايزك', 'بنطلبه',
+    ];
+    for (final marker in markers) {
+      if (_containsWord(normalized, normalizeText(marker))) return true;
+    }
+    return false;
+  }
+
+  static AssistantAnswer? _knowledgeAnswer(
+    String query,
+    AssistantMemory memory, {
+    required bool arabic,
+  }) {
+    final ranked = rankArticles(query, memory, limit: 1, arabic: arabic);
+    if (ranked.isEmpty) return null;
+    if (ranked.first.$2 < 3) return null;
+    // An action belongs to the intents, not to the facts.
+    if (_isActionRequest(query) && ranked.first.$2 < 5) return null;
+    final best = ranked.first.$1;
+    return AssistantAnswer(
+      text: best.bodyFor(arabic: arabic),
+      topic: best.topic,
+      sourceId: best.id,
+      quickReplies: arabic
+          ? AssistantComposer.quickRepliesAr
+          : const ['Suggest a drink', 'Track my order', 'Any coupons?'],
+    );
+  }
+
+  /// "شيل اللاتيه من السلة" — a removal, not an order.
+  ///
+  /// The cart has its own verbs and the intent matcher reads "شيل" as a
+  /// request to order, so a customer asking to take something out was answered
+  /// with "shall I confirm the order?". The cart is answered here instead.
+  ///
+  /// Returns null when the question is not about the cart.
+  static AssistantAnswer? _cartRequest(
+    String query,
+    AssistantMemory memory, {
+    required bool arabic,
+    required Set<String> cartProductIds,
+  }) {
+    final normalized = normalizeText(query);
+    final mentionsCart = [
+      'السلة',
+      'سلتي',
+      'السلة',
+      'cart',
+      'basket',
+    ].any((word) => _containsWord(normalized, normalizeText(word)));
+    if (!mentionsCart) return null;
+
+    final isRemoval = [
+      'شيل',
+      'امسح',
+      'احذف',
+      'انقص',
+      'remove',
+      'delete',
+    ].any((word) => _containsWord(normalized, normalizeText(word)));
+
+    if (isRemoval) {
+      return _removeFromCart(query, memory, arabic: arabic, cartProductIds: cartProductIds);
+    }
+
+    final asksEmpty = [
+      'فاضي',
+      'فاضية',
+      'فاضيه',
+      'empty',
+    ].any((word) => _containsWord(normalized, normalizeText(word)));
+    final asksCount = [
+      'كام',
+      'كمان كام',
+      'how many',
+      'number',
+    ].any((word) => _containsWord(normalized, normalizeText(word)));
+    if (!asksEmpty && !asksCount) return null;
+
+    return _cartStatus(arabic: arabic, cartProductIds: cartProductIds);
+  }
+
+  /// What is in the cart right now.
+  static AssistantAnswer _cartStatus({
+    required bool arabic,
+    required Set<String> cartProductIds,
+  }) {
+    if (cartProductIds.isEmpty) {
+      return AssistantAnswer(
+        text: arabic
+            ? 'السلة فاضية دلوقتي. تحب أديك ترشيح؟'
+            : 'Your cart is empty right now. Shall I suggest something?',
+        topic: 'cart',
+        sourceId: 'cart-empty',
+        quickReplies: arabic
+            ? const ['رشحلي مشروب', 'حاجه تانية']
+            : const ['Suggest a drink', 'Something else'],
+      );
+    }
+    final names = <String>[];
+    for (final id in cartProductIds) {
+      final product = _productById(id);
+      if (product != null) names.add(product.name);
+    }
+    final items = names.isEmpty ? cartProductIds.length : names.length;
+    return AssistantAnswer(
+      text: arabic
+          ? 'في السلة $items ${items == 1 ? 'حاجة' : 'حاجات'}${names.isEmpty ? '' : ': ${names.join('، ')}'}.'
+          : 'Your cart has $items ${items == 1 ? 'item' : 'items'}${names.isEmpty ? '' : ': ${names.join(', ')}'}.',
+      topic: 'cart',
+      sourceId: 'cart-status',
+      quickReplies: arabic
+          ? const ['عايز اطلب', 'حاجه تانية']
+          : const ['I want to order', 'Something else'],
+    );
+  }
+
+  /// Takes a product out of the cart.
+  static AssistantAnswer _removeFromCart(
+    String query,
+    AssistantMemory memory, {
+    required bool arabic,
+    required Set<String> cartProductIds,
+  }) {
+    final tokens = tokenize(query).toSet();
+    final wanted = _expandAll(query, tokens).wanted;
+    ProductModel? target;
+    for (final name in wanted) {
+      for (final product in AssistantSnapshot.current.products) {
+        if (AssistantSnapshot.canonicalName(product) == name) {
+          target = product;
+          break;
+        }
+      }
+      if (target != null) break;
+    }
+    if (target == null) {
+      final inCart = _cartProducts(cartProductIds);
+      if (inCart.isEmpty) {
+        return AssistantAnswer(
+          text: arabic
+              ? 'السلة فاضية دلوقتي، مفيش حاجة أشيلها.'
+              : 'Your cart is empty right now, there is nothing to remove.',
+          topic: 'cart',
+          sourceId: 'cart-empty',
+          quickReplies: arabic
+              ? const ['رشحلي مشروب', 'حاجه تانية']
+              : const ['Suggest a drink', 'Something else'],
+        );
+      }
+      return AssistantAnswer(
+        text: arabic
+            ? 'أشيل إيه بالظبط؟ في السلة: ${inCart.map((p) => p.name).join('، ')}.'
+            : 'Which one exactly? In the cart: ${inCart.map((p) => p.name).join(', ')}.',
+        topic: 'cart',
+        sourceId: 'cart-clarify',
+        products: inCart.take(3).toList(),
+        quickReplies: inCart
+            .take(3)
+            .map((product) => product.name)
+            .toList(),
+      );
+    }
+    if (!cartProductIds.contains(target.id)) {
+      return AssistantAnswer(
+        text: arabic
+            ? '${target.name} مش في السلة دلوقتي.'
+            : '${target.name} is not in your cart right now.',
+        topic: 'cart',
+        sourceId: 'cart-missing',
+        quickReplies: arabic
+            ? const ['السلة فيها ايه؟', 'حاجه تانية']
+            : const ["What's in my cart?", 'Something else'],
+      );
+    }
+    return AssistantAnswer(
+      text: arabic
+          ? 'شلت ${target.name} من السلة.'
+          : 'Removed ${target.name} from your cart.',
+      topic: 'cart',
+      sourceId: 'cart-removed',
+      actions: [CartAction(productId: target.id, remove: true)],
+      quickReplies: arabic
+          ? const ['السلة فيها ايه؟', 'حاجه تانية']
+          : const ["What's in my cart?", 'Something else'],
+    );
+  }
+
+  /// The products currently in the cart.
+  static List<ProductModel> _cartProducts(Set<String> cartProductIds) {
+    final products = <ProductModel>[];
+    for (final id in cartProductIds) {
+      final product = _productById(id);
+      if (product != null) products.add(product);
+    }
+    return products;
+  }
+
   static AssistantAnswer _ingredientAnswer(
     ProductModel product,
     AssistantMemory memory, {
@@ -656,6 +919,54 @@ class AssistantEngine {
       quickReplies: arabic
           ? const ['أيوه هو دا', 'لا مش هو']
           : const ['Yes, this one', 'Not this one'],
+    );
+  }
+
+  /// "Do you have anything with nuts?" — nothing does.
+  ///
+  /// Returns null when the ingredient is on the menu, or when the question is
+  /// not about an ingredient at all.
+  static AssistantAnswer? _missingIngredientAnswer(
+    String query,
+    AssistantMemory memory, {
+    required bool arabic,
+  }) {
+    final hits = AssistantCatalog.current.detectIngredients(query);
+    if (hits.isEmpty) return null;
+    final matches = AssistantCatalog.current.matchByIngredients(
+      hits,
+      excludeIds: memory.dismissedIds.toSet(),
+    );
+    if (matches.isNotEmpty) return null;
+    return _noSuchIngredientAnswer(hits.first, memory, arabic: arabic);
+  }
+
+  /// "Do you have anything with nuts?" — nothing does.
+  ///
+  /// The shop's ingredients are known exactly, so the answer is a fact, not a
+  /// guess. The bot also offers what it does have.
+  static AssistantAnswer _noSuchIngredientAnswer(
+    String ingredient,
+    AssistantMemory memory, {
+    required bool arabic,
+  }) {
+    memory.pendingQuestion = null;
+    final alternatives = AssistantSnapshot.current.products
+        .where((product) => !memory.dismissedIds.contains(product.id))
+        .take(3)
+        .toList();
+    final names = alternatives.map((product) => product.name).join('، ');
+    final label = IngredientLexicon.label(ingredient, arabic: arabic);
+    return AssistantAnswer(
+      text: arabic
+          ? 'مفيش حاجة عندنا فيها $label. بس عندنا $names.'
+          : 'We do not have anything with $label. But we do have $names.',
+      topic: 'suggest',
+      sourceId: 'ingredient-none',
+      products: alternatives,
+      quickReplies: arabic
+          ? const ['رشحلي مشروب', 'حاجه تانية']
+          : const ['Suggest a drink', 'Something else'],
     );
   }
 
@@ -1018,6 +1329,21 @@ class AssistantEngine {
     return (wanted: wanted, categories: categories);
   }
 
+  /// True when the answer to this question would go stale.
+  ///
+  /// The customer's own order, the cart and the prices change; an answer
+  /// about them must never be remembered and served to the next customer.
+  static bool isPerishableQuestion(String query) {
+    if (_asksPrice(query)) return true;
+    final intent = detectIntent(query);
+    return const {
+      AssistantIntent.orderStatus,
+      AssistantIntent.cancelOrder,
+      AssistantIntent.payNow,
+      AssistantIntent.payCash,
+    }.contains(intent);
+  }
+
   static bool _containsWord(String normalized, String phrase) {
     if (phrase.length < 3) return false;
     var index = normalized.indexOf(phrase);
@@ -1090,16 +1416,181 @@ class AssistantEngine {
     return false;
   }
 
+  /// True when the question is about coupons and discounts.
+  ///
+  /// "كم السعر؟" is a price question; "كم العروض؟" is a coupon question. The
+  /// two were both answered with the coupon page, because the coupon intent
+  /// claimed the "كم".
+  static bool _mentionsCoupons(String query) {
+    final normalized = normalizeText(query);
+    const markers = [
+      'عروض', 'عرض', 'كوبون', 'كوبونات', 'خصم', 'تخفيض', 'برومو',
+      'discount', 'offer', 'promo', 'coupon',
+    ];
+    for (final marker in markers) {
+      if (normalized.contains(normalizeText(marker))) return true;
+    }
+    return false;
+  }
+
+  /// The products the conversation is currently about.
+  ///
+  /// The order in progress comes first: it is the most specific thing the
+  /// customer and the bot are talking about. After that it is whatever is on
+  /// screen — the last suggestion.
+  static List<ProductModel> _contextProducts(AssistantMemory memory) {
+    final products = <ProductModel>[];
+    void add(String id) {
+      final product = _productById(id);
+      if (product == null) return;
+      if (products.any((existing) => existing.id == product.id)) return;
+      products.add(product);
+    }
+
+    for (final item in memory.draft.items) {
+      add(item.productId);
+    }
+    for (final id in memory.lastSuggestedIds) {
+      add(id);
+    }
+    return products;
+  }
+
+  /// True for a question about how a drink can be made ("فيه سكر اقل؟",
+  /// "ينفع كبير؟", "من غير سكر").
+  static bool _asksAboutOptions(String query) {
+    final normalized = normalizeText(query);
+    const markers = [
+      'سكر', 'حجم', 'مقاس', 'كبير', 'صغير', 'وسط', 'اضافه', 'اضافات',
+      'حليب', 'ثلج', 'مركز', 'sugar', 'size', 'large', 'small', 'medium',
+      'extra', 'shot', 'cream', 'ice',
+    ];
+    for (final marker in markers) {
+      if (normalized.contains(normalizeText(marker))) return true;
+    }
+    return false;
+  }
+
+  /// The option group a question is about, or null when it names none.
+  ///
+  /// "فيه سكر اقل؟" is about the sugar, and listing the sizes and the extras
+  /// as well only buried the answer.
+  static String? _askedOptionGroup(String query) {
+    final normalized = normalizeText(query);
+    const byGroup = <String, List<String>>{
+      'sugar': ['سكر', 'sugar', 'حلو', 'sweet'],
+      'size': ['حجم', 'مقاس', 'كبير', 'صغير', 'وسط', 'size', 'large', 'small', 'medium'],
+      'extras': [
+        'اضافه', 'اضافات', 'شيبس', 'حليب', 'ثلج', 'كرميه', 'عسل',
+        'extra', 'shot', 'cream', 'ice', 'syrup',
+      ],
+    };
+    for (final entry in byGroup.entries) {
+      for (final marker in entry.value) {
+        if (normalized.contains(normalizeText(marker))) return entry.key;
+      }
+    }
+    return null;
+  }
+
+  /// Answers "what can I have it with?" about the product on screen.
+  ///
+  /// The options come from the database, so the answer lists what the shop
+  /// actually offers instead of guessing.
+  static AssistantAnswer? _contextOptionsAnswer(
+    String query,
+    List<ProductModel> context, {
+    required bool arabic,
+  }) {
+    if (context.isEmpty) return null;
+    if (!_asksAboutOptions(query)) return null;
+    final product = context.first;
+    final groups = AssistantSnapshot.current.optionsFor(product.id);
+    if (groups.isEmpty) return null;
+    final asked = _askedOptionGroup(query);
+    final lines = <String>[];
+    for (final group in groups) {
+      // Only the group the question is about, unless it named none.
+      if (asked != null && group.code != asked) continue;
+      final values = group.values
+          .map(
+            (value) => arabic
+                ? (value.nameAr.trim().isNotEmpty ? value.nameAr : value.code)
+                : (value.nameEn.trim().isNotEmpty ? value.nameEn : value.code),
+          )
+          .toList();
+      if (values.isEmpty) continue;
+      final groupName = arabic
+          ? (group.nameAr.trim().isNotEmpty ? group.nameAr : group.code)
+          : (group.nameEn.trim().isNotEmpty ? group.nameEn : group.code);
+      lines.add('$groupName: ${values.join('، ')}');
+    }
+    if (lines.isEmpty) return null;
+    return AssistantAnswer(
+      text: arabic
+          ? '${product.name} متاح بـ ${lines.join('، و')}.'
+          : '${product.name} comes with ${lines.join(', and ')}.',
+      topic: 'options',
+      sourceId: 'options-context',
+      products: [product],
+      quickReplies: arabic
+          ? const ['عايز اضيفه', 'حاجه تانية']
+          : const ['Add it', 'Something else'],
+    );
+  }
+
+  /// Confirms what is on screen ("هو ده اللي رشحته؟").
+  ///
+  /// Without this the bot answered a new suggestion instead of confirming the
+  /// one the customer was already looking at.
+  static AssistantAnswer? _confirmSuggestionAnswer(
+    String query,
+    List<ProductModel> context, {
+    required bool arabic,
+  }) {
+    if (context.isEmpty) return null;
+    final normalized = normalizeText(query);
+    const markers = [
+      'هو ده اللي رشحته', 'ده اللي رشحته', 'هو اللي رشحته', 'ده اللي قترحته',
+      'هو اللي قترحته', 'اللي رشحته', 'اللي قترحته', 'رشحته ده',
+      'is that what you suggested', 'did you suggest',
+    ];
+    var asks = false;
+    for (final marker in markers) {
+      if (normalized.contains(normalizeText(marker))) {
+        asks = true;
+        break;
+      }
+    }
+    if (!asks) return null;
+    final names = context.map((product) => product.name).join('، ');
+    return AssistantAnswer(
+      text: arabic
+          ? 'أيوه، دي اللي رشحتها ليك: $names. عايز اضيف واحدة منهم للسلة؟'
+          : 'Yes, those are the ones I suggested: $names. Shall I add one to your cart?',
+      topic: 'suggest',
+      sourceId: 'suggest-confirm',
+      products: context.take(3).toList(),
+      quickReplies: arabic
+          ? const ['ايوه ضيفها', 'حاجه تانية']
+          : const ['Yes, add it', 'Something else'],
+    );
+  }
+
   /// "كم سعر اللاتيه؟" → answers with the REAL menu price (no guessing).
-  /// Returns null when no product is named (other intents handle it).
+  ///
+  /// Returns null when no product is named and nothing is on screen to refer
+  /// to (other intents handle it).
   static AssistantAnswer? _productPriceAnswer(
     String query, {
     required bool arabic,
+    List<ProductModel> context = const [],
   }) {
     if (!_asksPrice(query)) return null;
+    // A question about discounts is a coupon question, not a price one.
+    if (_mentionsCoupons(query)) return null;
     final tokens = tokenize(query).toSet();
     final wanted = _expandAll(query, tokens).wanted;
-    if (wanted.isEmpty) return null;
     final lines = <String>[];
     final products = <ProductModel>[];
     for (final name in wanted) {
@@ -1115,7 +1606,17 @@ class AssistantEngine {
         }
       }
     }
-    if (lines.isEmpty) return null;
+    if (lines.isEmpty) {
+      // No product named: the question is about the one on screen.
+      if (context.isEmpty) return null;
+      final product = context.first;
+      products.add(product);
+      lines.add(
+        arabic
+            ? '${product.name} بـ ${Formatters.price(product.price)}'
+            : '${product.name} is ${Formatters.price(product.price)}',
+      );
+    }
     return AssistantAnswer(
       text: arabic
           ? 'الأسعار عندنا: ${lines.join('، ')}.'
@@ -1486,17 +1987,36 @@ class AssistantEngine {
     String query,
     AssistantMemory memory, {
     int limit = 3,
+    bool arabic = false,
   }) {
     final tokens = tokenize(query);
+    final normalizedQuery = normalizeText(query);
     final scored = <(KnowledgeArticle, double)>[];
     for (final article in [...faqKnowledge, ...coffeeKnowledge]) {
       var score = 0.0;
-      for (final keyword in article.keywords) {
-        if (tokens.contains(keyword)) score += 2;
-        if (query.toLowerCase().contains(keyword)) score += 1;
+      // Both keyword sets are searched: the article is the same fact, and the
+      // customer may write it in either language.
+      for (final keyword in article.keywordsFor(arabic: arabic)) {
+        final normalized = normalizeText(keyword);
+        if (tokens.contains(normalized)) {
+          score += 2;
+          continue;
+        }
+        if (normalized.length < 3) continue;
+        if (normalized.contains(' ')) {
+          // A phrase is as specific as the whole question, and customers
+          // inflect the verbs ("بتاخد" is "ياخد" with a prefix), so a phrase
+          // is matched anywhere in the text.
+          if (normalizedQuery.contains(normalized)) score += 2;
+          continue;
+        }
+        // A single word only counts on a word boundary: "لاتي" is not inside
+        // "لاتيه", otherwise every drink article scored an extra point for
+        // every other drink.
+        if (_containsWord(normalizedQuery, normalized)) score += 1;
       }
-      if (article.title.toLowerCase().contains(query.toLowerCase().trim()) &&
-          query.trim().length > 3) {
+      final title = normalizeText(article.titleFor(arabic: arabic));
+      if (title.length > 3 && normalizedQuery.contains(title)) {
         score += 3;
       }
       score *= memory.sourceBoost(article.id);
@@ -1553,6 +2073,9 @@ class AssistantEngine {
       if (matches.isNotEmpty) {
         return _ingredientAnswer(matches.first, memory, arabic: arabic);
       }
+      // The shop carries nothing with that ingredient. Saying so is honest and
+      // local; letting the language model guess would be neither.
+      return _noSuchIngredientAnswer(ingredientHits.first, memory, arabic: arabic);
     }
     const tasteTokens = {
       'sweet', 'strong', 'cheap', 'light', 'hot', 'cold', 'chocolate',
@@ -1579,13 +2102,13 @@ class AssistantEngine {
         arabic: arabic,
       );
     }
-    final ranked = rankArticles(query, memory, limit: 1);
+    final ranked = rankArticles(query, memory, limit: 1, arabic: arabic);
     final best = ranked.isEmpty ? null : ranked.first.$1;
     final bestScore = ranked.isEmpty ? 0.0 : ranked.first.$2;
     if (best != null && bestScore >= 2) {
       return AssistantAnswer(
-        // Knowledge base is English; Arabic users get a local intro.
-        text: arabic ? 'لقيتلك المعلومة دي: ${best.body}' : best.body,
+        // The article is answered in the customer's own language.
+        text: best.bodyFor(arabic: arabic),
         topic: best.topic,
         sourceId: best.id,
         quickReplies: arabic
@@ -1593,6 +2116,7 @@ class AssistantEngine {
             : const ['Suggest a drink', 'Track my order', 'Any coupons?'],
       );
     }
+
     return AssistantAnswer(
       text: AssistantComposer.pick(
         arabic ? AssistantComposer.fallbackAr : AssistantComposer.fallback,

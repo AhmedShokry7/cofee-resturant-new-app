@@ -28,6 +28,19 @@ abstract class ProductRepository {
   /// groups bound to it and their values.
   Future<ProductWithOptions?> getWithOptions(String id, {String? branchId});
 
+  /// Option groups bound to many products, in one round trip.
+  ///
+  /// The assistant needs the size and sugar groups of the whole menu to build
+  /// a cart action. Reading them product by product costs about six queries per
+  /// product, so opening the assistant cost dozens of requests; this costs
+  /// three for the entire catalogue.
+  ///
+  /// An empty [productIds] asks for every product, which lets the caller start
+  /// the read before it knows the ids and run it alongside the product query.
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  );
+
   /// Server-side search. Arabic works because the aliases live in the database
   /// rather than in a Dart map, so search no longer borrows from the assistant.
   Future<List<ProductModel>> search(

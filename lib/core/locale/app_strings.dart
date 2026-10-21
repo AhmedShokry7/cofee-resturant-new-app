@@ -147,6 +147,13 @@ static String get clearPromoCode =>
   static String removedFromCart(String name) =>
       _ar ? 'تمت إزالة $name' : 'Removed $name';
   static String get undo => _ar ? 'تراجع' : 'Undo';
+  static String get cartSyncFailed => _ar
+      ? 'تعذّر حفظ السلة على الخادم. سنعيد المحاولة تلقائيًا.'
+      : 'The cart could not be saved on the server. We will retry automatically.';
+  static String get favoritesSyncFailed => _ar
+      ? 'تعذّر حفظ المفضلة على الخادم. سنعيد المحاولة تلقائيًا.'
+      : 'The favorites could not be saved on the server. '
+          'We will retry automatically.';
 
   // ---------- Checkout ----------
   static String get checkout => _ar ? 'الدفع' : 'Checkout';
@@ -222,6 +229,9 @@ static String get clearPromoCode =>
   static String get deliveryUnavailable => _ar
       ? 'التوصيل غير متاح لهذا الفرع، اختر الاستلام أو غيّر الفرع.'
       : 'Delivery is unavailable for this branch. Choose pickup or another branch.';
+  static String get deliveryNeedsBranch => _ar
+      ? 'اختر الفرع أولاً لمعرفة هل التوصيل متاح.'
+      : 'Choose a branch first to see whether delivery is available.';
   static String get deliveryAddressRequired => _ar
       ? 'أضف عنوان توصيل لإتمام الطلب.'
       : 'Add a delivery address to place the order.';
@@ -560,6 +570,7 @@ static String get cardHolderName =>
       _ar ? 'المتابعة برقم الهاتف' : 'Continue with phone number';
   static String get continueWithGoogle =>
       _ar ? 'المتابعة بحساب جوجل' : 'Continue with Google';
+
   static String get forgotPasswordQ =>
       _ar ? 'نسيت كلمة المرور؟' : 'Forget your password?';
   static String get emailRequired =>
@@ -641,6 +652,9 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       : 'The photo was uploaded but could not be linked to your account.';
   static String get photoLoadFailed =>
       _ar ? 'تعذر تحميل الصورة' : "Couldn't load the photo";
+  static String get photoSignInRequired => _ar
+      ? 'سجّل الدخول أولاً لحفظ صورة الملف الشخصي.'
+      : 'Sign in first to save a profile photo.';
   static String get language => _ar ? 'اللغة' : 'Language';
   static String languageValue(bool arabic) =>
       arabic ? 'اللغة: العربية' : 'Language: English';
@@ -684,6 +698,19 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       _ar ? 'لا توجد إشعارات بعد' : 'No notifications yet';
   static String get notificationsHint =>
       _ar ? 'ستظهر تحديثات الطلبات هنا' : 'Order updates will appear here';
+  static String get turnOnNotifications =>
+      _ar ? 'تفعيل الإشعارات' : 'Turn on notifications';
+  static String get turnOffNotifications =>
+      _ar ? 'إيقاف الإشعارات' : 'Turn off notifications';
+  static String get notificationsTurnedOn => _ar
+      ? 'تم تفعيل الإشعارات'
+      : 'Notifications are on';
+  static String get notificationsTurnedOff => _ar
+      ? 'تم إيقاف الإشعارات'
+      : 'Notifications are off';
+  static String get notificationPermissionDenied => _ar
+      ? 'لم يُسمح بالإشعارات. فعّلها من إعدادات الهاتف.'
+      : 'Notifications are not allowed. Turn them on in the phone settings.';
   static String get skip => _ar ? 'تخطي' : 'Skip';
 
   // ---------- Banners ----------
@@ -739,6 +766,12 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       _ar ? 'حدث خطأ أثناء الدخول. حاول مرة أخرى.' : 'Something went wrong signing in. Please try again.';
   static String get authUnexpected =>
       _ar ? 'حدث خطأ غير متوقع، برجاء المحاولة مرة أخرى.' : 'Something unexpected happened. Please try again.';
+
+  /// Shown when Google Sign-In was refused because the OAuth client that
+  /// matches this build's signing certificate is missing or misconfigured.
+  static String get authGoogleUnavailable => _ar
+      ? 'تعذّر تسجيل الدخول بحساب جوجل. برجاء المحاولة مرة أخرى.'
+      : 'Google sign-in could not be completed. Please try again.';
 
   /// Shown when the backend could not be reached at all. Distinct from
   /// [authFailed], which means the request itself was rejected.

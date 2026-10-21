@@ -119,9 +119,9 @@ class _ProductsGridViewState extends State<ProductsGridView> {
           padding:
               widget.padding ??
               EdgeInsets.fromLTRB(
-                SpacingTokens.lg.w,
+                SpacingTokens.md.w,
                 SpacingTokens.md.h,
-                SpacingTokens.lg.w,
+                SpacingTokens.md.w,
                 SpacingTokens.lg.w,
               ),
           sliver: SliverGrid(

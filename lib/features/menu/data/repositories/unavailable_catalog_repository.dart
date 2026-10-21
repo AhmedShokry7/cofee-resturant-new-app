@@ -33,6 +33,11 @@ class UnavailableCatalogRepository implements CatalogRepository {
   }) async => null;
 
   @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) async => {};
+
+  @override
   Future<List<ProductModel>> search(
     String query, {
     String? branchId,

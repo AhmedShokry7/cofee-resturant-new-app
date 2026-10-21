@@ -118,6 +118,11 @@ class _ControlledCatalog implements CatalogRepository {
       _inner.getWithOptions(id, branchId: branchId);
 
   @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) => _inner.getOptionsByProduct(productIds);
+
+  @override
   Future<List<FeaturedProduct>> getFeatured({
     String? branchId,
     int limit = 10,

@@ -138,7 +138,10 @@ class IngredientLexicon {
     // cream family
     'كريمه': 'cream', 'كريمة': 'cream', 'كريم': 'cream', 'قشطه': 'cream',
     'قشطة': 'cream', 'ويب كريم': 'cream', 'cream': 'cream',
-    'whipped cream': 'cream',
+    'whipped cream': 'cream', 'كرميله': 'cream', 'قشده': 'cream',
+    // nuts family
+    'مكسرات': 'nuts', 'مكسره': 'nuts', 'بندق': 'nuts', 'لوز': 'nuts',
+    'كاجو': 'nuts', 'فول سوداني': 'nuts', 'nuts': 'nuts',
     // milk family
     'حليب': 'milk', 'لبن': 'milk', 'milk': 'milk',
     // ice family
@@ -172,4 +175,42 @@ class IngredientLexicon {
     'جليز': 'glaze', 'glaze': 'glaze',
     'صودا': 'soda', 'soda': 'soda',
   };
+
+  /// The Arabic name of an ingredient.
+  ///
+  /// The answer says "we have nothing with nuts", not "with nuts" in English.
+  static const Map<String, String> labelsAr = {
+    'chocolate': 'شوكولاتة',
+    'cocoa': 'كاكاو',
+    'cream': 'كريمة',
+    'milk': 'لبن',
+    'ice': 'ثلج',
+    'ice_cream': 'آيس كريم',
+    'espresso': 'إسبريسو',
+    'water': 'مياه',
+    'foam': 'رغوة',
+    'tea': 'شاي',
+    'ginger': 'زنجبيل',
+    'cardamom': 'هيل',
+    'spices': 'بهارات',
+    'cinnamon': 'قرفة',
+    'cheese': 'جبنة',
+    'biscuit': 'بسكويت',
+    'sugar': 'سكر',
+    'egg': 'بيض',
+    'flour': 'دقيق',
+    'butter': 'زبد',
+    'vanilla': 'فانيليا',
+    'caramel': 'كراميل',
+    'strawberry': 'فراولة',
+    'banana': 'موز',
+    'mango': 'مانجو',
+    'glaze': 'الشيسيل',
+    'soda': 'صودا',
+    'nuts': 'مكسرات',
+  };
+
+  /// The ingredient's name in the customer's language.
+  static String label(String ingredient, {required bool arabic}) =>
+      arabic ? (labelsAr[ingredient] ?? ingredient) : ingredient;
 }

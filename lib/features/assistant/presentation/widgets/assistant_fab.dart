@@ -8,7 +8,6 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
-import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -16,15 +15,8 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
-import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/assistant/data/llm/http_llm_client.dart';
-import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
-import 'package:new_coffee/features/assistant/data/llm/supabase_llm_client.dart';
-import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
-import 'package:new_coffee/features/assistant/presentation/views/assistant_sheet.dart';
-import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
+import 'package:new_coffee/features/assistant/presentation/widgets/assistant_launcher.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
-import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
@@ -166,30 +158,15 @@ class _AssistantFabState extends State<AssistantFab> {
   }
 
   Future<void> _openSheet() async {
-    final navContext = rootNavigatorKey.currentContext;
-    if (navContext == null) return;
+    if (!mounted) return;
     setState(() {
       _sheetOpen = true;
       _showHint = false;
     });
-    await showModalBottomSheet<void>(
-      context: navContext,
-      backgroundColor: AppColor.whiteColor,
-      isScrollControlled: true,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-      ),
-      builder: (_) => BlocProvider(
-        create: (_) => AssistantCubit(
-          catalog: navContext.read<CatalogRepository>(),
-          orders: navContext.read<OrdersRepository>(),
-          branchId: navContext.read<BranchCubit>().state.selected?.id,
-          llmClient: SupabaseService.isConfigured
-              ? const SupabaseLlmClient()
-              : const HttpLlmClient(LlmConfig()),
-        )..start(isReturning: _isReturningUser, firstName: _firstName),
-        child: const AssistantSheet(),
-      ),
+    await openAssistantSheet(
+      context,
+      isReturning: _isReturningUser,
+      firstName: _firstName,
     );
     if (mounted) setState(() => _sheetOpen = false);
   }

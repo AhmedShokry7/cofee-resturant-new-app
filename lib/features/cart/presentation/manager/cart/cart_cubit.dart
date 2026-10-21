@@ -7,6 +7,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/cart/data/model/cart_line.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -17,15 +18,18 @@ part 'cart_state.dart';
 
 /// Owns the customer-facing cart.
 ///
-/// The device cart is namespaced per account ([storageKeyFor]), so two
+/// The device copy is namespaced per account ([storageKeyFor]), so two
 /// customers sharing one device never see each other's lines: switching
 /// accounts reloads that account's own cart. A guest cart is adopted into the
 /// account once, on the first load after sign-in, then cleared.
 ///
-/// The server intentionally rejects client-supplied prices, and bundle
-/// discounts have no server-side line representation yet, so the device cart
-/// stays the checkout source of truth. Writes are mirrored best-effort into
-/// the customer's per-branch server cart and must never block the UI.
+/// For a signed-in customer the server owns the cart. Every change is written
+/// to the customer's per-branch server cart and every load reads it back, so
+/// the same account sees the same cart on every device. The device copy stays
+/// as an offline fallback and as the place where a bundle wrapper lives; it is
+/// never presented as confirmed server data while the server cannot be
+/// reached, and a change the server has not accepted yet is pushed again
+/// instead of being dropped.
 class CartCubit extends Cubit<CartState> {
   CartCubit({
     required CartRepository cartRepository,
@@ -65,6 +69,11 @@ class CartCubit extends Cubit<CartState> {
   /// Which storage slot the restored lines come from.
   String? get _userId => _userIdProvider();
   String get _key => storageKeyFor(_userId);
+
+  /// Key of the flag that records "the device cart still has to reach the
+  /// server". It lives next to the cart itself so the two always describe the
+  /// same account.
+  String get _pendingKey => '${_key}_pending';
 
   /// Identity whose lines are currently in state. Null means guest.
   ///
@@ -143,7 +152,49 @@ class CartCubit extends Cubit<CartState> {
   /// interrupted adoption cannot leave a partially written account cart.
   bool _suppressPersist = false;
 
-  Future<void> load() async {
+  /// While guest lines are being merged, the server write is deferred too, so
+  /// the merge reaches the server as one cart instead of one write per line.
+  bool _suppressServerSync = false;
+
+  /// Rapid cart edits are coalesced into a single server write.
+  ///
+  /// A customer stepping through quantities would otherwise spend the server's
+  /// write budget on taps instead of on real changes.
+  static const _syncDebounce = Duration(milliseconds: 700);
+
+  Timer? _syncTimer;
+
+  /// The newest load, so a caller can wait for it.
+  Future<void>? _pendingLoad;
+
+  Future<void> load() {
+    final future = _load(readServer: true);
+    _pendingLoad = future;
+    return future;
+  }
+
+  /// Completes when the newest load has finished.
+  ///
+  /// The constructor starts a load without awaiting it, so a caller that has
+  /// to observe the result — a test, or a screen that opens right after the
+  /// app started — needs a handle on it.
+  @visibleForTesting
+  Future<void> get settled => _pendingLoad ?? Future<void>.value();
+
+  /// Writes the cart to the server right now instead of waiting for the
+  /// debounce window to close.
+  @visibleForTesting
+  Future<void> flushServerSync() => _syncToServer();
+
+  /// Restores the cart.
+  ///
+  /// For a signed-in customer with a branch the server owns the result: the
+  /// server cart replaces the device copy. A change the server has not
+  /// accepted yet is pushed first, because the device is then the newer of the
+  /// two and the server would otherwise answer with the older cart. When the
+  /// server cannot be reached the device copy is kept and the failure is
+  /// reported, so an old cache is never shown as confirmed server data.
+  Future<void> _load({required bool readServer}) async {
     final generation = ++_loadGeneration;
     try {
       final raw = await SharedPref.getValue(key: _key);
@@ -163,15 +214,49 @@ class CartCubit extends Cubit<CartState> {
       // Skipping the emit used to leave the previous account's lines on screen
       // because nothing replaced them. Resolving zero entries never touches the
       // catalogue, so an empty cart still costs no request.
-      final entries = (raw == null || raw.isEmpty)
+      final cachedEntries = (raw == null || raw.isEmpty)
           ? const <Map<String, dynamic>>[]
           : _decodeEntries(raw);
-      final items = await _resolveItems(entries, catalog);
+
+      Object? serverError;
+      List<CartLine>? serverLines;
+      if (readServer && _canSyncToServer) {
+        // A change the server has not accepted yet is newer than anything the
+        // server can answer with, so it goes first.
+        if (await _hasPendingSync()) {
+          try {
+            await _saveLines(_linesFromEntries(cachedEntries));
+            await _setPendingSync(false);
+          } catch (error) {
+            serverError = error;
+          }
+        }
+        if (serverError == null) {
+          try {
+            serverLines = await _cartRepository.fetchLines(branchId: branchId);
+          } catch (error) {
+            serverError = error;
+          }
+        }
+      }
       if (isClosed) return;
       // A newer load, or a newer identity, already owns the state.
       if (generation != _loadGeneration) return;
-      if (items.isNotEmpty || state.items.isNotEmpty) {
-        emit(CartState(items: items));
+
+      final entries = serverLines == null
+          ? cachedEntries
+          : _mergeServerLines(serverLines, cachedEntries);
+      final items = await _resolveItems(entries, catalog);
+      if (isClosed) return;
+      if (generation != _loadGeneration) return;
+      if (items.isNotEmpty || state.items.isNotEmpty || serverError != null) {
+        emit(
+          CartState(
+            items: items,
+            error: serverError == null ? null : S.cartSyncFailed,
+          ),
+        );
+        if (serverError != null) addError(serverError);
       }
 
       // One-time adoption: a guest cart becomes the account's cart on the
@@ -182,6 +267,7 @@ class CartCubit extends Cubit<CartState> {
       if (_userId != null && !_adoptingGuestCart) {
         _adoptingGuestCart = true;
         _suppressPersist = true;
+        _suppressServerSync = true;
         String? guestRaw;
         List<Map<String, dynamic>> guestEntries = const [];
         final preAdoptionItems = List<CartItem>.from(state.items);
@@ -308,6 +394,8 @@ class CartCubit extends Cubit<CartState> {
               // One authoritative write after all lines have merged.
               _suppressPersist = false;
               await _persist();
+              // The merged cart has to reach the server as well.
+              await _setPendingSync(true);
             }
           }
         } catch (error, stackTrace) {
@@ -349,7 +437,13 @@ class CartCubit extends Cubit<CartState> {
           }
         } finally {
           _suppressPersist = false;
+          _suppressServerSync = false;
           _adoptingGuestCart = false;
+        }
+        if (!isClosed &&
+            generation == _loadGeneration &&
+            _identity == _userId) {
+          _scheduleServerSync();
         }
       }
     } catch (error, stackTrace) {
@@ -362,10 +456,29 @@ class CartCubit extends Cubit<CartState> {
     }
   }
 
-  Future<void> setBranch(String? branchId) {
+  /// Whether the cart can be written to and read from the server right now.
+  bool get _canSyncToServer =>
+      _userId != null && (branchId?.trim() ?? '').isNotEmpty;
+
+  /// Points the cart at another branch.
+  ///
+  /// The cart belongs to the customer, not to the branch: the lines stay, only
+  /// the prices and the availability follow the new branch. The very first
+  /// branch is different — there the server holds the cart for that branch,
+  /// so it is read back. A later switch mirrors the cart into the new
+  /// branch's server cart instead, which is what keeps both branches in step
+  /// with what the customer sees.
+  Future<void> setBranch(String? branchId) async {
     if (branchId == this.branchId) return Future.value();
+    final previous = this.branchId;
     this.branchId = branchId;
-    return load();
+    final firstBranch = previous == null || previous.trim().isEmpty;
+    if (firstBranch) {
+      await load();
+      return;
+    }
+    await _load(readServer: false);
+    await _syncToServer();
   }
 
   void add(
@@ -408,21 +521,7 @@ class CartCubit extends Cubit<CartState> {
       );
     }
     emit(CartState(items: items));
-    _persist();
-
-    // Mirror best-effort into the per-branch server cart. Never blocks UI;
-    // failures are reported, never silent and never fatal.
-    _mirror(
-      _cartRepository.addItem(
-        productId: product.id,
-        quantity: quantity,
-        note: note,
-        optionValueIds: optionValueIds,
-        unitPrice: unitPrice ?? product.price,
-        bundleId: bundleId,
-        branchId: branchId,
-      ),
-    );
+    _onCartChanged();
   }
 
   /// Adds an entire bundle as a single cart line.
@@ -477,23 +576,7 @@ class CartCubit extends Cubit<CartState> {
       );
     }
     emit(CartState(items: items));
-    _persist();
-
-    // Mirror best-effort into the per-branch server cart, expanding the bundle
-    // into its priced components so server-side checks see the same content.
-    for (final component in components) {
-      _mirror(
-        _cartRepository.addItem(
-          productId: component.productId,
-          quantity: component.quantity * quantity,
-          note: note,
-          optionValueIds: optionValueIds,
-          unitPrice: component.unitPrice,
-          bundleId: bundleId,
-          branchId: branchId,
-        ),
-      );
-    }
+    _onCartChanged();
   }
 
   /// Kept for callers that only know a product. The cart page and stepper now
@@ -511,7 +594,7 @@ class CartCubit extends Cubit<CartState> {
             .toList(),
       ),
     );
-    _persist();
+    _onCartChanged();
   }
 
   void incrementLine(String lineId) => _changeQuantity(lineId, 1);
@@ -524,29 +607,195 @@ class CartCubit extends Cubit<CartState> {
         items: state.items.where((item) => item.lineId != lineId).toList(),
       ),
     );
-    _persist();
+    _onCartChanged();
   }
 
   void clear() {
     emit(const CartState(items: []));
-    _persist();
-    _mirror(_cartRepository.clearCart(branchId: branchId));
+    _onCartChanged();
   }
 
   @override
   Future<void> close() {
     _authSubscription?.cancel();
     _authSubscription = null;
+    _syncTimer?.cancel();
+    _syncTimer = null;
     return super.close();
   }
 
-  void _mirror(Future<void> work) {
-    work.then(
-      (_) {},
-      onError: (Object error, StackTrace stack) {
-        if (!isClosed) addError(error, stack);
-      },
-    );
+  /// A cart change: keep the device copy and send the cart to the server.
+  ///
+  /// The device copy is written first so a change survives an app that is
+  /// killed before the server answered, and the "pending" flag records that
+  /// the server still has to catch up.
+  void _onCartChanged() {
+    _persist();
+    if (_suppressServerSync) return;
+    _setPendingSync(true);
+    _scheduleServerSync();
+  }
+
+  void _scheduleServerSync() {
+    if (_suppressServerSync) return;
+    if (!_canSyncToServer) return;
+    _syncTimer?.cancel();
+    _syncTimer = Timer(_syncDebounce, () {
+      unawaited(_syncToServer());
+    });
+  }
+
+  /// Writes the current cart to the server.
+  ///
+  /// A failure is reported, never swallowed: the customer keeps the lines on
+  /// the device, the pending flag stays set so the next attempt pushes them
+  /// again, and the error reaches the screen.
+  Future<void> _syncToServer() async {
+    _syncTimer?.cancel();
+    _syncTimer = null;
+    if (isClosed) return;
+    if (!_canSyncToServer) return;
+    final lines = _linesFromState();
+    try {
+      await _saveLines(lines);
+      await _setPendingSync(false);
+      if (!isClosed && state.error != null) {
+        emit(CartState(items: state.items));
+      }
+    } catch (error, stackTrace) {
+      await _setPendingSync(true);
+      if (!isClosed) {
+        emit(CartState(items: state.items, error: S.cartSyncFailed));
+        addError(error, stackTrace);
+      }
+    }
+  }
+
+  Future<void> _saveLines(List<CartLine> lines) =>
+      _cartRepository.saveLines(branchId: branchId, lines: lines);
+
+  /// The server lines for the cart the customer is looking at.
+  ///
+  /// A bundle is one line on the device but its component lines on the
+  /// server, exactly like the checkout sends it, so the server keeps charging
+  /// the bundle share.
+  List<CartLine> _linesFromState() => [
+        for (final item in state.items)
+          if (item.isBundle)
+            for (final component in item.bundleComponents)
+              CartLine(
+                productId: component.productId,
+                quantity: component.quantity * item.quantity,
+                note: item.note,
+                optionValueIds: item.optionValueIds,
+                bundleId: item.bundleId,
+              )
+          else
+            CartLine(
+              productId: item.product.id,
+              quantity: item.quantity,
+              note: item.note,
+              optionValueIds: item.optionValueIds,
+              bundleId: item.bundleId,
+            ),
+      ];
+
+  /// The server lines for a stored cart.
+  List<CartLine> _linesFromEntries(List<Map<String, dynamic>> entries) => [
+        for (final entry in entries)
+          if (entry['isBundle'] != true)
+            CartLine(
+              productId: entry['productId']?.toString() ?? '',
+              quantity: (entry['quantity'] as num?)?.toInt() ?? 1,
+              note: entry['note']?.toString() ?? '',
+              optionValueIds: canonicalOptionIds(
+                (entry['optionValueIds'] as List?)
+                        ?.map((e) => e.toString()) ??
+                    const <String>[],
+              ),
+            ),
+      ];
+
+  /// Combines the server cart with the device copy.
+  ///
+  /// The server owns the product lines. A bundle is a device-side wrapper
+  /// around component lines, so it is re-attached to the component lines the
+  /// server kept; a bundle the server does not know any more is dropped,
+  /// because the server is the authority.
+  List<Map<String, dynamic>> _mergeServerLines(
+    List<CartLine> serverLines,
+    List<Map<String, dynamic>> cachedEntries,
+  ) {
+    final remaining = List<CartLine>.of(serverLines);
+    final merged = <Map<String, dynamic>>[];
+
+    for (final entry in cachedEntries) {
+      if (entry['isBundle'] != true) continue;
+      final components = <CartBundleComponent>[];
+      final rawComponents = entry['bundleComponents'];
+      if (rawComponents is List) {
+        for (final raw in rawComponents) {
+          if (raw is Map) {
+            components.add(
+              CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)),
+            );
+          }
+        }
+      }
+      if (components.isEmpty) continue;
+
+      final note = entry['note']?.toString() ?? '';
+      final optionIds = canonicalOptionIds(
+        (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
+            const <String>[],
+      );
+      final matched = <CartLine>[];
+      var complete = true;
+      for (final component in components) {
+        final index = remaining.indexWhere(
+          (line) =>
+              line.productId == component.productId &&
+              line.note == note &&
+              _sameOptions(line.optionValueIds, optionIds),
+        );
+        if (index == -1) {
+          complete = false;
+          break;
+        }
+        matched.add(remaining.removeAt(index));
+      }
+      if (!complete) {
+        // The bundle is not on the server any more: put the lines that were
+        // taken back and let the server decide.
+        remaining.insertAll(0, matched);
+        continue;
+      }
+
+      var quantity = 1 << 30;
+      for (var i = 0; i < matched.length; i++) {
+        final perBundle = components[i].quantity;
+        final held = perBundle <= 0
+            ? matched[i].quantity
+            : matched[i].quantity ~/ perBundle;
+        if (held < quantity) quantity = held;
+      }
+      merged.add({
+        ...entry,
+        'quantity': quantity.clamp(1, 99),
+      });
+    }
+
+    for (final line in remaining) {
+      merged.add({
+        'productId': line.productId,
+        'quantity': line.quantity,
+        if (line.note.isNotEmpty) 'note': line.note,
+        if (line.optionValueIds.isNotEmpty)
+          'optionValueIds': line.optionValueIds,
+        if (line.unitPrice != null) 'unitPrice': line.unitPrice,
+      });
+    }
+    return merged;
   }
 
   void _changeQuantityForProduct(String productId, int delta) {
@@ -570,7 +819,7 @@ class CartCubit extends Cubit<CartState> {
       items[index] = items[index].copyWith(quantity: quantity);
     }
     emit(CartState(items: items));
-    _persist();
+    _onCartChanged();
   }
 
   static bool _sameOptions(List<String> a, List<String> b) {
@@ -723,5 +972,24 @@ class CartCubit extends Cubit<CartState> {
     } catch (_) {
       // Best-effort: never break the cart if storage fails.
     }
+  }
+
+  /// Records that the server still has to accept the device cart.
+  Future<void> _setPendingSync(bool pending) async {
+    if (_userId == null) return;
+    try {
+      await SharedPref.setValue(
+        key: _pendingKey,
+        value: pending ? '1' : '',
+      );
+    } catch (_) {
+      // Best-effort: a missing flag only means one more attempt later.
+    }
+  }
+
+  Future<bool> _hasPendingSync() async {
+    if (_userId == null) return false;
+    final raw = await SharedPref.getValue(key: _pendingKey);
+    return raw != null && raw.isNotEmpty && raw != '0';
   }
 }

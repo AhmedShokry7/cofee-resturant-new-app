@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
@@ -135,6 +136,26 @@ void main() {
       await cubit.signInWithGoogle();
 
       expect(cubit.state, isA<AuthFailure>());
+    });
+
+    test('a misconfigured OAuth client reports the configuration problem',
+        () async {
+      // A release build is signed with a different certificate than a debug
+      // build, and Google only accepts a certificate whose SHA-1 is registered
+      // with the Android OAuth client. When that entry is missing the failure
+      // has to say so instead of showing the generic "something went wrong".
+      final repo = _FakeAuthRepository()
+        ..googleError = const AuthException('google_client_configuration_error');
+      final cubit = AuthCubit(repo);
+      addTearDown(cubit.close);
+
+      await cubit.signInWithGoogle();
+
+      expect(cubit.state, isA<AuthFailure>());
+      expect(
+        (cubit.state as AuthFailure).message,
+        S.authGoogleUnavailable,
+      );
     });
 
     test('repeated taps while loading do not call repository twice', () async {

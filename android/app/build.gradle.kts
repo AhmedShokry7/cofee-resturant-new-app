@@ -1,10 +1,18 @@
+import java.io.ByteArrayInputStream
 import java.io.FileInputStream
+import java.security.KeyStore
+import java.security.MessageDigest
+import java.security.cert.X509Certificate
 import java.util.Properties
 
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Turns android/app/google-services.json into Firebase resources. It needs
+    // the plugin to run after com.android.application, because it reads the
+    // applicationId to pick the matching client out of the JSON file.
+    id("com.google.gms.google-services")
 }
 
 // Release signing.
@@ -35,7 +43,12 @@ if (hasReleaseKeystore) {
 project.ext.set("tree-shake-icons", "false")
 
 android {
-    namespace = "com.example.new_cofee"
+    // The namespace is the package the R class and the generated resources
+    // live in. It is kept identical to the applicationId below, and to the
+    // package name the Firebase console knows this app by, so the
+    // google-services plugin finds the matching client in google-services.json
+    // and nothing has to be translated between the two.
+    namespace = "com.example.new_coffee"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -90,6 +103,82 @@ android {
             )
         }
     }
+}
+
+// The package name the release build is installed under. Google matches an
+// Android OAuth client against it together with the certificate fingerprint.
+val releaseApplicationId: String = android.defaultConfig.applicationId ?: ""
+
+// Prints the fingerprint of the certificate the release build is signed with.
+//
+// Google binds an Android OAuth client to one certificate. An app signed with
+// a certificate whose SHA-1 was never registered fails on a real device with
+// "clientConfigurationError", while the debug build - a different certificate -
+// keeps working. That is why Google Sign-In can work in debug and break in
+// release, and it is why the fingerprint that has to be registered must never
+// be guessed.
+//
+// The task runs as part of every release build and prints the SHA-1 and
+// SHA-256 of the release certificate. It can also be run on its own with
+// `./gradlew :app:printSigningFingerprints`.
+val printSigningFingerprints by tasks.registering {
+    group = "signing"
+    description =
+        "Prints the SHA-1/SHA-256 fingerprints of the release signing certificate."
+    doLast {
+        if (!hasReleaseKeystore) {
+            logger.warn(
+                "android/key.properties is missing: the release build is signed " +
+                    "with the debug key, and no fingerprint can be printed.",
+            )
+            return@doLast
+        }
+        try {
+            val store = file(keystoreProperties["storeFile"] as String)
+            val alias = keystoreProperties["keyAlias"] as String
+            val password = keystoreProperties["storePassword"] as String
+            val bytes = store.readBytes()
+            // The keystore is JKS or PKCS12 depending on what keytool wrote it,
+            // and both types are read through the same KeyStore API. The bytes
+            // are read once and replayed for each attempt.
+            val keyStore = listOf("JKS", "PKCS12").firstNotNullOfOrNull { type ->
+                runCatching {
+                    KeyStore.getInstance(type).apply {
+                        load(ByteArrayInputStream(bytes), password.toCharArray())
+                    }
+                }.getOrNull()
+            }
+            if (keyStore == null) {
+                logger.warn("Could not open the keystore at ${store.path}.")
+                return@doLast
+            }
+            val certificate = keyStore.getCertificate(alias) as? X509Certificate
+            if (certificate == null) {
+                logger.warn("No certificate found for alias '$alias' in ${store.path}.")
+                return@doLast
+            }
+            val encoded = certificate.encoded
+            fun fingerprint(algorithm: String): String =
+                MessageDigest.getInstance(algorithm)
+                    .digest(encoded)
+                    .joinToString(":") { byte -> "%02X".format(byte) }
+            logger.lifecycle("Release signing certificate: ${certificate.subjectX500Principal.name}")
+            logger.lifecycle("  SHA-1:   ${fingerprint("SHA-1")}")
+            logger.lifecycle("  SHA-256: ${fingerprint("SHA-256")}")
+            logger.lifecycle(
+                "Register the SHA-1 above for package name " +
+                    "\"$releaseApplicationId\" in the Android OAuth client, or " +
+                    "Google Sign-In fails on a real device in release.",
+            )
+        } catch (error: Exception) {
+            // A fingerprint that cannot be printed must never break the build.
+            logger.warn("Could not print the release signing fingerprints: $error")
+        }
+    }
+}
+
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(printSigningFingerprints)
 }
 
 dependencies {

@@ -41,42 +41,48 @@ class AssistantSnapshot {
 
   /// Loads enough catalogue context for one chat session.
   ///
-  /// Two hundred products comfortably covers the seeded menu. Options are
-  /// fetched only for products that can plausibly be ordered, and order
-  /// history is best-effort: guests have none, and a failed history read must
-  /// not silence the assistant.
+  /// The products and the option groups are read side by side: neither needs
+  /// the other, and asking for the groups for the whole menu lets the two
+  /// requests travel together instead of one after the other. Reading the
+  /// groups product by product cost about six queries per product, which was
+  /// most of the time the assistant took to open.
+  ///
+  /// Order history is best-effort: guests have none, and a failed history read
+  /// must not silence the assistant.
   static Future<AssistantSnapshot> load({
     required CatalogRepository catalog,
     required Future<List<OrderItemModel>> Function() activeOrders,
     String? branchId,
     int productLimit = 200,
   }) async {
-    final products = await catalog.getProducts(
+    // An empty list asks for every product, so this read can start before the
+    // product query has answered.
+    final optionsFuture = catalog.getOptionsByProduct(const []);
+    final ordersFuture = activeOrders();
+    final productsFuture = catalog.getProducts(
       branchId: branchId,
       limit: productLimit,
     );
-    final optionsByProductId = <String, List<OptionGroup>>{};
-    await Future.wait([
-      for (final product in products)
-        catalog
-            .getWithOptions(product.id, branchId: branchId)
-            .then((loaded) {
-          if (loaded != null && loaded.groups.isNotEmpty) {
-            optionsByProductId[product.id] = loaded.groups;
-          }
-        }),
-    ]);
 
+    final products = await productsFuture;
+
+    Map<String, List<OptionGroup>> optionsByProduct = const {};
+    try {
+      optionsByProduct = await optionsFuture;
+    } catch (_) {
+      // A product without its option groups still belongs in the catalogue.
+      optionsByProduct = const {};
+    }
     List<OrderItemModel> orders = const [];
     try {
-      orders = await activeOrders();
+      orders = await ordersFuture;
     } catch (_) {
       orders = const [];
     }
     return AssistantSnapshot(
       products: products,
       orders: orders,
-      optionsByProductId: optionsByProductId,
+      optionsByProductId: optionsByProduct,
     );
   }
 

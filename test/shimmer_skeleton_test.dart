@@ -68,7 +68,7 @@ void main() {
     testWidgets('ProductCardSkeleton keeps the taller card aspect ratio', (
       tester,
     ) async {
-      await pumpSkeleton(tester, const ProductCardSkeleton(width: 150));
+      await pumpSkeleton(tester, const ProductCardSkeleton(width: 168));
       expect(find.byType(AspectRatio), findsOneWidget);
       expect(
         tester.widget<AspectRatio>(find.byType(AspectRatio)).aspectRatio,
@@ -108,7 +108,7 @@ void main() {
       // The derived-height strip is laid out; only viewport-visible cards are built,
       // exactly like the real horizontal carousel.
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(150 / 0.60, 1));
+      expect(strip.height, closeTo(168 / 0.60, 1));
       expect(find.byType(ProductCardSkeleton), findsWidgets);
       // Scrolling reveals more skeleton cards, proving all four exist.
       await tester.drag(find.byType(ListView), const Offset(-400, 0));

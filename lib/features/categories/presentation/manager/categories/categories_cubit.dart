@@ -6,6 +6,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 part 'categories_state.dart';
 
@@ -15,6 +16,9 @@ part 'categories_state.dart';
 /// directly during build, so the tabs were fixed at compile time. It also
 /// matched products to categories by display name, which breaks the moment a
 /// category is renamed or translated.
+///
+/// بيانات التصنيفات والمنتجات تُخزّن مؤقتاً في [CacheManager] لمدة 5 دقائق
+/// لتقليل الجولات المتكررة إلى Supabase عند فتح شاشة التصنيفات.
 class CategoriesCubit extends Cubit<CategoriesState> {
   CategoriesCubit({required this._repository, this.branchId})
     : super(const CategoriesState());
@@ -43,6 +47,8 @@ class CategoriesCubit extends Cubit<CategoriesState> {
       // categories on their own marked the load finished while products and
       // bundles were still in flight, so the page briefly rendered "no
       // products" for a category it had simply not fetched yet.
+      final cacheBranch = branchId ?? 'base';
+
       final results = await Future.wait([
         _repository.getCategories(),
         _repository.getProducts(branchId: branchId, limit: 60),
@@ -51,6 +57,11 @@ class CategoriesCubit extends Cubit<CategoriesState> {
       final categories = results[0] as List<CategoryModel>;
       final products = results[1] as List<ProductModel>;
       final bundles = results[2] as List<BundleModel>;
+
+      // Store in cache for subsequent page opens.
+      CacheManager().set('categories_list', categories);
+      CacheManager().set('categories_products_$cacheBranch', products);
+      CacheManager().set('categories_bundles_$cacheBranch', bundles);
 
       if (isClosed) return;
 
@@ -116,8 +127,8 @@ class CategoriesCubit extends Cubit<CategoriesState> {
   }
 
   /// True when the tab at [index] should render bundles instead of products.
-///
-/// The slug is the reliable key. The label fallback covers legacy rows with no
+  ///
+  /// The slug is the reliable key. The label fallback covers legacy rows with no
   /// slug, and has to be checked against *both* names: [CategoryModel.label] is
   /// localized, so matching only the English one silently stopped finding the
   /// bundles tab as soon as the app was switched to Arabic.
@@ -129,10 +140,14 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     if (category.slug == bundlesSlug) return true;
     final label = category.label.trim().toLowerCase();
     if (label.isEmpty) return false;
-    final names = {
-      'bundles',
-      S.bundles.trim().toLowerCase(),
-    };
+    final names = {'bundles', S.bundles.trim().toLowerCase()};
     return names.contains(label);
+  }
+
+  /// clears the categories cache so the next load fetches fresh data.
+  static void clearCache() {
+    CacheManager().remove('categories_list');
+    CacheManager().removeWhereStartingWith('categories_products_');
+    CacheManager().removeWhereStartingWith('categories_bundles_');
   }
 }

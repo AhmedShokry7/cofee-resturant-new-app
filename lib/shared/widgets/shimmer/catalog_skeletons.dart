@@ -7,7 +7,7 @@ import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
 
 /// Skeleton that mirrors [ProductCard] in its grid/carousel variant.
 ///
-/// Layout contract (product_card.dart): finite cell width (or 150.w when the
+/// Layout contract (product_card.dart): finite cell width (or 160.w when the
 /// horizontal parent is unbounded), AspectRatio 0.60, padding md.w, radius
 /// 16.r, image Expanded with radius 12.r plus a 28.w favorite badge, then
 /// title / description lines and a price + 36.w add-button row.
@@ -24,7 +24,7 @@ class ProductCardSkeleton extends StatelessWidget {
       builder: (context, constraints) {
         final resolved =
             width ??
-            (constraints.maxWidth.isFinite ? constraints.maxWidth : 170.w);
+            (constraints.maxWidth.isFinite ? constraints.maxWidth : 168.w);
         return SizedBox(
           width: resolved,
           child: AspectRatio(
@@ -100,9 +100,9 @@ class ProductsGridSkeleton extends StatelessWidget {
       padding:
           padding ??
           EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
+            SpacingTokens.md.w,
             SpacingTokens.md.h,
-            SpacingTokens.lg.w,
+            SpacingTokens.md.w,
             SpacingTokens.lg.w,
           ),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -118,7 +118,7 @@ class ProductsGridSkeleton extends StatelessWidget {
 }
 
 /// Skeleton carousel mirroring [HomeProductsCarousel]: section title row plus
-/// a horizontal list of fixed 150.w product cards whose strip height is
+/// a horizontal list of fixed 168.w product cards whose strip height is
 /// derived from the card aspect ratio, exactly like the real carousel.
 class ProductsCarouselSkeleton extends StatelessWidget {
   const ProductsCarouselSkeleton({
@@ -154,14 +154,14 @@ class ProductsCarouselSkeleton extends StatelessWidget {
         ],
         SizedBox(height: SpacingTokens.md.h),
         SizedBox(
-          height: 150.w / 0.60,
+          height: 168.w / 0.60,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: itemCount,
             separatorBuilder: (context, index) =>
                 SizedBox(width: SpacingTokens.md.w),
-            itemBuilder: (context, index) => ProductCardSkeleton(width: 150.w),
+            itemBuilder: (context, index) => ProductCardSkeleton(width: 168.w),
           ),
         ),
       ],
@@ -170,7 +170,7 @@ class ProductsCarouselSkeleton extends StatelessWidget {
 }
 
 /// Skeleton bundle card mirroring the home bundles carousel card:
-/// 170.w wide, 210.h list height, radius 16.r, image radius 12.r, title /
+/// 180.w wide, 250.h list height, radius 16.r, image radius 12.r, title /
 /// subtitle lines and a price row.
 class BundleCardSkeleton extends StatelessWidget {
   const BundleCardSkeleton({super.key});
@@ -178,7 +178,7 @@ class BundleCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 170.w,
+      width: 180.w,
       padding: EdgeInsets.all(SpacingTokens.md.w),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
@@ -213,8 +213,8 @@ class BundleCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton mirroring [HomeBundlesSection]: title plus a 210.h horizontal
-/// list of 170.w bundle cards.
+/// Skeleton mirroring [HomeBundlesSection]: title plus a 250.h horizontal
+/// list of 180.w bundle cards.
 class BundlesCarouselSkeleton extends StatelessWidget {
   const BundlesCarouselSkeleton({super.key, this.itemCount = 3});
 
@@ -228,7 +228,7 @@ class BundlesCarouselSkeleton extends StatelessWidget {
         const Shimmer(child: ShimmerLine(width: 110, height: 16, radius: 8)),
         SizedBox(height: SpacingTokens.md.h),
         SizedBox(
-          height: 210.h,
+          height: 250.h,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
@@ -243,7 +243,7 @@ class BundlesCarouselSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton row mirroring [BundleListTile]: 64.w thumbnail radius 12.r,
+/// Skeleton row mirroring [BundleListTile]: 78.w thumbnail radius 12.r,
 /// title / subtitle / price lines and a trailing arrow slot.
 class BundleListTileSkeleton extends StatelessWidget {
   const BundleListTileSkeleton({super.key});
@@ -262,8 +262,8 @@ class BundleListTileSkeleton extends StatelessWidget {
         child: Row(
           children: [
             ShimmerBox(
-              width: 64.w,
-              height: 64.w,
+              width: 78.w,
+              height: 78.w,
               borderRadius: BorderRadius.circular(12.r),
             ),
             SizedBox(width: SpacingTokens.md.w),

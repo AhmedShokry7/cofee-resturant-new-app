@@ -43,11 +43,12 @@ class AssistantGreetings {
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' $name';
     if (isReturning) {
-      return '$day$who! Welcome back. Want your usual, or shall I suggest something new? '
-          'I can also check your order status or active coupons.';
+      return '$day$who! Good to see you. Your usual, or something new today?';
     }
-    return '$day$who! Welcome — I am your coffee assistant. '
-        'I can suggest drinks, track your orders and answer coffee questions.';
+    // A person does not introduce themselves by listing what they can do.
+    // They ask what the customer is in the mood for.
+    return '$day$who! Tell me what you are in the mood for and I will pick '
+        'something, or bring your usual if you have ordered before.';
   }
 
   /// Friendly per-order status line ("your order is being prepared...").
@@ -99,11 +100,12 @@ class AssistantGreetings {
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' يا $name';
     if (isReturning) {
-      return '$day$who! وحشتني. تحب تاخد المعتاد بتاعك ولا أرشحلك حاجة جديدة؟ '
-          'أقدر كمان أتابع طلبك أو أشوفلك العروض.';
+      return '$day$who! وحشتني. نطلب المعتاد بتاعك ولا تجرب حاجة جديدة؟';
     }
-    return '$day$who! أهلاً بيك — أنا مساعد القهوة بتاعك. '
-        'أقدر أرشحلك مشروبات، أتابع طلباتك، وأجاوب على أي سؤال عن القهوة.';
+    // A person does not introduce themselves by listing what they can do.
+    // They ask what the customer is in the mood for.
+    return '$day$who! قولي إيه اللي على مزاجك وأنا أرشحلك، '
+        'أو لو طلبت قبل كده أقدر أجيبلك المعتاد.';
   }
 
   /// Arabic per-order status line (طلبك بيتحضر...).

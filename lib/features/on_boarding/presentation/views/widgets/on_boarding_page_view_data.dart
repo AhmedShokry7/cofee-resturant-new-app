@@ -21,7 +21,7 @@ class OnBoardingPageViewData extends StatelessWidget {
         final item = onBoardingList[index];
         return Column(
           children: [
-                SizedBox(height: 4.h),
+                SizedBox(height: 8.h),
             Image.asset(item.image, height: 380.h, fit: BoxFit.fill),
             SizedBox(height: 24.h),
             Text(
@@ -35,7 +35,7 @@ class OnBoardingPageViewData extends StatelessWidget {
             Text(
               textAlign: TextAlign.center,
               item.body,
-              style: AppFonts.semiBold16(
+              style: AppFonts.regular16(
                 context,
               ).copyWith(color: AppColor.greyColor),
             ),

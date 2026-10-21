@@ -9,6 +9,7 @@ import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.d
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan_product.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_image.dart';
 
 class SubscriptionPlanDetailsPage extends StatelessWidget {
   const SubscriptionPlanDetailsPage({super.key, required this.plan});
@@ -31,9 +32,7 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
               if (plan.imageUrl != null && plan.imageUrl!.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: plan.imageUrl!.startsWith('assets/')
-                      ? Image.asset(plan.imageUrl!, height: 180, width: double.infinity, fit: BoxFit.cover)
-                      : Image.network(plan.imageUrl!, height: 180, width: double.infinity, fit: BoxFit.cover),
+                  child: SubscriptionPlanImage(imageUrl: plan.imageUrl!),
                 ),
               Text(_t(plan.nameAr, plan.nameEn, 'Plan'), style: Theme.of(context).textTheme.titleLarge),
               if (plan.descriptionAr != null || plan.descriptionEn != null)

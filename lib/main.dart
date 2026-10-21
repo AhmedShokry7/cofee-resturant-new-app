@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart' show RemoteMessage;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -12,7 +16,12 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
+import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/features/notifications/data/services/push_service.dart';
+import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
+import 'package:new_coffee/firebase_options.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +42,31 @@ Future<void> main() async {
   // Locale first: everything else renders through it.
   await _guard('AppLocale.init', () => AppLocale.instance.initialize());
 
+  // Firebase is only initialised on Android, the platform that has a client
+  // in the Firebase console. Nothing in the app depends on it yet, so a
+  // failure is logged and the app continues without it.
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await _guard(
+      'Firebase.init',
+      () => Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      ),
+    );
+  }
+
   // The backend is optional at startup. A failure must not stop the app: the
-  // providers fall back to their offline implementations.
-  await _guard('Supabase.init', () => SupabaseService.init());
+  // providers fall back to their offline implementations. The connection is
+  // retried a few times, because a phone that wakes up without a network
+  // would otherwise stay without a backend for the whole session.
+  await _guard('Supabase.init', () => SupabaseService.ensureReady());
+
+  // The push is set up after the backend, because the token of the device is
+  // registered with it. The tap handler is attached inside the setup, so a
+  // tap that opens the app from a cold start is not lost.
+  await _guard(
+    'Push.start',
+    () => PushService.start(onOpened: _handlePushOpened),
+  );
 
   // The saved session decides where the app resumes. Reading it can fail on a
   // locked profile, and the app still has to start.
@@ -63,6 +94,23 @@ Future<void> _guard(
   } catch (error, stackTrace) {
     _logRelease(label, error.toString(), stackTrace);
   }
+}
+
+/// Opens the notifications when the customer taps a push.
+///
+/// A tap that opens the app from a cold start arrives before there is a
+/// navigator to push a route on, so the route waits in [PushService] until the
+/// main page takes it. A tap while the app is already open on the main page
+/// opens the screen right away.
+void _handlePushOpened(RemoteMessage message) {
+  final route = NotificationsPage.routeName;
+  final navigator = rootNavigatorKey.currentState;
+  final current = AppRouteObserver.instance.currentRouteName.value;
+  if (navigator != null && current == MainPage.routeName) {
+    navigator.pushNamed(route);
+    return;
+  }
+  PushService.setPendingRoute(route);
 }
 
 /// Logs a startup failure where a release build can still show it.

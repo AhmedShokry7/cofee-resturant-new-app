@@ -16,29 +16,40 @@ class FavoritesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PageTitle(title: S.favorites),
-            Expanded(
-              child: BlocBuilder<FavoritesCubit, FavoritesState>(
-                builder: (context, state) {
-                  if (state.isLoading && state.favoriteProducts.isEmpty) {
-                    return const ProductsGridSkeleton();
-                  }
-                  final items = state.favoriteProducts;
-                  if (items.isEmpty) {
-                    return EmptyState(
-                      icon: HugeIcons.strokeRoundedFavourite,
-                      title: S.noFavorites,
-                      subtitle: S.favoritesHint,
-                    );
-                  }
-                  return ProductsGridView(products: items);
-                },
+        child: BlocListener<FavoritesCubit, FavoritesState>(
+          // A heart that could not be saved on the server must say so: the
+          // list is otherwise shown as if the server had it.
+          listenWhen: (previous, current) =>
+              current.error != null && current.error != previous.error,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error!)),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageTitle(title: S.favorites),
+              Expanded(
+                child: BlocBuilder<FavoritesCubit, FavoritesState>(
+                  builder: (context, state) {
+                    if (state.isLoading && state.favoriteProducts.isEmpty) {
+                      return const ProductsGridSkeleton();
+                    }
+                    final items = state.favoriteProducts;
+                    if (items.isEmpty) {
+                      return EmptyState(
+                        icon: HugeIcons.strokeRoundedFavourite,
+                        title: S.noFavorites,
+                        subtitle: S.favoritesHint,
+                      );
+                    }
+                    return ProductsGridView(products: items);
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

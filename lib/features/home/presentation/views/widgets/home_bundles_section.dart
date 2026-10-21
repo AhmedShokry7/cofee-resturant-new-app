@@ -27,7 +27,7 @@ class HomeBundlesSection extends StatelessWidget {
         HomeSectionTitle(title: S.bundles),
         SizedBox(height: SpacingTokens.md.h),
         SizedBox(
-          height: 210.h,
+          height: 250.h,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: bundles.length,
@@ -59,7 +59,7 @@ class _BundleCard extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 170.w,
+            width: 180.w,
             padding: EdgeInsets.all(SpacingTokens.md.w),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,

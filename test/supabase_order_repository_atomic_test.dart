@@ -142,6 +142,9 @@ void main() {
 
       final first = submit();
       final second = submit();
+      // Both submits start placeOrder; the RPC is deferred by the rate-limit
+      // check microtask, so pump the queue before asserting keys were sent.
+      await Future<void>.delayed(Duration.zero);
       expect(keys, ['same-attempt', 'same-attempt']);
       pending.complete([_placedRow]);
       final results = await Future.wait([first, second]);

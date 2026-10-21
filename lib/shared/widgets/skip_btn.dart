@@ -22,7 +22,6 @@ class SkipBtn extends StatelessWidget {
                 Text(
                   S.skip,
                   style: AppFonts.regular14(context).copyWith(
-                    fontWeight: FontWeight.bold,
                     color: AppColor.greyColor,
                   ),
                 ),

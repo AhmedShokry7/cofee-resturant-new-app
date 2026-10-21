@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/search/data/model/search_sort.dart';
+import 'package:new_coffee/shared/utils/rate_limit_client.dart';
 
 part 'search_state.dart';
 
@@ -196,6 +197,23 @@ class SearchCubit extends Cubit<SearchState> {
     );
 
     try {
+      final allowed = await RateLimitClient().check('search');
+      if (!allowed) {
+        emit(
+          SearchState(
+            query: query,
+            sort: sort ?? state.sort,
+            categories: categories ?? state.categories,
+            category: category,
+            minPrice: minPrice,
+            maxPrice: maxPrice,
+            results: const [],
+            error: 'search rate limit exceeded',
+            hasSearched: true,
+          ),
+        );
+        return;
+      }
       var results = await _catalog.search(
         query,
         branchId: _effectiveBranch,

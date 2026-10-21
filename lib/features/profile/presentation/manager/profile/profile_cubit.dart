@@ -14,18 +14,24 @@ part 'profile_state.dart';
 /// Owns the customer's profile photo.
 ///
 /// The photo is a [ProfilePhotoRepository] concern; this cubit only decides what
-/// is on screen and when. It keeps three sources apart instead of treating them
+/// is on screen and when. It keeps two sources apart instead of treating them
 /// as one image:
 ///
-///   * [ProfileState.localBytes]   the image the customer just picked, so the
-///                                avatar updates the instant the sheet closes.
-///   * [ProfileState.avatarPath]   the Storage path persisted on the profile.
+///   * [ProfileState.imageBytes]  the image itself, held in memory. It is the
+///                                bytes the customer just picked, or the bytes
+///                                read back from Storage.
+///   * [ProfileState.avatarPath]  the Storage path persisted on the profile.
 ///                                This is the source of truth.
-///   * [ProfileState.signedUrl]    a short-lived displayable URL resolved from
-///                                that path, because the bucket is private.
+///
+/// The bucket is private, so the image is read back with the customer's own
+/// session instead of through a signed URL. A signed URL would have to be
+/// minted before every read, expires after an hour, and changes on every
+/// refresh, which defeats every image cache in the app. Holding the bytes
+/// renders the avatar instantly and needs no network at all after the first
+/// read.
 ///
 /// Everything the customer sees is keyed to the signed-in identity. Signing out
-/// or switching accounts drops all three, so one customer's photo can never be
+/// or switching accounts drops all of it, so one customer's photo can never be
 /// rendered for another.
 class ProfileCubit extends Cubit<ProfileState> {
   ProfileCubit({required ProfilePhotoRepository repository})
@@ -60,7 +66,7 @@ class ProfileCubit extends Cubit<ProfileState> {
     return super.close();
   }
 
-  /// Reads the persisted path and resolves a URL for it.
+  /// Reads the persisted path and downloads the photo behind it.
   ///
   /// Called on app start, on sign-in, and whenever the page is opened. A guest
   /// or an account without a photo ends with nothing to show, which is the
@@ -76,26 +82,35 @@ class ProfileCubit extends Cubit<ProfileState> {
         emit(state.copyWith(clearAvatar: true, isLoading: false));
         return;
       }
-      final url = await _repository.resolveSignedUrl(path);
+      final bytes = await _repository.downloadAvatar(path);
       if (isClosed || generation != _generation) return;
       emit(
         state.copyWith(
+          imageBytes: bytes,
           avatarPath: path,
-          signedUrl: url,
-          signedUrlExpiresAt: DateTime.now().add(
-            ProfilePhotoRepository.signedUrlTtl,
-          ),
           isLoading: false,
         ),
       );
     } on ProfilePhotoException catch (error) {
       if (isClosed || generation != _generation) return;
+      if (error.failure == ProfilePhotoFailure.notSignedIn) {
+        // Nobody is signed in, so there is no photo to show and nothing
+        // failed. A guest reaching this point is the normal case after a
+        // sign-out, not something the customer has to read about.
+        emit(
+          state.copyWith(
+            clearAvatar: true,
+            isLoading: false,
+            clearError: true,
+          ),
+        );
+        return;
+      }
       // Keep the path: the photo may still exist and a later refresh can
-      // recover. Drop the URL so a dead one is never rendered.
+      // recover. Drop the bytes so a dead image is never rendered.
       emit(
         state.copyWith(
-          signedUrl: null,
-          signedUrlExpiresAt: null,
+          clearImage: true,
           isLoading: false,
           error: error.failure.name,
         ),
@@ -104,8 +119,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (isClosed || generation != _generation) return;
       emit(
         state.copyWith(
-          signedUrl: null,
-          signedUrlExpiresAt: null,
+          clearImage: true,
           isLoading: false,
           error: ProfilePhotoFailure.photoLoadFailed.name,
         ),
@@ -126,15 +140,18 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (detectProfileImageFormat(bytes) == null) {
       emit(
         state.copyWith(
-          clearLocalBytes: true,
+          clearImage: true,
           isUploading: false,
           error: ProfilePhotoFailure.unsupportedFormat.name,
         ),
       );
       return;
     }
+    // The photo that is on screen right now. It comes back if the upload fails,
+    // so a failure never leaves the customer with no avatar at all.
+    final previousBytes = state.imageBytes;
     final generation = ++_generation;
-    emit(state.copyWith(localBytes: bytes, isUploading: true, clearError: true));
+    emit(state.copyWith(imageBytes: bytes, isUploading: true, clearError: true));
     try {
       await _repository.uploadAvatar(bytes);
       if (isClosed || generation != _generation) return;
@@ -145,22 +162,23 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (isClosed || generation != _generation) return;
       if (path == null) {
         emit(
-          ProfileState(
+          state.copyWith(
+            imageBytes: previousBytes,
+            clearImage: previousBytes == null,
+            isUploading: false,
             isLoading: false,
             error: ProfilePhotoFailure.profileUpdateFailed.name,
           ),
         );
         return;
       }
-      final url = await _repository.resolveSignedUrl(path);
-      if (isClosed || generation != _generation) return;
+      // The bytes that were just uploaded are the saved photo, so there is
+      // nothing to download: the preview simply becomes the saved photo.
       emit(
-        ProfileState(
+        state.copyWith(
+          imageBytes: bytes,
           avatarPath: path,
-          signedUrl: url,
-          signedUrlExpiresAt: DateTime.now().add(
-            ProfilePhotoRepository.signedUrlTtl,
-          ),
+          isUploading: false,
           isLoading: false,
         ),
       );
@@ -168,7 +186,8 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (isClosed || generation != _generation) return;
       emit(
         state.copyWith(
-          clearLocalBytes: true,
+          imageBytes: previousBytes,
+          clearImage: previousBytes == null,
           isUploading: false,
           error: error.failure.name,
         ),
@@ -177,7 +196,8 @@ class ProfileCubit extends Cubit<ProfileState> {
       if (isClosed || generation != _generation) return;
       emit(
         state.copyWith(
-          clearLocalBytes: true,
+          imageBytes: previousBytes,
+          clearImage: previousBytes == null,
           isUploading: false,
           error: ProfilePhotoFailure.uploadFailed.name,
         ),
@@ -187,38 +207,10 @@ class ProfileCubit extends Cubit<ProfileState> {
   }
 
   /// Drops everything about the current photo. Used on sign-out and on an
-  /// account switch, so no cached URL outlives the session that produced it.
+  /// account switch, so no cached image outlives the session that produced it.
   void clear() {
     _generation++;
-    emit(const ProfileState());
-  }
-
-  /// Refreshes a signed URL that is close to lapsing.
-  ///
-  /// No-op while the current one is still comfortably valid, so calling it from
-  /// `build` costs nothing.
-  Future<void> ensureFreshSignedUrl() async {
-    if (isClosed) return;
-    final path = state.avatarPath;
-    if (path == null) return;
-    if (state.signedUrlIsFresh) return;
-    final generation = ++_generation;
-    try {
-      final url = await _repository.resolveSignedUrl(path);
-      if (isClosed || generation != _generation) return;
-      emit(
-        state.copyWith(
-          signedUrl: url,
-          signedUrlExpiresAt: DateTime.now().add(
-            ProfilePhotoRepository.signedUrlTtl,
-          ),
-          clearError: true,
-        ),
-      );
-    } on ProfilePhotoException catch (error) {
-      if (isClosed || generation != _generation) return;
-      emit(state.copyWith(error: error.failure.name));
-    }
+    emit(const ProfileState(isLoading: false));
   }
 
   /// Whether the signed-in customer changed, in which case everything about the
@@ -231,9 +223,9 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (identity == _identity) return false;
     _identity = identity;
     // Invalidate anything in flight under the previous identity before it can
-    // write the previous customer's URL into this one's state.
+    // write the previous customer's image into this one's state.
     _generation++;
-    emit(const ProfileState());
+    emit(const ProfileState(isLoading: false));
     return true;
   }
 
@@ -256,6 +248,14 @@ class ProfileCubit extends Cubit<ProfileState> {
     if (!shouldReloadOnAuthEvent(auth)) return;
     applyIdentityTransition(auth.session?.user.id);
     if (isClosed) return;
+    if (auth.event == AuthChangeEvent.signedOut) {
+      // A signed-out customer has no photo. Reloading would ask the backend
+      // for a path nobody is allowed to read, and the refusal was reported to
+      // the customer as "the photo could not be saved" while they were simply
+      // signing out.
+      emit(const ProfileState(isLoading: false));
+      return;
+    }
     unawaited(load());
   }
 

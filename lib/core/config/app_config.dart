@@ -33,12 +33,24 @@ class AppConfig {
     defaultValue: SupabasePublicConfig.publishableKey,
   );
 
+  /// رابط قاعدة البيانات للقراءة فقط (Read Replica).
+  /// يُمرر عبر --dart-define=SUPABASE_READ_URL=...
+  /// إذا ترك فارغًا، تُستخدم القاعدة الأساسية للقراءة والكتابة معًا.
+  static const String supabaseReadUrl = String.fromEnvironment(
+    'SUPABASE_READ_URL',
+    defaultValue: '',
+  );
+
+  /// Whether a dedicated Read Replica URL has been provided.
+  static bool get hasReadReplica => supabaseReadUrl.isNotEmpty;
+
   /// Where Supabase should send the user after they follow a password-reset
   /// link. Must be registered under Auth -> URL Configuration in the dashboard,
   /// otherwise the redirect is rejected and no recovery session is created.
   /// Injected with `--dart-define=PASSWORD_RECOVERY_REDIRECT=...`.
-  static const String passwordRecoveryRedirect =
-      String.fromEnvironment('PASSWORD_RECOVERY_REDIRECT');
+  static const String passwordRecoveryRedirect = String.fromEnvironment(
+    'PASSWORD_RECOVERY_REDIRECT',
+  );
 
   /// Web OAuth client ID used as the Google Sign-In server client ID on
   /// Android. Supplied via --dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>.
@@ -46,8 +58,7 @@ class AppConfig {
   /// empty at runtime, even when no dart-define is passed.
   static const String googleServerClientId = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',
-    defaultValue:
-        '496541472556-j23g42irr9r93rmeuo078513nj6skiu7.apps.googleusercontent.com',
+    defaultValue: '496541472556-j23g42irr9r93rmeuo078513nj6skiu7.apps.googleusercontent.com',
   );
 
   /// Shown if public configuration was intentionally cleared. Never includes

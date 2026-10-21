@@ -1,0 +1,112 @@
+﻿import 'package:hugeicons/hugeicons.dart';
+
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+
+/// The growth domain: promotions, loyalty, subscriptions and engagement.
+List<AdminDestination> get growthDestinations => <AdminDestination>[
+  AdminDestination(
+    id: 'coupons',
+    label: S.coupons,
+    icon: HugeIcons.strokeRoundedTicket01,
+    searchHint: S.searchCouponsHint,
+    permission: 'settings.write',
+    section: S.sectionGrowth,
+    tables: <String>[
+      'marketing.coupons',
+      'marketing.coupons_categories',
+      'marketing.coupons_products',
+      'marketing.coupon_redemptions',
+    ],
+  ),
+  AdminDestination(
+    id: 'banners',
+    label: S.banners,
+    icon: HugeIcons.strokeRoundedPromotion,
+    searchHint: S.searchBannersHint,
+    permission: 'settings.write',
+    section: S.sectionGrowth,
+    tables: <String>['marketing.banners'],
+  ),
+  AdminDestination(
+    id: 'loyalty',
+    label: S.loyalty,
+    icon: HugeIcons.strokeRoundedGift,
+    searchHint: S.searchLoyaltyHint,
+    permission: 'loyalty.read',
+    section: S.sectionGrowth,
+    tables: <String>[
+      'loyalty.loyalty_rules',
+      'loyalty.loyalty_accounts',
+      'loyalty.loyalty_transactions',
+      'loyalty.loyalty_rewards',
+    ],
+  ),
+  AdminDestination(
+    id: 'subscriptions',
+    label: S.subscriptions,
+    icon: HugeIcons.strokeRoundedRepeat,
+    searchHint: S.searchSubscriptionsHint,
+    permission: 'subscriptions.manage',
+    section: S.sectionGrowth,
+    tables: <String>[
+      'subscriptions.plans',
+      'subscriptions.plan_branches',
+      'subscriptions.plan_products',
+      'subscriptions.subscriptions',
+      'subscriptions.subscription_usage',
+      'subscriptions.subscription_events',
+      'subscriptions.subscription_consumptions',
+      'subscriptions.qr_tokens',
+    ],
+  ),
+  AdminDestination(
+    id: 'reviews',
+    label: S.reviews,
+    icon: HugeIcons.strokeRoundedStar,
+    searchHint: S.searchReviewsHint,
+    permission: 'reviews.moderate',
+    section: S.sectionGrowth,
+    tables: <String>['engagement.product_reviews'],
+  ),
+  AdminDestination(
+    id: 'notifications',
+    label: S.notifications,
+    icon: HugeIcons.strokeRoundedNotification01,
+    searchHint: S.searchNotificationsHint,
+    permission: 'notifications.read',
+    section: S.sectionGrowth,
+    tables: <String>[
+      'engagement.notifications',
+      'engagement.notification_preferences',
+      'engagement.device_tokens',
+    ],
+  ),
+  AdminDestination(
+    id: 'favorites',
+    label: S.favorites,
+    icon: HugeIcons.strokeRoundedFavourite,
+    searchHint: S.searchFavoritesHint,
+    permission: 'customers.read',
+    section: S.sectionGrowth,
+    tables: <String>['engagement.customer_favorites'],
+  ),
+  AdminDestination(
+    id: 'websites',
+    label: S.customerWebsites,
+    icon: HugeIcons.strokeRoundedGlobe,
+    searchHint: S.searchWebsitesHint,
+    permission: 'customers.read',
+    section: S.sectionGrowth,
+    tables: <String>['engagement.customer_websites'],
+  ),
+  AdminDestination(
+    id: 'aiKnowledge',
+    label: S.aiKnowledge,
+    icon: HugeIcons.strokeRoundedSparkles,
+    searchHint: S.searchAiKnowledgeHint,
+    permission: 'settings.write',
+    section: S.sectionGrowth,
+    tables: <String>['ai.product_knowledge', 'ai.knowledge_articles'],
+  ),
+];

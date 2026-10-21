@@ -28,7 +28,12 @@ class ProductCard extends StatelessWidget {
   /// [Expanded], so growing the card height flows entirely into a larger
   /// product image while title, description, price and actions keep their
   /// fixed slots.
-  static const double cardAspectRatio = 0.75;
+  static const double cardAspectRatio = 0.60;
+
+  /// Width of a card inside a horizontal strip (home carousel), in design
+  /// pixels. Wide enough for the price and the struck-through old price to
+  /// sit side by side without either of them being cut.
+  static const double stripWidth = 168;
 
   const ProductCard({
     super.key,
@@ -63,90 +68,93 @@ class ProductCard extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth.isFinite
             ? constraints.maxWidth
-            : 150.w;
+            : stripWidth.w;
         return SizedBox(
           width: width,
-      child: AspectRatio(
-        aspectRatio: cardAspectRatio,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            GestureDetector(
-              onTap: () => _openDetails(context),
-              child: Container(
-                padding: EdgeInsets.all(SpacingTokens.md.w),
-                decoration: _decoration,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          Positioned.fill(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12.r),
-                              child: _buildProductImage(),
-                            ),
-                          ),
-                          if (showFavorite)
-                            Positioned(
-                              top: 2.w,
-                              left: 4.w,
-                              child: ProductFavoriteButton(
-                                product: product,
-                                size: 28,
-                              ),
-                            ),
-
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: SpacingTokens.sm.h),
-                    Text(
-                      product.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.semiBold16(context),
-                    ),
-                    SizedBox(height: 4.h),
-                    Text(
-                      product.category.trim().isEmpty
-                          ? product.description
-                          : product.category,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppFonts.regular12(context)
-                          .copyWith(color: AppColor.greyColor),
-                    ),
-                    SizedBox(height: 6.h),
-                    Row(
+          child: AspectRatio(
+            aspectRatio: cardAspectRatio,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                GestureDetector(
+                  onTap: () => _openDetails(context),
+                  child: Container(
+                    padding: EdgeInsets.all(SpacingTokens.md.w),
+                    decoration: _decoration,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(child: ProductPrice(product: product)),
-                        SizedBox(width: SpacingTokens.xs.w),
-                        AnimatedAddToCartIconButton(
-                          size: 36,
-                          onAdd: () async =>
-                              context.read<CartCubit>().add(product),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12.r),
+                                  child: _buildProductImage(),
+                                ),
+                              ),
+                              if (showFavorite)
+                                Positioned(
+                                  top: 2.w,
+                                  left: 4.w,
+                                  child: ProductFavoriteButton(
+                                    product: product,
+                                    size: 28,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: SpacingTokens.sm.h),
+                        Text(
+                          product.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.semiBold16(context),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          product.category.trim().isEmpty
+                              ? product.description
+                              : product.category,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.greyColor),
+                        ),
+                        SizedBox(height: 6.h),
+                        Row(
+                          children: [
+                            Expanded(child: ProductPrice(product: product)),
+                            SizedBox(width: SpacingTokens.xs.w),
+                            AnimatedAddToCartIconButton(
+                              size: 36,
+                              onAdd: () async =>
+                                  context.read<CartCubit>().add(product),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
+                if (product.hasDiscount)
+                  Positioned(
+                    top: DiscountBadge.cardTop,
+                    right: DiscountBadge.cardRight,
+                    child: DiscountBadge(
+                      percent:
+                          (((product.oldPrice! - product.price) /
+                                      product.oldPrice!) *
+                                  100)
+                              .round(),
+                      size: DiscountBadge.cardSize,
+                    ),
+                  ),
+              ],
             ),
-            if (product.hasDiscount)
-              Positioned(
-                top: DiscountBadge.cardTop,
-                right: DiscountBadge.cardRight,
-                child: DiscountBadge(
-                  percent: (((product.oldPrice! - product.price) / product.oldPrice!) * 100).round(),
-                  size: DiscountBadge.cardSize,
-                ),
-              ),
-            ],
           ),
-        ),
-    );
+        );
       },
     );
   }
@@ -213,10 +221,27 @@ class ProductCard extends StatelessWidget {
             ),
           ),
           SizedBox(width: SpacingTokens.sm.w),
-          _QuantityStepper(
-            quantity: quantity!,
-            onIncrement: onIncrement,
-            onDecrement: onDecrement,
+          // The price of one piece sits right above the add button, so the
+          // customer can see what a single piece costs while they raise the
+          // quantity. The line total stays where it is, under the name.
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              PriceLabel(
+                amount: unitPrice ?? product.price,
+                style: AppFonts.regular12(context)
+                    .copyWith(color: AppColor.greyColor),
+                iconSize: 12,
+                iconColor: AppColor.greyColor,
+              ),
+              SizedBox(height: 6.h),
+              _QuantityStepper(
+                quantity: quantity!,
+                onIncrement: onIncrement,
+                onDecrement: onDecrement,
+              ),
+            ],
           ),
         ],
       ),

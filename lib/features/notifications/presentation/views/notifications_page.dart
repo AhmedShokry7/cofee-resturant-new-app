@@ -41,7 +41,32 @@ class _NotificationsPageState extends State<NotificationsPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<NotificationsCubit>().markAllRead();
+      // The switch of the push belongs to the customer, so it is read from
+      // the server instead of being remembered on the device.
+      context.read<NotificationsCubit>().loadPushState();
     });
+  }
+
+  /// Turns the push on or off and says what happened.
+  ///
+  /// Turning it on needs the permission of the system, so it can be refused.
+  /// A refusal that leaves the switch where it was is reported, because a
+  /// switch that does nothing looks broken.
+  Future<void> _togglePush(BuildContext context, bool enabled) async {
+    final cubit = context.read<NotificationsCubit>();
+    final requested = !enabled;
+    await cubit.setPushEnabled(requested);
+    if (!context.mounted) return;
+    if (cubit.state.pushEnabled == requested) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          requested
+              ? S.notificationPermissionDenied
+              : S.notificationsTurnedOff,
+        ),
+      ),
+    );
   }
 
   @override
@@ -54,7 +79,31 @@ class _NotificationsPageState extends State<NotificationsPage> {
           );
         }
         return Scaffold(
-          appBar: AppBar(title: Text(S.notifications)),
+          appBar: AppBar(
+            title: Text(S.notifications),
+            actions: [
+              BlocBuilder<NotificationsCubit, NotificationsState>(
+                buildWhen: (previous, current) =>
+                    previous.pushEnabled != current.pushEnabled ||
+                    previous.signedOut != current.signedOut,
+                builder: (context, cubitState) {
+                  if (cubitState.signedOut) return const SizedBox.shrink();
+                  final enabled = cubitState.pushEnabled;
+                  return IconButton(
+                    tooltip: enabled
+                        ? S.turnOffNotifications
+                        : S.turnOnNotifications,
+                    icon: Icon(
+                      enabled
+                          ? Icons.notifications_active_outlined
+                          : Icons.notifications_off_outlined,
+                    ),
+                    onPressed: () => _togglePush(context, enabled),
+                  );
+                },
+              ),
+            ],
+          ),
           body: Builder(
             builder: (context) {
               if (state.isLoading && state.notifications.isEmpty) {

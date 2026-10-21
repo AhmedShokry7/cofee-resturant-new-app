@@ -2,9 +2,8 @@
 //
 // Before the avatar repository existed, a picked photo was only a Uint8List in
 // the cubit: gone on restart, invisible on a second device. These tests pin the
-// three states that fix depends on — the picked bytes, the persisted Storage
-// path, and the short-lived signed URL — and the rule that none of them may
-// survive an account change.
+// two states that fix depends on — the picked bytes and the persisted Storage
+// path — and the rule that none of them may survive an account change.
 import 'dart:async';
 import 'dart:typed_data';
 
@@ -14,7 +13,6 @@ import 'package:new_coffee/features/profile/data/models/profile_photo_exception.
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_avatar.dart';
-import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 import 'support/in_memory_profile_photo_repository.dart';
@@ -93,7 +91,7 @@ void main() {
   });
 
   group('loading the saved photo', () {
-    test('a fresh session picks up the persisted path and resolves a URL', () async {
+    test('a fresh session picks up the persisted path and the photo', () async {
       // The repository holds what a previous session already saved. Creating a
       // new cubit is exactly what happens on another device after sign-in.
       final repository = InMemoryProfilePhotoRepository(storedPath: 'uid/avatar.jpg');
@@ -102,8 +100,8 @@ void main() {
       await settle();
 
       expect(cubit.state.avatarPath, 'uid/avatar.jpg');
-      expect(cubit.state.signedUrl, contains('uid/avatar.jpg'));
-      expect(cubit.state.signedUrlExpiresAt, isNotNull);
+      expect(cubit.state.imageBytes, isNotNull);
+      expect(repository.downloadedPaths, ['uid/avatar.jpg']);
       expect(cubit.state.hasVisibleImage, isTrue);
       expect(cubit.state.error, isNull);
     });
@@ -115,7 +113,7 @@ void main() {
       await settle();
 
       expect(cubit.state.avatarPath, isNull);
-      expect(cubit.state.signedUrl, isNull);
+      expect(cubit.state.imageBytes, isNull);
       expect(cubit.state.hasVisibleImage, isFalse);
       expect(cubit.state.error, isNull);
       expect(cubit.state.isLoading, isFalse);
@@ -146,7 +144,8 @@ void main() {
   });
 
   group('uploading', () {
-    test('keeps the picked image visible, then swaps to the persisted path', () async {
+    test('keeps the picked image visible, then records the persisted path',
+        () async {
       final repository = InMemoryProfilePhotoRepository();
       final cubit = ProfileCubit(repository: repository);
       addTearDown(cubit.close);
@@ -154,15 +153,15 @@ void main() {
 
       final upload = cubit.upload(jpegBytes());
       // Mid-flight: the customer must still see what they just chose.
-      expect(cubit.state.localBytes, isNotNull);
+      expect(cubit.state.imageBytes, isNotNull);
       expect(cubit.state.isUploading, isTrue);
 
       await upload;
       expect(repository.uploadedPaths, ['uid/avatar.jpg']);
       expect(cubit.state.avatarPath, 'uid/avatar.jpg');
-      expect(cubit.state.signedUrl, isNotNull);
-      // The preview hands over to the server record.
-      expect(cubit.state.localBytes, isNull);
+      // The bytes that were uploaded are the saved photo, so there is nothing
+      // to download: the preview simply becomes the photo.
+      expect(cubit.state.imageBytes, isNotNull);
       expect(cubit.state.isUploading, isFalse);
       expect(cubit.state.error, isNull);
     });
@@ -172,6 +171,7 @@ void main() {
       final cubit = ProfileCubit(repository: repository);
       addTearDown(cubit.close);
       await settle();
+      final saved = cubit.state.imageBytes;
       expect(cubit.state.avatarPath, 'uid/old.jpg');
 
       repository.uploadError = const ProfilePhotoException(
@@ -180,7 +180,7 @@ void main() {
       await cubit.upload(jpegBytes());
 
       expect(cubit.state.error, ProfilePhotoFailure.uploadFailed.name);
-      expect(cubit.state.localBytes, isNull);
+      expect(cubit.state.imageBytes, saved);
       expect(cubit.state.isUploading, isFalse);
       expect(cubit.state.avatarPath, 'uid/old.jpg');
     });
@@ -223,67 +223,79 @@ void main() {
     });
   });
 
-  group('signed url lifetime', () {
-    test('a fresh URL is not re-resolved', () async {
+  group('reading the photo back', () {
+    test('a failed download keeps the path and surfaces the error', () async {
       final repository = InMemoryProfilePhotoRepository(storedPath: 'uid/avatar.jpg');
       final cubit = ProfileCubit(repository: repository);
       addTearDown(cubit.close);
       await settle();
 
-      expect(cubit.state.signedUrlIsFresh, isTrue);
-      final url = cubit.state.signedUrl;
-      await cubit.ensureFreshSignedUrl();
-      await settle();
-
-      expect(cubit.state.signedUrl, url);
-    });
-
-    test('an expired URL is refreshed', () async {
-      final repository = InMemoryProfilePhotoRepository(storedPath: 'uid/avatar.jpg');
-      final cubit = ProfileCubit(repository: repository);
-      addTearDown(cubit.close);
-      await settle();
-
-      // Age the URL past its refresh margin.
-      cubit.emit(
-        ProfileState(
-          avatarPath: 'uid/avatar.jpg',
-          signedUrl: 'https://signed.example/stale',
-          signedUrlExpiresAt: DateTime.now().add(const Duration(seconds: 10)),
-          isLoading: false,
-        ),
+      repository.downloadError = const ProfilePhotoException(
+        ProfilePhotoFailure.photoLoadFailed,
       );
-      expect(cubit.state.signedUrlIsFresh, isFalse);
-
-      await cubit.ensureFreshSignedUrl();
+      await cubit.load();
       await settle();
 
-      expect(cubit.state.signedUrl, contains('uid/avatar.jpg'));
-      expect(cubit.state.signedUrlIsFresh, isTrue);
-    });
-
-    test('a failed refresh keeps the path and surfaces the error', () async {
-      final repository = InMemoryProfilePhotoRepository(storedPath: 'uid/avatar.jpg');
-      final cubit = ProfileCubit(repository: repository);
-      addTearDown(cubit.close);
-      await settle();
-
-      repository.signedUrlError = const ProfilePhotoException(
-        ProfilePhotoFailure.signedUrlFailed,
-      );
-      cubit.emit(
-        ProfileState(
-          avatarPath: 'uid/avatar.jpg',
-          signedUrlExpiresAt: DateTime.now().subtract(const Duration(minutes: 1)),
-          isLoading: false,
-        ),
-      );
-
-      await cubit.ensureFreshSignedUrl();
-      await settle();
-
-      expect(cubit.state.error, ProfilePhotoFailure.signedUrlFailed.name);
+      expect(cubit.state.error, ProfilePhotoFailure.photoLoadFailed.name);
       expect(cubit.state.avatarPath, 'uid/avatar.jpg');
+      expect(cubit.state.imageBytes, isNull);
+    });
+
+    test('a guest has no photo and no error', () async {
+      // Reading the photo without a session is refused by the backend. That is
+      // the normal state of a guest, not something that failed.
+      final repository = InMemoryProfilePhotoRepository()
+        ..loadError = const ProfilePhotoException(
+          ProfilePhotoFailure.notSignedIn,
+        );
+      final cubit = ProfileCubit(repository: repository);
+      addTearDown(cubit.close);
+      await settle();
+
+      expect(cubit.state.error, isNull);
+      expect(cubit.state.hasVisibleImage, isFalse);
+      expect(cubit.state.isLoading, isFalse);
+    });
+  });
+
+  group('signing out', () {
+    test('drops the photo without reporting a failure', () async {
+      final repository = InMemoryProfilePhotoRepository(storedPath: 'uid/avatar.jpg');
+      final cubit = ProfileCubit(repository: repository);
+      addTearDown(cubit.close);
+      await settle();
+      expect(cubit.state.hasVisibleImage, isTrue);
+
+      // The backend refuses to read a photo for nobody, so the reload after a
+      // sign-out used to fail and was reported as "the photo could not be
+      // saved".
+      repository.loadError = const ProfilePhotoException(
+        ProfilePhotoFailure.notSignedIn,
+      );
+      cubit.handleAuthStateChanged(AuthState(AuthChangeEvent.signedOut, null));
+      await settle();
+
+      expect(cubit.state.error, isNull);
+      expect(cubit.state.hasVisibleImage, isFalse);
+      expect(cubit.state.avatarPath, isNull);
+    });
+
+    test('does not ask the backend for a photo nobody is allowed to read',
+        () async {
+      final repository = InMemoryProfilePhotoRepository(storedPath: 'uid/avatar.jpg');
+      final cubit = ProfileCubit(repository: repository);
+      addTearDown(cubit.close);
+      await settle();
+      final readsBefore = repository.downloadedPaths.length;
+
+      cubit.handleAuthStateChanged(AuthState(AuthChangeEvent.signedOut, null));
+      await settle();
+
+      expect(
+        repository.downloadedPaths.length,
+        readsBefore,
+        reason: 'a signed-out customer must not trigger a photo read',
+      );
     });
   });
 
@@ -298,8 +310,7 @@ void main() {
       cubit.clear();
 
       expect(cubit.state.avatarPath, isNull);
-      expect(cubit.state.signedUrl, isNull);
-      expect(cubit.state.localBytes, isNull);
+      expect(cubit.state.imageBytes, isNull);
       expect(cubit.state.hasVisibleImage, isFalse);
     });
 
@@ -314,7 +325,7 @@ void main() {
 
       expect(cubit.applyIdentityTransition('user-a'), isTrue);
       expect(cubit.state.avatarPath, isNull);
-      expect(cubit.state.signedUrl, isNull);
+      expect(cubit.state.imageBytes, isNull);
 
       // Re-stating the same identity is a refresh, not a switch.
       expect(cubit.applyIdentityTransition('user-a'), isFalse);
@@ -336,7 +347,7 @@ void main() {
 
       final upload = cubit.upload(jpegBytes());
       await settle();
-      expect(cubit.state.localBytes, isNotNull);
+      expect(cubit.state.imageBytes, isNotNull);
 
       // The customer signs out before the upload comes back.
       expect(cubit.applyIdentityTransition(null), isTrue);
@@ -347,7 +358,7 @@ void main() {
       expect(
         cubit.state.hasVisibleImage,
         isFalse,
-        reason: 'a URL minted for the previous account must never be rendered',
+        reason: 'a photo uploaded for the previous account must never be rendered',
       );
     });
 
@@ -392,33 +403,33 @@ void main() {
       await tester.pumpWidget(host(const ProfileState(isLoading: false)));
       await tester.pump();
 
-      expect(find.byType(DbImage), findsNothing);
       expect(find.byIcon(Icons.image_not_supported), findsNothing);
       expect(find.byType(CircleAvatar), findsOneWidget);
     });
 
-    testWidgets('renders the persisted photo through DbImage', (tester) async {
+    testWidgets('draws the saved photo from memory', (tester) async {
       await tester.pumpWidget(
         host(
-          const ProfileState(
+          ProfileState(
+            imageBytes: pngBytes(),
             avatarPath: 'uid/avatar.jpg',
-            signedUrl: 'https://signed.example/uid/avatar.jpg?token=t',
             isLoading: false,
           ),
         ),
       );
       await tester.pump();
 
-      expect(find.byType(DbImage), findsOneWidget);
+      final avatar = tester.widget<CircleAvatar>(find.byType(CircleAvatar));
+      expect(avatar.backgroundImage, isA<ResizeImage>());
     });
 
-    testWidgets('shows the picked bytes ahead of the network image', (tester) async {
+    testWidgets('shows the picked bytes ahead of the upload finishing',
+        (tester) async {
       await tester.pumpWidget(
         host(
           ProfileState(
-            localBytes: pngBytes(),
+            imageBytes: pngBytes(),
             avatarPath: 'uid/avatar.jpg',
-            signedUrl: 'https://signed.example/uid/avatar.jpg?token=t',
             isUploading: true,
             isLoading: false,
           ),
@@ -427,9 +438,8 @@ void main() {
       await tester.pump();
 
       // The preview wins, and the upload scrim does not blank it.
-      expect(find.byType(DbImage), findsNothing);
       final avatar = tester.widget<CircleAvatar>(find.byType(CircleAvatar));
-      expect(avatar.backgroundImage, isA<MemoryImage>());
+      expect(avatar.backgroundImage, isA<ResizeImage>());
       expect(find.byType(CircularProgressIndicator), findsOneWidget);
     });
   });

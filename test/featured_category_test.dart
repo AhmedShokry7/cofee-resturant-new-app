@@ -8,6 +8,7 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 /// Cover for the home "Popular" row losing its category label.
 ///
@@ -20,6 +21,7 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(() => CacheManager().clear());
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
 
   Future<List<ProductModel>> popularFrom(
@@ -162,6 +164,11 @@ class _FeaturedCatalog implements CatalogRepository {
     String id, {
     String? branchId,
   }) => _inner.getWithOptions(id, branchId: branchId);
+
+  @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) => _inner.getOptionsByProduct(productIds);
 
   @override
   Future<List<ProductModel>> getProducts({

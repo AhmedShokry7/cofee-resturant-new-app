@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -205,7 +206,16 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     final wasFavorite = state.ids.contains(productId);
     if (wasFavorite) {
       emit(state.copyWith(ids: {...state.ids}..remove(productId)));
-      await _favorites.removeFavorite(productId);
+      try {
+        await _favorites.removeFavorite(productId);
+      } catch (error, stackTrace) {
+        // The heart is off on the device but the server still has it. The
+        // failure is reported so the customer is not told a silent success.
+        if (!isClosed) {
+          emit(state.copyWith(error: S.favoritesSyncFailed));
+          addError(error, stackTrace);
+        }
+      }
       return;
     }
 
@@ -226,8 +236,13 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       await _favorites.addFavorite(productId);
     } catch (error, stackTrace) {
       // The heart stays set locally; a failed server mirror must not unheart
-      // a product the customer just chose.
-      addError(error, stackTrace);
+      // a product the customer just chose. The next load uploads it again.
+      // The failure is reported instead of being swallowed, so a heart that
+      // never reached the server is never presented as a saved one.
+      if (!isClosed) {
+        emit(state.copyWith(error: S.favoritesSyncFailed));
+        addError(error, stackTrace);
+      }
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
+import 'package:new_coffee/features/assistant/data/llm/llm_reply_sanitizer.dart';
 
 /// OpenAI-compatible chat client (`POST {backendUrl}/v1/chat/completions`).
 /// Any failure returns null and the local engine answers instead.
@@ -17,6 +18,8 @@ class HttpLlmClient implements LlmClient {
     required String system,
     required List<Map<String, String>> history,
     required String query,
+    String questionKey = '',
+    bool learn = true,
   }) async {
     if (!config.enabled) return null;
     try {
@@ -51,7 +54,7 @@ class HttpLlmClient implements LlmClient {
       final content = (message?['message'] as Map<String, dynamic>?)?['content'];
       final text = content is String ? content.trim() : '';
       if (text.isEmpty) return null;
-      return LlmReply(text: text);
+      return LlmReply(text: sanitizeLlmReply(text));
     } catch (_) {
       return null;
     }

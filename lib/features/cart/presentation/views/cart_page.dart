@@ -67,56 +67,68 @@ class CartPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            PageTitle(title: S.cart),
-            Expanded(
-              child: BlocBuilder<CartCubit, CartState>(
-                builder: (context, state) {
-                  if (state.isEmpty) {
-                    return EmptyState(
-                      icon: HugeIcons.strokeRoundedShoppingCart01,
-                      title: S.cartEmpty,
-                      subtitle: S.cartEmptyHint,
-                    );
-                  }
-                  return Column(
-                    children: [
-                      Expanded(
-                        child: ListView.builder(
-                          padding: EdgeInsets.fromLTRB(
-                            SpacingTokens.lg.w,
-                            SpacingTokens.md.h,
-                            SpacingTokens.lg.w,
-                            SpacingTokens.lg.w,
+        child: BlocListener<CartCubit, CartState>(
+          // A cart that could not be saved on the server must say so: a
+          // silent failure would show a change that only exists on this
+          // device.
+          listenWhen: (previous, current) =>
+              current.error != null && current.error != previous.error,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.error!)),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PageTitle(title: S.cart),
+              Expanded(
+                child: BlocBuilder<CartCubit, CartState>(
+                  builder: (context, state) {
+                    if (state.isEmpty) {
+                      return EmptyState(
+                        icon: HugeIcons.strokeRoundedShoppingCart01,
+                        title: S.cartEmpty,
+                        subtitle: S.cartEmptyHint,
+                      );
+                    }
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: ListView.builder(
+                            padding: EdgeInsets.fromLTRB(
+                              SpacingTokens.lg.w,
+                              SpacingTokens.md.h,
+                              SpacingTokens.lg.w,
+                              SpacingTokens.lg.w,
+                            ),
+                            itemCount: state.items.length,
+                            itemBuilder: (context, index) {
+                              final item = state.items[index];
+                              return ProductCard(
+                                product: item.product,
+                                quantity: item.quantity,
+                                showFavorite: false,
+                                note: item.note,
+                                lineId: item.lineId,
+                                unitPrice: item.unitPrice,
+                                onIncrement: () => context
+                                    .read<CartCubit>()
+                                    .incrementLine(item.lineId),
+                                onDecrement: () =>
+                                    _decrementOrRemove(context, item),
+                              );
+                            },
                           ),
-                          itemCount: state.items.length,
-                          itemBuilder: (context, index) {
-                            final item = state.items[index];
-                            return ProductCard(
-                              product: item.product,
-                              quantity: item.quantity,
-                              showFavorite: false,
-                              note: item.note,
-                              lineId: item.lineId,
-                              unitPrice: item.unitPrice,
-                              onIncrement: () => context
-                                  .read<CartCubit>()
-                                  .incrementLine(item.lineId),
-                              onDecrement: () =>
-                                  _decrementOrRemove(context, item),
-                            );
-                          },
                         ),
-                      ),
-                      const _CartSummary(),
-                    ],
-                  );
-                },
+                        const _CartSummary(),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

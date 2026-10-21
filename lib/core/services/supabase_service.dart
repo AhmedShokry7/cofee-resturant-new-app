@@ -44,12 +44,49 @@ class SupabaseService {
   }
 
   /// Initialise once. Safe to call from multiple places.
+  ///
+  /// A failed attempt is not remembered: the next call tries again. The
+  /// alternative — caching the failed future — meant that one dropped
+  /// connection at start-up left the app without a backend for its whole
+  /// lifetime, and every sign-in then failed with "the service is
+  /// unavailable" even after the network came back.
   static Future<SupabaseClient?> init() {
     if (!AppConfig.isSupabaseConfigured) {
       AppConfig.debugLogConfiguration();
       return Future.value(null);
     }
-    return _initialising ??= _doInit();
+    final pending = _initialising ??= _doInit();
+    return pending.whenComplete(() {
+      if (_client == null) _initialising = null;
+    });
+  }
+
+  /// Makes sure a client exists, retrying a failed start-up.
+  ///
+  /// Called before the first request that needs the backend. A phone that
+  /// wakes up on a flaky connection, or an app that was started before the
+  /// network came back, recovers by itself instead of showing an error the
+  /// customer cannot do anything about.
+  static Future<SupabaseClient?> ensureReady({
+    int attempts = 3,
+    Duration delay = const Duration(seconds: 2),
+  }) async {
+    if (_client != null) return _client;
+    if (!AppConfig.isSupabaseConfigured) return null;
+    for (var attempt = 1; attempt <= attempts; attempt++) {
+      try {
+        final client = await init();
+        if (client != null) return client;
+        return null;
+      } catch (_) {
+        // The error stays in [initialisationError] for diagnosis; the next
+        // attempt starts from scratch.
+      }
+      if (attempt < attempts) {
+        await Future<void>.delayed(delay * attempt);
+      }
+    }
+    return _client;
   }
 
   static Future<SupabaseClient?> _doInit() async {
@@ -82,6 +119,18 @@ class SupabaseService {
   @visibleForTesting
   static void debugReset() {
     _client = null;
+    _initialising = null;
+    _initialisationError = null;
+  }
+
+  /// Test hook for injecting a client that talks to a fake server.
+  ///
+  /// Production code never calls this: the client is created by [init] and
+  /// nowhere else. It exists so a repository that goes through
+  /// [SupabaseService.client] can be covered without a live backend.
+  @visibleForTesting
+  static void debugSetClient(SupabaseClient? client) {
+    _client = client;
     _initialising = null;
     _initialisationError = null;
   }

@@ -13,20 +13,24 @@ class AssistantPhrases {
     AssistantIntent.greeting: [
       // English
       'hello', 'hi there', 'hey', 'good morning', 'good evening',
-      'good afternoon', 'how are you', 'whats up',
+      'good afternoon', 'how are you', 'whats up', 'help me',
       // MSA / shared
       'سلام عليكم', 'السلام عليكم', 'صباح الخير', 'مساء الخير',
       'اهلا', 'أهلا', 'مرحبا', 'ازيك', 'ازيك', 'عامل ايه', 'اخبارك',
+      'ساعدني', 'ساعد', 'محتاج مساعده',
+      'ممكن توضحلي', 'وضحلي', 'ممكن تشرح', 'اشرحلي',
       // Egyptian
       'صباح الفل', 'مساء الفل', 'ازيك يا', 'عاملين ايه', 'اهلا بيك',
+      'ساعدني لو سمحت', 'محتاج مساعده',
       // Levantine
       'مرحبا', 'كيفك', 'شو اخبارك', 'صباحو', 'مسا الخير', 'اهلين',
+      'ساعدني', 'بدك تساعدني',
       // Gulf / Saudi
       'هلا', 'هلا والله', 'صباح النور', 'مساء النور', 'شحالك', 'شلونك',
-      'الله يحييك', 'ياهلا فيك',
+      'الله يحييك', 'ياهلا فيك', 'ساعدني',
       // Arabizi
       'salam', 'sabah el kheir', 'masa el kheir', 'ezayak', '3amel eh',
-      'ahlan', 'marhaba', 'keefak', 'hala wallah',
+      'ahlan', 'marhaba', 'keefak', 'hala wallah', 'sa3edni',
     ],
     AssistantIntent.suggestDrink: [
       // English
@@ -36,17 +40,20 @@ class AssistantPhrases {
       // MSA / shared
       'اقترح', 'رشح', 'افضل مشروب', 'احسن حاجه', 'فاجئني', 'عايز اجرب',
       'حاجه جديده', 'زهقت', 'عندك افكار', 'قهوه قويه', 'حاجه حلوه',
-      'حاجه رخيصه', 'حاجه خفيفه',
+      'حاجه رخيصه', 'حاجه خفيفه', 'عندكم ايه', 'ايه عندكم', 'شو عندكم',
+      'ايش عندكم', 'شو فيه', 'ايش فيه', 'عندكم ايه',
+      'اكتر حاجه', 'اكتر شي', 'الناس بتاخد', 'الناس بتحب',
+      'وش بيعجب الناس', 'ايش بيعجب الناس',
       // Egyptian
       'عاوز اشرب ايه', 'عايز اشرب ايه', 'رشحلي حاجه', 'اقترح عليا',
       'عاوز حاجه قويه', 'عاوز حاجه مسكره', 'نفسك في ايه', 'تشرب ايه',
-      'حاجه تظبط الدماغ', 'عاوز افوق', 'عايز افوق',
+      'حاجه تظبط الدماغ', 'عاوز افوق', 'عايز افوق', 'عندكم قهوه',
       // Levantine
       'بدي اشرب شي', 'شو بتنصحني', 'شو طيب عندكم', 'بدي شي قوي',
-      'بدي شي حلو', 'شو الجديد',
+      'بدي شي حلو', 'شو الجديد', 'شو في',
       // Gulf / Saudi
       'ابي شي', 'وش تنصح', 'وش احسن شي', 'ابي قهوه قويه', 'ابي شي حلو',
-      'ابغى اطلب', 'ابي اطلب', 'ودي اطلب', 'بدي اطلب',
+      'ابغى اطلب', 'ابي اطلب', 'ودي اطلب', 'بدي اطلب', 'وش متوفر',
       // Arabizi
       'ersha7', 'rash7ly', '3ayez ashrab eh', '3awz haga helwa',
       '3ayez haga helwa', 'badi shi', 'shu btnsa7ni', 'abi shi',
@@ -58,6 +65,11 @@ class AssistantPhrases {
       // MSA / shared
       'الاوردر', 'طلبى', 'فين طلبى', 'طلبى وصل', 'حاله الطلب', 'تتبع الطلب',
       'الطلب اتعمل', 'الطلب جاهز', 'الطلب فين',
+      // "I ordered it yesterday" is a question about a past order, not a new
+      // one. Without these it started a fresh order instead of looking for
+      // the one that was already placed.
+      'اطلبت امبارح', 'طلبت امبارح', 'اطلبت من امبارح', 'طلبت من امبارح',
+      'الطلب السابق', 'طلبي السابق', 'الاوردر السابق',
       // Egyptian
       'الاوردر فين', 'طلبى اتعمل ولا لسه', 'الاوردر وصل', 'هو الاوردر جاهز',
       'طلبى بيتحضر', 'لسه الطلب',
@@ -171,11 +183,17 @@ class AssistantPhrases {
       'new', 'bored', 'surprise', 'ideas', 'strong', 'sweet', 'cheap',
       'light', 'something', 'thirsty', 'mood', 'want',
       // The obvious basics (never miss these again).
-      'coffee', 'drink', 'drinks', 'tea',
+      'coffee', 'drink', 'drinks', 'tea', 'قهوه', 'قهوة', 'كوفي',
+      'منيو', 'القائمه', 'كافيه', 'café', 'cafe',
       'اقترح', 'رشح', 'احسن', 'افضل', 'اجرب', 'جديد', 'زهقت',
       'فاجئني', 'افكار', 'قويه', 'قوي', 'حلوه', 'حلو', 'مسكره', 'مسكر',
       'رخيصه', 'رخيص', 'خفيفه', 'خفيف', 'عطشان', 'عايز', 'عاوز',
       'بدي', 'ابي', 'نفسي', 'مزاج', 'افوق', 'تظبط',
+      // "What do people order?" wording. Without these, the "what" in
+      // "الناس بتاخد ايه" was read as the Saudi "yes" and the customer got a
+      // thumbs-up instead of a recommendation.
+      'بتاخد', 'بياخد', 'بتطلب', 'بيطلب', 'بتطلبوا', 'بيطلبوا',
+      'بحب', 'بتحب', 'بحبه', 'بيعجب', 'يعجب', 'يحبوا', 'يحب',
       '3ayez', '3awz', 'haga', '7aga', 'helwa', 'helw',
       // Saudi / Gulf want-words.
       'ابغى', 'أبغى', 'يبغى', 'يبغي', 'تبغى', 'نبغى', 'ابغاه', 'يبغاه',
@@ -217,7 +235,7 @@ class AssistantPhrases {
       'تمام', 'ماشي', 'طبعا', 'اكيد', 'حاضر', 'موافق', 'اكد',
       // Saudi / Gulf yes-words.
       'ايه', 'طيب', 'يلا', 'سم', 'لبيه', 'تم', 'ممتاز', 'كويس',
-      'اوكي', 'أوكيه',
+      'اوكي', 'أوكيه', 'زين',
     ],
     AssistantIntent.deny: [
       'لا', 'لاء', 'no', 'nope', 'بلاش', 'مش عايز', 'مش عاوز',
@@ -281,6 +299,7 @@ class AssistantPhrases {
   /// exact English menu names.
   static const Map<String, String> productSynonyms = {
     'اسبريسو': 'Espresso', 'اسبرسو': 'Espresso', 'إسبريسو': 'Espresso',
+    'سبريسو': 'Espresso',
     'كابتشينو': 'Cappuccino', 'كبتشينو': 'Cappuccino',
     'لاتيه': 'Latte', 'لاته': 'Latte', 'لاتي': 'Latte', 'لا تيه': 'Latte',
     'موكا': 'Mocha', 'موكة': 'Mocha', 'موك': 'Mocha', 'موكہ': 'Mocha',
@@ -302,6 +321,7 @@ class AssistantPhrases {
     'توست': 'Butter Bread', 'عيش': 'Butter Bread',
     'دونات': 'Glazed Donut', 'دونتس': 'Glazed Donut',
     'قهوه': 'coffee', 'قهوة': 'coffee', 'كوفي': 'coffee',
+    'كافيه': 'coffee', 'cafe': 'coffee',
     'هيل': 'coffee',
     'فنجان': 'coffee', 'فنجال': 'coffee', 'كوب': 'coffee',
     'كاسه': 'coffee', 'كاس': 'coffee',

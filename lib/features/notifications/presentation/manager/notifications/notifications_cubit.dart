@@ -1,13 +1,22 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart' show RemoteMessage;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
+import 'package:new_coffee/features/notifications/data/repositories/push_repository.dart';
+import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
-    show AuthChangeEvent, AuthState;
+    show
+        AuthChangeEvent,
+        AuthState,
+        PostgresChangeEvent,
+        PostgresChangeFilter,
+        PostgresChangeFilterType,
+        RealtimeChannel;
 
 part 'notifications_state.dart';
 
@@ -17,8 +26,13 @@ part 'notifications_state.dart';
 /// stored read state for those inventions locally. An empty list is the only
 /// honest signed-out answer.
 class NotificationsCubit extends Cubit<NotificationsState> {
-  NotificationsCubit({required this._repository})
-      : super(const NotificationsState()) {
+  NotificationsCubit({
+    required this._repository,
+    PushRepository? pushRepository,
+    Future<bool> Function(bool enabled)? pushSwitch,
+  }) : _pushRepository = pushRepository ?? const PushRepositoryImpl(),
+       _pushSwitch = pushSwitch ?? PushService.setEnabled,
+       super(const NotificationsState()) {
     // Seeded from the same source the repository reads, so restoring the
     // session that is already present is not mistaken for a switch to it.
     _identity = SupabaseService.isReady
@@ -27,12 +41,42 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     if (SupabaseService.isReady) {
       _authSubscription = SupabaseService.client.auth.onAuthStateChange
           .listen(_onAuthStateChanged);
+      // The session can already be there when the cubit is created, in which
+      // case the stream replays it and opens the channel. This covers the
+      // moment between the two, when the customer is signed in but the
+      // cubit does not know it yet.
+      final currentUserId = SupabaseService.client.auth.currentUser?.id;
+      if (currentUserId != null) {
+        _openRealtimeChannel(currentUserId);
+      }
     }
+    // A push that arrives while the app is open changes the list too, and
+    // the customer sees it without opening the screen.
+    _pushSubscription = PushService.onForegroundMessage.listen((_) {
+      load();
+    });
     load();
   }
 
   final NotificationsRepository _repository;
+  final PushRepository _pushRepository;
+
+  /// Turns the push on or off.
+  ///
+  /// It is a function so a test can decide what the system answers without
+  /// a real Firebase behind it.
+  final Future<bool> Function(bool enabled) _pushSwitch;
+
   StreamSubscription<AuthState>? _authSubscription;
+  StreamSubscription<RemoteMessage>? _pushSubscription;
+
+  /// The realtime channel that tells the app about a new notification.
+  ///
+  /// The database is the source of truth, so the row is read again when the
+  /// channel reports one. The channel belongs to one customer at a time and
+  /// is closed when that customer signs out.
+  RealtimeChannel? _channel;
+
 
   /// Tail of the serialized load chain.
   ///
@@ -126,10 +170,89 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       auth.event == AuthChangeEvent.signedOut;
 
   void _onAuthStateChanged(AuthState auth) {
+    // The realtime channel belongs to the customer, and it is opened for every
+    // event that carries a session, not only for a sign-in: the session of a
+    // returning customer is restored after the app started, and that event
+    // is the one that has to open the channel.
+    if (auth.event == AuthChangeEvent.signedOut) {
+      _closeRealtimeChannel();
+    } else if (auth.session != null) {
+      _openRealtimeChannel(auth.session!.user.id);
+    }
+
     if (!shouldReloadOnAuthEvent(auth)) return;
     applyIdentityTransition(auth.session?.user.id);
     load();
   }
+
+  /// Subscribes to the notifications of the customer.
+  ///
+  /// Without this the list only changes when the customer opens the screen,
+  /// so the badge on the bell would be wrong until then. The channel is
+  /// filtered by the customer, and the row is read again from the database
+  /// when it arrives, so the screen shows what the database holds.
+  void _openRealtimeChannel(String? userId) {
+    _closeRealtimeChannel();
+    if (userId == null || !SupabaseService.isReady) return;
+    try {
+      _channel = SupabaseService.client
+          .channel('notifications:$userId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'engagement',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: userId,
+            ),
+            callback: (_) => load(),
+          )
+          .subscribe();
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('[NotificationsCubit] realtime failed: $error');
+      }
+    }
+  }
+
+  void _closeRealtimeChannel() {
+    final channel = _channel;
+    _channel = null;
+    if (channel == null || !SupabaseService.isReady) return;
+    try {
+      SupabaseService.client.removeChannel(channel);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('[NotificationsCubit] realtime close failed: $error');
+      }
+    }
+  }
+
+  /// Whether the customer wants to receive pushes on this phone.
+  Future<void> loadPushState() async {
+    try {
+      final enabled = await _pushRepository.isPushEnabled();
+      if (isClosed) return;
+      emit(state.copyWith(pushEnabled: enabled));
+    } catch (error) {
+      // A customer who is not signed in has no push state yet. The screen
+      // shows the switch as off, which is the honest answer.
+      if (isClosed) return;
+      emit(state.copyWith(pushEnabled: false));
+    }
+  }
+
+  /// Turns the push on or off for this customer.
+  ///
+  /// Turning it on needs the permission of the system, so it can fail: the
+  /// switch then stays where it was.
+  Future<void> setPushEnabled(bool enabled) async {
+    final changed = await _pushSwitch(enabled);
+    if (isClosed) return;
+    emit(state.copyWith(pushEnabled: changed));
+  }
+
 
   Future<void> _load({required bool markRead}) async {
     final generation = ++_loadGeneration;
@@ -187,6 +310,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   Future<void> close() {
     _authSubscription?.cancel();
     _authSubscription = null;
+    _pushSubscription?.cancel();
+    _pushSubscription = null;
+    _closeRealtimeChannel();
     return super.close();
   }
 }

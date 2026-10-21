@@ -66,6 +66,10 @@ class AssistantCatalog {
   }
 
   /// Ingredient ids mentioned anywhere in [query] (whole words).
+  ///
+  /// The Arabic preposition is part of the word here: "بالمكسرات" (with nuts)
+  /// is one word, so the ingredient is glued to a "ب" and the whole-word check
+  /// has to allow it.
   Set<String> detectIngredients(String query) {
     final normalized = normalizeText(query);
     if (normalized.isEmpty) return {};
@@ -125,7 +129,9 @@ class AssistantCatalog {
       _knowledge.map((row) => row.toJson()).toList();
 
   static bool _wholeWord(String text, int index, int length) {
-    final beforeOk = index == 0 || text[index - 1] == ' ';
+    // The Arabic preposition "ب" is written attached: "بالمكسرات" is one word.
+    final beforeOk =
+        index == 0 || text[index - 1] == ' ' || text[index - 1] == 'ب';
     final end = index + length;
     final afterOk = end >= text.length || text[end] == ' ';
     return beforeOk && afterOk;

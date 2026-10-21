@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hugeicons/hugeicons.dart';
 
@@ -52,6 +53,21 @@ class PaymentMethodModel {
       'mada' => HugeIcons.strokeRoundedCreditCard,
       _ => HugeIcons.strokeRoundedCreditCard,
     };
+  }
+
+  /// Whether this method can be used on the device the app runs on.
+  ///
+  /// The database says which methods the shop offers; the device says which
+  /// of them it can actually take. Apple Pay on Android is not something the
+  /// customer can use, and offering it there only leads to a failed payment.
+  bool get isAvailableOnThisDevice {
+    switch (code) {
+      case 'apple_pay':
+        return defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS;
+      default:
+        return true;
+    }
   }
 
   factory PaymentMethodModel.fromDatabase(Map<String, dynamic> json) {

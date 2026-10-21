@@ -1,6 +1,10 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
+import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
+import 'package:new_coffee/shared/utils/cache_manager.dart';
+
 /// Which language the UI should render.
 ///
 /// Held in one place so a model can expose a locale-aware `name` without every
@@ -56,6 +60,11 @@ class AppLocale extends ChangeNotifier {
     notifyListeners();
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_languagePreferenceKey, value.code);
+
+    // مسح الكاش عند تغيير اللغة لأن البيانات محلية (ar/en) وقد تختلف.
+    HomeCubit.clearCache();
+    CategoriesCubit.clearCache();
+    CacheManager().clear();
   }
 
   Future<void> toggle() => setLanguage(

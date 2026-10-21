@@ -6,6 +6,7 @@ import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 part 'home_state.dart';
 
@@ -15,6 +16,10 @@ part 'home_state.dart';
 /// during build, so the data was fixed at compile time and could not change
 /// without a release. One cubit loads it once and every widget reads the same
 /// snapshot, which is also one round trip instead of seven.
+///
+/// بيانات الصفحة الرئيسية تُخزّن مؤقتاً في ذاكرة الجهاز ([CacheManager]) لمدة
+/// 5 دقائق لتجنب إعادة طلب نفس البيانات من Supabase في كل opening للصفحة،
+/// مما يخفف الحمل على قاعدة البيانات عند ازدياد عدد المستخدمين المتزامنين.
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit({required this._repository, this.branchId})
     : super(const HomeState()) {
@@ -51,41 +56,63 @@ class HomeCubit extends Cubit<HomeState> {
       }
     }
 
-    final bannersFuture = guard(
-      'banners',
-      () => _repository.getBanners(),
-      state.banners,
-    );
-    final bundlesFuture = guard(
-      'bundles',
-      () => _repository.getBundles(branchId: branchId),
-      state.bundles,
-    );
-    final categoriesFuture = guard(
-      'categories',
-      () => _repository.getCategories(),
-      state.categories,
-    );
-    final featuredFuture = guard(
-      'featured',
-      () => _repository.getFeatured(branchId: branchId, limit: 10),
-      const <FeaturedProduct>[],
-    );
+    //cache key includes branchId so different branches don't share stale data.
+    final cacheBranch = branchId ?? 'base';
+
+    // البانرات تتغير rarement — تُجلب من الكاش إذا كانت متوفرة.
+    final banners = await guard('banners', () async {
+      final key = 'home_banners';
+      final cached = CacheManager().get<List<BannerModel>>(key);
+      if (cached != null) return cached;
+      final fetched = await _repository.getBanners();
+      CacheManager().set(key, fetched);
+      return fetched;
+    }, state.banners);
+    final bundles = await guard('bundles', () async {
+      final key = 'home_bundles_$cacheBranch';
+      final cached = CacheManager().get<List<BundleModel>>(key);
+      if (cached != null) return cached;
+      final fetched = await _repository.getBundles(branchId: branchId);
+      CacheManager().set(key, fetched);
+      return fetched;
+    }, state.bundles);
+    final categories = await guard('categories', () async {
+      final key = 'home_categories';
+      final cached = CacheManager().get<List<CategoryModel>>(key);
+      if (cached != null) return cached;
+      final fetched = await _repository.getCategories();
+      CacheManager().set(key, fetched);
+      return fetched;
+    }, state.categories);
+    final featuredFuture = guard('featured', () async {
+      final key = 'home_featured_$cacheBranch';
+      final cached = CacheManager().get<List<FeaturedProduct>>(key);
+      if (cached != null) return cached;
+      final fetched = await _repository.getFeatured(
+        branchId: branchId,
+        limit: 10,
+      );
+      CacheManager().set(key, fetched);
+      return fetched;
+    }, const <FeaturedProduct>[]);
     // Candidate pool for recommendations. Loaded once here so the weather
     // rule can filter it without a query per temperature change.
-    final productsFuture = guard(
-      'products',
-      () => _repository.getProducts(branchId: branchId, limit: 10),
-      state.recommendationPool,
-    );
+    final productsFuture = guard('products', () async {
+      final key = 'home_products_$cacheBranch';
+      final cached = CacheManager().get<List<ProductModel>>(key);
+      if (cached != null) return cached;
+      final fetched = await _repository.getProducts(
+        branchId: branchId,
+        limit: 10,
+      );
+      CacheManager().set(key, fetched);
+      return fetched;
+    }, state.recommendationPool);
 
     // Critical sections first so the home renders quickly; heavier sections
     // (bundles, featured, products) follow without blocking the first frame.
-    final bundles = await bundlesFuture;
     final featured = await featuredFuture;
     final products = await productsFuture;
-    final banners = await bannersFuture;
-    final categories = await categoriesFuture;
     if (isClosed) return;
 
     // Resolve the products a bundle contains in one query, rather than per
@@ -132,6 +159,13 @@ class HomeCubit extends Cubit<HomeState> {
         error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
       ),
     );
+  }
+
+  /// clears the home cache so the next load fetches fresh data from Supabase.
+  /// Called when the customer switches language or logs out.
+  static void clearCache() {
+    CacheManager().remove('home_banners');
+    CacheManager().remove('home_categories');
   }
 
   /// Products contained by the loaded bundles, keyed by product id.

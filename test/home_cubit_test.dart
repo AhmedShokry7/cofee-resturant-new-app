@@ -6,6 +6,7 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 /// Home page loading contract.
 ///
@@ -13,6 +14,8 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 /// failing section must degrade with a named error instead of blanking the
 /// whole page.
 void main() {
+  setUp(() => CacheManager().clear());
+
   Future<HomeState> loadFinished(HomeCubit cubit) =>
       cubit.stream.firstWhere((s) => !s.isLoading);
 
@@ -89,6 +92,11 @@ class _FailingBannersCatalog implements CatalogRepository {
   @override
   Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) =>
       _inner.getWithOptions(id, branchId: branchId);
+
+  @override
+  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
+    List<String> productIds,
+  ) => _inner.getOptionsByProduct(productIds);
 
   @override
   Future<List<ProductModel>> getProducts({

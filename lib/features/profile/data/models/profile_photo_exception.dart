@@ -21,11 +21,8 @@ enum ProfilePhotoFailure {
   /// while the profile still points at the old one.
   profileUpdateFailed,
 
-  /// The signed URL could not be created.
-  signedUrlFailed,
-
-  /// Reading the saved path or resolving its URL failed for a reason that is not
-  /// one of the specific cases above.
+  /// Reading the saved path or the photo behind it failed for a reason that is
+  /// not one of the specific cases above.
   photoLoadFailed,
 
   /// `identity.profiles` has no row for this auth user, so there is nowhere to
