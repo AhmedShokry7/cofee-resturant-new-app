@@ -35,6 +35,8 @@ class OrderItemModel {
     this.subtotal,
     this.discountTotal,
     this.lineDiscountTotal,
+    this.productDiscountTotal,
+    this.lineProductDiscountTotal,
     this.taxTotal,
     this.grandTotal,
   });
@@ -75,8 +77,22 @@ class OrderItemModel {
   /// Header money snapshots. Null only for pre-database models, where the
   /// frozen line values are still the correct source.
   final double? subtotal;
+
+  /// The coupon of the order.
   final double? discountTotal;
+
+  /// The share of the coupon that belongs to this line.
   final double? lineDiscountTotal;
+
+  /// The product discount of the order.
+  ///
+  /// It is already inside [subtotal]: the price before the promotion minus the
+  /// price charged. It is a separate figure so the invoice can show it.
+  final double? productDiscountTotal;
+
+  /// The product discount that belongs to this line.
+  final double? lineProductDiscountTotal;
+
   final double? taxTotal;
   final double? grandTotal;
 
@@ -186,6 +202,12 @@ class OrderItemModel {
       subtotal: Db.asDoubleOrNull(orderMap['subtotal']),
       discountTotal: Db.asDoubleOrNull(orderMap['discount_total']),
       lineDiscountTotal: Db.asDoubleOrNull(itemMap['discount_total']),
+      productDiscountTotal: Db.asDoubleOrNull(
+        orderMap['product_discount_total'],
+      ),
+      lineProductDiscountTotal: Db.asDoubleOrNull(
+        itemMap['product_discount_total'],
+      ),
       taxTotal: Db.asDoubleOrNull(orderMap['tax_total']),
       grandTotal: Db.asDoubleOrNull(orderMap['grand_total']),
       placedAt: placedAtValue == null

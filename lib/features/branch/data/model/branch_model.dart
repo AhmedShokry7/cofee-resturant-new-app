@@ -14,6 +14,8 @@ class Branch {
     String? address,
     this.addressAr,
     this.addressEn,
+    this.latitude,
+    this.longitude,
     this.phone,
     this.isActive = true,
   }) : _legacyAddress = address;
@@ -24,6 +26,8 @@ class Branch {
   final String nameEn;
   final String? addressAr;
   final String? addressEn;
+  final double? latitude;
+  final double? longitude;
   final String? phone;
   final bool isActive;
   final String? _legacyAddress;
@@ -56,6 +60,8 @@ class Branch {
       address: Db.textOrNull(map['address']),
       addressAr: Db.textOrNull(map['address_ar']),
       addressEn: Db.textOrNull(map['address_en']),
+      latitude: Db.asDoubleOrNull(map['latitude']),
+      longitude: Db.asDoubleOrNull(map['longitude']),
       phone: Db.textOrNull(map['phone']),
       isActive: Db.asBool(map['is_active'], fallback: true),
     );

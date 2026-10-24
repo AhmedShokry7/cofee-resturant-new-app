@@ -28,7 +28,7 @@ class CardPreview extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.all(SpacingTokens.lg.w),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [AppColor.primaryColor, AppColor.secondryColor],

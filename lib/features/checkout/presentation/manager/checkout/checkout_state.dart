@@ -20,12 +20,22 @@ class CheckoutSummary {
     required this.subtotal,
     required this.discount,
     required this.deliveryFee,
+    this.tax = 0,
+    this.productDiscount = 0,
     required this.total,
   });
 
   final double subtotal;
+
+  /// The coupon.
   final double discount;
+
+  /// The product discount. It is already inside [subtotal]; it is shown
+  /// separately so the customer can see what the promotion saved.
+  final double productDiscount;
+
   final double deliveryFee;
+  final double tax;
   final double total;
 }
 
@@ -43,6 +53,7 @@ class CheckoutState {
     this.isLoading = true,
     this.isPlacingOrder = false,
     this.orderError,
+    this.orderWarning,
     this.addressOutOfZone = false,
     this.isResolvingZone = false,
     this.selectedSavedCard,
@@ -52,6 +63,9 @@ class CheckoutState {
     this.selectedDeliveryZone,
     this.deliveryZonesLoadFailed = false,
     this.deliveryBlocked = false,
+    this.checkoutQuote,
+    this.quoteLoading = false,
+    this.quoteError,
   });
 
   final List<AddressModel> addresses;
@@ -83,6 +97,11 @@ class CheckoutState {
   /// success clears it before setting [lastOrder].
   final String? orderError;
 
+  /// Something the customer must know about an order that was placed, e.g. a
+  /// coupon the server did not grant. It is not a failure: the order exists
+  /// and its total is the server's.
+  final String? orderWarning;
+
   final String? error;
 
   /// Whether the order is collected at the branch or delivered.
@@ -111,6 +130,9 @@ class CheckoutState {
   /// not explicitly picked pickup since. [placeOrder] refuses while it is set,
   /// so an attempted delivery can never be silently completed as a pickup.
   final bool deliveryBlocked;
+  final CheckoutQuote? checkoutQuote;
+  final bool quoteLoading;
+  final String? quoteError;
 
   /// True when the selected address has coordinates and none of the branch's
   /// zones covers it.
@@ -141,6 +163,7 @@ class CheckoutState {
   CheckoutState copyWith({
     List<AddressModel>? addresses,
     AddressModel? selectedAddress,
+    bool clearSelectedAddress = false,
     List<PaymentMethodModel>? paymentMethods,
     PaymentMethodModel? selectedPaymentMethod,
     OrderModel? lastOrder,
@@ -154,6 +177,8 @@ class CheckoutState {
     bool? isPlacingOrder,
     String? orderError,
     bool clearOrderError = false,
+    String? orderWarning,
+    bool clearOrderWarning = false,
     String? error,
     bool clearError = false,
     FulfillmentType? fulfillment,
@@ -165,20 +190,31 @@ class CheckoutState {
     bool? addressOutOfZone,
     bool? isResolvingZone,
     SavedCardModel? selectedSavedCard,
+    bool clearSelectedSavedCard = false,
+    CheckoutQuote? checkoutQuote,
+    bool clearCheckoutQuote = false,
+    bool? quoteLoading,
+    String? quoteError,
+    bool clearQuoteError = false,
   }) {
     return CheckoutState(
       addresses: addresses ?? this.addresses,
-      selectedAddress: selectedAddress ?? this.selectedAddress,
+      selectedAddress: clearSelectedAddress
+          ? null
+          : selectedAddress ?? this.selectedAddress,
       paymentMethods: paymentMethods ?? this.paymentMethods,
-      selectedPaymentMethod: selectedPaymentMethod ?? this.selectedPaymentMethod,
+      selectedPaymentMethod:
+          selectedPaymentMethod ?? this.selectedPaymentMethod,
       lastOrder: clearLastOrder ? null : lastOrder ?? this.lastOrder,
       appliedCoupon: clearCoupon ? null : appliedCoupon ?? this.appliedCoupon,
       availableCoupons: availableCoupons ?? this.availableCoupons,
-      couponError:
-          clearCouponError ? null : (couponError ?? this.couponError),
+      couponError: clearCouponError ? null : (couponError ?? this.couponError),
       isLoading: isLoading ?? this.isLoading,
       isPlacingOrder: isPlacingOrder ?? this.isPlacingOrder,
       orderError: clearOrderError ? null : (orderError ?? this.orderError),
+      orderWarning: clearOrderWarning
+          ? null
+          : (orderWarning ?? this.orderWarning),
       error: clearError ? null : (error ?? this.error),
       fulfillment: fulfillment ?? this.fulfillment,
       deliveryZones: deliveryZones ?? this.deliveryZones,
@@ -189,8 +225,15 @@ class CheckoutState {
           deliveryZonesLoadFailed ?? this.deliveryZonesLoadFailed,
       deliveryBlocked: deliveryBlocked ?? this.deliveryBlocked,
       addressOutOfZone: addressOutOfZone ?? this.addressOutOfZone,
-      selectedSavedCard: selectedSavedCard ?? this.selectedSavedCard,
+      selectedSavedCard: clearSelectedSavedCard
+          ? null
+          : selectedSavedCard ?? this.selectedSavedCard,
       isResolvingZone: isResolvingZone ?? this.isResolvingZone,
+      checkoutQuote: clearCheckoutQuote
+          ? null
+          : checkoutQuote ?? this.checkoutQuote,
+      quoteLoading: quoteLoading ?? this.quoteLoading,
+      quoteError: clearQuoteError ? null : quoteError ?? this.quoteError,
     );
   }
 }

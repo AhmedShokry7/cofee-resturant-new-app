@@ -56,7 +56,9 @@ class AdminAuthRepository {
   }
 
   Future<AdminSession> _loadStaffRecord(SupabaseClient supabase) async {
-    final raw = await supabase.rpc('admin_get_my_admin_record');
+    // The staff record comes from the function the migration chain creates
+    // and grants to the signed-in staff: admin_get_my_staff_record().
+    final raw = await supabase.rpc('admin_get_my_staff_record');
     return AdminSession.fromRpc(raw);
   }
 

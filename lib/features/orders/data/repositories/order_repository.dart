@@ -53,17 +53,53 @@ class PlacedOrder {
     required this.grandTotal,
     required this.pointsEarned,
     required this.placedAt,
+    this.productDiscountTotal = 0,
   });
 
   final String orderId;
   final String orderNumber;
   final double subtotal;
+
+  /// The coupon.
   final double discountTotal;
+
+  /// The product discount. It is already inside [subtotal].
+  final double productDiscountTotal;
+
   final double deliveryFee;
   final double taxTotal;
   final double grandTotal;
   final int pointsEarned;
   final DateTime placedAt;
+}
+
+/// Authoritative checkout prices returned by the same database rules used to
+/// persist the invoice.
+class CheckoutQuote {
+  const CheckoutQuote({
+    required this.subtotal,
+    required this.discountTotal,
+    required this.deliveryFee,
+    required this.taxTotal,
+    required this.grandTotal,
+    required this.currencyCode,
+    this.productDiscountTotal = 0,
+  });
+
+  final double subtotal;
+
+  /// The coupon.
+  final double discountTotal;
+
+  /// The product discount. It is already inside [subtotal], so it is a
+  /// separate figure: the invoice shows the price before the discount, then
+  /// the discount, and the subtotal is what is left.
+  final double productDiscountTotal;
+
+  final double deliveryFee;
+  final double taxTotal;
+  final double grandTotal;
+  final String currencyCode;
 }
 
 /// Customer-facing order history.
@@ -113,4 +149,29 @@ abstract class OrdersRepository {
 
   /// Status transitions recorded by the server, oldest first.
   Future<List<OrderStatusEvent>> orderHistory(String orderId);
+}
+
+/// Optional server pricing capability, separate so local fakes and
+/// read-only order repositories keep their smaller contract.
+abstract interface class CheckoutQuoteRepository {
+  Future<CheckoutQuote> quoteCheckout({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String fulfillmentType,
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+  });
+
+  Future<PlacedOrder> placeOrderWithQuote({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String idempotencyKey,
+    required double expectedTotal,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+    String? note,
+  });
 }

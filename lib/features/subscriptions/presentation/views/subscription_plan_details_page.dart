@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -57,7 +58,7 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
                         leading: p.imageUrl != null
                             ? (p.imageUrl!.startsWith('assets/')
                                 ? Image.asset(p.imageUrl!, width: 40, height: 40, fit: BoxFit.cover)
-                                : Image.network(p.imageUrl!, width: 40, height: 40, fit: BoxFit.cover))
+                                : CachedNetworkImage(imageUrl: p.imageUrl!, width: 40, height: 40, fit: BoxFit.fill))
                             : null,
                         title: Text(_t(p.nameAr, p.nameEn, p.nameEn)),
                         subtitle: Text('${p.price}'),
@@ -80,6 +81,8 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
                         child: CardPaymentPage(
                           subscriptionId: subscription.id,
                           idempotencyKey: subscription.id,
+                          amount: plan.price,
+                          currency: plan.currencyCode,
                           publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
                           sdkConfiguration: const <String, dynamic>{},
                         ),

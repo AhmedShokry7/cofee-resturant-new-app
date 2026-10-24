@@ -28,14 +28,23 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   String? _savedCardId;
 
   /// Binds the cubit to an order/subscription and, optionally, a saved card to charge.
+  ///
+  /// [reset] clears the state of a previous attempt. It is false when the
+  /// charge for this very order already exists (the saved-card flow creates
+  /// the charge before the payment page is opened), so the page keeps the
+  /// charge id and the redirect URL it has to follow.
   void start({
     String? orderId,
     String? subscriptionId,
     String? savedCardId,
+    bool reset = true,
   }) {
     _orderId = orderId;
     _subscriptionId = subscriptionId;
     _savedCardId = savedCardId;
+    if (reset && !isClosed) {
+      emit(const CardPaymentState());
+    }
   }
 
   void onCardValidInput(bool isValid) {
@@ -51,7 +60,14 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     }
   }
 
-  Future<void> createCharge() async {
+  /// Creates the charge for the order or subscription this cubit is bound to.
+  ///
+  /// [sourceToken] is the token the hosted card form produced. It is passed
+  /// in by the caller that owns the form, because the token only exists there;
+  /// [sourceTokenProvider] stays available for callers that fetch the token
+  /// themselves. Without either, the attempt fails as a tokenization failure
+  /// instead of leaving the screen stuck in "tokenizing".
+  Future<void> createCharge({String? sourceToken}) async {
     if (state.isBusy) return;
     final orderId = _orderId;
     final subscriptionId = _subscriptionId;
@@ -75,8 +91,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     emit(state.copyWith(status: CardPaymentStatus.tokenizing, clearError: true));
 
     final provider = sourceTokenProvider;
-    if (provider == null) return;
-    final token = await provider();
+    final token = sourceToken ?? (provider == null ? null : await provider());
     if (isClosed) return;
 
     if (token == null || token.isEmpty) {

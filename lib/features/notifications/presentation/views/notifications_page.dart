@@ -7,6 +7,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
+import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -61,9 +63,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          requested
-              ? S.notificationPermissionDenied
-              : S.notificationsTurnedOff,
+          requested ? S.notificationPermissionDenied : S.notificationsTurnedOff,
         ),
       ),
     );
@@ -110,36 +110,47 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 return const NotificationsSkeleton();
               }
               if (state.error != null && state.notifications.isEmpty) {
-            return EmptyState(
-              icon: Icons.notifications_outlined,
-              title: S.couldNotLoadNotifications,
-              subtitle: state.error,
-            );
-          }
-          if (state.notifications.isEmpty) {
-            return EmptyState(
-              icon: Icons.notifications_outlined,
-              title: S.noNotifications,
-              subtitle: S.notificationsHint,
-            );
-          }
-          return ListView(
-            padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.md.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.lg.w,
-            ),
-            children: state.notifications
-                .map(
-                  (notification) => NotificationTile(
-                    notification: notification,
-                    isRead: notification.isRead,
-                  ),
-                )
-                .toList(),
-          );
-            }
+                return EmptyState(
+                  icon: Icons.notifications_outlined,
+                  title: S.couldNotLoadNotifications,
+                  subtitle: state.error,
+                );
+              }
+              if (state.notifications.isEmpty) {
+                return EmptyState(
+                  icon: Icons.notifications_outlined,
+                  title: S.noNotifications,
+                  subtitle: S.notificationsHint,
+                );
+              }
+              return ListView(
+                padding: EdgeInsets.fromLTRB(
+                  SpacingTokens.lg.w,
+                  SpacingTokens.md.h,
+                  SpacingTokens.lg.w,
+                  SpacingTokens.lg.w,
+                ),
+                children: state.notifications
+                    .map(
+                      (notification) => NotificationTile(
+                        notification: notification,
+                        isRead: notification.isRead,
+                        onTap: () {
+                          final route = switch (notification
+                              .relatedEntityType) {
+                            'order' => OrdersPage.routeName,
+                            'subscription' => SubscriptionDetailsPage.routeName,
+                            _ => null,
+                          };
+                          if (route != null) {
+                            Navigator.of(context).pushNamed(route);
+                          }
+                        },
+                      ),
+                    )
+                    .toList(),
+              );
+            },
           ),
         );
       },

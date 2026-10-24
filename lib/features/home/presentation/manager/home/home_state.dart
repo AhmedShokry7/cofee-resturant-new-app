@@ -35,7 +35,13 @@ class HomeState {
 
   /// True before anything has ever loaded, which is different from loaded and
   /// found nothing.
-  bool get isFirstLoad => isLoading && banners.isEmpty && bundles.isEmpty;
+  bool get isFirstLoad =>
+      isLoading &&
+      banners.isEmpty &&
+      bundles.isEmpty &&
+      categories.isEmpty &&
+      popular.isEmpty &&
+      recommendationPool.isEmpty;
 
   /// Banners past the carousel, used by the single promo banner slot.
   BannerModel? get promoBanner {

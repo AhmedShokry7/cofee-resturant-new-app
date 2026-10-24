@@ -1,9 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
+import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card.dart';
+import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_records.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+
+class _FakePageRepository extends AdminProductRepository {
+  final List<AdminProduct> saved = <AdminProduct>[];
+
+  @override
+  Future<AdminCatalogSnapshot> loadCatalog({
+    String? branchId,
+    int? limit,
+    int offset = 0,
+    String? search,
+  }) async {
+    return const AdminCatalogSnapshot(
+      products: <AdminProduct>[],
+      categories: <AdminCategory>[
+        AdminCategory(id: 'c1', nameAr: 'قهوة', nameEn: 'Coffee'),
+      ],
+      branchId: 'branch-1',
+    );
+  }
+
+  @override
+  Future<AdminProduct> saveProduct(
+    AdminProduct product, {
+    String? branchId,
+  }) async {
+    saved.add(product);
+    return product.copyWith(id: 'p1', isDraft: false);
+  }
+}
 
 void _setViewport(WidgetTester tester, double width) {
   tester.view.physicalSize = Size(width, 1200);
@@ -56,6 +93,56 @@ const List<AdminProduct> _products = <AdminProduct>[
 ];
 
 void main() {
+  setUp(() {
+    AppLocale.instance.debugSet(AppLanguage.english);
+  });
+
+  tearDown(() {
+    AppLocale.instance.debugSet(AppLanguage.english);
+  });
+
+  testWidgets('add product opens the data dialog and waits for save', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+
+    final repository = _FakePageRepository();
+    final cubit = AdminProductCubit(repository: repository);
+    final searchController = AdminSearchController();
+    addTearDown(cubit.close);
+    addTearDown(searchController.dispose);
+
+    await cubit.load();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProductPage(searchController: searchController, cubit: cubit),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(cubit.state.products, isEmpty);
+
+    await tester.tap(find.text(S.addProduct));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProductDataDialog), findsOneWidget);
+    expect(cubit.state.products, isEmpty);
+    expect(repository.saved, isEmpty);
+
+    await tester.tap(find.widgetWithText(FilledButton, S.save));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProductDataDialog), findsOneWidget);
+    expect(cubit.state.products, isEmpty);
+    expect(repository.saved, isEmpty);
+
+    await tester.tap(find.widgetWithText(TextButton, S.cancel));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProductDataDialog), findsNothing);
+    expect(cubit.state.products, isEmpty);
+  });
+
   testWidgets('the grid fits five cards on a very wide screen', (tester) async {
     _setViewport(tester, 1600);
 
@@ -122,8 +209,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('منتج أول'), findsOneWidget);
-    expect(find.text('SAR 10.00'), findsOneWidget);
+    expect(find.text('First'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
     expect(find.byType(ProductCard), findsNWidgets(5));
   });
 }

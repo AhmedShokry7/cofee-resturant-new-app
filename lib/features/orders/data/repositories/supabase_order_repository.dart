@@ -1,6 +1,7 @@
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/services/supabase_read_service.dart';
-import 'package:new_coffee/core/services/supabase_service.dart';import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
@@ -9,7 +10,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Reads the caller's orders through the `public` bridge and delegates all
 /// customer writes to ownership-checking server RPCs.
-class SupabaseOrdersRepository implements OrdersRepository {
+class SupabaseOrdersRepository
+    implements OrdersRepository, CheckoutQuoteRepository {
   SupabaseOrdersRepository({
     SupabaseClient? client,
     Future<dynamic> Function(String name, Map<String, dynamic> params)? rpc,
@@ -111,6 +113,50 @@ class SupabaseOrdersRepository implements OrdersRepository {
     String? addressId,
     String? couponCode,
     String? note,
+  }) => _submitOrder(
+    branchId: branchId,
+    lines: lines,
+    idempotencyKey: idempotencyKey,
+    fulfillmentType: fulfillmentType,
+    deliveryZoneId: deliveryZoneId,
+    addressId: addressId,
+    couponCode: couponCode,
+    note: note,
+  );
+
+  @override
+  Future<PlacedOrder> placeOrderWithQuote({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String idempotencyKey,
+    required double expectedTotal,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+    String? note,
+  }) => _submitOrder(
+    branchId: branchId,
+    lines: lines,
+    idempotencyKey: idempotencyKey,
+    fulfillmentType: fulfillmentType,
+    deliveryZoneId: deliveryZoneId,
+    addressId: addressId,
+    couponCode: couponCode,
+    note: note,
+    expectedTotal: expectedTotal,
+  );
+
+  Future<PlacedOrder> _submitOrder({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String idempotencyKey,
+    String fulfillmentType = 'pickup',
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+    String? note,
+    double? expectedTotal,
   }) async {
     _requireUserId();
     final branch = branchId.trim();
@@ -136,16 +182,22 @@ class SupabaseOrdersRepository implements OrdersRepository {
     if (!allowed) {
       throw StateError('place_order rate limit exceeded. Try again later.');
     }
-    final response = await _rpc('place_order_with_lines', <String, dynamic>{
-      'p_branch_id': branch,
-      'p_lines': _cartLinePayload(lines),
-      'p_idempotency_key': idempotencyKey,
-      'p_fulfillment_type': fulfillmentType,
-      if (zoneId.isNotEmpty) 'p_delivery_zone_id': zoneId,
-      if (addressIdValue.isNotEmpty) 'p_address_id': addressIdValue,
-      if (coupon.isNotEmpty) 'p_coupon_code': coupon,
-      if (orderNote.isNotEmpty) 'p_note': orderNote,
-    });
+    final response = await _rpc(
+      expectedTotal == null
+          ? 'place_order_with_lines'
+          : 'place_order_with_quote',
+      <String, dynamic>{
+        'p_branch_id': branch,
+        'p_lines': _cartLinePayload(lines),
+        'p_idempotency_key': idempotencyKey,
+        'p_fulfillment_type': fulfillmentType,
+        if (expectedTotal != null) 'p_expected_total': expectedTotal,
+        if (zoneId.isNotEmpty) 'p_delivery_zone_id': zoneId,
+        if (addressIdValue.isNotEmpty) 'p_address_id': addressIdValue,
+        if (coupon.isNotEmpty) 'p_coupon_code': coupon,
+        if (orderNote.isNotEmpty) 'p_note': orderNote,
+      },
+    );
 
     final rows = response is List ? response : const [];
     if (rows.isEmpty) {
@@ -162,6 +214,43 @@ class SupabaseOrdersRepository implements OrdersRepository {
       grandTotal: Db.asDouble(row['grand_total']),
       pointsEarned: (row['points_earned'] as num?)?.toInt() ?? 0,
       placedAt: DateTime.now(),
+      productDiscountTotal: Db.asDouble(row['product_discount_total']),
+    );
+  }
+
+  @override
+  Future<CheckoutQuote> quoteCheckout({
+    required String branchId,
+    required List<PlaceOrderLine> lines,
+    required String fulfillmentType,
+    String? deliveryZoneId,
+    String? addressId,
+    String? couponCode,
+  }) async {
+    _requireUserId();
+    final response = await _rpc('quote_checkout', <String, dynamic>{
+      'p_branch_id': branchId.trim(),
+      'p_lines': _cartLinePayload(lines),
+      'p_fulfillment_type': fulfillmentType,
+      if (deliveryZoneId?.trim().isNotEmpty ?? false)
+        'p_delivery_zone_id': deliveryZoneId!.trim(),
+      if (addressId?.trim().isNotEmpty ?? false)
+        'p_address_id': addressId!.trim(),
+      if (couponCode?.trim().isNotEmpty ?? false)
+        'p_coupon_code': couponCode!.trim(),
+    });
+    if (response is! List || response.isEmpty || response.first is! Map) {
+      throw StateError('quote_checkout returned no price.');
+    }
+    final row = Db.asMap(response.first as Map);
+    return CheckoutQuote(
+      subtotal: Db.asDouble(row['subtotal']),
+      discountTotal: Db.asDouble(row['discount_total']),
+      deliveryFee: Db.asDouble(row['delivery_fee']),
+      taxTotal: Db.asDouble(row['tax_total']),
+      grandTotal: Db.asDouble(row['grand_total']),
+      currencyCode: Db.text(row['currency_code']),
+      productDiscountTotal: Db.asDouble(row['product_discount_total']),
     );
   }
 

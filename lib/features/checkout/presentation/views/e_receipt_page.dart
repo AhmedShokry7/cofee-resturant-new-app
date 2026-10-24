@@ -78,6 +78,9 @@ class _ReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // The price of the items before the promotion, so the receipt adds up.
+    final itemsTotal =
+        order.items.fold<double>(0, (sum, item) => sum + item.total);
     return Container(
       padding: EdgeInsets.all(SpacingTokens.lg.w),
       decoration: BoxDecoration(
@@ -186,6 +189,41 @@ class _ReceiptCard extends StatelessWidget {
           ),
           const Divider(),
           SizedBox(height: SpacingTokens.sm.h),
+          if (order.productDiscount > 0) ...[
+            // The price before the promotion and the promotion itself, so the
+            // rows add up to the total the customer paid.
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(S.subtotal, style: AppFonts.regular14(context)),
+                PriceLabel(
+                  amount: itemsTotal + order.productDiscount,
+                  style: AppFonts.medium14(context),
+                  iconSize: 14,
+                ),
+              ],
+            ),
+            SizedBox(height: SpacingTokens.xs.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  S.productDiscount,
+                  style: AppFonts.regular14(context)
+                      .copyWith(color: AppColor.primaryColor),
+                ),
+                PriceLabel(
+                  amount: order.productDiscount,
+                  prefix: '-',
+                  style: AppFonts.medium14(context)
+                      .copyWith(color: AppColor.primaryColor),
+                  iconSize: 14,
+                  iconColor: AppColor.primaryColor,
+                ),
+              ],
+            ),
+            SizedBox(height: SpacingTokens.sm.h),
+          ],
           if (order.deliveryFee > 0) ...[
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

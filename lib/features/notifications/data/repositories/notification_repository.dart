@@ -46,7 +46,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
         await client
                 .from('notifications')
                 .select(
-                  'id, type, title_ar, title_en, body_ar, body_en, is_read, created_at',
+                  'id, type, title_ar, title_en, body_ar, body_en, related_entity_type, related_entity_id, is_read, created_at',
                 )
                 .order('created_at', ascending: false)
                 .limit(limit.clamp(1, 200))

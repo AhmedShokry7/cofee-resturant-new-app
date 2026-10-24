@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -8,11 +10,10 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
-import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
-import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
-import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
@@ -30,9 +31,10 @@ class CartPage extends StatelessWidget {
       return;
     }
     cart.decrementLine(item.lineId);
-    ScaffoldMessenger.of(context).showSnackBar(
+    final snackBarController = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(S.removedFromCart(item.product.name)),
+        duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: S.undo,
           onPressed: () {
@@ -61,6 +63,9 @@ class CartPage extends StatelessWidget {
         ),
       ),
     );
+    // Snackbars with actions may remain visible indefinitely when accessibility
+    // navigation is enabled; close this specific undo snackbar after 3 seconds.
+    Timer(const Duration(seconds: 3), snackBarController.close);
   }
 
   @override
@@ -74,9 +79,8 @@ class CartPage extends StatelessWidget {
           listenWhen: (previous, current) =>
               current.error != null && current.error != previous.error,
           listener: (context, state) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error!)),
-            );
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.error!)));
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -112,6 +116,9 @@ class CartPage extends StatelessWidget {
                                 note: item.note,
                                 lineId: item.lineId,
                                 unitPrice: item.unitPrice,
+                                onTap: item.isBundle
+                                    ? () => _openBundle(context, item.bundleId!)
+                                    : null,
                                 onIncrement: () => context
                                     .read<CartCubit>()
                                     .incrementLine(item.lineId),
@@ -133,6 +140,20 @@ class CartPage extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _openBundle(BuildContext context, String bundleId) async {
+    try {
+      final bundle = await context.read<CatalogRepository>().getBundleById(
+        bundleId,
+      );
+      if (!context.mounted || bundle == null) return;
+      Navigator.of(context)
+          .pushNamed(BundleDetailsPage.routeName, arguments: bundle);
+    } catch (_) {
+      // The line remains usable if the bundle was unpublished after it was
+      // added; opening details is best-effort and must not mutate the cart.
+    }
+  }
 }
 
 class _CartSummary extends StatefulWidget {
@@ -147,7 +168,7 @@ class _CartSummaryState extends State<_CartSummary> {
   Widget build(BuildContext context) {
     return BlocBuilder<CartCubit, CartState>(
       builder: (context, cart) {
-        final subtotal = cart.total;
+        final total = cart.total;
         return Container(
           padding: EdgeInsets.all(SpacingTokens.lg.w),
           decoration: BoxDecoration(
@@ -161,11 +182,7 @@ class _CartSummaryState extends State<_CartSummary> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _SummaryRow(label: S.subTotal, priceValue: subtotal),
-              SizedBox(height: SpacingTokens.sm.h),
-              const Divider(height: 1),
-              SizedBox(height: SpacingTokens.sm.h),
-              _SummaryRow(label: S.totalCost, priceValue: subtotal, total: true),
+              _SummaryRow(label: S.total, priceValue: total, total: true),
               SizedBox(height: SpacingTokens.md.h),
               CustomBtn(
                 text: S.proceedToCheckout,
@@ -181,74 +198,11 @@ class _CartSummaryState extends State<_CartSummary> {
   }
 }
 
-class _AppliedCouponRow extends StatelessWidget {
-  const _AppliedCouponRow({
-    required this.code,
-    required this.onRemove,
-    this.scopeLabel = '',
-  });
-
-  final String code;
-  final VoidCallback onRemove;
-
-  /// What the coupon is limited to, when it is limited. Empty for an unscoped
-  /// coupon, which needs no explanation.
-  final String scopeLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md.w,
-        vertical: SpacingTokens.sm.h,
-      ),
-      decoration: BoxDecoration(
-        color: AppColor.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(100.r),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  code,
-                  style: AppFonts.medium14(context)
-                      .copyWith(color: AppColor.primaryColor),
-                ),
-                // The discount below is a share of these items only, so the
-                // figure looks small next to the subtotal. Naming the scope
-                // here is the difference between "the coupon worked" and "the
-                // coupon is broken".
-                if (scopeLabel.isNotEmpty) ...[
-                  SizedBox(height: 2.h),
-                  Text(
-                    '$scopeLabel — ${S.couponScopeDiscountNote}',
-                    style: AppFonts.regular12(context).copyWith(
-                      color: AppColor.greyColor,
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          GestureDetector(
-            onTap: onRemove,
-            child: Icon(Icons.close, size: 20.w, color: AppColor.primaryColor),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({
     required this.label,
     required this.priceValue,
     this.total = false,
-    this.pricePrefix = '',
   });
 
   final String label;
@@ -256,9 +210,6 @@ class _SummaryRow extends StatelessWidget {
 
   /// Monetary value rendered with the standard currency icon.
   final double priceValue;
-
-  /// Literal prepended to [priceValue] (`-` for discounts).
-  final String pricePrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +229,6 @@ class _SummaryRow extends StatelessWidget {
         ),
         PriceLabel(
           amount: priceValue,
-          prefix: pricePrefix,
           style: valueStyle,
           iconSize: valueStyle.fontSize,
           iconColor: valueStyle.color,

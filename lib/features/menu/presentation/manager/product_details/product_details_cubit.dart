@@ -5,6 +5,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 
 part 'product_details_state.dart';
 
@@ -122,6 +123,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         // The previous answer described the previous combination, so drop it
         // rather than show a stale price for one frame.
         clearResolvedPrice: true,
+        clearResolvedRegularPrice: true,
       ),
     );
     await _confirmPrice(selection);
@@ -153,6 +155,9 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
           isAvailable: resolved.isAvailable,
           unavailableReason: resolved.unavailableReason,
           clearUnavailableReason: resolved.isAvailable,
+          resolvedRegularPrice: resolved.regularPrice,
+          clearResolvedRegularPrice: !resolved.hasDiscount,
+          resolvedDiscountPercentage: resolved.discountPercentage,
         ),
       );
     } catch (error, stackTrace) {
@@ -182,13 +187,11 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
 
       List<ProductModel> rows = const [];
       if (source.relatedProductIds.isNotEmpty) {
-        final fetched = <ProductModel>[];
-        for (final id in source.relatedProductIds) {
-          if (id == productId) continue;
-          final resolved = await _repository.getById(id, branchId: branchId);
-          if (resolved != null) fetched.add(resolved);
-        }
-        rows = fetched;
+        rows = await getProductsByIds(
+          _repository,
+          source.relatedProductIds.where((id) => id != productId).toList(),
+          branchId: branchId,
+        );
       } else {
         // Legacy rows carry only a display label, so fall back to the name the
         // way the offline catalogue matches it.
@@ -216,4 +219,18 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
   /// The price to charge: the server figure when it arrived, the local estimate
   /// otherwise.
   double get unitPrice => state.resolvedPrice ?? state.estimatedUnitPrice;
+
+  /// The price before the discount, when the server reported one.
+  double? get regularPrice => state.resolvedRegularPrice;
+
+  /// The discount the server applied, in percent. Zero when there is none.
+  double get discountPercentage => state.resolvedDiscountPercentage;
+
+  /// Whether the price on screen carries a real discount.
+  bool get hasDiscount {
+    final regular = regularPrice;
+    if (regular == null) return false;
+    if (discountPercentage <= 0) return false;
+    return regular > unitPrice;
+  }
 }

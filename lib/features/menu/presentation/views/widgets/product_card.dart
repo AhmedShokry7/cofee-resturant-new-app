@@ -12,6 +12,7 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_imag
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
@@ -45,6 +46,7 @@ class ProductCard extends StatelessWidget {
     this.note = '',
     this.lineId,
     this.unitPrice,
+    this.onTap,
   });
 
   final ProductModel product;
@@ -55,8 +57,22 @@ class ProductCard extends StatelessWidget {
   final String note;
   final String? lineId;
   final double? unitPrice;
+  final VoidCallback? onTap;
 
   bool get _isCart => quantity != null;
+
+  /// The price of one piece before the discount, when one applies.
+  ///
+  /// A variant carries the option deltas on top of the product price, so the
+  /// price before the discount of the variant is the price before the
+  /// discount of the product plus the same deltas.
+  double? get _oldUnitPrice {
+    final oldPrice = product.oldPrice;
+    if (oldPrice == null) return null;
+    final effective = unitPrice ?? product.price;
+    final old = oldPrice + (effective - product.price);
+    return old > effective ? old : null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +90,7 @@ class ProductCard extends StatelessWidget {
           child: AspectRatio(
             aspectRatio: cardAspectRatio,
             child: Stack(
-              clipBehavior: Clip.none,
+              clipBehavior: Clip.hardEdge,
               children: [
                 GestureDetector(
                   onTap: () => _openDetails(context),
@@ -139,15 +155,14 @@ class ProductCard extends StatelessWidget {
                   ),
                 ),
                 if (product.hasDiscount)
-                  Positioned(
+                  PositionedDirectional(
                     top: DiscountBadge.cardTop,
-                    right: DiscountBadge.cardRight,
+                    end: DiscountBadge.cardRight,
                     child: DiscountBadge(
-                      percent:
-                          (((product.oldPrice! - product.price) /
-                                      product.oldPrice!) *
-                                  100)
-                              .round(),
+                      // The percentage the server applied, not one derived
+                      // from two prices: a compare-at price is a reference
+                      // price and is not a discount.
+                      percent: product.appliedDiscountPercentage!.round(),
                       size: DiscountBadge.cardSize,
                     ),
                   ),
@@ -165,9 +180,15 @@ class ProductCard extends StatelessWidget {
     border: Border.all(color: AppColor.borderColor),
   );
 
-  void _openDetails(BuildContext context) =>
-      Navigator.of(context)
-          .pushNamed(ProductDetailsPage.routeName, arguments: product);
+  void _openDetails(BuildContext context) {
+    final handler = onTap;
+    if (handler != null) {
+      handler();
+      return;
+    }
+    Navigator.of(context)
+        .pushNamed(ProductDetailsPage.routeName, arguments: product);
+  }
 
   Widget _buildProductImage() => ProductImageView(product: product);
 
@@ -210,12 +231,25 @@ class ProductCard extends StatelessWidget {
                   ),
                 ],
                 SizedBox(height: 4.h),
-                PriceLabel(
-                  amount: (unitPrice ?? product.price) * quantity!,
-                  style: AppFonts.semiBold14(context)
-                      .copyWith(color: AppColor.primaryColor),
-                  iconSize: 14,
-                  iconColor: AppColor.primaryColor,
+                Row(
+                  children: [
+                    PriceLabel(
+                      amount: (unitPrice ?? product.price) * quantity!,
+                      style: AppFonts.semiBold14(context)
+                          .copyWith(color: AppColor.primaryColor),
+                      iconSize: 14,
+                      iconColor: AppColor.primaryColor,
+                    ),
+                    // The discount the server applied, so the line says why
+                    // the price is lower.
+                    if (product.hasDiscount) ...[
+                      SizedBox(width: 4.w),
+                      DiscountBadge(
+                        percent: product.appliedDiscountPercentage!.round(),
+                        size: 26,
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -228,12 +262,29 @@ class ProductCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              PriceLabel(
-                amount: unitPrice ?? product.price,
-                style: AppFonts.regular12(context)
-                    .copyWith(color: AppColor.greyColor),
-                iconSize: 12,
-                iconColor: AppColor.greyColor,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  PriceLabel(
+                    amount: unitPrice ?? product.price,
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.greyColor),
+                    iconSize: 12,
+                    iconColor: AppColor.greyColor,
+                  ),
+                  // The price before the discount, so the line explains
+                  // itself.
+                  if (_oldUnitPrice != null) ...[
+                    SizedBox(width: 4.w),
+                    Text(
+                      Formatters.amount(_oldUnitPrice!),
+                      style: AppFonts.regular12(context).copyWith(
+                        color: AppColor.greyColor,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                  ],
+                ],
               ),
               SizedBox(height: 6.h),
               _QuantityStepper(

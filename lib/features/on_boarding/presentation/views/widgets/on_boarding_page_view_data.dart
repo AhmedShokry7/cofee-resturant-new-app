@@ -21,9 +21,9 @@ class OnBoardingPageViewData extends StatelessWidget {
         final item = onBoardingList[index];
         return Column(
           children: [
-                SizedBox(height: 8.h),
-            Image.asset(item.image, height: 380.h, fit: BoxFit.fill),
-            SizedBox(height: 24.h),
+                SizedBox(height: 16.h),
+            Image.asset(item.image, height: 350.h, fit: BoxFit.fill),
+            SizedBox(height: 40.h),
             Text(
               textAlign: TextAlign.center,
               item.title,

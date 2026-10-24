@@ -18,6 +18,9 @@ class ProductImageView extends StatelessWidget {
   final BoxFit fit;
 
   @override
-  Widget build(BuildContext context) =>
-      DbImage(image: product.displayImageUrl, fit: fit);
+  Widget build(BuildContext context) => DbImage(
+    image: product.displayImageUrl,
+    fit: DbImage.fitFromName(product.imageFit),
+    alignment: DbImage.alignmentFromName(product.imageAlignment),
+  );
 }

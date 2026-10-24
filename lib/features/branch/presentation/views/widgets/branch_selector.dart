@@ -88,7 +88,7 @@ class BranchSelector extends StatelessWidget {
                 title: Text(branch.name),
                 subtitle: branch.address == null ? null : Text(branch.address!),
                 trailing: branch.id == state.selected?.id
-                    ? const Icon(Icons.check, color: AppColor.primaryColor)
+                    ? Icon(Icons.check, color: AppColor.primaryColor)
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(branch),
               ),

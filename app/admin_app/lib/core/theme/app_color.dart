@@ -42,4 +42,32 @@ class AppColor {
 
   /// Light surface color used as fallback background for product images.
   static const surfaceColor = Color(0xffF7F8FA);
+
+  // Record cards
+  /// Border of a record card and of the field cells inside it.
+  static const recordBorder = Color(0xFFEEEEEE);
+
+  /// Background of the label and action cells of a record card.
+  static const recordCellBackground = Color(0xFFFCFCFC);
+
+  /// Text of the record card footer and of its label cells.
+  static const recordText = Color(0xFF444444);
+
+  /// Text of the record card value cells.
+  static const recordTextStrong = Color(0xFF333333);
+
+  /// Secondary text inside a record card, such as the currency mark.
+  static const recordTextSecondary = Color(0xFF666666);
+
+  /// Muted text for a value that is still empty.
+  static const recordTextMuted = Color(0xFF999999);
+
+  /// Deep teal of the marks that sit on top of the product image.
+  static const accentDeep = Color(0xFF004D5A);
+
+  /// Placeholder behind a product image that has no file yet.
+  static const imagePlaceholder = Color(0xFFF5F5F5);
+
+  /// Fill of the delete circle on the product image.
+  static const dangerSurface = Color(0xFFF55157);
 }

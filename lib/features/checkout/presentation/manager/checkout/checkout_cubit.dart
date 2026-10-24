@@ -64,6 +64,124 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   String? _pendingOrderIdempotencyKey;
   String? _loadedAttemptUserId;
   bool _orderSubmissionInProgress = false;
+  int _quoteGeneration = 0;
+  String? _requestedQuoteSignature;
+
+  /// Refresh the exact cart/zone/coupon quote from the authoritative checkout
+  /// transaction. Repeated widget rebuilds with the same inputs do no work.
+  Future<void> refreshCheckoutQuote(List<CartItem> items) async {
+    final branch = branchId?.trim() ?? '';
+    final delivery = state.fulfillment.isDelivery;
+    if (branch.isEmpty ||
+        items.isEmpty ||
+        state.isResolvingZone ||
+        (delivery &&
+            (state.addressOutOfZone ||
+                state.selectedDeliveryZone == null ||
+                state.selectedAddress == null))) {
+      _requestedQuoteSignature = null;
+      if (state.checkoutQuote != null ||
+          state.quoteLoading ||
+          state.quoteError != null) {
+        _quoteGeneration++;
+        emit(
+          state.copyWith(
+            clearCheckoutQuote: true,
+            quoteLoading: false,
+            clearQuoteError: true,
+          ),
+        );
+      }
+      return;
+    }
+    final signature =
+        '${_cartSignature(items)}|${state.fulfillment.value}|'
+        '${state.selectedDeliveryZone?.id ?? ''}|${state.selectedAddress?.id ?? ''}|'
+        '${state.appliedCoupon?.coupon.code ?? ''}';
+    if (_requestedQuoteSignature == signature &&
+        (state.quoteLoading ||
+            state.checkoutQuote != null ||
+            state.quoteError != null)) {
+      return;
+    }
+    _requestedQuoteSignature = signature;
+    final generation = ++_quoteGeneration;
+    emit(
+      state.copyWith(
+        clearCheckoutQuote: true,
+        quoteLoading: true,
+        clearQuoteError: true,
+      ),
+    );
+    try {
+      final quote = _orders is CheckoutQuoteRepository
+          ? await (_orders as CheckoutQuoteRepository).quoteCheckout(
+              branchId: branch,
+              lines: _lines(items),
+              fulfillmentType: state.fulfillment.value,
+              deliveryZoneId: delivery ? state.selectedDeliveryZone!.id : null,
+              addressId: delivery ? state.selectedAddress!.id : null,
+              couponCode: state.appliedCoupon?.coupon.code,
+            )
+          : _localPreviewQuote(items);
+      if (isClosed || generation != _quoteGeneration) return;
+      emit(
+        state.copyWith(
+          checkoutQuote: quote,
+          quoteLoading: false,
+          clearQuoteError: true,
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed || generation != _quoteGeneration) return;
+      emit(
+        state.copyWith(
+          clearCheckoutQuote: true,
+          quoteLoading: false,
+          quoteError: error.toString(),
+        ),
+      );
+      addError(error, stackTrace);
+    }
+  }
+
+  CheckoutQuote _localPreviewQuote(List<CartItem> items) {
+    final subtotal = items.fold<double>(0, (sum, item) => sum + item.total);
+    final discount = discountFor(subtotal);
+    final fee = state.payableDeliveryFee;
+    return CheckoutQuote(
+      subtotal: subtotal,
+      discountTotal: discount,
+      deliveryFee: fee,
+      taxTotal: 0,
+      grandTotal: (subtotal - discount + fee)
+          .clamp(0, double.infinity)
+          .toDouble(),
+      currencyCode: '',
+      productDiscountTotal: _productDiscountFor(items),
+    );
+  }
+
+  /// The product discount of the cart, from the prices the customer sees.
+  ///
+  /// The server states the figure on the quote; this is the local estimate of
+  /// the same thing, used when there is no quote.
+  double _productDiscountFor(List<CartItem> items) {
+    var total = 0.0;
+    for (final item in items) {
+      final oldPrice = item.product.oldPrice;
+      if (oldPrice == null) continue;
+      final effectiveUnit = item.effectiveUnit;
+      // A variant carries the option deltas on top of the product price, so
+      // the price before the discount of the variant is the price before the
+      // discount of the product plus the same deltas.
+      final oldUnit = oldPrice + (effectiveUnit - item.product.price);
+      if (oldUnit > effectiveUnit) {
+        total += (oldUnit - effectiveUnit) * item.quantity;
+      }
+    }
+    return total;
+  }
 
   Future<void> load() async {
     emit(state.copyWith(isLoading: true, clearError: true));
@@ -273,37 +391,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       return;
     }
 
-    // A fixed 20 km circular delivery radius around the branch. Anything
-    // beyond it is out of delivery range, regardless of configured zones.
-    if (SupabaseService.isReady) {
-      try {
-        final row = await SupabaseService.client
-            .from('branches')
-            .select('latitude,longitude')
-            .eq('id', branch)
-            .maybeSingle();
-        final branchLat = (row?['latitude'] as num?)?.toDouble();
-        final branchLng = (row?['longitude'] as num?)?.toDouble();
-        if (branchLat != null && branchLng != null) {
-          const earthRadiusKm = 6371.0;
-          final dLat = (latitude - branchLat) * pi / 180;
-          final dLng = (longitude - branchLng) * pi / 180;
-          final a = sin(dLat / 2) * sin(dLat / 2) +
-              cos(branchLat * pi / 180) *
-                  cos(latitude * pi / 180) *
-                  sin(dLng / 2) *
-                  sin(dLng / 2);
-          final distance = earthRadiusKm * 2 * atan2(sqrt(a), sqrt(1 - a));
-          if (distance > 20) {
-            emit(state.copyWith(addressOutOfZone: true, isResolvingZone: false, clearSelectedDeliveryZone: true));
-            return;
-          }
-        }
-      } catch (_) {
-        // Fall through to zone resolution if the branch lookup fails.
-      }
-    }
-
+    // The branch's configured delivery zones are authoritative. A fixed
+    // client-side radius here used to contradict those zones (and could reject
+    // a valid address even though the database would accept its order).
     emit(state.copyWith(isResolvingZone: true));
     try {
       final zones = await _deliveryZoneRepository.zonesForPoint(
@@ -314,7 +404,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       if (isClosed) return;
       // The address or branch moved on while this was in flight; a newer
       // resolution owns the state.
-      if (state.selectedAddress?.id != address.id || branchId?.trim() != branch) {
+      if (state.selectedAddress?.id != address.id ||
+          branchId?.trim() != branch) {
         return;
       }
       emit(
@@ -346,6 +437,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   /// before. Setting a card means the checkout charges it directly, so a
   /// customer who saved a card is never asked to type it again.
   void selectSavedCard(SavedCardModel? card) {
+    if (card == null) {
+      emit(state.copyWith(clearSelectedSavedCard: true));
+      return;
+    }
     emit(state.copyWith(selectedSavedCard: card));
   }
 
@@ -376,7 +471,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     // to the default rather than keeping an address the server no longer serves.
     final selected = keep ?? _pickInitial(addresses);
 
-    emit(state.copyWith(addresses: addresses, selectedAddress: selected));
+    emit(
+      state.copyWith(
+        addresses: addresses,
+        selectedAddress: selected,
+        clearSelectedAddress: selected == null,
+      ),
+    );
     if (selected?.id != currentId) resolveZoneForSelectedAddress();
   }
 
@@ -432,6 +533,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
                   (address) => address.isDefault,
                   orElse: () => remaining.first,
                 ),
+          // The last address is gone: the selection must go with it, or the
+          // checkout would submit an address the server no longer has.
+          clearSelectedAddress: remaining.isEmpty,
         ),
       );
       resolveZoneForSelectedAddress();
@@ -488,7 +592,16 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   void selectPaymentMethod(PaymentMethodModel method) {
-    emit(state.copyWith(selectedPaymentMethod: method));
+    // A saved card can only pay a card method. Keeping the selection while
+    // another method is chosen would silently charge the stored card for an
+    // Apple Pay or cash order.
+    final keepsSavedCard = method.isCardMethod;
+    emit(
+      state.copyWith(
+        selectedPaymentMethod: method,
+        clearSelectedSavedCard: !keepsSavedCard,
+      ),
+    );
   }
 
   /// Validates a coupon code against the server for the current [items].
@@ -524,9 +637,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
       // The approval lands first so the discount shows immediately; the
       // per-line explanation follows. Losing it must not lose the discount.
-      emit(
-        state.copyWith(appliedCoupon: validated, clearCouponError: true),
-      );
+      emit(state.copyWith(appliedCoupon: validated, clearCouponError: true));
       final breakdown = await _coupons.lineBreakdown(
         code: normalized,
         branchId: branch,
@@ -535,7 +646,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       );
       if (isClosed || generation != _couponGeneration) return true;
       // Only meaningful while the same coupon is still applied.
-      if (state.appliedCoupon?.coupon.code != validated.coupon.code) return true;
+      if (state.appliedCoupon?.coupon.code != validated.coupon.code) {
+        return true;
+      }
       emit(state.copyWith(appliedCoupon: validated.copyWithLines(breakdown)));
       return true;
     } on CouponRejectedException catch (error) {
@@ -565,9 +678,11 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     emit(state.copyWith(clearCoupon: true));
   }
 
-  /// Payable total: subtotal - coupon discount + delivery fee
-  /// (never negative).
+  /// Display the server quote when available; the fallback supports non-server
+  /// previews only and is never allowed to submit a real order.
   double finalTotal(double subtotal) {
+    final quote = state.checkoutQuote;
+    if (quote != null) return quote.grandTotal;
     final discount = discountFor(subtotal);
     final total = subtotal - discount + state.payableDeliveryFee;
     return total < 0 ? 0 : total;
@@ -586,13 +701,25 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   }
 
   /// Single source of truth for the payable breakdown.
-  CheckoutSummary summary(double subtotal) {
+  CheckoutSummary summary(double subtotal, [List<CartItem> items = const []]) {
+    final quote = state.checkoutQuote;
+    if (quote != null) {
+      return CheckoutSummary(
+        subtotal: quote.subtotal,
+        discount: quote.discountTotal,
+        deliveryFee: quote.deliveryFee,
+        tax: quote.taxTotal,
+        productDiscount: quote.productDiscountTotal,
+        total: quote.grandTotal,
+      );
+    }
     final discount = discountFor(subtotal);
     final total = subtotal - discount + state.payableDeliveryFee;
     return CheckoutSummary(
       subtotal: subtotal,
       discount: discount,
       deliveryFee: state.payableDeliveryFee,
+      productDiscount: _productDiscountFor(items),
       total: total < 0 ? 0 : total,
     );
   }
@@ -665,6 +792,16 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(orderError: S.signIn));
       return false;
     }
+    final expectedQuote = state.checkoutQuote;
+    final quoteSignature =
+        '${_cartSignature(items)}|${state.fulfillment.value}|'
+        '${state.selectedDeliveryZone?.id ?? ''}|${state.selectedAddress?.id ?? ''}|'
+        '${state.appliedCoupon?.coupon.code ?? ''}';
+    if (expectedQuote == null && _orders is CheckoutQuoteRepository ||
+        expectedQuote != null && _requestedQuoteSignature != quoteSignature) {
+      emit(state.copyWith(orderError: S.orderFailed));
+      return false;
+    }
     // A shopper who asked for delivery but got "unavailable" must explicitly
     // choose pickup before checkout can proceed, so the order is never silently
     // placed as a pickup they did not pick.
@@ -712,11 +849,13 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         isPlacingOrder: true,
         clearLastOrder: true,
         clearOrderError: true,
+        clearOrderWarning: true,
       ),
     );
     try {
       final idempotencyKey = await _orderAttemptFor(requestSignature);
-      final placed = await _orders.placeOrder(
+      final quoteAware = _orders;
+      final orderArgs = (
         branchId: branch,
         lines: _lines(items),
         idempotencyKey: idempotencyKey,
@@ -725,6 +864,26 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         addressId: isDelivery ? state.selectedAddress!.id : null,
         couponCode: state.appliedCoupon?.coupon.code,
       );
+      final placed = quoteAware is CheckoutQuoteRepository
+          ? await (quoteAware as CheckoutQuoteRepository).placeOrderWithQuote(
+              branchId: orderArgs.branchId,
+              lines: orderArgs.lines,
+              idempotencyKey: orderArgs.idempotencyKey,
+              expectedTotal: expectedQuote!.grandTotal,
+              fulfillmentType: orderArgs.fulfillmentType,
+              deliveryZoneId: orderArgs.deliveryZoneId,
+              addressId: orderArgs.addressId,
+              couponCode: orderArgs.couponCode,
+            )
+          : await _orders.placeOrder(
+              branchId: orderArgs.branchId,
+              lines: orderArgs.lines,
+              idempotencyKey: orderArgs.idempotencyKey,
+              fulfillmentType: orderArgs.fulfillmentType,
+              deliveryZoneId: orderArgs.deliveryZoneId,
+              addressId: orderArgs.addressId,
+              couponCode: orderArgs.couponCode,
+            );
       if (isClosed) return false;
       final userId = _currentOrderUserId;
       if (userId != null) {
@@ -736,6 +895,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       _pendingOrderSignature = null;
       _pendingOrderIdempotencyKey = null;
       final address = state.selectedAddress;
+      final approvedCoupon = state.appliedCoupon;
       emit(
         state.copyWith(
           isPlacingOrder: false,
@@ -744,6 +904,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
             id: placed.orderNumber.isEmpty
                 ? placed.orderId
                 : placed.orderNumber,
+            orderId: placed.orderId,
             date: placed.placedAt,
             items: items,
             total: placed.grandTotal,
@@ -753,10 +914,25 @@ class CheckoutCubit extends Cubit<CheckoutState> {
             deliveryAddress: isDelivery && address != null
                 ? '${address.label} - ${address.details}'
                 : null,
-            discountLines: state.appliedCoupon?.lines ?? const [],
+            discountLines: approvedCoupon?.lines ?? const [],
+            productDiscount: placed.productDiscountTotal,
           ),
         ),
       );
+      // The server has the last word on the discount. If it granted less than
+      // the approval the customer saw (the coupon expired, ran out of uses or
+      // no longer fits the cart), the coupon is dropped and the difference is
+      // reported: the invoice and the charge both use the server's total, so
+      // the customer has to be told that the discount did not apply.
+      if (approvedCoupon != null &&
+          placed.discountTotal + 0.005 < approvedCoupon.discount) {
+        emit(
+          state.copyWith(
+            clearCoupon: true,
+            orderWarning: S.couponNotAppliedAtCheckout,
+          ),
+        );
+      }
       return true;
     } catch (error, stackTrace) {
       if (isClosed) return false;

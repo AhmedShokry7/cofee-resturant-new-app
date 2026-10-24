@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'dart:async';
+
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
@@ -16,8 +18,47 @@ import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_f
 import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 
-class CheckoutPageBody extends StatelessWidget {
+class CheckoutPageBody extends StatefulWidget {
   const CheckoutPageBody({super.key});
+
+  @override
+  State<CheckoutPageBody> createState() => _CheckoutPageBodyState();
+}
+
+class _CheckoutPageBodyState extends State<CheckoutPageBody> {
+  StreamSubscription<CartState>? _cartSubscription;
+  StreamSubscription<CheckoutState>? _checkoutSubscription;
+  bool _quoteScheduled = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_cartSubscription != null) return;
+    final cart = context.read<CartCubit>();
+    final checkout = context.read<CheckoutCubit>();
+    _cartSubscription = cart.stream.listen((state) => _scheduleQuote());
+    _checkoutSubscription = checkout.stream.listen((state) => _scheduleQuote());
+    _scheduleQuote();
+  }
+
+  void _scheduleQuote() {
+    if (_quoteScheduled || !mounted) return;
+    _quoteScheduled = true;
+    scheduleMicrotask(() {
+      _quoteScheduled = false;
+      if (!mounted) return;
+      context.read<CheckoutCubit>().refreshCheckoutQuote(
+        context.read<CartCubit>().state.items,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _cartSubscription?.cancel();
+    _checkoutSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +142,8 @@ class _CouponSectionState extends State<_CouponSection> {
     final message = applied
         ? S.couponApplied
         : checkout.state.couponError ?? S.invalidCouponCode;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
     if (applied) _promoController.clear();
   }
 
@@ -162,7 +204,8 @@ class _AppliedCouponRow extends StatelessWidget {
           Expanded(
             child: Text(
               code,
-              style: AppFonts.medium14(context).copyWith(color: AppColor.primaryColor),
+              style: AppFonts.medium14(context)
+                  .copyWith(color: AppColor.primaryColor),
             ),
           ),
           GestureDetector(
@@ -185,34 +228,93 @@ class _OrderSummary extends StatelessWidget {
         return BlocBuilder<CheckoutCubit, CheckoutState>(
           builder: (context, checkout) {
             final cubit = context.read<CheckoutCubit>();
-            final summary = cubit.summary(cart.total);
-            final subtotal = summary.subtotal;
+            final summary = cubit.summary(cart.total, cart.items);
             final total = summary.total;
-            final saved = summary.discount;
+            if (checkout.checkoutQuote == null) {
+              if (checkout.quoteError == null && !checkout.quoteLoading) {
+                return const SizedBox.shrink();
+              }
+              if (checkout.quoteLoading) {
+                return Column(
+                  children: [
+                    LabeledValueRow(
+                      label: S.deliveryFee,
+                      priceValue: summary.deliveryFee,
+                    ),
+                    LabeledValueRow(
+                      label: S.total,
+                      priceValue: total,
+                      emphasized: true,
+                      big: true,
+                    ),
+                    if (summary.tax == 0)
+                      Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Padding(
+                          padding: EdgeInsets.only(top: SpacingTokens.xs.h),
+                          child: Text(
+                            S.vatIncluded,
+                            style: AppFonts.regular12(context)
+                                .copyWith(color: AppColor.greyColor),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }
+              return TextButton.icon(
+                onPressed: () => cubit.refreshCheckoutQuote(cart.items),
+                icon: const Icon(Icons.refresh),
+                label: Text(S.retry),
+              );
+            }
             return Column(
               children: [
-                LabeledValueRow(label: S.subtotal, priceValue: subtotal),
-                SizedBox(height: SpacingTokens.xs.h),
-                LabeledValueRow(
-                  label: S.deliveryFee,
-                  priceValue: summary.deliveryFee,
-                ),
-                if (saved > 0) ...[
-                  SizedBox(height: SpacingTokens.xs.h),
+                // The price before the product discount, so the two rows below
+                // it add up to the subtotal the customer is charged.
+                if (summary.productDiscount > 0) ...[
                   LabeledValueRow(
-                    label: S.couponDiscount,
-                    priceValue: saved,
+                    label: S.subtotal,
+                    priceValue: summary.subtotal + summary.productDiscount,
+                  ),
+                  LabeledValueRow(
+                    label: S.productDiscount,
+                    priceValue: summary.productDiscount,
                     pricePrefix: '-',
                     emphasized: true,
                   ),
                 ],
-                SizedBox(height: SpacingTokens.xs.h),
+                if (summary.discount > 0)
+                  LabeledValueRow(
+                    label: S.discount,
+                    priceValue: summary.discount,
+                    pricePrefix: '-',
+                    emphasized: true,
+                  ),
+                LabeledValueRow(
+                  label: S.deliveryFee,
+                  priceValue: summary.deliveryFee,
+                ),
+                if (summary.tax > 0)
+                  LabeledValueRow(label: S.vat, priceValue: summary.tax),
                 LabeledValueRow(
                   label: S.total,
                   priceValue: total,
                   emphasized: true,
                   big: true,
                 ),
+                if (summary.tax == 0)
+                  Align(
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Padding(
+                      padding: EdgeInsets.only(top: SpacingTokens.xs.h),
+                      child: Text(
+                        S.vatIncluded,
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.greyColor),
+                      ),
+                    ),
+                  ),
               ],
             );
           },

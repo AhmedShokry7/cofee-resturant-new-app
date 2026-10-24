@@ -1164,4 +1164,84 @@ void main() {
       await cubit.close();
     },
   );
+
+  // ---------- The product discount on the invoice ----------
+
+  test('the summary states the product discount of the cart', () async {
+    final orders = _FakeOrders(result: _placed());
+    final cubit = _cubit(orders, branchId: 'branch-1');
+
+    // A product that costs 90 after a 10 percent discount of 100.
+    final discounted = CartItem(
+      product: ProductModel(
+        id: 'p1',
+        name: 'Latte',
+        price: 90,
+        oldPrice: 100,
+        appliedDiscountPercentage: 10,
+        image: 'assets/images/p.png',
+      ),
+      quantity: 2,
+    );
+
+    final summary = cubit.summary(discounted.total, <CartItem>[discounted]);
+
+    expect(summary.subtotal, closeTo(180, 0.001));
+    expect(summary.productDiscount, closeTo(20, 0.001));
+    expect(summary.total, closeTo(180, 0.001));
+
+    await cubit.close();
+  });
+
+  test('a product without a discount states none', () async {
+    final orders = _FakeOrders(result: _placed());
+    final cubit = _cubit(orders, branchId: 'branch-1');
+
+    final plain = CartItem(product: _product('p1'), quantity: 2);
+    final summary = cubit.summary(plain.total, <CartItem>[plain]);
+
+    expect(summary.productDiscount, 0);
+
+    await cubit.close();
+  });
+
+  test('the invoice line reads the product discount from the order row', () {
+    final line = OrderItemModel.fromDatabase(
+      order: <String, dynamic>{
+        'id': 'order-1',
+        'order_number': 'ORD-1',
+        'status': 'completed',
+        'subtotal': '64.00',
+        'discount_total': '12.80',
+        'product_discount_total': '16.00',
+        'delivery_fee': '0',
+        'tax_total': '0',
+        'grand_total': '51.20',
+        'currency_code': 'SAR',
+        'fulfillment_type': 'pickup',
+        'placed_at': '2026-01-01T00:00:00.000Z',
+      },
+      item: <String, dynamic>{
+        'id': 'line-1',
+        'order_id': 'order-1',
+        'product_id': 'p1',
+        'product_name_ar': 'كابتشينو',
+        'product_name_en': 'Cappuccino',
+        'sku_snapshot': 'CF-002',
+        'unit_price': '32.00',
+        'quantity': 2,
+        'line_total': '64.00',
+        'discount_total': '12.80',
+        'product_discount_total': '16.00',
+        'options_key': '',
+        'note': '',
+      },
+    );
+
+    expect(line.productDiscountTotal, closeTo(16, 0.001));
+    expect(line.lineProductDiscountTotal, closeTo(16, 0.001));
+    // The coupon keeps its own figure.
+    expect(line.discountTotal, closeTo(12.80, 0.001));
+    expect(line.lineDiscountTotal, closeTo(12.80, 0.001));
+  });
 }

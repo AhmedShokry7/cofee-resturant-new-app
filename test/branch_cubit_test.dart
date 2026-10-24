@@ -31,18 +31,32 @@ class _FakeBranchRepository implements BranchRepository {
 }
 
 void main() {
+  test('customer branch keeps the admin-saved address and map coordinates', () {
+    final branch = Branch.fromDatabase({
+      'id': 'branch-id',
+      'code': 'MAIN',
+      'name_ar': 'الفرع الرئيسي',
+      'name_en': 'Main Branch',
+      'address': 'شارع الملك فهد، الرياض',
+      'address_ar': 'شارع الملك فهد، الرياض',
+      'address_en': 'King Fahd Road, Riyadh',
+      'latitude': '24.7136',
+      'longitude': 46.6753,
+    });
+
+    expect(branch.latitude, 24.7136);
+    expect(branch.longitude, 46.6753);
+    expect(branch.addressAr, 'شارع الملك فهد، الرياض');
+    expect(branch.addressEn, 'King Fahd Road, Riyadh');
+  });
+
   test('without a backend the branch list is not invented', () async {
     const repository = BranchRepositoryImpl();
-    await expectLater(
-      repository.activeBranches(),
-      throwsA(isA<StateError>()),
-    );
+    await expectLater(repository.activeBranches(), throwsA(isA<StateError>()));
   });
 
   test('a stored branch is restored, but none is invented', () async {
-    SharedPreferences.setMockInitialValues({
-      'selected_branch_v1': _main.id,
-    });
+    SharedPreferences.setMockInitialValues({'selected_branch_v1': _main.id});
 
     final cubit = BranchCubit(
       repository: const _FakeBranchRepository([_main, _jeddah]),
@@ -68,4 +82,5 @@ void main() {
     expect(cubit.state.selected, isNull);
     await cubit.close();
   });
+
 }

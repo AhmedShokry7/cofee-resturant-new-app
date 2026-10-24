@@ -1,9 +1,13 @@
-String formatMoney(num value, {String currency = 'SAR'}) {
+/// A price without the currency prefix.
+///
+/// The card shows the currency with its own mark, so the amount travels
+/// without a currency code attached to it.
+String formatAmount(num value) {
   final fixed = value.toDouble().toStringAsFixed(2);
   final parts = fixed.split('.');
   final whole = _groupDigits(parts.first);
   final fraction = parts.length > 1 ? parts[1] : '00';
-  return '$currency $whole.$fraction';
+  return '$whole.$fraction';
 }
 
 String formatCount(int value) => _groupDigits('$value');

@@ -13,7 +13,7 @@ class S {
 
   static bool get _ar => AppLocale.instance.isArabic;
 
-  static String get appName => _ar ? 'نيو كوفي' : 'New Coffee';
+  static String get appName => _ar ? 'غيم وسحب' : 'Ghaim & Sohob';
 
   // ---------- Common ----------
   static String get retry => _ar ? 'إعادة المحاولة' : 'Retry';
@@ -39,8 +39,16 @@ class S {
   static String get total => _ar ? 'الإجمالي' : 'Total';
   static String get subtotal => _ar ? 'المجموع الفرعي' : 'Subtotal';
   static String get deliveryFee => _ar ? 'رسوم التوصيل' : 'Delivery Fee';
+  static String get vat => _ar ? 'ضريبة القيمة المضافة' : 'VAT';
+  static String get vatIncluded => _ar
+      ? 'أسعار المنتجات تشمل ضريبة القيمة المضافة'
+      : 'Product prices include VAT';
   static String get discount => _ar ? 'الخصم' : 'Discount';
   static String get couponDiscount => _ar ? 'خصم الكوبون' : 'Coupon discount';
+
+  /// The discount a promotion on the product itself applied.
+  static String get productDiscount =>
+      _ar ? 'خصم المنتج' : 'Product discount';
   static String get required => _ar ? 'مطلوب' : 'Required';
 
   // ---------- Navigation ----------
@@ -113,6 +121,10 @@ class S {
   static String get addToCart => _ar ? 'أضف إلى السلة' : 'Add to Cart';
   static String get unavailable => _ar ? 'غير متوفر' : 'Unavailable';
   static String get quantity => _ar ? 'الكمية' : 'Quantity';
+  static String caloriesValue(int value) =>
+      _ar ? '$value سعرة حرارية' : '$value kcal';
+  static String get caloriesUnavailable =>
+      _ar ? 'السعرات الحرارية غير مسجلة' : 'Calories not provided';
   static String get goesWellWith => _ar ? 'يتماشى معه' : 'Goes well with';
   static String get addedToCart =>
       _ar ? 'تمت الإضافة إلى السلة' : 'Added to cart';
@@ -140,7 +152,7 @@ class S {
   static String get subTotal => _ar ? 'المجموع الفرعي' : 'Sub-Total';
   static String get totalCost => _ar ? 'التكلفة الإجمالية' : 'Total Cost';
   static String get promoCode => _ar ? 'كود الخصم' : 'Promo Code';
-static String get clearPromoCode =>
+  static String get clearPromoCode =>
       _ar ? 'مسح كود الخصم' : 'Clear promo code';
   static String get proceedToCheckout =>
       _ar ? 'إتمام الطلب' : 'Proceed to Checkout';
@@ -153,7 +165,7 @@ static String get clearPromoCode =>
   static String get favoritesSyncFailed => _ar
       ? 'تعذّر حفظ المفضلة على الخادم. سنعيد المحاولة تلقائيًا.'
       : 'The favorites could not be saved on the server. '
-          'We will retry automatically.';
+            'We will retry automatically.';
 
   // ---------- Checkout ----------
   static String get checkout => _ar ? 'الدفع' : 'Checkout';
@@ -164,8 +176,9 @@ static String get clearPromoCode =>
   static String get continueToPayment =>
       _ar ? 'المتابعة للدفع' : 'Continue to Payment';
   static String get confirmPayment => _ar ? 'تأكيد الدفع' : 'Confirm Payment';
-  static String get orderFailed =>
-      _ar ? 'تعذّر إتمام الطلب. حاول مرة أخرى.' : 'Could not place the order. Please try again.';
+  static String get orderFailed => _ar
+      ? 'تعذّر إتمام الطلب. حاول مرة أخرى.'
+      : 'Could not place the order. Please try again.';
   static String get addAddressName =>
       _ar ? 'من فضلك أدخل اسم العنوان' : 'Please enter an address name';
   static String get addAddressLocation =>
@@ -190,21 +203,24 @@ static String get clearPromoCode =>
   /// particular: the system dialog will never appear again, so only Settings
   /// can fix it — which is why the UI offers a button to open them.
   static String locationFailed(LocationFailure failure) => switch (failure) {
-    LocationFailure.servicesDisabled => _ar
-        ? 'خدمة الموقع مغلقة. شغّلها ثم حاول مرة أخرى.'
-        : 'Location is off. Turn it on and try again.',
-    LocationFailure.permissionDenied => _ar
-        ? 'التطبيق يحتاج صلاحية الموقع لتحديد عنوانك.'
-        : 'The app needs location permission to find your address.',
-    LocationFailure.permissionPermanentlyDenied => _ar
-        ? 'صلاحية الموقع مرفوضة نهائيًا. فعّلها من إعدادات التطبيق.'
-        : 'Location permission is permanently denied. Enable it in app settings.',
-    LocationFailure.timeout => _ar
-        ? 'ما قدرناش نحدد موقعك في الوقت المناسب. جرّب مكانًا مفتوحًا.'
-        : "We couldn't fix your position in time. Try somewhere more open.",
-    LocationFailure.unavailable => _ar
-        ? 'تعذّر تحديد موقعك حاليًا. حدّد المكان على الخريطة يدويًا.'
-        : 'Could not get your position. Pick a spot on the map.',
+    LocationFailure.servicesDisabled =>
+      _ar
+          ? 'خدمة الموقع مغلقة. شغّلها ثم حاول مرة أخرى.'
+          : 'Location is off. Turn it on and try again.',
+    LocationFailure.permissionDenied =>
+      _ar
+          ? 'التطبيق يحتاج صلاحية الموقع لتحديد عنوانك.'
+          : 'The app needs location permission to find your address.',
+    LocationFailure.permissionPermanentlyDenied =>
+      _ar ? 'صلاحية الموقع مرفوضة نهائيًا. فعّلها من إعدادات التطبيق.' : 'Location permission is permanently denied. Enable it in app settings.',
+    LocationFailure.timeout =>
+      _ar
+          ? 'ما قدرناش نحدد موقعك في الوقت المناسب. جرّب مكانًا مفتوحًا.'
+          : "We couldn't fix your position in time. Try somewhere more open.",
+    LocationFailure.unavailable =>
+      _ar
+          ? 'تعذّر تحديد موقعك حاليًا. حدّد المكان على الخريطة يدويًا.'
+          : 'Could not get your position. Pick a spot on the map.',
   };
 
   /// Opens the app's settings page, for the one case that only Settings fixes.
@@ -253,57 +269,53 @@ static String get clearPromoCode =>
   static String get deliveryOutOfZoneShort => _ar
       ? 'التوصيل غير متاح لهذا العنوان'
       : 'Delivery is not available for this address';
-  static String get deliveryZoneFromAddress => _ar
-      ? 'المنطقة حسب عنوانك'
-      : 'Area from your address';
-  static String get deliveryChooseZoneManually => _ar
-      ? 'اختر منطقة التوصيل يدويًا'
-      : 'Choose the delivery area manually';
+  static String get deliveryZoneFromAddress =>
+      _ar ? 'المنطقة حسب عنوانك' : 'Area from your address';
+  static String get deliveryChooseZoneManually =>
+      _ar ? 'اختر منطقة التوصيل يدويًا' : 'Choose the delivery area manually';
   static String get deliveryZoneAutoUnavailable => _ar
       ? 'ما قدرناش نحدد منطقة موقعك. اخترها يدويًا.'
       : "We couldn't match your location to an area. Pick one manually.";
-  static String get deliveryFreeOver => _ar
-      ? 'التوصيل مجاني للطلبات فوق'
-      : 'Free delivery over';
+  static String get deliveryFreeOver =>
+      _ar ? 'التوصيل مجاني للطلبات فوق' : 'Free delivery over';
   static String get deliveryPerKm => _ar ? 'حسب المسافة' : 'By distance';
   static String get deliveryFlatFee => _ar ? 'رسوم ثابتة' : 'Flat fee';
-  static String get deliveryAlwaysFree => _ar ? 'التوصيل مجاني' : 'Free delivery';
-  static String deliveryDistanceAway(double km) => _ar
-      ? 'يبعد $km كم عن الفرع'
-      : '$km km from the branch';
+  static String get deliveryAlwaysFree =>
+      _ar ? 'التوصيل مجاني' : 'Free delivery';
+  static String deliveryDistanceAway(double km) =>
+      _ar ? 'يبعد $km كم عن الفرع' : '$km km from the branch';
   static String get couponAppliesTo => _ar ? 'ينطبق على' : 'Applies to';
-  static String get couponAppliesToAll => _ar
-      ? 'ينطبق على كل المنتجات'
-      : 'Applies to everything in your cart';
+  static String get couponAppliesToAll =>
+      _ar ? 'ينطبق على كل المنتجات' : 'Applies to everything in your cart';
+
   /// A scoped coupon discounts only the eligible items, so the figure is a
   /// percentage of those items and not of the whole basket.
   static String get couponScopeDiscountNote => _ar
       ? 'الخصم على المنتجات المؤهلة فقط، مش على كل السلة'
       : 'The discount applies to the eligible items only, not to your whole cart';
-  static String get couponEligibleInCart => _ar
-      ? 'المنتجات المؤهلة في سلتك'
-      : 'Eligible items in your cart';
-  static String get couponDiscountBreakdown => _ar
-      ? 'تفصيل الخصم'
-      : 'Discount breakdown';
-  static String get subTotalDiscounted => _ar ? 'إجمالي الخصم' : 'Total discount';
+  static String get couponEligibleInCart =>
+      _ar ? 'المنتجات المؤهلة في سلتك' : 'Eligible items in your cart';
+  static String get couponDiscountBreakdown =>
+      _ar ? 'تفصيل الخصم' : 'Discount breakdown';
+  static String get subTotalDiscounted =>
+      _ar ? 'إجمالي الخصم' : 'Total discount';
   static String get lineDiscount => _ar ? 'خصم هذا السطر' : 'Line discount';
   static String get originalPrice => _ar ? 'السعر الأصلي' : 'Original price';
-  static String get discountedPrice => _ar ? 'السعر بعد الخصم' : 'Price after discount';
-  static String get couponBreakdown => _ar ? 'تفصيل خصم الكوبون' : 'Coupon discount breakdown';
-  static String get setDefaultCard => _ar ? 'تعيين كافتراضية' : 'Set as default';
+  static String get discountedPrice =>
+      _ar ? 'السعر بعد الخصم' : 'Price after discount';
+  static String get couponBreakdown =>
+      _ar ? 'تفصيل خصم الكوبون' : 'Coupon discount breakdown';
+  static String get setDefaultCard =>
+      _ar ? 'تعيين كافتراضية' : 'Set as default';
   static String get defaultCardBadge => _ar ? 'افتراضية' : 'Default';
-  static String get payWithSavedCard => _ar
-      ? 'الدفع ببطاقة محفوظة'
-      : 'Pay with a saved card';
+  static String get payWithSavedCard =>
+      _ar ? 'الدفع ببطاقة محفوظة' : 'Pay with a saved card';
   static String get chooseSavedCard => _ar ? 'اختر البطاقة' : 'Choose a card';
-  static String get noCardsSaved => _ar
-      ? 'لا توجد بطاقات محفوظة'
-      : 'No saved cards yet';
+  static String get noCardsSaved =>
+      _ar ? 'لا توجد بطاقات محفوظة' : 'No saved cards yet';
   static String get cardExpires => _ar ? 'تنتهي في' : 'Expires';
-  static String get couponLineNotIncluded => _ar
-      ? 'مش من المنتجات المؤهلة'
-      : 'Not an eligible item';
+  static String get couponLineNotIncluded =>
+      _ar ? 'مش من المنتجات المؤهلة' : 'Not an eligible item';
   static String get couponScopeCategories => _ar ? 'الأقسام' : 'categories';
   static String get couponScopeProducts => _ar ? 'المنتجات' : 'products';
 
@@ -323,37 +335,40 @@ static String get clearPromoCode =>
     String scopeLabel, {
     String legacyMessage = '',
   }) => switch (reasonCode.trim()) {
-        'not_found' => _ar ? 'كود الخصم غير صحيح' : 'That coupon code is not valid',
-        'expired' => _ar ? 'انتهت صلاحية هذا الكود' : 'This coupon has expired',
-        'min_order_not_met' => _ar
-            ? 'الطلب لم يصل للحد الأدنى المطلوب للكود'
-            : "Your order is below this coupon's minimum",
-        'fully_used' => _ar
-            ? 'تم استنفاد هذا الكود'
-            : 'This coupon has been fully claimed',
-        'user_limit_reached' => _ar
-            ? 'استخدمت هذا الكود بالحد المسموح لك'
-            : 'You have already used this coupon the allowed number of times',
-        'scope_category_no_match' => scopeLabel.isEmpty
-            ? _ar
-                  ? 'الكود مخصص لأقسام محددة مش في سلتك'
-                  : 'This coupon is limited to certain categories, none of which are in your cart'
-            : _ar
-            ? 'الكود مخصص لـ$scopeLabel، وده مش موجود في سلتك'
-            : "This coupon is limited to $scopeLabel, which is not in your cart",
-        'scope_product_no_match' => scopeLabel.isEmpty
-            ? _ar
-                  ? 'الكود مخصص لمنتجات محددة مش في سلتك'
-                  : 'This coupon is limited to certain products, none of which are in your cart'
-            : _ar
-            ? 'الكود مخصص لـ$scopeLabel، وده مش موجود في سلتك'
-            : "This coupon is limited to $scopeLabel, which is not in your cart",
-        // Legacy bridges and older deployments answer with a message rather than
-        // a reason code; fall back to translating that.
-        _ => couponRejected(
-          legacyMessage.trim().isNotEmpty ? legacyMessage : reasonCode,
-        ),
-      };
+    'not_found' => _ar ? 'كود الخصم غير صحيح' : 'That coupon code is not valid',
+    'expired' => _ar ? 'انتهت صلاحية هذا الكود' : 'This coupon has expired',
+    'min_order_not_met' =>
+      _ar
+          ? 'الطلب لم يصل للحد الأدنى المطلوب للكود'
+          : "Your order is below this coupon's minimum",
+    'fully_used' =>
+      _ar ? 'تم استنفاد هذا الكود' : 'This coupon has been fully claimed',
+    'user_limit_reached' =>
+      _ar
+          ? 'استخدمت هذا الكود بالحد المسموح لك'
+          : 'You have already used this coupon the allowed number of times',
+    'scope_category_no_match' =>
+      scopeLabel.isEmpty
+          ? _ar
+                ? 'الكود مخصص لأقسام محددة مش في سلتك'
+                : 'This coupon is limited to certain categories, none of which are in your cart'
+          : _ar
+          ? 'الكود مخصص لـ$scopeLabel، وده مش موجود في سلتك'
+          : "This coupon is limited to $scopeLabel, which is not in your cart",
+    'scope_product_no_match' =>
+      scopeLabel.isEmpty
+          ? _ar
+                ? 'الكود مخصص لمنتجات محددة مش في سلتك'
+                : 'This coupon is limited to certain products, none of which are in your cart'
+          : _ar
+          ? 'الكود مخصص لـ$scopeLabel، وده مش موجود في سلتك'
+          : "This coupon is limited to $scopeLabel, which is not in your cart",
+    // Legacy bridges and older deployments answer with a message rather than
+    // a reason code; fall back to translating that.
+    _ => couponRejected(
+      legacyMessage.trim().isNotEmpty ? legacyMessage : reasonCode,
+    ),
+  };
 
   // ---------- Orders ----------
   static String get myOrders => _ar ? 'طلباتي' : 'My Orders';
@@ -448,10 +463,12 @@ static String get clearPromoCode =>
   static String get earnRateUnavailable =>
       _ar ? 'معدل الكسب غير متوفر' : 'Earn rate unavailable';
 
-  static String get authEmailNotConfirmed =>
-      _ar ? 'يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.' : 'Please confirm your email address before signing in.';
-  static String get authTooManyRequests =>
-      _ar ? 'محاولات كثيرة جداً. يرجى الانتظار قليلاً والمحاولة مرة أخرى.' : 'Too many attempts. Please wait a moment and try again.';
+  static String get authEmailNotConfirmed => _ar
+      ? 'يرجى تأكيد بريدك الإلكتروني قبل تسجيل الدخول.'
+      : 'Please confirm your email address before signing in.';
+  static String get authTooManyRequests => _ar
+      ? 'محاولات كثيرة جداً. يرجى الانتظار قليلاً والمحاولة مرة أخرى.'
+      : 'Too many attempts. Please wait a moment and try again.';
 
   // ---------- Coupons ----------
   static String get coupon => _ar ? 'الكوبون' : 'Coupon';
@@ -461,8 +478,11 @@ static String get clearPromoCode =>
   static String couponsLoadError(String error) =>
       _ar ? 'تعذر تحميل الكوبونات: $error' : 'Could not load coupons: $error';
   static String get couponCheckFailed => _ar
-      ? 'تعذر التحقق من الكوبون للمرة الحالية. حدّث السلة وحاول مجددًا.'
+      ? 'لم يتم التحقق من الكوبون للطلب الحالي. حدّث وحاول مرة أخرى.'
       : "Couldn't verify the coupon for the current cart. Refresh and try again.";
+  static String get couponNotAppliedAtCheckout => _ar
+      ? 'لم يُطبّق خصم الكوبون عند إتمام الطلب، وتم احتساب المبلغ بدون الخصم.'
+      : 'The coupon discount could not be applied at checkout, so the order was placed without it.';
   static String codeCopied(String code) =>
       _ar ? 'تم نسخ الكود $code' : 'Code $code copied';
 
@@ -488,19 +508,19 @@ static String get clearPromoCode =>
       _ar ? 'أدخل رقم بطاقة صحيحًا' : 'Enter a valid card number';
   static String get invalidDate => _ar ? 'تاريخ غير صالح' : 'Invalid date';
   static String get cardBrandFallback => _ar ? 'بطاقة' : 'CARD';
+
   /// The name printed on the card. "Card holder" reads as the role; "Card holder
   /// name" reads as a form field asking for something else.
-static String get cardHolderName =>
-      _ar ? 'حامل البطاقة' : 'Card Holder';
+  static String get cardHolderName => _ar ? 'حامل البطاقة' : 'Card Holder';
   static String get cardNumber => _ar ? 'رقم البطاقة' : 'Card Number';
-  static String get expiryFormatHint =>
-      _ar ? 'شهر/سنة' : 'MM/YY';
+  static String get expiryFormatHint => _ar ? 'شهر/سنة' : 'MM/YY';
   static String cvvHint(int digits) =>
       _ar ? 'الرمز ($digits أرقام)' : 'CVV ($digits digits)';
   static String invalidCvvLength(int digits) => _ar
       ? 'الرمز المكوّن من $digits أرقام مطلوب'
       : 'CVV must be $digits digits';
-  static String get invalidCvv => _ar ? 'أدخل رمز البطاقة بشكل صحيح' : 'Enter a valid CVV';
+  static String get invalidCvv =>
+      _ar ? 'أدخل رمز البطاقة بشكل صحيح' : 'Enter a valid CVV';
   static String get cardExpired =>
       _ar ? 'البطاقة منتهية الصلاحية' : 'This card has expired';
   static String get savingCard =>
@@ -511,9 +531,9 @@ static String get cardHolderName =>
   static String get cardDeclined => _ar
       ? 'لم يتم قبول البطاقة. تحقق من البيانات أو جرّب بطاقة أخرى.'
       : "Your card wasn't accepted. Check the details or try another card.";
-  static String get cardSaveNotAllowed => _ar
-      ? 'سجّل الدخول لحفظ البطاقات.'
-      : 'Sign in to save cards.';
+  static String get cardSaveNotAllowed =>
+      _ar ? 'سجّل الدخول لحفظ البطاقات.' : 'Sign in to save cards.';
+
   /// The card provider is not reachable at all — a build/deploy problem.
   ///
   /// Deliberately not "try again later": retrying cannot fix a function that
@@ -536,8 +556,8 @@ static String get cardHolderName =>
       : 'Could not save the card details. Please try again.';
   static String get paymentNotCompleted =>
       _ar ? 'لم يتم إتمام الدفع.' : 'Payment was not completed.';
-  static String get paymentVerificationFailed => _ar
-      ? 'فشل التحقق من الدفع.' : 'Payment verification failed.';
+  static String get paymentVerificationFailed =>
+      _ar ? 'فشل التحقق من الدفع.' : 'Payment verification failed.';
   static String get paymentRetryLater => _ar
       ? 'تعذّر إتمام الدفع. حاول مرة أخرى.'
       : 'Payment failed. Please try again.';
@@ -545,6 +565,15 @@ static String get cardHolderName =>
   // ---------- Auth ----------
   static String get signIn => _ar ? 'تسجيل الدخول' : 'Sign In';
   static String get signUp => _ar ? 'إنشاء حساب' : 'Sign Up';
+  static String get signInRequired =>
+      _ar ? 'يلزم تسجيل الدخول' : 'Sign in required';
+  static String get signInOrCreateAccount => _ar
+      ? 'يرجى تسجيل الدخول أو إنشاء حساب للمتابعة.'
+      : 'Please sign in or create an account to continue.';
+  static String get createAccount => _ar ? 'إنشاء حساب' : 'Create Account';
+  static String get bundleLoadFailed => _ar
+      ? 'تعذر تحميل تفاصيل الباقة. حاول مرة أخرى لاحقًا.'
+      : 'Could not load bundle details. Please try again later.';
   static String get orSignUpWith => _ar ? 'أو سجل عبر' : 'Or sign up with';
   static String get orSignInWith => _ar ? 'أو ادخل عبر' : 'Or sign in with';
   static String get dontHaveAccount =>
@@ -614,18 +643,21 @@ static String get cardHolderName =>
   static String get yourProfile => _ar ? 'حسابك' : 'Your Profile';
   static String get help => _ar ? 'المساعدة' : 'Help';
   static String get privacyPolicy => _ar ? 'سياسة الخصوصية' : 'Privacy Policy';
-static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
-  static String get setDefaultAddress => _ar ? 'تعيين كافتراضي' : 'Set as default';
+  static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
+  static String get setDefaultAddress =>
+      _ar ? 'تعيين كافتراضي' : 'Set as default';
   static String get editAddress => _ar ? 'تعديل العنوان' : 'Edit address';
   static String get logOut => _ar ? 'تسجيل الخروج' : 'Log Out';
   static String get confirmLogout => _ar ? 'نعم، تسجيل الخروج' : 'Yes, Logout';
   static String get logoutConfirm => _ar
       ? 'هل أنت متأكد من تسجيل الخروج؟'
       : 'Are you sure you want to log out ?';
+
   /// Shown when the client sign-out itself fails. The customer stays signed in
   /// and the sign-out can be retried.
-  static String get logoutFailed =>
-      _ar ? 'تعذّر تسجيل الخروج. حاول مرة أخرى.' : 'Could not sign you out. Please try again.';
+  static String get logoutFailed => _ar
+      ? 'تعذّر تسجيل الخروج. حاول مرة أخرى.'
+      : 'Could not sign you out. Please try again.';
   static String get faqTitle =>
       _ar ? 'الأسئلة الشائعة' : 'Frequently asked questions';
   static String get profilePicture =>
@@ -633,7 +665,8 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get fullNameHint => _ar ? 'الاسم الكامل' : 'Full Name';
   static String get firstNameHint => _ar ? 'الاسم الأول' : 'First Name';
   static String get lastNameHint => _ar ? 'الاسم الأخير' : 'Last Name';
-  static String get profileUpdateFailed => _ar ? 'فشل تحديث الملف الشخصي' : 'Profile update failed';
+  static String get profileUpdateFailed =>
+      _ar ? 'فشل تحديث الملف الشخصي' : 'Profile update failed';
   static String get phoneNumberHint => _ar ? 'رقم الهاتف' : 'Phone Number';
   static String get profileUpdated =>
       _ar ? 'تم تحديث الحساب بنجاح' : 'Profile updated successfully';
@@ -642,8 +675,9 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get takePhoto => _ar ? 'التقط صورة' : 'Take a photo';
   static String get imagePickerFailed =>
       _ar ? 'تعذر فتح اختيار الصور' : "Couldn't open the image picker";
-  static String get photoUploadFailed =>
-      _ar ? 'تعذر حفظ الصورة. حاول مرة أخرى.' : "Couldn't save the photo. Please try again.";
+  static String get photoUploadFailed => _ar
+      ? 'تعذر حفظ الصورة. حاول مرة أخرى.'
+      : "Couldn't save the photo. Please try again.";
   static String get photoFormatUnsupported => _ar
       ? 'صيغة الصورة غير مدعومة. اختر صورة بصيغة مدعومة.'
       : 'That image format is not supported. Choose a JPG, PNG or WebP image.';
@@ -668,13 +702,14 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       : 'Add your addresses to check out delivery faster';
   static String get delete => _ar ? 'حذف' : 'Delete';
   static String get deleteAddress => _ar ? 'حذف العنوان' : 'Delete address';
-  static String get deleteAddressConfirm => _ar
-      ? 'هل تريد حذف هذا العنوان؟'
-      : 'Do you want to delete this address?';
-  static String get addressSaveFailed =>
-      _ar ? 'تعذر حفظ العنوان. حاول مرة أخرى.' : 'Could not save the address. Please try again.';
-  static String get addressDeleteFailed =>
-      _ar ? 'تعذر حذف العنوان. حاول مرة أخرى.' : 'Could not delete the address. Please try again.';
+  static String get deleteAddressConfirm =>
+      _ar ? 'هل تريد حذف هذا العنوان؟' : 'Do you want to delete this address?';
+  static String get addressSaveFailed => _ar
+      ? 'تعذر حفظ العنوان. حاول مرة أخرى.'
+      : 'Could not save the address. Please try again.';
+  static String get addressDeleteFailed => _ar
+      ? 'تعذر حذف العنوان. حاول مرة أخرى.'
+      : 'Could not delete the address. Please try again.';
 
   // ---------- Help / FAQ / policy ----------
   static String faqsLoadError(String error) =>
@@ -702,12 +737,10 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       _ar ? 'تفعيل الإشعارات' : 'Turn on notifications';
   static String get turnOffNotifications =>
       _ar ? 'إيقاف الإشعارات' : 'Turn off notifications';
-  static String get notificationsTurnedOn => _ar
-      ? 'تم تفعيل الإشعارات'
-      : 'Notifications are on';
-  static String get notificationsTurnedOff => _ar
-      ? 'تم إيقاف الإشعارات'
-      : 'Notifications are off';
+  static String get notificationsTurnedOn =>
+      _ar ? 'تم تفعيل الإشعارات' : 'Notifications are on';
+  static String get notificationsTurnedOff =>
+      _ar ? 'تم إيقاف الإشعارات' : 'Notifications are off';
   static String get notificationPermissionDenied => _ar
       ? 'لم يُسمح بالإشعارات. فعّلها من إعدادات الهاتف.'
       : 'Notifications are not allowed. Turn them on in the phone settings.';
@@ -730,9 +763,8 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       _ar ? 'لا توجد شرائح تعريفية' : 'No onboarding slides';
 
   // ---------- Auth screens ----------
-  static String get welcomeBackSubtitle => _ar
-      ? 'أهلًا بعودتك، كنا ننتظرك'
-      : "Hi welcome back, you've been missed";
+  static String get welcomeBackSubtitle =>
+      _ar ? 'أهلًا بعودتك، كنا ننتظرك' : "Hi welcome back, you've been missed";
   static String get createAccountTitle => _ar ? 'حساب جديد' : 'Create Account';
   static String get forgotPasswordSubtitle => _ar
       ? 'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين'
@@ -760,12 +792,15 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get authWeakPassword => _ar
       ? 'كلمة المرور ضعيفة، برجاء استخدام كلمة مرور أطول وأكثر أمانًا'
       : 'Password is too weak. Please use a longer, stronger password.';
-  static String get authInvalidEmail =>
-      _ar ? 'إيميل غير صحيح، برجاء إدخال إيميل صحيح' : 'Enter a valid email address.';
-  static String get authFailed =>
-      _ar ? 'حدث خطأ أثناء الدخول. حاول مرة أخرى.' : 'Something went wrong signing in. Please try again.';
-  static String get authUnexpected =>
-      _ar ? 'حدث خطأ غير متوقع، برجاء المحاولة مرة أخرى.' : 'Something unexpected happened. Please try again.';
+  static String get authInvalidEmail => _ar
+      ? 'إيميل غير صحيح، برجاء إدخال إيميل صحيح'
+      : 'Enter a valid email address.';
+  static String get authFailed => _ar
+      ? 'حدث خطأ أثناء الدخول. حاول مرة أخرى.'
+      : 'Something went wrong signing in. Please try again.';
+  static String get authUnexpected => _ar
+      ? 'حدث خطأ غير متوقع، برجاء المحاولة مرة أخرى.'
+      : 'Something unexpected happened. Please try again.';
 
   /// Shown when Google Sign-In was refused because the OAuth client that
   /// matches this build's signing certificate is missing or misconfigured.
@@ -799,22 +834,24 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   /// English sentences — and no explanation — in an Arabic checkout, which read
   /// as the coupon silently vanishing.
   static String couponRejected(String code) => switch (code.trim()) {
-    'code not valid' => _ar ? 'كود الخصم غير صحيح' : 'That coupon code is not valid',
-    'code expired' => _ar
-        ? 'انتهت صلاحية هذا الكود'
-        : 'This coupon has expired',
-    'minimum order not reached' => _ar
-        ? 'الطلب لم يصل للحد الأدنى المطلوب للكود'
-        : 'Your order is below this coupon\'s minimum',
-    'code fully used' => _ar
-        ? 'تم استنفاد هذا الكود'
-        : 'This coupon has been fully claimed',
-    'you already used this code' => _ar
-        ? 'استخدمت هذا الكود بالحد المسموح لك'
-        : 'You have already used this coupon the allowed number of times',
-    'code does not apply to your items' => _ar
-        ? 'هذا الكود لا ينطبق على المنتجات في سلتك'
-        : 'This coupon does not apply to the items in your cart',
+    'code not valid' =>
+      _ar ? 'كود الخصم غير صحيح' : 'That coupon code is not valid',
+    'code expired' =>
+      _ar ? 'انتهت صلاحية هذا الكود' : 'This coupon has expired',
+    'minimum order not reached' =>
+      _ar
+          ? 'الطلب لم يصل للحد الأدنى المطلوب للكود'
+          : 'Your order is below this coupon\'s minimum',
+    'code fully used' =>
+      _ar ? 'تم استنفاد هذا الكود' : 'This coupon has been fully claimed',
+    'you already used this code' =>
+      _ar
+          ? 'استخدمت هذا الكود بالحد المسموح لك'
+          : 'You have already used this coupon the allowed number of times',
+    'code does not apply to your items' =>
+      _ar
+          ? 'هذا الكود لا ينطبق على المنتجات في سلتك'
+          : 'This coupon does not apply to the items in your cart',
     _ => _ar ? 'كود الخصم غير صالح' : 'Invalid coupon code',
   };
 
@@ -823,9 +860,8 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
       : count == 1
       ? '1 use left'
       : '$count uses left';
-  static String get couponNoUsesLeft => _ar
-      ? 'استخدمت هذا الكود بالحد المسموح'
-      : 'You have used up this coupon';
+  static String get couponNoUsesLeft =>
+      _ar ? 'استخدمت هذا الكود بالحد المسموح' : 'You have used up this coupon';
   static String get couponAppliedBadge =>
       _ar ? 'مطبّق على طلبك' : 'Applied to your order';
 
@@ -834,24 +870,21 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get readLess => _ar ? 'اقرأ أقل' : 'Read less';
   static String get productUnavailable =>
       _ar ? 'المنتج غير متاح' : 'Product unavailable';
-  static String get productNoLongerAvailable => _ar
-      ? 'هذا المنتج لم يعد متاحًا'
-      : 'This product is no longer available';
+  static String get productNoLongerAvailable =>
+      _ar ? 'هذا المنتج لم يعد متاحًا' : 'This product is no longer available';
 
   // ---------- Orders ----------
   static String quantityLabel(int quantity) =>
       _ar ? 'الكمية: $quantity' : 'Qty: $quantity';
   static String get liveStatusFailed =>
       _ar ? 'تعذّر جلب حالة الطلب مباشرة' : 'Could not load live status';
-  static String get removedProduct =>
-      _ar ? 'منتج محذوف' : 'Removed product';
+  static String get removedProduct => _ar ? 'منتج محذوف' : 'Removed product';
   static String get addNewShippingAddress =>
       _ar ? '+ إضافة عنوان توصيل جديد' : '+ Add new shipping address';
 
   // ---------- Checkout ----------
-  static String get selectBranchBeforePaying => _ar
-      ? 'اختر الفرع قبل الدفع.'
-      : 'Select a branch before paying.';
+  static String get selectBranchBeforePaying =>
+      _ar ? 'اختر الفرع قبل الدفع.' : 'Select a branch before paying.';
   static String loyaltyPointsEarned(int points) => _ar
       ? 'لقد كسبت $points نقطة ولاء!'
       : 'You earned $points loyalty points!';
@@ -860,8 +893,7 @@ static String get defaultAddress => _ar ? 'افتراضي' : 'Default';
   static String get selectBranchBeforeRedeeming => _ar
       ? 'اختر الفرع قبل استبدال هذه المكافأة.'
       : 'Select a branch before redeeming this reward.';
-  static String get orderPurchaseLabel =>
-      _ar ? 'شراء طلب' : 'Order purchase';
+  static String get orderPurchaseLabel => _ar ? 'شراء طلب' : 'Order purchase';
   static String get rewardRedeemedLabel =>
       _ar ? 'تم استبدال المكافأة' : 'Reward redeemed';
   static String get pointsRefundedLabel =>

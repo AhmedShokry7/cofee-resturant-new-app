@@ -1,32 +1,40 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
-
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/utils/formatters.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_fields.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
-/// Language code, the product name and the trailing action.
+/// The title row: the product mark and the name of the product.
 class ProductCardNameRow extends StatelessWidget {
-  const ProductCardNameRow({super.key, required this.product, this.onMore});
+  const ProductCardNameRow({
+    super.key,
+    required this.nameController,
+    this.onMore,
+    this.moreKey,
+  });
 
-  final AdminProduct product;
+  final TextEditingController nameController;
   final VoidCallback? onMore;
+
+  /// Finds the button of the menu, so the menu opens under it.
+  final GlobalKey? moreKey;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        RecordLanguageTag(label: S.languageCode),
+        RecordActionBox(
+          key: moreKey,
+          icon: HugeIcons.strokeRoundedPackage,
+          onTap: onMore,
+          radiusStart: true,
+        ),
         Expanded(
-          child: RecordValueBox(
-            value: product.name,
-            alignEnd: true,
-            trailing: RecordActionBox(
-              icon: HugeIcons.strokeRoundedArrowDown01,
-              onTap: onMore,
-            ),
+          child: RecordTextFieldBox(
+            controller: nameController,
+            hint: S.productName,
           ),
         ),
       ],
@@ -34,125 +42,95 @@ class ProductCardNameRow extends StatelessWidget {
   }
 }
 
-/// Currency, the price and the trailing action.
+/// The price row: the currency mark, the price and the Riyal symbol.
+///
+/// When the product carries a discount, the price the customer pays is stated
+/// under the field, so the admin sees what the catalogue will sell for.
 class ProductCardPriceRow extends StatelessWidget {
-  const ProductCardPriceRow({super.key, required this.product, this.onMore});
-
-  final AdminProduct product;
-  final VoidCallback? onMore;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: AlignmentDirectional.centerEnd,
-      child: SizedBox(
-        width: AppDimensions.recordPriceRowWidth,
-        child: Row(
-          children: [
-            RecordActionBox(
-              icon: HugeIcons.strokeRoundedEdit02,
-              onTap: onMore,
-              radiusEnd: true,
-            ),
-            RecordCurrencyBox(label: S.currency),
-            Expanded(
-              child: RecordValueBox(
-                value: formatMoney(product.basePrice),
-                alignEnd: true,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Options and quantity row with its check box and counters.
-class ProductCardOptionsRow extends StatelessWidget {
-  const ProductCardOptionsRow({
+  const ProductCardPriceRow({
     super.key,
-    required this.product,
-    this.onToggleFeatured,
+    required this.priceController,
+    this.discountedPrice,
+    this.discountPercentage,
+    this.discountActive = true,
     this.onMore,
   });
 
-  final AdminProduct product;
-  final VoidCallback? onToggleFeatured;
+  final TextEditingController priceController;
+
+  /// The price after the discount, when one applies.
+  final double? discountedPrice;
+
+  /// The discount in percent.
+  final double? discountPercentage;
+
+  /// False when the discount is scheduled or expired.
+  final bool discountActive;
+
   final VoidCallback? onMore;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final row = Row(
       children: [
-        RecordLabelBox(label: S.optionsAndQuantity),
-        const SizedBox(width: 1),
         RecordActionBox(
-          icon: HugeIcons.strokeRoundedTick01,
-          onTap: onToggleFeatured,
-          active: product.isFeatured,
-          width: AppDimensions.recordCheckBoxColumnWidth,
-        ),
-        const SizedBox(width: 1),
-        RecordActionBox(
-          icon: HugeIcons.strokeRoundedDelete01,
+          icon: HugeIcons.strokeRoundedMoney01,
           onTap: onMore,
-          width: AppDimensions.recordFieldActionWidth,
+          radiusStart: true,
         ),
         Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: RecordValueBox(
-                  value: '${product.prepMinutes ?? 0}',
-                  alignEnd: true,
-                ),
-              ),
-              RecordActionBox(
-                icon: HugeIcons.strokeRoundedAdd01,
-                onTap: onMore,
-                width: AppDimensions.recordCheckBoxColumnWidth,
-                radiusEnd: true,
-              ),
+          child: RecordTextFieldBox(
+            controller: priceController,
+            hint: S.price,
+            textInputType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
             ],
           ),
         ),
+        RecordActionBox(
+          onTap: onMore,
+          radiusEnd: true,
+          child: const CurrencyIcon(size: 14),
+        ),
       ],
     );
+
+    return row;
   }
 }
 
-/// A label box followed by a read only value that looks like a select.
-class ProductCardSelectRow extends StatelessWidget {
-  const ProductCardSelectRow({
+/// The category row: the category of the product and the add action.
+class ProductCardCategoryRow extends StatelessWidget {
+  const ProductCardCategoryRow({
     super.key,
-    required this.label,
-    required this.value,
-    this.onTap,
+    required this.categoryName,
+    required this.onPickCategory,
+    this.onAddCategory,
     this.muted = false,
   });
 
-  final String label;
-  final String value;
-  final VoidCallback? onTap;
+  final String categoryName;
+  final VoidCallback? onPickCategory;
+  final VoidCallback? onAddCategory;
   final bool muted;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        RecordLabelBox(label: label),
         Expanded(
-          child: RecordValueBox(
-            value: value,
-            alignEnd: true,
+          child: RecordSelectBox(
+            value: categoryName,
+            onTap: onPickCategory,
             muted: muted,
-            trailing: RecordActionBox(
-              icon: HugeIcons.strokeRoundedArrowDown01,
-              onTap: onTap,
-              radiusEnd: true,
-            ),
           ),
+        ),
+        RecordActionLabelBox(
+          icon: HugeIcons.strokeRoundedAdd01,
+          label: S.addCategoryShort,
+          onTap: onAddCategory,
+          radiusEnd: true,
         ),
       ],
     );

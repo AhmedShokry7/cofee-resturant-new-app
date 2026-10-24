@@ -65,14 +65,8 @@ void main() {
         coupon(usageLimit: null, totalUsed: 10_000).isExhaustedForMe,
         isFalse,
       );
-      expect(
-        coupon(usageLimit: 100, totalUsed: 100).isExhaustedForMe,
-        isTrue,
-      );
-      expect(
-        coupon(usageLimit: 100, totalUsed: 99).isExhaustedForMe,
-        isFalse,
-      );
+      expect(coupon(usageLimit: 100, totalUsed: 100).isExhaustedForMe, isTrue);
+      expect(coupon(usageLimit: 100, totalUsed: 99).isExhaustedForMe, isFalse);
     });
 
     test('unknown counters do not mark a coupon unavailable', () {
@@ -146,6 +140,7 @@ void main() {
       expect(merged.usedCount, 1);
       expect(merged.remainingUses, 0);
       expect(merged.isExhaustedForMe, isTrue);
+      expect(merged.usedUpByCustomer, isTrue);
     });
   });
 }

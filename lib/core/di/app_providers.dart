@@ -37,6 +37,7 @@ import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
@@ -145,31 +146,41 @@ class AppProviders extends StatelessWidget {
                 BranchCubit(repository: const BranchRepositoryImpl()),
           ),
           BlocProvider(
+            // The cubit loads itself when it is created, so the cart is read
+            // from the server exactly once per start.
             create: (context) => CartCubit(
               cartRepository: context.read<CartRepository>(),
               catalogRepository: context.read<CatalogRepository>(),
-            )..load(),
+            ),
           ),
           BlocProvider(
             create: (context) => FavoritesCubit(
               repository: context.read<CatalogRepository>(),
               favorites: FavoritesRepositoryImpl(),
-            )..load(),
+            ),
           ),
           BlocProvider(
             create: (context) => CheckoutCubit(
               coupons: context.read<CouponRepository>(),
               addresses: context.read<AddressRepository>(),
               paymentMethods: context.read<PaymentMethodRepository>(),
-              deliveryZoneRepository: context
-                  .read<DeliveryZoneRepository>(),
+              deliveryZoneRepository: context.read<DeliveryZoneRepository>(),
               orders: context.read<OrdersRepository>(),
             ),
           ),
           BlocProvider(
-            create: (context) => SavedCardsCubit(
-              repository: SupabaseSavedCardsRepository(),
-            )..load(),
+            create: (context) =>
+                SavedCardsCubit(repository: SupabaseSavedCardsRepository())
+                  ..load(),
+          ),
+          // The card payment cubit is app wide: the checkout charges an order
+          // with it, and the subscription screens create their own instance for
+          // a subscription. Without it here the checkout had no cubit to read
+          // and every card payment failed before it started.
+          BlocProvider(
+            create: (context) => CardPaymentCubit(
+              repository: context.read<TapPaymentRepository>(),
+            ),
           ),
           BlocProvider(
             create: (context) => SearchCubit(
@@ -187,9 +198,8 @@ class AppProviders extends StatelessWidget {
                 CategoriesCubit(repository: context.read<CatalogRepository>()),
           ),
           BlocProvider(
-            create: (context) => AddressesCubit(
-              repository: context.read<AddressRepository>(),
-            ),
+            create: (context) =>
+                AddressesCubit(repository: context.read<AddressRepository>()),
           ),
           BlocProvider(
             create: (context) => ProfileCubit(
@@ -258,8 +268,7 @@ class _UnavailableOrdersRepository implements OrdersRepository {
       throw StateError(_message);
 
   @override
-  Future<List<OrderStatusEvent>> orderHistory(String orderId) async =>
-      const [];
+  Future<List<OrderStatusEvent>> orderHistory(String orderId) async => const [];
 }
 
 /// Propagates the customer's explicit branch choice to every branch-aware

@@ -35,87 +35,36 @@ class PaymentMethodBottomBar extends StatelessWidget {
       return;
     }
 
-    final orderId = checkout.state.lastOrder?.id ?? '';
+    final order = checkout.state.lastOrder;
+    // The server id of the order, never the number the customer reads. The
+    // payment functions look the order up by its uuid.
+    final orderId = order?.orderId ?? '';
+    final warning = checkout.state.orderWarning;
+    if (warning != null && warning.isNotEmpty) {
+      messenger.showSnackBar(SnackBar(content: Text(warning)));
+    }
     final selectedMethod = checkout.state.selectedPaymentMethod;
     final isOnline = selectedMethod?.isOnline ?? false;
-    final savedCard = checkout.state.selectedSavedCard;
+    // A stored card can only pay a card method. Apple Pay and cash must never
+    // be settled with the card the customer saved earlier.
+    final savedCard = selectedMethod?.isCardMethod == true
+        ? checkout.state.selectedSavedCard
+        : null;
 
-    // A saved card pays without the hosted form: the server charges it
-    // directly, so the customer is never asked for a number they already gave.
-    if (isOnline && savedCard != null && orderId.isNotEmpty) {
+    if (isOnline && orderId.isNotEmpty) {
       final chargeCubit = context.read<CardPaymentCubit>();
-      chargeCubit.start(orderId: orderId, savedCardId: savedCard.id);
-      await chargeCubit.createCharge();
-      if (!context.mounted) return;
-      final chargeResult = chargeCubit.state;
-      if (chargeResult.status == CardPaymentStatus.chargeCreated &&
-          (chargeResult.transactionUrl ?? '').isNotEmpty) {
-        final launched = await navigator.push<bool>(
-          MaterialPageRoute(
-            builder: (_) => CardPaymentPage(
-              orderId: orderId,
-              idempotencyKey: orderId,
-              publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
-              sdkConfiguration: <String, dynamic>{},
-            ),
-          ),
-        );
+      if (savedCard != null) {
+        // A saved card pays without the hosted form: the server charges it
+        // directly, so the customer is never asked for a number they already
+        // gave.
+        chargeCubit.start(orderId: orderId, savedCardId: savedCard.id);
+        await chargeCubit.createCharge();
         if (!context.mounted) return;
-          if (launched != true) return;
-          final verified = await chargeCubit.verifyCharge();
-          if (!context.mounted) return;
-          if (verified != 'succeeded') {
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(
-                  chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
-                ),
-              ),
-            );
-            return;
-          }
-        } else if (chargeResult.status == CardPaymentStatus.paymentFailed) {
-          messenger.showSnackBar(
-            SnackBar(content: Text(chargeResult.errorMessage ?? S.orderFailed)),
-          );
-          return;
-        } else {
-          final verified = await chargeCubit.verifyCharge();
-          if (!context.mounted) return;
-          if (verified != 'succeeded') {
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(
-                  chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
-                ),
-              ),
-            );
-            return;
-          }
-        }
-    } else if (isOnline && orderId.isNotEmpty) {
-      final publicKey = const String.fromEnvironment('TAP_PUBLIC_KEY');
-      final sdkConfig = <String, dynamic>{};
-      final result = await navigator.push<bool>(
-        MaterialPageRoute(
-          builder: (_) => CardPaymentPage(
-            orderId: orderId,
-            idempotencyKey: orderId,
-            publicKey: publicKey,
-            sdkConfiguration: sdkConfig,
-          ),
-        ),
-      );
-        if (!context.mounted) return;
-        if (result != true) return;
-        final chargeCubit = context.read<CardPaymentCubit>();
-        final verified = await chargeCubit.verifyCharge();
-        if (!context.mounted) return;
-        if (verified != 'succeeded') {
+        if (chargeCubit.state.status != CardPaymentStatus.chargeCreated) {
           messenger.showSnackBar(
             SnackBar(
               content: Text(
-                chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
+                chargeCubit.state.errorMessage ?? S.paymentRetryLater,
               ),
             ),
           );
@@ -123,8 +72,38 @@ class PaymentMethodBottomBar extends StatelessWidget {
         }
       }
 
+      // The page verifies the charge when the customer comes back from the
+      // bank and only returns true when the money was really taken.
+      final paid = await navigator.push<bool>(
+        MaterialPageRoute(
+          builder: (_) => CardPaymentPage(
+            orderId: orderId,
+            idempotencyKey: orderId,
+            amount: order?.total ?? total,
+            publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
+            sdkConfiguration: <String, dynamic>{},
+            savedCardId: savedCard?.id,
+          ),
+        ),
+      );
+      if (!context.mounted) return;
+      if (paid != true) {
+        // The charge was not completed. The order stays unpaid and the cart
+        // stays intact, so nothing is lost and the customer can try again.
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
+            ),
+          ),
+        );
+        return;
+      }
+    }
+
     context.read<LoyaltyCubit>().earnForOrder(total);
     cart.clear();
+    await cart.flushServerSync();
     navigator.pushNamedAndRemoveUntil(
       PaymentSuccessPage.routeName,
       (route) => route.isFirst,
@@ -135,11 +114,22 @@ class PaymentMethodBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<CheckoutCubit, CheckoutState>(
       buildWhen: (previous, current) =>
-          previous.isPlacingOrder != current.isPlacingOrder,
+          previous.isPlacingOrder != current.isPlacingOrder ||
+          previous.checkoutQuote != current.checkoutQuote ||
+          previous.quoteLoading != current.quoteLoading ||
+          previous.addressOutOfZone != current.addressOutOfZone ||
+          previous.isResolvingZone != current.isResolvingZone ||
+          previous.deliveryBlocked != current.deliveryBlocked,
       builder: (context, state) => PrimaryBottomBar(
         text: S.confirmPayment,
         isLoading: state.isPlacingOrder,
-        enabled: !state.addressOutOfZone,
+        enabled:
+            !state.isPlacingOrder &&
+            !state.addressOutOfZone &&
+            !state.isResolvingZone &&
+            !state.deliveryBlocked &&
+            !state.quoteLoading &&
+            state.checkoutQuote != null,
         onPressed: () => _confirm(context),
       ),
     );

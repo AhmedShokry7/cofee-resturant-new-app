@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
@@ -8,11 +9,7 @@ import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 ///
 /// Guests see a standard prompt instead of an empty or data-loading page.
 class AuthGuard extends StatelessWidget {
-  const AuthGuard({
-    super.key,
-    required this.child,
-    this.originRoute,
-  });
+  const AuthGuard({super.key, required this.child, this.originRoute});
 
   final Widget child;
   final String? originRoute;
@@ -41,23 +38,20 @@ class AuthRequiredView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Sign in required'),
+              Text(S.signInRequired),
               const SizedBox(height: 8),
-              const Text('Please sign in or create an account to continue.'),
+              Text(S.signInOrCreateAccount),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => Navigator.of(context).pushNamed(
-                  AuthPage.routeName,
-                  arguments: originRoute,
-                ),
-                child: const Text('Sign In'),
+                onPressed: () =>
+                    Navigator.of(context)
+                        .pushNamed(AuthPage.routeName, arguments: originRoute),
+                child: Text(S.signIn),
               ),
               TextButton(
-                onPressed: () => Navigator.of(context).pushNamed(
-                  SignUpPage.routeName,
-                  arguments: originRoute,
-                ),
-                child: const Text('Create Account'),
+                onPressed: () => Navigator.of(context)
+                    .pushNamed(SignUpPage.routeName, arguments: originRoute),
+                child: Text(S.createAccount),
               ),
             ],
           ),

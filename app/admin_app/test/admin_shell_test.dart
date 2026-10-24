@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/auth/data/models/admin_session.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
+import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/shell/presentation/views/admin_shell.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_app_bar.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_desktop_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
+import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_item.dart';
 
 AdminSession _session() => const AdminSession(
   staffId: 'u1',
@@ -19,6 +22,19 @@ AdminSession _session() => const AdminSession(
   status: 'active',
   roles: [],
   permissionScopes: [],
+  canManageAllBranches: true,
+);
+
+/// A staff member that may write the products.
+AdminSession _sessionWithProducts() => const AdminSession(
+  staffId: 'u1',
+  email: 'admin@example.com',
+  fullName: 'Admin One',
+  status: 'active',
+  roles: [],
+  permissionScopes: [
+    AdminPermissionScope(permissions: ['catalog.product.write']),
+  ],
   canManageAllBranches: true,
 );
 
@@ -109,6 +125,88 @@ void main() {
     searchController.dispose();
     searchTextController.dispose();
   });
+
+  testWidgets('the sidebar follows the language of the panel', (tester) async {
+    _setViewport(tester, 1280);
+    AppLocale.instance.debugSet(AppLanguage.english);
+    addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+    await tester.pumpWidget(MaterialApp(home: AdminShell(session: _session())));
+    await tester.pump();
+
+    // The sidebar carries the text of the panel.
+    expect(find.byType(AdminSidebar), findsOneWidget);
+    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Sign out'), findsOneWidget);
+
+    // The panel is switched to Arabic while the app runs.
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    await tester.pump();
+
+    // The sidebar shows the Arabic text, without a restart.
+    expect(find.text(S.dashboard), findsWidgets);
+    expect(find.text(S.signOut), findsWidgets);
+    expect(find.text('Dashboard'), findsNothing);
+    expect(find.text('Sign out'), findsNothing);
+  });
+
+  testWidgets('the sidebar follows the language back to English', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+    await tester.pumpWidget(MaterialApp(home: AdminShell(session: _session())));
+    await tester.pump();
+
+    expect(find.text(S.dashboard), findsWidgets);
+    expect(find.text('Dashboard'), findsNothing);
+
+    AppLocale.instance.debugSet(AppLanguage.english);
+    await tester.pump();
+
+    expect(find.text('Dashboard'), findsWidgets);
+    expect(find.text('Sign out'), findsOneWidget);
+  });
+
+  testWidgets(
+    'the selected item and the menu state survive a language switch',
+    (tester) async {
+      _setViewport(tester, 1280);
+      AppLocale.instance.debugSet(AppLanguage.english);
+      addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+      await tester.pumpWidget(
+        MaterialApp(home: AdminShell(session: _sessionWithProducts())),
+      );
+      await tester.pump();
+
+      // The admin picks the products page in the sidebar.
+      final products = find.descendant(
+        of: find.byType(AdminSidebar),
+        matching: find.byType(AdminSidebarItem),
+      );
+      await tester.tap(products.at(1));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester.widget<AdminSidebarItem>(products.at(1)).isSelected,
+        isTrue,
+      );
+
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+      await tester.pump();
+
+      // The same item is still the one that is selected.
+      expect(
+        tester.widget<AdminSidebarItem>(products.at(1)).isSelected,
+        isTrue,
+      );
+      // And the panel still shows the products page.
+      expect(find.byType(ProductPage), findsOneWidget);
+    },
+  );
 
   testWidgets('shell switches layout with the viewport width', (tester) async {
     _setViewport(tester, 1280);

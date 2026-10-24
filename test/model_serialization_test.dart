@@ -108,14 +108,32 @@ void main() {
       expect(legacy.hasDiscount, isFalse);
     });
 
-    test('hasDiscount still reflects compare_at_price', () {
-      final discounted = ProductModel.fromJson({
+    test('a compare-at price is a reference price, not a discount', () {
+      final withCompareAt = ProductModel.fromJson({
         ...productRow,
         'base_price': '40.00',
         'compare_at_price': '50.00',
       });
-      expect(discounted.oldPrice, 50.0);
+      expect(withCompareAt.oldPrice, 50.0);
+      // The old price is shown next to the price, but nothing was reduced, so
+      // nothing may claim that the product is discounted.
+      expect(withCompareAt.hasOldPrice, isTrue);
+      expect(withCompareAt.hasDiscount, isFalse);
+      expect(withCompareAt.appliedDiscountPercentage, isNull);
+    });
+
+    test('an applied discount is reported as one', () {
+      final discounted = ProductModel(
+        id: 'p1',
+        name: 'Latte',
+        price: 36,
+        oldPrice: 40,
+        appliedDiscountPercentage: 10,
+        image: 'assets/images/product.png',
+      );
       expect(discounted.hasDiscount, isTrue);
+      expect(discounted.hasOldPrice, isTrue);
+      expect(discounted.appliedDiscountPercentage, 10);
     });
 
     test('survives a toJson round trip', () {

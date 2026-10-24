@@ -453,7 +453,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
           child: Container(
             height: 48.w,
             width: 48.w,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColor.primaryColor,
               shape: BoxShape.circle,
             ),

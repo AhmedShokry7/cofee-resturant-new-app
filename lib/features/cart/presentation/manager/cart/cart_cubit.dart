@@ -10,6 +10,7 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/data/model/cart_line.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
@@ -42,8 +43,9 @@ class CartCubit extends Cubit<CartState> {
        super(const CartState(items: [])) {
     _identity = _userIdProvider();
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange
-          .listen(_onAuthStateChanged);
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
     }
     load();
   }
@@ -106,6 +108,10 @@ class CartCubit extends Cubit<CartState> {
     _identity = identity;
     // Invalidate anything already in flight under the previous identity.
     _loadGeneration++;
+    // A queued write describes the previous identity's cart. Letting it run
+    // would write that cart into the account that just signed in.
+    _syncTimer?.cancel();
+    _syncTimer = null;
     if (state.items.isNotEmpty) {
       emit(const CartState(items: []));
     }
@@ -140,8 +146,6 @@ class CartCubit extends Cubit<CartState> {
     load();
   }
 
-  /// Restored rows stay within the catalogue's configured page width.
-  static const _catalogPageSize = 200;
   static const _maxItems = 50;
 
   /// Guards guest adoption: concurrent loads must not adopt the same guest
@@ -164,6 +168,9 @@ class CartCubit extends Cubit<CartState> {
 
   Timer? _syncTimer;
 
+  /// Tail of the queue that serialises server writes.
+  Future<void> _writeChain = Future<void>.value();
+
   /// The newest load, so a caller can wait for it.
   Future<void>? _pendingLoad;
 
@@ -183,7 +190,6 @@ class CartCubit extends Cubit<CartState> {
 
   /// Writes the cart to the server right now instead of waiting for the
   /// debounce window to close.
-  @visibleForTesting
   Future<void> flushServerSync() => _syncToServer();
 
   /// Restores the cart.
@@ -203,11 +209,11 @@ class CartCubit extends Cubit<CartState> {
       Future<Map<String, ProductModel>> catalog() async {
         final cached = productsById;
         if (cached != null) return cached;
-        final fresh = await _catalogRepository
-            .getProducts(branchId: branchId, limit: _catalogPageSize)
-            .then((products) => {for (final p in products) p.id: p});
-        productsById = fresh;
-        return fresh;
+        // Cart restoration knows its product IDs, so the resolver will fetch
+        // exactly those IDs in one batch instead of downloading a 200-row
+        // catalogue page and then issuing per-item fallbacks.
+        productsById = <String, ProductModel>{};
+        return productsById!;
       }
 
       // An empty storage slot is a real answer: this account's cart is empty.
@@ -220,10 +226,19 @@ class CartCubit extends Cubit<CartState> {
 
       Object? serverError;
       List<CartLine>? serverLines;
+      // The lines above were read from the previous identity's slot; a
+      // transition that happened meanwhile must not let them be written into
+      // the new account's cart.
+      if (generation != _loadGeneration) return;
       if (readServer && _canSyncToServer) {
         // A change the server has not accepted yet is newer than anything the
-        // server can answer with, so it goes first.
+        // server can answer with, so it goes first. Let any queued write
+        // finish first so the two never reach the server out of order.
         if (await _hasPendingSync()) {
+          _syncTimer?.cancel();
+          _syncTimer = null;
+          await _writeChain;
+          if (isClosed || generation != _loadGeneration) return;
           try {
             await _saveLines(_linesFromEntries(cachedEntries));
             await _setPendingSync(false);
@@ -416,21 +431,13 @@ class CartCubit extends Cubit<CartState> {
           if (!restored) {
             // Report that recovery itself failed.
             if (!isClosed) {
-              addError(
-                StateError('Guest cart restoration failed'),
-                stackTrace,
-              );
+              addError(StateError('Guest cart restoration failed'), stackTrace);
             }
           }
           if (!isClosed &&
               generation == _loadGeneration &&
               _identity == _userId) {
-            emit(
-              CartState(
-                items: preAdoptionItems,
-                error: error.toString(),
-              ),
-            );
+            emit(CartState(items: preAdoptionItems, error: error.toString()));
           }
           if (!isClosed) {
             addError(error, stackTrace);
@@ -639,8 +646,11 @@ class CartCubit extends Cubit<CartState> {
   void _scheduleServerSync() {
     if (_suppressServerSync) return;
     if (!_canSyncToServer) return;
+    final identity = _userId;
     _syncTimer?.cancel();
     _syncTimer = Timer(_syncDebounce, () {
+      // The account may have changed while the window was open.
+      if (_userId != identity) return;
       unawaited(_syncToServer());
     });
   }
@@ -650,19 +660,32 @@ class CartCubit extends Cubit<CartState> {
   /// A failure is reported, never swallowed: the customer keeps the lines on
   /// the device, the pending flag stays set so the next attempt pushes them
   /// again, and the error reaches the screen.
-  Future<void> _syncToServer() async {
+  ///
+  /// Writes are queued: two changes can never reach the server out of order,
+  /// which would let an older cart overwrite a newer one.
+  Future<void> _syncToServer() {
+    final identity = _userId;
+    final next = _writeChain.then((_) => _writeNow(identity));
+    _writeChain = next;
+    return next;
+  }
+
+  Future<void> _writeNow(String? identity) async {
     _syncTimer?.cancel();
     _syncTimer = null;
     if (isClosed) return;
+    if (_userId != identity) return;
     if (!_canSyncToServer) return;
     final lines = _linesFromState();
     try {
       await _saveLines(lines);
+      if (isClosed || _userId != identity) return;
       await _setPendingSync(false);
       if (!isClosed && state.error != null) {
         emit(CartState(items: state.items));
       }
     } catch (error, stackTrace) {
+      if (_userId != identity) return;
       await _setPendingSync(true);
       if (!isClosed) {
         emit(CartState(items: state.items, error: S.cartSyncFailed));
@@ -680,48 +703,87 @@ class CartCubit extends Cubit<CartState> {
   /// server, exactly like the checkout sends it, so the server keeps charging
   /// the bundle share.
   List<CartLine> _linesFromState() => [
-        for (final item in state.items)
-          if (item.isBundle)
-            for (final component in item.bundleComponents)
-              CartLine(
-                productId: component.productId,
-                quantity: component.quantity * item.quantity,
-                note: item.note,
-                optionValueIds: item.optionValueIds,
-                bundleId: item.bundleId,
-              )
-          else
-            CartLine(
-              productId: item.product.id,
-              quantity: item.quantity,
-              note: item.note,
-              optionValueIds: item.optionValueIds,
-              bundleId: item.bundleId,
-            ),
-      ];
+    for (final item in state.items)
+      if (item.isBundle)
+        for (final component in item.bundleComponents)
+          CartLine(
+            productId: component.productId,
+            quantity: component.quantity * item.quantity,
+            note: item.note,
+            optionValueIds: item.optionValueIds,
+            bundleId: item.bundleId,
+          )
+      else
+        CartLine(
+          productId: item.product.id,
+          quantity: item.quantity,
+          note: item.note,
+          optionValueIds: item.optionValueIds,
+          bundleId: item.bundleId,
+        ),
+  ];
 
   /// The server lines for a stored cart.
+  ///
+  /// A bundle is one stored line but its component lines on the server, the
+  /// same way the checkout sends it.
   List<CartLine> _linesFromEntries(List<Map<String, dynamic>> entries) => [
-        for (final entry in entries)
-          if (entry['isBundle'] != true)
-            CartLine(
-              productId: entry['productId']?.toString() ?? '',
-              quantity: (entry['quantity'] as num?)?.toInt() ?? 1,
-              note: entry['note']?.toString() ?? '',
-              optionValueIds: canonicalOptionIds(
-                (entry['optionValueIds'] as List?)
-                        ?.map((e) => e.toString()) ??
-                    const <String>[],
-              ),
+    for (final entry in entries)
+      if (entry['isBundle'] == true)
+        for (final component in _bundleComponentsOf(entry))
+          CartLine(
+            productId: component.productId,
+            quantity:
+                component.quantity *
+                ((entry['quantity'] as num?)?.toInt() ?? 1),
+            note: entry['note']?.toString() ?? '',
+            optionValueIds: canonicalOptionIds(
+              (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
+                  const <String>[],
             ),
-      ];
+            bundleId: entry['bundleId']?.toString(),
+          )
+      else
+        CartLine(
+          productId: entry['productId']?.toString() ?? '',
+          quantity: (entry['quantity'] as num?)?.toInt() ?? 1,
+          note: entry['note']?.toString() ?? '',
+          optionValueIds: canonicalOptionIds(
+            (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
+                const <String>[],
+          ),
+          bundleId: entry['bundleId']?.toString(),
+        ),
+  ];
+
+  /// The components of a stored bundle line.
+  static List<CartBundleComponent> _bundleComponentsOf(
+    Map<String, dynamic> entry,
+  ) {
+    final components = <CartBundleComponent>[];
+    final rawComponents = entry['bundleComponents'];
+    if (rawComponents is List) {
+      for (final raw in rawComponents) {
+        if (raw is Map) {
+          components.add(
+            CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)),
+          );
+        }
+      }
+    }
+    return components;
+  }
 
   /// Combines the server cart with the device copy.
   ///
   /// The server owns the product lines. A bundle is a device-side wrapper
   /// around component lines, so it is re-attached to the component lines the
-  /// server kept; a bundle the server does not know any more is dropped,
-  /// because the server is the authority.
+  /// server kept, matched by bundle id as well as product/note/options: a
+  /// standalone line of the same product must never be pulled into a bundle.
+  /// A bundle the server does not know any more is dropped, because the server
+  /// is the authority. Component lines the device has no bundle for stay
+  /// ordinary lines but keep their `bundleId`, so the next write still sends
+  /// the bundle identity instead of inventing a standalone price.
   List<Map<String, dynamic>> _mergeServerLines(
     List<CartLine> serverLines,
     List<Map<String, dynamic>> cachedEntries,
@@ -731,18 +793,12 @@ class CartCubit extends Cubit<CartState> {
 
     for (final entry in cachedEntries) {
       if (entry['isBundle'] != true) continue;
-      final components = <CartBundleComponent>[];
-      final rawComponents = entry['bundleComponents'];
-      if (rawComponents is List) {
-        for (final raw in rawComponents) {
-          if (raw is Map) {
-            components.add(
-              CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)),
-            );
-          }
-        }
-      }
+      final components = _bundleComponentsOf(entry);
       if (components.isEmpty) continue;
+
+      final bundleId =
+          entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
+      if (bundleId.isEmpty) continue;
 
       final note = entry['note']?.toString() ?? '';
       final optionIds = canonicalOptionIds(
@@ -755,6 +811,7 @@ class CartCubit extends Cubit<CartState> {
         final index = remaining.indexWhere(
           (line) =>
               line.productId == component.productId &&
+              line.bundleId == bundleId &&
               line.note == note &&
               _sameOptions(line.optionValueIds, optionIds),
         );
@@ -779,10 +836,12 @@ class CartCubit extends Cubit<CartState> {
             : matched[i].quantity ~/ perBundle;
         if (held < quantity) quantity = held;
       }
-      merged.add({
-        ...entry,
-        'quantity': quantity.clamp(1, 99),
-      });
+      if (quantity < 1) {
+        // Never turn "not enough components" into a bundle by clamping.
+        remaining.insertAll(0, matched);
+        continue;
+      }
+      merged.add({...entry, 'quantity': quantity.clamp(1, 99)});
     }
 
     for (final line in remaining) {
@@ -793,6 +852,8 @@ class CartCubit extends Cubit<CartState> {
         if (line.optionValueIds.isNotEmpty)
           'optionValueIds': line.optionValueIds,
         if (line.unitPrice != null) 'unitPrice': line.unitPrice,
+        if (line.bundleId != null && line.bundleId!.trim().isNotEmpty)
+          'bundleId': line.bundleId,
       });
     }
     return merged;
@@ -843,20 +904,65 @@ class CartCubit extends Cubit<CartState> {
     List<Map<String, dynamic>> entries,
     Future<Map<String, ProductModel>> Function() catalog,
   ) async {
+    if (entries.isEmpty) return const [];
+    final productsById = await catalog();
+    final requestedIds = <String>{};
+    for (final entry in entries) {
+      if (entry['isBundle'] == true) {
+        final rawComponents = entry['bundleComponents'];
+        if (rawComponents is List) {
+          for (final raw in rawComponents) {
+            if (raw is Map) {
+              final id = raw['productId']?.toString() ?? '';
+              if (id.isNotEmpty) requestedIds.add(id);
+            }
+          }
+        }
+      } else {
+        final id = entry['productId']?.toString() ?? '';
+        if (id.isNotEmpty) requestedIds.add(id);
+      }
+    }
+    final missingIds = requestedIds
+        .where((id) => !productsById.containsKey(id))
+        .toList(growable: false);
+    if (missingIds.isNotEmpty) {
+      try {
+        final missingProducts = await getProductsByIds(
+          _catalogRepository,
+          missingIds,
+          branchId: branchId,
+        );
+        productsById.addAll({
+          for (final product in missingProducts) product.id: product,
+        });
+      } catch (error, stackTrace) {
+        addError(error, stackTrace);
+      }
+    }
+
     final items = <CartItem>[];
     for (final entry in entries) {
       if (entry['isBundle'] == true) {
-        final bundleId = entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
+        final bundleId =
+            entry['bundleId']?.toString() ??
+            entry['productId']?.toString() ??
+            '';
         if (bundleId.isEmpty) continue;
         final title = entry['bundleTitle']?.toString() ?? S.bundleLabel;
-        final price = (entry['bundlePrice'] as num?)?.toDouble() ?? (entry['unitPrice'] as num?)?.toDouble() ?? 0.0;
+        final price =
+            (entry['bundlePrice'] as num?)?.toDouble() ??
+            (entry['unitPrice'] as num?)?.toDouble() ??
+            0.0;
         final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
         final components = <CartBundleComponent>[];
         final rawComponents = entry['bundleComponents'];
         if (rawComponents is List) {
           for (final raw in rawComponents) {
             if (raw is Map) {
-              components.add(CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)));
+              components.add(
+                CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)),
+              );
             }
           }
         }
@@ -864,19 +970,33 @@ class CartCubit extends Cubit<CartState> {
         if (image.isEmpty) {
           image = await _bundleFallbackImage(components, catalog);
         }
-        final product = ProductModel(id: 'bundle:$bundleId', name: title, price: price, image: image);
-        items.add(CartItem(product: product, quantity: quantity, note: entry['note']?.toString() ?? '', optionValueIds: _optionIds(entry['optionValueIds']), unitPrice: price, bundleId: bundleId, bundleComponents: components));
+        final product = ProductModel(
+          id: 'bundle:$bundleId',
+          name: title,
+          price: price,
+          image: image,
+        );
+        items.add(
+          CartItem(
+            product: product,
+            quantity: quantity,
+            note: entry['note']?.toString() ?? '',
+            optionValueIds: _optionIds(entry['optionValueIds']),
+            unitPrice: price,
+            bundleId: bundleId,
+            bundleComponents: components,
+          ),
+        );
         if (items.length >= _maxItems) break;
         continue;
       }
       final productId = entry['productId']?.toString();
       if (productId == null || productId.isEmpty) continue;
-      final product =
-          (await catalog())[productId] ??
-          await _catalogRepository.getById(productId, branchId: branchId);
+      final product = productsById[productId];
       // Preserve unavailable lines on a branch switch instead of silently
       // dropping them; the customer can review before checkout.
-      final resolvedProduct = product ??
+      final resolvedProduct =
+          product ??
           (branchId == null || branchId!.trim().isEmpty
               ? null
               : ProductModel(
@@ -914,13 +1034,24 @@ class CartCubit extends Cubit<CartState> {
     List<CartBundleComponent> components,
     Future<Map<String, ProductModel>> Function() catalog,
   ) async {
+    final productsById = await catalog();
+    final missingIds = components
+        .map((component) => component.productId)
+        .where((id) => !productsById.containsKey(id))
+        .toSet()
+        .toList(growable: false);
+    if (missingIds.isNotEmpty) {
+      final missingProducts = await getProductsByIds(
+        _catalogRepository,
+        missingIds,
+        branchId: branchId,
+      );
+      productsById.addAll({
+        for (final product in missingProducts) product.id: product,
+      });
+    }
     for (final component in components) {
-      final product =
-          (await catalog())[component.productId] ??
-          await _catalogRepository.getById(
-            component.productId,
-            branchId: branchId,
-          );
+      final product = productsById[component.productId];
       final image = product?.displayImageUrl;
       if (image != null && image.trim().isNotEmpty) return image.trim();
     }
@@ -978,10 +1109,7 @@ class CartCubit extends Cubit<CartState> {
   Future<void> _setPendingSync(bool pending) async {
     if (_userId == null) return;
     try {
-      await SharedPref.setValue(
-        key: _pendingKey,
-        value: pending ? '1' : '',
-      );
+      await SharedPref.setValue(key: _pendingKey, value: pending ? '1' : '');
     } catch (_) {
       // Best-effort: a missing flag only means one more attempt later.
     }

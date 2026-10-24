@@ -121,16 +121,29 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
         .where(validProductIds.contains)
         .where((id) => !remoteIds.contains(id))
         .toList(growable: false);
-    for (final id in uploadable) {
-      try {
-        await client.from('customer_favorites').insert({
-          'user_id': user.id,
-          'product_id': id,
-        });
-      } on PostgrestException catch (error) {
-        // A product deleted between the catalogue read and this insert must
-        // not fail the whole sync. Anything else is a real backend problem.
-        if (error.code != '23503') rethrow;
+    if (uploadable.isEmpty) return {...localIds, ...remoteIds};
+    try {
+      // One RPC inserts the missing ids with ON CONFLICT DO NOTHING. Syncing
+      // 100 local hearts therefore costs one write request, not 100.
+      await client.rpc(
+        'sync_customer_favorites',
+        params: {'p_product_ids': uploadable},
+      );
+    } on PostgrestException catch (error) {
+      if (error.code != '23503' && error.code != 'PGRST202') rethrow;
+      // Keep compatibility with older deployments and tolerate a product
+      // deleted between catalogue loading and sync.
+      for (final id in uploadable) {
+        try {
+          await client.from('customer_favorites').insert({
+            'user_id': user.id,
+            'product_id': id,
+          });
+        } on PostgrestException catch (insertError) {
+          if (insertError.code != '23503' && insertError.code != '23505') {
+            rethrow;
+          }
+        }
       }
     }
     return {...localIds, ...remoteIds};

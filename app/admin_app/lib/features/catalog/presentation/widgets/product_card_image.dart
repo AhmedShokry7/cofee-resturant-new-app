@@ -1,24 +1,41 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 
-/// The square image of the product card with its media actions.
+/// Product image area styled after the Figma reference.
 class ProductCardImage extends StatelessWidget {
   const ProductCardImage({
     super.key,
     required this.imageUrl,
+    required this.isSelected,
     required this.isFeatured,
     this.onChangeImage,
-    this.onDelete,
+    this.onSelect,
+    this.onOpenImages,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
   });
 
   final String? imageUrl;
+
+  /// The product is picked for a bulk action.
+  final bool isSelected;
+
   final bool isFeatured;
   final VoidCallback? onChangeImage;
-  final VoidCallback? onDelete;
+  final VoidCallback? onSelect;
+
+  /// Opens the gallery of the pictures of the product.
+  final VoidCallback? onOpenImages;
+
+  /// How the picture fills its space.
+  final BoxFit fit;
+
+  /// Where the picture sits in its space.
+  final Alignment alignment;
 
   @override
   Widget build(BuildContext context) {
@@ -27,21 +44,27 @@ class ProductCardImage extends StatelessWidget {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          _CoverImage(url: imageUrl),
+          // The picture opens the gallery of the product.
+          GestureDetector(
+            onTap: (imageUrl != null && imageUrl!.trim().isNotEmpty) ? (onOpenImages ?? onChangeImage) : (onChangeImage ?? onOpenImages),
+            behavior: HitTestBehavior.opaque,
+            child: _CoverImage(url: imageUrl, fit: fit, alignment: alignment),
+          ),
           PositionedDirectional(
             top: AppDimensions.recordImageInset,
             end: AppDimensions.recordImageInset,
-            child: _FeaturedCheckBox(checked: isFeatured),
+            child: _SelectionCheckBox(checked: isSelected, onTap: onSelect),
           ),
+          if (isFeatured)
+            PositionedDirectional(
+              top: AppDimensions.recordImageInset,
+              start: AppDimensions.recordImageInset,
+              child: const _FeaturedBadge(),
+            ),
           PositionedDirectional(
             bottom: AppDimensions.recordImageInset,
             start: AppDimensions.recordImageInset,
             child: _MediaPill(onTap: onChangeImage),
-          ),
-          PositionedDirectional(
-            bottom: AppDimensions.recordImageInset,
-            end: AppDimensions.recordImageInset,
-            child: _DeleteCircle(onTap: onDelete),
           ),
         ],
       ),
@@ -50,9 +73,14 @@ class ProductCardImage extends StatelessWidget {
 }
 
 class _CoverImage extends StatelessWidget {
-  const _CoverImage({required this.url});
-
+  const _CoverImage({
+    required this.url,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+  });
   final String? url;
+  final BoxFit fit;
+  final Alignment alignment;
 
   @override
   Widget build(BuildContext context) {
@@ -60,11 +88,14 @@ class _CoverImage extends StatelessWidget {
     if (image == null || image.isEmpty) {
       return const _ImagePlaceholder();
     }
-
-    return Image.network(
-      image,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => const _ImagePlaceholder(),
+    // The picture is cached on the device: the catalogue shows the same
+    // pictures again and again, so they are fetched once.
+    return CachedNetworkImage(
+      imageUrl: image,
+      fit: fit,
+      alignment: alignment,
+      placeholder: (context, url) => const _ImagePlaceholder(),
+      errorWidget: (context, url, error) => const _ImagePlaceholder(),
     );
   }
 }
@@ -75,7 +106,7 @@ class _ImagePlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const ColoredBox(
-      color: AppColor.lightGreyColor,
+      color: AppColor.imagePlaceholder,
       child: Center(
         child: Icon(
           HugeIcons.strokeRoundedImage01,
@@ -87,36 +118,74 @@ class _ImagePlaceholder extends StatelessWidget {
   }
 }
 
-/// The small square check box drawn on top of the image.
-class _FeaturedCheckBox extends StatelessWidget {
-  const _FeaturedCheckBox({required this.checked});
-
+/// The checkbox that picks the product for a bulk action.
+class _SelectionCheckBox extends StatelessWidget {
+  const _SelectionCheckBox({required this.checked, this.onTap});
   final bool checked;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: AppDimensions.recordCheckBoxSize,
-      height: AppDimensions.recordCheckBoxSize,
-      decoration: BoxDecoration(
+    return Material(
+      color: AppColor.whiteColor.withValues(alpha: 0.96),
+      borderRadius: BorderRadius.circular(AppDimensions.recordFieldRadius),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.recordFieldRadius),
-        border: Border.all(color: AppColor.primaryColor),
+        child: Container(
+          width: AppDimensions.recordCheckBoxSize,
+          height: AppDimensions.recordCheckBoxSize,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(
+              AppDimensions.recordFieldRadius,
+            ),
+            border: Border.all(
+              color: checked ? AppColor.primaryColor : AppColor.greyColor,
+            ),
+          ),
+          child: checked
+              ? const Icon(
+                  HugeIcons.strokeRoundedTick01,
+                  size: 14,
+                  color: AppColor.primaryColor,
+                )
+              : null,
+        ),
       ),
-      child: checked
-          ? const Icon(
-              HugeIcons.strokeRoundedTick01,
-              size: 14,
-              color: AppColor.primaryColor,
-            )
-          : null,
     );
   }
 }
 
-/// The white pill that opens the media picker.
+/// The mark of a product that is featured in the store.
+class _FeaturedBadge extends StatelessWidget {
+  const _FeaturedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: AppColor.primaryColor,
+      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppDimensions.sm,
+          vertical: 4,
+        ),
+        child: Text(
+          S.featured,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppColor.whiteColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _MediaPill extends StatelessWidget {
   const _MediaPill({required this.onTap});
-
   final VoidCallback? onTap;
 
   @override
@@ -128,53 +197,22 @@ class _MediaPill extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.md,
-            vertical: 4,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 S.addImageOrVideo,
                 style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColor.primaryColor),
+                    ?.copyWith(color: AppColor.primaryColor, fontSize: 12),
               ),
-              const SizedBox(width: AppDimensions.xs),
+              const SizedBox(width: 5),
               const Icon(
                 HugeIcons.strokeRoundedImageAdd01,
                 size: 14,
                 color: AppColor.primaryColor,
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The red round action on the image.
-class _DeleteCircle extends StatelessWidget {
-  const _DeleteCircle({required this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColor.errorColor,
-      shape: const CircleBorder(),
-      child: InkWell(
-        onTap: onTap,
-        customBorder: const CircleBorder(),
-        child: const SizedBox(
-          width: AppDimensions.recordActionCircle,
-          height: AppDimensions.recordActionCircle,
-          child: Icon(
-            HugeIcons.strokeRoundedDelete01,
-            size: 16,
-            color: AppColor.whiteColor,
           ),
         ),
       ),

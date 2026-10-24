@@ -59,9 +59,17 @@ class CartItem {
 
   bool get isBundle => bundleComponents.isNotEmpty;
 
-  /// Stable merge identity for one product/note/option combination.
+  /// Stable merge identity for one product/note/option/bundle combination.
+  ///
+  /// The bundle id is part of the identity even for a component shown without
+  /// its wrapper, so it can never collide with a standalone line of the same
+  /// product.
   String get lineId {
-    final prefix = isBundle ? 'bundle:${bundleId ?? product.id}' : product.id;
+    final prefix = isBundle
+        ? 'bundle:${bundleId ?? product.id}'
+        : (bundleId == null || bundleId!.trim().isEmpty
+            ? product.id
+            : '${product.id}::bundle:$bundleId');
     return '$prefix::$note::${optionValueIds.join(',')}';
   }
 

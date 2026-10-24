@@ -28,7 +28,10 @@ class ProductPrice extends StatelessWidget {
           iconSize: 14,
           iconColor: AppColor.primaryColor,
         ),
-        if (product.hasDiscount) ...[
+        // The old price is shown for a discounted product and for a product
+        // that only carries a compare-at price. The badge is what says "this
+        // is a promotion", so the old price alone does not claim one.
+        if (product.hasOldPrice) ...[
           SizedBox(width: 6.w),
           Flexible(
             child: Text(

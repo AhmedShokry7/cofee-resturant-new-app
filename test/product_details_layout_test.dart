@@ -486,10 +486,10 @@ void main() {
         pairs.map((p) => p.id).toSet(),
         isNot(contains(bundle.productIds.first)),
       );
-      // The section sits at the end of the content: scroll it into view.
+      // Related products belong on product details, not bundle details.
       await tester.drag(find.byType(ListView), const Offset(0, -1200));
       await tester.pump();
-      expect(find.byType(HomeProductsCarousel), findsOneWidget);
+      expect(find.byType(HomeProductsCarousel), findsNothing);
     });
   });
 

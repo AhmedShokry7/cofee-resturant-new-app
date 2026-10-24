@@ -37,13 +37,4 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
       'payments.payment_events',
     ],
   ),
-  AdminDestination(
-    id: 'savedCards',
-    label: S.savedCards,
-    icon: HugeIcons.strokeRoundedCreditCard,
-    searchHint: S.searchSavedCardsHint,
-    permission: 'payments.read',
-    section: S.sectionOperations,
-    tables: <String>['payments.saved_cards', 'payments.tap_customers'],
-  ),
 ];

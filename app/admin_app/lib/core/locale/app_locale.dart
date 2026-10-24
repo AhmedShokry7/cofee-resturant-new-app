@@ -47,6 +47,7 @@ class AppLocale extends ChangeNotifier {
     final systemLanguage =
         WidgetsBinding.instance.platformDispatcher.locale.languageCode;
     _language = AppLanguage.fromCode(savedLanguage ?? systemLanguage);
+    notifyListeners();
   }
 
   Future<void> setLanguage(AppLanguage value) async {

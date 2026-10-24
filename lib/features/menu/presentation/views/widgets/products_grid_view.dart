@@ -150,7 +150,7 @@ class _ProductsGridViewState extends State<ProductsGridView> {
                 child: SizedBox(
                   height: 24.w,
                   width: 24.w,
-                  child: const CircularProgressIndicator(
+                  child: CircularProgressIndicator(
                     strokeWidth: 2.5,
                     color: AppColor.primaryColor,
                   ),

@@ -18,6 +18,7 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
     icon: HugeIcons.strokeRoundedReceiptDollar,
     searchHint: S.searchOrdersHint,
     permission: 'orders.read',
+    isImplemented: true,
     section: S.sectionManagement,
     tables: <String>[
       'orders.orders',
@@ -66,15 +67,6 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
     permission: 'catalog.product.write',
     section: S.sectionManagement,
     tables: <String>['catalog.bundles', 'catalog.bundle_items'],
-  ),
-  AdminDestination(
-    id: 'pricing',
-    label: S.branchPricing,
-    icon: HugeIcons.strokeRoundedDollar01,
-    searchHint: S.searchPricingHint,
-    permission: 'catalog.product.write',
-    section: S.sectionManagement,
-    tables: <String>['catalog.branch_product_pricing'],
   ),
   AdminDestination(
     id: 'carts',

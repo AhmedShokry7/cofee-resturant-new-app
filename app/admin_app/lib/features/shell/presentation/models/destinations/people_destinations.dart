@@ -15,15 +15,6 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
     tables: <String>['identity.profiles'],
   ),
   AdminDestination(
-    id: 'addresses',
-    label: S.addresses,
-    icon: HugeIcons.strokeRoundedLocation01,
-    searchHint: S.searchAddressesHint,
-    permission: 'customers.read',
-    section: S.sectionPeople,
-    tables: <String>['identity.customer_addresses'],
-  ),
-  AdminDestination(
     id: 'staff',
     label: S.staffLabel,
     icon: HugeIcons.strokeRoundedUser,
@@ -62,14 +53,5 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
     permission: 'settings.write',
     section: S.sectionPeople,
     tables: <String>['core.branches', 'core.brands'],
-  ),
-  AdminDestination(
-    id: 'deliveryZones',
-    label: S.deliveryZones,
-    icon: HugeIcons.strokeRoundedPin,
-    searchHint: S.searchDeliveryZonesHint,
-    permission: 'settings.write',
-    section: S.sectionPeople,
-    tables: <String>['core.delivery_zones', 'core.delivery_zone_branches'],
   ),
 ];

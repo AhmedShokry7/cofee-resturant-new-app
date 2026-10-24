@@ -41,7 +41,7 @@ Widget assistantInputBar({
         child: Container(
           height: 48.w,
           width: 48.w,
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColor.primaryColor,
             shape: BoxShape.circle,
           ),

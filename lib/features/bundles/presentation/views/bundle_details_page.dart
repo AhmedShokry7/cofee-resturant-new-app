@@ -14,7 +14,6 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/widgets/discount_badge.dart';
-import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -73,10 +72,9 @@ class BundleDetailsPage extends StatelessWidget {
       for (final product in cubit.state.products)
         CartBundleComponent(
           productId: product.id,
-          quantity:
-              bundle.components
-                  .firstWhere((item) => item.productId == product.id)
-                  .quantity,
+          quantity: bundle.components
+              .firstWhere((item) => item.productId == product.id)
+              .quantity,
           unitPrice: shares[product.id] ?? product.price,
         ),
     ];
@@ -117,7 +115,7 @@ class _BundleDetailsBody extends StatelessWidget {
           return const BundleDetailsSkeleton();
         }
         if (state.error != null && state.products.isEmpty) {
-          return Center(child: Text(state.error!));
+          return Center(child: Text(S.bundleLoadFailed));
         }
 
         final cubit = context.read<BundleDetailsCubit>();
@@ -146,11 +144,16 @@ class _BundleDetailsBody extends StatelessWidget {
                       ),
                     ),
                     if (cubit.originalTotalFor() > state.bundle.price)
-                      Positioned(
+                      PositionedDirectional(
                         top: -12,
-                        right: 8,
+                        end: 8,
                         child: DiscountBadge(
-                          percent: (((cubit.originalTotalFor() - state.bundle.price) / cubit.originalTotalFor()) * 100).round(),
+                          percent:
+                              (((cubit.originalTotalFor() -
+                                              state.bundle.price) /
+                                          cubit.originalTotalFor()) *
+                                      100)
+                                  .round(),
                           size: 52,
                         ),
                       ),
@@ -224,16 +227,6 @@ class _BundleDetailsBody extends StatelessWidget {
               amount: cubit.savingsFor(),
               highlighted: true,
             ),
-            // Same-category companions outside the bundle, in the shared
-            // home carousel. Hidden when the catalogue offers none.
-            if (state.pairs.isNotEmpty) ...[
-              SizedBox(height: SpacingTokens.xl.h),
-              HomeProductsCarousel(
-                title: S.goesWellWith,
-                products: state.pairs,
-                maxItems: 5,
-              ),
-            ],
           ],
         );
       },

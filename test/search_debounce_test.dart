@@ -12,7 +12,13 @@ import 'package:new_coffee/features/search/data/model/search_sort.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 
 class _SearchCall {
-  _SearchCall(this.index, this.query, this.branchId, this.categoryId, this.sort);
+  _SearchCall(
+    this.index,
+    this.query,
+    this.branchId,
+    this.categoryId,
+    this.sort,
+  );
 
   final int index;
   final String query;
@@ -82,15 +88,16 @@ class _ControlledCatalog implements CatalogRepository {
   }
 
   static List<ProductModel> _rows(String query) => [
-        ProductModel(
-          id: 'hit-$query',
-          name: 'Hit $query',
-          category: 'Hot Coffee',
-          description: 'd',
-          price: 10,
-          image: 'x',
-        ),
-      ];
+    ProductModel(
+      id: 'hit-$query',
+      name: 'Hit $query',
+      category: 'Hot Coffee',
+      categoryId: 'cat-1',
+      description: 'd',
+      price: 10,
+      image: 'x',
+    ),
+  ];
 
   @override
   Future<List<ProductModel>> getProducts({
@@ -133,11 +140,7 @@ class _ControlledCatalog implements CatalogRepository {
     String? branchId,
     Duration period = const Duration(days: 30),
     int limit = 10,
-  }) => _inner.getBestSellers(
-    branchId: branchId,
-    period: period,
-    limit: limit,
-  );
+  }) => _inner.getBestSellers(branchId: branchId, period: period, limit: limit);
 
   @override
   Future<ResolvedPrice?> resolvePrice(
@@ -191,7 +194,18 @@ void main() {
     await _boot(tester);
 
     // 10 changes spread over 200ms, all inside one 300ms pause.
-    const typed = ['l', 'la', 'lat', 'lat', 'latt', 'latte', 'latte', 'latte', 'latte', 'latte'];
+    const typed = [
+      'l',
+      'la',
+      'lat',
+      'lat',
+      'latt',
+      'latte',
+      'latte',
+      'latte',
+      'latte',
+      'latte',
+    ];
     for (final query in typed) {
       cubit.search(query);
       await tester.pump(const Duration(milliseconds: 20));
@@ -257,11 +271,9 @@ void main() {
     catalog.complete(0, 'a');
     await tester.pump();
 
-    expect(
-      cubit.state.results.map((p) => p.id),
-      ['hit-b'],
-      reason: 'a slower earlier answer must never replace the newer result',
-    );
+    expect(cubit.state.results.map((p) => p.id), [
+      'hit-b',
+    ], reason: 'a slower earlier answer must never replace the newer result');
     expect(cubit.state.query, 'b');
     expect(cubit.state.isLoading, isFalse);
   });
@@ -323,7 +335,9 @@ void main() {
     expect(cubit.state.query, '');
   });
 
-  testWidgets('a branch change refreshes at once, with no pause', (tester) async {
+  testWidgets('a branch change refreshes at once, with no pause', (
+    tester,
+  ) async {
     final catalog = _ControlledCatalog();
     final cubit = SearchCubit(catalogRepository: catalog, branchId: 'branch-a');
     addTearDown(cubit.close);
@@ -376,7 +390,7 @@ void main() {
     );
   });
 
-testWidgets('closing with a pending pause sends nothing and emits nothing', (
+  testWidgets('closing with a pending pause sends nothing and emits nothing', (
     tester,
   ) async {
     final catalog = _ControlledCatalog();
@@ -395,7 +409,9 @@ testWidgets('closing with a pending pause sends nothing and emits nothing', (
     expect(catalog.calls, isEmpty);
   });
 
-  testWidgets('a failure surfaces, and a stale failure is ignored', (tester) async {
+  testWidgets('a failure surfaces, and a stale failure is ignored', (
+    tester,
+  ) async {
     final catalog = _ControlledCatalog()..hold = true;
     final cubit = SearchCubit(catalogRepository: catalog, branchId: null);
     addTearDown(cubit.close);
@@ -443,7 +459,9 @@ testWidgets('closing with a pending pause sends nothing and emits nothing', (
     expect(cubit.state.results, isEmpty);
   });
 
-  testWidgets('filters re-run the latest query, not a stale one', (tester) async {
+  testWidgets('filters use the loaded results without another query', (
+    tester,
+  ) async {
     final catalog = _ControlledCatalog();
     final cubit = SearchCubit(catalogRepository: catalog, branchId: null);
     addTearDown(cubit.close);
@@ -457,16 +475,14 @@ testWidgets('closing with a pending pause sends nothing and emits nothing', (
     final countBefore = catalog.calls.length;
     expect(countBefore, 1);
 
-    // applyFilters does not read cubit.state.query, so a filter still inside
-    // the pause would run a stale (or empty) query. The caller must wait for
-    // the word to settle before opening the sheet; here we verify the safe path.
+    // Category, price and sort changes only filter the loaded result set.
     cubit.applyFilters(sort: SearchSort.priceLowHigh, category: 'cat-1');
     await tester.pump();
 
-    expect(catalog.calls.length, countBefore + 1);
-    expect(catalog.calls.last.query, 'mocha');
-    expect(catalog.calls.last.sort, 'priceLowHigh');
-    expect(catalog.calls.last.categoryId, 'cat-1');
+    expect(catalog.calls.length, countBefore);
+    expect(cubit.state.query, 'mocha');
+    expect(cubit.state.sort, SearchSort.priceLowHigh);
+    expect(cubit.state.results.map((p) => p.id), ['hit-mocha']);
   });
 
   testWidgets('the category list loads once, without a search', (tester) async {

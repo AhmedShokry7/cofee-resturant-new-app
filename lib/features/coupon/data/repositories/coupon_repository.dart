@@ -100,10 +100,10 @@ class CouponRepositoryImpl implements CouponRepository {
     // same scope.
     final usage = await usageForCustomer();
     final scoped = await scopeForCoupons(coupons);
-    return [
-      for (final coupon in coupons)
-        _merge(coupon, usage[coupon.id], scoped[coupon.code]),
-    ];
+    return coupons
+        .map((coupon) => _merge(coupon, usage[coupon.id], scoped[coupon.code]))
+        .where((coupon) => !coupon.usedUpByCustomer)
+        .toList(growable: false);
   }
 
   /// One model carrying everything the card needs, built only from what the
@@ -138,46 +138,54 @@ class CouponRepositoryImpl implements CouponRepository {
     final client = _client;
     if (client == null || coupons.isEmpty) return const {};
     final result = <String, CouponScope>{};
-    for (final coupon in coupons) {
-      try {
-        final rows = await client.rpc(
-          'coupon_scope',
-          params: {'p_code': coupon.code},
-        );
-        if (rows is! List) continue;
-        final categoryIds = <String>[];
-        final productIds = <String>[];
-        final namesAr = <String>[];
-        final namesEn = <String>[];
-        var appliesTo = 'all';
+    try {
+      final rows = await client.rpc(
+        'coupon_scopes',
+        params: {'p_codes': coupons.map((coupon) => coupon.code).toList()},
+      );
+      if (rows is List) {
+        final grouped = <String, List<Map<String, dynamic>>>{};
         for (final row in rows) {
-          if (row is! Map<String, dynamic>) continue;
-          appliesTo = Db.text(row['applies_to'], 'all');
-          final id = Db.text(row['scope_id']);
-          if (id.isEmpty) continue;
-          if (Db.text(row['scope_kind']) == 'product') {
-            productIds.add(id);
-          } else {
-            categoryIds.add(id);
+          if (row is Map<String, dynamic>) {
+            grouped.putIfAbsent(Db.text(row['coupon_code']), () => []).add(row);
           }
-          final ar = Db.textOrNull(row['name_ar']);
-          final en = Db.textOrNull(row['name_en']);
-          if (ar != null) namesAr.add(ar);
-          if (en != null) namesEn.add(en);
         }
-        // An 'all' coupon has no rows; record it only when it is genuinely
-        // scoped, so an unscoped coupon keeps an empty label.
-        if (categoryIds.isEmpty && productIds.isEmpty) continue;
-        result[coupon.code] = CouponScope(
-          appliesTo: appliesTo,
-          categoryIds: categoryIds,
-          productIds: productIds,
-          namesAr: namesAr,
-          namesEn: namesEn,
-        );
-      } catch (_) {
-        // One unscannable coupon must not empty the whole list.
+        for (final coupon in coupons) {
+          final couponRows = grouped[coupon.code];
+          if (couponRows == null) continue;
+          final categoryIds = <String>[];
+          final productIds = <String>[];
+          final namesAr = <String>[];
+          final namesEn = <String>[];
+          var appliesTo = 'all';
+          for (final row in couponRows) {
+            appliesTo = Db.text(row['applies_to'], 'all');
+            final id = Db.text(row['scope_id']);
+            if (id.isEmpty) continue;
+            if (Db.text(row['scope_kind']) == 'product') {
+              productIds.add(id);
+            } else {
+              categoryIds.add(id);
+            }
+            final ar = Db.textOrNull(row['name_ar']);
+            final en = Db.textOrNull(row['name_en']);
+            if (ar != null) namesAr.add(ar);
+            if (en != null) namesEn.add(en);
+          }
+          // An 'all' coupon has no rows; record it only when the coupon is
+          // genuinely scoped, so an unscoped coupon keeps an empty label.
+          if (categoryIds.isEmpty && productIds.isEmpty) continue;
+          result[coupon.code] = CouponScope(
+            appliesTo: appliesTo,
+            categoryIds: categoryIds,
+            productIds: productIds,
+            namesAr: namesAr,
+            namesEn: namesEn,
+          );
+        }
       }
+    } catch (_) {
+      // A missing bridge must not empty the whole coupon list.
     }
     return result;
   }
@@ -255,7 +263,7 @@ class CouponRepositoryImpl implements CouponRepository {
     if (client == null) {
       throw StateError('Coupons need a configured Supabase backend.');
     }
-    final allowed = await RateLimitClient().check('replace_cart');
+    final allowed = await RateLimitClient().check('coupon_validation');
     if (!allowed) {
       throw StateError(
         'Coupon validation rate limit exceeded. Try again later.',

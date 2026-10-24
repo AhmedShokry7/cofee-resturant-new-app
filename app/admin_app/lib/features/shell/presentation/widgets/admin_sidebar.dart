@@ -181,11 +181,14 @@ class _SignOutButton extends StatelessWidget {
                 size: 18,
                 color: AppColor.whiteColor,
               ),
-              const SizedBox(width: AppDimensions.md),
-              Text(
-                S.signOut,
-                style: Theme.of(context).textTheme.bodyMedium
-                    ?.copyWith(color: AppColor.whiteColor),
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: Text(
+                  S.signOut,
+                  style: Theme.of(context).textTheme.bodyMedium
+                      ?.copyWith(color: AppColor.whiteColor),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),

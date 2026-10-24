@@ -27,4 +27,14 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
     section: S.sectionContent,
     tables: <String>['core.app_settings'],
   ),
+  AdminDestination(
+    id: 'customerPreview',
+    label: S.customerPreview,
+    icon: HugeIcons.strokeRoundedSmartPhone01,
+    searchHint: S.customerPreviewHint,
+    permission: 'settings.write',
+    section: S.sectionContent,
+    isImplemented: true,
+    tables: <String>['core.app_settings'],
+  ),
 ];

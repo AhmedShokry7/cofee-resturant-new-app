@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 
 class AppColor {
-  static const primaryColor = Color(0xff1D4ED8);
-  static const secondryColor = Color(0xff033A58);
+  static Color primaryColor = const Color(0xff1D4ED8);
+  static Color secondryColor = const Color(0xff033A58);
   static const greyColor = Color(0xff797979);
   static const lightGreyColor = Color(0xffF5F5F5);
   static const whiteColor = Color(0xffFFFFFF);
@@ -24,5 +24,5 @@ class AppColor {
   static const darkTextSecondary = Color(0xff9E9E9E);
 
   /// Light surface color used as fallback background for product images.
-  static const surfaceColor = Color(0xffF9F9F9);
+  static Color surfaceColor = const Color(0xffF9F9F9);
 }

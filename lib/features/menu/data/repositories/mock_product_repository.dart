@@ -32,6 +32,7 @@ class MockProductRepository implements CatalogRepository {
       description: "A classic favorite made with a balanced shot of espresso, topped with steamed milk and a generous layer of velvety milk foam. Perfect for any time of the day.",
       price: 40,
       oldPrice: 50,
+      appliedDiscountPercentage: 20,
       image: AppImages.product,
     ),
     ProductModel(
@@ -49,6 +50,7 @@ class MockProductRepository implements CatalogRepository {
       description: "A decadent combination of rich espresso, steamed milk and premium chocolate syrup, topped with whipped cream. The perfect treat for chocolate and coffee lovers alike.",
       price: 45,
       oldPrice: 55,
+      appliedDiscountPercentage: 18,
       image: AppImages.product,
     ),
     ProductModel(
@@ -66,6 +68,7 @@ class MockProductRepository implements CatalogRepository {
       description: "Chilled espresso poured over ice and combined with cold fresh milk for a refreshing, creamy drink. The ideal cool-down on a warm and sunny day.",
       price: 42,
       oldPrice: 50,
+      appliedDiscountPercentage: 16,
       image: AppImages.product,
     ),
     ProductModel(
@@ -91,6 +94,7 @@ class MockProductRepository implements CatalogRepository {
       description: "A rich and creamy cheesecake with a buttery biscuit base, baked to perfection and served chilled.",
       price: 55,
       oldPrice: 65,
+      appliedDiscountPercentage: 15,
       image: AppImages.product,
     ),
     ProductModel(
@@ -124,6 +128,7 @@ class MockProductRepository implements CatalogRepository {
       description: "A thick and creamy chocolate milkshake blended with premium ice cream and topped with whipped cream.",
       price: 45,
       oldPrice: 55,
+      appliedDiscountPercentage: 18,
       image: AppImages.product,
     ),
     ProductModel(

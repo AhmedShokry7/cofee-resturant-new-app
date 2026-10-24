@@ -24,7 +24,7 @@ class SelectionRadio extends StatelessWidget {
               child: Container(
                 height: 14.w,
                 width: 14.w,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColor.primaryColor,
                   shape: BoxShape.circle,
                 ),

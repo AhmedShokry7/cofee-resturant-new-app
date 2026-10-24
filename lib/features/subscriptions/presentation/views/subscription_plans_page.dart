@@ -92,6 +92,8 @@ class _SubscriptionPlansView extends StatelessWidget {
                         child: CardPaymentPage(
                           subscriptionId: subscription.id,
                           idempotencyKey: subscription.id,
+                          amount: plan.price,
+                          currency: plan.currencyCode,
                           publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
                           sdkConfiguration: const <String, dynamic>{},
                         ),

@@ -2,12 +2,12 @@ import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/notifications/data/repositories/push_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' show AuthChangeEvent, AuthState;
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState;
 
 /// Receives the push that Android hands to the app while it is in the
 /// background.
@@ -29,18 +29,17 @@ Future<void> pushMessagingBackgroundHandler(RemoteMessage message) async {}
 ///   * a message the customer taps is handed to the listener, which opens the
 ///     screen the notification belongs to.
 ///
-/// The permission is asked once per install and only for a signed-in
-/// customer: a guest has no notifications to receive, and asking twice is
-/// noise.
+/// Permission is requested only after the customer turns notifications on
+/// from the in-app settings. A guest is never prompted.
 class PushService {
   PushService._();
 
   /// The platform the tokens of this app belong to.
-  static const String platform = 'android';
-
-  /// Remembers that the system prompt was already shown, so the customer is
-  /// not asked again on every launch.
-  static const String _promptedFlag = 'push_permission_prompted_v1';
+  static String get platform => switch (defaultTargetPlatform) {
+    TargetPlatform.android => 'android',
+    TargetPlatform.iOS => 'ios',
+    _ => 'unknown',
+  };
 
   static final StreamController<RemoteMessage> _foregroundMessages =
       StreamController<RemoteMessage>.broadcast();
@@ -55,10 +54,10 @@ class PushService {
   static bool _started = false;
   static String? _token;
 
-  /// The customer the permission was already asked for.
+  /// The customer whose token registration was most recently attempted.
   ///
-  /// The permission belongs to the device, but the registration belongs to
-  /// the customer, so it is asked once for every customer that signs in.
+  /// Permission belongs to the device, but the token registration belongs to
+  /// the signed-in customer.
   static String? _enabledUserId;
 
   /// The route a tapped notification asks for, waiting for the app to be
@@ -111,7 +110,6 @@ class PushService {
         await _registerToken(token, pushRepository);
       }
       await pushRepository.setPushEnabled(true);
-      await _markPrompted();
       return true;
     } catch (error) {
       if (kDebugMode) {
@@ -143,13 +141,25 @@ class PushService {
     void Function(RemoteMessage message)? onOpened,
   }) async {
     if (_started) return;
-    if (defaultTargetPlatform != TargetPlatform.android) return;
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
     _started = true;
 
     final pushRepository = repository ?? const PushRepositoryImpl();
 
     try {
       FirebaseMessaging.onBackgroundMessage(pushMessagingBackgroundHandler);
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        await FirebaseMessaging.instance
+            .setForegroundNotificationPresentationOptions(
+              // The app displays its own foreground banner.
+              alert: false,
+              badge: true,
+              sound: false,
+            );
+      }
 
       _foregroundSubscription = FirebaseMessaging.onMessage.listen((message) {
         _foregroundMessages.add(message);
@@ -235,47 +245,29 @@ class PushService {
     }
     final userId = auth.session?.user.id;
     if (userId == null || userId == _enabledUserId) return;
-    // Every event that carries a session counts, not only the sign-in: the
-    // session of a returning customer is restored after the app started, and
-    // that is the moment the permission has to be asked.
+    // Restore the token registration when a returning customer session loads.
+    // This only checks existing permission and never opens the OS prompt.
     _enabledUserId = userId;
     await _enable(const PushRepositoryImpl());
   }
 
-  /// Asks for the permission and registers the token.
-  ///
-  /// The permission is asked once per install. When the customer had already
-  /// answered it, the choice on the server is left alone: a customer who
-  /// switched the notifications off in the settings must not have them
-  /// switched on again by a new sign-in.
+  /// Registers an already-authorized device without prompting on sign-in.
+  /// The customer explicitly grants notification permission from the settings
+  /// screen; logging in must never unexpectedly open an OS permission dialog.
   static Future<void> _enable(PushRepository repository) async {
     try {
-      final askedBefore = await _wasPrompted();
-      final settings = await FirebaseMessaging.instance.requestPermission();
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
       final granted =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional;
-      if (!granted) {
-        await _markPrompted();
-        return;
-      }
+      if (!granted) return;
 
-      // The token of the device. The newer API of the plugin reports the
-      // installation id of the app instance, which only arrives when the
-      // device registers itself. The token of getToken() is what the server
-      // sends to, and it is there on every launch.
       // ignore: deprecated_member_use
       final token = await FirebaseMessaging.instance.getToken();
       if (token == null || token.isEmpty) return;
       _token = token;
       await _registerToken(token, repository);
-
-      if (!askedBefore) {
-        // The customer answered the prompt for the first time, so the push is
-        // what they asked for.
-        await repository.setPushEnabled(true);
-      }
-      await _markPrompted();
     } catch (error) {
       if (kDebugMode) {
         debugPrint('[PushService] enable failed: $error');
@@ -297,29 +289,6 @@ class PushService {
     } catch (error) {
       if (kDebugMode) {
         debugPrint('[PushService] register failed: $error');
-      }
-    }
-  }
-
-  static Future<bool> _wasPrompted() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_promptedFlag) ?? false;
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint('[PushService] read flag failed: $error');
-      }
-      return false;
-    }
-  }
-
-  static Future<void> _markPrompted() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool(_promptedFlag, true);
-    } catch (error) {
-      if (kDebugMode) {
-        debugPrint('[PushService] write flag failed: $error');
       }
     }
   }

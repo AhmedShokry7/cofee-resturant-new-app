@@ -171,7 +171,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                             color: AppColor.whiteColor,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(100.r),
-                              side: const BorderSide(
+                              side: BorderSide(
                                 color: AppColor.primaryColor,
                               ),
                             ),

@@ -119,6 +119,11 @@ class CouponModel {
     return (limit - usedCount).clamp(0, limit);
   }
 
+  /// Per-customer allowance only. The picker hides these coupons for this
+  /// account; a global limit is shown as sold out instead of hiding the offer
+  /// from every customer.
+  bool get usedUpByCustomer => remainingUses != null && remainingUses! <= 0;
+
   /// True when this customer can no longer use it.
   ///
   /// A shared coupon that everyone else has burned through reads as "sold out"
@@ -336,7 +341,8 @@ class CouponLineDiscount {
   /// What the line costs after the discount.
   double get payableTotal => lineTotal - discount;
 
-  String get name => pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
+  String get name =>
+      pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 
   factory CouponLineDiscount.fromDatabase(Map<String, dynamic> json) {
     final map = Db.asMap(json);

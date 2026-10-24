@@ -3,6 +3,7 @@ import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,21 +25,22 @@ void main() {
       'Needs --dart-define SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and '
       'SCHEMAS_EXPOSED=true (Dashboard -> Settings -> API -> Exposed schemas)';
 
-  final String? skip =
-      (!AppConfig.isSupabaseConfigured || !schemasExposed) ? needsSetup : null;
+  final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
+      ? needsSetup
+      : null;
 
   late CatalogRepository live;
   const mock = MockProductRepository();
 
   setUpAll(() async {
-      // Without credentials the live half is skipped, but the mock half still
-      // needs to run, so initialisation must not be asserted unconditionally.
-      if (skip != null) return;
-      SharedPreferences.setMockInitialValues(<String, Object>{});
-      await SupabaseService.init();
-      live = SupabaseProductRepository();
-      AppLocale.instance.debugSet(AppLanguage.english);
-    });
+    // Without credentials the live half is skipped, but the mock half still
+    // needs to run, so initialisation must not be asserted unconditionally.
+    if (skip != null) return;
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    await SupabaseService.init();
+    live = SupabaseProductRepository();
+    AppLocale.instance.debugSet(AppLanguage.english);
+  });
 
   group('mock repository (offline path, always runs)', () {
     test('lists the catalogue', () async {
@@ -50,7 +52,10 @@ void main() {
     test('filters by a substring query', () async {
       final items = await mock.search('latte');
       expect(items, isNotEmpty);
-      expect(items.every((p) => p.name.toLowerCase().contains('latte')), isTrue);
+      expect(
+        items.every((p) => p.name.toLowerCase().contains('latte')),
+        isTrue,
+      );
     });
 
     test('paginates without going out of range', () async {
@@ -70,9 +75,15 @@ void main() {
 
     test('returns bilingual names for every product', () async {
       final items = await live.getProducts();
-      expect(items.every((p) => p.nameAr != null && p.nameAr!.isNotEmpty), isTrue,
-          reason: 'D4 requires Arabic on every product');
-      expect(items.every((p) => p.nameEn != null && p.nameEn!.isNotEmpty), isTrue);
+      expect(
+        items.every((p) => p.nameAr != null && p.nameAr!.isNotEmpty),
+        isTrue,
+        reason: 'D4 requires Arabic on every product',
+      );
+      expect(
+        items.every((p) => p.nameEn != null && p.nameEn!.isNotEmpty),
+        isTrue,
+      );
     }, skip: skip);
 
     test('finds a product by id', () async {
@@ -82,22 +93,48 @@ void main() {
       expect(found, isNotNull);
       expect(found!.id, first.id);
       expect(found.nameEn, first.nameEn);
-      expect(await live.getById('00000000-0000-0000-0000-000000000000'), isNull);
+      expect(
+        await live.getById('00000000-0000-0000-0000-000000000000'),
+        isNull,
+      );
     }, skip: skip);
+
+    test(
+      'bulk reads selected products with their images and branch price',
+      () async {
+        const branchId = '00000000-0000-4000-8000-000000000101';
+        final firstPage = await live.getProducts(branchId: branchId, limit: 3);
+        expect(firstPage, isNotEmpty);
+        final ids = firstPage.map((product) => product.id).toList();
+        final bulk = await getProductsByIds(live, ids, branchId: branchId);
+
+        expect(bulk.map((product) => product.id).toSet(), ids.toSet());
+        expect(
+          {for (final product in bulk) product.id: product.price},
+          {for (final product in firstPage) product.id: product.price},
+        );
+      },
+      skip: skip,
+    );
 
     test('searches Arabic through the alias table', () async {
       final results = await live.search('لاتيه');
-      expect(results, isNotEmpty,
-          reason: 'catalog.product_aliases must make this resolve');
+      expect(
+        results,
+        isNotEmpty,
+        reason: 'catalog.product_aliases must make this resolve',
+      );
       expect(results.first.nameEn, 'Latte');
     }, skip: skip);
 
     test('matches the mock behaviour on an English query', () async {
       final fromDb = await live.search('cappuccino');
       final fromMock = await mock.search('cappuccino');
-      expect(fromDb.map((p) => p.nameEn).toSet(),
-          fromMock.map((p) => p.name).toSet(),
-          reason: 'both sources must agree, or swapping them changes the screen');
+      expect(
+        fromDb.map((p) => p.nameEn).toSet(),
+        fromMock.map((p) => p.name).toSet(),
+        reason: 'both sources must agree, or swapping them changes the screen',
+      );
     }, skip: skip);
 
     test('applies a branch price override', () async {
@@ -111,15 +148,21 @@ void main() {
       final withBranch = await live.getProducts(
         branchId: '00000000-0000-4000-8000-000000000101',
       );
-      expect(withBranch.length, all.length,
-          reason: 'an override changes the price, not the membership');
+      expect(
+        withBranch.length,
+        all.length,
+        reason: 'an override changes the price, not the membership',
+      );
     }, skip: skip);
 
     test('reads categories including sub-category support', () async {
       final categories = await live.getCategories();
       expect(categories.length, greaterThanOrEqualTo(10));
-      expect(categories.every((c) => c.slug != null), isTrue,
-          reason: 'a stable slug replaces matching categories by name');
+      expect(
+        categories.every((c) => c.slug != null),
+        isTrue,
+        reason: 'a stable slug replaces matching categories by name',
+      );
 
       final hotCoffee = await live.getCategoryBySlug('hot-coffee');
       expect(hotCoffee, isNotNull);
@@ -136,8 +179,11 @@ void main() {
       expect(detailed, isNotNull);
       // Latte is bound to size and sugar in the seed.
       if (detailed!.groups.isNotEmpty) {
-        expect(detailed.groups.first.values, isNotEmpty,
-            reason: 'a group without values would render an empty selector');
+        expect(
+          detailed.groups.first.values,
+          isNotEmpty,
+          reason: 'a group without values would render an empty selector',
+        );
       }
     }, skip: skip);
 
@@ -163,18 +209,27 @@ void main() {
         branchId: '00000000-0000-4000-8000-000000000101',
       );
       if (cola.slug == 'cola') {
-        expect(resolved!.isAvailable, isFalse,
-            reason: 'the seed marks cola unavailable at the main branch');
+        expect(
+          resolved!.isAvailable,
+          isFalse,
+          reason: 'the seed marks cola unavailable at the main branch',
+        );
         expect(resolved.unavailableReason, isNotNull);
       }
     }, skip: skip);
 
-    test('best sellers is empty rather than an error when there is no sales',
-        () async {
-      final sellers = await live.getBestSellers();
-      expect(sellers, isA<List>(),
-          reason: 'no completed orders yet must not throw');
-    }, skip: skip);
+    test(
+      'best sellers is empty rather than an error when there is no sales',
+      () async {
+        final sellers = await live.getBestSellers();
+        expect(
+          sellers,
+          isA<List>(),
+          reason: 'no completed orders yet must not throw',
+        );
+      },
+      skip: skip,
+    );
 
     // The three below are what HomeCubit depends on. They were added when the
     // home screen moved off the Dart constants and had no live coverage, which
@@ -182,21 +237,40 @@ void main() {
 
     test('reads banners with a resolvable category target', () async {
       final banners = await live.getBanners();
-      expect(banners, isNotEmpty, reason: 'the seed creates promotional banners');
+      expect(
+        banners,
+        isNotEmpty,
+        reason: 'the seed creates promotional banners',
+      );
 
       for (final banner in banners) {
         expect(banner.id, isNotEmpty);
-        expect(banner.titleEn, isNotEmpty, reason: 'a banner needs an English title');
-        expect(banner.titleAr, isNotEmpty, reason: 'a banner needs an Arabic title');
-        expect(banner.image, isNotEmpty, reason: 'BannerImage has no fallback art');
+        expect(
+          banner.titleEn,
+          isNotEmpty,
+          reason: 'a banner needs an English title',
+        );
+        expect(
+          banner.titleAr,
+          isNotEmpty,
+          reason: 'a banner needs an Arabic title',
+        );
+        expect(
+          banner.image,
+          isNotEmpty,
+          reason: 'BannerImage has no fallback art',
+        );
         expect(banner.ctaLabel, isNotEmpty);
 
         // A category-targeted banner is only useful if the target resolves. The
         // old banner_details_page matched on a display-name string, so a banner
         // pointing at a renamed category silently showed nothing.
         if (banner.targetType == 'category') {
-          expect(banner.targetId, isNotNull,
-              reason: 'a category banner must carry the category id');
+          expect(
+            banner.targetId,
+            isNotNull,
+            reason: 'a category banner must carry the category id',
+          );
         }
       }
     }, skip: skip);
@@ -210,8 +284,11 @@ void main() {
         expect(bundle.nameEn, isNotEmpty);
         expect(bundle.nameAr, isNotEmpty);
         expect(bundle.price, greaterThan(0));
-        expect(bundle.components, isNotEmpty,
-            reason: 'a bundle with no components cannot show what it contains');
+        expect(
+          bundle.components,
+          isNotEmpty,
+          reason: 'a bundle with no components cannot show what it contains',
+        );
         for (final component in bundle.components) {
           expect(component.productId, isNotEmpty);
           expect(component.quantity, greaterThan(0));
@@ -219,8 +296,7 @@ void main() {
       }
     }, skip: skip);
 
-    test('featured products carry a price and a reason they were chosen',
-        () async {
+    test('featured products carry a price and a reason they were chosen', () async {
       final featured = await live.getFeatured(limit: 10);
       expect(featured, isNotEmpty, reason: 'the seed pins featured products');
 
@@ -229,8 +305,11 @@ void main() {
         expect(f.nameEn, isNotEmpty);
         expect(f.nameAr, isNotEmpty);
         expect(f.effectivePrice, greaterThan(0));
-        expect(f.source, isNotEmpty,
-            reason: 'the card explains whether it was pinned or ranked');
+        expect(
+          f.source,
+          isNotEmpty,
+          reason: 'the card explains whether it was pinned or ranked',
+        );
       }
 
       // The carousel caps at the requested limit, so a limit must be honoured.
@@ -251,8 +330,11 @@ void main() {
           .toSet();
 
       expect(liveSlugs.contains(expected), isTrue);
-      expect(mockSlugs.contains(expected), isTrue,
-          reason: 'the offline fallback must offer the same tab');
+      expect(
+        mockSlugs.contains(expected),
+        isTrue,
+        reason: 'the offline fallback must offer the same tab',
+      );
     }, skip: skip);
   });
 }

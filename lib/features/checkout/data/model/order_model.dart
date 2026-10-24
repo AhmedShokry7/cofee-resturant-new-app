@@ -9,6 +9,7 @@ import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 class OrderModel {
   const OrderModel({
     required this.id,
+    this.orderId = '',
     required this.date,
     required this.items,
     required this.total,
@@ -17,9 +18,19 @@ class OrderModel {
     this.deliveryZoneName,
     this.deliveryAddress,
     this.discountLines = const [],
+    this.productDiscount = 0,
   });
 
+  /// The number the customer reads, e.g. `ORD-2026-000123`.
   final String id;
+
+  /// The server's own id of the order (a uuid).
+  ///
+  /// The number is a label; the uuid is the key every server call uses
+  /// (charging, cancelling, reading the history). They are not the same
+  /// string, so both are kept: the receipt shows [id], the payment uses
+  /// [orderId].
+  final String orderId;
   final DateTime date;
   final List<CartItem> items;
   final double total;
@@ -34,6 +45,13 @@ class OrderModel {
   /// down (older deployment): the total is still correct in both cases, only
   /// the explanation is missing.
   final List<CouponLineDiscount> discountLines;
+
+  /// The product discount of the order.
+  ///
+  /// It is already inside the total, so it is a separate figure: the receipt
+  /// shows the price before the discount, then the discount, and the total is
+  /// what the customer pays.
+  final double productDiscount;
 
   bool get isDelivery => fulfillmentType == 'delivery';
 

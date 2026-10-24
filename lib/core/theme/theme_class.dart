@@ -12,7 +12,7 @@ class ThemeClass {
   /// Poppins for English. Every [AppFonts] style leaves its family unset, so the
   /// whole UI follows whichever family is chosen here.
   static ThemeData light({bool isArabic = true}) {
-    const colorScheme = ColorScheme.light(
+    final colorScheme = ColorScheme.light(
       primary: AppColor.primaryColor,
       onPrimary: AppColor.whiteColor,
       secondary: AppColor.secondryColor,
@@ -63,7 +63,7 @@ class ThemeClass {
         style: OutlinedButton.styleFrom(
           backgroundColor: Colors.transparent,
           foregroundColor: AppColor.primaryColor,
-          side: const BorderSide(color: AppColor.primaryColor),
+          side: BorderSide(color: AppColor.primaryColor),
           padding: const EdgeInsets.symmetric(
             horizontal: SpacingTokens.lg,
             vertical: SpacingTokens.md,
@@ -94,11 +94,11 @@ class ThemeClass {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
-          borderSide: const BorderSide(color: AppColor.primaryColor),
+          borderSide: BorderSide(color: AppColor.primaryColor),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
-          borderSide: const BorderSide(color: AppColor.primaryColor),
+          borderSide: BorderSide(color: AppColor.primaryColor),
         ),
       ),
       cardTheme: CardThemeData(

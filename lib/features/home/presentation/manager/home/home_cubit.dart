@@ -6,6 +6,7 @@ import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 part 'home_state.dart';
@@ -33,8 +34,10 @@ class HomeCubit extends Cubit<HomeState> {
   /// Mutable so [setBranch] can switch it. It was final before, which meant
   /// setBranch reloaded with the old value and silently did nothing.
   String? branchId;
+  int _loadGeneration = 0;
 
   Future<void> load() async {
+    final generation = ++_loadGeneration;
     emit(state.copyWith(isLoading: true, error: null));
 
     // Each section loads independently so one failing source does not blank the
@@ -60,7 +63,7 @@ class HomeCubit extends Cubit<HomeState> {
     final cacheBranch = branchId ?? 'base';
 
     // البانرات تتغير rarement — تُجلب من الكاش إذا كانت متوفرة.
-    final banners = await guard('banners', () async {
+    final bannersFuture = guard('banners', () async {
       final key = 'home_banners';
       final cached = CacheManager().get<List<BannerModel>>(key);
       if (cached != null) return cached;
@@ -68,7 +71,7 @@ class HomeCubit extends Cubit<HomeState> {
       CacheManager().set(key, fetched);
       return fetched;
     }, state.banners);
-    final bundles = await guard('bundles', () async {
+    final bundlesFuture = guard('bundles', () async {
       final key = 'home_bundles_$cacheBranch';
       final cached = CacheManager().get<List<BundleModel>>(key);
       if (cached != null) return cached;
@@ -76,7 +79,7 @@ class HomeCubit extends Cubit<HomeState> {
       CacheManager().set(key, fetched);
       return fetched;
     }, state.bundles);
-    final categories = await guard('categories', () async {
+    final categoriesFuture = guard('categories', () async {
       final key = 'home_categories';
       final cached = CacheManager().get<List<CategoryModel>>(key);
       if (cached != null) return cached;
@@ -109,11 +112,32 @@ class HomeCubit extends Cubit<HomeState> {
       return fetched;
     }, state.recommendationPool);
 
-    // Critical sections first so the home renders quickly; heavier sections
-    // (bundles, featured, products) follow without blocking the first frame.
+    // Start every section before waiting. Sequential awaits on cache misses
+    // turned independent requests into a network waterfall.
     final featured = await featuredFuture;
     final products = await productsFuture;
-    if (isClosed) return;
+    final banners = await bannersFuture;
+    final categories = await categoriesFuture;
+    if (isClosed || generation != _loadGeneration) return;
+
+    // Render the sections that are ready while the bundle list and its member
+    // products finish loading. A slow bundle request should not hold the whole
+    // home page behind a full-screen skeleton.
+    emit(
+      HomeState(
+        banners: banners,
+        categories: categories,
+        popular: _toProducts(featured),
+        recommendationPool: products,
+        bundles: state.bundles,
+        bundleProducts: state.bundleProducts,
+        isLoading: true,
+        error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
+      ),
+    );
+
+    final bundles = await bundlesFuture;
+    if (isClosed || generation != _loadGeneration) return;
 
     // Resolve the products a bundle contains in one query, rather than per
     // card. This also replaces the old bundleProducts() helper, which read
@@ -130,23 +154,31 @@ class HomeCubit extends Cubit<HomeState> {
     // Resolve every bundle component, fetching any that the recommendation
     // pool did not already include so prices (and the discount badge) stay
     // accurate instead of silently dropping bundles with a discount.
-    final bundleProducts = <String, ProductModel>{};
-    for (final id in componentIds) {
-      var product = productsById[id];
-      if (product == null) {
-        try {
-          product = await _repository.getById(id, branchId: branchId);
-        } catch (_) {
-          product = null;
-        }
-      }
-      if (product != null) {
-        productsById[id] = product;
-        bundleProducts[id] = product;
+    final missingComponentIds = componentIds
+        .where((id) => !productsById.containsKey(id))
+        .toList(growable: false);
+    if (missingComponentIds.isNotEmpty) {
+      try {
+        final missingProducts = await getProductsByIds(
+          _repository,
+          missingComponentIds,
+          branchId: branchId,
+        );
+        productsById.addAll({
+          for (final product in missingProducts) product.id: product,
+        });
+      } catch (error, stackTrace) {
+        failures.add('bundle_products');
+        addError(error, stackTrace);
       }
     }
+    final bundleProducts = <String, ProductModel>{};
+    for (final id in componentIds) {
+      final product = productsById[id];
+      if (product != null) bundleProducts[id] = product;
+    }
 
-    if (isClosed) return;
+    if (isClosed || generation != _loadGeneration) return;
     emit(
       HomeState(
         banners: banners,
@@ -201,6 +233,7 @@ class HomeCubit extends Cubit<HomeState> {
   Future<void> setBranch(String? branchId) {
     if (branchId == this.branchId) return Future.value();
     this.branchId = branchId;
+    emit(const HomeState());
     return load();
   }
 
@@ -222,6 +255,12 @@ class HomeCubit extends Cubit<HomeState> {
               categoryEn: f.categoryEn,
               description: '',
               price: f.effectivePrice,
+              // The discount the server applied, so the badge on a "Popular"
+              // card states the real percentage.
+              oldPrice: f.hasDiscount ? f.regularPrice : null,
+              appliedDiscountPercentage: f.hasDiscount
+                  ? f.discountPercentage
+                  : null,
               image: f.imageUrl ?? '',
               isFeatured: f.source == 'manual',
             ),

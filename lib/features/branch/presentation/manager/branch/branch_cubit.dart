@@ -13,8 +13,7 @@ part 'branch_state.dart';
 /// without a branch are base prices, and branch-specific data stays unloaded
 /// until a choice exists.
 class BranchCubit extends Cubit<BranchState> {
-  BranchCubit({required this._repository})
-      : super(const BranchState()) {
+  BranchCubit({required this._repository}) : super(const BranchState()) {
     load();
   }
 
@@ -34,11 +33,13 @@ class BranchCubit extends Cubit<BranchState> {
         }
       }
       if (isClosed) return;
-      emit(state.copyWith(
-        branches: branches,
-        selected: selected,
-        isLoading: false,
-      ));
+      emit(
+        state.copyWith(
+          branches: branches,
+          selected: selected,
+          isLoading: false,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
@@ -49,10 +50,7 @@ class BranchCubit extends Cubit<BranchState> {
   Future<void> select(Branch? branch) async {
     emit(state.copyWith(selected: branch, clearError: true));
     try {
-      await SharedPref.setValue(
-        key: _storageKey,
-        value: branch?.id ?? '',
-      );
+      await SharedPref.setValue(key: _storageKey, value: branch?.id ?? '');
     } catch (_) {
       // Selection still applies for this session if storage fails.
     }

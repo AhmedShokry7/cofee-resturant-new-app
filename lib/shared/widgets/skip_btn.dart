@@ -29,7 +29,7 @@ class SkipBtn extends StatelessWidget {
                 Container(
                   height: 1,
                   width: 100.h,
-                  decoration: const BoxDecoration(color: AppColor.greyColor),
+                  decoration: BoxDecoration(color: AppColor.greyColor),
                 ),
               ],
             ),

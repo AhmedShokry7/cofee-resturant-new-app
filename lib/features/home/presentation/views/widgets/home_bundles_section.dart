@@ -124,9 +124,9 @@ class _BundleCard extends StatelessWidget {
         ),
       ),
         if (context.read<HomeCubit>().originalTotalFor(bundle) > bundle.price)
-          Positioned(
+          PositionedDirectional(
             top: DiscountBadge.cardTop,
-            right: DiscountBadge.cardRight,
+            end: DiscountBadge.cardRight,
             child: DiscountBadge(
               percent: (((context.read<HomeCubit>().originalTotalFor(bundle) - bundle.price) /
                       context.read<HomeCubit>().originalTotalFor(bundle)) *

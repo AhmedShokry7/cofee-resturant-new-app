@@ -30,7 +30,7 @@ class PaymentSuccessPage extends StatelessWidget {
                   Container(
                     height: 124.w,
                     width: 124.w,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: AppColor.primaryColor,
                       shape: BoxShape.circle,
                     ),
@@ -76,7 +76,7 @@ class PaymentSuccessPage extends StatelessWidget {
           ),
           Container(
             padding: EdgeInsets.all(SpacingTokens.lg.w),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               color: AppColor.whiteColor,
               border: Border(top: BorderSide(color: AppColor.borderColor)),
             ),

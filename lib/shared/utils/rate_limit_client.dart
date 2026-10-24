@@ -29,7 +29,10 @@ class RateLimitClient {
       final response = await client.functions.invoke(
         'rate-limit',
         body: <String, dynamic>{
-          'user_id': client.auth.currentUser?.id,
+          // The bucket is derived from the caller's identity by the function
+          // itself, from the token the platform attaches. A user id in the
+          // body is ignored there on purpose: a caller that may name another
+          // customer could exhaust their quota.
           'endpoint': endpoint,
           'cost': 1,
         },

@@ -32,7 +32,7 @@ void main() {
     ) async {
       await _pump(
         tester,
-        const CurrencyIcon(size: 16, color: AppColor.primaryColor),
+        CurrencyIcon(size: 16, color: AppColor.primaryColor),
       );
 
       final picture = tester.widget<SvgPicture>(find.byType(SvgPicture));
@@ -41,7 +41,7 @@ void main() {
       expect(picture.height, 16);
       expect(
         picture.colorFilter,
-        const ColorFilter.mode(AppColor.primaryColor, BlendMode.srcIn),
+        ColorFilter.mode(AppColor.primaryColor, BlendMode.srcIn),
       );
     });
 

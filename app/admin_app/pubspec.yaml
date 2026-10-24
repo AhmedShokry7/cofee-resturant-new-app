@@ -18,7 +18,31 @@ dependencies:
   supabase_flutter: ^2.10.0
   flutter_bloc: ^9.1.1
   hugeicons: ^0.0.11
+  flutter_svg: ^2.3.0
   flutter_launcher_icons: ^0.14.4
+  # The pictures of the catalogue come from the database and are shown again
+  # and again, so they are cached on the device instead of being fetched
+  # every time a card is drawn.
+  cached_network_image: ^4.0.4
+  # The admin picks the pictures of a product from the device. The customer
+  # application already uses this picker, so the platform is proven.
+  image_picker: ^1.2.4
+  # The editor of a picture crops and rotates the real file, not only the
+  # preview. The processing runs in Dart, so it works on the web too.
+  image: ^4.12.0
+  # The editor reads the file of a picture to cut it. The package is already in
+  # the tree of the Supabase client, so it costs nothing extra.
+  http: ^1.6.0
+  flutter_quill: ^11.6.0
+  file_picker: ^13.1.0
+  archive: ^4.0.7
+  xml: ^6.0.0
+  syncfusion_flutter_xlsio: ^33.2.13
+  universal_html: ^2.3.0
+  flutter_map: ^8.3.2
+  geolocator: ^14.0.1
+  latlong2: ^0.10.1
+  fl_chart: ^0.69.0
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +54,7 @@ flutter:
 
   assets:
     - assets/fonts/
+    - assets/icons/
     - assets/images/
 
   fonts:

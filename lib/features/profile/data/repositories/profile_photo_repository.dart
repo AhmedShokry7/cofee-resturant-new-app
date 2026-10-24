@@ -114,19 +114,24 @@ class SupabaseProfilePhotoRepository implements ProfilePhotoRepository {
       throw const ProfilePhotoException(ProfilePhotoFailure.unsupportedFormat);
     }
 
-    final path = '$id/avatar.${format.extension}';
+    // A new object path makes cached avatars on other devices self-invalidating
+    // when the customer replaces their photo.
+    final previousPath = await loadAvatarPath();
+    final path =
+        '$id/avatar_${DateTime.now().microsecondsSinceEpoch}.${format.extension}';
 
     try {
-      await _client.storage.from(ProfilePhotoRepository.bucket).uploadBinary(
-        path,
-        bytes,
-        fileOptions: FileOptions(
-          contentType: format.mimeType,
-          // Replacing in place keeps one photo per customer and makes a repeat
-          // pick idempotent instead of failing on an existing object.
-          upsert: true,
-        ),
-      );
+      await _client.storage
+          .from(ProfilePhotoRepository.bucket)
+          .uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(
+              contentType: format.mimeType,
+              // Each upload has a versioned object path to invalidate local caches.
+              upsert: false,
+            ),
+          );
     } catch (error) {
       throw ProfilePhotoException(
         ProfilePhotoFailure.uploadFailed,
@@ -134,12 +139,18 @@ class SupabaseProfilePhotoRepository implements ProfilePhotoRepository {
       );
     }
 
-    // A customer who switches from a JPEG to a PNG would otherwise keep an
-    // orphaned avatar.jpg next to the new one. Best effort: the upload already
-    // succeeded, so a cleanup failure must not fail the operation.
-    await _removeSiblingFormats(id, keepExtension: format.extension);
-
     await _writePath(path);
+    // The profile now points at the new object. Remove the previous object only
+    // after that write succeeds, so a failed profile update keeps the old photo.
+    if (previousPath != null && previousPath != path) {
+      try {
+        await _client.storage.from(ProfilePhotoRepository.bucket).remove([
+          previousPath,
+        ]);
+      } catch (_) {
+        // Cleanup only. The profile already points at the new photo.
+      }
+    }
 
     return path;
   }
@@ -168,7 +179,9 @@ class SupabaseProfilePhotoRepository implements ProfilePhotoRepository {
     final path = await loadAvatarPath();
     if (path != null) {
       try {
-        await _client.storage.from(ProfilePhotoRepository.bucket).remove([path]);
+        await _client.storage.from(ProfilePhotoRepository.bucket).remove([
+          path,
+        ]);
       } catch (_) {
         // The profile column is cleared either way; a stale object is invisible
         // because nothing points at it.
@@ -214,24 +227,6 @@ class SupabaseProfilePhotoRepository implements ProfilePhotoRepository {
         ProfilePhotoFailure.profileUpdateFailed,
         error.toString(),
       );
-    }
-  }
-
-  Future<void> _removeSiblingFormats(
-    String uid, {
-    required String keepExtension,
-  }) async {
-    final api = _client.storage.from(ProfilePhotoRepository.bucket);
-    for (final format in ProfileImageFormat.values) {
-      if (format.extension == keepExtension) continue;
-      final sibling = '$uid/avatar.${format.extension}';
-      try {
-        if (await api.exists(sibling)) {
-          await api.remove([sibling]);
-        }
-      } catch (_) {
-        // Cleanup only. Never fails the upload.
-      }
     }
   }
 }

@@ -223,6 +223,8 @@ class ProductImage {
     this.altEn,
     this.isPrimary = false,
     this.sortOrder = 0,
+    this.fit = 'cover',
+    this.alignment = 'center',
   });
 
   final String url;
@@ -231,12 +233,20 @@ class ProductImage {
   final bool isPrimary;
   final int sortOrder;
 
+  /// How the picture fills its space, as the dashboard set it.
+  final String fit;
+
+  /// Where the picture sits in its space, as the dashboard set it.
+  final String alignment;
+
   factory ProductImage.fromJson(Map<String, dynamic> json) => ProductImage(
     url: json['image_url']?.toString() ?? '',
     altAr: json['alt_ar']?.toString(),
     altEn: json['alt_en']?.toString(),
     isPrimary: json['is_primary'] == true,
     sortOrder: (json['sort_order'] as num?)?.toInt() ?? 0,
+    fit: json['fit']?.toString() ?? 'cover',
+    alignment: json['alignment']?.toString() ?? 'center',
   );
 }
 
@@ -250,6 +260,8 @@ class FeaturedProduct {
     required this.source,
     this.categoryAr,
     this.categoryEn,
+    this.regularPrice,
+    this.discountPercentage = 0,
   });
 
   final String productId;
@@ -257,6 +269,15 @@ class FeaturedProduct {
   final String nameEn;
   final String? imageUrl;
   final double effectivePrice;
+
+  /// The price the discount was taken from. Null when the server did not say.
+  final double? regularPrice;
+
+  /// The discount the server applied, in percent. Zero when there is none.
+  final double discountPercentage;
+
+  /// Whether this product really carries a discount.
+  bool get hasDiscount => discountPercentage > 0 && regularPrice != null;
 
   /// Category name, so a card can label itself without a second query. Null
   /// when the product has no category.
@@ -297,12 +318,27 @@ class ResolvedPrice {
     required this.currencyCode,
     required this.isAvailable,
     this.unavailableReason,
+    this.regularPrice,
+    this.discountPercentage = 0,
   });
 
   final double unitPrice;
+
+  /// The price before the discount, when one applies.
+  final double? regularPrice;
+
+  /// The discount the server applied, in percent. Zero when there is none.
+  final double discountPercentage;
+
   final String currencyCode;
   final bool isAvailable;
   final String? unavailableReason;
+
+  /// Whether a discount really applies to this price.
+  bool get hasDiscount =>
+      discountPercentage > 0 &&
+      regularPrice != null &&
+      regularPrice! > unitPrice;
 }
 
 /// Category reads, kept separate so a category listing never has to pull the

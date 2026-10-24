@@ -83,15 +83,6 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
     ],
   ),
   AdminDestination(
-    id: 'favorites',
-    label: S.favorites,
-    icon: HugeIcons.strokeRoundedFavourite,
-    searchHint: S.searchFavoritesHint,
-    permission: 'customers.read',
-    section: S.sectionGrowth,
-    tables: <String>['engagement.customer_favorites'],
-  ),
-  AdminDestination(
     id: 'websites',
     label: S.customerWebsites,
     icon: HugeIcons.strokeRoundedGlobe,

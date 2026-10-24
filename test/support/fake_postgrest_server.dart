@@ -366,6 +366,7 @@ class FakePostgrestServer {
         'unit_price': unitPrice,
         'line_total': unitPrice * quantity,
         'created_at': DateTime.now().toIso8601String(),
+        if (raw['bundle_id'] != null) 'bundle_id': raw['bundle_id'],
       };
       for (final optionId in optionIds) {
         final optionRowId = _nextId();

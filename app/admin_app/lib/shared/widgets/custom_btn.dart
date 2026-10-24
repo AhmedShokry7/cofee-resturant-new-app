@@ -66,7 +66,7 @@ class CustomBtn extends StatelessWidget {
         bgColor = backgroundColor ?? Colors.transparent;
         fgColor = textColor ?? AppColor.primaryColor;
       case BtnVariant.destructive:
-        bgColor = backgroundColor ?? Colors.red;
+        bgColor = backgroundColor ?? AppColor.errorColor;
         fgColor = textColor ?? AppColor.whiteColor;
     }
 

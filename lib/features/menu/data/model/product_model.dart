@@ -27,10 +27,17 @@ class ProductModel {
     this.categoryId,
     this.categorySlug = '',
     this.isFeatured = false,
-    this.prepMinutes,
+  this.prepMinutes,
+  this.calories,
+    this.discountPercentage,
+    this.discountStartsAt,
+    this.discountEndsAt,
+    this.appliedDiscountPercentage,
     this.imageUrls = const [],
     this.isPrimaryImageAvailable = false,
     this.primaryImageUrl,
+    this.imageFit = 'cover',
+    this.imageAlignment = 'center',
     this.relatedProductIds = const [],
   }) : _legacyName = name ?? '',
        _legacyCategory = category ?? '',
@@ -71,6 +78,29 @@ class ProductModel {
   final bool isFeatured;
   final int? prepMinutes;
 
+  /// Scheduled general discount of the product, in percent.
+  final double? discountPercentage;
+
+  /// Start of the general discount window.
+  final DateTime? discountStartsAt;
+
+  /// End of the general discount window.
+  final DateTime? discountEndsAt;
+
+  /// The discount that is applied to [price] right now, in percent.
+  ///
+  /// Null when the product is not discounted. This is the number the badge
+  /// shows, so the badge can never announce a discount that does not exist.
+  ///
+  /// It is set by the repository, which is the only place that knows whether
+  /// the discount of the product, the discount of the branch, or the window of
+  /// either one is active at this moment. [discountPercentage] is the
+  /// configured value and says nothing about whether it applies.
+  final double? appliedDiscountPercentage;
+
+  /// Calories per serving, in kcal. Null means the value has not been provided.
+  final int? calories;
+
   // Single-language values carried over from the mock data. They keep `name`,
   // `category` and `description` working as getters, so the roughly fifty
   // existing call sites need no change while the data becomes bilingual.
@@ -86,6 +116,13 @@ class ProductModel {
 
   /// The primary image URL, determined by priority: explicit is_primary → lowest sort_order → product-level image → null.
   final String? primaryImageUrl;
+
+  /// How the picture of the product fills its space, as the dashboard set it.
+  final String imageFit;
+
+  /// Where the picture of the product sits in its space, as the dashboard set
+  /// it.
+  final String imageAlignment;
 
   /// Admin-defined companion products for "Goes well with".
   final List<String> relatedProductIds;
@@ -124,7 +161,20 @@ class ProductModel {
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
 
-  bool get hasDiscount => oldPrice != null && oldPrice! > price;
+  /// Whether a real discount is applied to [price].
+  ///
+  /// This is deliberately not "the old price is higher than the price": the
+  /// admin's compare-at price is a merchandising price, and reading it as a
+  /// discount made a product with no discount at all announce a percentage.
+  bool get hasDiscount =>
+      appliedDiscountPercentage != null && appliedDiscountPercentage! > 0;
+
+  /// Whether an old price is shown next to [price].
+  ///
+  /// True for a discounted product (the price before the discount) and for a
+  /// product that only carries a compare-at price. The second case shows the
+  /// old price without a badge: it is a reference price, not a promotion.
+  bool get hasOldPrice => oldPrice != null && oldPrice! > price;
 
   /// Convenience for the search ranking UI.
   bool matches(String needle) {
@@ -187,7 +237,16 @@ class ProductModel {
       prepMinutes: json['prep_minutes'] == null
           ? null
           : Db.asInt(json['prep_minutes']),
-      relatedProductIds: (json['related_product_ids'] as List?)
+      discountPercentage: Db.asDoubleOrNull(json['discount_percentage']),
+      discountStartsAt: json['discount_starts_at'] == null
+          ? null
+          : DateTime.tryParse('${json['discount_starts_at']}'),
+      discountEndsAt: json['discount_ends_at'] == null
+          ? null
+          : DateTime.tryParse('${json['discount_ends_at']}'),
+      calories: json['calories'] == null ? null : Db.asInt(json['calories']),
+      relatedProductIds:
+          (json['related_product_ids'] as List?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -211,6 +270,10 @@ class ProductModel {
     'image_url': image,
     'is_featured': isFeatured,
     'prep_minutes': prepMinutes,
+    'discount_percentage': discountPercentage,
+    'discount_starts_at': discountStartsAt?.toIso8601String(),
+    'discount_ends_at': discountEndsAt?.toIso8601String(),
+    'calories': calories,
     'image_urls': imageUrls.join(','),
     'is_primary': isPrimaryImageAvailable,
     'primary_image_url': primaryImageUrl,
@@ -236,9 +299,17 @@ class ProductModel {
     String? image,
     bool? isFeatured,
     int? prepMinutes,
+    double? discountPercentage,
+    DateTime? discountStartsAt,
+    DateTime? discountEndsAt,
+    double? appliedDiscountPercentage,
+    bool clearAppliedDiscountPercentage = false,
+    int? calories,
     List<String>? imageUrls,
     bool? isPrimaryImageAvailable,
     String? primaryImageUrl,
+    String? imageFit,
+    String? imageAlignment,
     List<String>? relatedProductIds,
   }) => ProductModel(
     id: id ?? this.id,
@@ -260,10 +331,19 @@ class ProductModel {
     image: image ?? this.image,
     isFeatured: isFeatured ?? this.isFeatured,
     prepMinutes: prepMinutes ?? this.prepMinutes,
+    discountPercentage: discountPercentage ?? this.discountPercentage,
+    discountStartsAt: discountStartsAt ?? this.discountStartsAt,
+    discountEndsAt: discountEndsAt ?? this.discountEndsAt,
+    appliedDiscountPercentage: clearAppliedDiscountPercentage
+        ? null
+        : (appliedDiscountPercentage ?? this.appliedDiscountPercentage),
+    calories: calories ?? this.calories,
     imageUrls: imageUrls ?? this.imageUrls,
     isPrimaryImageAvailable:
         isPrimaryImageAvailable ?? this.isPrimaryImageAvailable,
     primaryImageUrl: primaryImageUrl ?? this.primaryImageUrl,
+    imageFit: imageFit ?? this.imageFit,
+    imageAlignment: imageAlignment ?? this.imageAlignment,
     relatedProductIds: relatedProductIds ?? this.relatedProductIds,
   );
 

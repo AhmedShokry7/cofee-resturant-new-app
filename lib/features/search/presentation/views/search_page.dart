@@ -98,7 +98,7 @@ class _SearchView extends StatelessWidget {
                         EmptyState(
                           icon: Icons.cloud_off_outlined,
                           title: S.searchFailed,
-                          subtitle: state.error,
+                          subtitle: S.tryAgainLater,
                         ),
                         SizedBox(height: SpacingTokens.md.h),
                         CustomBtn(

@@ -15,6 +15,8 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_desc
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
@@ -37,7 +39,7 @@ class ProductDetailsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProductDetailsCubit, ProductDetailsState>(
       builder: (context, state) {
-        if (state.isLoading) {
+        if (state.isLoading && state.product == null) {
           return const ProductDetailsSkeleton();
         }
         final product = state.product;
@@ -198,12 +200,39 @@ class _DetailsSheet extends StatelessWidget {
                 child: Text(product.name, style: AppFonts.semiBold20(context)),
               ),
               SizedBox(width: SpacingTokens.sm.w),
-              PriceLabel(
-                amount: cubit.unitPrice,
-                style: AppFonts.semiBold18(context)
-                    .copyWith(color: AppColor.primaryColor),
-                iconSize: 18,
-                iconColor: AppColor.primaryColor,
+              // The price the customer pays, the discount the server applied
+              // and the price before it.
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PriceLabel(
+                        amount: cubit.unitPrice,
+                        style: AppFonts.semiBold18(context)
+                            .copyWith(color: AppColor.primaryColor),
+                        iconSize: 18,
+                        iconColor: AppColor.primaryColor,
+                      ),
+                      if (cubit.hasDiscount) ...[
+                        SizedBox(width: 4.w),
+                        DiscountBadge(
+                          percent: cubit.discountPercentage.round(),
+                          size: 30,
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (cubit.hasDiscount)
+                    Text(
+                      Formatters.amount(cubit.regularPrice!),
+                      style: AppFonts.regular12(context).copyWith(
+                        color: AppColor.greyColor,
+                        decoration: TextDecoration.lineThrough,
+                      ),
+                    ),
+                ],
               ),
             ],
           ),
@@ -236,6 +265,27 @@ class _DetailsSheet extends StatelessWidget {
           Text(S.productDetails, style: AppFonts.semiBold16(context)),
           SizedBox(height: SpacingTokens.sm.h),
           ProductDescription(description: product.description),
+
+          ...[
+            SizedBox(height: SpacingTokens.md.h),
+            Row(
+              children: [
+                Icon(
+                  Icons.local_fire_department_outlined,
+                  size: 18.w,
+                  color: AppColor.greyColor,
+                ),
+                SizedBox(width: SpacingTokens.xs.w),
+                Text(
+                  product.calories == null
+                      ? S.caloriesUnavailable
+                      : S.caloriesValue(product.calories!),
+                  style: AppFonts.regular14(context)
+                      .copyWith(color: AppColor.greyColor),
+                ),
+              ],
+            ),
+          ],
 
           for (final group in groups) ...[
             SizedBox(height: SpacingTokens.lg.h),

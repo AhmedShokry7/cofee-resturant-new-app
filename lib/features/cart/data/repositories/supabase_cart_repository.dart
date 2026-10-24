@@ -49,7 +49,7 @@ class SupabaseCartRepository implements CartRepository {
 
     final itemRows = await _client
         .from('cart_items')
-        .select('id, product_id, quantity, note, unit_price')
+        .select('id, product_id, quantity, note, unit_price, bundle_id')
         .eq('cart_id', cartId)
         .order('created_at') as List;
 
@@ -69,6 +69,7 @@ class SupabaseCartRepository implements CartRepository {
       if (productId.isEmpty) continue;
       final itemId = Db.text(row['id']);
       final optionIds = optionsByItem[itemId] ?? const <String>[];
+      final bundleId = Db.text(row['bundle_id']).trim();
       lines.add(
         CartLine(
           productId: productId,
@@ -76,6 +77,7 @@ class SupabaseCartRepository implements CartRepository {
           note: Db.text(row['note']),
           optionValueIds: canonicalOptionIds(optionIds),
           unitPrice: Db.asDoubleOrNull(row['unit_price']),
+          bundleId: bundleId.isEmpty ? null : bundleId,
         ),
       );
     }

@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
@@ -43,8 +45,9 @@ class ProfileCubit extends Cubit<ProfileState> {
         ? SupabaseService.client.auth.currentUser?.id
         : null;
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange
-          .listen(_onAuthStateChanged);
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
     }
     load();
   }
@@ -76,20 +79,55 @@ class ProfileCubit extends Cubit<ProfileState> {
     final generation = ++_generation;
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
+      // Show this account's last verified image immediately while the profile
+      // path and private Storage object are checked in the background.
+      final userId = _identity;
+      final cacheKey = userId == null ? null : _cacheKey(userId);
+      String? cachedPath;
+      if (cacheKey != null) {
+        final rawCache = await SharedPref.getValue(key: cacheKey);
+        if (isClosed || generation != _generation) return;
+        if (rawCache != null) {
+          try {
+            final cached = jsonDecode(rawCache) as Map<String, dynamic>;
+            cachedPath = cached['path']?.toString();
+            final encoded = cached['bytes']?.toString();
+            if (encoded != null && encoded.isNotEmpty) {
+              emit(
+                state.copyWith(
+                  imageBytes: base64Decode(encoded),
+                  avatarPath: cachedPath,
+                  isLoading: true,
+                ),
+              );
+            }
+          } catch (_) {
+            await SharedPref.setValue(key: cacheKey, value: '');
+          }
+        }
+      }
       final path = (await _repository.loadAvatarPath())?.trim();
       if (isClosed || generation != _generation) return;
       if (path == null || path.isEmpty) {
+        if (cacheKey != null)
+          await SharedPref.setValue(key: cacheKey, value: '');
         emit(state.copyWith(clearAvatar: true, isLoading: false));
+        return;
+      }
+      if (cachedPath == path && state.imageBytes != null) {
+        emit(state.copyWith(avatarPath: path, isLoading: false));
         return;
       }
       final bytes = await _repository.downloadAvatar(path);
       if (isClosed || generation != _generation) return;
+      if (cacheKey != null) {
+        await SharedPref.setValue(
+          key: cacheKey,
+          value: jsonEncode({'path': path, 'bytes': base64Encode(bytes)}),
+        );
+      }
       emit(
-        state.copyWith(
-          imageBytes: bytes,
-          avatarPath: path,
-          isLoading: false,
-        ),
+        state.copyWith(imageBytes: bytes, avatarPath: path, isLoading: false),
       );
     } on ProfilePhotoException catch (error) {
       if (isClosed || generation != _generation) return;
@@ -98,12 +136,12 @@ class ProfileCubit extends Cubit<ProfileState> {
         // failed. A guest reaching this point is the normal case after a
         // sign-out, not something the customer has to read about.
         emit(
-          state.copyWith(
-            clearAvatar: true,
-            isLoading: false,
-            clearError: true,
-          ),
+          state.copyWith(clearAvatar: true, isLoading: false, clearError: true),
         );
+        return;
+      }
+      if (state.imageBytes != null) {
+        emit(state.copyWith(isLoading: false, clearError: true));
         return;
       }
       // Keep the path: the photo may still exist and a later refresh can
@@ -117,6 +155,10 @@ class ProfileCubit extends Cubit<ProfileState> {
       );
     } catch (error, stackTrace) {
       if (isClosed || generation != _generation) return;
+      if (state.imageBytes != null) {
+        emit(state.copyWith(isLoading: false, clearError: true));
+        return;
+      }
       emit(
         state.copyWith(
           clearImage: true,
@@ -151,27 +193,12 @@ class ProfileCubit extends Cubit<ProfileState> {
     // so a failure never leaves the customer with no avatar at all.
     final previousBytes = state.imageBytes;
     final generation = ++_generation;
-    emit(state.copyWith(imageBytes: bytes, isUploading: true, clearError: true));
+    emit(
+      state.copyWith(imageBytes: bytes, isUploading: true, clearError: true),
+    );
     try {
-      await _repository.uploadAvatar(bytes);
+      final path = await _repository.uploadAvatar(bytes);
       if (isClosed || generation != _generation) return;
-
-      // Re-read rather than trusting the returned path: the profile row is what
-      // another device will read, so the state must come from the same place.
-      final path = await _repository.loadAvatarPath();
-      if (isClosed || generation != _generation) return;
-      if (path == null) {
-        emit(
-          state.copyWith(
-            imageBytes: previousBytes,
-            clearImage: previousBytes == null,
-            isUploading: false,
-            isLoading: false,
-            error: ProfilePhotoFailure.profileUpdateFailed.name,
-          ),
-        );
-        return;
-      }
       // The bytes that were just uploaded are the saved photo, so there is
       // nothing to download: the preview simply becomes the saved photo.
       emit(
@@ -182,6 +209,13 @@ class ProfileCubit extends Cubit<ProfileState> {
           isLoading: false,
         ),
       );
+      final userId = _identity;
+      if (userId != null) {
+        await SharedPref.setValue(
+          key: _cacheKey(userId),
+          value: jsonEncode({'path': path, 'bytes': base64Encode(bytes)}),
+        );
+      }
     } on ProfilePhotoException catch (error) {
       if (isClosed || generation != _generation) return;
       emit(
@@ -212,6 +246,8 @@ class ProfileCubit extends Cubit<ProfileState> {
     _generation++;
     emit(const ProfileState(isLoading: false));
   }
+
+  static String _cacheKey(String userId) => 'profile_avatar_v1_$userId';
 
   /// Whether the signed-in customer changed, in which case everything about the
   /// previous customer's photo must be dropped.

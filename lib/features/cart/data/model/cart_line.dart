@@ -2,11 +2,13 @@ import 'package:flutter/foundation.dart';
 
 /// One cart line as the server stores it.
 ///
-/// The line identity is the tuple (product, note, sorted option value ids),
-/// which is exactly what `orders.cart_items` uses through its
-/// `unique (cart_id, product_id, note, options_key)` constraint. Two
-/// configurations of the same product are therefore two lines, and a repeated
-/// add of the same configuration is one line with a bigger quantity.
+/// The line identity is the tuple (product, note, sorted option value ids,
+/// bundle), which is exactly what `orders.cart_items` uses through its
+/// `unique (cart_id, product_id, note, options_key, bundle_key)` constraint.
+/// Two configurations of the same product are therefore two lines, and a
+/// repeated add of the same configuration is one line with a bigger quantity.
+/// The bundle is part of the identity so a bundle component never merges with
+/// a standalone product of the same configuration.
 ///
 /// A line carries no client price on the way out: the server prices every line
 /// from the catalogue. [unitPrice] is only filled when reading a line the
@@ -40,7 +42,7 @@ class CartLine {
   /// Canonical identity of this line, independent of the order the option
   /// values were collected in.
   String get identity =>
-      '$productId::$note::${optionValueIds.join(',')}';
+      '$productId::$note::${optionValueIds.join(',')}::${bundleId ?? ''}';
 
   /// The payload the server expects. It never carries a price: `replace_cart`
   /// re-prices every line from the catalogue.
@@ -75,7 +77,8 @@ class CartLine {
 
   @override
   String toString() =>
-      'CartLine($productId x$quantity, note: "$note", options: $optionValueIds)';
+      'CartLine($productId x$quantity, note: "$note", options: $optionValueIds'
+      '${bundleId == null ? '' : ', bundle: $bundleId'})';
 }
 
 /// Sorted, de-duplicated, non-empty option value ids.

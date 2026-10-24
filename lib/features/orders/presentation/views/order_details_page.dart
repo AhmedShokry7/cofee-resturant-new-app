@@ -218,6 +218,35 @@ class _DetailsScaffold extends StatelessWidget {
                       ],
                     ),
                   ],
+                  if (allLines[i].lineProductDiscountTotal != null &&
+                      allLines[i].lineProductDiscountTotal! > 0) ...[
+                    SizedBox(height: SpacingTokens.xs.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Icon(
+                          HugeIcons.strokeRoundedDiscount01,
+                          size: 12.w,
+                          color: AppColor.primaryColor,
+                        ),
+                        SizedBox(width: SpacingTokens.xs.w),
+                        Text(
+                          S.productDiscount,
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.primaryColor),
+                        ),
+                        SizedBox(width: SpacingTokens.xs.w),
+                        PriceLabel(
+                          amount: allLines[i].lineProductDiscountTotal!,
+                          prefix: '-',
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.primaryColor),
+                          iconSize: 11,
+                          iconColor: AppColor.primaryColor,
+                        ),
+                      ],
+                    ),
+                  ],
                   if (i != allLines.length - 1)
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
@@ -269,6 +298,16 @@ class _DetailsScaffold extends StatelessWidget {
             valueSize: 16,
             labelExpanded: true,
           ),
+          if (order.productDiscountTotal != null &&
+              order.productDiscountTotal! > 0) ...[
+            SizedBox(height: SpacingTokens.sm.h),
+            LabeledValueRow(
+              label: S.productDiscount,
+              priceValue: order.productDiscountTotal!,
+              pricePrefix: '-',
+              valueSize: 16,
+            ),
+          ],
           if (order.discountTotal != null && order.discountTotal! > 0) ...[
             SizedBox(height: SpacingTokens.sm.h),
             LabeledValueRow(

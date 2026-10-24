@@ -9,20 +9,17 @@ class DiscountBadge extends StatelessWidget {
     super.key,
     required this.percent,
     this.size = 40,
-    this.textAlignment = Alignment.bottomLeft,
-    this.textPadding = const EdgeInsets.only(
-      left: 3,
-      bottom: 4,
-    ),
+    this.textAlignment = AlignmentDirectional.bottomStart,
+    this.textPadding = const EdgeInsetsDirectional.only(start: 3, bottom: 4),
   });
 
   final int percent;
   final double size;
-  final Alignment textAlignment;
+  final AlignmentGeometry textAlignment;
   final EdgeInsetsGeometry textPadding;
 
   static const double cardSize = 50;
-  static const double cardTop = -1;
+  static const double cardTop = 0;
   static const double cardRight = 0;
 
   @override
@@ -36,15 +33,13 @@ class DiscountBadge extends StatelessWidget {
         decoration: const BoxDecoration(
           image: DecorationImage(
             image: AssetImage('assets/icons/discount.png'),
+            matchTextDirection: true,
             fit: BoxFit.contain,
           ),
         ),
         alignment: textAlignment,
         child: Padding(
-          padding: EdgeInsets.only(
-            left: 12.w,
-            bottom: 4.h,
-          ),
+          padding: EdgeInsetsDirectional.only(start: 12.w, bottom: 4.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,

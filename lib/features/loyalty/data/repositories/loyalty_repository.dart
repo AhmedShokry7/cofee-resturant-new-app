@@ -5,6 +5,7 @@ import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -93,16 +94,19 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
     final rewardRows = (results[1] as List).cast<Map<String, dynamic>>();
     final brandRows = (results[2] as List).cast<Map<String, dynamic>>();
 
-    final rewards = <RewardModel>[];
-    for (final row in rewardRows) {
-      final productId = row['product_id']?.toString();
-      if (productId == null || productId.isEmpty) continue;
-      final product = await _catalog.getById(productId);
-      // A reward whose product disappeared is omitted. Showing its stale id
-      // would let a customer attempt an impossible redemption.
-      if (product == null) continue;
-      rewards.add(RewardModel.fromDatabase(row: row, product: product));
-    }
+    final productIds = rewardRows
+        .map((row) => row['product_id']?.toString() ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList(growable: false);
+    final productsById = {
+      for (final product in await getProductsByIds(_catalog, productIds))
+        product.id: product,
+    };
+    final rewards = <RewardModel>[
+      for (final row in rewardRows)
+        if (productsById[row['product_id']?.toString()] case final product?)
+          RewardModel.fromDatabase(row: row, product: product),
+    ];
 
     return LoyaltyCatalog(
       rules: [for (final row in ruleRows) LoyaltyRule.fromDatabase(row)],

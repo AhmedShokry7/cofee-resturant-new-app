@@ -16,15 +16,17 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
-import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 import 'package:new_coffee/firebase_options.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
 
   // A release build has no debugger attached, so an uncaught framework error
   // would otherwise disappear without a trace. Both handlers log through
@@ -42,14 +44,17 @@ Future<void> main() async {
   // Locale first: everything else renders through it.
   await _guard('AppLocale.init', () => AppLocale.instance.initialize());
 
-  // Firebase is only initialised on Android, the platform that has a client
-  // in the Firebase console. Nothing in the app depends on it yet, so a
-  // failure is logged and the app continues without it.
-  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+  // Android uses generated Firebase options; iOS uses its native GoogleService-Info.plist.
+  // A missing platform setup is logged but never blocks the app from starting.
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
     await _guard(
       'Firebase.init',
       () => Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
+        options: defaultTargetPlatform == TargetPlatform.android
+            ? DefaultFirebaseOptions.currentPlatform
+            : null,
       ),
     );
   }
@@ -78,6 +83,30 @@ Future<void> main() async {
     onboardingDone = await session.hasCompletedOnboarding();
   });
 
+  // Preview mode: allow the admin dashboard to override design tokens via the
+  // query string without touching published configuration.
+  try {
+    final params = Uri.base.queryParameters;
+    if (params['preview'] == '1') {
+      Color? parse(String? hex) {
+        if (hex == null || hex.isEmpty) return null;
+        final value = int.tryParse(hex.replaceFirst('#', ''), radix: 16);
+        if (value == null) return null;
+        return Color(value | 0xFF000000);
+      }
+
+      final primary = parse(params['primary']);
+      if (primary != null) AppColor.primaryColor = primary;
+      final secondary = parse(params['secondary']);
+      if (secondary != null) AppColor.secondryColor = secondary;
+      final background = parse(params['background']);
+      if (background != null) {
+        // background is not a separate token; keep for future use.
+      }
+      final surface = parse(params['surface']);
+      if (surface != null) AppColor.surfaceColor = surface;
+    }
+  } catch (_) {}
   runApp(MyApp(currentRoute: currentRoute, onboardingDone: onboardingDone));
 }
 
@@ -85,10 +114,7 @@ Future<void> main() async {
 ///
 /// Startup must always reach `runApp`; a step that fails is logged and the app
 /// continues with whatever state is available.
-Future<void> _guard(
-  String label,
-  Future<void> Function() action,
-) async {
+Future<void> _guard(String label, Future<void> Function() action) async {
   try {
     await action();
   } catch (error, stackTrace) {
@@ -103,10 +129,14 @@ Future<void> _guard(
 /// main page takes it. A tap while the app is already open on the main page
 /// opens the screen right away.
 void _handlePushOpened(RemoteMessage message) {
-  final route = NotificationsPage.routeName;
+  final relatedType = message.data['related_entity_type'];
+  final route = switch (relatedType) {
+    'order' => OrdersPage.routeName,
+    'subscription' => SubscriptionDetailsPage.routeName,
+    _ => NotificationsPage.routeName,
+  };
   final navigator = rootNavigatorKey.currentState;
-  final current = AppRouteObserver.instance.currentRouteName.value;
-  if (navigator != null && current == MainPage.routeName) {
+  if (navigator != null) {
     navigator.pushNamed(route);
     return;
   }
@@ -124,13 +154,56 @@ void _logRelease(String label, String message, StackTrace? stackTrace) {
   }
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key, this.currentRoute, this.onboardingDone = false});
 
   final String? currentRoute;
 
   /// Whether the customer already finished the onboarding.
   final bool onboardingDone;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  StreamSubscription<RemoteMessage>? _foregroundPushSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _foregroundPushSubscription = PushService.onForegroundMessage.listen(
+      _showForegroundPush,
+    );
+  }
+
+  void _showForegroundPush(RemoteMessage message) {
+    final arabic = AppLocale.instance.isArabic;
+    final title =
+        message.data[arabic ? 'title_ar' : 'title_en'] ??
+        message.notification?.title ??
+        '';
+    final body =
+        message.data[arabic ? 'body_ar' : 'body_en'] ??
+        message.notification?.body ??
+        '';
+    if (!mounted || (title.isEmpty && body.isEmpty)) return;
+    rootScaffoldMessengerKey.currentState
+      ?..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            [title, body].where((part) => part.isNotEmpty).join(' — '),
+          ),
+        ),
+      );
+  }
+
+  @override
+  void dispose() {
+    _foregroundPushSubscription?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -152,14 +225,13 @@ class MyApp extends StatelessWidget {
                 GlobalCupertinoLocalizations.delegate,
               ],
               debugShowCheckedModeBanner: false,
-              theme: ThemeClass.light(
-                isArabic: AppLocale.instance.isArabic,
-              ),
+              theme: ThemeClass.light(isArabic: AppLocale.instance.isArabic),
               builder: (context, child) => Directionality(
                 textDirection: AppLocale.instance.textDirection,
                 child: child ?? const SizedBox.shrink(),
               ),
               navigatorKey: rootNavigatorKey,
+              scaffoldMessengerKey: rootScaffoldMessengerKey,
               // The assistant FAB is owned by the Home page scaffold, not by
               // a global overlay, so it can never duplicate or leak onto
               // other screens.
@@ -172,8 +244,8 @@ class MyApp extends StatelessWidget {
               routes: {
                 SplashView.routeName: (context) => SplashView(
                   targetRoute: AppRoutes.initialRouteName(
-                    currentRoute,
-                    onboardingDone: onboardingDone,
+                    widget.currentRoute,
+                    onboardingDone: widget.onboardingDone,
                   ),
                 ),
                 ...AppRoutes.routes,

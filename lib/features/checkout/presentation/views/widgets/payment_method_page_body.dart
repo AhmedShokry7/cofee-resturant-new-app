@@ -14,7 +14,6 @@ import 'package:new_coffee/features/payment/presentation/views/add_card_page.dar
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/add_card_tile.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
-import 'package:new_coffee/features/payment/presentation/views/widgets/saved_card_tile.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/payment_option_tile.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 
@@ -161,6 +160,16 @@ class _PayableTotal extends StatelessWidget {
       builder: (context, cart) {
         final checkout = context.watch<CheckoutCubit>();
         final summary = checkout.summary(cart.total);
+        if (checkout.state.quoteLoading) {
+          return Container(
+            padding: EdgeInsets.all(SpacingTokens.md.w),
+            decoration: BoxDecoration(
+              color: AppColor.lightGreyColor,
+              borderRadius: BorderRadius.circular(12.r),
+            ),
+            child: const Center(child: CircularProgressIndicator()),
+          );
+        }
         return Container(
           padding: EdgeInsets.all(SpacingTokens.md.w),
           decoration: BoxDecoration(
@@ -175,13 +184,15 @@ class _PayableTotal extends StatelessWidget {
                 style: AppFonts.regular14(context)
                     .copyWith(color: AppColor.greyColor),
               ),
-              PriceLabel(
-                amount: summary.total,
-                style: AppFonts.semiBold18(context)
-                    .copyWith(color: AppColor.primaryColor),
-                iconSize: 18,
-                iconColor: AppColor.primaryColor,
-              ),
+              checkout.state.checkoutQuote == null
+                  ? Text(S.orderFailed, style: AppFonts.regular14(context))
+                  : PriceLabel(
+                      amount: summary.total,
+                      style: AppFonts.semiBold18(context)
+                          .copyWith(color: AppColor.primaryColor),
+                      iconSize: 18,
+                      iconColor: AppColor.primaryColor,
+                    ),
             ],
           ),
         );

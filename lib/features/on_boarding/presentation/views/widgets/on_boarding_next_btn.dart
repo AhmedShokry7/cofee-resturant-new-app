@@ -18,7 +18,7 @@ class OnBoardingNextBtn extends StatelessWidget {
       child: Container(
         height: AppConstant.btnHeight(context) - 10,
         width: AppConstant.btnHeight(context) - 10,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColor.primaryColor,
           shape: BoxShape.circle,
         ),

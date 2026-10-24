@@ -16,6 +16,8 @@ class NotificationModel {
     this.bodyAr,
     this.bodyEn,
     this.type = 'system',
+    this.relatedEntityType,
+    this.relatedEntityId,
     this.createdAt,
     this.isRead = true,
   }) : _legacyTitle = title ?? '',
@@ -29,6 +31,8 @@ class NotificationModel {
   final String? bodyAr;
   final String? bodyEn;
   final String type;
+  final String? relatedEntityType;
+  final String? relatedEntityId;
   final DateTime? createdAt;
   final bool isRead;
 
@@ -77,6 +81,7 @@ class NotificationModel {
       'order_status' => HugeIcons.strokeRoundedTruckDelivery,
       'promo' => HugeIcons.strokeRoundedDiscountTag01,
       'loyalty' => HugeIcons.strokeRoundedFavourite,
+      'subscription' => HugeIcons.strokeRoundedCalendar03,
       _ => HugeIcons.strokeRoundedNotification01,
     };
   }
@@ -91,6 +96,8 @@ class NotificationModel {
       bodyAr: Db.textOrNull(map['body_ar']),
       bodyEn: Db.textOrNull(map['body_en']),
       type: Db.text(map['type'], 'system'),
+      relatedEntityType: Db.textOrNull(map['related_entity_type']),
+      relatedEntityId: Db.textOrNull(map['related_entity_id']),
       createdAt: createdAt == null
           ? null
           : DateTime.tryParse(createdAt)?.toLocal(),

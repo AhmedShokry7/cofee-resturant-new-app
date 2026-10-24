@@ -31,6 +31,18 @@ class PaymentMethodModel {
   /// Whether the customer must have a saved card to use this method.
   final bool requiresSavedCard;
 
+  /// Whether this method is paid with a card, so a saved card can pay it.
+  ///
+  /// Cash is not a card, and a wallet (Apple Pay) is not charged through a
+  /// stored card either. Rows without a code are legacy rows and are treated
+  /// as a card, which is how they behaved before the code existed.
+  bool get isCardMethod {
+    if (!isOnline) return false;
+    final value = (code ?? '').trim().toLowerCase();
+    if (value.isEmpty) return true;
+    return value == 'card' || value == 'mada';
+  }
+
   final IconData? _legacyIcon;
   final String _legacyLabel;
 

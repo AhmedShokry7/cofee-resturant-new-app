@@ -1,4 +1,5 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -178,13 +179,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     color: focusColor,
                     width: AppDimensions.fieldFocusBorderWidth,
                   ),
-                  errorBorder: _buildBorder(color: Colors.red.shade400),
+                  errorBorder: _buildBorder(color: AppColor.errorColor),
                   focusedErrorBorder: _buildBorder(
-                    color: Colors.red.shade400,
+                    color: AppColor.errorColor,
                     width: AppDimensions.fieldFocusBorderWidth,
                   ),
                   errorStyle: AppFonts.semiBold12(context)
-                      .copyWith(color: Colors.red.shade400),
+                      .copyWith(color: AppColor.errorColor),
                 ),
               ),
             ),

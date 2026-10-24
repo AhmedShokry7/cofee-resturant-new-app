@@ -65,19 +65,15 @@ void main() {
         'products',
         'categories',
         'bundles',
-        'pricing',
         'carts',
         'inventory',
         'stockMovements',
         'payments',
-        'savedCards',
         'customers',
-        'addresses',
         'staff',
         'roles',
         'auditLog',
         'branches',
-        'deliveryZones',
         'content',
         'appSettings',
         'coupons',
@@ -86,15 +82,19 @@ void main() {
         'subscriptions',
         'reviews',
         'notifications',
-        'favorites',
         'websites',
         'aiKnowledge',
+        'customerPreview',
       ]),
     );
+    expect(ids, isNot(contains('deliveryZones')));
+    expect(ids, isNot(contains('pricing')));
 
     for (final destination in adminDestinations) {
       expect(destination.section, isNotNull, reason: destination.id);
-      if (destination.id != 'dashboard') {
+      if (destination.id != 'dashboard' &&
+          destination.id != 'orders' &&
+          destination.id != 'customerPreview') {
         expect(destination.tables, isNotEmpty, reason: destination.id);
         expect(destination.isImplemented, isFalse, reason: destination.id);
       }

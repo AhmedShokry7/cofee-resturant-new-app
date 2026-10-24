@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
+import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
+import 'package:admin_app/features/carts/presentation/pages/cart_page.dart';
+import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
+import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
+import 'package:admin_app/features/orders/presentation/pages/order_page.dart';
+import 'package:admin_app/features/payments/presentation/pages/payment_page.dart';
+import 'package:admin_app/features/roles/presentation/pages/role_page.dart';
+import 'package:admin_app/features/staff/presentation/pages/staff_page.dart';
+import 'package:admin_app/features/subscriptions_admin/presentation/pages/subscription_admin_page.dart';
 import 'package:admin_app/features/auth/presentation/manager/admin_auth_cubit.dart';
+import 'package:admin_app/features/branches/presentation/pages/branch_page.dart';
+import 'package:admin_app/features/bundles/presentation/pages/bundle_page.dart';
+import 'package:admin_app/features/catalog/presentation/pages/category_page.dart';
 import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
@@ -91,6 +105,47 @@ class _AdminShellState extends State<AdminShell> {
     switch (destination.id) {
       case 'products':
         return ProductPage(searchController: _searchController);
+      case 'categories':
+        return CategoryPage(searchController: _searchController);
+      case 'branches':
+        return BranchPage(
+          searchController: _searchController,
+          canManagePricing:
+              widget.session.hasPermission('catalog.product.write') ||
+              widget.session.isOwner,
+        );
+      case 'auditLog':
+        return AuditLogPage(searchController: _searchController);
+      case 'bundles':
+        return BundlePage(searchController: _searchController);
+      case 'payments':
+        return PaymentPage(searchController: _searchController);
+      case 'orders':
+        return OrderPage(searchController: _searchController);
+      case 'banners':
+        return BannerPage(searchController: _searchController);
+      case 'carts':
+        return CartPage(searchController: _searchController);
+      case 'customerPreview':
+        return const CustomerPreviewPage();
+      case 'customers':
+        return CustomerPage(searchController: _searchController);
+      case 'staff':
+        return StaffPage(
+          searchController: _searchController,
+          canManagePermissions:
+              widget.session.hasPermission('admin.staff.write') ||
+              widget.session.isOwner,
+        );
+      case 'roles':
+        return RolePage(
+          searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('admin.role.write') ||
+              widget.session.isOwner,
+        );
+      case 'subscriptions':
+        return SubscriptionAdminPage(searchController: _searchController);
       default:
         return AdminFeaturePlaceholder(destination: destination);
     }
@@ -112,6 +167,16 @@ class _AdminShellState extends State<AdminShell> {
 
   @override
   Widget build(BuildContext context) {
+    // The text of the panel is read while the shell builds. The shell listens
+    // to the language of the panel, so a language switch re-labels the
+    // sidebar, the app bar and the page right away, without a restart.
+    return ListenableBuilder(
+      listenable: AppLocale.instance,
+      builder: (context, _) => _buildShell(context),
+    );
+  }
+
+  Widget _buildShell(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= 900;
     final data = _buildLayoutData();

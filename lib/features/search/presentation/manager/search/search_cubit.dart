@@ -56,6 +56,12 @@ class SearchCubit extends Cubit<SearchState> {
   /// so they never re-run a query the customer has already replaced.
   String _latestQuery = '';
 
+  /// Unfiltered results for the current query and branch. Category, price and
+  /// sort controls operate on this in-memory snapshot, so changing filters does
+  /// not issue another catalogue request.
+  List<ProductModel> _queryResults = const [];
+  String? _loadedResultKey;
+
   /// Monotonic id of the newest search. Only the run holding the latest number
   /// may write state.
   ///
@@ -182,10 +188,11 @@ class SearchCubit extends Cubit<SearchState> {
     List<CategoryModel>? categories,
   }) async {
     final generation = ++_searchGeneration;
+    final effectiveSort = sort ?? state.sort;
     emit(
       SearchState(
         query: query,
-        sort: sort ?? state.sort,
+        sort: effectiveSort,
         categories: categories ?? state.categories,
         category: category,
         minPrice: minPrice,
@@ -197,49 +204,64 @@ class SearchCubit extends Cubit<SearchState> {
     );
 
     try {
-      final allowed = await RateLimitClient().check('search');
-      if (!allowed) {
-        emit(
-          SearchState(
-            query: query,
-            sort: sort ?? state.sort,
-            categories: categories ?? state.categories,
-            category: category,
-            minPrice: minPrice,
-            maxPrice: maxPrice,
-            results: const [],
-            error: 'search rate limit exceeded',
-            hasSearched: true,
-          ),
+      final key = '${_effectiveBranch ?? ''}|${query.trim().toLowerCase()}';
+      if (_loadedResultKey != key) {
+        final allowed = await RateLimitClient().check('search');
+        if (isClosed || generation != _searchGeneration) return;
+        if (!allowed) {
+          emit(
+            SearchState(
+              query: query,
+              sort: effectiveSort,
+              categories: categories ?? state.categories,
+              category: category,
+              minPrice: minPrice,
+              maxPrice: maxPrice,
+              results: const [],
+              error: 'search rate limit exceeded',
+              hasSearched: true,
+            ),
+          );
+          return;
+        }
+        _queryResults = await _catalog.search(
+          query,
+          branchId: _effectiveBranch,
+          sort: 'relevance',
+          limit: 100,
         );
-        return;
+        _loadedResultKey = key;
       }
-      var results = await _catalog.search(
-        query,
-        branchId: _effectiveBranch,
-        categoryId: category,
-        sort: _sortCode(sort ?? state.sort),
-        limit: 100,
-      );
       if (isClosed) return;
       // A newer search owns the state now. This answer is discarded rather than
       // cancelling the request that is already on the wire.
       if (generation != _searchGeneration) return;
 
-      // Price filtering stays client-side because the RPC deliberately keeps
-      // its signature small. The result set here is one page of at most 100,
-      // so this is cheap and keeps the range slider responsive.
-      results = results.where((p) {
+      // All filters stay local to the loaded result page. The selected category
+      // and sort mode are presentation choices; they do not change the search
+      // document being searched on the server.
+      var results = _queryResults.where((p) {
+        if (category != null && p.categoryId != category) return false;
         if (minPrice != null && p.price < minPrice) return false;
         if (maxPrice != null && p.price > maxPrice) return false;
         return true;
       }).toList();
+      switch (effectiveSort) {
+        case SearchSort.priceLowHigh:
+          results.sort((a, b) => a.price.compareTo(b.price));
+        case SearchSort.priceHighLow:
+          results.sort((a, b) => b.price.compareTo(a.price));
+        case SearchSort.nameAsc:
+          results.sort((a, b) => a.name.compareTo(b.name));
+        case SearchSort.relevance:
+          break;
+      }
       if (isClosed) return;
       if (generation != _searchGeneration) return;
       emit(
         SearchState(
           query: query,
-          sort: sort ?? state.sort,
+          sort: effectiveSort,
           categories: categories ?? state.categories,
           category: category,
           minPrice: minPrice,
@@ -256,7 +278,7 @@ class SearchCubit extends Cubit<SearchState> {
       emit(
         SearchState(
           query: query,
-          sort: sort ?? state.sort,
+          sort: effectiveSort,
           categories: categories ?? state.categories,
           category: category,
           minPrice: minPrice,
@@ -275,19 +297,7 @@ class SearchCubit extends Cubit<SearchState> {
     // Nothing may fire after the page is gone.
     _debounce?.cancel();
     _debounce = null;
+    _queryResults = const [];
     return super.close();
-  }
-
-  static String _sortCode(SearchSort sort) {
-    switch (sort) {
-      case SearchSort.priceLowHigh:
-        return 'priceLowHigh';
-      case SearchSort.priceHighLow:
-        return 'priceHighLow';
-      case SearchSort.nameAsc:
-        return 'nameAsc';
-      case SearchSort.relevance:
-        return 'relevance';
-    }
   }
 }

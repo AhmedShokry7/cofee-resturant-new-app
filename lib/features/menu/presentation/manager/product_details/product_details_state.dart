@@ -8,6 +8,8 @@ class ProductDetailsState {
     this.selection = const OptionSelection.empty(),
     this.estimatedUnitPrice = 0,
     this.resolvedPrice,
+    this.resolvedRegularPrice,
+    this.resolvedDiscountPercentage = 0,
     this.quantity = 1,
     this.showFullDescription = false,
     this.isAvailable = true,
@@ -33,6 +35,13 @@ class ProductDetailsState {
   /// Authoritative unit price from resolvePrice. Null until it arrives, and
   /// left null if the call failed.
   final double? resolvedPrice;
+
+  /// The price before the discount, from the same answer. Null when there is
+  /// no discount.
+  final double? resolvedRegularPrice;
+
+  /// The discount the server applied, in percent.
+  final double resolvedDiscountPercentage;
 
   final int quantity;
 
@@ -68,6 +77,9 @@ class ProductDetailsState {
     double? estimatedUnitPrice,
     double? resolvedPrice,
     bool clearResolvedPrice = false,
+    double? resolvedRegularPrice,
+    bool clearResolvedRegularPrice = false,
+    double? resolvedDiscountPercentage,
     int? quantity,
     bool? showFullDescription,
     bool? isAvailable,
@@ -85,6 +97,11 @@ class ProductDetailsState {
     resolvedPrice: clearResolvedPrice
         ? null
         : (resolvedPrice ?? this.resolvedPrice),
+    resolvedRegularPrice: clearResolvedRegularPrice
+        ? null
+        : (resolvedRegularPrice ?? this.resolvedRegularPrice),
+    resolvedDiscountPercentage:
+        resolvedDiscountPercentage ?? this.resolvedDiscountPercentage,
     quantity: quantity ?? this.quantity,
     showFullDescription: showFullDescription ?? this.showFullDescription,
     isAvailable: isAvailable ?? this.isAvailable,

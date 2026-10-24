@@ -122,9 +122,9 @@ class BundleListTile extends StatelessWidget {
             ),
           ),
           if (original > bundle.price)
-            Positioned(
+            PositionedDirectional(
               top: DiscountBadge.cardTop,
-              right: DiscountBadge.cardRight,
+              end: DiscountBadge.cardRight,
               child: DiscountBadge(
                 percent: (((original - bundle.price) / original) * 100).round(),
                 size: DiscountBadge.cardSize,

@@ -29,7 +29,7 @@ class AppDimensions {
   // Page margins
   /// The left and right margin of every page. Change it here to move the
   /// content of all the admin pages at once.
-  static const double pageHorizontalPadding = 12.0;
+  static const double pageHorizontalPadding = 32.0;
 
   /// The top and bottom margin of every page.
   static const double pageVerticalPadding = 24.0;
@@ -94,6 +94,8 @@ class AppDimensions {
   static const double fieldFocusBorderWidth = 2.0;
 
   // Shared component sizes
+  /// Width of a single order summary card in the horizontal list.
+  static const double orderSummaryCardWidth = 168.0;
   static const double searchFieldWidth = 320.0;
   static const double dialogButtonHeight = 40.0;
   static const double placeholderIconBox = 72.0;
