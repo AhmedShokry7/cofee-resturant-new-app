@@ -1,0 +1,626 @@
+﻿import 'package:admin_app/core/locale/app_locale.dart';
+
+/// Every user-visible admin string in one place.
+///
+/// Each getter reads the current [AppLocale] at build time, so toggling the
+/// language rebuilds the whole tree and every label flips together.
+class S {
+  S._();
+
+  static bool get _ar => AppLocale.instance.isArabic;
+
+  static String get appName => _ar ? 'ط¥ط¯ط§ط±ط© ط§ظ„ظ‚ظ‡ظˆط©' : 'Coffee Admin';
+  static String get admin => _ar ? 'ط§ظ„ط¥ط¯ط§ط±ط©' : 'Admin';
+
+  // ---------- Sidebar ----------
+  static String get signOut => _ar ? 'طھط³ط¬ظٹظ„ ط§ظ„ط®ط±ظˆط¬' : 'Sign out';
+  static String get owner => _ar ? 'ط§ظ„ظ…ط§ظ„ظƒ' : 'Owner';
+  static String get staff => _ar ? 'ظ…ظˆط¸ظپ' : 'Staff';
+
+  // ---------- Destinations ----------
+  static String get dashboard => _ar ? 'ظ„ظˆط­ط© ط§ظ„طھط­ظƒظ…' : 'Dashboard';
+  static String get orders => _ar ? 'ط§ظ„ط·ظ„ط¨ط§طھ' : 'Orders';
+  static String get products => _ar ? 'ط§ظ„ظ…ظ†طھط¬ط§طھ' : 'Products';
+  static String get categories => _ar ? 'ط§ظ„طھطµظ†ظٹظپط§طھ' : 'Categories';
+  static String get inventory => _ar ? 'ط§ظ„ظ…ط®ط²ظˆظ†' : 'Inventory';
+  static String get customers => _ar ? 'ط§ظ„ط¹ظ…ظ„ط§ط،' : 'Customers';
+  static String get staffLabel => _ar ? 'ط§ظ„ظ…ظˆط¸ظپظˆظ†' : 'Staff';
+  static String get role => _ar ? 'ط§ظ„ط¯ظˆط±' : 'Role';
+  static String get settings => _ar ? 'ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ' : 'Settings';
+
+  // ---------- App bar ----------
+  static String get search => _ar ? 'ط¨ط­ط«' : 'Search';
+  static String get language => _ar ? 'ط§ظ„ظ„ط؛ط©' : 'Language';
+  static String get theme => _ar ? 'ط§ظ„ظ…ط¸ظ‡ط±' : 'Theme';
+  static String get menu => _ar ? 'ط§ظ„ظ‚ط§ط¦ظ…ط©' : 'Menu';
+  static String get clearSearch => _ar ? 'ظ…ط³ط­ ط§ظ„ط¨ط­ط«' : 'Clear search';
+
+  // ---------- Per-page search hints ----------
+  static String get searchDashboardHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط·ظ„ط¨ط§طھ ظˆط§ظ„ط¹ظ…ظ„ط§ط،...' : 'Search orders and customers...';
+  static String get searchOrdersHint => _ar
+      ? 'ط§ط¨ط­ط« ط¨ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨ ط£ظˆ ط§ظ„ط¹ظ…ظٹظ„...'
+      : 'Search by order number or customer...';
+  static String get searchProductsHint =>
+      _ar ? 'ط§ط¨ط­ط« ط¹ظ† ظ…ظ†طھط¬...' : 'Search products...';
+  static String get searchCategoriesHint =>
+      _ar ? 'ط§ط¨ط­ط« ط¹ظ† طھطµظ†ظٹظپ...' : 'Search categories...';
+  static String get searchInventoryHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظ…ط®ط²ظˆظ†...' : 'Search inventory...';
+  static String get searchCustomersHint =>
+      _ar ? 'ط§ط¨ط­ط« ط¹ظ† ط¹ظ…ظٹظ„...' : 'Search customers...';
+  static String get searchStaffHint =>
+      _ar ? 'ط§ط¨ط­ط« ط¹ظ† ظ…ظˆط¸ظپ...' : 'Search staff...';
+  static String get searchSettingsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ...' : 'Search settings...';
+  static String get searchDefaultHint => _ar ? 'ط§ط¨ط­ط«...' : 'Search...';
+
+  // ---------- Dashboard ----------
+  static String get welcomeBack => _ar ? 'ظ…ط±ط­ط¨ظ‹ط§ ط¨ط¹ظˆط¯طھظƒ' : 'Welcome back';
+  static String welcomeBackName(String name) =>
+      _ar ? 'ظ…ط±ط­ط¨ظ‹ط§ ط¨ط¹ظˆط¯طھظƒطŒ $name.' : 'Welcome back, $name.';
+  static String get todayOrders => _ar ? 'ط·ظ„ط¨ط§طھ ط§ظ„ظٹظˆظ…' : "Today's orders";
+  static String get todayRevenue => _ar ? 'ط¥ظٹط±ط§ط¯ط§طھ ط§ظ„ظٹظˆظ…' : "Today's revenue";
+  static String get activeOrders => _ar ? 'ط§ظ„ط·ظ„ط¨ط§طھ ط§ظ„ظ†ط´ط·ط©' : 'Active orders';
+  static String get activeProducts =>
+      _ar ? 'ط§ظ„ظ…ظ†طھط¬ط§طھ ط§ظ„ظ†ط´ط·ط©' : 'Active products';
+  static String get customersLabel => _ar ? 'ط§ظ„ط¹ظ…ظ„ط§ط،' : 'Customers';
+  static String get activeBranches => _ar ? 'ط§ظ„ظپط±ظˆط¹ ط§ظ„ظ†ط´ط·ط©' : 'Active branches';
+  static String get recentOrders => _ar ? 'ط£ط­ط¯ط« ط§ظ„ط·ظ„ط¨ط§طھ' : 'Recent orders';
+  static String get noOrdersYet =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ط·ظ„ط¨ط§طھ ط¨ط¹ط¯.' : 'No orders yet.';
+  static String get refresh => _ar ? 'طھط­ط¯ظٹط«' : 'Refresh';
+  static String get totalOrdersToDate =>
+      _ar ? 'ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط·ظ„ط¨ط§طھ ط­طھظ‰ ط§ظ„ط¢ظ†' : 'Total orders to date';
+  static String get noDashboardMetrics => _ar
+      ? 'ط¯ظˆط±ظƒ ظ„ط§ ظٹطھط¶ظ…ظ† ظ…ظ‚ط§ظٹظٹط³ ظ„ظˆط­ط© ط§ظ„طھط­ظƒظ….'
+      : 'Your role does not include dashboard metrics.';
+  static String get couldNotLoadDashboard =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ظ„ظˆط­ط© ط§ظ„طھط­ظƒظ…' : 'Could not load dashboard';
+  static String get tryAgain => _ar ? 'ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰' : 'Try again';
+  static String get delivery => _ar ? 'طھظˆطµظٹظ„' : 'Delivery';
+  static String get pickup => _ar ? 'ط§ط³طھظ„ط§ظ…' : 'Pickup';
+
+  // ---------- Coming soon ----------
+  static String get comingSoon => _ar ? 'ظ‚ط±ظٹط¨ظ‹ط§' : 'Coming soon';
+
+  // ---------- Auth / login ----------
+  static String get staffSignIn =>
+      _ar ? 'طھط³ط¬ظٹظ„ ط¯ط®ظˆظ„ ط§ظ„ظ…ظˆط¸ظپظٹظ†' : 'Staff sign in';
+  static String get staffSignInSubtitle => _ar
+      ? 'ط§ط³طھط®ط¯ظ… ط­ط³ط§ط¨ ط§ظ„ظ…ظˆط¸ظپ ط§ظ„ط®ط§طµ ط¨ظƒ ظ„ظ„ظˆطµظˆظ„ ط¥ظ„ظ‰ ظ„ظˆط­ط© ط§ظ„طھط­ظƒظ….'
+      : 'Use your staff account to access the dashboard.';
+  static String get email => _ar ? 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ' : 'Email';
+  static String get password => _ar ? 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±' : 'Password';
+  static String get signIn => _ar ? 'طھط³ط¬ظٹظ„ ط§ظ„ط¯ط®ظˆظ„' : 'Sign in';
+  static String get emailRequired =>
+      _ar ? 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ ظ…ط·ظ„ظˆط¨.' : 'Email is required.';
+  static String get validEmail =>
+      _ar ? 'ط£ط¯ط®ظ„ ط¨ط±ظٹط¯ظ‹ط§ ط¥ظ„ظƒطھط±ظˆظ†ظٹظ‹ط§ طµط­ظٹط­ظ‹ط§.' : 'Enter a valid email.';
+  static String get passwordRequired =>
+      _ar ? 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ظ…ط·ظ„ظˆط¨ط©.' : 'Password is required.';
+  static String get manageBrandSubtitle => _ar
+      ? 'ط£ط¯ط± ط§ظ„ط·ظ„ط¨ط§طھ ظˆط§ظ„ظ‚ط§ط¦ظ…ط© ظˆط§ظ„ظپط±ظˆط¹ ظˆط§ظ„ظ…ظˆط¸ظپظٹظ† ظپظٹ ظ…ظƒط§ظ† ظˆط§ط­ط¯.'
+      : 'Manage orders, catalog, branches and staff in one place.';
+
+  // ---------- Sign out dialog ----------
+  static String get signOutTitle => _ar ? 'طھط³ط¬ظٹظ„ ط§ظ„ط®ط±ظˆط¬' : 'Sign out';
+  static String get signOutMessage => _ar
+      ? 'ظ‡ظ„ ط£ظ†طھ ظ…طھط£ظƒط¯ ط£ظ†ظƒ طھط±ظٹط¯ طھط³ط¬ظٹظ„ ط§ظ„ط®ط±ظˆط¬طں'
+      : 'Are you sure you want to sign out?';
+  static String get cancel => _ar ? 'ط¥ظ„ط؛ط§ط،' : 'Cancel';
+
+  // ---------- Catalog ----------
+  static String get all => _ar ? 'ط§ظ„ظƒظ„' : 'All';
+
+  // Actions
+  static String get addCategory => _ar ? 'ط¥ط¶ط§ظپط© طھطµظ†ظٹظپ' : 'Add category';
+  static String get editCategory => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„طھطµظ†ظٹظپ' : 'Edit category';
+  static String get addProduct => _ar ? 'ط¥ط¶ط§ظپط© ظ…ظ†طھط¬' : 'Add product';
+  static String get editProduct => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ظ…ظ†طھط¬' : 'Edit product';
+  static String get save => _ar ? 'ط­ظپط¸' : 'Save';
+  static String get edit => _ar ? 'طھط¹ط¯ظٹظ„' : 'Edit';
+  static String get delete => _ar ? 'ط­ط°ظپ' : 'Delete';
+  static String get archive => _ar ? 'ط£ط±ط´ظپط©' : 'Archive';
+  static String get restore => _ar ? 'ط§ط³طھط¹ط§ط¯ط©' : 'Restore';
+
+  // Fields
+  static String get image => _ar ? 'ط§ظ„طµظˆط±ط©' : 'Image';
+  static String get name => _ar ? 'ط§ظ„ط§ط³ظ…' : 'Name';
+  static String get nameAr => _ar ? 'ط§ظ„ط§ط³ظ… ط¨ط§ظ„ط¹ط±ط¨ظٹط©' : 'Name (Arabic)';
+  static String get nameEn => _ar ? 'ط§ظ„ط§ط³ظ… ط¨ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©' : 'Name (English)';
+  static String get slug => _ar ? 'ط§ظ„ط±ط§ط¨ط·' : 'Slug';
+  static String get category => _ar ? 'ط§ظ„طھطµظ†ظٹظپ' : 'Category';
+  static String get categoryFilter => _ar ? 'طھطµظ†ظٹظپ ط§ظ„ظ…ظ†طھط¬' : 'Product category';
+  static String get sku => _ar ? 'ظƒظˆط¯ ط§ظ„ظ…ظ†طھط¬' : 'SKU';
+  static String get price => _ar ? 'ط§ظ„ط³ط¹ط±' : 'Price';
+  static String get compareAtPrice =>
+      _ar ? 'ط§ظ„ط³ط¹ط± ط§ظ„ظ…ظ‚ط§ط±ظ†' : 'Compare at price';
+  static String get prepMinutes => _ar ? 'ط¯ظ‚ظٹظ‚ط© ط§ظ„طھط­ط¶ظٹط±' : 'Prep minutes';
+  static String get featured => _ar ? 'ظ…ظ…ظٹط²' : 'Featured';
+  static String get isFeatured => _ar ? 'ظ…ظ†طھط¬ ظ…ظ…ظٹط²' : 'Featured product';
+  static String get status => _ar ? 'ط§ظ„ط­ط§ظ„ط©' : 'Status';
+  static String get active => _ar ? 'ظ…ظپط¹ظ„' : 'Active';
+  static String get inactive => _ar ? 'ظ…ط¹ط·ظ„' : 'Inactive';
+  static String get archived => _ar ? 'ظ…ط¤ط±ط´ظپ' : 'Archived';
+  static String get actions => _ar ? 'ط¹ظ…ظ„ظٹط§طھ' : 'Actions';
+  static String get iconKey => _ar ? 'ظ…ظپطھط§ط­ ط§ظ„ط£ظٹظ‚ظˆظ†ط©' : 'Icon key';
+  static String get imageUrl => _ar ? 'ط±ط§ط¨ط· ط§ظ„طµظˆط±ط©' : 'Image URL';
+  static String get descriptionAr =>
+      _ar ? 'ط§ظ„ظˆطµظپ ط¨ط§ظ„ط¹ط±ط¨ظٹط©' : 'Description (Arabic)';
+  static String get descriptionEn =>
+      _ar ? 'ط§ظ„ظˆطµظپ ط¨ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©' : 'Description (English)';
+  static String get sortOrder => _ar ? 'طھط±طھظٹط¨ ط§ظ„ط¹ط±ط¶' : 'Sort order';
+  static String get isActive => _ar ? 'ظ…ظپط¹ظ„' : 'Active';
+  static String get parent => _ar ? 'ط§ظ„طھطµظ†ظٹظپ ط§ظ„ط£ظ…' : 'Parent category';
+
+  // Validation
+  static String get requiredField =>
+      _ar ? 'ظ‡ط°ط§ ط§ظ„ط­ظ‚ظ„ ظ…ط·ظ„ظˆط¨' : 'This field is required';
+  static String get invalidPrice => _ar ? 'ط³ط¹ط± ط؛ظٹط± طµط§ظ„ط­' : 'Invalid price';
+  static String get invalidNumber => _ar ? 'ط±ظ‚ظ… ط؛ظٹط± طµط§ظ„ط­' : 'Invalid number';
+  static String get compareAtMustBeHigher => _ar
+      ? 'ظٹط¬ط¨ ط£ظ† ظٹظƒظˆظ† ط§ظ„ط³ط¹ط± ط§ظ„ظ…ظ‚ط§ط±ظ† ط£ط¹ظ„ظ‰ ظ…ظ† ط§ظ„ط³ط¹ط± ط§ظ„ط£ط³ط§ط³ظٹ'
+      : 'Compare-at price must be higher than the base price';
+
+  // Empty states
+  static String get noCategoriesFound =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ طھطµظ†ظٹظپط§طھ ظ…ط·ط§ط¨ظ‚ط©' : 'No categories found';
+  static String get noProductsFound =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ظ…ظ†طھط¬ط§طھ ظ…ط·ط§ط¨ظ‚ط©' : 'No products found';
+
+  // Messages
+  static String get saved => _ar ? 'طھظ… ط§ظ„ط­ظپط¸' : 'Saved';
+  static String get deleted => _ar ? 'طھظ… ط§ظ„ط­ط°ظپ' : 'Deleted';
+  static String get couldNotLoadCategories =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط§ظ„طھطµظ†ظٹظپط§طھ' : 'Could not load categories';
+  static String get couldNotLoadProducts =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط§ظ„ظ…ظ†طھط¬ط§طھ' : 'Could not load products';
+
+  static String categoriesCount(int count) => count == 1
+      ? _ar
+            ? 'طھطµظ†ظٹظپ ظˆط§ط­ط¯'
+            : '1 category'
+      : _ar
+      ? '$count طھطµظ†ظٹظپط§طھ'
+      : '$count categories';
+
+  static String productsCount(int count) => count == 1
+      ? _ar
+            ? 'ظ…ظ†طھط¬ ظˆط§ط­ط¯'
+            : '1 product'
+      : _ar
+      ? '$count ظ…ظ†طھط¬ط§طھ'
+      : '$count products';
+
+  static String deleteCategoryConfirm(String name) => _ar
+      ? 'ظ‡ظ„ ط£ظ†طھ ظ…طھط£ظƒط¯ ط£ظ†ظƒ طھط±ظٹط¯ ط­ط°ظپ ط§ظ„طھطµظ†ظٹظپ "$name"طں'
+      : 'Are you sure you want to delete the category "$name"?';
+
+  static String deleteProductConfirm(String name) => _ar
+      ? 'ظ‡ظ„ ط£ظ†طھ ظ…طھط£ظƒط¯ ط£ظ†ظƒ طھط±ظٹط¯ ط­ط°ظپ ط§ظ„ظ…ظ†طھط¬ "$name"طں'
+      : 'Are you sure you want to delete the product "$name"?';
+
+  // ---------- Customers ----------
+  static String get noCustomersFound =>
+      _ar ? 'ظ„ط§ ظٹظˆط¬ط¯ ط¹ظ…ظ„ط§ط،' : 'No customers yet';
+  static String get customerName => _ar ? 'ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„' : 'Customer name';
+  static String get emailAddress => _ar ? 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ' : 'Email';
+  static String get phone => _ar ? 'ط§ظ„ظ‡ط§طھظپ' : 'Phone';
+  static String get ordersCountLabel => _ar ? 'ط¹ط¯ط¯ ط§ظ„ط·ظ„ط¨ط§طھ' : 'Orders';
+  static String get totalSpent => _ar ? 'ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¥ظ†ظپط§ظ‚' : 'Total spent';
+  static String get lastOrder => _ar ? 'ط¢ط®ط± ط·ظ„ط¨' : 'Last order';
+  static String get editCustomerTitle => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ط¹ظ…ظٹظ„' : 'Edit customer';
+  static String get fullName => _ar ? 'ط§ظ„ط§ط³ظ… ط§ظ„ظƒط§ظ…ظ„' : 'Full name';
+
+  static String customersCount(int count) => count == 1
+      ? _ar
+            ? 'ط¹ظ…ظٹظ„ ظˆط§ط­ط¯'
+            : '1 customer'
+      : _ar
+      ? '$count ط¹ظ…ظ„ط§ط،'
+      : '$count customers';
+
+  // ---------- Inventory ----------
+  static String get noInventoryItems =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ط£طµظ†ط§ظپ ظپظٹ ط§ظ„ظ…ط®ط²ظˆظ†' : 'No inventory items';
+  static String get productName => _ar ? 'ط§ط³ظ… ط§ظ„ظ…ظ†طھط¬' : 'Product';
+  static String get currentStock => _ar ? 'ط§ظ„ظ…ط®ط²ظˆظ† ط§ظ„ط­ط§ظ„ظٹ' : 'Current stock';
+  static String get minStock => _ar ? 'ط§ظ„ط­ط¯ ط§ظ„ط£ط¯ظ†ظ‰' : 'Min stock';
+  static String get unit => _ar ? 'ط§ظ„ظˆط­ط¯ط©' : 'Unit';
+  static String get lowStock => _ar ? 'ظ…ظ†ط®ظپط¶' : 'Low';
+  static String get inStock => _ar ? 'ظ…طھظˆظپط±' : 'In stock';
+  static String get editStockTitle => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ظ…ط®ط²ظˆظ†' : 'Edit stock';
+
+  static String inventoryCount(int count) => count == 1
+      ? _ar
+            ? 'طµظ†ظپ ظˆط§ط­ط¯'
+            : '1 item'
+      : _ar
+      ? '$count ط£طµظ†ط§ظپ'
+      : '$count items';
+
+  static String lowStockCount(int count) => count == 1
+      ? _ar
+            ? 'طµظ†ظپ ظ…ظ†ط®ظپط¶'
+            : '1 low stock item'
+      : _ar
+      ? '$count ط£طµظ†ط§ظپ ظ…ظ†ط®ظپط¶ط©'
+      : '$count low stock items';
+
+  // ---------- Orders ----------
+  static String get noOrdersFound => _ar ? 'ظ„ط§ طھظˆط¬ط¯ ط·ظ„ط¨ط§طھ' : 'No orders yet';
+  static String get orderNumber => _ar ? 'ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨' : 'Order number';
+  static String get customer => _ar ? 'ط§ظ„ط¹ظ…ظٹظ„' : 'Customer';
+  static String get total => _ar ? 'ط§ظ„ظ…ط¬ظ…ظˆط¹' : 'Total';
+  static String get fulfillmentType => _ar ? 'ظ†ظˆط¹ ط§ظ„طھظˆطµظٹظ„' : 'Delivery type';
+  static String get date => _ar ? 'ط§ظ„طھط§ط±ظٹط®' : 'Date';
+  static String get statusPending => _ar ? 'ظ‚ظٹط¯ ط§ظ„ط§ظ†طھط¸ط§ط±' : 'Pending';
+  static String get statusConfirmed => _ar ? 'ظ…ط¤ظƒط¯' : 'Confirmed';
+  static String get statusPreparing => _ar ? 'ظ‚ظٹط¯ ط§ظ„طھط­ط¶ظٹط±' : 'Preparing';
+  static String get statusReady => _ar ? 'ط¬ط§ظ‡ط²' : 'Ready';
+  static String get statusOutForDelivery =>
+      _ar ? 'ظپظٹ ط·ط±ظٹظ‚ظ‡ ظ„ظ„طھظˆطµظٹظ„' : 'Out for delivery';
+  static String get statusCompleted => _ar ? 'ظ…ظƒطھظ…ظ„' : 'Completed';
+  static String get statusCancelled => _ar ? 'ظ…ظ„ط؛ظٹ' : 'Cancelled';
+
+  static String orderStatusLabel(String status) => switch (status) {
+    'pending' => statusPending,
+    'confirmed' => statusConfirmed,
+    'preparing' => statusPreparing,
+    'ready' => statusReady,
+    'out_for_delivery' => statusOutForDelivery,
+    'completed' => statusCompleted,
+    'cancelled' => statusCancelled,
+    _ => status,
+  };
+
+  // ---------- Staff ----------
+  static String get noStaffFound => _ar ? 'ظ„ط§ ظٹظˆط¬ط¯ ظ…ظˆط¸ظپظٹظ†' : 'No staff members';
+  static String get staffName => _ar ? 'ط§ط³ظ… ط§ظ„ظ…ظˆط¸ظپ' : 'Staff name';
+  static String get roleColumn => _ar ? 'ط§ظ„ط¯ظˆط±' : 'Role';
+  static String get roleManager => _ar ? 'ظ…ط¯ظٹط±' : 'Manager';
+  static String get roleCashier => _ar ? 'ظƒط§ط´ظٹط±' : 'Cashier';
+  static String get activeStatus => _ar ? 'ظ†ط´ط·' : 'Active';
+  static String get inactiveStatus => _ar ? 'ط؛ظٹط± ظ†ط´ط·' : 'Inactive';
+  static String get editStaffTitle => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ظ…ظˆط¸ظپ' : 'Edit staff';
+  static String get roleHint =>
+      _ar ? 'ط§ظ„ط¯ظˆط± (owner/staff/manager)' : 'Role (owner/staff/manager)';
+
+  static String staffCount(int count) => count == 1
+      ? _ar
+            ? 'ظ…ظˆط¸ظپ ظˆط§ط­ط¯'
+            : '1 staff member'
+      : _ar
+      ? '$count ظ…ظˆط¸ظپظٹظ†'
+      : '$count staff members';
+
+  static String activeStaffCount(int count) => count == 1
+      ? _ar
+            ? 'ظ…ظˆط¸ظپ ظ†ط´ط·'
+            : '1 active staff member'
+      : _ar
+      ? '$count ظ…ظˆط¸ظپظٹظ† ظ†ط´ط·ظٹظ†'
+      : '$count active staff members';
+
+  static String deleteOrderConfirm(String orderNumber) => _ar
+      ? 'ظ‡ظ„ ط£ظ†طھ ظ…طھط£ظƒط¯ ط£ظ†ظƒ طھط±ظٹط¯ ط­ط°ظپ ط§ظ„ط·ظ„ط¨ "$orderNumber"طں'
+      : 'Are you sure you want to delete the order "$orderNumber"?';
+
+  // ---------- Load errors ----------
+  static String get couldNotLoadCustomers =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط§ظ„ط¹ظ…ظ„ط§ط،' : 'Could not load customers';
+  static String get couldNotLoadInventory =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط§ظ„ظ…ط®ط²ظˆظ†' : 'Could not load inventory';
+  static String get couldNotLoadOrders =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط§ظ„ط·ظ„ط¨ط§طھ' : 'Could not load orders';
+  static String get couldNotLoadStaff =>
+      _ar ? 'طھط¹ط°ط± طھط­ظ…ظٹظ„ ط§ظ„ظ…ظˆط¸ظپظٹظ†' : 'Could not load staff';
+
+  // ---------- Settings ----------
+  static String get preferences => _ar ? 'ط§ظ„طھظپط¶ظٹظ„ط§طھ' : 'Preferences';
+  static String get changePassword =>
+      _ar ? 'طھط؛ظٹظٹط± ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط±' : 'Change password';
+  static String get currentPassword =>
+      _ar ? 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ط­ط§ظ„ظٹط©' : 'Current password';
+  static String get newPassword => _ar ? 'ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ط¬ط¯ظٹط¯ط©' : 'New password';
+  static String get confirmNewPassword =>
+      _ar ? 'طھط£ظƒظٹط¯ ظƒظ„ظ…ط© ط§ظ„ظ…ط±ظˆط± ط§ظ„ط¬ط¯ظٹط¯ط©' : 'Confirm new password';
+  static String get themeSystem => _ar ? 'ط§ظ„ظ†ط¸ط§ظ…' : 'System';
+  static String get themeLight => _ar ? 'ظپط§طھط­' : 'Light';
+  static String get themeDark => _ar ? 'ط¯ط§ظƒظ†' : 'Dark';
+  static String get arabicLabel => _ar ? 'ط§ظ„ط¹ط±ط¨ظٹط©' : 'Arabic';
+  static String get englishLabel => _ar ? 'ط§ظ„ط¥ظ†ط¬ظ„ظٹط²ظٹط©' : 'English';
+  static String get statusActive => _ar ? 'ظ†ط´ط·' : 'Active';
+  static String get more => _ar ? 'ط§ظ„ظ…ط²ظٹط¯' : 'More';
+  static String get viewTable => _ar ? 'ط¹ط±ط¶ ظƒط¬ط¯ظˆظ„' : 'Table view';
+  static String get viewCards => _ar ? 'ط¹ط±ط¶ ظƒظƒط±ظˆطھ' : 'Card view';
+  static String get sectionManagement => _ar ? 'ط§ظ„ط¥ط¯ط§ط±ط©' : 'Management';
+  static String get sectionSettings =>
+      _ar ? 'ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„ط¹ط§ظ…ط©' : 'General settings';
+  static String get sectionOperations => _ar ? 'ط§ظ„ط¹ظ…ظ„ظٹط§طھ' : 'Operations';
+  static String get sectionPeople =>
+      _ar ? 'ط§ظ„ط£ط´ط®ط§طµ ظˆط§ظ„ظپط±ظˆط¹' : 'People and branches';
+  static String get sectionContent =>
+      _ar ? 'ط§ظ„ظ…ط­طھظˆظ‰ ظˆط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ' : 'Content and settings';
+  static String get sectionGrowth =>
+      _ar ? 'ط§ظ„ظ†ظ…ظˆ ظˆط§ظ„طھظپط§ط¹ظ„' : 'Growth and engagement';
+
+  // ---------- Feature placeholders ----------
+  static String get soonBadge => _ar ? 'ظ‚ط±ظٹط¨ط§ظ‹' : 'Soon';
+  static String get featureNotBuilt => _ar
+      ? 'ظ‡ط°ظ‡ ط§ظ„ظ…ظٹط²ط© ظ…ظˆط¬ظˆط¯ط© ظپظٹ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ ظ„ظƒظ†ظ‡ط§ ظ„ظ… طھظڈط¨ظ†ظژ ط¨ط¹ط¯ ظپظٹ ظ„ظˆط­ط© ط§ظ„طھط­ظƒظ….'
+      : 'This feature exists in the database but is not built in the dashboard yet.';
+  static String get databaseTables =>
+      _ar ? 'ط¬ط¯ط§ظˆظ„ ظ‚ط§ط¹ط¯ط© ط§ظ„ط¨ظٹط§ظ†ط§طھ' : 'Database tables';
+  static String get noDatabaseTables =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ط¬ط¯ط§ظˆظ„ ظ…ط±طھط¨ط·ط© ظ…ط¨ط§ط´ط±ط©.' : 'No directly related tables.';
+
+  static String get bundles => _ar ? 'ط§ظ„ط¨ط§ظ‚ط§طھ' : 'Bundles';
+  static String get branchPricing => _ar ? 'طھط³ط¹ظٹط± ط§ظ„ظپط±ظˆط¹' : 'Branch pricing';
+  static String get carts => _ar ? 'ط³ظ„ط© ط§ظ„ظ…ط´طھط±ظٹط§طھ' : 'Carts';
+  static String get stockMovements => _ar ? 'ط­ط±ظƒط© ط§ظ„ظ…ط®ط²ظˆظ†' : 'Stock movements';
+  static String get payments => _ar ? 'ط§ظ„ظ…ط¯ظپظˆط¹ط§طھ' : 'Payments';
+  static String get savedCards => _ar ? 'ط§ظ„ط¨ط·ط§ظ‚ط§طھ ط§ظ„ظ…ط­ظپظˆط¸ط©' : 'Saved cards';
+  static String get addresses => _ar ? 'ط§ظ„ط¹ظ†ط§ظˆظٹظ†' : 'Addresses';
+  static String get rolesAndPermissions =>
+      _ar ? 'ط§ظ„ط£ط¯ظˆط§ط± ظˆط§ظ„طµظ„ط§ط­ظٹط§طھ' : 'Roles and permissions';
+  static String get auditLog => _ar ? 'ط³ط¬ظ„ ط§ظ„طھط¯ظ‚ظٹظ‚' : 'Audit log';
+  static String get branches => _ar ? 'ط§ظ„ظپط±ظˆط¹' : 'Branches';
+  static String get deliveryZones => _ar ? 'ظ…ظ†ط§ط·ظ‚ ط§ظ„طھظˆطµظٹظ„' : 'Delivery zones';
+  static String get content => _ar ? 'ط§ظ„ظ…ط­طھظˆظ‰' : 'Content';
+  static String get appSettings => _ar ? 'ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„طھط·ط¨ظٹظ‚' : 'App settings';
+  static String get coupons => _ar ? 'ط§ظ„ظƒظˆط¨ظˆظ†ط§طھ' : 'Coupons';
+  static String get banners => _ar ? 'ط§ظ„ط¨ط§ظ†ط±ط§طھ' : 'Banners';
+  static String get loyalty => _ar ? 'ط§ظ„ظˆظ„ط§ط، ظˆط§ظ„ظ†ظ‚ط§ط·' : 'Loyalty and points';
+  static String get subscriptions => _ar ? 'ط§ظ„ط§ط´طھط±ط§ظƒط§طھ' : 'Subscriptions';
+  static String get reviews => _ar ? 'ط§ظ„طھظ‚ظٹظٹظ…ط§طھ' : 'Reviews';
+  static String get notifications => _ar ? 'ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ' : 'Notifications';
+  static String get favorites => _ar ? 'ط§ظ„ظ…ظپط¶ظ„ط©' : 'Favorites';
+  static String get customerWebsites =>
+      _ar ? 'ظ…ظˆط§ظ‚ط¹ ط§ظ„ط¹ظ…ظ„ط§ط،' : 'Customer websites';
+  static String get aiKnowledge =>
+      _ar ? 'ظ…ط¹ط±ظپط© ط§ظ„ظ…ط³ط§ط¹ط¯ ط§ظ„ط°ظƒظٹ' : 'Assistant knowledge';
+
+  static String get searchBundlesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¨ط§ظ‚ط§طھ...' : 'Search bundles...';
+  static String get searchPricingHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„طھط³ط¹ظٹط±...' : 'Search pricing...';
+  static String get searchCartsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط³ظ„ط§ظ„...' : 'Search carts...';
+  static String get searchStockMovementsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط­ط±ظƒط© ط§ظ„ظ…ط®ط²ظˆظ†...' : 'Search stock movements...';
+  static String get searchPaymentsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظ…ط¯ظپظˆط¹ط§طھ...' : 'Search payments...';
+  static String get searchSavedCardsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¨ط·ط§ظ‚ط§طھ ط§ظ„ظ…ط­ظپظˆط¸ط©...' : 'Search saved cards...';
+  static String get searchAddressesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¹ظ†ط§ظˆظٹظ†...' : 'Search addresses...';
+  static String get searchRolesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط£ط¯ظˆط§ط±...' : 'Search roles...';
+  static String get searchAuditLogHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط³ط¬ظ„ ط§ظ„طھط¯ظ‚ظٹظ‚...' : 'Search the audit log...';
+  static String get searchBranchesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظپط±ظˆط¹...' : 'Search branches...';
+  static String get searchDeliveryZonesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ظ…ظ†ط§ط·ظ‚ ط§ظ„طھظˆطµظٹظ„...' : 'Search delivery zones...';
+  static String get searchContentHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظ…ط­طھظˆظ‰...' : 'Search content...';
+  static String get searchAppSettingsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ...' : 'Search settings...';
+  static String get searchCouponsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظƒظˆط¨ظˆظ†ط§طھ...' : 'Search coupons...';
+  static String get searchBannersHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¨ط§ظ†ط±ط§طھ...' : 'Search banners...';
+  static String get searchLoyaltyHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظˆظ„ط§ط،...' : 'Search loyalty...';
+  static String get searchSubscriptionsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط§ط´طھط±ط§ظƒط§طھ...' : 'Search subscriptions...';
+  static String get searchReviewsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„طھظ‚ظٹظٹظ…ط§طھ...' : 'Search reviews...';
+  static String get searchNotificationsHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ط¥ط´ط¹ط§ط±ط§طھ...' : 'Search notifications...';
+  static String get searchFavoritesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ط§ظ„ظ…ظپط¶ظ„ط©...' : 'Search favorites...';
+  static String get searchWebsitesHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ظ…ظˆط§ظ‚ط¹ ط§ظ„ط¹ظ…ظ„ط§ط،...' : 'Search websites...';
+  static String get searchAiKnowledgeHint =>
+      _ar ? 'ط§ط¨ط­ط« ظپظٹ ظ…ط¹ط±ظپط© ط§ظ„ظ…ط³ط§ط¹ط¯...' : 'Search assistant knowledge...';
+  static String get newBadge => _ar ? 'ط¬ط¯ظٹط¯' : 'New';
+  static String get changeImage => _ar ? 'طھط؛ظٹظٹط± ط§ظ„طµظˆط±ط©' : 'Change image';
+  static String get addImageOrVideo =>
+      _ar ? 'ط¥ط¶ط§ظپط© طµظˆط±ط© ط£ظˆ ظپظٹط¯ظٹظˆ' : 'Add image or video';
+  static String get selectProductCategory =>
+      _ar ? 'ط§ط®طھط± طھطµظ†ظٹظپ ط§ظ„ظ…ظ†طھط¬' : 'Choose a product category';
+  static String get selectLocalCategory =>
+      _ar ? 'ط§ط®طھط± طھطµظ†ظٹظپ ظ…ط­ظ„ظٹ' : 'Choose a local category';
+  static String get localCategory => _ar ? 'طھطµظ†ظٹظپ ظ…ط­ظ„ظٹ' : 'Local category';
+  static String get languageCode => 'AR';
+  static String get currency => _ar ? 'ط±.ط³' : 'SAR';
+  static String get productData => _ar ? 'ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ظ†طھط¬' : 'Product data';
+  static String get categoryData => _ar ? 'ط¨ظٹط§ظ†ط§طھ ط§ظ„طھطµظ†ظٹظپ' : 'Category data';
+  static String get optionsAndQuantity =>
+      _ar ? 'ط§ظ„ط®ظٹط§ط±ط§طھ ظˆط§ظ„ظƒظ…ظٹط©' : 'Options and quantity';
+  static String get addCategoryShort => _ar ? 'ط§ط¶ظپ طھطµظ†ظٹظپ' : 'Add category';
+
+  // ---------- Brand panel ----------
+  static String get brandTitle => _ar
+      ? 'ظ†ط¸ط§ظ… ط¥ط¯ط§ط±ط© ظ…طھظƒط§ظ…ظ„ ظ„ظ„ظ…ظ‚ط§ظ‡ظٹ ظˆط§ظ„ظ…ط·ط§ط¹ظ…'
+      : 'A complete management system for cafs and restaurants';
+  static String get brandDescription => _ar
+      ? 'طھط§ط¨ط¹ ط§ظ„ط·ظ„ط¨ط§طھ ظˆط§ظ„ظ…ط®ط²ظˆظ† ظˆط§ظ„ط¹ظ…ظ„ط§ط، ظˆط§ظ„ظ…ظˆط¸ظپظٹظ† ظˆط§ظ„طھظ‚ط§ط±ظٹط± ظ…ظ† ظ„ظˆط­ط© طھط­ظƒظ… ظˆط§ط­ط¯ط© ط¨طھطµظ…ظٹظ… ط§ط­طھط±ط§ظپظٹ ظˆط³ط±ظٹط¹ ط§ظ„ط§ط³طھط¬ط§ط¨ط©.'
+      : 'Track orders, inventory, customers, staff and reports from a single professional dashboard that adapts to every screen.';
+
+  static String get addBranch => _ar ? 'ط¥ط¶ط§ظپط© ظپط±ط¹' : 'Add branch';
+  static String get addBundle => _ar ? 'ط¥ط¶ط§ظپط© ط¨ط§ظ‚ط©' : 'Add bundle';
+  static String get addBanner => _ar ? 'إضافة بانر' : 'Add banner';
+  static String get addComponent => _ar ? 'ط¥ط¶ط§ظپط© ظ…ظƒظˆظ†' : 'Add component';
+  static String get addImage => _ar ? 'ط¥ط¶ط§ظپط© طµظˆط±ط©' : 'Add image';
+  static String get adjustments => _ar ? 'ط§ظ„طھط¹ط¯ظٹظ„ط§طھ' : 'Adjustments';
+  static String get allergens => _ar ? 'ظ…ط³ط¨ط¨ط§طھ ط§ظ„ط­ط³ط§ط³ظٹط©' : 'Allergens';
+  static String get applyToAllImages =>
+      _ar ? 'طھط·ط¨ظٹظ‚ ط¹ظ„ظ‰ ط¬ظ…ظٹط¹ ط§ظ„طµظˆط±' : 'Apply to all images';
+  static String get applyToAllImagesConfirm =>
+      _ar ? 'طھط£ظƒظٹط¯ طھط·ط¨ظٹظ‚ ط¹ظ„ظ‰ ط¬ظ…ظٹط¹ ط§ظ„طµظˆط±' : 'Confirm apply to all images';
+  static String get applyToThisImage =>
+      _ar ? 'طھط·ط¨ظٹظ‚ ط¹ظ„ظ‰ ظ‡ط°ظ‡ ط§ظ„طµظˆط±ط©' : 'Apply to this image';
+  static String get beforeAfter => _ar ? 'ظ‚ط¨ظ„/ط¨ط¹ط¯' : 'Before/After';
+  static String get branchAddress => _ar ? 'ط¹ظ†ظˆط§ظ† ط§ظ„ظپط±ط¹' : 'Branch address';
+  static String get branchCode => _ar ? 'ط±ظ…ط² ط§ظ„ظپط±ط¹' : 'Branch code';
+  static String get branchNeedsCode =>
+      _ar ? 'ط§ظ„ظپط±ط¹ ظٹط­طھط§ط¬ ط¥ظ„ظ‰ ط±ظ…ط²' : 'Branch needs a code';
+  static String get branchNeedsName =>
+      _ar ? 'ط§ظ„ظپط±ط¹ ظٹط­طھط§ط¬ ط¥ظ„ظ‰ ط§ط³ظ…' : 'Branch needs a name';
+  static String get branchPhone => _ar ? 'ظ‡ط§طھظپ ط§ظ„ظپط±ط¹' : 'Branch phone';
+  static String get brightness => _ar ? 'ط§ظ„ط³ط·ظˆط¹' : 'Brightness';
+  static String get bundleComponents =>
+      _ar ? 'ظ…ظƒظˆظ†ط§طھ ط§ظ„ط¨ط§ظ‚ط©' : 'Bundle components';
+  static String get bundlePrice => _ar ? 'ط³ط¹ط± ط§ظ„ط¨ط§ظ‚ط©' : 'Bundle price';
+  static String get calories => _ar ? 'ط§ظ„ط³ط¹ط±ط§طھ' : 'Calories';
+  static String get chooseExcelFile =>
+      _ar ? 'ط§ط®طھط± ظ…ظ„ظپ Excel' : 'Choose Excel file';
+  static String get chooseExcelFileHint =>
+      _ar ? 'ط§ط®طھط± ظ…ظ„ظپ Excel ظ„ظ„ط§ط³طھظٹط±ط§ط¯' : 'Choose an Excel file to import';
+  static String get close => _ar ? 'ط¥ط؛ظ„ط§ظ‚' : 'Close';
+  static String get closesAt => _ar ? 'ظٹط؛ظ„ظ‚ ظپظٹ' : 'Closes at';
+  static String get contrast => _ar ? 'ط§ظ„طھط¨ط§ظٹظ†' : 'Contrast';
+  static String get couldNotSaveProduct =>
+      _ar ? 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ظ…ظ†طھط¬' : 'Could not save product';
+  static String get createdProducts =>
+      _ar ? 'ط§ظ„ظ…ظ†طھط¬ط§طھ ط§ظ„ظ…ظ†ط´ط£ط©' : 'Created products';
+  static String get deleteImage => _ar ? 'ط­ط°ظپ ط§ظ„طµظˆط±ط©' : 'Delete image';
+  static String get deleteImageConfirm =>
+      _ar ? 'طھط£ظƒظٹط¯ ط­ط°ظپ ط§ظ„طµظˆط±ط©' : 'Confirm delete image';
+  static String get discountEndDate =>
+      _ar ? 'طھط§ط±ظٹط® ط§ظ†طھظ‡ط§ط، ط§ظ„ط®طµظ…' : 'Discount end date';
+  static String get discountPercentage =>
+      _ar ? 'ظ†ط³ط¨ط© ط§ظ„ط®طµظ…' : 'Discount percentage';
+  static String get discountStartDate =>
+      _ar ? 'طھط§ط±ظٹط® ط¨ط¯ط، ط§ظ„ط®طµظ…' : 'Discount start date';
+  static String get discountStatusActive =>
+      _ar ? 'ط§ظ„ط®طµظ… ظ†ط´ط·' : 'Discount active';
+  static String get discountStatusExpired =>
+      _ar ? 'ط§ظ„ط®طµظ… ظ…ظ†طھظ‡ظٹ' : 'Discount expired';
+  static String get discountStatusNotActive =>
+      _ar ? 'ط§ظ„ط®طµظ… ط؛ظٹط± ظ†ط´ط·' : 'Discount not active';
+  static String get discountStatusScheduled =>
+      _ar ? 'ط§ظ„ط®طµظ… ظ…ط¬ط¯ظˆظ„' : 'Discount scheduled';
+  static String get downloadSampleFile =>
+      _ar ? 'طھط­ظ…ظٹظ„ ظ…ظ„ظپ ظ†ظ…ظˆط°ط¬ظٹ' : 'Download sample file';
+  static String get downloadSampleFileHint =>
+      _ar ? 'طھط­ظ…ظٹظ„ ظ…ظ„ظپ ظ†ظ…ظˆط°ط¬ظٹ ظ„ظ„ط§ط³طھظٹط±ط§ط¯' : 'Download a sample file for import';
+  static String get editBranch => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ظپط±ط¹' : 'Edit branch';
+  static String get editBundle => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ط¨ط§ظ‚ط©' : 'Edit bundle';
+  static String get editImage => _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„طµظˆط±ط©' : 'Edit image';
+  static String get exportExcel => _ar ? 'طھطµط¯ظٹط± Excel' : 'Export Excel';
+  static String get exporting => _ar ? 'ط¬ط§ط±ظچ ط§ظ„طھطµط¯ظٹط±' : 'Exporting';
+  static String get exportSuccess =>
+      _ar ? 'طھظ… ط§ظ„طھطµط¯ظٹط± ط¨ظ†ط¬ط§ط­' : 'Export successful';
+  static String get exposure => _ar ? 'ط§ظ„طھط¹ط±ظٹط¶' : 'Exposure';
+  static String get failedProducts =>
+      _ar ? 'ط§ظ„ظ…ظ†طھط¬ط§طھ ط§ظ„ظپط§ط´ظ„ط©' : 'Failed products';
+  static String get filters => _ar ? 'ط§ظ„ظپظ„ط§طھط±' : 'Filters';
+  static String get flipHorizontal => _ar ? 'ظ‚ظ„ط¨ ط£ظپظ‚ظٹ' : 'Flip horizontal';
+  static String get flipVertical => _ar ? 'ظ‚ظ„ط¨ ط¹ظ…ظˆط¯ظٹ' : 'Flip vertical';
+  static String get highlights => _ar ? 'ط§ظ„طھظ…ظٹظٹط²ط§طھ' : 'Highlights';
+  static String get hours => _ar ? 'ط³ط§ط¹ط§طھ' : 'Hours';
+  static String get imageActionFailed =>
+      _ar ? 'ظپط´ظ„ ط¥ط¬ط±ط§ط، ط§ظ„طµظˆط±ط©' : 'Image action failed';
+  static String get imageActionForbidden =>
+      _ar ? 'ط¥ط¬ط±ط§ط، ط§ظ„طµظˆط±ط© ط؛ظٹط± ظ…ط³ظ…ظˆط­' : 'Image action not allowed';
+  static String get imageAlignment => _ar ? 'ظ…ط­ط§ط°ط§ط© ط§ظ„طµظˆط±ط©' : 'Image alignment';
+  static String get imageCouldNotBeOpened =>
+      _ar ? 'طھط¹ط°ط± ظپطھط­ ط§ظ„طµظˆط±ط©' : 'Image could not be opened';
+  static String get imageCouldNotBeSaved =>
+      _ar ? 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„طµظˆط±ط©' : 'Image could not be saved';
+  static String get imageFit => _ar ? 'ظ…ظ„ط§ط،ظ…ط© ط§ظ„طµظˆط±ط©' : 'Image fit';
+  static String get imageScope => _ar ? 'ظ†ط·ط§ظ‚ ط§ظ„طµظˆط±ط©' : 'Image scope';
+  static String get imageSettings => _ar ? 'ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„طµظˆط±ط©' : 'Image settings';
+  static String get imageSettingsMissing =>
+      _ar ? 'ط¥ط¹ط¯ط§ط¯ط§طھ ط§ظ„طµظˆط±ط© ظ…ظپظ‚ظˆط¯ط©' : 'Image settings missing';
+  static String get imageSource => _ar ? 'ظ…طµط¯ط± ط§ظ„طµظˆط±ط©' : 'Image source';
+  static String get importExcel => _ar ? 'ط§ط³طھظٹط±ط§ط¯ Excel' : 'Import Excel';
+  static String get importing => _ar ? 'ط¬ط§ط±ظچ ط§ظ„ط§ط³طھظٹط±ط§ط¯' : 'Importing';
+  static String get importProductsSubtitle =>
+      _ar ? 'ط§ط³طھظٹط±ط§ط¯ ط§ظ„ظ…ظ†طھط¬ط§طھ ظ…ظ† Excel' : 'Import products from Excel';
+  static String get importProductsTitle =>
+      _ar ? 'ط§ط³طھظٹط±ط§ط¯ ط§ظ„ظ…ظ†طھط¬ط§طھ' : 'Import products';
+  static String get importSummary => _ar ? 'ظ…ظ„ط®طµ ط§ظ„ط§ط³طھظٹط±ط§ط¯' : 'Import summary';
+  static String get intensity => _ar ? 'ط§ظ„ظƒط«ط§ظپط©' : 'Intensity';
+  static String get invalidDiscountPercentage =>
+      _ar ? 'ظ†ط³ط¨ط© ط®طµظ… ط؛ظٹط± طµط§ظ„ط­ط©' : 'Invalid discount percentage';
+  static String get invalidDiscountRange =>
+      _ar ? 'ظ†ط·ط§ظ‚ ط®طµظ… ط؛ظٹط± طµط§ظ„ط­' : 'Invalid discount range';
+  static String get invalidExcelFile =>
+      _ar ? 'ظ…ظ„ظپ Excel ط؛ظٹط± طµط§ظ„ط­' : 'Invalid Excel file';
+  static String get invalidPrepTime =>
+      _ar ? 'ظˆظ‚طھ طھط­ط¶ظٹط± ط؛ظٹط± طµط§ظ„ط­' : 'Invalid prep time';
+  static String get invalidRows => _ar ? 'طµظپظˆظپ ط؛ظٹط± طµط§ظ„ط­ط©' : 'Invalid rows';
+  static String get minutes => _ar ? 'ط¯ظ‚ط§ط¦ظ‚' : 'Minutes';
+  static String get noBranchesFound =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ظپط±ظˆط¹' : 'No branches found';
+  static String get noBundlesFound =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ط¨ط§ظ‚ط§طھ' : 'No bundles found';
+  static String get noImagesYet => _ar ? 'ظ„ط§ طھظˆط¬ط¯ طµظˆط± ط¨ط¹ط¯' : 'No images yet';
+  static String get noProductsYet =>
+      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ظ…ظ†طھط¬ط§طھ ط¨ط¹ط¯' : 'No products yet';
+  static String get opensAt => _ar ? 'ظٹظپطھط­ ظپظٹ' : 'Opens at';
+  static String get prepTime => _ar ? 'ظˆظ‚طھ ط§ظ„طھط­ط¶ظٹط±' : 'Prep time';
+  static String get prepUnit => _ar ? 'ظˆط­ط¯ط© ط§ظ„طھط­ط¶ظٹط±' : 'Prep unit';
+  static String get prepValue => _ar ? 'ظ‚ظٹظ…ط© ط§ظ„طھط­ط¶ظٹط±' : 'Prep value';
+  static String get priceAfterDiscount =>
+      _ar ? 'ط§ظ„ط³ط¹ط± ط¨ط¹ط¯ ط§ظ„ط®طµظ…' : 'Price after discount';
+  static String get primary => _ar ? 'ط£ط³ط§ط³ظٹ' : 'Primary';
+  static String get productImages => _ar ? 'طµظˆط± ط§ظ„ظ…ظ†طھط¬' : 'Product images';
+  static String get productNeedsCategory =>
+      _ar ? 'ط§ظ„ظ…ظ†طھط¬ ظٹط­طھط§ط¬ ط¥ظ„ظ‰ طھطµظ†ظٹظپ' : 'Product needs a category';
+  static String get productNeedsName =>
+      _ar ? 'ط§ظ„ظ…ظ†طھط¬ ظٹط­طھط§ط¬ ط¥ظ„ظ‰ ط§ط³ظ…' : 'Product needs a name';
+  static String get productWasAdded =>
+      _ar ? 'طھظ…طھ ط¥ط¶ط§ظپط© ط§ظ„ظ…ظ†طھط¬' : 'Product was added';
+  static String get quantity => _ar ? 'ط§ظ„ظƒظ…ظٹط©' : 'Quantity';
+  static String get redo => _ar ? 'ط¥ط¹ط§ط¯ط©' : 'Redo';
+  static String get replaceImage => _ar ? 'ط§ط³طھط¨ط¯ط§ظ„ ط§ظ„طµظˆط±ط©' : 'Replace image';
+  static String get resetImage => _ar ? 'ط¥ط¹ط§ط¯ط© طھط¹ظٹظٹظ† ط§ظ„طµظˆط±ط©' : 'Reset image';
+  static String get retry => _ar ? 'ط¥ط¹ط§ط¯ط© ط§ظ„ظ…ط­ط§ظˆظ„ط©' : 'Retry';
+  static String get rowsCount => _ar ? 'ط¹ط¯ط¯ ط§ظ„طµظپظˆظپ' : 'Rows count';
+  static String get saturation => _ar ? 'ط§ظ„طھط´ط¨ط¹' : 'Saturation';
+  static String get saveProductFirst =>
+      _ar ? 'ط§ط­ظپط¸ ط§ظ„ظ…ظ†طھط¬ ط£ظˆظ„ط§ظ‹' : 'Save the product first';
+  static String get savingImage => _ar ? 'ط¬ط§ط±ظچ ط­ظپط¸ ط§ظ„طµظˆط±ط©' : 'Saving image';
+  static String get seconds => _ar ? 'ط«ظˆط§ظ†ظٹ' : 'Seconds';
+  static String get setPrimaryImage =>
+      _ar ? 'طھط¹ظٹظٹظ† طµظˆط±ط© ط£ط³ط§ط³ظٹط©' : 'Set primary image';
+  static String get shadows => _ar ? 'ط§ظ„ط¸ظ„ط§ظ„' : 'Shadows';
+  static String get sharpness => _ar ? 'ط§ظ„ط­ط¯ط©' : 'Sharpness';
+  static String get undo => _ar ? 'طھط±ط§ط¬ط¹' : 'Undo';
+  static String get updatedProducts =>
+      _ar ? 'ط§ظ„ظ…ظ†طھط¬ط§طھ ط§ظ„ظ…ط­ط¯ط«ط©' : 'Updated products';
+  static String get uploadFromDevice =>
+      _ar ? 'ط±ظپط¹ ظ…ظ† ط§ظ„ط¬ظ‡ط§ط²' : 'Upload from device';
+  static String get uploadingImage =>
+      _ar ? 'ط¬ط§ط±ظچ ط±ظپط¹ ط§ظ„طµظˆط±ط©' : 'Uploading image';
+  static String get useGeneralDiscount =>
+      _ar ? 'ط§ط³طھط®ط¯ط§ظ… ط®طµظ… ط¹ط§ظ…' : 'Use general discount';
+  static String get useImageLink =>
+      _ar ? 'ط§ط³طھط®ط¯ط§ظ… ط±ط§ط¨ط· طµظˆط±ط©' : 'Use image link';
+  static String get warmth => _ar ? 'ط§ظ„ط­ط±ط§ط±ط©' : 'Warmth';
+  static String get zoomIn => _ar ? 'طھظƒط¨ظٹط±' : 'Zoom in';
+  static String get zoomOut => _ar ? 'طھطµط؛ظٹط±' : 'Zoom out';
+
+  static String branchesCount(int count) => count == 1
+      ? _ar
+            ? 'ظپط±ط¹ ظˆط§ط­ط¯'
+            : '1 branch'
+      : _ar
+      ? '$count ظپط±ظˆط¹'
+      : '$count branches';
+
+  static String bundlesCount(int count) => count == 1
+      ? _ar
+            ? 'ط¨ط§ظ‚ط© ظˆط§ط­ط¯ط©'
+            : '1 bundle'
+      : _ar
+      ? '$count ط¨ط§ظ‚ط§طھ'
+      : '$count bundles';
+}

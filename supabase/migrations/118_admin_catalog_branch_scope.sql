@@ -1,0 +1,283 @@
+-- 118_admin_catalog_branch_scope.sql
+--
+-- The branch the dashboard reviews.
+--
+-- A staff member with a branch scope reviews that branch. A staff member who
+-- manages every branch (the owner role) reviews the first active branch, so
+-- the stock of the card always belongs to one branch instead of mixing them.
+
+create or replace function public.admin_catalog_snapshot(
+  p_branch_id uuid default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_branch uuid;
+  v_products jsonb;
+  v_categories jsonb;
+begin
+  if not identity.is_staff() then
+    raise exception 'not authenticated' using errcode = '42501';
+  end if;
+
+  if not identity.has_permission('catalog.product.write') then
+    raise exception 'missing permission: catalog.product.write' using errcode = '42501';
+  end if;
+
+  if p_branch_id is null then
+    select sr.branch_id into v_branch
+      from identity.staff_members sm
+      join identity.staff_roles sr on sr.staff_id = sm.id
+     where sm.user_id = auth.uid()
+       and sm.status = 'active'
+       and sr.branch_id is not null
+     order by sr.branch_id
+     limit 1;
+
+    if v_branch is null then
+      select b.id into v_branch
+        from core.branches b
+       where b.is_active
+       order by b.code
+       limit 1;
+    end if;
+  else
+    v_branch := p_branch_id;
+    if not identity.can_manage_branch(v_branch) then
+      raise exception 'branch not managed by the caller' using errcode = '42501';
+    end if;
+  end if;
+
+  select coalesce(
+           jsonb_agg(
+             to_jsonb(p) || jsonb_build_object(
+               'category_name_ar', c.name_ar,
+               'category_name_en', c.name_en,
+               'stock_quantity', coalesce(s.quantity_on_hand, 0)
+             )
+             order by p.sort_order, p.name_en
+           ),
+           '[]'::jsonb
+         )
+    into v_products
+    from catalog.products p
+    join catalog.categories c on c.id = p.category_id
+    left join lateral (
+      select bs.quantity_on_hand
+        from inventory.branch_stock bs
+       where bs.product_id = p.id
+         and bs.variant_key = '00000000-0000-0000-0000-000000000000'::uuid
+         and (v_branch is null or bs.branch_id = v_branch)
+       limit 1
+    ) s on true
+   where p.archived_at is null;
+
+  select coalesce(jsonb_agg(to_jsonb(c) order by c.sort_order, c.name_en), '[]'::jsonb)
+    into v_categories
+    from catalog.categories c;
+
+  return jsonb_build_object(
+    'branch_id', v_branch,
+    'products', v_products,
+    'categories', v_categories
+  );
+end;
+$$;
+
+create or replace function public.admin_save_product(
+  p_product_id       uuid default null,
+  p_name_ar          text default null,
+  p_name_en          text default null,
+  p_sku              text default null,
+  p_slug             text default null,
+  p_base_price       numeric default 0,
+  p_compare_at_price numeric default null,
+  p_category_id      uuid default null,
+  p_image_url        text default null,
+  p_is_featured      boolean default false,
+  p_is_active        boolean default true,
+  p_prep_minutes     integer default null,
+  p_stock_quantity   integer default null,
+  p_branch_id        uuid default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_product_id uuid;
+  v_slug text;
+  v_sku text;
+  v_branch uuid;
+  v_previous integer;
+  v_saved jsonb;
+begin
+  if not identity.is_staff() then
+    raise exception 'not authenticated' using errcode = '42501';
+  end if;
+
+  if not identity.has_permission('catalog.product.write') then
+    raise exception 'missing permission: catalog.product.write' using errcode = '42501';
+  end if;
+
+  if btrim(coalesce(p_name_ar, '')) = '' then
+    raise exception 'the product needs an Arabic name' using errcode = '22023';
+  end if;
+
+  if p_category_id is null
+     or not exists (select 1 from catalog.categories c where c.id = p_category_id) then
+    raise exception 'unknown category' using errcode = '22023';
+  end if;
+
+  if p_compare_at_price is not null and p_compare_at_price <= p_base_price then
+    raise exception 'the compare price must be above the price' using errcode = '22023';
+  end if;
+
+  if p_product_id is null then
+    v_slug := coalesce(
+      nullif(btrim(p_slug), ''),
+      nullif(core.slugify(p_name_en), ''),
+      nullif(core.slugify(p_name_ar), '')
+    );
+    if v_slug is null then
+      v_slug := 'product-' || substr(md5(random()::text), 1, 8);
+    end if;
+
+    v_sku := coalesce(
+      nullif(btrim(p_sku), ''),
+      'SKU-' || upper(substr(md5(v_slug || random()::text), 1, 8))
+    );
+
+    insert into catalog.products (
+      category_id, sku, slug, name_ar, name_en,
+      base_price, compare_at_price, image_url,
+      is_active, is_featured, prep_minutes
+    )
+    values (
+      p_category_id, v_sku, v_slug,
+      btrim(p_name_ar),
+      btrim(coalesce(nullif(p_name_en, ''), p_name_ar)),
+      p_base_price, p_compare_at_price, p_image_url,
+      p_is_active, p_is_featured, p_prep_minutes
+    )
+    returning id into v_product_id;
+  else
+    v_product_id := p_product_id;
+
+    if not exists (select 1 from catalog.products p where p.id = v_product_id) then
+      raise exception 'unknown product' using errcode = '22023';
+    end if;
+
+    update catalog.products p
+       set name_ar = btrim(p_name_ar),
+           name_en = btrim(coalesce(nullif(p_name_en, ''), p_name_ar)),
+           base_price = p_base_price,
+           compare_at_price = p_compare_at_price,
+           category_id = p_category_id,
+           image_url = p_image_url,
+           is_active = p_is_active,
+           is_featured = p_is_featured,
+           prep_minutes = p_prep_minutes,
+           updated_at = now()
+     where p.id = v_product_id;
+  end if;
+
+  -- The stock belongs to a branch, so it needs its own permission.
+  if p_stock_quantity is not null then
+    if not identity.has_permission('inventory.adjust') then
+      raise exception 'missing permission: inventory.adjust' using errcode = '42501';
+    end if;
+
+    if p_branch_id is null then
+      select sr.branch_id into v_branch
+        from identity.staff_members sm
+        join identity.staff_roles sr on sr.staff_id = sm.id
+       where sm.user_id = auth.uid()
+         and sm.status = 'active'
+         and sr.branch_id is not null
+       order by sr.branch_id
+       limit 1;
+
+      if v_branch is null then
+        select b.id into v_branch
+          from core.branches b
+         where b.is_active
+         order by b.code
+         limit 1;
+      end if;
+    else
+      v_branch := p_branch_id;
+    end if;
+
+    if v_branch is null then
+      raise exception 'no branch holds the stock of this dashboard' using errcode = '22023';
+    end if;
+
+    if not identity.can_manage_branch(v_branch) then
+      raise exception 'branch not managed by the caller' using errcode = '42501';
+    end if;
+
+    if p_stock_quantity < 0 then
+      raise exception 'the stock cannot be negative' using errcode = '22023';
+    end if;
+
+    select bs.quantity_on_hand into v_previous
+      from inventory.branch_stock bs
+     where bs.branch_id = v_branch
+       and bs.product_id = v_product_id
+       and bs.variant_key = '00000000-0000-0000-0000-000000000000'::uuid;
+
+    insert into inventory.branch_stock (
+      branch_id, product_id, variant_key, quantity_on_hand
+    )
+    values (
+      v_branch, v_product_id,
+      '00000000-0000-0000-0000-000000000000'::uuid,
+      p_stock_quantity
+    )
+    on conflict (branch_id, product_id, variant_key)
+    do update
+      set quantity_on_hand = excluded.quantity_on_hand,
+          updated_at = now();
+
+    if coalesce(v_previous, 0) <> p_stock_quantity then
+      insert into inventory.stock_movements (
+        branch_id, product_id, variant_key, quantity_delta,
+        reason, reference_type, actor_user_id, note
+      )
+      values (
+        v_branch, v_product_id,
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        p_stock_quantity - coalesce(v_previous, 0),
+        'adjustment', 'manual', auth.uid(), 'admin dashboard'
+      );
+    end if;
+  end if;
+
+  select to_jsonb(p) || jsonb_build_object(
+           'category_name_ar', c.name_ar,
+           'category_name_en', c.name_en,
+           'stock_quantity', coalesce(s.quantity_on_hand, 0)
+         )
+    into v_saved
+    from catalog.products p
+    join catalog.categories c on c.id = p.category_id
+    left join lateral (
+      select bs.quantity_on_hand
+        from inventory.branch_stock bs
+       where bs.product_id = p.id
+         and bs.variant_key = '00000000-0000-0000-0000-000000000000'::uuid
+         and (v_branch is null or bs.branch_id = v_branch)
+       limit 1
+    ) s on true
+   where p.id = v_product_id;
+
+  return v_saved;
+end;
+$$;
+
+notify pgrst, 'reload schema';

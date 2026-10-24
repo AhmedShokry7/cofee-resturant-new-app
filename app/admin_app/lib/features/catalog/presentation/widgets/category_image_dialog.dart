@@ -1,0 +1,232 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
+import 'package:image_picker/image_picker.dart';
+
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+
+/// The dialog that changes the picture of a category.
+///
+/// It offers the same two sources as the gallery of a product: a file of
+/// the device (uploaded to the bucket) or a link that is already hosted.
+class CategoryImageDialog extends StatefulWidget {
+  const CategoryImageDialog({
+    super.key,
+    required this.currentImageUrl,
+    required this.onApply,
+    this.onRemove,
+    this.onPickPicture,
+  });
+
+  /// The picture the category has right now, if any.
+  final String? currentImageUrl;
+
+  /// Called with the source the admin picked.
+  final Future<void> Function(ProductImageSource source) onApply;
+
+  /// Called when the admin wants to remove the picture.
+  final VoidCallback? onRemove;
+
+  /// Picks a picture from the device; tests can give their own.
+  final Future<ProductImageSource?> Function()? onPickPicture;
+
+  @override
+  State<CategoryImageDialog> createState() => _CategoryImageDialogState();
+}
+
+class _CategoryImageDialogState extends State<CategoryImageDialog> {
+  bool _busy = false;
+  String? _phaseText;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return AlertDialog(
+      title: Text(S.imageSource),
+      content: SizedBox(
+        width: 440,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (widget.currentImageUrl != null &&
+                widget.currentImageUrl!.trim().isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 260,
+                  child: CachedNetworkImage(
+                    imageUrl: widget.currentImageUrl!,
+                    fit: BoxFit.contain,
+                    errorWidget: (_, _, _) => const ColoredBox(
+                      color: AppColor.secondaryColor,
+                      child: Center(
+                        child: Icon(HugeIcons.strokeRoundedImageAdd01),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.md),
+            ],
+            if (_busy) ...[
+              Center(child: CircularProgressIndicator()),
+              if (_phaseText != null) ...[
+                const SizedBox(height: AppDimensions.md),
+                Text(
+                  _phaseText!,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColor.greyColor,
+                  ),
+                ),
+              ],
+            ] else ...[
+              ListTile(
+                leading: const Icon(
+                  HugeIcons.strokeRoundedImageAdd01,
+                  size: 20,
+                ),
+                title: Text(S.uploadFromDevice),
+                subtitle: Text(
+                  'JPG, PNG or WEBP',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColor.greyColor,
+                  ),
+                ),
+                onTap: _busy ? null : _pickFromDevice,
+              ),
+              ListTile(
+                leading: const Icon(HugeIcons.strokeRoundedLink01, size: 20),
+                title: Text(S.useImageLink),
+                onTap: _busy ? null : _askForLink,
+              ),
+              if (widget.currentImageUrl != null &&
+                  widget.currentImageUrl!.isNotEmpty &&
+                  widget.onRemove != null) ...[
+                const Divider(),
+                ListTile(
+                  leading: const Icon(
+                    HugeIcons.strokeRoundedDelete01,
+                    size: 20,
+                    color: AppColor.errorColor,
+                  ),
+                  title: Text(
+                    S.deleteImage,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColor.errorColor,
+                    ),
+                  ),
+                  onTap: _busy ? null : _removeImage,
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+          child: Text(S.cancel),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _pickFromDevice() async {
+    final source = await widget.onPickPicture?.call();
+    if (source != null) {
+      await _apply(source);
+      return;
+    }
+
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 90,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      await _apply(
+        ProductImageSource.file(
+          bytes,
+          picked.name,
+          picked.mimeType ?? 'image/jpeg',
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      _showMessage('${S.imageCouldNotBeOpened}: $error', isError: true);
+    }
+  }
+
+  Future<void> _askForLink() async {
+    final controller = TextEditingController(
+      text: widget.currentImageUrl ?? '',
+    );
+    final url = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(S.useImageLink),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: InputDecoration(hintText: S.imageUrl),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: Text(S.save),
+          ),
+        ],
+      ),
+    );
+    if (url == null || url.trim().isEmpty) return;
+    await _apply(ProductImageSource.link(url.trim()));
+  }
+
+  Future<void> _apply(ProductImageSource source) async {
+    setState(() {
+      _busy = true;
+      _phaseText = source.isLink ? S.savingImage : S.uploadingImage;
+    });
+
+    try {
+      await widget.onApply(source);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _phaseText = null;
+      });
+      _showMessage('${S.imageActionFailed}: $error', isError: true);
+    }
+  }
+
+  void _removeImage() {
+    widget.onRemove?.call();
+    Navigator.of(context).pop();
+  }
+
+  void _showMessage(String message, {bool isError = false}) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? AppColor.errorColor : null,
+      ),
+    );
+  }
+}

@@ -1,0 +1,278 @@
+-- 127_admin_catalog_product_discounts.sql
+--
+-- Adds an optional scheduled direct discount to catalog.products and extends
+-- admin_save_product() so the admin dashboard can store it. The charged price
+-- still comes from resolve_effective_price(); the discount metadata is kept
+-- separate from compare_at_price, which remains the displayed original price.
+
+alter table catalog.products
+  add column if not exists discount_percentage numeric(5,2)
+    check (discount_percentage is null or (discount_percentage >= 0 and discount_percentage <= 100)),
+  add column if not exists discount_starts_at timestamptz,
+  add column if not exists discount_ends_at timestamptz;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'ck_products_discount_window'
+      and conrelid = 'catalog.products'::regclass
+  ) then
+    alter table catalog.products
+      add constraint ck_products_discount_window check (
+        discount_ends_at is null
+        or discount_starts_at is null
+        or discount_ends_at > discount_starts_at
+      );
+  end if;
+end $$;
+
+drop function if exists public.admin_save_product(
+  uuid, text, text, text, text, text, text, numeric, numeric, uuid, text, boolean, boolean, integer, integer, text[], integer, uuid
+);
+
+create or replace function public.admin_save_product(
+  p_product_id         uuid default null,
+  p_name_ar            text default null,
+  p_name_en            text default null,
+  p_description_ar     text default null,
+  p_description_en     text default null,
+  p_sku                text default null,
+  p_slug               text default null,
+  p_base_price         numeric default 0,
+  p_compare_at_price   numeric default null,
+  p_category_id        uuid default null,
+  p_image_url          text default null,
+  p_is_featured        boolean default false,
+  p_is_active          boolean default true,
+  p_prep_minutes       integer default null,
+  p_discount_percentage numeric default null,
+  p_discount_starts_at timestamptz default null,
+  p_discount_ends_at   timestamptz default null,
+  p_calories           integer default null,
+  p_allergens          text[] default null,
+  p_stock_quantity     integer default null,
+  p_branch_id          uuid default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  v_product_id uuid;
+  v_slug text;
+  v_sku text;
+  v_branch uuid;
+  v_previous integer;
+  v_saved jsonb;
+begin
+  if not identity.is_staff() then
+    raise exception 'not authenticated' using errcode = '42501';
+  end if;
+
+  if not identity.has_permission('catalog.product.write') then
+    raise exception 'missing permission: catalog.product.write' using errcode = '42501';
+  end if;
+
+  if btrim(coalesce(p_name_ar, '')) = '' then
+    raise exception 'the product needs an Arabic name' using errcode = '22023';
+  end if;
+
+  if p_category_id is null
+     or not exists (select 1 from catalog.categories c where c.id = p_category_id) then
+    raise exception 'unknown category' using errcode = '22023';
+  end if;
+
+  if p_compare_at_price is not null and p_compare_at_price <= p_base_price then
+    raise exception 'the compare price must be above the price' using errcode = '22023';
+  end if;
+
+  if p_discount_percentage is not null
+     and (p_discount_percentage < 0 or p_discount_percentage > 100) then
+    raise exception 'the discount percentage must be between 0 and 100' using errcode = '22023';
+  end if;
+
+  if p_discount_ends_at is not null
+     and p_discount_starts_at is not null
+     and p_discount_ends_at <= p_discount_starts_at then
+    raise exception 'the discount end must be after the discount start' using errcode = '22023';
+  end if;
+
+  if p_calories is not null and p_calories < 0 then
+    raise exception 'the calories cannot be negative' using errcode = '22023';
+  end if;
+
+  if p_product_id is null then
+    v_slug := coalesce(
+      nullif(btrim(p_slug), ''),
+      nullif(core.slugify(p_name_en), ''),
+      nullif(core.slugify(p_name_ar), '')
+    );
+    if v_slug is null then
+      v_slug := 'product-' || substr(md5(random()::text), 1, 8);
+    end if;
+
+    v_sku := coalesce(
+      nullif(btrim(p_sku), ''),
+      'SKU-' || upper(substr(md5(v_slug || random()::text), 1, 8))
+    );
+
+    insert into catalog.products (
+      category_id, sku, slug, name_ar, name_en,
+      description_ar, description_en, base_price, compare_at_price,
+      image_url, is_active, is_featured, prep_minutes, calories, allergens,
+      discount_percentage, discount_starts_at, discount_ends_at
+    )
+    values (
+      p_category_id, v_sku, v_slug,
+      btrim(p_name_ar),
+      btrim(coalesce(p_name_en, '')),
+      nullif(btrim(coalesce(p_description_ar, '')), ''),
+      nullif(btrim(coalesce(p_description_en, '')), ''),
+      p_base_price, p_compare_at_price, p_image_url,
+      p_is_active, p_is_featured, p_prep_minutes, p_calories,
+      coalesce(p_allergens, '{}'::text[]),
+      p_discount_percentage, p_discount_starts_at, p_discount_ends_at
+    )
+    returning id into v_product_id;
+  else
+    v_product_id := p_product_id;
+
+    if not exists (select 1 from catalog.products p where p.id = v_product_id) then
+      raise exception 'unknown product' using errcode = '22023';
+    end if;
+
+    update catalog.products p
+       set name_ar = btrim(p_name_ar),
+           name_en = btrim(coalesce(p_name_en, '')),
+           description_ar = nullif(btrim(coalesce(p_description_ar, '')), ''),
+           description_en = nullif(btrim(coalesce(p_description_en, '')), ''),
+           sku = coalesce(nullif(btrim(p_sku), ''), p.sku),
+           slug = coalesce(nullif(btrim(p_slug), ''), p.slug),
+           base_price = p_base_price,
+           compare_at_price = p_compare_at_price,
+           category_id = p_category_id,
+           image_url = p_image_url,
+           is_active = p_is_active,
+           is_featured = p_is_featured,
+           prep_minutes = p_prep_minutes,
+           calories = p_calories,
+           allergens = coalesce(p_allergens, p.allergens),
+           discount_percentage = p_discount_percentage,
+           discount_starts_at = p_discount_starts_at,
+           discount_ends_at = p_discount_ends_at,
+           updated_at = now()
+     where p.id = v_product_id;
+  end if;
+
+  -- The stock belongs to a branch, so it needs its own permission.
+  if p_stock_quantity is not null then
+    if not identity.has_permission('inventory.adjust') then
+      raise exception 'missing permission: inventory.adjust' using errcode = '42501';
+    end if;
+
+    if p_branch_id is null then
+      select sr.branch_id into v_branch
+        from identity.staff_members sm
+        join identity.staff_roles sr on sr.staff_id = sm.id
+       where sm.user_id = auth.uid()
+         and sm.status = 'active'
+         and sr.branch_id is not null
+       order by sr.branch_id
+       limit 1;
+
+      if v_branch is null then
+        select b.id into v_branch
+          from core.branches b
+         where b.is_active
+         order by b.code
+         limit 1;
+      end if;
+    else
+      v_branch := p_branch_id;
+    end if;
+
+    if v_branch is null then
+      raise exception 'no branch holds the stock of this dashboard' using errcode = '22023';
+    end if;
+
+    if not identity.can_manage_branch(v_branch) then
+      raise exception 'branch not managed by the caller' using errcode = '42501';
+    end if;
+
+    if p_stock_quantity < 0 then
+      raise exception 'the stock cannot be negative' using errcode = '22023';
+    end if;
+
+    select bs.quantity_on_hand into v_previous
+      from inventory.branch_stock bs
+     where bs.branch_id = v_branch
+       and bs.product_id = v_product_id
+       and bs.variant_key = '00000000-0000-0000-0000-000000000000'::uuid;
+
+    insert into inventory.branch_stock (
+      branch_id, product_id, variant_key, quantity_on_hand
+    )
+    values (
+      v_branch, v_product_id,
+      '00000000-0000-0000-0000-000000000000'::uuid,
+      p_stock_quantity
+    )
+    on conflict (branch_id, product_id, variant_key)
+    do update
+      set quantity_on_hand = excluded.quantity_on_hand,
+          updated_at = now();
+
+    if coalesce(v_previous, 0) <> p_stock_quantity then
+      insert into inventory.stock_movements (
+        branch_id, product_id, variant_key, quantity_delta,
+        reason, reference_type, actor_user_id, note
+      )
+      values (
+        v_branch, v_product_id,
+        '00000000-0000-0000-0000-000000000000'::uuid,
+        p_stock_quantity - coalesce(v_previous, 0),
+        'adjustment', 'manual', auth.uid(), 'admin dashboard'
+      );
+    end if;
+  end if;
+
+  select to_jsonb(p) || jsonb_build_object(
+           'category_name_ar', c.name_ar,
+           'category_name_en', c.name_en,
+           'stock_quantity', coalesce(s.quantity_on_hand, 0)
+         )
+    into v_saved
+    from catalog.products p
+    join catalog.categories c on c.id = p.category_id
+    left join lateral (
+      select bs.quantity_on_hand
+        from inventory.branch_stock bs
+       where bs.product_id = p.id
+         and bs.variant_key = '00000000-0000-0000-0000-000000000000'::uuid
+         and (v_branch is null or bs.branch_id = v_branch)
+       limit 1
+    ) s on true
+   where p.id = v_product_id;
+
+  return v_saved;
+end;
+$fn$;
+
+comment on function public.admin_save_product(
+  uuid, text, text, text, text, text, text, numeric, numeric, uuid, text, boolean, boolean, integer, numeric, timestamptz, timestamptz, integer, text[], integer, uuid
+) is
+  'Creates or updates the whole product, including an optional scheduled direct discount, and the stock of the branch. Requires catalog.product.write, and inventory.adjust for the stock.';
+
+revoke all on function public.admin_save_product(
+  uuid, text, text, text, text, text, text, numeric, numeric, uuid, text, boolean, boolean, integer, numeric, timestamptz, timestamptz, integer, text[], integer, uuid
+) from public;
+revoke execute on function public.admin_save_product(
+  uuid, text, text, text, text, text, text, numeric, numeric, uuid, text, boolean, boolean, integer, numeric, timestamptz, timestamptz, integer, text[], integer, uuid
+) from anon;
+grant execute on function public.admin_save_product(
+  uuid, text, text, text, text, text, text, numeric, numeric, uuid, text, boolean, boolean, integer, numeric, timestamptz, timestamptz, integer, text[], integer, uuid
+) to authenticated;
+
+notify pgrst, 'reload schema';

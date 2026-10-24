@@ -1,0 +1,95 @@
+﻿import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/customers/presentation/manager/admin_customer_cubit.dart';
+import 'package:admin_app/features/customers/presentation/manager/admin_customer_state.dart';
+import 'package:admin_app/features/customers/presentation/widgets/customer_detail_dialog.dart';
+import 'package:admin_app/features/customers/presentation/widgets/customer_page_body.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/shared/widgets/admin_page_title.dart';
+import 'package:admin_app/shared/widgets/admin_state_view.dart';
+
+class CustomerPage extends StatefulWidget {
+  const CustomerPage({super.key, required this.searchController, this.cubit});
+
+  static const String routeName = '/customers';
+
+  final AdminSearchController searchController;
+  final AdminCustomerCubit? cubit;
+
+  @override
+  State<CustomerPage> createState() => _CustomerPageState();
+}
+
+class _CustomerPageState extends State<CustomerPage> {
+  late final AdminCustomerCubit _cubit;
+  late final bool _ownsCubit;
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsCubit = widget.cubit == null;
+    _cubit = widget.cubit ?? AdminCustomerCubit();
+    if (_ownsCubit) _cubit.load();
+    widget.searchController.bind(_onSearch);
+  }
+
+  @override
+  void dispose() {
+    widget.searchController.bind(null);
+    if (_ownsCubit) _cubit.close();
+    super.dispose();
+  }
+
+  void _onSearch(String query) {
+    setState(() => _searchQuery = query.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider<AdminCustomerCubit>.value(
+      value: _cubit,
+      child: BlocBuilder<AdminCustomerCubit, AdminCustomerState>(
+        builder: (context, state) {
+          if (state.isLoading && !state.hasCustomers) {
+            return const AdminLoadingView();
+          }
+          if (state.status == AdminCustomerStatus.failure &&
+              !state.hasCustomers) {
+            return AdminFailureView(
+              message: state.errorMessage,
+              onRetry: _cubit.load,
+            );
+          }
+          return Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.pageHorizontalPadding,
+              vertical: AppDimensions.pageVerticalPadding,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdminPageTitle(S.customers),
+                const SizedBox(height: AppDimensions.lg),
+                Expanded(
+                  child: CustomerPageBody(
+                    customers: state.customers,
+                    search: _searchQuery,
+                    onOpen: (customer) => showCustomerDetailDialog(
+                      context: context,
+                      cubit: _cubit,
+                      customer: customer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
