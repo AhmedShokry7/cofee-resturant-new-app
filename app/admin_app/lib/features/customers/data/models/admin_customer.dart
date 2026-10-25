@@ -11,6 +11,7 @@ class AdminCustomer {
     this.lastSeenAt,
     this.createdAt,
     this.updatedAt,
+    this.lastOrderAt,
     this.ordersCount = 0,
     this.totalSpent = 0,
     this.isVip = false,
@@ -27,6 +28,7 @@ class AdminCustomer {
   final DateTime? lastSeenAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? lastOrderAt;
   final int ordersCount;
   final double totalSpent;
   final bool isVip;
@@ -54,6 +56,7 @@ class AdminCustomer {
       lastSeenAt: _toDateTime(json['last_seen_at']),
       createdAt: _toDateTime(json['created_at']),
       updatedAt: _toDateTime(json['updated_at']),
+      lastOrderAt: _toDateTime(json['last_order_at']),
       ordersCount: (json['orders_count'] as num?)?.toInt() ?? 0,
       totalSpent: (json['total_spent'] as num?)?.toDouble() ?? 0,
       isVip: json['is_vip'] == true,

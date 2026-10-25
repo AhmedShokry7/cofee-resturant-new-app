@@ -55,7 +55,7 @@ void main() {
     test('an unknown status keeps a neutral fallback', () {
       final view = OrderStatusView.of('brand_new_status');
       expect(view.code, 'brand_new_status');
-      expect(view.label, 'brand_new_status');
+      expect(view.label, S.unknownOrderStatus);
     });
 
     test('only completed and cancelled end an order', () {

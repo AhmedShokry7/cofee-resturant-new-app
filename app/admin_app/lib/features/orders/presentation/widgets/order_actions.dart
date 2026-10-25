@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_product_picker.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
@@ -12,9 +13,9 @@ Future<void> changeOrderStatus(
 ) async {
   try {
     await controller.changeStatus(status);
-  } catch (error) {
+  } catch (_) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, '$error');
+    showErrorSnackBar(context, S.orderActionFailed);
   }
 }
 
@@ -26,9 +27,9 @@ Future<void> changePaymentStatus(
 ) async {
   try {
     await controller.changePaymentStatus(paymentStatus);
-  } catch (error) {
+  } catch (_) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, '$error');
+    showErrorSnackBar(context, S.orderActionFailed);
   }
 }
 
@@ -44,9 +45,9 @@ Future<void> addProductToOrder(
   if (pick == null || !context.mounted) return;
   try {
     await controller.addProduct(pick.product, pick.quantity);
-  } catch (error) {
+  } catch (_) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, '$error');
+    showErrorSnackBar(context, S.orderActionFailed);
   }
 }
 
@@ -58,8 +59,8 @@ Future<void> removeOrderLine(
 ) async {
   try {
     await controller.removeItem(itemId);
-  } catch (error) {
+  } catch (_) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, '$error');
+    showErrorSnackBar(context, S.orderActionFailed);
   }
 }

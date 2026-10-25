@@ -4,7 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/theme/app_color.dart';
 
-/// A round customer photo with a neutral placeholder behind it.
+/// A customer photo with a neutral placeholder behind it.
 ///
 /// The dashboard only fetches a picture when the value is a real `http(s)`
 /// URL. `identity.profiles.avatar_url` holds a PATH inside the PRIVATE
@@ -13,12 +13,29 @@ import 'package:admin_app/core/theme/app_color.dart';
 /// request that is certain to fail: the placeholder is shown instead until
 /// the backend hands out a displayable URL.
 class AdminAvatarImage extends StatelessWidget {
-  const AdminAvatarImage({super.key, this.url, this.size = 48});
+  const AdminAvatarImage({
+    super.key,
+    this.url,
+    this.size = 48,
+    this.borderRadius,
+    this.fallbackText,
+    this.placeholderColor,
+    this.fallbackColor,
+  });
 
   /// The stored value: a full URL, a storage path, or nothing.
   final String? url;
 
   final double size;
+
+  /// Rounds the photo and its placeholder. Defaults to a circle.
+  final BorderRadius? borderRadius;
+
+  /// Shown instead of the generic person icon when there is no photo.
+  final String? fallbackText;
+
+  final Color? placeholderColor;
+  final Color? fallbackColor;
 
   bool get _isFetchable {
     final value = url?.trim() ?? '';
@@ -30,7 +47,27 @@ class AdminAvatarImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
+    final text = fallbackText?.trim() ?? '';
+    final placeholder = ColoredBox(
+      color: placeholderColor ?? AppColor.secondaryColor,
+      child: Center(
+        child: text.isEmpty
+            ? Icon(HugeIcons.strokeRoundedUser, size: _iconSize)
+            : Text(
+                text,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                style: TextStyle(
+                  color: fallbackColor ?? AppColor.primaryColor,
+                  fontSize: size * 0.34,
+                  fontWeight: FontWeight.w600,
+                  height: 1.1,
+                ),
+              ),
+      ),
+    );
+    return ClipRRect(
+      borderRadius: borderRadius ?? BorderRadius.circular(size / 2),
       child: SizedBox(
         width: size,
         height: size,
@@ -38,19 +75,10 @@ class AdminAvatarImage extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: url!.trim(),
                 fit: BoxFit.fill,
-                placeholder: (_, _) => ColoredBox(
-                  color: AppColor.secondaryColor,
-                  child: Icon(HugeIcons.strokeRoundedUser, size: _iconSize),
-                ),
-                errorWidget: (_, _, _) => ColoredBox(
-                  color: AppColor.secondaryColor,
-                  child: Icon(HugeIcons.strokeRoundedUser, size: _iconSize),
-                ),
+                placeholder: (_, _) => placeholder,
+                errorWidget: (_, _, _) => placeholder,
               )
-            : ColoredBox(
-                color: AppColor.secondaryColor,
-                child: Icon(HugeIcons.strokeRoundedUser, size: _iconSize),
-              ),
+            : placeholder,
       ),
     );
   }

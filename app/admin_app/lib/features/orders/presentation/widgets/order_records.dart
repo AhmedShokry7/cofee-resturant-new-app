@@ -1,49 +1,17 @@
-﻿import 'package:admin_app/features/orders/presentation/widgets/order_cards.dart';
-export 'package:admin_app/features/orders/presentation/widgets/order_cards.dart';
 import 'package:flutter/material.dart';
-
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_cards.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_filtering.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric_format.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_table.dart';
+import 'package:admin_app/shared/widgets/admin_pagination.dart';
 
-/// The orders that match the search and the active filters.
-///
-/// The `admin_orders` RPC takes no filter parameters, so the dashboard
-/// filters the page it already loaded instead of asking the database again.
-List<AdminOrder> filterOrders(
-  List<AdminOrder> orders, {
-  String search = '',
-  String status = '',
-  String fulfillment = '',
-  String paymentStatus = '',
-  String branchId = '',
-}) {
-  final q = search.trim().toLowerCase();
-  return orders
-      .where((order) {
-        if (status.isNotEmpty && order.status != status) return false;
-        if (fulfillment.isNotEmpty && order.fulfillmentType != fulfillment) {
-          return false;
-        }
-        if (paymentStatus.isNotEmpty && order.paymentStatus != paymentStatus) {
-          return false;
-        }
-        if (branchId.isNotEmpty && order.branchId != branchId) return false;
-        if (q.isEmpty) return true;
-        return order.orderNumber.toLowerCase().contains(q) ||
-            (order.customerName ?? '').toLowerCase().contains(q) ||
-            order.items.any(
-              (item) => (item.productNameEn ?? item.productNameAr ?? '')
-                  .toLowerCase()
-                  .contains(q),
-            );
-      })
-      .toList(growable: false);
-}
+export 'order_cards.dart';
+export 'order_filtering.dart';
 
-/// The list of the order cards, empty when nothing matches.
-class OrderRecords extends StatelessWidget {
+class OrderRecords extends StatefulWidget {
   const OrderRecords({
     super.key,
     required this.orders,
@@ -55,51 +23,69 @@ class OrderRecords extends StatelessWidget {
     this.onChangeStatus,
     this.onOpen,
   });
-
   final List<AdminOrder> orders;
-  final String search;
-  final String status;
-  final String fulfillment;
-  final String paymentStatus;
-  final String branchId;
+  final String search, status, fulfillment, paymentStatus, branchId;
   final void Function(AdminOrder order, String status)? onChangeStatus;
   final ValueChanged<AdminOrder>? onOpen;
 
   @override
-  Widget build(BuildContext context) {
-    final orders = filterOrders(
-      this.orders,
-      search: search,
-      status: status,
-      fulfillment: fulfillment,
-      paymentStatus: paymentStatus,
-      branchId: branchId,
-    );
-    if (orders.isEmpty) {
-      return Center(
-        child: Text(
-          S.noOrdersForFilter,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColor.greyColor),
-        ),
-      );
-    }
+  State<OrderRecords> createState() => _OrderRecordsState();
+}
 
-    return ListView.separated(
-      itemCount: orders.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.md),
-      itemBuilder: (context, index) {
-        final order = orders[index];
-        return OrderCard(
-          order: order,
-          onChangeStatus: onChangeStatus == null
-              ? null
-              : (status) => onChangeStatus!(order, status),
-          onTap: onOpen == null ? null : () => onOpen!(order),
-        );
-      },
+class _OrderRecordsState extends State<OrderRecords> {
+  static const _pageSize = 5;
+  int _page = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = filterOrders(
+      widget.orders,
+      search: widget.search,
+      status: widget.status,
+      fulfillment: widget.fulfillment,
+      paymentStatus: widget.paymentStatus,
+      branchId: widget.branchId,
+    );
+    if (filtered.isEmpty) return Center(child: Text(S.noOrdersForFilter));
+    final pages = (filtered.length / _pageSize).ceil();
+    final page = _page.clamp(0, pages - 1);
+    final start = page * _pageSize;
+    final visible = filtered.skip(start).take(_pageSize).toList();
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    return Column(
+      children: [
+        Expanded(
+          child: wide
+              ? OrderTable(orders: visible, onOpen: widget.onOpen)
+              : ListView.separated(
+                  itemCount: visible.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppDimensions.sm),
+                  itemBuilder: (context, index) {
+                    final order = visible[index];
+                    return OrderCard(
+                      order: order,
+                      onChangeStatus: widget.onChangeStatus == null
+                          ? null
+                          : (status) => widget.onChangeStatus!(order, status),
+                      onTap: widget.onOpen == null
+                          ? null
+                          : () => widget.onOpen!(order),
+                    );
+                  },
+                ),
+        ),
+        AdminPagination(
+          page: page,
+          pages: pages,
+          count: filtered.length,
+          labelBuilder: (first, last, count) =>
+              OrderSummaryMetricFormat.digits(
+                S.ordersRowsLabel(first, last, count),
+              ),
+          onChanged: (value) => setState(() => _page = value),
+        ),
+      ],
     );
   }
 }
-
-/// One order, with its number, its customer, its status and its money.

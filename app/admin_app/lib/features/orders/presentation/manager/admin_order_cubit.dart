@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
 import 'package:admin_app/features/branches/data/models/admin_branch.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
@@ -16,15 +17,19 @@ class AdminOrderCubit extends Cubit<AdminOrderState> {
 
   final AdminOrderRepository _repository;
   final AdminProductRepository _productRepository;
+  int _loadRevision = 0;
 
   AdminOrderRepository get repository => _repository;
   AdminProductRepository get productRepository => _productRepository;
 
   Future<void> load() async {
+    final revision = ++_loadRevision;
     emit(state.copyWith(status: AdminOrderStatus.loading, clearError: true));
     try {
       final orders = await _repository.loadOrders();
-      final branchRows = await _productRepository.loadBranches();
+      if (isClosed || revision != _loadRevision) return;
+      final branchRows = await _loadBranches();
+      if (isClosed || revision != _loadRevision) return;
       final branches = branchRows
           .map((row) => AdminBranch.fromRow(row))
           .toList(growable: false);
@@ -36,13 +41,22 @@ class AdminOrderCubit extends Cubit<AdminOrderState> {
           clearError: true,
         ),
       );
-    } catch (error) {
+    } catch (_) {
+      if (isClosed || revision != _loadRevision) return;
       emit(
         state.copyWith(
           status: AdminOrderStatus.failure,
-          errorMessage: '$error',
+          errorMessage: S.ordersLoadFailed,
         ),
       );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> _loadBranches() async {
+    try {
+      return await _productRepository.loadBranches();
+    } catch (_) {
+      return const [];
     }
   }
 
@@ -71,6 +85,8 @@ class AdminOrderCubit extends Cubit<AdminOrderState> {
   Future<List<AdminOrder>> loadOrders() async => _repository.loadOrders();
 
   Future<AdminOrder?> findOrder(String orderId) async {
+    final cached = state.orders.where((order) => order.id == orderId);
+    if (cached.isNotEmpty) return cached.first;
     final orders = await _repository.loadOrders();
     for (final order in orders) {
       if (order.id == orderId) return order;

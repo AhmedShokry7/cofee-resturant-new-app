@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
 
 class AdminCustomerRepository {
   AdminCustomerRepository([this._client]);
@@ -19,6 +20,16 @@ class AdminCustomerRepository {
           .toList(growable: false);
     }
     return const <AdminCustomer>[];
+  }
+
+  Future<AdminCustomerMetrics> loadMetrics() async {
+    final response = await _supabase.rpc('admin_customer_metrics');
+    if (response is Map) {
+      return AdminCustomerMetrics.fromJson(
+        Map<String, dynamic>.from(response),
+      );
+    }
+    return AdminCustomerMetrics.empty;
   }
 
   Future<Map<String, dynamic>> loadCustomerDetails(String customerId) async {

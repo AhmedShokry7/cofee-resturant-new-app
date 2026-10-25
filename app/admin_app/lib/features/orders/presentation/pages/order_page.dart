@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/orders/data/order_excel_exporter.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_state.dart';
@@ -8,6 +10,9 @@ import 'package:admin_app/features/orders/presentation/pages/order_detail_page.d
 import 'package:admin_app/features/orders/presentation/widgets/order_page_body.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
+
+part 'order_page_export.dart';
+part 'order_page_actions.dart';
 
 class OrderPage extends StatefulWidget {
   const OrderPage({super.key, required this.searchController, this.cubit});
@@ -25,6 +30,7 @@ class _OrderPageState extends State<OrderPage> {
   late final AdminOrderCubit _cubit;
   late final bool _ownsCubit;
   String _searchQuery = '';
+  final ValueNotifier<bool> _exporting = ValueNotifier(false);
 
   @override
   void initState() {
@@ -38,32 +44,13 @@ class _OrderPageState extends State<OrderPage> {
   @override
   void dispose() {
     widget.searchController.bind(null);
+    _exporting.dispose();
     if (_ownsCubit) _cubit.close();
     super.dispose();
   }
 
   void _onSearch(String query) {
     setState(() => _searchQuery = query.trim().toLowerCase());
-  }
-
-  Future<void> _changeStatus(AdminOrder order, String status) async {
-    try {
-      await _cubit.updateOrderStatus(order.id, status);
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$error')));
-    }
-  }
-
-  Future<void> _openOrder(AdminOrder order) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => OrderDetailsPage(order: order, cubit: _cubit),
-      ),
-    );
-    if (!mounted) return;
-    _cubit.load();
   }
 
   @override
@@ -88,6 +75,9 @@ class _OrderPageState extends State<OrderPage> {
             onChangeStatus: _changeStatus,
             onOpen: _openOrder,
             onRefresh: _cubit.load,
+            onExport: _exportOrders,
+            exporting: _exporting,
+            errorMessage: state.errorMessage,
           );
         },
       ),

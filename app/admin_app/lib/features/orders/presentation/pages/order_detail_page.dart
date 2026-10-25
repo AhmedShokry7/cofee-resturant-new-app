@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
@@ -10,10 +11,16 @@ import 'package:admin_app/features/orders/presentation/widgets/order_detail_body
 /// The whole content of one order, editable by the admin while the backend
 /// still allows it.
 class OrderDetailsPage extends StatefulWidget {
-  const OrderDetailsPage({super.key, required this.order, this.cubit});
+  const OrderDetailsPage({
+    super.key,
+    required this.order,
+    this.cubit,
+    this.navigationOrders = const [],
+  });
 
   final AdminOrder order;
   final AdminOrderCubit? cubit;
+  final List<AdminOrder> navigationOrders;
 
   @override
   State<OrderDetailsPage> createState() => _OrderDetailsPageState();
@@ -40,6 +47,19 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     super.dispose();
   }
 
+  Future<void> _selectOrder(String orderId) async {
+    try {
+      final found = await _controller.openOrder(orderId);
+      if (!found && mounted) _showMessage(S.orderNotFound);
+    } catch (_) {
+      if (mounted) _showMessage(S.orderActionFailed);
+    }
+  }
+
+  void _showMessage(String message) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -52,6 +72,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
             padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
             child: OrderDetailBody(
               controller: _controller,
+              navigationOrders: widget.navigationOrders,
+              onSelectOrder: _selectOrder,
               onStatusChanged: (value) =>
                   changeOrderStatus(context, _controller, value),
               onRemoveItem: (itemId) =>

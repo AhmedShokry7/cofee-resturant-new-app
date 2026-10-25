@@ -5,6 +5,7 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_page_body.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric_format.dart';
 
 AdminOrder _order() => const AdminOrder(
   id: 'o1',
@@ -71,6 +72,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(S.ordersCount(1)), findsOneWidget);
+    expect(
+      find.text(OrderSummaryMetricFormat.digits(S.ordersRowsLabel(1, 1, 1))),
+      findsOneWidget,
+    );
   });
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 
 class OrderSectionCard extends StatelessWidget {
   const OrderSectionCard({super.key, required this.title, required this.child});
@@ -14,9 +13,9 @@ class OrderSectionCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
-        border: Border.all(color: AppColor.recordBorder),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
       padding: const EdgeInsets.all(AppDimensions.md),
       child: Column(

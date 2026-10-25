@@ -40,6 +40,40 @@ class AppColor {
   static const darkText = Color(0xffF2F4F7);
   static const darkTextSecondary = Color(0xffAAB5C3);
 
+  // Admin dashboard design tokens
+  /// Headings and primary values on a light admin surface.
+  static const adminHeading = Color(0xFF22332D);
+
+  /// Secondary labels under a value or a table heading.
+  static const adminMuted = Color(0xFF819087);
+
+  /// Restrained brand green used by the admin tables and controls.
+  static const adminAccent = Color(0xFF267660);
+
+  /// Tinted fill behind the active page number and selected rows.
+  static const adminAccentSurface = Color(0xFFE6F1EB);
+
+  /// Border of the large directory card.
+  static const adminCardBorder = Color(0xFFEBEFEB);
+
+  /// Background of a table heading row.
+  static const adminTableHeader = Color(0xFFF8FAF8);
+
+  /// Border around the table heading cells.
+  static const adminTableBorder = Color(0xFFEFF2EF);
+
+  /// Divider between table rows.
+  static const adminRowBorder = Color(0xFFF0F2F0);
+
+  /// Border of the compact toolbar buttons.
+  static const adminControlBorder = Color(0xFFE3E9E4);
+
+  /// Trend badge colours, matching the statistics cards.
+  static const trendPositive = Color(0xFF3D8A68);
+  static const trendPositiveSurface = Color(0xFFEDF6EF);
+  static const trendNegative = Color(0xFFC65353);
+  static const trendNegativeSurface = Color(0xFFFCEEEE);
+
   /// Light surface color used as fallback background for product images.
   static const surfaceColor = Color(0xffF7F8FA);
 

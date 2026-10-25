@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_status_tab.dart';
+
+class OrderStatusTabs extends StatelessWidget {
+  const OrderStatusTabs({
+    super.key,
+    required this.orders,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final List<AdminOrder> orders;
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = <(String, String)>[
+      ('', S.ordersAll),
+      ('processing', S.ordersPreparing),
+      ('shipped', S.orderShipped),
+      ('completed', S.statusCompleted),
+      ('cancelled', S.statusCancelled),
+    ];
+
+    return SizedBox(
+      height: 36,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.zero,
+        itemCount: tabs.length,
+        separatorBuilder: (_, _) => const SizedBox(width: AppDimensions.xs),
+        itemBuilder: (context, index) {
+          final (code, label) = tabs[index];
+          final isSelected = value == code;
+
+          final count = _count(code);
+          return OrderStatusTab(
+            code: code,
+            label: label,
+            count: count,
+            selected: isSelected,
+            onTap: () => onChanged(code),
+          );
+        },
+      ),
+    );
+  }
+
+  int _count(String code) => switch (code) {
+    '' => orders.length,
+    'processing' =>
+      orders
+          .where(
+            (order) => const {
+              'pending',
+              'confirmed',
+              'preparing',
+              'ready',
+            }.contains(order.status),
+          )
+          .length,
+    'shipped' =>
+      orders.where((order) => order.status == 'out_for_delivery').length,
+    _ => orders.where((order) => order.status == code).length,
+  };
+}

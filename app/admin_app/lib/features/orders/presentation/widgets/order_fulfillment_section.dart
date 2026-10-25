@@ -5,10 +5,12 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_section_card.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_fulfillment_row.dart';
 
 /// How the order reaches the customer: delivered or picked up.
 ///
@@ -33,18 +35,29 @@ class OrderFulfillmentSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _line(theme, HugeIcons.strokeRoundedDeliveryBox01, view.label),
+          OrderFulfillmentRow(
+            icon: HugeIcons.strokeRoundedDeliveryBox01,
+            label: view.label,
+          ),
           if (!view.isDelivery && branch.isNotEmpty)
-            _line(theme, HugeIcons.strokeRoundedStore01, branch),
+            OrderFulfillmentRow(
+              icon: HugeIcons.strokeRoundedStore01,
+              label: branch,
+            ),
           if (view.isDelivery && label.isNotEmpty)
-            _line(theme, HugeIcons.strokeRoundedMapPin, label),
+            OrderFulfillmentRow(
+              icon: HugeIcons.strokeRoundedMapPin,
+              label: label,
+            ),
           if (view.isDelivery && details.isNotEmpty)
-            _line(theme, HugeIcons.strokeRoundedMapPin, details),
+            OrderFulfillmentRow(
+              icon: HugeIcons.strokeRoundedMapPin,
+              label: details,
+            ),
           if (view.isDelivery && details.isEmpty && label.isEmpty)
-            _line(
-              theme,
-              HugeIcons.strokeRoundedAlertCircle,
-              S.noDeliveryAddress,
+            OrderFulfillmentRow(
+              icon: HugeIcons.strokeRoundedAlertCircle,
+              label: S.noDeliveryAddress,
               muted: true,
             ),
           if (view.isDelivery)
@@ -65,7 +78,7 @@ class OrderFulfillmentSection extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    order.deliveryFee.toStringAsFixed(2),
+                    formatAmount(order.deliveryFee),
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -75,35 +88,6 @@ class OrderFulfillmentSection extends StatelessWidget {
                 ],
               ),
             ),
-        ],
-      ),
-    );
-  }
-
-  Widget _line(
-    ThemeData theme,
-    IconData icon,
-    String text, {
-    bool muted = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            size: 14,
-            color: muted ? AppColor.greyColor : AppColor.primaryColor,
-          ),
-          const SizedBox(width: AppDimensions.xs),
-          Expanded(
-            child: Text(
-              text,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: muted ? AppColor.greyColor : null,
-              ),
-            ),
-          ),
         ],
       ),
     );

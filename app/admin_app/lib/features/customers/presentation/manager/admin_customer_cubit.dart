@@ -15,11 +15,15 @@ class AdminCustomerCubit extends Cubit<AdminCustomerState> {
   Future<void> load() async {
     emit(state.copyWith(status: AdminCustomerStatus.loading, clearError: true));
     try {
-      final customers = await _repository.loadCustomers();
+      final customersFuture = _repository.loadCustomers();
+      final metricsFuture = _repository.loadMetrics();
+      final customers = await customersFuture;
+      final metrics = await metricsFuture;
       emit(
         state.copyWith(
           status: AdminCustomerStatus.ready,
           customers: customers,
+          metrics: metrics,
           clearError: true,
         ),
       );

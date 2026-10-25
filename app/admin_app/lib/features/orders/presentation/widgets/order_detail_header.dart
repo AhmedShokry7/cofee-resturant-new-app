@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_detail_meta_row.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_detail_status_control.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 
-/// The top of the detail page: the number of the order, its status with the
-/// way to change it, when it was placed and which branch owns it.
 class OrderDetailHeader extends StatelessWidget {
   const OrderDetailHeader({
     super.key,
@@ -19,7 +17,6 @@ class OrderDetailHeader extends StatelessWidget {
     required this.saving,
     required this.onStatusChanged,
   });
-
   final AdminOrder order;
   final bool saving;
   final ValueChanged<String> onStatusChanged;
@@ -27,17 +24,15 @@ class OrderDetailHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final view = OrderStatusView.of(order.status);
-    final placedLabel = formatDateTime(order.placedAt);
     final branch = order.branchNameFor(AppLocale.instance.language);
-
+    final status = OrderStatusView.of(order.status);
     return Container(
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
-        border: Border.all(color: AppColor.recordBorder),
-      ),
       padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -51,106 +46,26 @@ class OrderDetailHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              AdminStatusBadge(label: view.label, color: view.color),
+              AdminStatusBadge(label: status.label, color: status.color),
             ],
           ),
           const SizedBox(height: AppDimensions.sm),
-          _row(
-            theme,
+          OrderDetailMetaRow(
             icon: HugeIcons.strokeRoundedClock01,
             label: S.orderPlacedAt,
-            value: placedLabel,
+            value: formatDateTime(order.placedAt),
           ),
           if (branch.isNotEmpty)
-            _row(
-              theme,
+            OrderDetailMetaRow(
               icon: HugeIcons.strokeRoundedStore01,
-              label: S.branchLabel,
+              label: S.ordersBranch,
               value: branch,
             ),
           const SizedBox(height: AppDimensions.sm),
-          Row(
-            children: [
-              Expanded(
-                child:                   DropdownButtonFormField<String>(
-                  isExpanded: true,
-                  initialValue: order.status,
-                  decoration: InputDecoration(labelText: S.changeStatus),
-                  items: [
-                    for (final code in OrderDetailHeader.statuses)
-                      DropdownMenuItem(
-                        value: code,
-                        child: Text(
-                          OrderStatusView.of(code).label,
-                          style: TextStyle(
-                            color: OrderStatusView.of(code).color,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                  ],
-                  onChanged: saving
-                      ? null
-                      : (value) {
-                          if (value != null) onStatusChanged(value);
-                        },
-                ),
-              ),
-              if (saving) ...[
-                const SizedBox(width: AppDimensions.sm),
-                const SizedBox(
-                  width: AppDimensions.spinnerSize,
-                  height: AppDimensions.spinnerSize,
-                  child: CircularProgressIndicator(
-                    strokeWidth: AppDimensions.spinnerStroke,
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// The statuses the dashboard may give to an order, in workflow order.
-  static const List<String> statuses = <String>[
-    'pending',
-    'confirmed',
-    'preparing',
-    'ready',
-    'out_for_delivery',
-    'completed',
-    'cancelled',
-  ];
-
-  Widget _row(
-    ThemeData theme, {
-    required IconData icon,
-    required String label,
-    required String value,
-  }) {
-    if (value.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        children: [
-          Icon(icon, size: 14, color: AppColor.greyColor),
-          const SizedBox(width: AppDimensions.xs),
-          Text(
-            '$label: ',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColor.greyColor,
-            ),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: theme.textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
+          OrderDetailStatusControl(
+            order: order,
+            saving: saving,
+            onChanged: onStatusChanged,
           ),
         ],
       ),

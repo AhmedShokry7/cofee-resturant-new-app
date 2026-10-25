@@ -19,11 +19,84 @@ class S {
 
   // ---------- Destinations ----------
   static String get dashboard => _ar ? 'ظ„ظˆط­ط© ط§ظ„طھط­ظƒظ…' : 'Dashboard';
-  static String get orders => _ar ? 'ط§ظ„ط·ظ„ط¨ط§طھ' : 'Orders';
+  static String get orders => _ar ? 'الطلبات' : 'Orders';
+  static String get ordersDescription => _ar
+      ? 'تابعي جميع طلبات متجرك من مكان واحد.'
+      : 'Review orders, update their status, and track paid revenue.';
+  static String get allOrders => _ar ? 'إجمالي الطلبات' : 'Total orders';
+  static String get orderRevenue => _ar ? 'إجمالي المبيعات' : 'Total sales';
+  static String get orderShipped => _ar ? 'تم الشحن' : 'Shipped';
+  static String get orderWaitingPreparation =>
+      _ar ? 'بانتظار التجهيز' : 'Awaiting preparation';
+  static String get orderNewOrders => _ar ? 'طلبات جديدة' : 'new orders';
+  static String get orderTrendNew => _ar ? 'جديد' : 'New';
+  static String get ordersAll => _ar ? 'الكل' : 'All';
+  static String get ordersPreparing => _ar ? 'قيد التجهيز' : 'Processing';
+  static String get ordersFilter => _ar ? 'تصفية' : 'Filter';
+  static String get ordersStatus => _ar ? 'الحالة' : 'Status';
+  static String get ordersBranch => _ar ? 'الفرع' : 'Branch';
+  static String get ordersRetry => _ar ? 'إعادة المحاولة' : 'Retry';
+  static String get ordersAdd => _ar ? 'إضافة' : 'Add';
+  static String get ordersBranchLocationUnavailable =>
+      _ar ? 'موقع الفرع غير متاح' : 'Branch location is unavailable';
+  static String get ordersSearch => _ar ? 'بحث' : 'Search';
+  static String get ordersCancel => _ar ? 'إلغاء' : 'Cancel';
+  static String get ordersExportExcel => _ar ? 'تصدير' : 'Export';
+  static String get ordersExporting => _ar ? 'جارٍ التصدير' : 'Exporting';
+  static String get ordersExportSuccess =>
+      _ar ? 'تم تصدير الطلبات بنجاح' : 'Orders exported successfully';
+  static String get ordersUnknownCustomer =>
+      _ar ? 'عميل غير معروف' : 'Unknown customer';
+  static String get ordersCustomerHistory =>
+      _ar ? 'طلبات العميل السابقة' : 'Customer order history';
+  static String get ordersNoPreviousOrders =>
+      _ar ? 'لا توجد طلبات سابقة' : 'No previous orders';
+  static String get ordersItems => _ar ? 'المنتج' : 'Product';
+  static String get ordersAddProduct => _ar ? 'إضافة منتج' : 'Add product';
+  static String get ordersNoProductsFound =>
+      _ar ? 'لا توجد منتجات مطابقة' : 'No matching products';
+  static String get ordersToday => _ar ? 'اليوم' : 'Today';
+  static String get ordersYesterday => _ar ? 'أمس' : 'Yesterday';
+  static String ordersRowsLabel(int from, int to, int count) => _ar
+      ? 'عرض $from–$to من $count طلبًا'
+      : 'Showing $from–$to of $count orders';
+  static String get unknownOrderStatus =>
+      _ar ? 'حالة غير معروفة' : 'Unknown status';
+  static String get unknownPaymentStatus =>
+      _ar ? 'حالة دفع غير معروفة' : 'Unknown payment status';
+  static String get unknownFulfillment =>
+      _ar ? 'نوع طلب غير معروف' : 'Unknown order type';
+  static String get ordersLoadFailed => _ar
+      ? 'تعذر تحميل الطلبات. حاول مرة أخرى.'
+      : 'Orders could not be loaded. Please try again.';
+  static String get orderActionFailed => _ar
+      ? 'تعذر تحديث الطلب. حاول مرة أخرى.'
+      : 'The order could not be updated. Please try again.';
+  static String get orderExportFailed => _ar
+      ? 'تعذر تصدير الطلبات. حاول مرة أخرى.'
+      : 'Orders could not be exported. Please try again.';
+  static String get orderItemsLabel => _ar ? 'العناصر' : 'Items';
+  static String get customerIdLabel => _ar ? 'رقم العميل' : 'Customer ID';
+  static String get customerPhoneLabel => _ar ? 'الهاتف' : 'Phone';
+  static String get customerEmailLabel => _ar ? 'البريد الإلكتروني' : 'Email';
+  static String get customerAddressLabel => _ar ? 'العنوان' : 'Address';
+  static String get customerContactUnavailable =>
+      _ar ? 'لا تتوفر بيانات الاتصال.' : 'No contact details are available.';
+  static String get customerHistoryLoadFailed => _ar
+      ? 'تعذر تحميل سجل طلبات العميل.'
+      : 'Customer order history could not be loaded.';
+  static String get olderOrder => _ar ? 'طلب أقدم' : 'Older order';
+  static String get newerOrder => _ar ? 'طلب أحدث' : 'Newer order';
+  static String get orderNotFound =>
+      _ar ? 'لم يعد هذا الطلب متاحًا.' : 'This order is no longer available.';
+  static String get previousPage => _ar ? 'الصفحة السابقة' : 'Previous page';
+  static String get nextPage => _ar ? 'الصفحة التالية' : 'Next page';
+  static String get viewOrder =>
+      _ar ? 'عرض تفاصيل الطلب' : 'View order details';
   static String get products => _ar ? 'ط§ظ„ظ…ظ†طھط¬ط§طھ' : 'Products';
   static String get categories => _ar ? 'ط§ظ„طھطµظ†ظٹظپط§طھ' : 'Categories';
   static String get inventory => _ar ? 'ط§ظ„ظ…ط®ط²ظˆظ†' : 'Inventory';
-  static String get customers => _ar ? 'ط§ظ„ط¹ظ…ظ„ط§ط،' : 'Customers';
+  static String get customers => _ar ? 'العملاء' : 'Customers';
   static String get staffLabel => _ar ? 'ط§ظ„ظ…ظˆط¸ظپظˆظ†' : 'Staff';
   static String get role => _ar ? 'ط§ظ„ط¯ظˆط±' : 'Role';
   static String get settings => _ar ? 'ط§ظ„ط¥ط¹ط¯ط§ط¯ط§طھ' : 'Settings';
@@ -134,7 +207,7 @@ class S {
   static String get addProduct => _ar ? 'ط¥ط¶ط§ظپط© ظ…ظ†طھط¬' : 'Add product';
   static String get editProduct =>
       _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ظ…ظ†طھط¬' : 'Edit product';
-  static String get save => _ar ? 'ط­ظپط¸' : 'Save';
+  static String get save => _ar ? 'حفظ' : 'Save';
   static String get edit => _ar ? 'طھط¹ط¯ظٹظ„' : 'Edit';
   static String get delete => _ar ? 'ط­ط°ظپ' : 'Delete';
   static String get archive => _ar ? 'ط£ط±ط´ظپط©' : 'Archive';
@@ -160,7 +233,7 @@ class S {
   static String get featured => _ar ? 'ظ…ظ…ظٹط²' : 'Featured';
   static String get isFeatured =>
       _ar ? 'ظ…ظ†طھط¬ ظ…ظ…ظٹط²' : 'Featured product';
-  static String get status => _ar ? 'ط§ظ„ط­ط§ظ„ط©' : 'Status';
+  static String get status => _ar ? 'الحالة' : 'Status';
   static String get active => _ar ? 'ظ…ظپط¹ظ„' : 'Active';
   static String get inactive => _ar ? 'ظ…ط¹ط·ظ„' : 'Inactive';
   static String get archived => _ar ? 'ظ…ط¤ط±ط´ظپ' : 'Archived';
@@ -227,28 +300,79 @@ class S {
       : 'Are you sure you want to delete the product "$name"?';
 
   // ---------- Customers ----------
+  static String get customersDescription => _ar
+      ? 'تعرّفي على عملائك وابني معهم علاقات أقوى.'
+      : 'Know your customers and build stronger relationships.';
+  static String get customersSearchHint => _ar
+      ? 'ابحث بالاسم أو البريد الإلكتروني'
+      : 'Search by name or email';
+  static String get customersExport => _ar ? 'تصدير' : 'Export';
+  static String get customersExporting => _ar ? 'جارٍ التصدير' : 'Exporting';
+  static String get customersExportSuccess => _ar
+      ? 'تم تصدير العملاء بنجاح'
+      : 'Customers exported successfully';
+  static String get customersExportFailed => _ar
+      ? 'تعذر تصدير العملاء. حاول مرة أخرى.'
+      : 'Customers could not be exported. Please try again.';
+  static String get customersFilter => _ar ? 'تصفية' : 'Filter';
+  static String get customersFilterAll => _ar ? 'كل العملاء' : 'All customers';
+  static String get customersFilterVip => _ar ? 'عملاء VIP' : 'VIP customers';
+  static String get customersFilterBlacklisted =>
+      _ar ? 'قائمة الحظر' : 'Blacklisted';
+  static String get customersFilterBuyers =>
+      _ar ? 'لديهم طلبات' : 'With orders';
+  static String get customersFilterNoOrders =>
+      _ar ? 'بدون طلبات' : 'Without orders';
+  static String get customersClearFilter => _ar
+      ? 'مسح عوامل التصفية'
+      : 'Clear filters';
+  static String get customersAverageSpend => _ar
+      ? 'متوسط إنفاق العميل'
+      : 'Average customer spend';
+  static String get customersRepeatRate =>
+      _ar ? 'معدل تكرار الشراء' : 'Repeat purchase rate';
+  static String get customersNewThisMonth =>
+      _ar ? 'عملاء جدد هذا الشهر' : 'New customers this month';
+  static String get customersTotal =>
+      _ar ? 'إجمالي العملاء' : 'Total customers';
+  static String get customersJoinDate =>
+      _ar ? 'تاريخ الانضمام' : 'Join date';
+  static String get customersNoLastOrder => _ar ? 'لا يوجد' : 'None';
+  static String get customersNoMatches => _ar
+      ? 'لا توجد نتائج مطابقة.'
+      : 'No matching customers.';
+  static String get customersSelectAll =>
+      _ar ? 'تحديد الكل' : 'Select all';
+  static String customersRowsLabel(int from, int to, int count) => _ar
+      ? 'عرض $from–$to من $count عميلًا'
+      : 'Showing $from–$to of $count customers';
+  static String customerOrdersValue(int count) {
+    if (count == 1) return _ar ? 'طلب واحد' : '1 order';
+    return _ar ? '$count طلبات' : '$count orders';
+  }
+  static String get today => _ar ? 'اليوم' : 'Today';
+  static String get yesterday => _ar ? 'أمس' : 'Yesterday';
   static String get noCustomersFound =>
-      _ar ? 'ظ„ط§ ظٹظˆط¬ط¯ ط¹ظ…ظ„ط§ط،' : 'No customers yet';
+      _ar ? 'لا يوجد عملاء بعد' : 'No customers yet';
   static String get customerName =>
-      _ar ? 'ط§ط³ظ… ط§ظ„ط¹ظ…ظٹظ„' : 'Customer name';
+      _ar ? 'اسم العميل' : 'Customer name';
   static String get emailAddress =>
-      _ar ? 'ط§ظ„ط¨ط±ظٹط¯ ط§ظ„ط¥ظ„ظƒطھط±ظˆظ†ظٹ' : 'Email';
-  static String get phone => _ar ? 'ط§ظ„ظ‡ط§طھظپ' : 'Phone';
+      _ar ? 'البريد الإلكتروني' : 'Email';
   static String get ordersCountLabel =>
-      _ar ? 'ط¹ط¯ط¯ ط§ظ„ط·ظ„ط¨ط§طھ' : 'Orders';
+      _ar ? 'عدد الطلبات' : 'Orders';
   static String get totalSpent =>
-      _ar ? 'ط¥ط¬ظ…ط§ظ„ظٹ ط§ظ„ط¥ظ†ظپط§ظ‚' : 'Total spent';
-  static String get lastOrder => _ar ? 'ط¢ط®ط± ط·ظ„ط¨' : 'Last order';
+      _ar ? 'إجمالي الإنفاق' : 'Total spent';
+  static String get lastOrder => _ar ? 'آخر طلب' : 'Last order';
   static String get editCustomerTitle =>
-      _ar ? 'طھط¹ط¯ظٹظ„ ط§ظ„ط¹ظ…ظٹظ„' : 'Edit customer';
-  static String get fullName => _ar ? 'ط§ظ„ط§ط³ظ… ط§ظ„ظƒط§ظ…ظ„' : 'Full name';
+      _ar ? 'تعديل العميل' : 'Edit customer';
+  static String get fullName => _ar ? 'الاسم الكامل' : 'Full name';
 
   static String customersCount(int count) => count == 1
       ? _ar
-            ? 'ط¹ظ…ظٹظ„ ظˆط§ط­ط¯'
+            ? 'عميل واحد'
             : '1 customer'
       : _ar
-      ? '$count ط¹ظ…ظ„ط§ط،'
+      ? '$count عملاء'
       : '$count customers';
 
   // ---------- Inventory ----------
@@ -283,23 +407,20 @@ class S {
 
   // ---------- Orders ----------
   static String get noOrdersFound =>
-      _ar ? 'ظ„ط§ طھظˆط¬ط¯ ط·ظ„ط¨ط§طھ' : 'No orders yet';
-  static String get orderNumber => _ar ? 'ط±ظ‚ظ… ط§ظ„ط·ظ„ط¨' : 'Order number';
-  static String get customer => _ar ? 'ط§ظ„ط¹ظ…ظٹظ„' : 'Customer';
-  static String get total => _ar ? 'ط§ظ„ظ…ط¬ظ…ظˆط¹' : 'Total';
-  static String get fulfillmentType =>
-      _ar ? 'ظ†ظˆط¹ ط§ظ„طھظˆطµظٹظ„' : 'Delivery type';
-  static String get date => _ar ? 'ط§ظ„طھط§ط±ظٹط®' : 'Date';
-  static String get statusPending =>
-      _ar ? 'ظ‚ظٹط¯ ط§ظ„ط§ظ†طھط¸ط§ط±' : 'Pending';
-  static String get statusConfirmed => _ar ? 'ظ…ط¤ظƒط¯' : 'Confirmed';
-  static String get statusPreparing =>
-      _ar ? 'ظ‚ظٹط¯ ط§ظ„طھط­ط¶ظٹط±' : 'Preparing';
-  static String get statusReady => _ar ? 'ط¬ط§ظ‡ط²' : 'Ready';
+      _ar ? 'لا توجد طلبات بعد' : 'No orders yet';
+  static String get orderNumber => _ar ? 'رقم الطلب' : 'Order number';
+  static String get customer => _ar ? 'العميل' : 'Customer';
+  static String get total => _ar ? 'الإجمالي' : 'Total';
+  static String get fulfillmentType => _ar ? 'نوع الطلب' : 'Order type';
+  static String get date => _ar ? 'التاريخ' : 'Date';
+  static String get statusPending => _ar ? 'قيد الانتظار' : 'Pending';
+  static String get statusConfirmed => _ar ? 'مؤكد' : 'Confirmed';
+  static String get statusPreparing => _ar ? 'قيد التحضير' : 'Preparing';
+  static String get statusReady => _ar ? 'جاهز' : 'Ready';
   static String get statusOutForDelivery =>
-      _ar ? 'ظپظٹ ط·ط±ظٹظ‚ظ‡ ظ„ظ„طھظˆطµظٹظ„' : 'Out for delivery';
-  static String get statusCompleted => _ar ? 'ظ…ظƒطھظ…ظ„' : 'Completed';
-  static String get statusCancelled => _ar ? 'ظ…ظ„ط؛ظٹ' : 'Cancelled';
+      _ar ? 'في الطريق للتوصيل' : 'Out for delivery';
+  static String get statusCompleted => _ar ? 'مكتمل' : 'Completed';
+  static String get statusCancelled => _ar ? 'ملغي' : 'Cancelled';
 
   static String orderStatusLabel(String status) => switch (status) {
     'pending' => statusPending,
@@ -486,7 +607,7 @@ class S {
   static String get changeImage =>
       _ar ? 'طھط؛ظٹظٹط± ط§ظ„طµظˆط±ط©' : 'Change image';
   static String get addImageOrVideo =>
-      _ar ? 'ط¥ط¶ط§ظپط© طµظˆط±ط© ط£ظˆ ظپظٹط¯ظٹظˆ' : 'Add image or video';
+      _ar ? 'ط¥ط¶ط§ظپط© طµظˆط±ط© ط£ظˆ ظپظٹط¯ظٹظˆ' : 'Add image';
   static String get selectProductCategory =>
       _ar ? 'ط§ط®طھط± طھطµظ†ظٹظپ ط§ظ„ظ…ظ†طھط¬' : 'Choose a product category';
   static String get selectLocalCategory =>
@@ -494,7 +615,7 @@ class S {
   static String get localCategory =>
       _ar ? 'طھطµظ†ظٹظپ ظ…ط­ظ„ظٹ' : 'Local category';
   static String get languageCode => 'AR';
-  static String get currency => _ar ? 'ط±.ط³' : 'SAR';
+  static String get currency => _ar ? 'ر.س' : 'SAR';
   static String get productData =>
       _ar ? 'ط¨ظٹط§ظ†ط§طھ ط§ظ„ظ…ظ†طھط¬' : 'Product data';
   static String get categoryData =>
@@ -519,14 +640,23 @@ class S {
   static String get addImage => 'addImage';
   static String get addZone => 'addZone';
   static String get adjustments => 'adjustments';
-  static String get adminNotes => 'adminNotes';
   static String get allergens => 'allergens';
   static String get allStatuses => 'allStatuses';
   static String get applyToAllImages => 'applyToAllImages';
   static String get applyToAllImagesConfirm => 'applyToAllImagesConfirm';
   static String get applyToThisImage => 'applyToThisImage';
   static String get beforeAfter => 'beforeAfter';
-  static String get blacklist => 'blacklist';
+  static String get vip => 'VIP';
+  static String get blacklist => _ar ? 'قائمة الحظر' : 'Blacklist';
+  static String get adminNotes => _ar ? 'ملاحظات الإدارة' : 'Admin notes';
+  static String get registeredAt =>
+      _ar ? 'تاريخ التسجيل' : 'Registered at';
+  static String get customerAddressesLabel =>
+      _ar ? 'عناوين العميل' : 'Customer addresses';
+  static String get customerOrdersLabel =>
+      _ar ? 'طلبات العميل' : 'Customer orders';
+  static String get customerSubscriptionsLabel =>
+      _ar ? 'اشتراكات العميل' : 'Customer subscriptions';
   static String get branchAddress => 'branchAddress';
   static String get branchCode => 'branchCode';
   static String get branchDeliveryDescription => 'branchDeliveryDescription';
@@ -543,32 +673,32 @@ class S {
   static String get cartStatusActive => 'cartStatusActive';
   static String get centerLatitude => 'centerLatitude';
   static String get centerLongitude => 'centerLongitude';
-  static String get changePaymentStatus => 'changePaymentStatus';
-  static String get changeStatus => 'changeStatus';
-  static String get clearFilters => 'clearFilters';
+  static String get changePaymentStatus =>
+      _ar ? 'تغيير حالة الدفع' : 'Change payment status';
+  static String get changeStatus =>
+      _ar ? 'تغيير حالة الطلب' : 'Change order status';
+  static String get clearFilters => _ar ? 'مسح عوامل التصفية' : 'Clear filters';
   static String get clearSelection => 'clearSelection';
-  static String get close => 'close';
+  static String get close => _ar ? 'إغلاق' : 'Close';
   static String get closesAt => 'closesAt';
   static String get contrast => 'contrast';
   static String get couldNotSaveProduct => 'couldNotSaveProduct';
   static String get createdCategories => 'createdCategories';
   static String get createdProducts => 'createdProducts';
-  static String get customerAddressesLabel => 'customerAddressesLabel';
   static String get customerInfoTitle => 'customerInfoTitle';
-  static String get customerOrdersLabel => 'customerOrdersLabel';
-  static String get customerSubscriptionsLabel => 'customerSubscriptionsLabel';
   static String get deleteImage => 'deleteImage';
   static String get deleteImageConfirm => 'deleteImageConfirm';
   static String get deleteSelectedProducts => 'deleteSelectedProducts';
-  static String get deliveryDistance => 'deliveryDistance';
-  static String get deliveryFee => 'deliveryFee';
+  static String get deliveryDistance => _ar ? 'المسافة' : 'Distance';
+  static String get deliveryFee => _ar ? 'رسوم التوصيل' : 'Delivery fee';
   static String get deliveryFeeAmount => 'deliveryFeeAmount';
   static String get deliveryFeeMethod => 'deliveryFeeMethod';
   static String get deliveryFeePerKm => 'deliveryFeePerKm';
-  static String get deliveryLocation => 'deliveryLocation';
+  static String get deliveryLocation =>
+      _ar ? 'موقع التوصيل' : 'Delivery location';
   static String get deliveryRadiusKm => 'deliveryRadiusKm';
   static String get directDistanceFeeHint => 'directDistanceFeeHint';
-  static String get discount => 'discount';
+  static String get discount => _ar ? 'الخصم' : 'Discount';
   static String get discountEndDate => 'discountEndDate';
   static String get discountPercentage => 'discountPercentage';
   static String get discountStartDate => 'discountStartDate';
@@ -584,7 +714,8 @@ class S {
   static String get editBundle => 'editBundle';
   static String get editImage => 'editImage';
   static String get editZone => 'editZone';
-  static String get estimatedDelivery => 'estimatedDelivery';
+  static String get estimatedDelivery =>
+      _ar ? 'وقت التوصيل المتوقع' : 'Estimated delivery';
   static String get estimatedDeliveryMinutes => 'estimatedDeliveryMinutes';
   static String get exportExcel => 'exportExcel';
   static String get exporting => 'exporting';
@@ -598,11 +729,12 @@ class S {
   static String get flipVertical => 'flipVertical';
   static String get freeDelivery => 'freeDelivery';
   static String get freeDeliveryMinimum => 'freeDeliveryMinimum';
-  static String get fulfillmentDelivery => 'fulfillmentDelivery';
-  static String get fulfillmentFilter => 'fulfillmentFilter';
-  static String get fulfillmentInfoTitle => 'fulfillmentInfoTitle';
-  static String get fulfillmentPickup => 'fulfillmentPickup';
-  static String get grandTotal => 'grandTotal';
+  static String get fulfillmentDelivery => _ar ? 'توصيل' : 'Delivery';
+  static String get fulfillmentFilter => _ar ? 'نوع الطلب' : 'Order type';
+  static String get fulfillmentInfoTitle =>
+      _ar ? 'طريقة الاستلام' : 'Fulfillment';
+  static String get fulfillmentPickup => _ar ? 'استلام من الفرع' : 'Pickup';
+  static String get grandTotal => _ar ? 'الإجمالي النهائي' : 'Grand total';
   static String get highlights => 'highlights';
   static String get hours => 'hours';
   static String get imageActionFailed => 'imageActionFailed';
@@ -633,32 +765,43 @@ class S {
   static String get maxDeliveryFee => 'maxDeliveryFee';
   static String get minimumOrder => 'minimumOrder';
   static String get minutes => 'minutes';
-  static String get noAddresses => 'noAddresses';
+  static String get noAddresses => _ar ? 'لا توجد عناوين' : 'No addresses';
   static String get noBranchDeliveryZones => 'noBranchDeliveryZones';
   static String get noBranchesFound => 'noBranchesFound';
   static String get noCartsFound => 'noCartsFound';
-  static String get noDeliveryAddress => 'noDeliveryAddress';
+  static String get noDeliveryAddress =>
+      _ar ? 'لم يُحدَّد عنوان للتوصيل' : 'No delivery address was provided';
   static String get noImagesYet => 'noImagesYet';
-  static String get noOrders => 'noOrders';
-  static String get noOrdersForFilter => 'noOrdersForFilter';
+  static String get noOrders => _ar ? 'لا توجد طلبات' : 'No orders';
+  static String get noOrdersForFilter => _ar
+      ? 'لا توجد طلبات تطابق عوامل التصفية.'
+      : 'No orders match the selected filters.';
+  static String get noOrderItems =>
+      _ar ? 'لا توجد عناصر في هذا الطلب.' : 'This order has no items.';
   static String get noPaymentsFound => 'noPaymentsFound';
   static String get noProductsYet => 'noProductsYet';
-  static String get noSubscriptions => 'noSubscriptions';
+  static String get noSubscriptions =>
+      _ar ? 'لا توجد اشتراكات' : 'No subscriptions';
   static String get opensAt => 'opensAt';
-  static String get orderCannotBeEdited => 'orderCannotBeEdited';
-  static String get orderPlacedAt => 'orderPlacedAt';
+  static String get orderCannotBeEdited =>
+      _ar ? 'لا يمكن تعديل هذا الطلب.' : 'This order can no longer be edited.';
+  static String get orderPlacedAt => _ar ? 'تاريخ الطلب' : 'Order date';
   static String get paidAt => 'paidAt';
   static String get paymentCard => 'paymentCard';
-  static String get paymentInfoTitle => 'paymentInfoTitle';
-  static String get paymentMethod => 'paymentMethod';
+  static String get paymentInfoTitle =>
+      _ar ? 'الدفع والإجماليات' : 'Payment and totals';
+  static String get paymentMethod => _ar ? 'طريقة الدفع' : 'Payment method';
   static String get paymentMethodCash => 'paymentMethodCash';
-  static String get paymentStatusFailed => 'paymentStatusFailed';
-  static String get paymentStatusFilter => 'paymentStatusFilter';
-  static String get paymentStatusLabelTitle => 'paymentStatusLabelTitle';
-  static String get paymentStatusPaid => 'paymentStatusPaid';
-  static String get paymentStatusPending => 'paymentStatusPending';
-  static String get paymentStatusRefunded => 'paymentStatusRefunded';
-  static String get paymentStatusUnpaid => 'paymentStatusUnpaid';
+  static String get paymentStatusFailed => _ar ? 'فشل الدفع' : 'Payment failed';
+  static String get paymentStatusFilter =>
+      _ar ? 'حالة الدفع' : 'Payment status';
+  static String get paymentStatusLabelTitle =>
+      _ar ? 'حالة الدفع' : 'Payment status';
+  static String get paymentStatusPaid => _ar ? 'مدفوع' : 'Paid';
+  static String get paymentStatusPending =>
+      _ar ? 'الدفع قيد الانتظار' : 'Payment pending';
+  static String get paymentStatusRefunded => _ar ? 'مسترد' : 'Refunded';
+  static String get paymentStatusUnpaid => _ar ? 'غير مدفوع' : 'Unpaid';
   static String get prepTime => 'prepTime';
   static String get prepUnit => 'prepUnit';
   static String get prepValue => 'prepValue';
@@ -670,12 +813,14 @@ class S {
   static String get productWasAdded => 'productWasAdded';
   static String get provider => 'provider';
   static String get published => 'published';
-  static String get quantity => 'quantity';
+  static String get quantity => _ar ? 'الكمية' : 'Quantity';
   static String get redo => 'redo';
-  static String get registeredAt => 'registeredAt';
-  static String get removeItem => 'removeItem';
-  static String get removeItemConfirm => 'removeItemConfirm';
-  static String get removeItemUnavailable => 'removeItemUnavailable';
+  static String get removeItem => _ar ? 'إزالة العنصر' : 'Remove item';
+  static String get removeItemConfirm => _ar
+      ? 'هل تريد إزالة هذا العنصر من الطلب؟'
+      : 'Remove this item from the order?';
+  static String get removeItemUnavailable =>
+      _ar ? 'لا يمكن إزالة هذا العنصر.' : 'This item cannot be removed.';
   static String get replaceImage => 'replaceImage';
   static String get resetImage => 'resetImage';
   static String get retry => 'retry';
@@ -688,9 +833,9 @@ class S {
   static String get setPrimaryImage => 'setPrimaryImage';
   static String get shadows => 'shadows';
   static String get sharpness => 'sharpness';
-  static String get statusFilter => 'statusFilter';
-  static String get subtotal => 'subtotal';
-  static String get tax => 'tax';
+  static String get statusFilter => _ar ? 'حالة الطلب' : 'Order status';
+  static String get subtotal => _ar ? 'المجموع الفرعي' : 'Subtotal';
+  static String get tax => _ar ? 'الضريبة' : 'Tax';
   static String get undo => 'undo';
   static String get unknownCustomer => 'unknownCustomer';
   static String get updatedAt => 'updatedAt';
@@ -702,7 +847,6 @@ class S {
   static String get useImageLink => 'useImageLink';
   static String get useTotal => 'useTotal';
   static String get verifiedByServer => 'verifiedByServer';
-  static String get vip => 'vip';
   static String get warmth => 'warmth';
   static String get zoneMapTapHint => 'zoneMapTapHint';
   static String get zoneNameArabic => 'zoneNameArabic';
@@ -723,7 +867,9 @@ class S {
       'cartStatusLabel';
   static String deleteProductsConfirm(int count) =>
       'This will permanently delete $count products. Continue?';
-  static String ordersCount(int count) => '$count orders';
+  static String ordersCount(int count) => _ar ? '$count طلب' : '$count orders';
+  static String orderItemsCount(int count) =>
+      _ar ? '$count عناصر' : '$count items';
   static String paymentStatusLabel(String status) => switch (status) {
     'unpaid' => paymentStatusUnpaid,
     'pending' => paymentStatusPending,
@@ -737,8 +883,7 @@ class S {
       'Could not delete $count products. They remain selected so you can retry.';
   static String selectAllProducts(int count) =>
       'Select all matching products ($count)';
-  static String selectedProductsCount(int count) =>
-      '$count selected';
+  static String selectedProductsCount(int count) => '$count selected';
 
   // ---------- Customer preview ----------
   static String get customerPreview => 'Customer preview';
