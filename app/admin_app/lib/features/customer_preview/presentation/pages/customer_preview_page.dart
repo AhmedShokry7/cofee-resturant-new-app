@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/features/customer_preview/presentation/manager/customer_preview_cubit.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/phone_frame.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/android_emulator_preview.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/preview_surface/preview_surface.dart';
 
 class CustomerPreviewPage extends StatelessWidget {
@@ -33,78 +34,107 @@ class _CustomerPreviewView extends StatelessWidget {
         final url = _buildUrl(state);
         final width = _viewportWidth(state.viewport);
 
-        return Padding(
-          padding: const EdgeInsets.all(AppDimensions.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _Header(isDirty: state.isDirty),
+        return DefaultTabController(
+          length: 2,
+          child: Padding(
+            padding: const EdgeInsets.all(AppDimensions.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _Header(isDirty: state.isDirty),
+              const SizedBox(height: AppDimensions.md),
+              const TabBar(
+                tabs: [
+                  Tab(text: 'Browser preview'),
+                  Tab(text: 'Android emulator'),
+                ],
+              ),
               const SizedBox(height: AppDimensions.md),
               Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final wide = constraints.maxWidth >= 900;
-                    final controls = _Controls(cubit: cubit, state: state);
-                    final preview = Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.sm,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColor.lightGreyColor,
-                              borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusPill,
+                child: TabBarView(
+                  children: [
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final wide = constraints.maxWidth >= 900;
+                        final controls = _Controls(cubit: cubit, state: state);
+                        final preview = SingleChildScrollView(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.max,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: AppDimensions.sm,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColor.lightGreyColor,
+                                  borderRadius: BorderRadius.circular(
+                                    AppDimensions.radiusPill,
+                                  ),
+                                ),
+                                child: Text(
+                                  state.isDirty
+                                      ? S.previewDraftMode
+                                      : S.previewPublishedMode,
+                                  style: const TextStyle(fontSize: 12),
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              state.isDirty
-                                  ? S.previewDraftMode
-                                  : S.previewPublishedMode,
-                              style: const TextStyle(fontSize: 12),
-                            ),
+                              const SizedBox(height: AppDimensions.md),
+                              PhoneFrame(
+                                width: width,
+                                child: url.isEmpty
+                                    ? Center(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(
+                                            AppDimensions.md,
+                                          ),
+                                          child: Text(
+                                            '${S.previewCustomerAppUrl}\n'
+                                            'Run: flutter run -d web-server '
+                                            '--web-port 8080',
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      )
+                                    : PreviewSurface(url: url),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: AppDimensions.md),
-                          PhoneFrame(
-                            width: width,
-                            child: url.isEmpty
-                                ? Center(
-                                    child: Text(S.previewError),
-                                  )
-                                : PreviewSurface(url: url),
-                          ),
-                        ],
-                      ),
-                    );
+                        );
 
-                    if (wide) {
-                      return Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(width: 320, child: controls),
-                          const SizedBox(width: AppDimensions.lg),
-                          Expanded(child: preview),
-                        ],
-                      );
-                    }
-                    return SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          controls,
-                          const SizedBox(height: AppDimensions.lg),
-                          preview,
-                        ],
-                      ),
-                    );
-                  },
+                        if (wide) {
+                          return Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                            width: 320,
+                            child: SingleChildScrollView(child: controls),
+                          ),
+                              const SizedBox(width: AppDimensions.lg),
+                              Expanded(child: preview),
+                            ],
+                          );
+                        }
+                        return SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              controls,
+                              const SizedBox(height: AppDimensions.lg),
+                              preview,
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                    const AndroidEmulatorPreview(),
+                  ],
                 ),
               ),
             ],
           ),
-        );
+        ),
+      );
       },
     );
   }
@@ -114,7 +144,7 @@ class _CustomerPreviewView extends StatelessWidget {
       case PreviewViewport.small:
         return 280;
       case PreviewViewport.medium:
-        return 320;
+        return 260;
       case PreviewViewport.large:
         return 360;
     }

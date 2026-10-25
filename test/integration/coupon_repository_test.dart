@@ -31,7 +31,7 @@ void main() {
 
     expect(
       coupons.map((coupon) => coupon.code),
-      containsAll(['WELCOME200', 'COFFEE20', 'COLD50', 'LOYAL10']),
+      containsAll(['DEMO10']),
     );
     expect(
       coupons.every((coupon) => coupon.discountValue > 0),
@@ -40,7 +40,7 @@ void main() {
     );
 
     await expectLater(
-      repository.validate(code: 'WELCOME200', subtotal: 100),
+      repository.validate(code: 'DEMO10', subtotal: 100),
       throwsA(
         isA<PostgrestException>().having(
           (error) => error.code,

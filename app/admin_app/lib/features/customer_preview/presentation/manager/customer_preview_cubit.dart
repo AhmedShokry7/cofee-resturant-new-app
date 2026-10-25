@@ -34,7 +34,7 @@ class CustomerPreviewState {
         draft: PreviewDraftSettings.defaults,
         screen: PreviewScreen.home,
         viewport: PreviewViewport.medium,
-        customerAppUrl: 'http://localhost:8080',
+        customerAppUrl: '',
         refreshToken: 0,
         isDirty: false,
       );
