@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 /// One statistic card of an admin page: a trend badge, an icon and a value.
 class AdminMetricCard extends StatelessWidget {
@@ -13,6 +14,7 @@ class AdminMetricCard extends StatelessWidget {
     required this.iconColor,
     this.changeLabel,
     this.isPositive = true,
+    this.caption,
   });
 
   final String label;
@@ -22,6 +24,9 @@ class AdminMetricCard extends StatelessWidget {
   final Color iconColor;
   final String? changeLabel;
   final bool isPositive;
+
+  /// A quiet second line that explains what the number counts.
+  final String? caption;
 
   @override
   Widget build(BuildContext context) {
@@ -63,29 +68,43 @@ class AdminMetricCard extends StatelessWidget {
             const SizedBox(height: 7),
             Text(
               value,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.headlineSmall?.copyWith(
                 color: dark ? AppColor.darkText : AppColor.adminHeading,
-                fontSize: 21,
-                fontWeight: FontWeight.w700,
+                fontSize: AppFontSizes.size21,
+                fontWeight: AppFontWeights.bold,
                 height: 1.5,
               ),
             ),
             const SizedBox(height: 1),
             Text(
               label,
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.start,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
-                fontSize: 9,
-                fontWeight: FontWeight.w400,
+                fontSize: AppFontSizes.size9,
+                fontWeight: AppFontWeights.regular,
                 height: 1.5,
               ),
             ),
+            if (caption != null)
+              Text(
+                caption!,
+                textAlign: TextAlign.start,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color:
+                      (dark ? AppColor.darkTextSecondary : AppColor.adminMuted)
+                          .withValues(alpha: .8),
+                  fontSize: AppFontSizes.size8_5,
+                  height: 1.4,
+                ),
+              ),
           ],
         ),
       ),
@@ -119,42 +138,49 @@ class _MetricBadge extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (label != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              decoration: BoxDecoration(
-                color: positive
-                    ? AppColor.trendPositiveSurface
-                    : AppColor.trendNegativeSurface,
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: Directionality(
-                textDirection: TextDirection.rtl,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      label!,
-                      style: TextStyle(
-                        color: trendColor,
-                        fontSize: 8,
-                        fontWeight: FontWeight.w600,
-                        height: 1.5,
+            Flexible(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  color: positive
+                      ? AppColor.trendPositiveSurface
+                      : AppColor.trendNegativeSurface,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+                child: Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          label!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: trendColor,
+                            fontSize: AppFontSizes.size8,
+                            fontWeight: AppFontWeights.semiBold,
+                            height: AppTextHeights.line1_5,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 3),
-                    Icon(
-                      positive
-                          ? Icons.trending_up_rounded
-                          : Icons.trending_down_rounded,
-                      size: 14,
-                      color: trendColor,
-                    ),
-                  ],
+                      const SizedBox(width: 3),
+                      Icon(
+                        positive
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
+                        size: 14,
+                        color: trendColor,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             )
           else
             const SizedBox.shrink(),
+          const SizedBox(width: 6),
           Container(
             width: 33,
             height: 33,

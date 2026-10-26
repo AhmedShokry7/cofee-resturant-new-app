@@ -1,123 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/branches/data/models/admin_branch.dart';
+import 'package:admin_app/features/branches/data/models/admin_branch_draft.dart';
+import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_cubit.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_location_picker.dart';
+import 'package:admin_app/features/branches/presentation/widgets/branch_messages.dart';
+import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 
 /// Opens the dialog that creates a branch through the cubit of the page.
-Future<void> showBranchCreateDialog({
+Future<bool?> showBranchCreateDialog({
   required BuildContext context,
   required AdminBranchCubit cubit,
 }) {
-  return showDialog<void>(
+  return showDialog<bool>(
     context: context,
-    builder: (context) => BranchDataDialog(
-      onSave:
-          ({
-            required String code,
-            required String nameAr,
-            required String nameEn,
-            required String address,
-            double? latitude,
-            required bool clearLatitude,
-            double? longitude,
-            required bool clearLongitude,
-            String? phone,
-            required bool clearPhone,
-            String? opensAt,
-            required bool clearOpensAt,
-            String? closesAt,
-            required bool clearClosesAt,
-          }) {
-            return cubit.createBranch(
-              code: code,
-              nameAr: nameAr,
-              nameEn: nameEn,
-              address: address,
-              latitude: latitude,
-              longitude: longitude,
-              phone: phone,
-              opensAt: opensAt,
-              closesAt: closesAt,
-            );
-          },
-    ),
+    builder: (context) => BranchDataDialog(onSave: cubit.saveBranch),
   );
 }
 
 /// Opens the dialog that edits a branch through the cubit of the page.
-Future<void> showBranchEditDialog({
+Future<bool?> showBranchEditDialog({
   required BuildContext context,
   required AdminBranchCubit cubit,
   required AdminBranch branch,
 }) {
-  return showDialog<void>(
+  return showDialog<bool>(
     context: context,
-    builder: (context) => BranchDataDialog(
-      initialBranch: branch,
-      onSave:
-          ({
-            required String code,
-            required String nameAr,
-            required String nameEn,
-            required String address,
-            double? latitude,
-            required bool clearLatitude,
-            double? longitude,
-            required bool clearLongitude,
-            String? phone,
-            required bool clearPhone,
-            String? opensAt,
-            required bool clearOpensAt,
-            String? closesAt,
-            required bool clearClosesAt,
-          }) {
-            return cubit.updateBranch(
-              branchId: branch.id,
-              code: code,
-              nameAr: nameAr,
-              nameEn: nameEn,
-              address: address,
-              latitude: latitude,
-              clearLatitude: clearLatitude,
-              longitude: longitude,
-              clearLongitude: clearLongitude,
-              phone: phone,
-              clearPhone: clearPhone,
-              opensAt: opensAt,
-              clearOpensAt: clearOpensAt,
-              closesAt: closesAt,
-              clearClosesAt: clearClosesAt,
-            );
-          },
-    ),
+    builder: (context) =>
+        BranchDataDialog(initialBranch: branch, onSave: cubit.saveBranch),
   );
 }
 
-/// The dialog that creates or edits a branch.
+/// The dialog that creates or edits a branch: identity, location and hours.
 class BranchDataDialog extends StatefulWidget {
   const BranchDataDialog({super.key, required this.onSave, this.initialBranch});
 
-  /// Creates or updates the branch; returns the saved branch.
-  final Future<AdminBranch> Function({
-    required String code,
-    required String nameAr,
-    required String nameEn,
-    required String address,
-    double? latitude,
-    required bool clearLatitude,
-    double? longitude,
-    required bool clearLongitude,
-    String? phone,
-    required bool clearPhone,
-    String? opensAt,
-    required bool clearOpensAt,
-    String? closesAt,
-    required bool clearClosesAt,
-  })
-  onSave;
+  /// Creates or updates the branch; the outcome decides whether to close.
+  final Future<BranchSaveOutcome> Function(AdminBranchDraft draft) onSave;
 
   /// When provided the dialog edits this branch instead of creating one.
   final AdminBranch? initialBranch;
@@ -130,14 +56,15 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
   late final TextEditingController _codeController;
   late final TextEditingController _nameArController;
   late final TextEditingController _nameEnController;
-  late final TextEditingController _addressController;
   late final TextEditingController _phoneController;
-  late final TextEditingController _latitudeController;
-  late final TextEditingController _longitudeController;
-  double? _pickedLatitude;
-  double? _pickedLongitude;
+  late final TextEditingController _legalNameController;
+  late final TextEditingController _vatNumberController;
   late final TextEditingController _opensAtController;
   late final TextEditingController _closesAtController;
+  late String _address;
+  double? _pickedLatitude;
+  double? _pickedLongitude;
+  int _locationKey = 0;
   String? _error;
   bool _saving = false;
 
@@ -148,18 +75,18 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
     _codeController = TextEditingController(text: branch?.code ?? '');
     _nameArController = TextEditingController(text: branch?.nameAr ?? '');
     _nameEnController = TextEditingController(text: branch?.nameEn ?? '');
-    _addressController = TextEditingController(text: branch?.address ?? '');
     _phoneController = TextEditingController(text: branch?.phone ?? '');
-    _latitudeController = TextEditingController(
-      text: branch?.latitude?.toString() ?? '',
-    );
-    _longitudeController = TextEditingController(
-      text: branch?.longitude?.toString() ?? '',
-    );
+    _legalNameController = TextEditingController(text: branch?.legalName ?? '');
+    _vatNumberController = TextEditingController(text: branch?.vatNumber ?? '');
+    _address = branch?.address ?? '';
     _pickedLatitude = branch?.latitude;
     _pickedLongitude = branch?.longitude;
-    _opensAtController = TextEditingController(text: branch?.opensAt ?? '');
-    _closesAtController = TextEditingController(text: branch?.closesAt ?? '');
+    _opensAtController = TextEditingController(
+      text: _timeForInput(branch?.opensAt),
+    );
+    _closesAtController = TextEditingController(
+      text: _timeForInput(branch?.closesAt),
+    );
   }
 
   @override
@@ -167,205 +94,354 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
     _codeController.dispose();
     _nameArController.dispose();
     _nameEnController.dispose();
-    _addressController.dispose();
     _phoneController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
+    _legalNameController.dispose();
+    _vatNumberController.dispose();
     _opensAtController.dispose();
     _closesAtController.dispose();
     super.dispose();
   }
 
-  void _submit() async {
+  Future<void> _submit() async {
     if (_saving) return;
 
     final code = _codeController.text.trim().toUpperCase();
-    final nameAr = _nameArController.text.trim();
-    final nameEn = _nameEnController.text.trim();
-
-    if (code.isEmpty) {
-      setState(() => _error = S.branchNeedsCode);
+    if (!RegExp(r'^[A-Z0-9_-]{1,24}$').hasMatch(code)) {
+      setState(() => _error = S.branchSaveInvalidCode);
       return;
     }
+    final nameAr = _nameArController.text.trim();
     if (nameAr.isEmpty) {
       setState(() => _error = S.branchNeedsName);
       return;
     }
+    final address = _address.trim();
+    if (address.isEmpty) {
+      setState(() => _error = S.branchNeedsAddress);
+      return;
+    }
+    final legalName = _legalNameController.text.trim();
+    if (legalName.length > 200) {
+      setState(() => _error = S.branchInvalidLegalName);
+      return;
+    }
+    final vatNumber = normalizeDigits(_vatNumberController.text.trim());
+    if (vatNumber.isNotEmpty && !RegExp(r'^3\d{13}3$').hasMatch(vatNumber)) {
+      setState(() => _error = S.branchInvalidVatNumber);
+      return;
+    }
+
+    final (opensAt, opensValid) = _parseTime(_opensAtController.text);
+    final (closesAt, closesValid) = _parseTime(_closesAtController.text);
+    if (!opensValid ||
+        !closesValid ||
+        (opensAt == null) != (closesAt == null) ||
+        (opensAt != null && opensAt.compareTo(closesAt!) >= 0)) {
+      setState(() => _error = S.branchInvalidHours);
+      return;
+    }
+
+    final nameEn = _nameEnController.text.trim();
+    final phone = _phoneController.text.trim();
+    final draft = AdminBranchDraft(
+      id: widget.initialBranch?.id,
+      code: code,
+      nameAr: nameAr,
+      nameEn: nameEn.isEmpty ? nameAr : nameEn,
+      address: address,
+      latitude: _pickedLatitude,
+      longitude: _pickedLongitude,
+      phone: phone.isEmpty ? null : phone,
+      legalName: legalName.isEmpty ? null : legalName,
+      vatNumber: vatNumber.isEmpty ? null : vatNumber,
+      opensAt: opensAt,
+      closesAt: closesAt,
+    );
 
     setState(() {
       _saving = true;
       _error = null;
     });
-
-    final branch = widget.initialBranch;
-    try {
-      await widget.onSave(
-        code: code,
-        nameAr: nameAr,
-        nameEn: nameEn.isEmpty ? nameAr : nameEn,
-        address: _addressController.text.trim(),
-        latitude: _pickedLatitude,
-        clearLatitude:
-            branch != null &&
-            _pickedLatitude == null &&
-            _addressController.text.trim().isEmpty,
-        longitude: _pickedLongitude,
-        clearLongitude:
-            branch != null &&
-            _pickedLongitude == null &&
-            _addressController.text.trim().isEmpty,
-        phone: _phoneController.text.trim(),
-        clearPhone: branch != null && _phoneController.text.trim().isEmpty,
-        opensAt: _normalizeTime(_opensAtController.text),
-        clearOpensAt: branch != null && _opensAtController.text.trim().isEmpty,
-        closesAt: _normalizeTime(_closesAtController.text),
-        clearClosesAt:
-            branch != null && _closesAtController.text.trim().isEmpty,
-      );
-      if (!mounted) return;
-      Navigator.of(context).pop();
-    } catch (error) {
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _error = error.toString();
-      });
+    final outcome = await widget.onSave(draft);
+    if (!mounted) return;
+    if (outcome == BranchSaveOutcome.saved) {
+      Navigator.of(context).pop(true);
+      return;
     }
+    setState(() {
+      _saving = false;
+      _error = branchSaveErrorMessage(outcome);
+    });
   }
 
-  /// Accepts "HH:mm" or "HH:mm:ss" and returns the form the database wants.
-  String? _normalizeTime(String text) {
-    final value = text.trim();
-    if (value.isEmpty) return null;
-    if (value.contains(':')) {
-      final parts = value.split(':');
-      if (parts.length == 2) return '$value:00';
-      return value;
-    }
-    return null;
+  /// Accepts `HH:mm` or `HH:mm:ss`; the bool is false only for invalid text.
+  (String?, bool) _parseTime(String input) {
+    final value = input.trim();
+    if (value.isEmpty) return (null, true);
+    final match = RegExp(r'^(\d{1,2}):(\d{2})(?::\d{2})?$').firstMatch(value);
+    if (match == null) return (null, false);
+    final hour = int.parse(match.group(1)!);
+    final minute = int.parse(match.group(2)!);
+    if (hour > 23 || minute > 59) return (null, false);
+    final clock =
+        '${hour.toString().padLeft(2, '0')}:'
+        '${minute.toString().padLeft(2, '0')}:00';
+    return (clock, true);
+  }
+
+  String _timeForInput(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return '';
+    final parts = text.split(':');
+    if (parts.length < 2) return text;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return text;
+    return '${hour.toString().padLeft(2, '0')}:'
+        '${minute.toString().padLeft(2, '0')}';
+  }
+
+  void _clearLocation() {
+    setState(() {
+      _pickedLatitude = null;
+      _pickedLongitude = null;
+      _locationKey++;
+    });
+  }
+
+  void _close() {
+    if (_saving) return;
+    Navigator.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
     final branch = widget.initialBranch;
-
-    return AlertDialog(
-      title: Text(branch != null ? S.editBranch : S.addBranch),
-      content: SizedBox(
-        width: 500,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_error != null)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimensions.md),
-                  child: Text(
-                    _error!,
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: Theme.of(context).colorScheme.error),
-                  ),
+    return Dialog(
+      clipBehavior: Clip.antiAlias,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: MediaQuery.sizeOf(context).width < 600
+            ? AppDimensions.md
+            : AppDimensions.xxl,
+        vertical: AppDimensions.lg,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 620),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AdminDialogHeader(
+              title: branch == null ? S.addBranch : S.editBranch,
+              subtitle: branch == null ? S.branchesDescription : branch.code,
+              onClose: _close,
+            ),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppDimensions.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (_error != null) ...[
+                      AdminErrorBanner(message: _error!),
+                      const SizedBox(height: AppDimensions.md),
+                    ],
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final fields = [
+                          _BranchField(
+                            controller: _codeController,
+                            label: '${S.branchCode} *',
+                            textCapitalization: TextCapitalization.characters,
+                          ),
+                          _BranchField(
+                            controller: _phoneController,
+                            label: S.branchPhone,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ];
+                        return constraints.maxWidth < 480
+                            ? Column(
+                                children: [
+                                  fields[0],
+                                  const SizedBox(height: AppDimensions.md),
+                                  fields[1],
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(child: fields[0]),
+                                  const SizedBox(width: AppDimensions.md),
+                                  Expanded(child: fields[1]),
+                                ],
+                              );
+                      },
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                    _BranchField(
+                      controller: _nameArController,
+                      label: '${S.nameAr} *',
+                      textDirection: TextDirection.rtl,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                    _BranchField(
+                      controller: _nameEnController,
+                      label: S.nameEn,
+                    ),
+                    const SizedBox(height: AppDimensions.lg),
+                    Row(
+                      children: [
+                        Text(
+                          S.branchLocation,
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: AppColor.greyColor,
+                                fontWeight: AppFontWeights.semiBold,
+                              ),
+                        ),
+                        const Spacer(),
+                        if (_pickedLatitude != null && _pickedLongitude != null)
+                          TextButton.icon(
+                            onPressed: _saving ? null : _clearLocation,
+                            icon: const Icon(
+                              HugeIcons.strokeRoundedCancel01,
+                              size: 15,
+                            ),
+                            label: Text(S.branchClearLocation),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.sm),
+                    AdminLocationPicker(
+                      key: ValueKey(_locationKey),
+                      initialLatitude: _pickedLatitude,
+                      initialLongitude: _pickedLongitude,
+                      initialAddress: _address,
+                      onAddressChanged: (value) => _address = value,
+                      onPicked: (point, address) {
+                        setState(() {
+                          _pickedLatitude = point.latitude;
+                          _pickedLongitude = point.longitude;
+                          if (address != null && address.trim().isNotEmpty) {
+                            _address = address.trim();
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: AppDimensions.lg),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _BranchField(
+                            controller: _opensAtController,
+                            label: S.opensAt,
+                            hint: S.branchHoursHint,
+                            keyboardType: TextInputType.datetime,
+                          ),
+                        ),
+                        const SizedBox(width: AppDimensions.md),
+                        Expanded(
+                          child: _BranchField(
+                            controller: _closesAtController,
+                            label: S.closesAt,
+                            hint: S.branchHoursHint,
+                            keyboardType: TextInputType.datetime,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimensions.xl),
+                    const Divider(height: 1),
+                    const SizedBox(height: AppDimensions.md),
+                    Text(
+                      S.branchTaxInvoiceSection,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColor.greyColor,
+                        fontWeight: AppFontWeights.semiBold,
+                      ),
+                    ),
+                    const SizedBox(height: AppDimensions.xs),
+                    Text(
+                      S.branchTaxInvoiceHint,
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: AppColor.greyColor),
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final fields = [
+                          _BranchField(
+                            controller: _legalNameController,
+                            label: S.branchLegalName,
+                          ),
+                          _BranchField(
+                            controller: _vatNumberController,
+                            label: S.branchVatNumber,
+                            keyboardType: TextInputType.number,
+                            textDirection: TextDirection.ltr,
+                          ),
+                        ];
+                        return constraints.maxWidth < 480
+                            ? Column(
+                                children: [
+                                  fields[0],
+                                  const SizedBox(height: AppDimensions.md),
+                                  fields[1],
+                                ],
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(flex: 3, child: fields[0]),
+                                  const SizedBox(width: AppDimensions.md),
+                                  Expanded(flex: 2, child: fields[1]),
+                                ],
+                              );
+                      },
+                    ),
+                  ],
                 ),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _codeController,
-                      decoration: InputDecoration(labelText: S.branchCode),
-                      textCapitalization: TextCapitalization.characters,
-                      onChanged: (_) => setState(() => _error = null),
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _phoneController,
-                      decoration: InputDecoration(labelText: S.branchPhone),
-                      keyboardType: TextInputType.phone,
-                    ),
-                  ),
-                ],
               ),
-              const SizedBox(height: AppDimensions.md),
-              TextField(
-                controller: _nameArController,
-                decoration: InputDecoration(labelText: '${S.nameAr} *'),
-                textDirection: TextDirection.rtl,
-                onChanged: (_) => setState(() => _error = null),
-              ),
-              const SizedBox(height: AppDimensions.md),
-              TextField(
-                controller: _nameEnController,
-                decoration: InputDecoration(labelText: S.nameEn),
-              ),
-              const SizedBox(height: AppDimensions.md),
-              TextField(
-                controller: _addressController,
-                decoration: InputDecoration(labelText: S.branchAddress),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: AppDimensions.md),
-              AdminLocationPicker(
-                initialLatitude: _pickedLatitude,
-                initialLongitude: _pickedLongitude,
-                initialAddress: _addressController.text,
-                onAddressChanged: (address) => _addressController.text = address,
-                onPicked: (point, address) {
-                  _pickedLatitude = point.latitude;
-                  _pickedLongitude = point.longitude;
-                  if (address != null && address.isNotEmpty) {
-                    _addressController.text = address;
-                  }
-                  setState(() {});
-                },
-              ),
-              const SizedBox(height: AppDimensions.md),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _opensAtController,
-                      decoration: InputDecoration(
-                        labelText: S.opensAt,
-                        hintText: 'HH:mm',
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.md),
-                  Expanded(
-                    child: TextField(
-                      controller: _closesAtController,
-                      decoration: InputDecoration(
-                        labelText: S.closesAt,
-                        hintText: 'HH:mm',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+            AdminDialogFooter(
+              saving: _saving,
+              onCancel: _close,
+              onSave: _submit,
+              saveKey: const Key('branch-data-save'),
+              saveLabel: S.save,
+              savingLabel: S.saving,
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _saving ? null : () => Navigator.of(context).pop(),
-          child: Text(S.cancel),
-        ),
-        FilledButton(
-          onPressed: _saving ? null : _submit,
-          child: _saving
-              ? const SizedBox(
-                  width: AppDimensions.spinnerSize,
-                  height: AppDimensions.spinnerSize,
-                  child: CircularProgressIndicator(
-                    strokeWidth: AppDimensions.spinnerStroke,
-                  ),
-                )
-              : Text(S.save),
-        ),
-      ],
     );
   }
+}
+
+class _BranchField extends StatelessWidget {
+  const _BranchField({
+    required this.controller,
+    required this.label,
+    this.hint,
+    this.keyboardType,
+    this.textDirection,
+    this.textCapitalization = TextCapitalization.none,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final String? hint;
+  final TextInputType? keyboardType;
+  final TextDirection? textDirection;
+  final TextCapitalization textCapitalization;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    controller: controller,
+    keyboardType: keyboardType,
+    textDirection: textDirection,
+    textCapitalization: textCapitalization,
+    decoration: InputDecoration(labelText: label, hintText: hint),
+  );
 }

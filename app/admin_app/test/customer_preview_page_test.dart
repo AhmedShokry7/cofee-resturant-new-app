@@ -2,21 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_permission_scope.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
 import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
 import 'package:admin_app/features/shell/presentation/views/admin_shell.dart';
 
 AdminSession _session() => const AdminSession(
-      staffId: 'u1',
-      email: 'admin@example.com',
-      fullName: 'Admin One',
-      status: 'active',
-      roles: [],
-      permissionScopes: [
-        AdminPermissionScope(permissions: ['settings.write']),
-      ],
-      canManageAllBranches: true,
-    );
+  staffId: 'u1',
+  email: 'admin@example.com',
+  fullName: 'Admin One',
+  status: 'active',
+  roles: [],
+  permissionScopes: [
+    AdminPermissionScope(permissions: ['settings.write']),
+  ],
+  canManageAllBranches: true,
+);
 
 void _setViewport(WidgetTester tester, double width) {
   tester.view.physicalSize = Size(width, 900);
@@ -31,9 +32,7 @@ void main() {
     AppLocale.instance.debugSet(AppLanguage.english);
     addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
 
-    await tester.pumpWidget(
-      MaterialApp(home: const CustomerPreviewPage()),
-    );
+    await tester.pumpWidget(MaterialApp(home: const CustomerPreviewPage()));
     await tester.pump();
 
     expect(find.text('Customer preview'), findsWidgets);

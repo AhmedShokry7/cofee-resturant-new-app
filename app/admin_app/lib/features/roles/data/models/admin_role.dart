@@ -15,12 +15,6 @@ class AdminRole {
   final bool isSystem;
   final List<String> permissions;
 
-  String displayName() {
-    if (nameEn != null && nameEn!.trim().isNotEmpty) return nameEn!.trim();
-    if (nameAr != null && nameAr!.trim().isNotEmpty) return nameAr!.trim();
-    return code;
-  }
-
   factory AdminRole.fromJson(Map<String, dynamic> json) {
     final perms = json['permissions'] as List<dynamic>?;
     return AdminRole(

@@ -22,7 +22,16 @@ alter table engagement.device_tokens
 comment on column engagement.device_tokens.locale is
   'The language of the device, used to pick the Arabic or the English text of a push.';
 
-grant insert, update, delete on table engagement.push_deliveries to service_role;
+-- This file also runs on a fresh replay, where the delivery log is created by
+-- 104 (the renamed push migration) and does not exist yet. Guard the grant so
+-- 098 succeeds and 099 can run; 104 repeats the grant afterwards.
+do $$
+begin
+  if to_regclass('engagement.push_deliveries') is not null then
+    execute 'grant insert, update, delete on table engagement.push_deliveries to service_role';
+  end if;
+end;
+$$;
 
 grant insert, update, delete on table engagement.device_tokens to service_role;
 

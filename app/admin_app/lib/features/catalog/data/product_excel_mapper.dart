@@ -1,3 +1,4 @@
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/product_excel_service.dart';
@@ -89,14 +90,9 @@ class ProductExcelMapper {
       if (name.isNotEmpty) headerIndex[name] = index;
     }
 
-    for (final required in <String>[
-      'name (arabic)',
-      'base price',
-    ]) {
+    for (final required in <String>['name (arabic)', 'base price']) {
       if (!headerIndex.containsKey(required)) {
-        throw FormatException(
-          'The file is missing the "${_label(required)}" column.',
-        );
+        throw FormatException(S.missingExcelColumn(_label(required)));
       }
     }
 
@@ -125,23 +121,19 @@ class ProductExcelMapper {
       final categoryValue = (_value(row, headerIndex, 'category') ?? '').trim();
       final category = categoryValue.isEmpty
           ? null
-          : _findCategory(
-              categoryValue,
-              categoryById,
-              categoryByName,
-            );
+          : _findCategory(categoryValue, categoryById, categoryByName);
 
       final reasons = <String>[];
       if (nameAr.isEmpty) {
-        reasons.add('Name (Arabic) is required');
+        reasons.add(S.excelArabicNameRequired);
       }
       if (price == null) {
-        reasons.add('Base Price is required');
+        reasons.add(S.excelBasePriceRequired);
       } else if (price < 0) {
-        reasons.add('Base Price cannot be negative');
+        reasons.add(S.excelBasePriceNegative);
       }
       if (categoryValue.isNotEmpty && category == null) {
-        reasons.add('Category "$categoryValue" not found');
+        reasons.add(S.excelCategoryNotFound(categoryValue));
       }
 
       if (reasons.isNotEmpty) {

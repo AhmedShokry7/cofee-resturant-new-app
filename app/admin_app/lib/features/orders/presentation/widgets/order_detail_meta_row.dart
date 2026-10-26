@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/app_color.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class OrderDetailMetaRow extends StatelessWidget {
   const OrderDetailMetaRow({
@@ -9,25 +11,39 @@ class OrderDetailMetaRow extends StatelessWidget {
     required this.label,
     required this.value,
   });
+
   final IconData icon;
   final String label, value;
 
   @override
   Widget build(BuildContext context) {
     if (value.isEmpty) return const SizedBox.shrink();
-    final style = Theme.of(context).textTheme.bodySmall;
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 2),
+      padding: const EdgeInsets.only(top: 4),
       child: Row(
         children: [
-          Icon(icon, size: 14, color: AppColor.greyColor),
-          const SizedBox(width: AppDimensions.xs),
-          Text('$label: ', style: style?.copyWith(color: AppColor.greyColor)),
+          HugeIcon(icon: icon, size: 13, color: adminSubtleColor(theme)),
+          const SizedBox(width: 6),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              color: adminMutedColor(theme),
+              fontSize: AppFontSizes.size10_5,
+              height: AppTextHeights.line1_5,
+            ),
+          ),
           Expanded(
             child: Text(
               value,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: style?.copyWith(fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: adminBodyColor(theme),
+                fontSize: AppFontSizes.size10_5,
+                fontWeight: AppFontWeights.medium,
+                height: AppTextHeights.line1_5,
+              ),
             ),
           ),
         ],

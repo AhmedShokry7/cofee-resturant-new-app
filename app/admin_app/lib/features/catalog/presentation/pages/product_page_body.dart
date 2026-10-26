@@ -5,6 +5,7 @@ import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_page_header.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_records.dart';
+import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 
 class ProductPageBody extends StatelessWidget {
   const ProductPageBody({
@@ -66,44 +67,42 @@ class ProductPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.pageHorizontalPadding,
-        vertical: AppDimensions.pageVerticalPadding,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          ProductPageHeader(
-            count: total ?? products.length,
-            selectedCount: selectedIds.length,
-            isSelectingAll: isSelectingAll,
-            isDeletingSelected: isDeletingSelected,
-            onSelectAll: onSelectAll,
-            onClearSelection: onClearSelection,
-            onDeleteSelected: onDeleteSelected,
-            onAdd: onAdd,
-            onPickFile: onPickFile,
-            onDownloadSample: onDownloadSample,
-            onExport: onExport,
-            importProgress: importProgress,
-            exportProgress: exportProgress,
-          ),
-          const SizedBox(height: AppDimensions.lg),
-          ProductRecords(
-            products: products,
-            categories: categories,
-            savingProductId: savingProductId,
-            onCreateCategory: onCreateCategory,
-            onToggleFeatured: onToggleFeatured,
-            onDelete: onDelete,
-            onSave: onSave,
-            onOpenImages: onOpenImages,
-            onSelect: onSelect,
-            selectedIds: selectedIds,
-            footer: footer,
-          ),
-        ],
+    return AdminPageFrame(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ProductPageHeader(
+              count: total ?? products.length,
+              selectedCount: selectedIds.length,
+              isSelectingAll: isSelectingAll,
+              isDeletingSelected: isDeletingSelected,
+              onSelectAll: onSelectAll,
+              onClearSelection: onClearSelection,
+              onDeleteSelected: onDeleteSelected,
+              onAdd: onAdd,
+              onPickFile: onPickFile,
+              onDownloadSample: onDownloadSample,
+              onExport: onExport,
+              importProgress: importProgress,
+              exportProgress: exportProgress,
+            ),
+            const SizedBox(height: AppDimensions.lg),
+            ProductRecords(
+              products: products,
+              categories: categories,
+              savingProductId: savingProductId,
+              onCreateCategory: onCreateCategory,
+              onToggleFeatured: onToggleFeatured,
+              onDelete: onDelete,
+              onSave: onSave,
+              onOpenImages: onOpenImages,
+              onSelect: onSelect,
+              selectedIds: selectedIds,
+              footer: footer,
+            ),
+          ],
+        ),
       ),
     );
   }

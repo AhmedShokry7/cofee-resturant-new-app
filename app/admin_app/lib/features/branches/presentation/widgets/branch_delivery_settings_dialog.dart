@@ -4,6 +4,8 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/features/branches/data/models/admin_branch.dart';
 import 'package:admin_app/features/delivery_zones/data/models/admin_delivery_zone.dart';
 import 'package:admin_app/features/delivery_zones/data/repositories/admin_delivery_zone_repository.dart';
@@ -199,7 +201,7 @@ class _BranchDeliverySettingsDialogState
                     child: Text(
                       S.branchActiveZoneCount(activeCount),
                       style: Theme.of(context).textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
+                          ?.copyWith(fontWeight: AppFontWeights.bold),
                     ),
                   ),
                   FilledButton.icon(
@@ -312,7 +314,7 @@ class _DialogHeader extends StatelessWidget {
                     ),
                   ),
                   style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: AppFontWeights.bold,
                   ),
                 ),
                 const SizedBox(height: AppDimensions.xs),
@@ -375,7 +377,7 @@ class _BranchLocationCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: AppFontWeights.semiBold,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -419,9 +421,9 @@ class _ZoneCard extends StatelessWidget {
 
   String _feeLabel() => switch (zone.feeMethod) {
     'per_km' =>
-      '${S.deliveryFeePerKm}: ${zone.feePerKm?.toStringAsFixed(2) ?? '0.00'} SAR/km',
+      '${S.deliveryFeePerKm}: ${S.perKilometer(formatMoneyWithCurrency(zone.feePerKm ?? 0))}',
     'free' => S.freeDelivery,
-    _ => '${S.fixedDeliveryFee}: ${zone.deliveryFee.toStringAsFixed(2)} SAR',
+    _ => '${S.fixedDeliveryFee}: ${formatMoneyWithCurrency(zone.deliveryFee)}',
   };
 
   @override
@@ -456,7 +458,7 @@ class _ZoneCard extends StatelessWidget {
                       child: Text(
                         zone.nameFor(isArabic),
                         style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: AppFontWeights.bold,
                         ),
                       ),
                     ),
@@ -470,14 +472,14 @@ class _ZoneCard extends StatelessWidget {
                   children: [
                     _Detail(
                       icon: Icons.radar,
-                      text: '${zone.radiusKm ?? '—'} km',
+                      text: S.kilometers('${zone.radiusKm ?? '—'}'),
                     ),
                     _Detail(icon: Icons.payments_outlined, text: _feeLabel()),
                     if (zone.minOrderAmount > 0)
                       _Detail(
                         icon: Icons.shopping_bag_outlined,
                         text:
-                            '${S.minimumOrder}: ${zone.minOrderAmount.toStringAsFixed(2)} SAR',
+                            '${S.minimumOrder}: ${formatMoneyWithCurrency(zone.minOrderAmount)}',
                       ),
                   ],
                 ),
@@ -544,7 +546,7 @@ class _StatusPill extends StatelessWidget {
       active ? S.active : S.inactive,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(
         color: active ? AppColor.primaryColor : AppColor.greyColor,
-        fontWeight: FontWeight.w700,
+        fontWeight: AppFontWeights.bold,
       ),
     ),
   );

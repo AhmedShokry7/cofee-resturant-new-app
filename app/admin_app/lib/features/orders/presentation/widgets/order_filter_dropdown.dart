@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 class OrderFilterDropdown extends StatelessWidget {
   const OrderFilterDropdown({
@@ -8,30 +11,74 @@ class OrderFilterDropdown extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.enabled = true,
   });
+
   final String label, value;
   final List<DropdownMenuItem<String>> items;
   final ValueChanged<String> onChanged;
+  final bool enabled;
 
   @override
-  Widget build(BuildContext context) => DropdownButtonFormField<String>(
-    initialValue: value,
-    isExpanded: true,
-    isDense: true,
-    decoration: InputDecoration(
-      labelText: label,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final border = dark ? AppColor.darkBorder : AppColor.adminControlBorder;
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    return DropdownButtonFormField<String>(
+      initialValue: value,
+      isExpanded: true,
       isDense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: AppDimensions.fieldVerticalPadding,
+      style: TextStyle(
+        color: dark ? AppColor.darkText : AppColor.adminBody,
+        fontSize: AppFontSizes.size11,
+        height: AppTextHeights.line1_5,
       ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedArrowDown01,
+        size: 16,
+        color: muted,
       ),
-    ),
-    items: items,
-    onChanged: (selected) {
-      if (selected != null) onChanged(selected);
-    },
-  );
+      dropdownColor: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(9),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          color: muted,
+          fontSize: AppFontSizes.size11,
+          height: AppTextHeights.line1_5,
+        ),
+        floatingLabelStyle: TextStyle(
+          color: dark ? AppColor.darkTextSecondary : AppColor.adminAccent,
+          fontSize: AppFontSizes.size10_5,
+          height: AppTextHeights.line1_5,
+        ),
+        filled: true,
+        fillColor: theme.colorScheme.surface,
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: BorderSide(color: border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: BorderSide(color: border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: const BorderSide(color: AppColor.adminAccent),
+        ),
+      ),
+      items: items,
+      onChanged: enabled
+          ? (selected) {
+              if (selected != null) onChanged(selected);
+            }
+          : null,
+    );
+  }
 }

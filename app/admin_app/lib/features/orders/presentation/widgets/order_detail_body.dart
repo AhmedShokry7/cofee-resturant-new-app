@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
+
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
+import 'package:admin_app/features/orders/presentation/widgets/customer_previous_orders.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_actions.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_customer_section.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_delivery_map.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_detail_main_column.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_detail_header.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_detail_navigation.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_detail_stats.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_fulfillment_section.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_items_list.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_payment_section.dart';
 
 class OrderDetailBody extends StatelessWidget {
   const OrderDetailBody({
@@ -17,6 +24,7 @@ class OrderDetailBody extends StatelessWidget {
     required this.navigationOrders,
     required this.onSelectOrder,
   });
+
   final OrderDetailController controller;
   final ValueChanged<String> onStatusChanged, onRemoveItem;
   final VoidCallback onAddProduct;
@@ -26,15 +34,31 @@ class OrderDetailBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final order = controller.order;
-    final wide = MediaQuery.sizeOf(context).width >= 1120;
+    final width = MediaQuery.sizeOf(context).width;
+    final wide = width >= 1080;
+
+    final items = OrderItemsList(
+      order: order,
+      onRemoveItem: onRemoveItem,
+      onAddProduct: onAddProduct,
+    );
+    final payment = OrderPaymentSection(
+      order: order,
+      saving: controller.saving,
+      onPaymentStatusChanged: (value) =>
+          changePaymentStatus(context, controller, value),
+    );
     final customer = OrderCustomerSection(
       order: order,
       customerDetails: controller.customerDetails,
-      isLoadingCustomerDetails: controller.customerDetailsLoading,
-      customerDetailsFailed: controller.customerDetailsFailed,
-      previousOrders: controller.previousOrders,
-      onOpenPreviousOrder: (value) => onSelectOrder(value.id),
     );
+    final previousOrders = CustomerPreviousOrders(
+      orders: controller.previousOrders,
+      loading: controller.customerDetailsLoading,
+      failed: controller.customerDetailsFailed,
+      onOpen: (value) => onSelectOrder(value.id),
+    );
+    final fulfillment = OrderFulfillmentSection(order: order);
     final map =
         controller.deliveryLatitude != null &&
             controller.deliveryLongitude != null
@@ -45,14 +69,17 @@ class OrderDetailBody extends StatelessWidget {
             branchLongitude: controller.branchLongitude,
           )
         : null;
-    final main = OrderDetailMainColumn(
-      controller: controller,
-      onStatusChanged: onStatusChanged,
-      onRemoveItem: onRemoveItem,
-      onAddProduct: onAddProduct,
-      customer: wide ? null : customer,
-      deliveryMap: wide ? null : map,
-    );
+
+    final main = <Widget>[items, const SizedBox(height: 12), payment];
+    final side = <Widget>[
+      customer,
+      const SizedBox(height: 12),
+      previousOrders,
+      const SizedBox(height: 12),
+      fulfillment,
+      if (map != null) ...[const SizedBox(height: 12), map],
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -62,26 +89,49 @@ class OrderDetailBody extends StatelessWidget {
           onSelect: onSelectOrder,
         ),
         const SizedBox(height: AppDimensions.md),
-        if (!wide)
-          main
-        else
+        OrderDetailHeader(
+          order: order,
+          saving: controller.saving,
+          onStatusChanged: onStatusChanged,
+        ),
+        const SizedBox(height: AppDimensions.md),
+        OrderDetailStats(order: order),
+        const SizedBox(height: AppDimensions.lg),
+        if (wide)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 3, child: main),
-              const SizedBox(width: AppDimensions.lg),
               Expanded(
-                flex: 1,
+                flex: 7,
                 child: Column(
-                  children: [
-                    customer,
-                    if (map != null) ...[
-                      const SizedBox(height: AppDimensions.md),
-                      map,
-                    ],
-                  ],
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: main,
                 ),
               ),
+              const SizedBox(width: AppDimensions.md),
+              Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: side,
+                ),
+              ),
+            ],
+          )
+        else
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              items,
+              const SizedBox(height: 12),
+              payment,
+              const SizedBox(height: 12),
+              customer,
+              const SizedBox(height: 12),
+              previousOrders,
+              const SizedBox(height: 12),
+              fulfillment,
+              if (map != null) ...[const SizedBox(height: 12), map],
             ],
           ),
       ],

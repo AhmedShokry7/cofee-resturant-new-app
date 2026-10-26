@@ -48,7 +48,7 @@ class _RolePageState extends State<RolePage> {
   }
 
   void _onSearch(String query) {
-    setState(() => _searchQuery = query.trim().toLowerCase());
+    setState(() => _searchQuery = query.trim());
   }
 
   @override
@@ -69,15 +69,18 @@ class _RolePageState extends State<RolePage> {
           return RolePageBody(
             roles: state.roles,
             search: _searchQuery,
+            onSearchChanged: widget.searchController.update,
+            onManage: (role) => showRolePermissionsDialog(
+              context: context,
+              cubit: _cubit,
+              role: role,
+              canManage: widget.canManage,
+            ),
             canManage: widget.canManage,
-            onManage: widget.canManage
-                ? (role) => showRolePermissionsDialog(
-                    context: context,
-                    cubit: _cubit,
-                    role: role,
-                    canManage: widget.canManage,
-                  )
-                : (_) {},
+            errorMessage: state.status == AdminRoleStatus.failure
+                ? state.errorMessage
+                : null,
+            onRefresh: _cubit.load,
           );
         },
       ),

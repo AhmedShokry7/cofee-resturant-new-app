@@ -21,13 +21,9 @@ class OrderSummaryCards extends StatelessWidget {
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
 
-        final columns = availableWidth < 520
-            ? 1
-            : availableWidth < 900
-            ? 2
-            : 4;
+        final columns = availableWidth < 900 ? 2 : 4;
 
-        const spacing = 12.0;
+        const spacing = 13.0;
         final cardWidth = (availableWidth - spacing * (columns - 1)) / columns;
 
         return Wrap(

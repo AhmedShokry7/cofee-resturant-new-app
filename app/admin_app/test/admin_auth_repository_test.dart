@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:admin_app/features/auth/data/repositories/admin_auth_repository.dart';
+import 'package:admin_app/core/error/failure.dart';
+import 'package:admin_app/features/auth/data/repositories/supabase_auth_repository.dart';
 
 /// Stands in for the Supabase HTTP layer.
 ///
@@ -81,17 +82,20 @@ class _RecordingClient extends http.BaseClient {
   }
 }
 
+SupabaseAuthRepository _repository(_RecordingClient httpClient) {
+  final client = SupabaseClient(
+    'https://example.supabase.co',
+    'publishable-test-key',
+    httpClient: httpClient,
+  );
+  addTearDown(client.dispose);
+  return SupabaseAuthRepository(client);
+}
+
 void main() {
   test('the sign-in asks the database for the staff record', () async {
     final httpClient = _RecordingClient();
-    final client = SupabaseClient(
-      'https://example.supabase.co',
-      'publishable-test-key',
-      httpClient: httpClient,
-    );
-    addTearDown(client.dispose);
-
-    final repository = AdminAuthRepository(client);
+    final repository = _repository(httpClient);
 
     await repository.signIn(email: 'manager@example.com', password: 'secret');
 
@@ -102,18 +106,15 @@ void main() {
 
   test('the staff record is read into the session', () async {
     final httpClient = _RecordingClient();
-    final client = SupabaseClient(
-      'https://example.supabase.co',
-      'publishable-test-key',
-      httpClient: httpClient,
-    );
-    addTearDown(client.dispose);
+    final repository = _repository(httpClient);
 
-    final repository = AdminAuthRepository(client);
-
-    final session = await repository.signIn(
+    final result = await repository.signIn(
       email: 'manager@example.com',
       password: 'secret',
+    );
+    final session = result.fold(
+      (failure) => throw failure,
+      (session) => session,
     );
 
     expect(session.staffId, 's1');
@@ -125,4 +126,43 @@ void main() {
     expect(session.hasPermission('admin.staff.write'), isFalse);
     expect(session.canManageAllBranches, isFalse);
   });
+
+  test('a rejected sign-in reports invalid credentials', () async {
+    final httpClient = _RejectingClient();
+    final client = SupabaseClient(
+      'https://example.supabase.co',
+      'publishable-test-key',
+      httpClient: httpClient,
+    );
+    addTearDown(client.dispose);
+
+    final result = await SupabaseAuthRepository(client)
+        .signIn(email: 'manager@example.com', password: 'wrong');
+
+    expect(
+      result.fold((failure) => failure, (_) => null),
+      isA<InvalidCredentialsFailure>(),
+    );
+  });
+}
+
+/// Refuses the sign-in call the way Supabase answers a wrong password.
+class _RejectingClient extends http.BaseClient {
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    final bytes = utf8.encode(
+      jsonEncode(<String, dynamic>{
+        'code': 'invalid_credentials',
+        'message': 'Invalid login credentials',
+      }),
+    );
+    return http.StreamedResponse(
+      Stream<List<int>>.value(bytes),
+      400,
+      headers: <String, String>{
+        'content-type': 'application/json; charset=utf-8',
+      },
+      request: request,
+    );
+  }
 }

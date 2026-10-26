@@ -30,14 +30,14 @@ class CustomerPreviewState {
   final bool isSaving;
 
   factory CustomerPreviewState.initial() => const CustomerPreviewState(
-        published: PreviewDraftSettings.defaults,
-        draft: PreviewDraftSettings.defaults,
-        screen: PreviewScreen.home,
-        viewport: PreviewViewport.medium,
-        customerAppUrl: '',
-        refreshToken: 0,
-        isDirty: false,
-      );
+    published: PreviewDraftSettings.defaults,
+    draft: PreviewDraftSettings.defaults,
+    screen: PreviewScreen.home,
+    viewport: PreviewViewport.medium,
+    customerAppUrl: '',
+    refreshToken: 0,
+    isDirty: false,
+  );
 
   CustomerPreviewState copyWith({
     PreviewDraftSettings? published,
@@ -100,17 +100,33 @@ class CustomerPreviewCubit extends Cubit<CustomerPreviewState> {
   void updateCustomerAppUrl(String value) =>
       emit(state.copyWith(customerAppUrl: value));
 
-  void updatePrimaryColor(Color color) =>
-      emit(state.copyWith(draft: state.draft.copyWith(primaryColor: color), isDirty: true));
+  void updatePrimaryColor(Color color) => emit(
+    state.copyWith(
+      draft: state.draft.copyWith(primaryColor: color),
+      isDirty: true,
+    ),
+  );
 
-  void updateSecondaryColor(Color color) =>
-      emit(state.copyWith(draft: state.draft.copyWith(secondaryColor: color), isDirty: true));
+  void updateSecondaryColor(Color color) => emit(
+    state.copyWith(
+      draft: state.draft.copyWith(secondaryColor: color),
+      isDirty: true,
+    ),
+  );
 
-  void updateBackgroundColor(Color color) =>
-      emit(state.copyWith(draft: state.draft.copyWith(backgroundColor: color), isDirty: true));
+  void updateBackgroundColor(Color color) => emit(
+    state.copyWith(
+      draft: state.draft.copyWith(backgroundColor: color),
+      isDirty: true,
+    ),
+  );
 
-  void updateSurfaceColor(Color color) =>
-      emit(state.copyWith(draft: state.draft.copyWith(surfaceColor: color), isDirty: true));
+  void updateSurfaceColor(Color color) => emit(
+    state.copyWith(
+      draft: state.draft.copyWith(surfaceColor: color),
+      isDirty: true,
+    ),
+  );
 
   void updateScreen(PreviewScreen screen) =>
       emit(state.copyWith(screen: screen));
@@ -129,7 +145,9 @@ class CustomerPreviewCubit extends Cubit<CustomerPreviewState> {
           '${_hex(state.draft.primaryColor)}|${_hex(state.draft.secondaryColor)}|'
           '${_hex(state.draft.backgroundColor)}|${_hex(state.draft.surfaceColor)}';
       await prefs.setString(_draftKey, encoded);
-      emit(state.copyWith(published: state.draft, isDirty: false, isSaving: false));
+      emit(
+        state.copyWith(published: state.draft, isDirty: false, isSaving: false),
+      );
     } catch (_) {
       emit(state.copyWith(isSaving: false));
     }

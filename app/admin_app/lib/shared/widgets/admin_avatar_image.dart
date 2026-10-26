@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 /// A customer photo with a neutral placeholder behind it.
 ///
@@ -60,8 +61,8 @@ class AdminAvatarImage extends StatelessWidget {
                 style: TextStyle(
                   color: fallbackColor ?? AppColor.primaryColor,
                   fontSize: size * 0.34,
-                  fontWeight: FontWeight.w600,
-                  height: 1.1,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_1,
                 ),
               ),
       ),

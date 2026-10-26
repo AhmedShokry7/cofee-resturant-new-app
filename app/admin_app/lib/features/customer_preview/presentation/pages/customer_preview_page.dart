@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/presentation/manager/customer_preview_cubit.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/phone_frame.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/android_emulator_preview.dart';
@@ -42,99 +43,104 @@ class _CustomerPreviewView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Header(isDirty: state.isDirty),
-              const SizedBox(height: AppDimensions.md),
-              const TabBar(
-                tabs: [
-                  Tab(text: 'Browser preview'),
-                  Tab(text: 'Android emulator'),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.md),
-              Expanded(
-                child: TabBarView(
-                  children: [
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        final wide = constraints.maxWidth >= 900;
-                        final controls = _Controls(cubit: cubit, state: state);
-                        final preview = SingleChildScrollView(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.max,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: AppDimensions.sm,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColor.lightGreyColor,
-                                  borderRadius: BorderRadius.circular(
-                                    AppDimensions.radiusPill,
-                                  ),
-                                ),
-                                child: Text(
-                                  state.isDirty
-                                      ? S.previewDraftMode
-                                      : S.previewPublishedMode,
-                                  style: const TextStyle(fontSize: 12),
-                                ),
-                              ),
-                              const SizedBox(height: AppDimensions.md),
-                              PhoneFrame(
-                                width: width,
-                                child: url.isEmpty
-                                    ? Center(
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(
-                                            AppDimensions.md,
-                                          ),
-                                          child: Text(
-                                            '${S.previewCustomerAppUrl}\n'
-                                            'Run: flutter run -d web-server '
-                                            '--web-port 8080',
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      )
-                                    : PreviewSurface(url: url),
-                              ),
-                            ],
-                          ),
-                        );
-
-                        if (wide) {
-                          return Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(
-                            width: 320,
-                            child: SingleChildScrollView(child: controls),
-                          ),
-                              const SizedBox(width: AppDimensions.lg),
-                              Expanded(child: preview),
-                            ],
-                          );
-                        }
-                        return SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              controls,
-                              const SizedBox(height: AppDimensions.lg),
-                              preview,
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                    const AndroidEmulatorPreview(),
+                const SizedBox(height: AppDimensions.md),
+                TabBar(
+                  tabs: [
+                    Tab(text: S.browserPreview),
+                    Tab(text: S.androidEmulator),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(height: AppDimensions.md),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final wide = constraints.maxWidth >= 900;
+                          final controls = _Controls(
+                            cubit: cubit,
+                            state: state,
+                          );
+                          final preview = SingleChildScrollView(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.max,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: AppDimensions.sm,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColor.lightGreyColor,
+                                    borderRadius: BorderRadius.circular(
+                                      AppDimensions.radiusPill,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    state.isDirty
+                                        ? S.previewDraftMode
+                                        : S.previewPublishedMode,
+                                    style: const TextStyle(
+                                      fontSize: AppFontSizes.size12,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: AppDimensions.md),
+                                PhoneFrame(
+                                  width: width,
+                                  child: url.isEmpty
+                                      ? Center(
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(
+                                              AppDimensions.md,
+                                            ),
+                                            child: Text(
+                                              '${S.previewCustomerAppUrl}\n'
+                                              'Run: flutter run -d web-server '
+                                              '--web-port 8080',
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ),
+                                        )
+                                      : PreviewSurface(url: url),
+                                ),
+                              ],
+                            ),
+                          );
+
+                          if (wide) {
+                            return Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(
+                                  width: 320,
+                                  child: SingleChildScrollView(child: controls),
+                                ),
+                                const SizedBox(width: AppDimensions.lg),
+                                Expanded(child: preview),
+                              ],
+                            );
+                          }
+                          return SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                controls,
+                                const SizedBox(height: AppDimensions.lg),
+                                preview,
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                      const AndroidEmulatorPreview(),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
       },
     );
   }
@@ -185,16 +191,13 @@ class _Header extends StatelessWidget {
       children: [
         const Icon(HugeIcons.strokeRoundedSmartPhone01, size: 20),
         const SizedBox(width: AppDimensions.sm),
-        Text(
-          S.customerPreview,
-          style: Theme.of(context).textTheme.titleLarge,
-        ),
+        Text(S.customerPreview, style: Theme.of(context).textTheme.titleLarge),
         const Spacer(),
         Text(
           isDirty ? S.previewDraftMode : S.previewPublishedMode,
           style: TextStyle(
             color: isDirty ? AppColor.errorColor : AppColor.greenColor,
-            fontSize: 12,
+            fontSize: AppFontSizes.size12,
           ),
         ),
       ],
@@ -292,10 +295,7 @@ class _Controls extends StatelessWidget {
                   onPressed: state.isSaving ? null : cubit.saveDraft,
                   child: Text(S.previewSaveDraft),
                 ),
-                OutlinedButton(
-                  onPressed: null,
-                  child: Text(S.previewPublish),
-                ),
+                OutlinedButton(onPressed: null, child: Text(S.previewPublish)),
               ],
             ),
           ],
@@ -360,6 +360,5 @@ class _ColorFieldState extends State<_ColorField> {
     );
   }
 
-  String _hex(Color color) =>
-      '#';
+  String _hex(Color color) => '#';
 }

@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:xml/xml.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
+
 /// Reads and writes the small subset of the .xlsx format the product catalogue
 /// needs: one sheet, inline or shared strings, no formulas, no styling.
 class ProductExcelService {
@@ -58,7 +60,7 @@ class ProductExcelService {
     final archive = ZipDecoder().decodeBytes(bytes);
     final sheetFile = archive.findFile('xl/worksheets/sheet1.xml');
     if (sheetFile == null) {
-      throw const FormatException('The workbook has no worksheet.');
+      throw FormatException(S.noWorksheet);
     }
 
     final sharedStrings = _readSharedStrings(archive);

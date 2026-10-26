@@ -41,8 +41,8 @@ class _NeverFiresLoyaltyRepository implements LoyaltyRepository {
 
   @override
   Future<int> redeemReward({
-    required String productId,
-    required String branchId,
+    required String rewardId,
+    String? branchId,
   }) => Future.value(0);
 }
 

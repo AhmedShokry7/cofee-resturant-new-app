@@ -4,6 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_page_header.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.dart';
+import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 
 /// The header and the list of the bundles, the whole content of the page.
 class BundlePageBody extends StatelessWidget {
@@ -16,6 +17,12 @@ class BundlePageBody extends StatelessWidget {
     required this.onDelete,
     required this.onToggleActive,
     required this.onChangeImage,
+    this.selectedIds = const <String>{},
+    this.isDeletingSelected = false,
+    this.onSelect,
+    this.onSelectAll,
+    this.onClearSelection,
+    this.onDeleteSelected,
   });
 
   final List<AdminBundle> bundles;
@@ -25,26 +32,35 @@ class BundlePageBody extends StatelessWidget {
   final ValueChanged<AdminBundle> onDelete;
   final ValueChanged<AdminBundle> onToggleActive;
   final ValueChanged<AdminBundle> onChangeImage;
+  final Set<String> selectedIds;
+  final bool isDeletingSelected;
+  final ValueChanged<AdminBundle>? onSelect;
+  final VoidCallback? onSelectAll;
+  final VoidCallback? onClearSelection;
+  final VoidCallback? onDeleteSelected;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.pageHorizontalPadding,
-        vertical: AppDimensions.pageVerticalPadding,
-      ),
+    return AdminPageFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           BundlePageHeader(
             count: filterBundles(bundles, search).length,
             onAdd: onAdd,
+            selectedCount: selectedIds.length,
+            onSelectAll: onSelectAll,
+            onClearSelection: onClearSelection,
+            onDeleteSelected: onDeleteSelected,
+            isDeletingSelected: isDeletingSelected,
           ),
           const SizedBox(height: AppDimensions.lg),
           Expanded(
             child: BundleRecords(
               bundles: bundles,
               search: search,
+              selectedIds: selectedIds,
+              onSelect: onSelect,
               onEdit: onEdit,
               onDelete: onDelete,
               onToggleActive: onToggleActive,

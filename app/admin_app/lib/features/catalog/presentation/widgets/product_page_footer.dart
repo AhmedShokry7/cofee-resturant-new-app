@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_state.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 
 /// The strip under the grid of the products: the spinner while more pages
 /// arrive, the message when nothing matches, or the button that asks for
@@ -28,6 +31,7 @@ class ProductPageFooter extends StatelessWidget {
       );
     }
     if (state.status == AdminProductStatus.failure) {
+      final dark = Theme.of(context).brightness == Brightness.dark;
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: AppDimensions.lg),
         child: Row(
@@ -37,6 +41,9 @@ class ProductPageFooter extends StatelessWidget {
               child: Text(
                 state.errorMessage ?? S.couldNotLoadProducts,
                 textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: dark ? AppColor.darkTextSecondary : AppColor.greyColor,
+                ),
               ),
             ),
             TextButton(onPressed: onRetry, child: Text(S.retry)),
@@ -51,11 +58,14 @@ class ProductPageFooter extends StatelessWidget {
       );
     }
     if (!state.hasProducts) {
+      final filtering = state.search.trim().isNotEmpty;
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimensions.xl),
-        child: Text(
-          state.search.trim().isEmpty ? S.noProductsYet : S.noProductsFound,
-          textAlign: TextAlign.center,
+        padding: const EdgeInsets.symmetric(vertical: AppDimensions.lg),
+        child: AdminEmptyState(
+          icon: filtering
+              ? HugeIcons.strokeRoundedSearch01
+              : HugeIcons.strokeRoundedPackage,
+          message: filtering ? S.noProductsFound : S.noProductsYet,
         ),
       );
     }

@@ -4,11 +4,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 
 class PhoneFrame extends StatelessWidget {
-  const PhoneFrame({
-    super.key,
-    required this.child,
-    this.width = 320,
-  });
+  const PhoneFrame({super.key, required this.child, this.width = 320});
 
   final Widget child;
   final double width;

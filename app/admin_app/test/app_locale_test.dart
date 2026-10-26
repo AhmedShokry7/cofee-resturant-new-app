@@ -17,7 +17,9 @@ void main() {
   });
 
   test('initialize restores a saved language', () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{'admin_app_language': 'ar'});
+    SharedPreferences.setMockInitialValues(<String, Object>{
+      'admin_app_language': 'ar',
+    });
     await AppLocale.instance.initialize();
     expect(AppLocale.instance.language, AppLanguage.arabic);
     expect(AppLocale.instance.textDirection, TextDirection.rtl);

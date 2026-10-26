@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
+import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class OrderFinancialSummary extends StatelessWidget {
@@ -12,68 +16,127 @@ class OrderFinancialSummary extends StatelessWidget {
     required this.order,
     this.paymentMethodLabel,
   });
+
   final AdminOrder order;
   final String? paymentMethodLabel;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      if (paymentMethodLabel?.trim().isNotEmpty == true)
-        _textRow(context, S.paymentMethod, paymentMethodLabel!),
-      _amountRow(context, S.subtotal, order.subtotal),
-      if (order.discountTotal > 0)
-        _amountRow(context, S.discount, -order.discountTotal),
-      if (order.fulfillmentType == 'delivery')
-        _amountRow(context, S.deliveryFee, order.deliveryFee),
-      if (order.taxTotal > 0) _amountRow(context, S.tax, order.taxTotal),
-      const Divider(height: AppDimensions.lg),
-      Row(
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        if (paymentMethodLabel?.trim().isNotEmpty == true)
+          _textRow(context, S.paymentMethod, paymentMethodLabel!),
+        _amountRow(context, S.subtotal, order.subtotal),
+        if (order.discountTotal > 0)
+          _amountRow(context, S.discount, -order.discountTotal),
+        if (order.fulfillmentType == 'delivery')
+          _amountRow(context, S.deliveryFee, order.deliveryFee),
+        if (order.taxTotal > 0) _amountRow(context, S.tax, order.taxTotal),
+        const SizedBox(height: 10),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: adminFlagBackground(
+              theme,
+              AppColor.adminAccent,
+              AppColor.adminAccentSurface,
+            ),
+            borderRadius: BorderRadius.circular(9),
+            border: Border.all(
+              color: AppColor.adminAccent.withValues(
+                alpha: adminIsDark(theme) ? .35 : .18,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  S.grandTotal,
+                  style: TextStyle(
+                    color: adminHeadingColor(theme),
+                    fontSize: AppFontSizes.size11_5,
+                    fontWeight: AppFontWeights.bold,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+              ),
+              AdminMoneyText(
+                value: order.grandTotal,
+                fontSize: AppFontSizes.size15,
+                color: adminFlagForeground(theme, AppColor.adminAccent),
+                formatter: orderMoney,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _amountRow(BuildContext context, String label, double value) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
         children: [
           Expanded(
             child: Text(
-              S.grandTotal,
-              style: Theme.of(context).textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              label,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size11,
+                height: AppTextHeights.line1_5,
+              ),
             ),
           ),
           Text(
-            formatAmount(order.grandTotal),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: AppColor.primaryColor,
-              fontWeight: FontWeight.w700,
+            orderMoney(value),
+            style: TextStyle(
+              color: adminBodyColor(theme),
+              fontSize: AppFontSizes.size11,
+              fontWeight: AppFontWeights.medium,
+              height: AppTextHeights.line1_5,
             ),
           ),
           const SizedBox(width: AppDimensions.xs),
-          const CurrencyIcon(size: 16, color: AppColor.primaryColor),
+          const CurrencyIcon(size: 11),
         ],
       ),
-    ],
-  );
+    );
+  }
 
-  Widget _amountRow(BuildContext context, String label, double value) =>
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Row(
-          children: [
-            Expanded(
-              child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+  Widget _textRow(BuildContext context, String label, String value) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size11,
+                height: AppTextHeights.line1_5,
+              ),
             ),
-            Text(formatAmount(value)),
-            const SizedBox(width: AppDimensions.xs),
-            const CurrencyIcon(size: 12),
-          ],
-        ),
-      );
-
-  Widget _textRow(BuildContext context, String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 2),
-    child: Row(
-      children: [
-        Expanded(
-          child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-        ),
-        Text(value),
-      ],
-    ),
-  );
+          ),
+          Flexible(
+            child: Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: adminBodyColor(theme),
+                fontSize: AppFontSizes.size11,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

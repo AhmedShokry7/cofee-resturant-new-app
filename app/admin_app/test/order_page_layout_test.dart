@@ -42,6 +42,7 @@ void main() {
           body: OrderPageBody(
             orders: <AdminOrder>[_order()],
             search: '',
+            onSearchChanged: (_) {},
             onChangeStatus: (_, _) {},
             onOpen: (_) {},
             onRefresh: () {},
@@ -63,6 +64,7 @@ void main() {
           body: OrderPageBody(
             orders: <AdminOrder>[_order()],
             search: '',
+            onSearchChanged: (_) {},
             onChangeStatus: (_, _) {},
             onOpen: (_) {},
             onRefresh: () {},

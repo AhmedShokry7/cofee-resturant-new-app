@@ -1,0 +1,2099 @@
+import 'dart:math';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:hugeicons/hugeicons.dart';
+
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/features/pos/data/models/pos_cart.dart';
+import 'package:admin_app/features/pos/data/models/pos_shift.dart';
+import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
+import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
+import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
+import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
+import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
+import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
+import 'package:admin_app/shared/widgets/admin_status_badge.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
+
+/// Opens the cashier shift panel: the live drawer, cash movements, the drawer
+/// count and the shift history.
+Future<void> showPosShiftDialog(
+  BuildContext context, {
+  required PosCubit cubit,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (_) => BlocProvider<PosCubit>.value(
+      value: cubit,
+      child: const _PosShiftDialog(),
+    ),
+  );
+}
+
+/// Shows the Z report of one shift, used right after closing a drawer and from
+/// the shift history.
+Future<void> showPosShiftReportDialog(BuildContext context, PosShift shift) {
+  return showDialog<void>(
+    context: context,
+    builder: (_) => _ShiftReportDialog(shift: shift),
+  );
+}
+
+void _showShiftMessage(
+  BuildContext context,
+  String message, {
+  bool error = false,
+}) {
+  final messenger = ScaffoldMessenger.of(context);
+  messenger
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? AppColor.errorColor : null,
+      ),
+    );
+}
+
+class _PosShiftDialog extends StatelessWidget {
+  const _PosShiftDialog();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final width = min(620.0, size.width - 32);
+    final height = min(760.0, size.height * .92);
+
+    return BlocBuilder<PosCubit, PosState>(
+      builder: (context, state) {
+        final shift = state.shift;
+        final busy =
+            state.isOpeningShift ||
+            state.isClosingShift ||
+            state.isSavingMovement;
+        final initialLoad =
+            state.isLoadingShift &&
+            shift == null &&
+            state.shiftFailure == null &&
+            !state.shiftKnown;
+
+        return Dialog(
+          key: const Key('pos-shift-dialog'),
+          backgroundColor: theme.colorScheme.surface,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdminDialogHeader(
+                  title: S.posShiftTitle,
+                  subtitle: S.posShiftSubtitle,
+                  onClose: busy ? null : () => Navigator.of(context).pop(),
+                ),
+                if (state.isLoadingShift && shift != null)
+                  const LinearProgressIndicator(minHeight: 2),
+                Expanded(
+                  child: initialLoad
+                      ? const Center(child: CircularProgressIndicator())
+                      : shift != null
+                      ? _ShiftOverview(shift: shift)
+                      : _OpenShiftForm(
+                          failure: state.shiftFailure,
+                          opening: state.isOpeningShift,
+                        ),
+                ),
+                _ShiftFooter(state: state),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ShiftFooter extends StatelessWidget {
+  const _ShiftFooter({required this.state});
+
+  final PosState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final shift = state.shift;
+    final busy =
+        state.isOpeningShift || state.isClosingShift || state.isSavingMovement;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppDimensions.lg,
+        vertical: AppDimensions.sm,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: adminRowBorderColor(theme))),
+      ),
+      child: Wrap(
+        alignment: WrapAlignment.end,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        spacing: AppDimensions.sm,
+        runSpacing: AppDimensions.sm,
+        children: [
+          TextButton.icon(
+            key: const Key('pos-shift-history'),
+            onPressed: busy ? null : () => _openHistory(context),
+            icon: HugeIcon(
+              icon: HugeIcons.strokeRoundedTransactionHistory,
+              size: 16,
+              color: theme.colorScheme.primary,
+            ),
+            label: Text(
+              S.posShiftHistory,
+              style: const TextStyle(
+                fontSize: AppFontSizes.size10_5,
+                fontWeight: AppFontWeights.semiBold,
+              ),
+            ),
+          ),
+          if (shift != null) ...[
+            OutlinedButton.icon(
+              key: const Key('pos-shift-cash-in'),
+              onPressed: busy
+                  ? null
+                  : () => _recordMovement(context, PosCashMovementKind.cashIn),
+              style: _outlinedStyle(theme),
+              icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowDownLeft01,
+                size: 15,
+                color: adminBodyColor(theme),
+              ),
+              label: Text(
+                S.posShiftCashInAction,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.semiBold,
+                ),
+              ),
+            ),
+            OutlinedButton.icon(
+              key: const Key('pos-shift-cash-out'),
+              onPressed: busy
+                  ? null
+                  : () => _recordMovement(context, PosCashMovementKind.cashOut),
+              style: _outlinedStyle(theme),
+              icon: HugeIcon(
+                icon: HugeIcons.strokeRoundedArrowUpRight01,
+                size: 15,
+                color: adminBodyColor(theme),
+              ),
+              label: Text(
+                S.posShiftCashOutAction,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.semiBold,
+                ),
+              ),
+            ),
+            FilledButton.icon(
+              key: const Key('pos-shift-close'),
+              onPressed: busy ? null : () => _closeDrawer(context),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 38),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(9),
+                ),
+              ),
+              icon: const HugeIcon(
+                icon: HugeIcons.strokeRoundedLock,
+                size: 15,
+                color: AppColor.whiteColor,
+              ),
+              label: Text(
+                S.posShiftCloseDrawer,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.semiBold,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  ButtonStyle _outlinedStyle(ThemeData theme) => OutlinedButton.styleFrom(
+    minimumSize: const Size(0, 38),
+    padding: const EdgeInsets.symmetric(horizontal: 14),
+    foregroundColor: adminBodyColor(theme),
+    side: BorderSide(color: adminControlBorderColor(theme)),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+  );
+
+  Future<void> _recordMovement(
+    BuildContext context,
+    PosCashMovementKind kind,
+  ) async {
+    final cubit = context.read<PosCubit>();
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => BlocProvider<PosCubit>.value(
+        value: cubit,
+        child: _MovementDialog(kind: kind),
+      ),
+    );
+    if (saved == true && context.mounted) {
+      _showShiftMessage(context, S.posShiftMovementSaved);
+    }
+  }
+
+  Future<void> _closeDrawer(BuildContext context) async {
+    final cubit = context.read<PosCubit>();
+    final shift = cubit.state.shift;
+    if (shift == null) return;
+
+    final closed = await showDialog<PosShift>(
+      context: context,
+      builder: (_) => BlocProvider<PosCubit>.value(
+        value: cubit,
+        child: _CloseShiftDialog(shift: shift),
+      ),
+    );
+    if (closed == null || !context.mounted) return;
+    _showShiftMessage(context, S.posShiftClosedToast);
+    await showPosShiftReportDialog(context, closed);
+  }
+
+  Future<void> _openHistory(BuildContext context) {
+    final cubit = context.read<PosCubit>();
+    return showDialog<void>(
+      context: context,
+      builder: (_) => BlocProvider<PosCubit>.value(
+        value: cubit,
+        child: const _ShiftHistoryDialog(),
+      ),
+    );
+  }
+}
+
+class _ShiftOverview extends StatelessWidget {
+  const _ShiftOverview({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = shift.currencyCode;
+    return ListView(
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      children: [
+        _ShiftHero(shift: shift),
+        const SizedBox(height: AppDimensions.md),
+        _ShiftMetricGrid(
+          metrics: [
+            _ShiftMetric(
+              icon: HugeIcons.strokeRoundedCoins01,
+              tint: AppColor.trendPositive,
+              surface: AppColor.trendPositiveSurface,
+              label: S.posShiftCashSales,
+              value: posMoney(shift.cashSales, currency),
+            ),
+            _ShiftMetric(
+              icon: HugeIcons.strokeRoundedCreditCard,
+              tint: AppColor.adminInfo,
+              surface: AppColor.adminInfoSurface,
+              label: S.posShiftCardSales,
+              value: posMoney(shift.cardSales, currency),
+            ),
+            _ShiftMetric(
+              icon: HugeIcons.strokeRoundedReceiptDollar,
+              tint: AppColor.adminAccent,
+              surface: AppColor.adminAccentSurface,
+              label: S.posShiftSalesTotal,
+              value: posMoney(shift.salesTotal, currency),
+            ),
+            _ShiftMetric(
+              icon: HugeIcons.strokeRoundedShoppingCart01,
+              tint: AppColor.adminWarning,
+              surface: AppColor.adminWarningSurface,
+              label: S.posShiftOrders,
+              value: localizeDigits('${shift.orderCount}'),
+            ),
+            _ShiftMetric(
+              icon: HugeIcons.strokeRoundedArrowDownLeft01,
+              tint: AppColor.trendPositive,
+              surface: AppColor.trendPositiveSurface,
+              label: S.posShiftCashIn,
+              value: posMoney(shift.cashIn, currency),
+            ),
+            _ShiftMetric(
+              icon: HugeIcons.strokeRoundedArrowUpRight01,
+              tint: AppColor.trendNegative,
+              surface: AppColor.trendNegativeSurface,
+              label: S.posShiftCashOut,
+              value: posMoney(shift.cashOut, currency),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppDimensions.md),
+        if (shift.note.trim().isNotEmpty) ...[
+          _NoteCard(label: S.posShiftNote, note: shift.note),
+          const SizedBox(height: AppDimensions.md),
+        ],
+        _ShiftMovementsCard(shift: shift),
+      ],
+    );
+  }
+}
+
+class _ShiftHero extends StatelessWidget {
+  const _ShiftHero({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = adminFlagForeground(theme, AppColor.adminAccent);
+    final meta = <String>[
+      if (shift.openedByName.trim().isNotEmpty)
+        '${S.posShiftOpenedBy}: ${shift.openedByName}',
+      if (shift.openedAt != null) S.posShiftSince(posDateTime(shift.openedAt)),
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: adminFlagBackground(
+          theme,
+          AppColor.adminAccent,
+          AppColor.adminAccentSurface,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColor.adminAccent.withValues(alpha: .3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: adminFlagBackground(
+                    theme,
+                    AppColor.adminAccent,
+                    AppColor.adminAccentSurface,
+                  ),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColor.adminAccent.withValues(alpha: .3),
+                  ),
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedCashier,
+                  size: 18,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            S.posShiftActive,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: adminHeadingColor(theme),
+                              fontSize: AppFontSizes.size12,
+                              fontWeight: AppFontWeights.bold,
+                              height: AppTextHeights.line1_4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        AdminStatusBadge(
+                          label: S.posShiftStatusOpen,
+                          color: AppColor.adminAccent,
+                        ),
+                      ],
+                    ),
+                    if (meta.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        meta.join(' • '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size9,
+                          height: AppTextHeights.line1_45,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _HeroFigure(
+                  label: S.posShiftExpectedCash,
+                  value: posMoney(shift.expectedCash, shift.currencyCode),
+                  emphasized: true,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.md),
+              Expanded(
+                child: _HeroFigure(
+                  label: S.posShiftOpeningFloat,
+                  value: posMoney(shift.openingFloat, shift.currencyCode),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroFigure extends StatelessWidget {
+  const _HeroFigure({
+    required this.label,
+    required this.value,
+    this.emphasized = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasized;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: adminMutedColor(theme),
+            fontSize: AppFontSizes.size9,
+            height: AppTextHeights.line1_4,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: emphasized
+                ? adminFlagForeground(theme, AppColor.adminAccent)
+                : adminHeadingColor(theme),
+            fontSize: emphasized ? 16 : 13,
+            fontWeight: AppFontWeights.bold,
+            height: AppTextHeights.line1_4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShiftMetricGrid extends StatelessWidget {
+  const _ShiftMetricGrid({required this.metrics});
+
+  final List<Widget> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = AppDimensions.sm;
+        final columns = constraints.maxWidth >= 520 ? 3 : 2;
+        final itemWidth =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final metric in metrics)
+              SizedBox(width: itemWidth, child: metric),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ShiftMetric extends StatelessWidget {
+  const _ShiftMetric({
+    required this.icon,
+    required this.tint,
+    required this.surface,
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  final IconData icon;
+  final Color tint;
+  final Color surface;
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      constraints: const BoxConstraints(minHeight: 74),
+      padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        border: Border.all(color: adminCardBorderColor(theme)),
+        boxShadow: adminIsDark(theme)
+            ? const []
+            : const [
+                BoxShadow(
+                  color: Color(0x0A1B362B),
+                  blurRadius: 24,
+                  offset: Offset(0, 5),
+                ),
+              ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AdminIconTile(icon: icon, tint: tint, surface: surface, size: 24),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: valueColor ?? adminHeadingColor(theme),
+              fontSize: AppFontSizes.size13,
+              fontWeight: AppFontWeights.bold,
+              height: AppTextHeights.line1_35,
+            ),
+          ),
+          const SizedBox(height: 1),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: adminMutedColor(theme),
+              fontSize: AppFontSizes.size9,
+              height: AppTextHeights.line1_4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShiftMovementsCard extends StatelessWidget {
+  const _ShiftMovementsCard({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final movements = shift.movements;
+    final net = shift.cashNet;
+
+    return AdminSectionCard(
+      title: S.posShiftMovements,
+      count: movements.length,
+      padding: const EdgeInsets.all(AppDimensions.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (movements.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
+              child: Text(
+                S.posShiftNoMovements,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: adminMutedColor(theme),
+                  fontSize: AppFontSizes.size10,
+                  height: AppTextHeights.line1_5,
+                ),
+              ),
+            )
+          else ...[
+            for (var index = 0; index < movements.length; index++) ...[
+              if (index > 0)
+                Divider(height: 14, color: adminRowBorderColor(theme)),
+              _MovementRow(
+                movement: movements[index],
+                currencyCode: shift.currencyCode,
+              ),
+            ],
+            Divider(height: 16, color: adminRowBorderColor(theme)),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    S.posShiftNetCash,
+                    style: TextStyle(
+                      color: adminHeadingColor(theme),
+                      fontSize: AppFontSizes.size10,
+                      fontWeight: AppFontWeights.bold,
+                      height: AppTextHeights.line1_4,
+                    ),
+                  ),
+                ),
+                Text(
+                  _signedMoney(net, shift.currencyCode),
+                  style: TextStyle(
+                    color: net < 0
+                        ? AppColor.errorColor
+                        : adminFlagForeground(theme, AppColor.adminAccent),
+                    fontSize: AppFontSizes.size10_5,
+                    fontWeight: AppFontWeights.bold,
+                    height: AppTextHeights.line1_4,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MovementRow extends StatelessWidget {
+  const _MovementRow({required this.movement, required this.currencyCode});
+
+  final PosCashMovement movement;
+  final String currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final incoming = movement.isCashIn;
+    final color = incoming ? AppColor.trendPositive : AppColor.errorColor;
+    final surface = incoming
+        ? AppColor.trendPositiveSurface
+        : AppColor.trendNegativeSurface;
+    final meta = <String>[
+      if (movement.createdByName.trim().isNotEmpty) movement.createdByName,
+      if (movement.createdAt != null) posDateTime(movement.createdAt),
+    ];
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: adminFlagBackground(theme, color, surface),
+            shape: BoxShape.circle,
+          ),
+          child: HugeIcon(
+            icon: incoming
+                ? HugeIcons.strokeRoundedArrowDownLeft01
+                : HugeIcons.strokeRoundedArrowUpRight01,
+            size: 15,
+            color: adminFlagForeground(theme, color),
+          ),
+        ),
+        const SizedBox(width: AppDimensions.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                movement.reason.trim().isEmpty
+                    ? (incoming
+                          ? S.posShiftCashInAction
+                          : S.posShiftCashOutAction)
+                    : movement.reason,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: adminHeadingColor(theme),
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_4,
+                ),
+              ),
+              if (meta.isNotEmpty)
+                Text(
+                  meta.join(' • '),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: adminMutedColor(theme),
+                    fontSize: AppFontSizes.size8_5,
+                    height: AppTextHeights.line1_45,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppDimensions.sm),
+        Text(
+          '${incoming ? '+' : '-'}${posMoney(movement.amount, currencyCode)}',
+          style: TextStyle(
+            color: adminFlagForeground(theme, color),
+            fontSize: AppFontSizes.size10,
+            fontWeight: AppFontWeights.bold,
+            height: AppTextHeights.line1_4,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _NoteCard extends StatelessWidget {
+  const _NoteCard({required this.label, required this.note});
+
+  final String label;
+  final String note;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: adminCardBorderColor(theme)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HugeIcon(
+            icon: HugeIcons.strokeRoundedNote01,
+            size: 15,
+            color: adminMutedColor(theme),
+          ),
+          const SizedBox(width: AppDimensions.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: adminMutedColor(theme),
+                    fontSize: AppFontSizes.size9,
+                    fontWeight: AppFontWeights.semiBold,
+                    height: AppTextHeights.line1_4,
+                  ),
+                ),
+                Text(
+                  note,
+                  style: TextStyle(
+                    color: adminBodyColor(theme),
+                    fontSize: AppFontSizes.size10,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OpenShiftForm extends StatefulWidget {
+  const _OpenShiftForm({required this.failure, required this.opening});
+
+  final PosShiftFailure? failure;
+  final bool opening;
+
+  @override
+  State<_OpenShiftForm> createState() => _OpenShiftFormState();
+}
+
+class _OpenShiftFormState extends State<_OpenShiftForm> {
+  final _float = TextEditingController();
+  final _note = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _float.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    final raw = _float.text.trim();
+    final amount = raw.isEmpty ? 0.0 : posParseAmount(raw);
+    if (amount == null) {
+      setState(() => _error = S.posShiftInvalid);
+      return;
+    }
+    setState(() => _error = null);
+
+    final shift = await context.read<PosCubit>().openShift(
+      openingFloat: amount,
+      note: _note.text.trim(),
+    );
+    if (!mounted || shift == null) return;
+    _showShiftMessage(
+      context,
+      shift.alreadyOpen ? S.posShiftAlreadyOpenToast : S.posShiftOpenedToast,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final failure =
+        _error ??
+        (widget.failure == null
+            ? null
+            : posShiftFailureMessage(widget.failure));
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppDimensions.lg),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppDimensions.md),
+            decoration: BoxDecoration(
+              color: adminTintedSurfaceColor(theme),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: adminCardBorderColor(theme)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: adminFlagBackground(
+                      theme,
+                      AppColor.adminAccent,
+                      AppColor.adminAccentSurface,
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: HugeIcon(
+                    icon: HugeIcons.strokeRoundedCashier,
+                    size: 19,
+                    color: adminFlagForeground(theme, AppColor.adminAccent),
+                  ),
+                ),
+                const SizedBox(width: AppDimensions.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        S.posShiftOpenTitle,
+                        style: TextStyle(
+                          color: adminHeadingColor(theme),
+                          fontSize: AppFontSizes.size12,
+                          fontWeight: AppFontWeights.bold,
+                          height: AppTextHeights.line1_4,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        S.posShiftOpenHint,
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size9_5,
+                          height: AppTextHeights.line1_5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (failure != null) ...[
+            const SizedBox(height: AppDimensions.md),
+            AdminErrorBanner(message: failure),
+            const SizedBox(height: AppDimensions.sm),
+            Text(
+              S.posShiftUnknownHint,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size9_5,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppDimensions.lg),
+          TextField(
+            key: const Key('pos-shift-open-float'),
+            controller: _float,
+            autofocus: true,
+            enabled: !widget.opening,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [_moneyInputFormatter],
+            style: TextStyle(
+              color: adminBodyColor(theme),
+              fontSize: AppFontSizes.size12,
+              height: AppTextHeights.line1_5,
+            ),
+            decoration: adminDialogFieldDecoration(
+              context,
+              label: S.posShiftOpeningFloat,
+              hint: S.posShiftOpeningFloatHint,
+              required: true,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.md),
+          TextField(
+            key: const Key('pos-shift-open-note'),
+            controller: _note,
+            enabled: !widget.opening,
+            maxLines: 2,
+            minLines: 1,
+            style: TextStyle(
+              color: adminBodyColor(theme),
+              fontSize: AppFontSizes.size12,
+              height: AppTextHeights.line1_5,
+            ),
+            decoration: adminDialogFieldDecoration(
+              context,
+              label: S.posShiftNote,
+              hint: S.posShiftOpenNoteHint,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.lg),
+          FilledButton(
+            key: const Key('pos-shift-open-submit'),
+            onPressed: widget.opening ? null : _submit,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(42),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(9),
+              ),
+            ),
+            child: widget.opening
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColor.whiteColor,
+                        ),
+                      ),
+                      const SizedBox(width: AppDimensions.sm),
+                      Text(
+                        S.posShiftOpening,
+                        style: const TextStyle(
+                          fontSize: AppFontSizes.size11,
+                          fontWeight: AppFontWeights.semiBold,
+                        ),
+                      ),
+                    ],
+                  )
+                : Text(
+                    S.posShiftOpenConfirm,
+                    style: const TextStyle(
+                      fontSize: AppFontSizes.size11,
+                      fontWeight: AppFontWeights.semiBold,
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MovementDialog extends StatefulWidget {
+  const _MovementDialog({required this.kind});
+
+  final PosCashMovementKind kind;
+
+  @override
+  State<_MovementDialog> createState() => _MovementDialogState();
+}
+
+class _MovementDialogState extends State<_MovementDialog> {
+  final _amount = TextEditingController();
+  final _reason = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    _reason.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    final amount = posParseAmount(_amount.text);
+    if (amount == null || amount <= 0 || _reason.text.trim().isEmpty) {
+      setState(() => _error = S.posShiftInvalid);
+      return;
+    }
+    setState(() => _error = null);
+
+    final updated = await context.read<PosCubit>().recordCashMovement(
+      kind: widget.kind,
+      amount: amount,
+      reason: _reason.text.trim(),
+    );
+    if (!mounted || updated == null) return;
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final incoming = widget.kind == PosCashMovementKind.cashIn;
+
+    return BlocBuilder<PosCubit, PosState>(
+      builder: (context, state) {
+        final failure =
+            _error ??
+            (state.shiftFailure == null
+                ? null
+                : posShiftFailureMessage(state.shiftFailure));
+        return Dialog(
+          key: const Key('pos-shift-movement-dialog'),
+          backgroundColor: theme.colorScheme.surface,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SizedBox(
+            width: min(440.0, size.width - 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdminDialogHeader(
+                  title: incoming
+                      ? S.posShiftCashInAction
+                      : S.posShiftCashOutAction,
+                  subtitle: S.posShiftRecordMovement,
+                  onClose: state.isSavingMovement
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppDimensions.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (failure != null) ...[
+                          AdminErrorBanner(message: failure),
+                          const SizedBox(height: AppDimensions.md),
+                        ],
+                        TextField(
+                          key: const Key('pos-shift-movement-amount'),
+                          controller: _amount,
+                          autofocus: true,
+                          enabled: !state.isSavingMovement,
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [_moneyInputFormatter],
+                          style: TextStyle(
+                            color: adminBodyColor(theme),
+                            fontSize: AppFontSizes.size12,
+                            height: AppTextHeights.line1_5,
+                          ),
+                          decoration: adminDialogFieldDecoration(
+                            context,
+                            label: S.posShiftMovementAmount,
+                            hint: S.posShiftOpeningFloatHint,
+                            required: true,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.md),
+                        TextField(
+                          key: const Key('pos-shift-movement-reason'),
+                          controller: _reason,
+                          enabled: !state.isSavingMovement,
+                          maxLines: 2,
+                          minLines: 1,
+                          style: TextStyle(
+                            color: adminBodyColor(theme),
+                            fontSize: AppFontSizes.size12,
+                            height: AppTextHeights.line1_5,
+                          ),
+                          decoration: adminDialogFieldDecoration(
+                            context,
+                            label: S.posShiftMovementReason,
+                            hint: S.posShiftMovementReasonHint,
+                            required: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                AdminDialogFooter(
+                  saving: state.isSavingMovement,
+                  onCancel: () => Navigator.of(context).pop(),
+                  onSave: _submit,
+                  saveKey: const Key('pos-shift-movement-submit'),
+                  saveLabel: S.posShiftMovementSave,
+                  savingLabel: S.saving,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _CloseShiftDialog extends StatefulWidget {
+  const _CloseShiftDialog({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  State<_CloseShiftDialog> createState() => _CloseShiftDialogState();
+}
+
+class _CloseShiftDialogState extends State<_CloseShiftDialog> {
+  final _counted = TextEditingController();
+  final _note = TextEditingController();
+  String? _error;
+
+  @override
+  void dispose() {
+    _counted.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
+    final counted = posParseAmount(_counted.text);
+    if (counted == null) {
+      setState(() => _error = S.posShiftInvalid);
+      return;
+    }
+    setState(() => _error = null);
+
+    final closed = await context.read<PosCubit>().closeShift(
+      countedCash: counted,
+      note: _note.text.trim(),
+    );
+    if (!mounted || closed == null) return;
+    Navigator.of(context).pop(closed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final shift = widget.shift;
+
+    return BlocBuilder<PosCubit, PosState>(
+      builder: (context, state) {
+        final failure =
+            _error ??
+            (state.shiftFailure == null
+                ? null
+                : posShiftFailureMessage(state.shiftFailure));
+        final counted = posParseAmount(_counted.text);
+        final variance = counted == null
+            ? null
+            : posRound2(counted - shift.expectedCash);
+
+        return Dialog(
+          key: const Key('pos-shift-close-dialog'),
+          backgroundColor: theme.colorScheme.surface,
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 24,
+          ),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: SizedBox(
+            width: min(460.0, size.width - 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AdminDialogHeader(
+                  title: S.posShiftCloseTitle,
+                  subtitle: S.posShiftCloseSubtitle,
+                  onClose: state.isClosingShift
+                      ? null
+                      : () => Navigator.of(context).pop(),
+                ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(AppDimensions.lg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (failure != null) ...[
+                          AdminErrorBanner(message: failure),
+                          const SizedBox(height: AppDimensions.md),
+                        ],
+                        _DrawerSummary(shift: shift),
+                        const SizedBox(height: AppDimensions.lg),
+                        TextField(
+                          key: const Key('pos-shift-counted'),
+                          controller: _counted,
+                          autofocus: true,
+                          enabled: !state.isClosingShift,
+                          onChanged: (_) => setState(() {}),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          inputFormatters: [_moneyInputFormatter],
+                          style: TextStyle(
+                            color: adminBodyColor(theme),
+                            fontSize: AppFontSizes.size12,
+                            height: AppTextHeights.line1_5,
+                          ),
+                          decoration: adminDialogFieldDecoration(
+                            context,
+                            label: S.posShiftCountPrompt,
+                            hint: S.posShiftCountHint,
+                            required: true,
+                          ),
+                        ),
+                        const SizedBox(height: AppDimensions.md),
+                        _VarianceStrip(
+                          variance: variance,
+                          currencyCode: shift.currencyCode,
+                        ),
+                        const SizedBox(height: AppDimensions.md),
+                        TextField(
+                          key: const Key('pos-shift-close-note'),
+                          controller: _note,
+                          enabled: !state.isClosingShift,
+                          maxLines: 2,
+                          minLines: 1,
+                          style: TextStyle(
+                            color: adminBodyColor(theme),
+                            fontSize: AppFontSizes.size12,
+                            height: AppTextHeights.line1_5,
+                          ),
+                          decoration: adminDialogFieldDecoration(
+                            context,
+                            label: S.posShiftCloseNote,
+                            hint: S.posShiftCloseNoteHint,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                AdminDialogFooter(
+                  saving: state.isClosingShift,
+                  onCancel: () => Navigator.of(context).pop(),
+                  onSave: _submit,
+                  saveKey: const Key('pos-shift-close-submit'),
+                  saveLabel: S.posShiftConfirmClose,
+                  savingLabel: S.posShiftClosing,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _DrawerSummary extends StatelessWidget {
+  const _DrawerSummary({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final currency = shift.currencyCode;
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: adminCardBorderColor(theme)),
+      ),
+      child: Column(
+        children: [
+          _ReportLine(
+            label: S.posShiftOpeningFloat,
+            value: posMoney(shift.openingFloat, currency),
+          ),
+          const SizedBox(height: 5),
+          _ReportLine(
+            label: S.posShiftCashSales,
+            value: posMoney(shift.cashSales, currency),
+          ),
+          const SizedBox(height: 5),
+          _ReportLine(
+            label: S.posShiftCashIn,
+            value: posMoney(shift.cashIn, currency),
+          ),
+          const SizedBox(height: 5),
+          _ReportLine(
+            label: S.posShiftCashOut,
+            value: posMoney(shift.cashOut, currency),
+          ),
+          Divider(height: 16, color: adminRowBorderColor(theme)),
+          _ReportLine(
+            label: S.posShiftExpectedCash,
+            value: posMoney(shift.expectedCash, currency),
+            strong: true,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VarianceStrip extends StatelessWidget {
+  const _VarianceStrip({required this.variance, required this.currencyCode});
+
+  final double? variance;
+  final String currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final balanced = variance == null || variance!.abs() < .01;
+    final color = variance == null
+        ? AppColor.adminMuted
+        : balanced
+        ? AppColor.adminAccent
+        : (variance! < 0 ? AppColor.errorColor : AppColor.adminWarning);
+    final surface = variance == null
+        ? adminTintedSurfaceColor(theme)
+        : balanced
+        ? AppColor.adminAccentSurface
+        : (variance! < 0
+              ? AppColor.trendNegativeSurface
+              : AppColor.adminWarningSurface);
+    final label = variance == null
+        ? S.posShiftVarianceHint
+        : balanced
+        ? S.posShiftVarianceBalanced
+        : (variance! < 0 ? S.posShiftVarianceShort : S.posShiftVarianceOver);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: adminFlagBackground(theme, color, surface),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: color.withValues(alpha: .28)),
+      ),
+      child: Row(
+        children: [
+          HugeIcon(
+            icon: variance == null
+                ? HugeIcons.strokeRoundedInformationCircle
+                : balanced
+                ? HugeIcons.strokeRoundedCheckmarkCircle01
+                : HugeIcons.strokeRoundedAlertCircle,
+            size: 16,
+            color: adminFlagForeground(theme, color),
+          ),
+          const SizedBox(width: AppDimensions.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: adminFlagForeground(theme, color),
+                fontSize: AppFontSizes.size10,
+                fontWeight: AppFontWeights.semiBold,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ),
+          if (variance != null) ...[
+            const SizedBox(width: AppDimensions.sm),
+            Text(
+              _signedMoney(variance!, currencyCode),
+              style: TextStyle(
+                color: adminFlagForeground(theme, color),
+                fontSize: AppFontSizes.size10_5,
+                fontWeight: AppFontWeights.bold,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ShiftReportDialog extends StatelessWidget {
+  const _ShiftReportDialog({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final width = min(560.0, size.width - 32);
+    final height = min(720.0, size.height * .9);
+    final currency = shift.currencyCode;
+    final variance = shift.variance;
+    final varianceColor = !shift.hasVariance
+        ? AppColor.adminAccent
+        : (shift.isShort ? AppColor.errorColor : AppColor.adminWarning);
+    final varianceSurface = !shift.hasVariance
+        ? AppColor.adminAccentSurface
+        : (shift.isShort
+              ? AppColor.trendNegativeSurface
+              : AppColor.adminWarningSurface);
+
+    return Dialog(
+      key: const Key('pos-shift-report-dialog'),
+      backgroundColor: theme.colorScheme.surface,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AdminDialogHeader(
+              title: S.posShiftReportZ,
+              subtitle: S.posShiftReport,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(AppDimensions.lg),
+                children: [
+                  _ReportHero(shift: shift),
+                  const SizedBox(height: AppDimensions.md),
+                  _ShiftMetricGrid(
+                    metrics: [
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedWallet01,
+                        tint: AppColor.adminInfo,
+                        surface: AppColor.adminInfoSurface,
+                        label: S.posShiftOpeningFloat,
+                        value: posMoney(shift.openingFloat, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedCoins01,
+                        tint: AppColor.trendPositive,
+                        surface: AppColor.trendPositiveSurface,
+                        label: S.posShiftCashSales,
+                        value: posMoney(shift.cashSales, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedCreditCard,
+                        tint: AppColor.adminInfo,
+                        surface: AppColor.adminInfoSurface,
+                        label: S.posShiftCardSales,
+                        value: posMoney(shift.cardSales, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedReceiptDollar,
+                        tint: AppColor.adminAccent,
+                        surface: AppColor.adminAccentSurface,
+                        label: S.posShiftSalesTotal,
+                        value: posMoney(shift.salesTotal, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedShoppingCart01,
+                        tint: AppColor.adminWarning,
+                        surface: AppColor.adminWarningSurface,
+                        label: S.posShiftOrders,
+                        value: localizeDigits('${shift.orderCount}'),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedArrowDownLeft01,
+                        tint: AppColor.trendPositive,
+                        surface: AppColor.trendPositiveSurface,
+                        label: S.posShiftCashIn,
+                        value: posMoney(shift.cashIn, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedArrowUpRight01,
+                        tint: AppColor.trendNegative,
+                        surface: AppColor.trendNegativeSurface,
+                        label: S.posShiftCashOut,
+                        value: posMoney(shift.cashOut, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedCash01,
+                        tint: AppColor.adminAccent,
+                        surface: AppColor.adminAccentSurface,
+                        label: S.posShiftCountedCash,
+                        value: posMoney(shift.countedCash ?? 0, currency),
+                      ),
+                      _ShiftMetric(
+                        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+                        tint: varianceColor,
+                        surface: varianceSurface,
+                        label: S.posShiftVariance,
+                        value: variance == null
+                            ? posMoney(0, currency)
+                            : _signedMoney(variance, currency),
+                        valueColor: varianceColor,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppDimensions.md),
+                  if (shift.closeNote.trim().isNotEmpty) ...[
+                    _NoteCard(
+                      label: S.posShiftCloseNote,
+                      note: shift.closeNote,
+                    ),
+                    const SizedBox(height: AppDimensions.md),
+                  ],
+                  if (shift.note.trim().isNotEmpty) ...[
+                    _NoteCard(label: S.posShiftNote, note: shift.note),
+                    const SizedBox(height: AppDimensions.md),
+                  ],
+                  _ShiftMovementsCard(shift: shift),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimensions.lg,
+                vertical: AppDimensions.sm,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface,
+                border: Border(
+                  top: BorderSide(color: adminRowBorderColor(theme)),
+                ),
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(S.close),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReportHero extends StatelessWidget {
+  const _ReportHero({required this.shift});
+
+  final PosShift shift;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final closed = shift.isClosed;
+    final meta = <String>[
+      if (closed && shift.closedByName.trim().isNotEmpty)
+        '${S.posShiftClosedBy}: ${shift.closedByName}',
+      if (!closed && shift.openedByName.trim().isNotEmpty)
+        '${S.posShiftOpenedBy}: ${shift.openedByName}',
+      if (closed && shift.closedAt != null)
+        '${S.posShiftClosedAt}: ${posDateTime(shift.closedAt)}',
+      if (!closed && shift.openedAt != null)
+        '${S.posShiftOpenedAt}: ${posDateTime(shift.openedAt)}',
+    ];
+
+    return Container(
+      padding: const EdgeInsets.all(AppDimensions.md),
+      decoration: BoxDecoration(
+        color: adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: adminCardBorderColor(theme)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: adminFlagBackground(
+                    theme,
+                    AppColor.adminAccent,
+                    AppColor.adminAccentSurface,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedReceiptDollar,
+                  size: 18,
+                  color: adminFlagForeground(theme, AppColor.adminAccent),
+                ),
+              ),
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            S.posShiftReportZ,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: adminHeadingColor(theme),
+                              fontSize: AppFontSizes.size12,
+                              fontWeight: AppFontWeights.bold,
+                              height: AppTextHeights.line1_4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        AdminStatusBadge(
+                          label: closed
+                              ? S.posShiftStatusClosed
+                              : S.posShiftStatusOpen,
+                          color: closed
+                              ? AppColor.adminAccent
+                              : AppColor.adminInfo,
+                        ),
+                      ],
+                    ),
+                    if (meta.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        meta.join(' • '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size9,
+                          height: AppTextHeights.line1_45,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _HeroFigure(
+                  label: S.posShiftExpectedCash,
+                  value: posMoney(shift.expectedCash, shift.currencyCode),
+                  emphasized: true,
+                ),
+              ),
+              const SizedBox(width: AppDimensions.md),
+              Expanded(
+                child: _HeroFigure(
+                  label: S.posShiftCountedCash,
+                  value: posMoney(shift.countedCash ?? 0, shift.currencyCode),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReportLine extends StatelessWidget {
+  const _ReportLine({
+    required this.label,
+    required this.value,
+    this.strong = false,
+  });
+
+  final String label;
+  final String value;
+  final bool strong;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: strong ? adminHeadingColor(theme) : adminMutedColor(theme),
+              fontSize: strong ? 10.5 : 9.5,
+              fontWeight: strong ? AppFontWeights.bold : AppFontWeights.medium,
+              height: AppTextHeights.line1_5,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppDimensions.sm),
+        Text(
+          value,
+          style: TextStyle(
+            color: adminHeadingColor(theme),
+            fontSize: strong ? 11.5 : 10,
+            fontWeight: strong ? AppFontWeights.bold : AppFontWeights.semiBold,
+            height: AppTextHeights.line1_5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShiftHistoryDialog extends StatefulWidget {
+  const _ShiftHistoryDialog();
+
+  @override
+  State<_ShiftHistoryDialog> createState() => _ShiftHistoryDialogState();
+}
+
+class _ShiftHistoryDialogState extends State<_ShiftHistoryDialog> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final cubit = context.read<PosCubit>();
+      if (!cubit.state.isLoadingShiftHistory) {
+        cubit.loadShiftHistory();
+      }
+    });
+  }
+
+  Future<void> _openReport(PosShift shift) async {
+    final detail = await context.read<PosCubit>().loadShiftDetail(shift.id);
+    if (!mounted) return;
+    if (detail == null) {
+      _showShiftMessage(context, S.posShiftHistoryLoadFailed, error: true);
+      return;
+    }
+    await showPosShiftReportDialog(context, detail);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final width = min(600.0, size.width - 32);
+    final height = min(680.0, size.height * .9);
+
+    return Dialog(
+      key: const Key('pos-shift-history-dialog'),
+      backgroundColor: theme.colorScheme.surface,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
+        width: width,
+        height: height,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AdminDialogHeader(
+              title: S.posShiftHistory,
+              subtitle: S.posShiftTitle,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: BlocBuilder<PosCubit, PosState>(
+                builder: (context, state) => _buildBody(context, state),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, PosState state) {
+    final shifts = state.shiftHistory;
+    final loading = state.isLoadingShiftHistory;
+
+    if (loading && shifts.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state.shiftHistoryFailure != null && shifts.isEmpty) {
+      return AdminEmptyState(
+        icon: HugeIcons.strokeRoundedAlertCircle,
+        message: posShiftFailureMessage(state.shiftHistoryFailure),
+        hint: S.posShiftHistoryEmptyHint,
+        action: TextButton(
+          key: const Key('pos-shift-history-retry'),
+          onPressed: loading
+              ? null
+              : () => context.read<PosCubit>().loadShiftHistory(),
+          child: Text(S.retry),
+        ),
+      );
+    }
+
+    if (shifts.isEmpty) {
+      return AdminEmptyState(
+        icon: HugeIcons.strokeRoundedTransactionHistory,
+        message: S.posShiftHistoryEmpty,
+        hint: S.posShiftHistoryEmptyHint,
+        action: TextButton(
+          onPressed: loading
+              ? null
+              : () => context.read<PosCubit>().loadShiftHistory(),
+          child: Text(S.refresh),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (loading) const LinearProgressIndicator(minHeight: 2),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.all(AppDimensions.md),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            itemCount: shifts.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 6),
+            itemBuilder: (context, index) {
+              final shift = shifts[index];
+              return _ShiftHistoryTile(
+                shift: shift,
+                enabled: !state.isLoadingShiftDetail,
+                onTap: () => _openReport(shift),
+              );
+            },
+          ),
+        ),
+        if (state.shiftHistoryFailure != null)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.md),
+            child: AdminErrorBanner(
+              message: posShiftFailureMessage(state.shiftHistoryFailure),
+            ),
+          ),
+        if (state.canLoadMoreShiftHistory)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.md,
+              vertical: AppDimensions.sm,
+            ),
+            child: TextButton(
+              key: const Key('pos-shift-history-more'),
+              onPressed: loading
+                  ? null
+                  : () =>
+                        context.read<PosCubit>().loadShiftHistory(append: true),
+              child: Text(S.posShiftLoadMore),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ShiftHistoryTile extends StatelessWidget {
+  const _ShiftHistoryTile({
+    required this.shift,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final PosShift shift;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final varianceColor = !shift.hasVariance
+        ? AppColor.adminAccent
+        : (shift.isShort ? AppColor.errorColor : AppColor.adminWarning);
+    final varianceLabel = !shift.hasVariance
+        ? S.posShiftBalanced
+        : (shift.isShort ? S.posShiftShort : S.posShiftOver);
+
+    return Material(
+      key: Key('pos-shift-history-${shift.id}'),
+      color: theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(11),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(11),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(11),
+            border: Border.all(color: adminCardBorderColor(theme)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: adminFlagBackground(
+                    theme,
+                    AppColor.adminAccent,
+                    AppColor.adminAccentSurface,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: HugeIcon(
+                  icon: HugeIcons.strokeRoundedReceiptDollar,
+                  size: 16,
+                  color: adminFlagForeground(theme, AppColor.adminAccent),
+                ),
+              ),
+              const SizedBox(width: AppDimensions.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            posDateTime(shift.openedAt),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: adminHeadingColor(theme),
+                              fontSize: AppFontSizes.size10_5,
+                              fontWeight: AppFontWeights.bold,
+                              height: AppTextHeights.line1_4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        AdminStatusBadge(
+                          label: varianceLabel,
+                          color: varianceColor,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${S.posShiftTo}: ${posDateTime(shift.closedAt)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: adminMutedColor(theme),
+                        fontSize: AppFontSizes.size8_5,
+                        height: AppTextHeights.line1_45,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${S.posShiftOrders}: ${localizeDigits('${shift.orderCount}')}'
+                      ' • ${posMoney(shift.salesTotal, shift.currencyCode)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: adminBodyColor(theme),
+                        fontSize: AppFontSizes.size9,
+                        fontWeight: AppFontWeights.semiBold,
+                        height: AppTextHeights.line1_45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              HugeIcon(
+                icon: Directionality.of(context) == TextDirection.rtl
+                    ? HugeIcons.strokeRoundedArrowLeft01
+                    : HugeIcons.strokeRoundedArrowRight01,
+                size: 15,
+                color: adminMutedColor(theme),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final _moneyInputFormatter = FilteringTextInputFormatter.allow(
+  RegExp(r'[0-9\u0660-\u0669\u06F0-\u06F9.,]'),
+);
+
+String _signedMoney(double value, String currencyCode) {
+  final rounded = posRound2(value);
+  if (rounded.abs() < .005) return posMoney(0, currencyCode);
+  return '${rounded < 0 ? '-' : '+'}${posMoney(rounded.abs(), currencyCode)}';
+}

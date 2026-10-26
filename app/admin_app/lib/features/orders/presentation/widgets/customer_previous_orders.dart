@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-import 'package:admin_app/core/constants/app_dimensions.dart';
+
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/customer_previous_order_item.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class CustomerPreviousOrders extends StatelessWidget {
   const CustomerPreviousOrders({
@@ -14,55 +15,56 @@ class CustomerPreviousOrders extends StatelessWidget {
     required this.failed,
     this.onOpen,
   });
+
   final List<AdminOrder> orders;
   final bool loading, failed;
   final ValueChanged<AdminOrder>? onOpen;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Row(
-        children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedShoppingBag01,
-            size: 17,
-            color: AppColor.greyColor,
-          ),
-          const SizedBox(width: AppDimensions.sm),
-          Expanded(
-            child: Text(
-              S.ordersCustomerHistory,
-              style: Theme.of(context).textTheme.titleSmall
-                  ?.copyWith(fontWeight: FontWeight.w700),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final Widget body;
+    if (loading) {
+      body = const Padding(
+        padding: EdgeInsets.symmetric(vertical: 14),
+        child: Center(
+          child: SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColor.adminAccent,
             ),
           ),
-          Text(
-            '${orders.length}',
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
+        ),
+      );
+    } else if (orders.isEmpty) {
+      body = Text(
+        failed ? S.customerHistoryLoadFailed : S.ordersNoPreviousOrders,
+        style: TextStyle(
+          color: adminMutedColor(theme),
+          fontSize: AppFontSizes.size11,
+          height: AppTextHeights.line1_5,
+        ),
+      );
+    } else {
+      body = Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < orders.take(5).length; index++) ...[
+            if (index > 0) const SizedBox(height: 8),
+            CustomerPreviousOrderItem(
+              order: orders[index],
+              onTap: onOpen == null ? null : () => onOpen!(orders[index]),
+            ),
+          ],
         ],
-      ),
-      const SizedBox(height: AppDimensions.sm),
-      if (loading)
-        const Center(
-          child: Padding(
-            padding: EdgeInsets.all(AppDimensions.md),
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-        )
-      else if (orders.isEmpty)
-        Text(
-          failed ? S.customerHistoryLoadFailed : S.ordersNoPreviousOrders,
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: AppColor.greyColor),
-        )
-      else
-        for (final order in orders.take(5))
-          CustomerPreviousOrderItem(
-            order: order,
-            onTap: onOpen == null ? null : () => onOpen!(order),
-          ),
-    ],
-  );
+      );
+    }
+    return AdminSectionCard(
+      title: S.ordersCustomerHistory,
+      count: loading ? null : orders.length,
+      child: body,
+    );
+  }
 }

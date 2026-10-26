@@ -4,7 +4,9 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/banners/data/models/admin_banner.dart';
 
 class BannerRecords extends StatelessWidget {
@@ -47,7 +49,7 @@ class BannerRecords extends StatelessWidget {
     if (banners.isEmpty) {
       return Center(
         child: Text(
-          'No banners found',
+          S.noBannersFound,
           style: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AppColor.greyColor),
         ),
@@ -136,7 +138,7 @@ class _BannerCard extends StatelessWidget {
                 Text(
                   banner.titleFor(language),
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                    fontWeight: AppFontWeights.semiBold,
                   ),
                 ),
                 if (banner.subtitleEn != null || banner.subtitleAr != null)

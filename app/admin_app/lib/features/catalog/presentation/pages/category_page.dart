@@ -81,6 +81,8 @@ class _CategoryPageState extends State<CategoryPage> {
             search: _searchQuery,
             importProgress: _importProgress,
             exportProgress: _exportProgress,
+            selectedIds: state.selectedIds,
+            isDeletingSelected: state.isDeletingSelected,
           );
         },
       ),

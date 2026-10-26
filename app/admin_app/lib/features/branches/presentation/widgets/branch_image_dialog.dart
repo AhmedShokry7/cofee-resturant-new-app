@@ -6,35 +6,41 @@ import 'package:image_picker/image_picker.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_cubit.dart';
+import 'package:admin_app/features/branches/presentation/widgets/branch_messages.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
 
 /// Opens the dialog that replaces or removes the picture of a branch.
-Future<void> showBranchImageDialog({
+Future<bool?> showBranchImageDialog({
   required BuildContext context,
   required AdminBranchCubit cubit,
   required String branchId,
   required String? imageUrl,
 }) {
-  return showDialog<void>(
+  return showDialog<bool>(
     context: context,
     builder: (context) => BranchImageDialog(
       currentImageUrl: imageUrl,
       onApply: (source) async {
-        if (source.isLink) {
-          await cubit.updateBranchImage(branchId, source.url);
-        } else {
-          await cubit.uploadBranchImage(
-            branchId: branchId,
-            bytes: source.bytes!,
-            fileName: source.fileName!,
-            contentType: source.contentType!,
-          );
+        final outcome = source.isLink
+            ? await cubit.updateBranchImage(branchId, source.url)
+            : await cubit.uploadBranchImage(
+                branchId: branchId,
+                bytes: source.bytes!,
+                fileName: source.fileName!,
+                contentType: source.contentType!,
+              );
+        if (outcome != BranchMutationOutcome.success) {
+          throw AdminBranchException(branchMutationErrorMessage(outcome));
         }
       },
       onRemove: () async {
+        final outcome = await cubit.updateBranchImage(branchId, null);
+        if (outcome != BranchMutationOutcome.success) {
+          throw AdminBranchException(branchMutationErrorMessage(outcome));
+        }
         await cubit.deleteBranchImageFile(imageUrl);
-        await cubit.updateBranchImage(branchId, null);
       },
     ),
   );
@@ -52,7 +58,7 @@ class BranchImageDialog extends StatefulWidget {
 
   final String? currentImageUrl;
   final Future<void> Function(ProductImageSource source) onApply;
-  final VoidCallback? onRemove;
+  final Future<void> Function()? onRemove;
   final Future<ProductImageSource?> Function()? onPickPicture;
 
   @override
@@ -68,7 +74,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
     final theme = Theme.of(context);
 
     return AlertDialog(
-      title: Text(S.imageSource),
+      title: Text(S.branchesImageAction),
       content: SizedBox(
         width: 520,
         child: Column(
@@ -116,7 +122,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
                 ),
                 title: Text(S.uploadFromDevice),
                 subtitle: Text(
-                  'JPG, PNG or WEBP',
+                  S.imageFormats,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColor.greyColor,
                   ),
@@ -225,20 +231,36 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
     try {
       await widget.onApply(source);
       if (!mounted) return;
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
       setState(() {
         _busy = false;
         _phaseText = null;
       });
-      _showMessage('${S.imageActionFailed}: $error', isError: true);
+      _showMessage('$error', isError: true);
     }
   }
 
-  void _removeImage() {
-    widget.onRemove?.call();
-    Navigator.of(context).pop();
+  Future<void> _removeImage() async {
+    final remove = widget.onRemove;
+    if (remove == null || _busy) return;
+    setState(() {
+      _busy = true;
+      _phaseText = S.savingImage;
+    });
+    try {
+      await remove();
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _phaseText = null;
+      });
+      _showMessage('$error', isError: true);
+    }
   }
 
   void _showMessage(String message, {bool isError = false}) {

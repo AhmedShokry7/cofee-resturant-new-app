@@ -53,10 +53,13 @@ class LoyaltyWallet {
 abstract class LoyaltyRepository {
   Future<LoyaltyCatalog> loadCatalog();
   Future<LoyaltyWallet?> loadWallet();
-  Future<int> redeemReward({
-    required String productId,
-    required String branchId,
-  });
+
+  /// Spends points on [rewardId] and returns the new balance.
+  ///
+  /// [branchId] is required for product and bundle rewards (the server creates
+  /// a free pickup order there and deducts stock) and is ignored for plan
+  /// rewards.
+  Future<int> redeemReward({required String rewardId, String? branchId});
 }
 
 class LoyaltyRepositoryImpl implements LoyaltyRepository {
@@ -95,6 +98,11 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
     final brandRows = (results[2] as List).cast<Map<String, dynamic>>();
 
     final productIds = rewardRows
+        .where(
+          (row) =>
+              RewardTargetType.fromWire(row['reward_type']) ==
+              RewardTargetType.product,
+        )
         .map((row) => row['product_id']?.toString() ?? '')
         .where((id) => id.isNotEmpty)
         .toList(growable: false);
@@ -102,11 +110,17 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
       for (final product in await getProductsByIds(_catalog, productIds))
         product.id: product,
     };
-    final rewards = <RewardModel>[
-      for (final row in rewardRows)
-        if (productsById[row['product_id']?.toString()] case final product?)
-          RewardModel.fromDatabase(row: row, product: product),
-    ];
+    final rewards = <RewardModel>[];
+    for (final row in rewardRows) {
+      final type = RewardTargetType.fromWire(row['reward_type']);
+      final product = type.isProduct
+          ? productsById[row['product_id']?.toString()]
+          : null;
+      // A product reward without a readable product has nothing to deliver, so
+      // it is skipped. Bundles and plans are delivered by id.
+      if (type.isProduct && product == null) continue;
+      rewards.add(RewardModel.fromDatabase(row: row, product: product));
+    }
 
     return LoyaltyCatalog(
       rules: [for (final row in ruleRows) LoyaltyRule.fromDatabase(row)],
@@ -146,25 +160,22 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
   }
 
   @override
-  Future<int> redeemReward({
-    required String productId,
-    required String branchId,
-  }) async {
+  Future<int> redeemReward({required String rewardId, String? branchId}) async {
     final client = _client;
     if (client == null || client.auth.currentUser == null) {
       throw StateError('Sign in before redeeming a server reward.');
     }
-    if (branchId.isEmpty) {
-      throw ArgumentError.value(branchId, 'branchId', 'must not be empty');
-    }
-    final rows = await client.rpc(
-      'redeem_reward',
-      params: {'p_product_id': productId, 'p_branch_id': branchId},
-    ) as List;
-    if (rows.isEmpty) {
-      throw StateError('Redemption returned no balance.');
-    }
-    return Db.asInt(rows.first);
+    final branch = branchId?.trim() ?? '';
+    final balance = await client.rpc(
+      'redeem_loyalty_reward',
+      params: {
+        'p_reward_id': rewardId,
+        // The server requires a branch for product/bundle rewards and ignores
+        // it for plan rewards, so an account-wide plan may omit it.
+        'p_branch_id': branch.isEmpty ? null : branch,
+      },
+    );
+    return Db.asInt(balance);
   }
 }
 

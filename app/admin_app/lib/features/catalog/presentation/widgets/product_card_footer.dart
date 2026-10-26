@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 /// The "more" and "product data" row above the save bar.
 class ProductCardFooter extends StatelessWidget {
@@ -21,9 +22,13 @@ class ProductCardFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final border = dark ? AppColor.darkBorder : AppColor.recordBorder;
+    final textColor = dark ? AppColor.darkTextSecondary : AppColor.recordText;
+
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColor.recordBorder)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: border)),
       ),
       child: Row(
         children: [
@@ -39,9 +44,9 @@ class ProductCardFooter extends StatelessWidget {
                     Text(
                       S.more,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColor.recordText,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                        fontSize: AppFontSizes.size12,
+                        fontWeight: AppFontWeights.medium,
                       ),
                     ),
                   ],
@@ -51,10 +56,8 @@ class ProductCardFooter extends StatelessWidget {
           ),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
-                border: BorderDirectional(
-                  start: BorderSide(color: AppColor.recordBorder),
-                ),
+              decoration: BoxDecoration(
+                border: BorderDirectional(start: BorderSide(color: border)),
               ),
               child: InkWell(
                 onTap: onProductData,
@@ -66,9 +69,9 @@ class ProductCardFooter extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColor.recordText,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                        fontSize: AppFontSizes.size12,
+                        fontWeight: AppFontWeights.medium,
                       ),
                     ),
                   ),
@@ -113,8 +116,10 @@ class ProductCardSaveBar extends StatelessWidget {
                   )
                 : Text(
                     S.save,
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(color: AppColor.whiteColor, fontSize: 14),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColor.whiteColor,
+                      fontSize: AppFontSizes.size14,
+                    ),
                   ),
           ),
         ),

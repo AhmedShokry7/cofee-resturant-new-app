@@ -61,6 +61,19 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
     ],
   ),
   AdminDestination(
+    id: 'subscriptionPlans',
+    label: S.subscriptionPlans,
+    icon: HugeIcons.strokeRoundedPackage,
+    searchHint: S.searchSubscriptionPlansHint,
+    permission: 'subscriptions.manage',
+    section: S.sectionGrowth,
+    tables: <String>[
+      'subscriptions.plans',
+      'subscriptions.plan_branches',
+      'subscriptions.plan_products',
+    ],
+  ),
+  AdminDestination(
     id: 'reviews',
     label: S.reviews,
     icon: HugeIcons.strokeRoundedStar,
@@ -78,6 +91,8 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
     section: S.sectionGrowth,
     tables: <String>[
       'engagement.notifications',
+      'engagement.notification_campaigns',
+      'engagement.push_deliveries',
       'engagement.notification_preferences',
       'engagement.device_tokens',
     ],

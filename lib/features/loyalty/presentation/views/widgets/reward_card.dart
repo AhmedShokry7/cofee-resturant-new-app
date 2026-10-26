@@ -7,6 +7,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 
 class RewardCard extends StatelessWidget {
   const RewardCard({
@@ -39,7 +40,7 @@ class RewardCard extends StatelessWidget {
               child: SizedBox(
                 height: 56.w,
                 width: 56.w,
-                child: ProductImageView(product: reward.product),
+                child: _RewardThumb(reward: reward),
               ),
             ),
             SizedBox(width: SpacingTokens.md.w),
@@ -48,16 +49,26 @@ class RewardCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    reward.product.name,
+                    reward.name,
                     style: AppFonts.semiBold16(context),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   SizedBox(height: 4.h),
-                  Text(
-                    S.points(reward.pointsCost),
-                    style: AppFonts.medium14(context)
-                        .copyWith(color: AppColor.primaryColor),
+                  Row(
+                    children: [
+                      if (reward.type != RewardTargetType.product) ...[
+                        _RewardTypeBadge(type: reward.type),
+                        SizedBox(width: SpacingTokens.xs.w),
+                      ],
+                      Flexible(
+                        child: Text(
+                          S.points(reward.pointsCost),
+                          style: AppFonts.medium14(context)
+                              .copyWith(color: AppColor.primaryColor),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -94,3 +105,63 @@ class RewardCard extends StatelessWidget {
     );
   }
 }
+
+class _RewardThumb extends StatelessWidget {
+  const _RewardThumb({required this.reward});
+
+  final RewardModel reward;
+
+  @override
+  Widget build(BuildContext context) {
+    final product = reward.product;
+    if (product != null) return ProductImageView(product: product);
+    final image = reward.image;
+    if (image != null) return DbImage(image: image, iconSize: 22);
+    return ColoredBox(
+      color: AppColor.primaryColor.withValues(alpha: 0.08),
+      child: Center(
+        child: Icon(
+          _rewardTypeIcon(reward.type),
+          color: AppColor.primaryColor,
+          size: 24.w,
+        ),
+      ),
+    );
+  }
+}
+
+class _RewardTypeBadge extends StatelessWidget {
+  const _RewardTypeBadge({required this.type});
+
+  final RewardTargetType type;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: SpacingTokens.xs.w + 2.w,
+        vertical: 1.h,
+      ),
+      decoration: BoxDecoration(
+        color: AppColor.primaryColor.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(6.r),
+      ),
+      child: Text(
+        switch (type) {
+          RewardTargetType.bundle => S.bundleLabel,
+          RewardTargetType.plan => S.subscriptionLabel,
+          RewardTargetType.product => '',
+        },
+        style: AppFonts.regular12(
+          context,
+        ).copyWith(color: AppColor.primaryColor, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+IconData _rewardTypeIcon(RewardTargetType type) => switch (type) {
+  RewardTargetType.product => Icons.local_cafe_rounded,
+  RewardTargetType.bundle => Icons.card_giftcard_rounded,
+  RewardTargetType.plan => Icons.autorenew_rounded,
+};

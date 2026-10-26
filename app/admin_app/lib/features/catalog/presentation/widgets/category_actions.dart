@@ -92,9 +92,26 @@ void confirmDeleteCategory(
         await cubit.deleteCategory(category.id);
       } catch (error) {
         if (!context.mounted) return;
-        showErrorSnackBar(context, 'Could not delete category: $error');
+        showErrorSnackBar(context, S.couldNotDeleteCategory('$error'));
       }
     },
+  );
+}
+
+/// Asks the admin to confirm deleting every selected category.
+Future<void> confirmDeleteSelectedCategories(
+  BuildContext context,
+  AdminCategoryCubit cubit,
+) {
+  final count = cubit.state.selectedCount;
+  if (count == 0) return Future<void>.value();
+  return confirmBulkDelete(
+    context,
+    title: S.deleteSelectedCategories,
+    message: S.deleteCategoriesConfirm(count),
+    onDelete: cubit.deleteSelected,
+    deletedMessage: S.categoriesDeleted,
+    partialMessage: S.categoriesDeletePartial,
   );
 }
 
@@ -108,6 +125,6 @@ Future<void> toggleCategoryActive(
     await cubit.toggleActive(category);
   } catch (error) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, 'Could not update category: $error');
+    showErrorSnackBar(context, S.couldNotUpdateCategory('$error'));
   }
 }

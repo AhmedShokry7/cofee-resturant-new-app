@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
@@ -88,4 +88,3 @@ void main() {
     expect(find.text('Failed'), findsNothing);
   });
 }
-

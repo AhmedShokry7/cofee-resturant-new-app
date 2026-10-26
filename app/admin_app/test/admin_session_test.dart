@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/features/auth/data/models/admin_session_model.dart';
 
 void main() {
   test('owner role is treated as having every permission', () {
-    final session = AdminSession.fromJson(<String, dynamic>{
+    final session = AdminSessionModel.fromRpc(<String, dynamic>{
       'staff_id': 's1',
       'full_name': 'Owner',
       'email': 'owner@example.com',
@@ -14,14 +14,14 @@ void main() {
       ],
       'permissions': <dynamic>[],
       'can_manage_all_branches': true,
-    });
+    }).toEntity();
 
     expect(session.isOwner, isTrue);
     expect(session.hasPermission('anything.at_all'), isTrue);
   });
 
   test('non-owner permissions are resolved from branch scopes', () {
-    final session = AdminSession.fromJson(<String, dynamic>{
+    final session = AdminSessionModel.fromRpc(<String, dynamic>{
       'staff_id': 's2',
       'full_name': 'Manager',
       'email': 'manager@example.com',
@@ -36,7 +36,7 @@ void main() {
         },
       ],
       'can_manage_all_branches': false,
-    });
+    }).toEntity();
 
     expect(session.isOwner, isFalse);
     expect(session.hasPermission('orders.read'), isTrue);
@@ -46,17 +46,17 @@ void main() {
   });
 
   test('fromRpc accepts a JSON string payload', () {
-    final session = AdminSession.fromRpc(
+    final session = AdminSessionModel.fromRpc(
       '{"staff_id":"s3","full_name":"Cashier","email":"c@example.com",'
       '"status":"active","roles":[],"permissions":[],'
       '"can_manage_all_branches":false}',
-    );
+    ).toEntity();
 
     expect(session.staffId, 's3');
     expect(session.fullName, 'Cashier');
   });
 
   test('fromRpc rejects unexpected payloads', () {
-    expect(() => AdminSession.fromRpc(42), throwsFormatException);
+    expect(() => AdminSessionModel.fromRpc(42), throwsFormatException);
   });
 }

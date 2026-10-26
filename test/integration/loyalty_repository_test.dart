@@ -39,14 +39,14 @@ void main() {
       [150, 180, 200, 250, 300, 400],
     );
     expect(
-      catalog.rewards.every((reward) => reward.product.name.isNotEmpty),
+      catalog.rewards.every((reward) => reward.name.isNotEmpty),
       isTrue,
     );
 
     expect(await repository.loadWallet(), isNull);
     await expectLater(
       repository.redeemReward(
-        productId: catalog.rewards.first.product.id,
+        rewardId: catalog.rewards.first.id!,
         branchId: '00000000-0000-4000-8000-000000000101',
       ),
       throwsA(isA<StateError>()),

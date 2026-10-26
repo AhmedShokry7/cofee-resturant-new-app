@@ -7,6 +7,7 @@ import 'package:admin_app/features/bundles/presentation/widgets/bundle_data_dial
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_image_dialog.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_page_actions.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_page_body.dart';
+import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
@@ -65,6 +66,15 @@ class _BundlePageState extends State<BundlePage> {
           return BundlePageBody(
             bundles: state.bundles,
             search: _searchQuery,
+            selectedIds: state.selectedIds,
+            isDeletingSelected: state.isDeletingSelected,
+            onSelect: (bundle) => _cubit.toggleSelection(bundle.id),
+            onSelectAll: () => _cubit.selectMany(
+              filterBundles(state.bundles, _searchQuery).map((b) => b.id),
+            ),
+            onClearSelection: _cubit.clearSelection,
+            onDeleteSelected: () =>
+                confirmDeleteSelectedBundles(context, _cubit),
             onAdd: () => showBundleCreateDialog(
               context: context,
               cubit: _cubit,

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:admin_app/core/constants/app_dimensions.dart';
+
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_edit_rules.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class OrderItemRemoveButton extends StatelessWidget {
   const OrderItemRemoveButton({
@@ -14,12 +15,14 @@ class OrderItemRemoveButton extends StatelessWidget {
     required this.item,
     required this.onRemove,
   });
+
   final AdminOrder order;
   final AdminOrderItem item;
   final ValueChanged<String> onRemove;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final editable = OrderEditRules.canEditItems(order);
     final allowed = OrderEditRules.canRemoveItem(
       order,
@@ -32,12 +35,6 @@ class OrderItemRemoveButton extends StatelessWidget {
         : S.removeItem;
     return IconButton(
       tooltip: label,
-      color: AppColor.errorColor,
-      icon: const HugeIcon(
-        icon: HugeIcons.strokeRoundedDelete02,
-        size: AppDimensions.xl,
-        color: AppColor.errorColor,
-      ),
       onPressed: !allowed || item.id == null
           ? null
           : () => showConfirmDeleteSnackBar(
@@ -45,6 +42,19 @@ class OrderItemRemoveButton extends StatelessWidget {
               message: S.removeItemConfirm,
               onConfirm: () => onRemove(item.id!),
             ),
+      style: IconButton.styleFrom(
+        fixedSize: const Size(28, 28),
+        padding: EdgeInsets.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        disabledForegroundColor: adminSubtleColor(theme),
+      ),
+      icon: HugeIcon(
+        icon: HugeIcons.strokeRoundedDelete02,
+        size: 15,
+        color: allowed && item.id != null
+            ? AppColor.errorColor
+            : adminSubtleColor(theme),
+      ),
     );
   }
 }

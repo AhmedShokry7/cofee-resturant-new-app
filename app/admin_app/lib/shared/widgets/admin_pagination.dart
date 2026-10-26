@@ -3,6 +3,8 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 
 /// The footer of a paginated admin table.
 ///
@@ -28,6 +30,9 @@ class AdminPagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final muted = dark ? AppColor.darkTextSecondary : const Color(0xFF8A968E);
     return LayoutBuilder(
       builder: (context, constraints) {
         final first = count == 0 ? 0 : page * pageSize + 1;
@@ -35,13 +40,13 @@ class AdminPagination extends StatelessWidget {
             ? (page + 1) * pageSize
             : count;
         final label = Text(
-          labelBuilder(first, last, count),
-          textAlign: TextAlign.right,
-          style: const TextStyle(
-            color: Color(0xFF8A968E),
-            fontSize: 10,
-            fontWeight: FontWeight.w400,
-            height: 1.5,
+          localizeDigits(labelBuilder(first, last, count)),
+          textAlign: TextAlign.start,
+          style: TextStyle(
+            color: muted,
+            fontSize: AppFontSizes.size10,
+            fontWeight: AppFontWeights.regular,
+            height: AppTextHeights.line1_5,
           ),
         );
         final controls = _PaginationControls(
@@ -53,16 +58,26 @@ class AdminPagination extends StatelessWidget {
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.only(top: 16),
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: AppColor.adminRowBorder)),
+          decoration: BoxDecoration(
+            border: Border(
+              top: BorderSide(
+                color: dark ? AppColor.darkBorder : AppColor.adminRowBorder,
+              ),
+            ),
           ),
           child: constraints.maxWidth < 620
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Align(alignment: Alignment.centerRight, child: label),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: label,
+                    ),
                     const SizedBox(height: 8),
-                    Align(alignment: Alignment.centerLeft, child: controls),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: controls,
+                    ),
                   ],
                 )
               : Directionality(
@@ -101,15 +116,20 @@ class _PaginationControls extends StatelessWidget {
       const SizedBox(width: 4),
       for (final number in _pageNumbers(page, pages, compact))
         number == null
-            ? const SizedBox(
+            ? SizedBox(
                 width: 24,
                 child: Text(
                   '…',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF8A968E), fontSize: 10),
+                  style: TextStyle(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColor.darkTextSecondary
+                        : const Color(0xFF8A968E),
+                    fontSize: AppFontSizes.size10,
+                  ),
                 ),
               )
-            : _pageButton(number),
+            : _pageButton(context, number),
       const SizedBox(width: 4),
       _PaginationArrow(
         icon: HugeIcons.strokeRoundedArrowRight01,
@@ -120,7 +140,8 @@ class _PaginationControls extends StatelessWidget {
     ],
   );
 
-  Widget _pageButton(int number) {
+  Widget _pageButton(BuildContext context, int number) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     final selected = page + 1 == number;
     return InkWell(
       onTap: () => onChanged(number - 1),
@@ -134,13 +155,17 @@ class _PaginationControls extends StatelessWidget {
           borderRadius: BorderRadius.circular(7),
         ),
         child: Text(
-          number.toString(),
+          localizeDigits(number.toString()),
           textDirection: TextDirection.ltr,
           style: TextStyle(
-            color: selected ? AppColor.adminAccent : const Color(0xFF758178),
-            fontSize: 10,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
-            height: 1.5,
+            color: selected
+                ? AppColor.adminAccent
+                : dark
+                ? AppColor.darkTextSecondary
+                : const Color(0xFF758178),
+            fontSize: AppFontSizes.size10,
+            fontWeight: selected ? AppFontWeights.bold : AppFontWeights.regular,
+            height: AppTextHeights.line1_5,
           ),
         ),
       ),
@@ -177,22 +202,24 @@ class _PaginationArrow extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Tooltip(
-    message: tooltip,
-    child: InkWell(
-      onTap: enabled ? onTap : null,
-      borderRadius: BorderRadius.circular(7),
-      child: SizedBox(
-        width: 27,
-        height: 27,
-        child: Center(
-          child: HugeIcon(
-            icon: icon,
-            size: 16,
-            color: enabled ? const Color(0xFF758178) : const Color(0x59758178),
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final color = enabled
+        ? (dark ? AppColor.darkTextSecondary : const Color(0xFF758178))
+        : (dark ? AppColor.darkBorder : const Color(0x59758178));
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(7),
+        child: SizedBox(
+          width: 27,
+          height: 27,
+          child: Center(
+            child: HugeIcon(icon: icon, size: 16, color: color),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }

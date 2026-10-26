@@ -1,65 +1,77 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/features/customers/data/models/admin_customer.dart';
-import 'package:admin_app/features/customers/presentation/widgets/customer_analytics.dart';
-import 'package:admin_app/features/customers/presentation/widgets/customer_records.dart';
+import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
+import 'package:admin_app/features/customers/presentation/widgets/customer_directory.dart';
+import 'package:admin_app/features/customers/presentation/widgets/customer_metrics_cards.dart';
+import 'package:admin_app/features/customers/presentation/widgets/customer_page_header.dart';
+import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 
-/// The list of the customers beside the analytics panel, side by side on a
-/// wide screen and stacked on a narrow one.
 class CustomerPageBody extends StatelessWidget {
   const CustomerPageBody({
     super.key,
     required this.customers,
+    required this.metrics,
     required this.search,
+    required this.onSearchChanged,
     required this.onOpen,
+    required this.onExport,
+    required this.exporting,
+    this.errorMessage,
+    this.onRefresh,
   });
 
-  /// Every loaded customer; the body filters them with [search].
   final List<AdminCustomer> customers;
-
-  /// The word the admin is looking for.
+  final AdminCustomerMetrics metrics;
   final String search;
-
-  final void Function(AdminCustomer customer) onOpen;
-
-  List<AdminCustomer> get _filtered {
-    final q = search.trim().toLowerCase();
-    if (q.isEmpty) return customers;
-    return customers
-        .where(
-          (c) =>
-              (c.fullName ?? '').toLowerCase().contains(q) ||
-              (c.email ?? '').toLowerCase().contains(q) ||
-              (c.phone ?? '').toLowerCase().contains(q),
-        )
-        .toList(growable: false);
-  }
+  final ValueChanged<String> onSearchChanged;
+  final ValueChanged<AdminCustomer> onOpen;
+  final ValueChanged<List<AdminCustomer>> onExport;
+  final ValueListenable<bool> exporting;
+  final String? errorMessage;
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    final list = CustomerRecords(customers: _filtered, onOpen: onOpen);
-    final analytics = CustomerAnalyticsPanel(customers: customers);
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        if (constraints.maxWidth >= 900) {
-          return Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: list),
-              const SizedBox(width: AppDimensions.lg),
-              SizedBox(width: 360, child: analytics),
-            ],
-          );
-        }
-        return Column(
-          children: [
-            SizedBox(height: 320, child: analytics),
-            const SizedBox(height: AppDimensions.lg),
-            Expanded(child: list),
-          ],
-        );
-      },
+    final narrow = MediaQuery.sizeOf(context).width < 700;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: narrow ? 16 : 38),
+      child: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1600),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              narrow ? 12 : 28,
+              narrow ? 16 : 24,
+              narrow ? 12 : 28,
+              narrow ? 12 : 21,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const CustomerPageHeader(),
+                if (errorMessage != null)
+                  AdminInlineError(message: errorMessage!, onRetry: onRefresh),
+                const SizedBox(height: 7),
+                CustomerMetricsCards(metrics: metrics),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: CustomerDirectory(
+                    customers: customers,
+                    search: search,
+                    onSearchChanged: onSearchChanged,
+                    onOpen: onOpen,
+                    onExport: onExport,
+                    exporting: exporting,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

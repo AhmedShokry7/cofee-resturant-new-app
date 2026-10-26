@@ -18,7 +18,6 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
     icon: HugeIcons.strokeRoundedReceiptDollar,
     searchHint: S.searchOrdersHint,
     permission: 'orders.read',
-    isImplemented: true,
     section: S.sectionManagement,
     tables: <String>[
       'orders.orders',

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_log.dart';
 import 'package:admin_app/features/audit/presentation/manager/admin_audit_cubit.dart';
 import 'package:admin_app/features/audit/presentation/manager/admin_audit_state.dart';
-import 'package:admin_app/features/audit/presentation/widgets/audit_log_records.dart';
-import 'package:admin_app/shared/widgets/admin_page_title.dart';
-import 'package:admin_app/shared/widgets/admin_state_view.dart';
+import 'package:admin_app/features/audit/presentation/widgets/audit_details_dialog.dart';
+import 'package:admin_app/features/audit/presentation/widgets/audit_directory.dart';
+import 'package:admin_app/features/audit/presentation/widgets/audit_page_body.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class AuditLogPage extends StatefulWidget {
   const AuditLogPage({super.key, required this.searchController, this.cubit});
@@ -26,7 +25,6 @@ class AuditLogPage extends StatefulWidget {
 class _AuditLogPageState extends State<AuditLogPage> {
   late final AdminAuditCubit _cubit;
   late final bool _ownsCubit;
-  String _searchQuery = '';
 
   @override
   void initState() {
@@ -44,20 +42,22 @@ class _AuditLogPageState extends State<AuditLogPage> {
     super.dispose();
   }
 
-  void _onSearch(String query) {
-    setState(() => _searchQuery = query.trim().toLowerCase());
+  void _onSearch(String query) => _cubit.updateSearch(query);
+
+  void _onDirectorySearch(String value) {
+    _cubit.updateSearch(value);
+    widget.searchController.update(value);
   }
 
-  List<AdminAuditLog> _filtered(List<AdminAuditLog> logs) {
-    if (_searchQuery.isEmpty) return logs;
-    return logs
-        .where((log) {
-          return log.action.toLowerCase().contains(_searchQuery) ||
-              log.entityType.toLowerCase().contains(_searchQuery) ||
-              (log.actorName ?? '').toLowerCase().contains(_searchQuery);
-        })
-        .toList(growable: false);
+  void _clearFilters() {
+    _cubit.clearFilters();
+    widget.searchController.clear();
   }
+
+  Future<void> _refresh() => _cubit.refresh();
+
+  Future<void> _openDetails(AdminAuditLog log) =>
+      showAuditDetailsDialog(context: context, log: log);
 
   @override
   Widget build(BuildContext context) {
@@ -65,27 +65,36 @@ class _AuditLogPageState extends State<AuditLogPage> {
       value: _cubit,
       child: BlocBuilder<AdminAuditCubit, AdminAuditState>(
         builder: (context, state) {
-          if (state.isLoading && !state.hasLogs) {
+          if (state.isLoading && !state.hasData) {
             return const AdminLoadingView();
           }
-          if (state.status == AdminAuditStatus.failure && !state.hasLogs) {
+          if (state.isFailure && !state.hasData) {
             return AdminFailureView(
               message: state.errorMessage,
               onRetry: _cubit.load,
             );
           }
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.pageHorizontalPadding,
-              vertical: AppDimensions.pageVerticalPadding,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AdminPageTitle(S.auditLog),
-                const SizedBox(height: AppDimensions.lg),
-                Expanded(child: AuditLogRecords(logs: _filtered(state.logs))),
-              ],
+          return AuditPageBody(
+            metrics: state.metrics,
+            refreshing: state.isRefreshingRows,
+            onRefresh: _refresh,
+            errorMessage: state.isFailure ? state.errorMessage : null,
+            directory: AuditDirectory(
+              logs: state.logs,
+              total: state.total,
+              page: state.page,
+              pages: state.pages,
+              pageSize: state.pageSize,
+              search: state.search,
+              domain: state.domain,
+              criticalOnly: state.criticalOnly,
+              isRefreshingRows: state.isRefreshingRows,
+              onSearchChanged: _onDirectorySearch,
+              onDomainChanged: _cubit.setDomain,
+              onCriticalChanged: _cubit.setCriticalOnly,
+              onClearFilters: _clearFilters,
+              onPageChanged: _cubit.setPage,
+              onOpen: _openDetails,
             ),
           );
         },

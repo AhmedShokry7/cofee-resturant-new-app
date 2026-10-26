@@ -77,7 +77,9 @@ void main() {
   });
 
   test('a banner is deleted from the list', () async {
-    final repository = _FakeBannerRepository(banners: const <AdminBanner>[_banner]);
+    final repository = _FakeBannerRepository(
+      banners: const <AdminBanner>[_banner],
+    );
     final cubit = AdminBannerCubit(repository: repository);
     addTearDown(cubit.close);
 

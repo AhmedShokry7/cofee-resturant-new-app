@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 
@@ -20,6 +20,7 @@ class AdminShellLayoutData {
     required this.searchTextController,
     required this.title,
     required this.searchHint,
+    this.badges = const <String, int>{},
   });
 
   final AdminSession session;
@@ -37,4 +38,7 @@ class AdminShellLayoutData {
   /// Title and search hint of the active destination.
   final String title;
   final String searchHint;
+
+  /// Work waiting per destination, keyed by the destination id.
+  final Map<String, int> badges;
 }

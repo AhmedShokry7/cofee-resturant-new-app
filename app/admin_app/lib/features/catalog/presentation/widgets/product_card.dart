@@ -426,11 +426,15 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   Widget _buildCard(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
-        border: Border.all(color: AppColor.recordBorder),
+        border: Border.all(
+          color: dark ? AppColor.darkBorder : AppColor.recordBorder,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(

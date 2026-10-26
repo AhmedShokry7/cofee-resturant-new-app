@@ -295,9 +295,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
         offset += snapshot.products.length;
       }
       if (offset < total) {
-        throw const AdminProductException(
-          'Not all matching products could be loaded. Please try again.',
-        );
+        throw AdminProductException(S.notAllProductsLoaded);
       }
       emit(
         state.copyWith(
@@ -548,9 +546,9 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     if (error is AdminProductException) return error.message;
     if (error is PostgrestException) return error.message;
     if (error is StateError) {
-      return 'Supabase is not configured. Check the admin app configuration.';
+      return S.supabaseNotConfigured;
     }
-    return 'The catalogue could not be reached. Please try again.';
+    return S.catalogueUnreachable;
   }
 
   /// Turns the words of the database into a message the admin understands.

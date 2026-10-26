@@ -1,9 +1,8 @@
-import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
+
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final String hint;
@@ -20,6 +19,7 @@ class CustomTextFormField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final void Function(String)? onChanged;
+  final void Function(String)? onFieldSubmitted;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final double? padding;
@@ -42,6 +42,7 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction = TextInputAction.next,
     this.onChanged,
+    this.onFieldSubmitted,
     this.prefixIcon,
     this.suffixIcon,
     this.padding,
@@ -55,23 +56,7 @@ class CustomTextFormField extends StatefulWidget {
 }
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
-  late bool _isObscure;
   bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _isObscure = widget.obscureText;
-  }
-
-  @override
-  void didUpdateWidget(covariant CustomTextFormField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.obscureText != widget.obscureText) {
-      _isObscure = widget.obscureText;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -123,7 +108,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
               child: TextFormField(
                 controller: widget.controller,
                 focusNode: widget.focusNode,
-                obscureText: _isObscure,
+                obscureText: widget.obscureText,
                 keyboardType: widget.keyboardType,
                 textInputAction: widget.textInputAction,
                 inputFormatters: widget.inputFormatters,
@@ -132,6 +117,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 validator: widget.validator,
                 onSaved: widget.onSaved,
                 onChanged: widget.onChanged,
+                onFieldSubmitted: widget.onFieldSubmitted,
                 cursorColor: focusColor,
                 textAlignVertical: TextAlignVertical.center,
                 style: AppFonts.semiBold16(context).copyWith(color: onSurface),
@@ -160,7 +146,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     minWidth: AppDimensions.fieldIconBox,
                     minHeight: AppDimensions.fieldIconMinHeight,
                   ),
-                  suffixIcon: _buildSuffixIcon(),
+                  suffixIcon: widget.suffixIcon,
                   suffixIconConstraints: const BoxConstraints(
                     minWidth: AppDimensions.fieldIconBox,
                     minHeight: AppDimensions.fieldIconMinHeight,
@@ -170,8 +156,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     vertical:
                         widget.padding ?? AppDimensions.fieldVerticalPadding,
                   ),
-                  filled: true,
-                  fillColor: Colors.transparent,
+                  filled: false,
                   isDense: false,
                   border: _buildBorder(),
                   enabledBorder: _buildBorder(color: borderColor),
@@ -179,13 +164,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     color: focusColor,
                     width: AppDimensions.fieldFocusBorderWidth,
                   ),
-                  errorBorder: _buildBorder(color: AppColor.errorColor),
+                  errorBorder: _buildBorder(color: colorScheme.error),
                   focusedErrorBorder: _buildBorder(
-                    color: AppColor.errorColor,
+                    color: colorScheme.error,
                     width: AppDimensions.fieldFocusBorderWidth,
                   ),
                   errorStyle: AppFonts.semiBold12(context)
-                      .copyWith(color: AppColor.errorColor),
+                      .copyWith(color: colorScheme.error),
                 ),
               ),
             ),
@@ -193,28 +178,6 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         ],
       ),
     );
-  }
-
-  Widget? _buildSuffixIcon() {
-    final onSurface = Theme.of(context).colorScheme.onSurface;
-
-    if (widget.obscureText) {
-      return IconButton(
-        // tooltip: _isObscure ? S.showPassword : S.hidePassword,
-        onPressed: () {
-          setState(() => _isObscure = !_isObscure);
-        },
-        icon: Icon(
-          _isObscure
-              ? HugeIcons.strokeRoundedViewOff
-              : HugeIcons.strokeRoundedView,
-          size: AppDimensions.fieldIconSize,
-          color: onSurface.withValues(alpha: 0.6),
-        ),
-      );
-    }
-
-    return widget.suffixIcon;
   }
 
   OutlineInputBorder _buildBorder({

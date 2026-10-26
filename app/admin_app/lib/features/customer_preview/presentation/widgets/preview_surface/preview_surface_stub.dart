@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
+
 class PreviewSurface extends StatelessWidget {
   const PreviewSurface({super.key, required this.url});
 
@@ -7,8 +9,6 @@ class PreviewSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('Preview is available on web builds.'),
-    );
+    return Center(child: Text(S.previewUnsupported));
   }
 }

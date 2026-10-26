@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+import 'package:admin_app/core/locale/app_strings.dart';
+
 class EmulatorBridgeClient {
   EmulatorBridgeClient({http.Client? client})
     : _client = client ?? http.Client();
@@ -88,7 +90,7 @@ class EmulatorBridgeClient {
         return body['error'] as String;
       }
     } catch (_) {}
-    return 'Bridge request failed (${response.statusCode}).';
+    return S.bridgeRequestFailed(response.statusCode);
   }
 
   void dispose() => _client.close();

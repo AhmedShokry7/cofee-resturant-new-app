@@ -4,6 +4,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/shared/widgets/admin_selection_checkbox.dart';
 
 /// Product image area styled after the Figma reference.
 class ProductCardImage extends StatelessWidget {
@@ -46,14 +48,16 @@ class ProductCardImage extends StatelessWidget {
         children: [
           // The picture opens the gallery of the product.
           GestureDetector(
-            onTap: (imageUrl != null && imageUrl!.trim().isNotEmpty) ? (onOpenImages ?? onChangeImage) : (onChangeImage ?? onOpenImages),
+            onTap: (imageUrl != null && imageUrl!.trim().isNotEmpty)
+                ? (onOpenImages ?? onChangeImage)
+                : (onChangeImage ?? onOpenImages),
             behavior: HitTestBehavior.opaque,
             child: _CoverImage(url: imageUrl, fit: fit, alignment: alignment),
           ),
           PositionedDirectional(
             top: AppDimensions.recordImageInset,
             end: AppDimensions.recordImageInset,
-            child: _SelectionCheckBox(checked: isSelected, onTap: onSelect),
+            child: AdminSelectionCheckBox(checked: isSelected, onTap: onSelect),
           ),
           if (isFeatured)
             PositionedDirectional(
@@ -88,6 +92,7 @@ class _CoverImage extends StatelessWidget {
     if (image == null || image.isEmpty) {
       return const _ImagePlaceholder();
     }
+
     // The picture is cached on the device: the catalogue shows the same
     // pictures again and again, so they are fetched once.
     return CachedNetworkImage(
@@ -105,51 +110,14 @@ class _ImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const ColoredBox(
-      color: AppColor.imagePlaceholder,
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return ColoredBox(
+      color: dark ? AppColor.darkSurfaceContainer : AppColor.imagePlaceholder,
       child: Center(
         child: Icon(
           HugeIcons.strokeRoundedImage01,
           size: 40,
-          color: AppColor.greyColor,
-        ),
-      ),
-    );
-  }
-}
-
-/// The checkbox that picks the product for a bulk action.
-class _SelectionCheckBox extends StatelessWidget {
-  const _SelectionCheckBox({required this.checked, this.onTap});
-  final bool checked;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColor.whiteColor.withValues(alpha: 0.96),
-      borderRadius: BorderRadius.circular(AppDimensions.recordFieldRadius),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.recordFieldRadius),
-        child: Container(
-          width: AppDimensions.recordCheckBoxSize,
-          height: AppDimensions.recordCheckBoxSize,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(
-              AppDimensions.recordFieldRadius,
-            ),
-            border: Border.all(
-              color: checked ? AppColor.primaryColor : AppColor.greyColor,
-            ),
-          ),
-          child: checked
-              ? const Icon(
-                  HugeIcons.strokeRoundedTick01,
-                  size: 14,
-                  color: AppColor.primaryColor,
-                )
-              : null,
+          color: dark ? AppColor.darkTextSecondary : AppColor.greyColor,
         ),
       ),
     );
@@ -175,8 +143,8 @@ class _FeaturedBadge extends StatelessWidget {
           S.featured,
           style: theme.textTheme.bodySmall?.copyWith(
             color: AppColor.whiteColor,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontSize: AppFontSizes.size11,
+            fontWeight: AppFontWeights.semiBold,
           ),
         ),
       ),
@@ -203,8 +171,10 @@ class _MediaPill extends StatelessWidget {
             children: [
               Text(
                 S.addImageOrVideo,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColor.primaryColor, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColor.primaryColor,
+                  fontSize: AppFontSizes.size12,
+                ),
               ),
               const SizedBox(width: 5),
               const Icon(

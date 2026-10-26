@@ -36,6 +36,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
         state.copyWith(
           status: AdminCategoryStatus.ready,
           categories: categories,
+          selectedIds: const <String>{},
           clearError: true,
         ),
       );
@@ -102,9 +103,62 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
         categories: state.categories
             .where((c) => c.id != categoryId)
             .toList(growable: false),
+        selectedIds: state.selectedIds.difference(<String>{categoryId}),
         clearError: true,
       ),
     );
+  }
+
+  /// Picks the category for a bulk action, or drops it from the selection.
+  void toggleSelection(String categoryId) {
+    final selected = <String>{...state.selectedIds};
+    if (!selected.remove(categoryId)) selected.add(categoryId);
+    emit(state.copyWith(selectedIds: selected));
+  }
+
+  /// Drops every category from the selection.
+  void clearSelection() {
+    emit(state.copyWith(selectedIds: const <String>{}));
+  }
+
+  /// Selects every category whose id is in [ids], keeping the current picks.
+  void selectMany(Iterable<String> ids) {
+    emit(state.copyWith(selectedIds: <String>{...state.selectedIds, ...ids}));
+  }
+
+  /// Deletes the selected categories one by one, keeping the failed ones
+  /// selected so the admin can retry without repeating the successful ones.
+  Future<({int deleted, int failed})> deleteSelected() async {
+    if (state.isDeletingSelected || state.selectedIds.isEmpty) {
+      return (deleted: 0, failed: 0);
+    }
+
+    final requested = <String>{...state.selectedIds};
+    final deleted = <String>{};
+    var failures = 0;
+    emit(state.copyWith(isDeletingSelected: true, clearError: true));
+
+    for (final categoryId in requested) {
+      try {
+        await _repository.deleteCategory(categoryId);
+        deleted.add(categoryId);
+      } catch (_) {
+        failures++;
+      }
+    }
+
+    final current = state;
+    emit(
+      current.copyWith(
+        categories: current.categories
+            .where((c) => !deleted.contains(c.id))
+            .toList(growable: false),
+        selectedIds: current.selectedIds.difference(deleted),
+        isDeletingSelected: false,
+        clearError: true,
+      ),
+    );
+    return (deleted: deleted.length, failed: failures);
   }
 
   Future<void> toggleActive(AdminCategory category) async {

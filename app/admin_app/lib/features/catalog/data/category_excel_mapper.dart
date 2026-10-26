@@ -1,3 +1,4 @@
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/catalog/data/category_excel_service.dart';
 import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 
@@ -71,9 +72,7 @@ class CategoryExcelMapper {
 
     for (final required in <String>['name (arabic)', 'name (english)']) {
       if (!headerIndex.containsKey(required)) {
-        throw FormatException(
-          'The file is missing the "${_label(required)}" column.',
-        );
+        throw FormatException(S.missingExcelColumn(_label(required)));
       }
     }
 
@@ -91,10 +90,10 @@ class CategoryExcelMapper {
 
       final reasons = <String>[];
       if (nameAr.isEmpty) {
-        reasons.add('Name (Arabic) is required');
+        reasons.add(S.excelArabicNameRequired);
       }
       if (nameEn.isEmpty) {
-        reasons.add('Name (English) is required');
+        reasons.add(S.excelEnglishNameRequired);
       }
 
       if (reasons.isNotEmpty) {

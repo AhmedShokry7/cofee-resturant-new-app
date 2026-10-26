@@ -1,8 +1,26 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
+
+/// Asks the admin to confirm deleting every selected bundle.
+Future<void> confirmDeleteSelectedBundles(
+  BuildContext context,
+  AdminBundleCubit cubit,
+) {
+  final count = cubit.state.selectedCount;
+  if (count == 0) return Future<void>.value();
+  return confirmBulkDelete(
+    context,
+    title: S.deleteSelectedBundles,
+    message: S.deleteBundlesConfirm(count),
+    onDelete: cubit.deleteSelected,
+    deletedMessage: S.bundlesDeleted,
+    partialMessage: S.bundlesDeletePartial,
+  );
+}
 
 /// Activates or deactivates a bundle, and reports a failure to the admin.
 Future<void> toggleBundleActive(

@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/banners/data/models/admin_banner.dart';
 
@@ -58,9 +59,9 @@ class AdminBannerRepository {
     required String fileName,
     required String contentType,
   }) async {
-    if (bytes.isEmpty) throw Exception('Image is empty.');
+    if (bytes.isEmpty) throw Exception(S.imageIsEmpty);
     if (bytes.length > 5 * 1024 * 1024) {
-      throw Exception('Image is bigger than 5 MB.');
+      throw Exception(S.imageTooLarge);
     }
     final extension = _extensionOf(fileName);
     final stamp = DateTime.now().microsecondsSinceEpoch;

@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/utils/formatters.dart';
-import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_section_card.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_fulfillment_row.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// How the order reaches the customer: delivered or picked up.
 ///
@@ -29,15 +28,19 @@ class OrderFulfillmentSection extends StatelessWidget {
     final address = order.deliveryAddressSnapshot ?? const <String, dynamic>{};
     final details = '${address['details'] ?? ''}'.trim();
     final label = '${address['label'] ?? ''}'.trim();
+    final hasAddress = details.isNotEmpty || label.isNotEmpty;
 
-    return OrderSectionCard(
+    return AdminSectionCard(
       title: S.fulfillmentInfoTitle,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           OrderFulfillmentRow(
-            icon: HugeIcons.strokeRoundedDeliveryBox01,
+            icon: view.isDelivery
+                ? HugeIcons.strokeRoundedDeliveryTruck01
+                : HugeIcons.strokeRoundedStore01,
             label: view.label,
+            strong: true,
           ),
           if (!view.isDelivery && branch.isNotEmpty)
             OrderFulfillmentRow(
@@ -49,45 +52,40 @@ class OrderFulfillmentSection extends StatelessWidget {
               icon: HugeIcons.strokeRoundedMapPin,
               label: label,
             ),
-          if (view.isDelivery && details.isNotEmpty)
+          if (view.isDelivery && details.isNotEmpty && details != label)
             OrderFulfillmentRow(
               icon: HugeIcons.strokeRoundedMapPin,
               label: details,
             ),
-          if (view.isDelivery && details.isEmpty && label.isEmpty)
+          if (view.isDelivery && !hasAddress)
             OrderFulfillmentRow(
               icon: HugeIcons.strokeRoundedAlertCircle,
               label: S.noDeliveryAddress,
               muted: true,
             ),
-          if (view.isDelivery)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Row(
+          if (view.isDelivery) ...[
+            Divider(height: 14, color: adminRowBorderColor(theme)),
+            OrderFulfillmentRow(
+              icon: HugeIcons.strokeRoundedBicycle01,
+              label: S.deliveryFee,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    HugeIcons.strokeRoundedBicycle01,
-                    size: 14,
-                    color: AppColor.primaryColor,
-                  ),
-                  const SizedBox(width: AppDimensions.xs),
-                  Expanded(
-                    child: Text(
-                      S.deliveryFee,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ),
                   Text(
-                    formatAmount(order.deliveryFee),
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                    orderMoney(order.deliveryFee),
+                    style: TextStyle(
+                      color: adminBodyColor(theme),
+                      fontSize: AppFontSizes.size11,
+                      fontWeight: AppFontWeights.semiBold,
+                      height: AppTextHeights.line1_5,
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.xs),
-                  const CurrencyIcon(size: 12),
+                  const SizedBox(width: 4),
+                  const CurrencyIcon(size: 11),
                 ],
               ),
             ),
+          ],
         ],
       ),
     );

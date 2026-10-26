@@ -99,7 +99,7 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not get location: $error')),
+          SnackBar(content: Text(S.couldNotGetLocation('$error'))),
         );
       }
       setState(() => _isLocating = false);
@@ -152,7 +152,7 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
                 controller: _addressController,
                 decoration: InputDecoration(
                   labelText: S.branchAddress,
-                  hintText: 'Enter address manually',
+                  hintText: S.enterAddressManually,
                 ),
                 onChanged: widget.onAddressChanged,
               ),

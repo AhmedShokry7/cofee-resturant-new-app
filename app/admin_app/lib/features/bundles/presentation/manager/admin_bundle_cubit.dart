@@ -30,6 +30,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
           status: AdminBundleStatus.ready,
           bundles: bundles,
           products: snapshot.products,
+          selectedIds: const <String>{},
           clearError: true,
         ),
       );
@@ -73,9 +74,62 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
         bundles: state.bundles
             .where((b) => b.id != bundleId)
             .toList(growable: false),
+        selectedIds: state.selectedIds.difference(<String>{bundleId}),
         clearError: true,
       ),
     );
+  }
+
+  /// Picks the bundle for a bulk action, or drops it from the selection.
+  void toggleSelection(String bundleId) {
+    final selected = <String>{...state.selectedIds};
+    if (!selected.remove(bundleId)) selected.add(bundleId);
+    emit(state.copyWith(selectedIds: selected));
+  }
+
+  /// Drops every bundle from the selection.
+  void clearSelection() {
+    emit(state.copyWith(selectedIds: const <String>{}));
+  }
+
+  /// Selects every bundle whose id is in [ids], keeping the current picks.
+  void selectMany(Iterable<String> ids) {
+    emit(state.copyWith(selectedIds: <String>{...state.selectedIds, ...ids}));
+  }
+
+  /// Deletes the selected bundles one by one, keeping the failed ones
+  /// selected so the admin can retry without repeating the successful ones.
+  Future<({int deleted, int failed})> deleteSelected() async {
+    if (state.isDeletingSelected || state.selectedIds.isEmpty) {
+      return (deleted: 0, failed: 0);
+    }
+
+    final requested = <String>{...state.selectedIds};
+    final deleted = <String>{};
+    var failures = 0;
+    emit(state.copyWith(isDeletingSelected: true, clearError: true));
+
+    for (final bundleId in requested) {
+      try {
+        await _repository.deleteBundle(bundleId);
+        deleted.add(bundleId);
+      } catch (_) {
+        failures++;
+      }
+    }
+
+    final current = state;
+    emit(
+      current.copyWith(
+        bundles: current.bundles
+            .where((b) => !deleted.contains(b.id))
+            .toList(growable: false),
+        selectedIds: current.selectedIds.difference(deleted),
+        isDeletingSelected: false,
+        clearError: true,
+      ),
+    );
+    return (deleted: deleted.length, failed: failures);
   }
 
   Future<void> toggleActive(AdminBundle bundle) async {

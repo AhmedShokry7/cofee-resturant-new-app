@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
+
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class OrderDetailNavigation extends StatelessWidget {
   const OrderDetailNavigation({
@@ -11,12 +13,14 @@ class OrderDetailNavigation extends StatelessWidget {
     required this.orderId,
     required this.onSelect,
   });
+
   final List<AdminOrder> orders;
   final String orderId;
   final ValueChanged<String> onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final sorted = [...orders]
       ..sort(
         (a, b) =>
@@ -45,8 +49,11 @@ class OrderDetailNavigation extends StatelessWidget {
         ),
         Text(
           current,
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: AppColor.greyColor),
+          style: TextStyle(
+            color: adminMutedColor(theme),
+            fontSize: AppFontSizes.size10,
+            height: AppTextHeights.line1_5,
+          ),
         ),
         _button(
           context,
@@ -65,9 +72,26 @@ class OrderDetailNavigation extends StatelessWidget {
     String label,
     AdminOrder? order,
     IconData icon,
-  ) => OutlinedButton.icon(
-    onPressed: order == null ? null : () => onSelect(order.id),
-    icon: HugeIcon(icon: icon, size: 16, color: AppColor.greyColor),
-    label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-  );
+  ) {
+    final theme = Theme.of(context);
+    return OutlinedButton.icon(
+      onPressed: order == null ? null : () => onSelect(order.id),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: adminBodyColor(theme),
+        disabledForegroundColor: adminSubtleColor(theme),
+        side: BorderSide(color: adminControlBorderColor(theme)),
+        minimumSize: const Size(0, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.compact,
+        textStyle: const TextStyle(
+          fontSize: AppFontSizes.size10_5,
+          fontWeight: AppFontWeights.medium,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+      ),
+      icon: HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+    );
+  }
 }

@@ -8,7 +8,9 @@ import 'package:admin_app/features/carts/presentation/manager/admin_cart_state.d
 import 'package:admin_app/features/carts/presentation/widgets/cart_details_dialog.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_records.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
-import 'package:admin_app/shared/widgets/admin_page_title.dart';
+import 'package:admin_app/shared/widgets/admin_inline_error.dart';
+import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class CartPage extends StatefulWidget {
@@ -54,32 +56,35 @@ class _CartPageState extends State<CartPage> {
       value: _cubit,
       child: BlocBuilder<AdminCartCubit, AdminCartState>(
         builder: (context, state) {
-          if (state.isLoading && !state.hasCarts) {
-            return const AdminLoadingView();
-          }
-          if (state.status == AdminCartStatus.failure && !state.hasCarts) {
-            return AdminFailureView(
-              message: state.errorMessage,
-              onRetry: _cubit.load,
-            );
-          }
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.pageHorizontalPadding,
-              vertical: AppDimensions.pageVerticalPadding,
-            ),
+          final firstLoad = !state.hasCarts;
+          final failed = state.status == AdminCartStatus.failure;
+          return AdminPageFrame(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                AdminPageTitle(S.carts),
+                AdminPageHeader(title: S.carts, subtitle: S.cartsDescription),
+                if (failed && !firstLoad)
+                  AdminInlineError(
+                    message: state.errorMessage ?? '',
+                    onRetry: _cubit.load,
+                  ),
                 const SizedBox(height: AppDimensions.lg),
                 Expanded(
-                  child: CartRecords(
-                    carts: state.carts,
-                    search: _searchQuery,
-                    onOpen: (cart) =>
-                        showCartDetailsDialog(context: context, cart: cart),
-                  ),
+                  child: firstLoad && state.isLoading
+                      ? const AdminLoadingView()
+                      : firstLoad && failed
+                      ? AdminFailureView(
+                          message: state.errorMessage,
+                          onRetry: _cubit.load,
+                        )
+                      : CartRecords(
+                          carts: state.carts,
+                          search: _searchQuery,
+                          onOpen: (cart) => showCartDetailsDialog(
+                            context: context,
+                            cart: cart,
+                          ),
+                        ),
                 ),
               ],
             ),

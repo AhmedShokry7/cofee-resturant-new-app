@@ -3,6 +3,7 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 
 /// Placeholder for a feature that already exists in the database but is not
@@ -30,7 +31,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
           Text(
             destination.label,
             style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: AppFontWeights.bold,
             ),
           ),
           const SizedBox(height: AppDimensions.xl),
@@ -63,7 +64,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                             Text(
                               S.comingSoon,
                               style: theme.textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
+                                fontWeight: AppFontWeights.bold,
                               ),
                             ),
                             const SizedBox(height: AppDimensions.xs),
@@ -82,7 +83,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                   Text(
                     S.databaseTables,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: AppFontWeights.bold,
                     ),
                   ),
                   const SizedBox(height: AppDimensions.md),

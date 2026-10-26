@@ -46,6 +46,10 @@ class AppDimensions {
   /// Below this width record tables switch to their card representation.
   static const double tableBreakpoint = 720.0;
 
+  /// Below this width the sign-in screen drops the brand panel and keeps the
+  /// form alone.
+  static const double loginWideBreakpoint = 900.0;
+
   // Data table
   static const double tableRowMinHeight = 64.0;
   static const double tableRowMaxHeight = 84.0;

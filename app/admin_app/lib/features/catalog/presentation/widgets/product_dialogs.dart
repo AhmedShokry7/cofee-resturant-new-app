@@ -10,6 +10,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/category_excel_mapper.dart';
@@ -547,7 +548,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
         title,
         style: theme.textTheme.titleSmall?.copyWith(
           color: AppColor.primaryColor,
-          fontWeight: FontWeight.w600,
+          fontWeight: AppFontWeights.semiBold,
         ),
       ),
     );
@@ -1015,7 +1016,7 @@ class ImportReportDialog extends StatelessWidget {
               Text(
                 S.invalidRows,
                 style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: AppFontWeights.semiBold,
                 ),
               ),
               const SizedBox(height: AppDimensions.sm),
@@ -1044,7 +1045,7 @@ class ImportReportDialog extends StatelessWidget {
                                 '#${error.rowNumber}',
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: AppColor.greyColor,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: AppFontWeights.semiBold,
                                 ),
                               ),
                             ),
@@ -1060,7 +1061,8 @@ class ImportReportDialog extends StatelessWidget {
                                         error.productName!,
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
-                                              fontWeight: FontWeight.w600,
+                                              fontWeight:
+                                                  AppFontWeights.semiBold,
                                             ),
                                       ),
                                     ),
@@ -1113,7 +1115,7 @@ class ImportReportDialog extends StatelessWidget {
           value,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: color ?? AppColor.blackColor,
-            fontWeight: FontWeight.w600,
+            fontWeight: AppFontWeights.semiBold,
           ),
         ),
       ],
@@ -1154,7 +1156,9 @@ class CategoryPickerDialog extends StatelessWidget {
                 category.nameFor(language),
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: isSelected ? AppColor.primaryColor : null,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  fontWeight: isSelected
+                      ? AppFontWeights.semiBold
+                      : AppFontWeights.regular,
                 ),
               ),
               trailing: isSelected

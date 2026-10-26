@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
-import 'package:admin_app/shared/widgets/admin_status_badge.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_filter_dropdown.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class OrderPaymentStatusControl extends StatelessWidget {
   const OrderPaymentStatusControl({
@@ -13,12 +16,14 @@ class OrderPaymentStatusControl extends StatelessWidget {
     required this.saving,
     this.onChanged,
   });
+
   final AdminOrder order;
   final bool saving;
   final ValueChanged<String>? onChanged;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final view = OrderPaymentStatusView.of(order.paymentStatus);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -28,22 +33,24 @@ class OrderPaymentStatusControl extends StatelessWidget {
             Expanded(
               child: Text(
                 S.paymentStatusLabelTitle,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColor.greyColor),
+                style: TextStyle(
+                  color: adminMutedColor(theme),
+                  fontSize: AppFontSizes.size10_5,
+                  height: AppTextHeights.line1_5,
+                ),
               ),
             ),
-            AdminStatusBadge(label: view.label, color: view.color),
+            _PaymentPill(label: view.label, color: view.color),
           ],
         ),
         if (onChanged != null) ...[
-          const SizedBox(height: AppDimensions.sm),
-          DropdownButtonFormField<String>(
-            initialValue:
-                OrderPaymentStatusView.allCodes.contains(order.paymentStatus)
+          const SizedBox(height: 10),
+          OrderFilterDropdown(
+            key: ValueKey(order.paymentStatus),
+            label: S.changePaymentStatus,
+            value: OrderPaymentStatusView.allCodes.contains(order.paymentStatus)
                 ? order.paymentStatus
-                : null,
-            isExpanded: true,
-            decoration: InputDecoration(labelText: S.changePaymentStatus),
+                : '',
             items: [
               for (final code in OrderPaymentStatusView.allCodes)
                 DropdownMenuItem(
@@ -51,19 +58,71 @@ class OrderPaymentStatusControl extends StatelessWidget {
                   child: Text(OrderPaymentStatusView.of(code).label),
                 ),
             ],
-            onChanged: saving
-                ? null
-                : (value) {
-                    if (value != null) onChanged!(value);
-                  },
+            enabled: !saving,
+            onChanged: onChanged!,
           ),
           if (saving)
             const Padding(
               padding: EdgeInsets.only(top: AppDimensions.xs),
-              child: LinearProgressIndicator(),
+              child: LinearProgressIndicator(
+                minHeight: 2,
+                color: AppColor.adminAccent,
+                backgroundColor: AppColor.adminAccentSurface,
+              ),
             ),
         ],
       ],
+    );
+  }
+}
+
+class _PaymentPill extends StatelessWidget {
+  const _PaymentPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = adminIsDark(theme);
+    final foreground = adminFlagForeground(theme, color);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: dark
+            ? color.withValues(alpha: .16)
+            : Color.lerp(color, AppColor.whiteColor, .86),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: dark ? .35 : .18)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: foreground,
+                fontSize: AppFontSizes.size9_5,
+                fontWeight: AppFontWeights.semiBold,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+          ),
+          const SizedBox(width: 5),
+          Container(
+            width: 5,
+            height: 5,
+            decoration: BoxDecoration(
+              color: foreground,
+              borderRadius: BorderRadius.circular(2.5),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

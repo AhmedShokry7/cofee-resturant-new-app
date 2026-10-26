@@ -25,9 +25,7 @@ class AdminCustomerRepository {
   Future<AdminCustomerMetrics> loadMetrics() async {
     final response = await _supabase.rpc('admin_customer_metrics');
     if (response is Map) {
-      return AdminCustomerMetrics.fromJson(
-        Map<String, dynamic>.from(response),
-      );
+      return AdminCustomerMetrics.fromJson(Map<String, dynamic>.from(response));
     }
     return AdminCustomerMetrics.empty;
   }

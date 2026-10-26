@@ -48,7 +48,7 @@ class _StaffPageState extends State<StaffPage> {
   }
 
   void _onSearch(String query) {
-    setState(() => _searchQuery = query.trim().toLowerCase());
+    setState(() => _searchQuery = query.trim());
   }
 
   @override
@@ -69,14 +69,18 @@ class _StaffPageState extends State<StaffPage> {
           return StaffPageBody(
             staff: state.staff,
             search: _searchQuery,
+            onSearchChanged: widget.searchController.update,
             canManagePermissions: widget.canManagePermissions,
-            onManage: widget.canManagePermissions
-                ? (member) => showStaffPermissionsDialog(
-                    context: context,
-                    cubit: _cubit,
-                    member: member,
-                  )
-                : (_) {},
+            onManage: (member) => showStaffPermissionsDialog(
+              context: context,
+              cubit: _cubit,
+              member: member,
+              canManage: widget.canManagePermissions,
+            ),
+            errorMessage: state.status == AdminStaffStatus.failure
+                ? state.errorMessage
+                : null,
+            onRefresh: _cubit.load,
           );
         },
       ),

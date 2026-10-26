@@ -33,7 +33,9 @@ void main() {
         final line = lines[i];
         // Replacement character.
         if (line.contains('\uFFFD')) {
-          violations.add('${entity.path}:${i + 1}: U+FFFD replacement character');
+          violations.add(
+            '${entity.path}:${i + 1}: U+FFFD replacement character',
+          );
         }
         // Box-drawing characters from Latin-1 mis-decode.
         for (final ch in line.runes) {
@@ -45,8 +47,7 @@ void main() {
           }
         }
         // Common Arabic mojibake: "ط·" followed by another "ط·" or "ط¸".
-        if (line.contains('\u0637\u0637') ||
-            line.contains('\u0637\u0638')) {
+        if (line.contains('\u0637\u0637') || line.contains('\u0637\u0638')) {
           violations.add(
             '${entity.path}:${i + 1}: Arabic mojibake (ط· followed by ط·/ط¸)',
           );

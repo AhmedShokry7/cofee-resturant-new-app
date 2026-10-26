@@ -8,6 +8,7 @@ import 'package:admin_app/features/catalog/presentation/widgets/category_actions
 import 'package:admin_app/features/catalog/presentation/widgets/category_excel_actions.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/category_page_header.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/category_records.dart';
+import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 
 /// The header and the grid of the categories, the whole content of the page.
 ///
@@ -22,6 +23,8 @@ class CategoryPageBody extends StatelessWidget {
     required this.search,
     required this.importProgress,
     required this.exportProgress,
+    this.selectedIds = const <String>{},
+    this.isDeletingSelected = false,
   });
 
   final AdminCategoryCubit cubit;
@@ -30,31 +33,39 @@ class CategoryPageBody extends StatelessWidget {
   final String search;
   final double? importProgress;
   final double? exportProgress;
+  final Set<String> selectedIds;
+  final bool isDeletingSelected;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.pageHorizontalPadding,
-        vertical: AppDimensions.pageVerticalPadding,
-      ),
+    final visible = filterCategories(categories, search);
+    return AdminPageFrame(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           CategoryPageHeader(
-            count: filterCategories(categories, search).length,
+            count: visible.length,
             onAdd: () => showCategoryDataDialog(context: context, cubit: cubit),
             onPickFile: () => runCategoryImport(context, excel),
             onDownloadSample: () => runCategorySampleDownload(context, excel),
             onExport: () => runCategoryExport(context, excel, categories),
             importProgress: importProgress,
             exportProgress: exportProgress,
+            selectedCount: selectedIds.length,
+            onSelectAll: () =>
+                cubit.selectMany(visible.map((category) => category.id)),
+            onClearSelection: cubit.clearSelection,
+            onDeleteSelected: () =>
+                confirmDeleteSelectedCategories(context, cubit),
+            isDeletingSelected: isDeletingSelected,
           ),
           const SizedBox(height: AppDimensions.lg),
           Expanded(
             child: CategoryRecords(
               categories: categories,
               search: search,
+              selectedIds: selectedIds,
+              onSelect: (category) => cubit.toggleSelection(category.id),
               onEdit: (category) => showCategoryDataDialog(
                 context: context,
                 cubit: cubit,

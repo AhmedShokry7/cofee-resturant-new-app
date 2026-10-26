@@ -5,9 +5,14 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/features/carts/data/models/admin_cart.dart';
 import 'package:admin_app/features/carts/presentation/models/cart_status.dart';
+import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// The list of the carts, empty when nothing matches.
 class CartRecords extends StatelessWidget {
@@ -28,9 +33,9 @@ class CartRecords extends StatelessWidget {
 
   List<AdminCart> get _filtered {
     final q = search.trim().toLowerCase();
-    final visible = carts.where((cart) => cart.total > 0).toList(
-      growable: false,
-    );
+    final visible = carts
+        .where((cart) => cart.total > 0)
+        .toList(growable: false);
     if (q.isEmpty) return visible;
     final language = AppLocale.instance.language;
     return visible
@@ -49,26 +54,28 @@ class CartRecords extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final carts = _filtered;
-    if (carts.isEmpty) {
-      return Center(
-        child: Text(
-          S.noCartsFound,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColor.greyColor),
-        ),
-      );
-    }
+    final filtering = search.trim().isNotEmpty;
 
-    return ListView.separated(
-      itemCount: carts.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.md),
-      itemBuilder: (context, index) {
-        final cart = carts[index];
-        return CartCard(
-          cart: cart,
-          onTap: onOpen == null ? null : () => onOpen!(cart),
-        );
-      },
+    return AdminDirectoryPanel(
+      child: carts.isEmpty
+          ? AdminEmptyState(
+              icon: filtering
+                  ? HugeIcons.strokeRoundedSearch01
+                  : HugeIcons.strokeRoundedShoppingBag01,
+              message: filtering ? S.noCartsFound : S.noCartsYet,
+            )
+          : ListView.separated(
+              padding: EdgeInsets.zero,
+              itemCount: carts.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final cart = carts[index];
+                return CartCard(
+                  cart: cart,
+                  onTap: onOpen == null ? null : () => onOpen!(cart),
+                );
+              },
+            ),
     );
   }
 }
@@ -87,62 +94,93 @@ class CartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     final status = CartStatusView.of(cart.status);
     final name = cart.customerName?.trim();
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    final radius = BorderRadius.circular(12);
+    final muted = adminSubtleColor(theme);
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
-          border: Border.all(color: AppColor.recordBorder),
-        ),
-        padding: const EdgeInsets.all(AppDimensions.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    (name == null || name.isEmpty) ? S.unknownCustomer : name,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: radius,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: Container(
+          padding: const EdgeInsets.all(AppDimensions.md),
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            border: Border.all(color: adminCardBorderColor(theme)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      (name == null || name.isEmpty) ? S.unknownCustomer : name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: adminBodyColor(theme),
+                        fontSize: AppFontSizes.size12,
+                        fontWeight: AppFontWeights.bold,
+                        height: AppTextHeights.line1_5,
+                      ),
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                AdminStatusBadge(label: status.label, color: status.color),
-              ],
-            ),
-            const SizedBox(height: AppDimensions.xs),
-            Row(
-              children: [
-                Icon(
-                  HugeIcons.strokeRoundedShoppingBag01,
-                  size: 14,
-                  color: AppColor.greyColor,
-                ),
-                const SizedBox(width: AppDimensions.xs),
-                Text(
-                  S.cartItemsCount(cart.items.length),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColor.greyColor,
+                  const SizedBox(width: AppDimensions.sm),
+                  AdminStatusBadge(label: status.label, color: status.color),
+                  if (onTap != null) ...[
+                    const SizedBox(width: AppDimensions.sm),
+                    HugeIcon(
+                      icon: rtl
+                          ? HugeIcons.strokeRoundedArrowLeft01
+                          : HugeIcons.strokeRoundedArrowRight01,
+                      size: 16,
+                      color: adminMutedColor(theme),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  HugeIcon(
+                    icon: HugeIcons.strokeRoundedShoppingBag01,
+                    size: 14,
+                    color: muted,
                   ),
-                ),
-                const Spacer(),
-                Text(
-                  '${cart.total.toStringAsFixed(2)} SAR',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColor.primaryColor,
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      S.cartItemsCount(cart.items.length),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: muted,
+                        fontSize: AppFontSizes.size10_5,
+                        height: AppTextHeights.line1_5,
+                      ),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(width: AppDimensions.sm),
+                  Text(
+                    formatMoneyWithCurrency(cart.total),
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: dark ? AppColor.darkText : AppColor.adminAmount,
+                      fontSize: AppFontSizes.size12,
+                      fontWeight: AppFontWeights.bold,
+                      height: AppTextHeights.line1_5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

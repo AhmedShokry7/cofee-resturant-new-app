@@ -1,13 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_metrics.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_cubit.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_state.dart';
-import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_records.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
-import 'package:admin_app/shared/widgets/admin_page_title.dart';
+import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_details_dialog.dart';
+import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_page_body.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class SubscriptionAdminPage extends StatefulWidget {
@@ -48,7 +48,15 @@ class _SubscriptionAdminPageState extends State<SubscriptionAdminPage> {
   }
 
   void _onSearch(String query) {
-    setState(() => _searchQuery = query.trim().toLowerCase());
+    setState(() => _searchQuery = query.trim());
+  }
+
+  void _openSubscription(AdminSubscription subscription) {
+    showSubscriptionDetailsDialog(
+      context: context,
+      subscription: subscription,
+      cubit: _cubit,
+    );
   }
 
   @override
@@ -67,24 +75,16 @@ class _SubscriptionAdminPageState extends State<SubscriptionAdminPage> {
               onRetry: _cubit.load,
             );
           }
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.pageHorizontalPadding,
-              vertical: AppDimensions.pageVerticalPadding,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AdminPageTitle(S.subscriptions),
-                const SizedBox(height: AppDimensions.lg),
-                Expanded(
-                  child: SubscriptionRecords(
-                    subscriptions: state.subscriptions,
-                    search: _searchQuery,
-                  ),
-                ),
-              ],
-            ),
+          return SubscriptionPageBody(
+            subscriptions: state.subscriptions,
+            metrics: AdminSubscriptionMetrics.from(state.subscriptions),
+            search: _searchQuery,
+            onSearchChanged: widget.searchController.update,
+            onOpen: _openSubscription,
+            errorMessage: state.status == AdminSubscriptionStatus.failure
+                ? state.errorMessage
+                : null,
+            onRefresh: _cubit.load,
           );
         },
       ),

@@ -1,15 +1,17 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/customers/data/customer_excel_exporter.dart';
+import 'package:admin_app/features/customers/data/models/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_cubit.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_state.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_detail_dialog.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_page_body.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
-import 'package:admin_app/shared/widgets/admin_page_title.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
+
+part 'customer_page_export.dart';
 
 class CustomerPage extends StatefulWidget {
   const CustomerPage({super.key, required this.searchController, this.cubit});
@@ -27,6 +29,7 @@ class _CustomerPageState extends State<CustomerPage> {
   late final AdminCustomerCubit _cubit;
   late final bool _ownsCubit;
   String _searchQuery = '';
+  final ValueNotifier<bool> _exporting = ValueNotifier(false);
 
   @override
   void initState() {
@@ -40,12 +43,21 @@ class _CustomerPageState extends State<CustomerPage> {
   @override
   void dispose() {
     widget.searchController.bind(null);
+    _exporting.dispose();
     if (_ownsCubit) _cubit.close();
     super.dispose();
   }
 
   void _onSearch(String query) {
     setState(() => _searchQuery = query.trim());
+  }
+
+  void _openCustomer(AdminCustomer customer) {
+    showCustomerDetailDialog(
+      context: context,
+      cubit: _cubit,
+      customer: customer,
+    );
   }
 
   @override
@@ -64,29 +76,18 @@ class _CustomerPageState extends State<CustomerPage> {
               onRetry: _cubit.load,
             );
           }
-          return Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.pageHorizontalPadding,
-              vertical: AppDimensions.pageVerticalPadding,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                AdminPageTitle(S.customers),
-                const SizedBox(height: AppDimensions.lg),
-                Expanded(
-                  child: CustomerPageBody(
-                    customers: state.customers,
-                    search: _searchQuery,
-                    onOpen: (customer) => showCustomerDetailDialog(
-                      context: context,
-                      cubit: _cubit,
-                      customer: customer,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          return CustomerPageBody(
+            customers: state.customers,
+            metrics: state.metrics,
+            search: _searchQuery,
+            onSearchChanged: widget.searchController.update,
+            onOpen: _openCustomer,
+            onExport: _exportCustomers,
+            exporting: _exporting,
+            errorMessage: state.status == AdminCustomerStatus.failure
+                ? state.errorMessage
+                : null,
+            onRefresh: _cubit.load,
           );
         },
       ),

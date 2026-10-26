@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
 import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/category_records.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 
 /// The bundles whose name or description holds [search].
 List<AdminBundle> filterBundles(List<AdminBundle> bundles, String search) {
@@ -34,6 +36,8 @@ class BundleRecords extends StatelessWidget {
     this.onDelete,
     this.onToggleActive,
     this.onChangeImage,
+    this.selectedIds = const <String>{},
+    this.onSelect,
   });
 
   /// Every loaded bundle; the list filters them with [search].
@@ -47,18 +51,23 @@ class BundleRecords extends StatelessWidget {
   final ValueChanged<AdminBundle>? onToggleActive;
   final ValueChanged<AdminBundle>? onChangeImage;
 
+  /// The bundles that are picked for a bulk action.
+  final Set<String> selectedIds;
+
+  final ValueChanged<AdminBundle>? onSelect;
+
   List<AdminBundle> get _filtered => filterBundles(bundles, search);
 
   @override
   Widget build(BuildContext context) {
     final bundles = _filtered;
     if (bundles.isEmpty) {
-      return Center(
-        child: Text(
-          'No bundles found',
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColor.greyColor),
-        ),
+      final filtering = search.trim().isNotEmpty;
+      return AdminEmptyState(
+        icon: filtering
+            ? HugeIcons.strokeRoundedSearch01
+            : HugeIcons.strokeRoundedPackage,
+        message: filtering ? S.noBundlesFound : S.noBundlesYet,
       );
     }
 
@@ -101,6 +110,7 @@ class BundleRecords extends StatelessWidget {
                 imageUrl: bundle.imageUrl,
                 productCount: bundle.components.length,
               ),
+              countLabel: S.bundleComponentsCount(bundle.components.length),
               onEdit: onEdit == null ? null : () => onEdit!(bundle),
               onDelete: onDelete == null ? null : () => onDelete!(bundle),
               onToggleActive: onToggleActive == null
@@ -109,6 +119,8 @@ class BundleRecords extends StatelessWidget {
               onChangeImage: onChangeImage == null
                   ? null
                   : () => onChangeImage!(bundle),
+              isSelected: selectedIds.contains(bundle.id),
+              onSelect: onSelect == null ? null : () => onSelect!(bundle),
             );
           },
         );

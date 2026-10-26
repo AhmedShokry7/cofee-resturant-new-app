@@ -1,63 +1,125 @@
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/presentation/widgets/branch_page_header.dart';
-import 'package:admin_app/features/branches/presentation/widgets/branch_records.dart';
+import 'package:admin_app/features/branches/data/models/admin_branch_metrics.dart';
+import 'package:admin_app/features/branches/presentation/widgets/branch_directory.dart';
+import 'package:admin_app/features/branches/presentation/widgets/branch_metrics_cards.dart';
+import 'package:admin_app/shared/widgets/admin_inline_error.dart';
+import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:admin_app/shared/widgets/admin_page_header.dart';
+import 'package:admin_app/shared/widgets/admin_read_only_hint.dart';
+import 'package:admin_app/shared/widgets/custom_btn.dart';
 
-/// The header and the grid of the branches, the whole content of the page.
 class BranchPageBody extends StatelessWidget {
   const BranchPageBody({
     super.key,
     required this.branches,
+    required this.metrics,
     required this.search,
+    required this.onSearchChanged,
+    required this.canManage,
+    required this.canManagePricing,
     required this.onAdd,
     required this.onEdit,
-    required this.onDelete,
-    required this.onToggleActive,
     required this.onChangeImage,
     required this.onManageDelivery,
+    required this.onToggleActive,
+    required this.onDelete,
     this.onManagePricing,
+    this.errorMessage,
+    this.onRefresh,
   });
 
   final List<AdminBranch> branches;
+  final AdminBranchMetrics metrics;
   final String search;
+  final ValueChanged<String> onSearchChanged;
+  final bool canManage;
+  final bool canManagePricing;
   final VoidCallback onAdd;
   final ValueChanged<AdminBranch> onEdit;
-  final ValueChanged<AdminBranch> onDelete;
-  final ValueChanged<AdminBranch> onToggleActive;
   final ValueChanged<AdminBranch> onChangeImage;
   final ValueChanged<AdminBranch> onManageDelivery;
   final ValueChanged<AdminBranch>? onManagePricing;
+  final ValueChanged<AdminBranch> onToggleActive;
+  final ValueChanged<AdminBranch> onDelete;
+  final String? errorMessage;
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.pageHorizontalPadding,
-        vertical: AppDimensions.pageVerticalPadding,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          BranchPageHeader(
-            count: filterBranches(branches, search).length,
+    return AdminPageFrame(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final compact =
+              constraints.maxWidth < 840 || constraints.maxHeight < 640;
+          final directory = BranchDirectory(
+            branches: branches,
+            search: search,
+            onSearchChanged: onSearchChanged,
+            canManage: canManage,
+            canManagePricing: canManagePricing,
             onAdd: onAdd,
-          ),
-          const SizedBox(height: AppDimensions.lg),
-          Expanded(
-            child: BranchRecords(
-              branches: branches,
-              search: search,
-              onEdit: onEdit,
-              onDelete: onDelete,
-              onToggleActive: onToggleActive,
-              onChangeImage: onChangeImage,
-              onManageDelivery: onManageDelivery,
-              onManagePricing: onManagePricing,
+            onEdit: onEdit,
+            onChangeImage: onChangeImage,
+            onManageDelivery: onManageDelivery,
+            onManagePricing: onManagePricing,
+            onToggleActive: onToggleActive,
+            onDelete: onDelete,
+          );
+          final sections = <Widget>[
+            AdminPageHeader(
+              title: S.branches,
+              subtitle: S.branchesDescription,
+              actions: [
+                if (canManage)
+                  CustomBtn(
+                    key: const Key('branch-add'),
+                    text: S.addBranch,
+                    onPressed: onAdd,
+                    leadingIcon: const Icon(
+                      HugeIcons.strokeRoundedAdd01,
+                      size: 18,
+                    ),
+                    height: 42,
+                    borderRadius: AppDimensions.radiusPill,
+                    backgroundColor: AppColor.primaryColor,
+                    textColor: AppColor.whiteColor,
+                  ),
+              ],
+              footer: canManage
+                  ? null
+                  : AdminReadOnlyHint(message: S.branchesReadOnly),
             ),
-          ),
-        ],
+            if (errorMessage != null)
+              AdminInlineError(message: errorMessage!, onRetry: onRefresh),
+            const SizedBox(height: 7),
+            BranchMetricsCards(metrics: metrics),
+            const SizedBox(height: 16),
+          ];
+          if (compact) {
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ...sections,
+                  SizedBox(height: 620, child: directory),
+                ],
+              ),
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ...sections,
+              Expanded(child: directory),
+            ],
+          );
+        },
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
@@ -416,7 +417,7 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
       if (picked == null) return null;
       final bytes = await picked.readAsBytes();
       if (bytes.isEmpty) {
-        throw const AdminProductException('The picture is empty.');
+        throw AdminProductException(S.imageIsEmpty);
       }
       return ProductImageSource.file(
         bytes,
@@ -776,8 +777,10 @@ class _PrimaryBadge extends StatelessWidget {
         ),
         child: Text(
           S.primary,
-          style: Theme.of(context).textTheme.bodySmall
-              ?.copyWith(color: AppColor.whiteColor, fontSize: 10),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: AppColor.whiteColor,
+            fontSize: AppFontSizes.size10,
+          ),
         ),
       ),
     );
@@ -844,8 +847,8 @@ class _PendingTile extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColor.primaryColor,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
+                        fontSize: AppFontSizes.size10,
+                        fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
                   ],

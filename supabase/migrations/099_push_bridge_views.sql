@@ -40,14 +40,26 @@ grant select, insert, update, delete on public.device_tokens to authenticated;
 grant select, insert, update, delete on public.device_tokens to service_role;
 revoke all on public.device_tokens from anon;
 
-create or replace view public.push_deliveries with (security_invoker = true) as
-  select * from engagement.push_deliveries;
-
-comment on view public.push_deliveries is
-  'Bridge to engagement.push_deliveries. Written by the send-push Edge Function.';
-
-grant select on public.push_deliveries to service_role;
-revoke all on public.push_deliveries from anon, authenticated;
+-- On a fresh replay the delivery log is created by 104 (the renamed push
+-- migration) after this file, so the view can only be created when the table
+-- already exists. 104 repeats both statements at the end.
+do $$
+begin
+  if to_regclass('engagement.push_deliveries') is not null then
+    execute $sql$
+      create or replace view public.push_deliveries
+        with (security_invoker = true) as
+        select * from engagement.push_deliveries
+    $sql$;
+    execute $sql$
+      comment on view public.push_deliveries is
+        'Bridge to engagement.push_deliveries. Written by the send-push Edge Function.'
+    $sql$;
+    execute 'grant select on public.push_deliveries to service_role';
+    execute 'revoke all on public.push_deliveries from anon, authenticated';
+  end if;
+end;
+$$;
 
 notify pgrst, 'reload config';
 notify pgrst, 'reload schema';

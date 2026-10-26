@@ -196,11 +196,11 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     final titleAr = _titleArController.text.trim();
     final titleEn = _titleEnController.text.trim();
     if (titleAr.isEmpty || titleEn.isEmpty) {
-      setState(() => _error = 'Title is required');
+      setState(() => _error = S.titleRequired);
       return;
     }
     if (_imageUrl == null || _imageUrl!.trim().isEmpty) {
-      setState(() => _error = 'Image is required');
+      setState(() => _error = S.imageRequired);
       return;
     }
 
@@ -329,8 +329,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _titleArController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title (Arabic) *',
+                      decoration: InputDecoration(
+                        labelText: '${S.title} (${S.arabicLabel}) *',
                       ),
                       textDirection: TextDirection.rtl,
                     ),
@@ -339,8 +339,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _titleEnController,
-                      decoration: const InputDecoration(
-                        labelText: 'Title (English) *',
+                      decoration: InputDecoration(
+                        labelText: '${S.title} (${S.englishLabel}) *',
                       ),
                     ),
                   ),
@@ -352,8 +352,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _subtitleArController,
-                      decoration: const InputDecoration(
-                        labelText: 'Subtitle (Arabic)',
+                      decoration: InputDecoration(
+                        labelText: '${S.subtitle} (${S.arabicLabel})',
                       ),
                       textDirection: TextDirection.rtl,
                     ),
@@ -362,8 +362,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _subtitleEnController,
-                      decoration: const InputDecoration(
-                        labelText: 'Subtitle (English)',
+                      decoration: InputDecoration(
+                        labelText: '${S.subtitle} (${S.englishLabel})',
                       ),
                     ),
                   ),
@@ -375,8 +375,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _ctaArController,
-                      decoration: const InputDecoration(
-                        labelText: 'CTA (Arabic)',
+                      decoration: InputDecoration(
+                        labelText: '${S.ctaLabel} (${S.arabicLabel})',
                       ),
                       textDirection: TextDirection.rtl,
                     ),
@@ -385,8 +385,8 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _ctaEnController,
-                      decoration: const InputDecoration(
-                        labelText: 'CTA (English)',
+                      decoration: InputDecoration(
+                        labelText: '${S.ctaLabel} (${S.englishLabel})',
                       ),
                     ),
                   ),
@@ -397,12 +397,15 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                 initialValue: _targetTypeController.text.isEmpty
                     ? 'none'
                     : _targetTypeController.text,
-                decoration: const InputDecoration(labelText: 'Target type'),
-                items: const [
-                  DropdownMenuItem(value: 'none', child: Text('None')),
-                  DropdownMenuItem(value: 'product', child: Text('Product')),
-                  DropdownMenuItem(value: 'category', child: Text('Category')),
-                  DropdownMenuItem(value: 'url', child: Text('URL')),
+                decoration: InputDecoration(labelText: S.targetType),
+                items: [
+                  DropdownMenuItem(value: 'none', child: Text(S.none)),
+                  DropdownMenuItem(
+                    value: 'product',
+                    child: Text(S.productLabel),
+                  ),
+                  DropdownMenuItem(value: 'category', child: Text(S.category)),
+                  DropdownMenuItem(value: 'url', child: Text(S.url)),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -420,14 +423,14 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                         initialValue: _targetIdController.text.isEmpty
                             ? null
                             : _targetIdController.text,
-                        decoration: const InputDecoration(
-                          labelText: 'Target product',
-                        ),
+                        decoration: InputDecoration(labelText: S.targetProduct),
                         items: [
                           for (final product in _products)
                             DropdownMenuItem(
                               value: product.id,
-                              child: Text(product.nameFor(AppLocale.instance.language)),
+                              child: Text(
+                                product.nameFor(AppLocale.instance.language),
+                              ),
                             ),
                         ],
                         onChanged: (value) {
@@ -442,14 +445,16 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                         initialValue: _targetIdController.text.isEmpty
                             ? null
                             : _targetIdController.text,
-                        decoration: const InputDecoration(
-                          labelText: 'Target category',
+                        decoration: InputDecoration(
+                          labelText: S.targetCategory,
                         ),
                         items: [
                           for (final category in _categories)
                             DropdownMenuItem(
                               value: category.id,
-                              child: Text(category.nameFor(AppLocale.instance.language)),
+                              child: Text(
+                                category.nameFor(AppLocale.instance.language),
+                              ),
                             ),
                         ],
                         onChanged: (value) {
@@ -460,12 +465,12 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               const SizedBox(height: AppDimensions.md),
               TextField(
                 controller: _targetUrlController,
-                decoration: const InputDecoration(labelText: 'Target URL'),
+                decoration: InputDecoration(labelText: S.targetUrl),
               ),
               const SizedBox(height: AppDimensions.md),
               TextField(
                 controller: _sortOrderController,
-                decoration: const InputDecoration(labelText: 'Sort order'),
+                decoration: InputDecoration(labelText: S.sortOrder),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: AppDimensions.md),

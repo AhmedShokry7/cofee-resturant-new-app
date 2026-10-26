@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product.dart';
 
@@ -36,7 +37,7 @@ class OrderProductPickerTile extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     ),
-    subtitle: Text('${product.basePrice.toStringAsFixed(2)} SAR'),
+    subtitle: Text(formatMoneyWithCurrency(product.basePrice)),
     onTap: onTap,
   );
 

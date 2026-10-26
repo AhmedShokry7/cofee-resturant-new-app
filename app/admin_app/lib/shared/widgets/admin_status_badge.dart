@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// A small pill that names a state with its colour.
 ///
@@ -12,28 +14,48 @@ class AdminStatusBadge extends StatelessWidget {
   final String label;
   final Color color;
 
-  /// A background pale enough to carry a dark text on any surface.
-  Color get _background => Color.lerp(color, Colors.white, 0.86)!;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
+    final dark = adminIsDark(theme);
+    final foreground = adminFlagForeground(theme, color);
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.sm,
-        vertical: 2,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: dark ? color.withValues(alpha: 0.25) : _background,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        color: adminFlagBackground(
+          theme,
+          color,
+          Color.lerp(color, AppColor.whiteColor, .86)!,
+        ),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: dark ? .35 : .18)),
       ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: dark ? color : color.withValues(alpha: 1),
-          fontWeight: FontWeight.w700,
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: AlignmentDirectional.centerStart,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              maxLines: 1,
+              style: TextStyle(
+                color: foreground,
+                fontSize: AppFontSizes.size9_5,
+                fontWeight: AppFontWeights.semiBold,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+            const SizedBox(width: 5),
+            Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: foreground,
+                borderRadius: BorderRadius.circular(2.5),
+              ),
+            ),
+          ],
         ),
       ),
     );

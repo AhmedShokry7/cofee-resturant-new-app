@@ -3,6 +3,25 @@ import 'package:flutter/services.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+
+Color _cellBackground(bool dark) =>
+    dark ? AppColor.darkSurfaceContainer : AppColor.recordCellBackground;
+
+Color _fieldBorder(bool dark) =>
+    dark ? AppColor.darkBorder : AppColor.recordBorder;
+
+Color _strongText(bool dark) =>
+    dark ? AppColor.darkText : AppColor.recordTextStrong;
+
+Color _labelText(bool dark) =>
+    dark ? AppColor.darkTextSecondary : AppColor.recordText;
+
+Color _mutedText(bool dark) =>
+    dark ? AppColor.darkTextSecondary : AppColor.recordTextMuted;
+
+Color _actionText(bool dark) =>
+    dark ? AppColor.secondaryColor : AppColor.primaryColor;
 
 /// Label cell matching the light-grey Figma field styling.
 class RecordLabelBox extends StatelessWidget {
@@ -12,13 +31,14 @@ class RecordLabelBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     return Container(
       width: AppDimensions.recordFieldLabelWidth,
       height: AppDimensions.recordFieldHeight,
       alignment: AlignmentDirectional.center,
       decoration: BoxDecoration(
-        color: AppColor.recordCellBackground,
-        border: Border.all(color: AppColor.recordBorder),
+        color: _cellBackground(dark),
+        border: Border.all(color: _fieldBorder(dark)),
         borderRadius: const BorderRadiusDirectional.horizontal(
           start: Radius.circular(AppDimensions.recordFieldRadius),
         ),
@@ -29,8 +49,8 @@ class RecordLabelBox extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
         style: theme.textTheme.bodySmall?.copyWith(
-          color: AppColor.recordText,
-          fontSize: 12,
+          color: _labelText(dark),
+          fontSize: AppFontSizes.size12,
         ),
       ),
     );
@@ -55,12 +75,13 @@ class RecordValueBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     return Container(
       constraints: const BoxConstraints(minWidth: 0),
       height: AppDimensions.recordFieldHeight,
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        border: Border.all(color: AppColor.recordBorder),
+        color: theme.colorScheme.surface,
+        border: Border.all(color: _fieldBorder(dark)),
       ),
       child: Row(
         children: [
@@ -77,10 +98,8 @@ class RecordValueBox extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   textAlign: alignEnd ? TextAlign.end : TextAlign.start,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: muted
-                        ? AppColor.recordTextMuted
-                        : AppColor.recordTextStrong,
-                    fontSize: 12,
+                    color: muted ? _mutedText(dark) : _strongText(dark),
+                    fontSize: AppFontSizes.size12,
                   ),
                 ),
               ),
@@ -116,12 +135,13 @@ class RecordTextFieldBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     return Container(
       constraints: const BoxConstraints(minWidth: 0),
       height: AppDimensions.recordFieldHeight,
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        border: Border.all(color: AppColor.recordBorder),
+        color: theme.colorScheme.surface,
+        border: Border.all(color: _fieldBorder(dark)),
       ),
       child: Padding(
         padding: const EdgeInsetsDirectional.only(start: 12, end: 8),
@@ -133,8 +153,8 @@ class RecordTextFieldBox extends StatelessWidget {
             inputFormatters: inputFormatters,
             maxLines: 1,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColor.recordTextStrong,
-              fontSize: 12,
+              color: _strongText(dark),
+              fontSize: AppFontSizes.size12,
             ),
             decoration: InputDecoration(
               isDense: true,
@@ -145,8 +165,8 @@ class RecordTextFieldBox extends StatelessWidget {
               contentPadding: EdgeInsets.zero,
               hintText: hint,
               hintStyle: theme.textTheme.bodySmall?.copyWith(
-                color: AppColor.recordTextMuted,
-                fontSize: 12,
+                color: _mutedText(dark),
+                fontSize: AppFontSizes.size12,
               ),
             ),
           ),
@@ -172,15 +192,16 @@ class RecordSelectBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     return Material(
-      color: AppColor.whiteColor,
+      color: theme.colorScheme.surface,
       child: InkWell(
         onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minWidth: 0),
           height: AppDimensions.recordFieldHeight,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColor.recordBorder),
+            border: Border.all(color: _fieldBorder(dark)),
           ),
           child: Row(
             children: [
@@ -193,18 +214,16 @@ class RecordSelectBox extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.start,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: muted
-                          ? AppColor.recordTextMuted
-                          : AppColor.recordTextStrong,
-                      fontSize: 12,
+                      color: muted ? _mutedText(dark) : _strongText(dark),
+                      fontSize: AppFontSizes.size12,
                     ),
                   ),
                 ),
               ),
-              const Icon(
+              Icon(
                 HugeIcons.strokeRoundedArrowDown01,
                 size: 13,
-                color: AppColor.greyColor,
+                color: dark ? AppColor.darkTextSecondary : AppColor.greyColor,
               ),
               const SizedBox(width: 8),
             ],
@@ -241,8 +260,9 @@ class RecordActionBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return Material(
-      color: AppColor.recordCellBackground,
+      color: _cellBackground(dark),
       child: InkWell(
         onTap: onTap,
         child: Container(
@@ -250,7 +270,7 @@ class RecordActionBox extends StatelessWidget {
           height: AppDimensions.recordFieldHeight,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            border: Border.all(color: AppColor.recordBorder),
+            border: Border.all(color: _fieldBorder(dark)),
             borderRadius: BorderRadiusDirectional.horizontal(
               start: radiusStart
                   ? const Radius.circular(AppDimensions.recordFieldRadius)
@@ -265,7 +285,9 @@ class RecordActionBox extends StatelessWidget {
               Icon(
                 icon,
                 size: 15,
-                color: active ? AppColor.primaryColor : AppColor.greyColor,
+                color: active
+                    ? _actionText(dark)
+                    : (dark ? AppColor.darkTextSecondary : AppColor.greyColor),
               ),
         ),
       ),
@@ -294,8 +316,10 @@ class RecordActionLabelBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final foreground = _actionText(dark);
     return Material(
-      color: AppColor.recordCellBackground,
+      color: _cellBackground(dark),
       child: InkWell(
         onTap: onTap,
         child: Container(
@@ -303,7 +327,7 @@ class RecordActionLabelBox extends StatelessWidget {
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: AppDimensions.sm),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColor.recordBorder),
+            border: Border.all(color: _fieldBorder(dark)),
             borderRadius: BorderRadiusDirectional.horizontal(
               end: radiusEnd
                   ? const Radius.circular(AppDimensions.recordFieldRadius)
@@ -313,16 +337,16 @@ class RecordActionLabelBox extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 15, color: AppColor.primaryColor),
+              Icon(icon, size: 15, color: foreground),
               const SizedBox(width: 5),
               Text(
                 label,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColor.primaryColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+                  color: foreground,
+                  fontSize: AppFontSizes.size12,
+                  fontWeight: AppFontWeights.medium,
                 ),
               ),
             ],

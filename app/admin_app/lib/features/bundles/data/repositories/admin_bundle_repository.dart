@@ -3,9 +3,19 @@ import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+
+class AdminBundleException implements Exception {
+  const AdminBundleException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
 
 /// Reads and writes bundles of the admin dashboard.
 class AdminBundleRepository {
@@ -91,7 +101,24 @@ class AdminBundleRepository {
 
   /// Deletes a bundle.
   Future<void> deleteBundle(String bundleId) async {
-    await _supabase.from('bundles').delete().eq('id', bundleId);
+    try {
+      await _supabase.rpc(
+        'admin_delete_bundle',
+        params: {'p_bundle_id': bundleId},
+      );
+    } on PostgrestException catch (error) {
+      throw AdminBundleException(_deleteMessage(error));
+    }
+  }
+
+  String _deleteMessage(PostgrestException error) {
+    if (error.message.contains('bundle_in_use')) {
+      return S.bundleDeleteBlockedByReward;
+    }
+    if (error.message.contains('bundle_not_found')) {
+      return S.bundleNotFound;
+    }
+    return error.message;
   }
 
   /// Activates or deactivates a bundle.
@@ -118,9 +145,9 @@ class AdminBundleRepository {
     required String contentType,
     void Function(AdminImageUploadPhase phase)? onPhase,
   }) async {
-    if (bytes.isEmpty) throw Exception('Image is empty.');
+    if (bytes.isEmpty) throw Exception(S.imageIsEmpty);
     if (bytes.length > 5 * 1024 * 1024) {
-      throw Exception('Image is bigger than 5 MB.');
+      throw Exception(S.imageTooLarge);
     }
 
     final extension = _extensionOf(fileName);

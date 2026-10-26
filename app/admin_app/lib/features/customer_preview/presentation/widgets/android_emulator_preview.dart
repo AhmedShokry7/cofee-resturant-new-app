@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/data/emulator_bridge_client.dart';
 
 class AndroidEmulatorPreview extends StatefulWidget {
@@ -58,7 +60,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
     });
     try {
       final connected = await _bridge.check(_token);
-      if (!connected) throw StateError('Bridge is not ready.');
+      if (!connected) throw StateError(S.bridgeNotReady);
       _frameTimer?.cancel();
       _healthTimer?.cancel();
       if (!mounted) return;
@@ -126,7 +128,9 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
       await _captureFrame();
     } catch (error) {
       if (mounted) {
-        setState(() => _error = error.toString().replaceFirst('Bad state: ', ''));
+        setState(
+          () => _error = error.toString().replaceFirst('Bad state: ', ''),
+        );
       }
     }
   }
@@ -189,11 +193,13 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Android emulator preview', style: theme.textTheme.headlineSmall),
+          Text(S.emulatorPreviewTitle, style: theme.textTheme.headlineSmall),
           const SizedBox(height: AppDimensions.xs),
           Text(
-            'Live Android emulator preview. Run the bridge on this PC, then connect.',
-            style: theme.textTheme.bodyMedium?.copyWith(color: AppColor.greyColor),
+            S.emulatorPreviewDescription,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColor.greyColor,
+            ),
           ),
           const SizedBox(height: AppDimensions.lg),
           LayoutBuilder(
@@ -202,7 +208,9 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
               final device = _buildDevice(theme);
               final controls = _buildConnectionPanel(theme);
               if (compact) {
-                return Column(children: [device, const SizedBox(height: 20), controls]);
+                return Column(
+                  children: [device, const SizedBox(height: 20), controls],
+                );
               }
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -231,23 +239,27 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    _connected ? 'Emulator connected' : 'Emulator disconnected',
+                    _connected ? S.emulatorConnected : S.emulatorDisconnected,
                     style: theme.textTheme.titleSmall,
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Reload saved app data',
+                  tooltip: S.reloadSavedAppData,
                   onPressed: _connected && !_working ? _refreshApp : null,
                   icon: const Icon(HugeIcons.strokeRoundedRefresh),
                 ),
                 IconButton(
-                  tooltip: 'Back',
-                  onPressed: _connected ? () => _run(() => _bridge.key(_token, 'back')) : null,
+                  tooltip: S.back,
+                  onPressed: _connected
+                      ? () => _run(() => _bridge.key(_token, 'back'))
+                      : null,
                   icon: const Icon(HugeIcons.strokeRoundedArrowLeft01),
                 ),
                 IconButton(
-                  tooltip: 'Home',
-                  onPressed: _connected ? () => _run(() => _bridge.key(_token, 'home')) : null,
+                  tooltip: S.homeScreen,
+                  onPressed: _connected
+                      ? () => _run(() => _bridge.key(_token, 'home'))
+                      : null,
                   icon: const Icon(HugeIcons.strokeRoundedHome01),
                 ),
               ],
@@ -267,13 +279,18 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                       return Listener(
                         behavior: HitTestBehavior.opaque,
                         onPointerDown: _handlePointerDown,
-                        onPointerUp: (event) => _handlePointerUp(event, constraints.biggest),
+                        onPointerUp: (event) =>
+                            _handlePointerUp(event, constraints.biggest),
                         child: _frame == null
                             ? ColoredBox(
                                 color: const Color(0xfff7f8fa),
                                 child: Center(child: _connectionMessage(theme)),
                               )
-                            : Image.memory(_frame!, fit: BoxFit.fill, gaplessPlayback: true),
+                            : Image.memory(
+                                _frame!,
+                                fit: BoxFit.fill,
+                                gaplessPlayback: true,
+                              ),
                       );
                     },
                   ),
@@ -290,9 +307,9 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                             controller: _textController,
                             autofocus: true,
                             decoration: InputDecoration(
-                              hintText: 'Type into the app',
+                              hintText: S.typeIntoApp,
                               suffixIcon: IconButton(
-                                tooltip: 'Send',
+                                tooltip: S.send,
                                 onPressed: _sendText,
                                 icon: const Icon(HugeIcons.strokeRoundedSent),
                               ),
@@ -300,9 +317,13 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                             onSubmitted: (_) => _sendText(),
                           )
                         : OutlinedButton.icon(
-                            onPressed: () => setState(() => _showKeyboardInput = true),
-                            icon: const Icon(HugeIcons.strokeRoundedKeyboard, size: 18),
-                            label: const Text('Type into app'),
+                            onPressed: () =>
+                                setState(() => _showKeyboardInput = true),
+                            icon: const Icon(
+                              HugeIcons.strokeRoundedKeyboard,
+                              size: 18,
+                            ),
+                            label: Text(S.typeIntoAppButton),
                           ),
                   ),
                 ],
@@ -323,31 +344,39 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
           children: [
             Row(
               children: [
-                const Icon(HugeIcons.strokeRoundedSmartPhone01, color: AppColor.primaryColor),
+                const Icon(
+                  HugeIcons.strokeRoundedSmartPhone01,
+                  color: AppColor.primaryColor,
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    'Connect the real emulator',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                    S.connectRealEmulator,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: AppFontWeights.bold,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            const Text('The browser needs a local bridge to reach Android Emulator. Run this helper on the same PC:'),
+            Text(S.emulatorBridgeHint),
             const SizedBox(height: 10),
             const SelectableText(
               r'powershell -ExecutionPolicy Bypass -File "app\admin_app\tools\android_emulator_bridge.ps1"',
               textDirection: TextDirection.ltr,
-              style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+              style: TextStyle(
+                fontFamily: 'monospace',
+                fontSize: AppFontSizes.size12,
+              ),
             ),
             const SizedBox(height: 18),
             TextField(
               controller: _tokenController,
               textDirection: TextDirection.ltr,
-              decoration: const InputDecoration(
-                labelText: 'Bridge token from the helper window',
-                hintText: 'Paste the token shown by the helper',
+              decoration: InputDecoration(
+                labelText: S.bridgeTokenLabel,
+                hintText: S.bridgeTokenHint,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(HugeIcons.strokeRoundedKey01, size: 18),
               ),
@@ -359,9 +388,13 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
               child: FilledButton.icon(
                 onPressed: _working ? null : _connect,
                 icon: _working
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                     : const Icon(HugeIcons.strokeRoundedLink01, size: 18),
-                label: Text(_working ? 'Connecting...' : 'Connect to emulator'),
+                label: Text(_working ? S.connecting : S.connectToEmulator),
               ),
             ),
             if (_error != null) ...[
@@ -373,17 +406,22 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                   color: theme.colorScheme.errorContainer,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(_error!, style: TextStyle(color: theme.colorScheme.onErrorContainer)),
+                child: Text(
+                  _error!,
+                  style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                ),
               ),
             ],
             const Divider(height: 28),
-            _helpRow(theme, '1', 'Save your changes in the admin app.'),
-            _helpRow(theme, '2', 'Select Reload to load the saved data.'),
-            _helpRow(theme, '3', 'Tap or swipe on the phone screen to use the app.'),
+            _helpRow(theme, '1', S.emulatorStepSave),
+            _helpRow(theme, '2', S.emulatorStepReload),
+            _helpRow(theme, '3', S.emulatorStepInteract),
             const SizedBox(height: 4),
             Text(
-              'The bridge listens on this PC only and requires Android SDK and an installed AVD.',
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColor.greyColor),
+              S.emulatorBridgeNote,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColor.greyColor,
+              ),
             ),
           ],
         ),
@@ -399,7 +437,13 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
         CircleAvatar(
           radius: 11,
           backgroundColor: AppColor.secondaryColor,
-          child: Text(number, style: const TextStyle(fontSize: 11, color: Colors.white)),
+          child: Text(
+            number,
+            style: const TextStyle(
+              fontSize: AppFontSizes.size11,
+              color: Colors.white,
+            ),
+          ),
         ),
         const SizedBox(width: 9),
         Expanded(child: Text(text, style: theme.textTheme.bodySmall)),
@@ -413,13 +457,15 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          _connected ? HugeIcons.strokeRoundedLoading03 : HugeIcons.strokeRoundedSmartPhone01,
+          _connected
+              ? HugeIcons.strokeRoundedLoading03
+              : HugeIcons.strokeRoundedSmartPhone01,
           size: 30,
           color: AppColor.greyColor,
         ),
         const SizedBox(height: 10),
         Text(
-          _connected ? 'Loading emulator screen' : 'Start the bridge, then connect',
+          _connected ? S.loadingEmulatorScreen : S.startBridgeThenConnect,
           textAlign: TextAlign.center,
           style: theme.textTheme.bodySmall,
         ),

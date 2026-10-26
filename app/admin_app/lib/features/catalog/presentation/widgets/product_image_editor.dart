@@ -8,6 +8,7 @@ import 'package:image/image.dart' as img;
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 /// Editor state snapshot for undo/redo
 class _EditorState {
@@ -115,7 +116,7 @@ Uint8List processImageBytes(
 }) {
   final original = img.decodeImage(bytes);
   if (original == null) {
-    throw const FormatException('The picture could not be read.');
+    throw FormatException(S.imageCouldNotBeRead);
   }
 
   var picture = original;
@@ -330,7 +331,7 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
       final bytes = await _readBytes();
       final decoded = img.decodeImage(bytes);
       if (decoded == null) {
-        throw const FormatException('The picture could not be read.');
+        throw FormatException(S.imageCouldNotBeRead);
       }
       if (!mounted) return;
       setState(() {
@@ -357,7 +358,7 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
   Future<Uint8List> _readBytes() async {
     final response = await http.get(Uri.parse(widget.imageUrl));
     if (response.statusCode != 200) {
-      throw StateError('The picture could not be read.');
+      throw StateError(S.imageCouldNotBeRead);
     }
     return response.bodyBytes;
   }
@@ -1184,7 +1185,10 @@ class _AdjustmentSlider extends StatelessWidget {
               if (onReset != null)
                 TextButton(
                   onPressed: onReset!,
-                  child: Text('Reset', style: const TextStyle(fontSize: 12)),
+                  child: Text(
+                    S.reset,
+                    style: const TextStyle(fontSize: AppFontSizes.size12),
+                  ),
                 ),
             ],
           ),

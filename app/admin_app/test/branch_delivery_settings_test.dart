@@ -1,6 +1,6 @@
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/presentation/widgets/branch_records.dart';
+import 'package:admin_app/features/branches/presentation/widgets/branch_cards.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_delivery_settings_dialog.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_product_pricing_dialog.dart';
 import 'package:admin_app/features/delivery_zones/data/models/admin_delivery_zone.dart';
@@ -125,18 +125,23 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: BranchRecords(
+          body: BranchCards(
             branches: const [_branch],
+            canManage: true,
+            canManagePricing: true,
             onEdit: (_) {},
-            onDelete: (_) {},
-            onToggleActive: (_) {},
             onChangeImage: (_) {},
             onManageDelivery: (_) {},
             onManagePricing: (_) {},
+            onToggleActive: (_) {},
+            onDelete: (_) {},
           ),
         ),
       ),
     );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('branch-menu-branch-a')));
     await tester.pumpAndSettle();
 
     expect(find.text(S.manageDelivery), findsOneWidget);

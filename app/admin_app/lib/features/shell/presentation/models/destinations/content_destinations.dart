@@ -34,7 +34,6 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
     searchHint: S.customerPreviewHint,
     permission: 'settings.write',
     section: S.sectionContent,
-    isImplemented: true,
     tables: <String>['core.app_settings'],
   ),
 ];

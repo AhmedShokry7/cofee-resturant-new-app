@@ -9,10 +9,9 @@ class ThemeClass {
 
   static const double _radius = 12;
 
-  /// Builds the light theme for the active language: Cairo for Arabic and
-  /// Poppins for English. Every [AppFonts] style leaves its family unset, so the
-  /// whole UI follows whichever family is chosen here.
-  static ThemeData light({bool isArabic = true}) {
+  /// Builds the light theme. Every [AppFonts] style leaves its family unset, so
+  /// the whole UI follows the family chosen here.
+  static ThemeData light() {
     const colorScheme = ColorScheme.light(
       primary: AppColor.primaryColor,
       onPrimary: AppColor.whiteColor,
@@ -20,15 +19,17 @@ class ThemeClass {
       onSecondary: AppColor.whiteColor,
       surface: AppColor.whiteColor,
       onSurface: AppColor.blackColor,
+      onSurfaceVariant: AppColor.adminMuted,
       surfaceContainerHighest: AppColor.lightGreyColor,
       outline: AppColor.borderColor,
       outlineVariant: AppColor.borderColor,
+      error: AppColor.errorColor,
+      onError: AppColor.whiteColor,
     );
 
     return ThemeData(
       colorScheme: colorScheme,
-      // Cairo for Arabic, Poppins for English. Every AppFonts style inherits it.
-      fontFamily: isArabic ? 'Cairo' : 'Poppins',
+      fontFamily: 'IBM Plex Sans Arabic',
       scaffoldBackgroundColor: AppColor.surfaceColor,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColor.whiteColor,
@@ -102,7 +103,7 @@ class ThemeClass {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
-          borderSide: const BorderSide(color: AppColor.primaryColor),
+          borderSide: const BorderSide(color: AppColor.errorColor),
         ),
       ),
       cardTheme: CardThemeData(
@@ -150,7 +151,7 @@ class ThemeClass {
 
   /// Builds the dark theme for the active language. Mirrors [light] so the
   /// same widgets look intentional in both appearances.
-  static ThemeData dark({bool isArabic = true}) {
+  static ThemeData dark() {
     const colorScheme = ColorScheme.dark(
       primary: AppColor.primaryColor,
       onPrimary: AppColor.whiteColor,
@@ -170,7 +171,7 @@ class ThemeClass {
 
     return ThemeData(
       colorScheme: colorScheme,
-      fontFamily: isArabic ? 'Cairo' : 'Poppins',
+      fontFamily: 'IBM Plex Sans Arabic',
       scaffoldBackgroundColor: AppColor.darkBackground,
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColor.darkSurface,

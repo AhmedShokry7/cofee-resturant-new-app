@@ -23,17 +23,25 @@ class LoyaltyPage extends StatelessWidget {
     final redeemed = await loyalty.redeem(reward);
     if (!context.mounted) return;
     if (redeemed) {
-      // Server redemption already places the reward in the server cart.
-      // Guests still use the device cart because they have no server cart.
+      // Signed-in redemption is fulfilled by the server: a product or bundle
+      // becomes a free pickup order and a plan starts a subscription. Guests
+      // only have the device cart and can redeem product rewards.
       if (wasGuest) {
-        context.read<CartCubit>().add(
-          reward.product,
-          unitPrice: 0,
-          note: S.loyaltyRewardNote,
-        );
+        final product = reward.product;
+        if (product != null) {
+          context.read<CartCubit>().add(
+            product,
+            unitPrice: 0,
+            note: S.loyaltyRewardNote,
+          );
+        }
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.enjoyReward(reward.product.name))),
+        SnackBar(
+          content: Text(
+            wasGuest ? S.enjoyReward(reward.name) : _successMessage(reward),
+          ),
+        ),
       );
     } else {
       final error = context.read<LoyaltyCubit>().state.error;
@@ -41,6 +49,12 @@ class LoyaltyPage extends StatelessWidget {
           .showSnackBar(SnackBar(content: Text(error ?? S.notEnoughPoints)));
     }
   }
+
+  static String _successMessage(RewardModel reward) => switch (reward.type) {
+    RewardTargetType.plan => S.rewardSubscriptionActivated(reward.name),
+    RewardTargetType.product ||
+    RewardTargetType.bundle => S.rewardOrderCreated(reward.name),
+  };
 
   @override
   Widget build(BuildContext context) {

@@ -43,10 +43,6 @@ class PreviewDraftSettings {
       other.surfaceColor == surfaceColor;
 
   @override
-  int get hashCode => Object.hash(
-        primaryColor,
-        secondaryColor,
-        backgroundColor,
-        surfaceColor,
-      );
+  int get hashCode =>
+      Object.hash(primaryColor, secondaryColor, backgroundColor, surfaceColor);
 }

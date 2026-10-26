@@ -28,8 +28,9 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
         ? SupabaseService.client.auth.currentUser?.id
         : null;
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange
-          .listen(_onAuthStateChanged);
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
     }
     load();
   }
@@ -205,26 +206,26 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
 
   /// Spends points on a reward. Returns false when the balance is short.
   ///
-  /// Guests redeem from the device wallet. Signed-in redemption needs a branch
-  /// because the server atomically adds the reward to that branch's cart; it
-  /// is therefore unavailable until branch selection exists in the UI.
+  /// Guests redeem from the device wallet. Signed-in redemption happens on the
+  /// server: a product or bundle becomes a free pickup order at the chosen
+  /// branch (so [branchId] is required) and a plan activates a new
+  /// subscription cycle (no branch needed).
   Future<bool> redeem(RewardModel reward) async {
     if (state.isGuest) return _redeemGuest(reward);
-    if (reward.id == null || reward.product.id.isEmpty) return false;
+    final rewardId = reward.id;
+    if (rewardId == null || rewardId.isEmpty) return false;
     if (state.balance < reward.pointsCost || isClosed) return false;
 
     final branch = branchId;
-    if (branch == null || branch.isEmpty) {
-      emit(
-        state.copyWith(error: S.selectBranchBeforeRedeeming),
-      );
+    if (reward.type.needsBranch && (branch == null || branch.isEmpty)) {
+      emit(state.copyWith(error: S.selectBranchBeforeRedeeming));
       return false;
     }
 
     try {
       final balance = await _repository.redeemReward(
-        productId: reward.product.id,
-        branchId: branch,
+        rewardId: rewardId,
+        branchId: reward.type.needsBranch ? branch : null,
       );
       if (isClosed) return true;
       emit(state.copyWith(balance: balance, clearError: true));
@@ -239,10 +240,16 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   }
 
   Future<bool> _redeemGuest(RewardModel reward) async {
+    if (!reward.isProduct || reward.product == null) {
+      if (!isClosed) {
+        emit(state.copyWith(error: S.rewardRequiresAccount));
+      }
+      return false;
+    }
     if (state.balance < reward.pointsCost || isClosed) return false;
     final transaction = LoyaltyTransaction(
       id: _nextId(),
-      title: S.redeemedReward(reward.product.name),
+      title: S.redeemedReward(reward.name),
       points: -reward.pointsCost,
       date: DateTime.now(),
     );

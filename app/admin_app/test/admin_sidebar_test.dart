@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
 
@@ -47,11 +48,33 @@ void main() {
 
     expect(find.text(S.dashboard), findsOneWidget);
     expect(find.text(S.sectionManagement), findsOneWidget);
-    expect(find.text(S.soonBadge), findsWidgets);
 
     await tester.tap(find.text(S.products));
     await tester.pump();
     expect(selected, 'products');
+  });
+
+  testWidgets('sidebar shows the live work count on the operations rows', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+
+    await tester.pumpWidget(
+      _wrap(
+        AdminSidebar(
+          session: _session(),
+          destinations: adminDestinations,
+          selectedId: 'dashboard',
+          badges: const <String, int>{'orders': 12, 'kitchen': 140},
+          onSelected: (_) {},
+          onSignOut: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text(localizeDigits('12')), findsOneWidget);
+    expect(find.text(localizeDigits('99+')), findsOneWidget);
   });
 
   test('every database feature is listed as a destination', () {
@@ -62,6 +85,9 @@ void main() {
       containsAll(<String>[
         'dashboard',
         'orders',
+        'pos',
+        'kitchen',
+        'tables',
         'products',
         'categories',
         'bundles',
@@ -96,7 +122,6 @@ void main() {
           destination.id != 'orders' &&
           destination.id != 'customerPreview') {
         expect(destination.tables, isNotEmpty, reason: destination.id);
-        expect(destination.isImplemented, isFalse, reason: destination.id);
       }
     }
   });

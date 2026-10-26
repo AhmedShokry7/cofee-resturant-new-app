@@ -1,27 +1,21 @@
 import 'package:flutter/material.dart';
+
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
-import 'package:admin_app/features/orders/presentation/widgets/customer_previous_orders.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_customer_contacts.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_customer_identity.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_section_card.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class OrderCustomerSection extends StatelessWidget {
   const OrderCustomerSection({
     super.key,
     required this.order,
     this.customerDetails,
-    this.isLoadingCustomerDetails = false,
-    this.customerDetailsFailed = false,
-    this.previousOrders = const [],
-    this.onOpenPreviousOrder,
   });
+
   final AdminOrder order;
   final Map<String, dynamic>? customerDetails;
-  final bool isLoadingCustomerDetails, customerDetailsFailed;
-  final List<AdminOrder> previousOrders;
-  final ValueChanged<AdminOrder>? onOpenPreviousOrder;
 
   String? _text(Object? value) {
     if (value == null) return null;
@@ -31,13 +25,14 @@ class OrderCustomerSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final profile = customerDetails?['profile'];
     final data = profile is Map ? Map<String, dynamic>.from(profile) : const {};
     final address = order.deliveryAddressSnapshot ?? const <String, dynamic>{};
     final label = _text(address['label']);
     final detail = _text(address['details']);
     final addressText = [label, detail].whereType<String>().toSet().join(', ');
-    return OrderSectionCard(
+    return AdminSectionCard(
       title: S.customer,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -51,21 +46,12 @@ class OrderCustomerSection extends StatelessWidget {
                 _text(order.customerAvatarUrl) ?? _text(data['avatar_url']),
           ),
           const SizedBox(height: AppDimensions.md),
-          const Divider(height: 1),
+          Divider(height: 1, color: adminRowBorderColor(theme)),
           const SizedBox(height: AppDimensions.md),
           OrderCustomerContacts(
             phone: _text(order.customerPhone) ?? _text(data['phone']),
             email: _text(order.customerEmail) ?? _text(data['email']),
             address: addressText.isEmpty ? null : addressText,
-          ),
-          const SizedBox(height: AppDimensions.sm),
-          const Divider(height: 1),
-          const SizedBox(height: AppDimensions.md),
-          CustomerPreviousOrders(
-            orders: previousOrders,
-            loading: isLoadingCustomerDetails,
-            failed: customerDetailsFailed,
-            onOpen: onOpenPreviousOrder,
           ),
         ],
       ),

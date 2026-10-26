@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 /// A small percentage pill, e.g. `20%`.
 ///
@@ -30,8 +31,8 @@ class DiscountPill extends StatelessWidget {
         '$percent%',
         style: theme.textTheme.bodySmall?.copyWith(
           color: AppColor.whiteColor,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
+          fontSize: AppFontSizes.size11,
+          fontWeight: AppFontWeights.semiBold,
         ),
       ),
     );

@@ -5,6 +5,8 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
+import 'package:admin_app/shared/widgets/admin_bulk_selection_bar.dart';
+import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 
 class CategoryPageHeader extends StatelessWidget {
@@ -17,6 +19,11 @@ class CategoryPageHeader extends StatelessWidget {
     this.onExport,
     this.importProgress,
     this.exportProgress,
+    this.selectedCount = 0,
+    this.onSelectAll,
+    this.onClearSelection,
+    this.onDeleteSelected,
+    this.isDeletingSelected = false,
   });
 
   final int count;
@@ -26,120 +33,81 @@ class CategoryPageHeader extends StatelessWidget {
   final VoidCallback? onExport;
   final double? importProgress;
   final double? exportProgress;
+  final int selectedCount;
+  final VoidCallback? onSelectAll;
+  final VoidCallback? onClearSelection;
+  final VoidCallback? onDeleteSelected;
+  final bool isDeletingSelected;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final progress = importProgress ?? exportProgress;
-    final isImporting = importProgress != null;
+    final busy = progress != null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (progress != null)
-          Padding(
-            padding: const EdgeInsets.only(bottom: AppDimensions.sm),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 100,
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    backgroundColor: AppColor.lightGreyColor,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      AppColor.primaryColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppDimensions.sm),
-                Text(
-                  '${(progress * 100).toInt()}%',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColor.greyColor,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(width: AppDimensions.xs),
-                Text(
-                  isImporting ? S.importing : S.exporting,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColor.greyColor,
-                  ),
-                ),
-              ],
-            ),
+    return AdminPageHeader(
+      title: S.categories,
+      subtitle: S.categoriesCount(count),
+      progress: progress,
+      progressLabel: importProgress != null ? S.importing : S.exporting,
+      actions: [
+        if (onPickFile != null || onDownloadSample != null)
+          _circleIcon(
+            context,
+            icon: HugeIcons.strokeRoundedUpload02,
+            tooltip: S.importExcel,
+            onTap: busy ? null : () => _showImportDialog(context),
           ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    S.categories,
-                    style: theme.textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimensions.xs),
-                  Text(
-                    S.categoriesCount(count),
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColor.greyColor,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (onPickFile != null || onDownloadSample != null)
-                  _circleIcon(
-                    icon: HugeIcons.strokeRoundedUpload02,
-                    tooltip: S.importExcel,
-                    onTap: progress != null
-                        ? null
-                        : () => _showImportDialog(context),
-                  ),
-                if (onExport != null) ...[
-                  const SizedBox(width: AppDimensions.sm),
-                  _circleIcon(
-                    icon: HugeIcons.strokeRoundedDownload02,
-                    tooltip: S.exportExcel,
-                    onTap: progress != null ? null : onExport,
-                  ),
-                ],
-                const SizedBox(width: AppDimensions.sm),
-                CustomBtn(
-                  text: S.addCategory,
-                  onPressed: progress != null ? null : onAdd,
-                  leadingIcon: const Icon(
-                    HugeIcons.strokeRoundedAdd01,
-                    size: 18,
-                  ),
-                  height: 42,
-                  borderRadius: AppDimensions.radiusPill,
-                  backgroundColor: AppColor.primaryColor,
-                  textColor: AppColor.whiteColor,
-                ),
-              ],
-            ),
-          ],
+        if (onExport != null)
+          _circleIcon(
+            context,
+            icon: HugeIcons.strokeRoundedDownload02,
+            tooltip: S.exportExcel,
+            onTap: busy ? null : onExport,
+          ),
+        CustomBtn(
+          text: S.addCategory,
+          onPressed: busy ? null : onAdd,
+          leadingIcon: const Icon(HugeIcons.strokeRoundedAdd01, size: 18),
+          height: 42,
+          borderRadius: AppDimensions.radiusPill,
+          backgroundColor: AppColor.primaryColor,
+          textColor: AppColor.whiteColor,
         ),
       ],
+      footer: selectedCount > 0
+          ? AdminBulkSelectionBar(
+              selectedCount: selectedCount,
+              totalCount: count,
+              selectedLabel: S.selectedCountLabel(selectedCount),
+              selectAllLabel: S.selectAllCategories(count),
+              deleteLabel: S.deleteSelectedCategories,
+              onSelectAll: onSelectAll,
+              onClearSelection: onClearSelection,
+              onDelete: onDeleteSelected,
+              isDeletingSelected: isDeletingSelected,
+            )
+          : null,
     );
   }
 
-  Widget _circleIcon({
+  Widget _circleIcon(
+    BuildContext context, {
     required IconData icon,
     required String tooltip,
     required VoidCallback? onTap,
   }) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     final isDisabled = onTap == null;
+    final background = isDisabled
+        ? (dark ? AppColor.darkCard : AppColor.borderColor)
+        : (dark ? AppColor.darkSurfaceContainer : AppColor.lightGreyColor);
+    final foreground = isDisabled
+        ? (dark ? AppColor.darkTextSecondary : AppColor.greyColor)
+        : (dark ? AppColor.secondaryColor : AppColor.primaryColor);
+
     return Material(
-      color: isDisabled ? AppColor.borderColor : AppColor.lightGreyColor,
+      color: background,
       shape: const CircleBorder(),
       child: InkWell(
         customBorder: const CircleBorder(),
@@ -148,11 +116,7 @@ class CategoryPageHeader extends StatelessWidget {
           message: tooltip,
           child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Icon(
-              icon,
-              size: 20,
-              color: isDisabled ? AppColor.greyColor : AppColor.primaryColor,
-            ),
+            child: Icon(icon, size: 20, color: foreground),
           ),
         ),
       ),

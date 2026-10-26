@@ -50,7 +50,7 @@ class _OrderPageState extends State<OrderPage> {
   }
 
   void _onSearch(String query) {
-    setState(() => _searchQuery = query.trim().toLowerCase());
+    setState(() => _searchQuery = query.trim());
   }
 
   @override
@@ -72,6 +72,7 @@ class _OrderPageState extends State<OrderPage> {
             orders: state.orders,
             branches: state.branches,
             search: _searchQuery,
+            onSearchChanged: widget.searchController.update,
             onChangeStatus: _changeStatus,
             onOpen: _openOrder,
             onRefresh: _cubit.load,

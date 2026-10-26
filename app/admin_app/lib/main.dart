@@ -5,10 +5,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/core/theme/app_theme.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/auth/presentation/manager/admin_auth_cubit.dart';
+import 'package:admin_app/features/auth/data/repositories/supabase_auth_repository.dart';
+import 'package:admin_app/features/auth/domain/usecases/check_session.dart';
+import 'package:admin_app/features/auth/domain/usecases/sign_in.dart';
+import 'package:admin_app/features/auth/domain/usecases/sign_out.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/auth/presentation/pages/auth_gate.dart';
 
 Future<void> main() async {
@@ -31,22 +37,45 @@ Future<void> main() async {
   runApp(const AdminApp());
 }
 
-class AdminApp extends StatelessWidget {
+/// جذر التطبيق: يبني الاعتماديات مرة واحدة ويوفرها لشجرة الواجهة.
+class AdminApp extends StatefulWidget {
   const AdminApp({super.key});
 
   @override
+  State<AdminApp> createState() => _AdminAppState();
+}
+
+class _AdminAppState extends State<AdminApp> {
+  late final AuthBloc _authBloc = _createAuthBloc();
+
+  /// نقطة تركيب الاعتماديات: الطبقات تُبنى هنا فقط، لا داخل الواجهات.
+  AuthBloc _createAuthBloc() {
+    final repository = SupabaseAuthRepository();
+    return AuthBloc(
+      checkSessionUseCase: CheckSessionUseCase(repository),
+      signInUseCase: SignInUseCase(repository),
+      signOutUseCase: SignOutUseCase(repository),
+    )..add(const AuthSessionCheckRequested());
+  }
+
+  @override
+  void dispose() {
+    _authBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return BlocProvider<AdminAuthCubit>(
-      create: (_) => AdminAuthCubit()..checkSession(),
+    return BlocProvider<AuthBloc>.value(
+      value: _authBloc,
       child: ListenableBuilder(
         listenable: Listenable.merge([AppLocale.instance, AppTheme.instance]),
         builder: (context, _) {
-          final isArabic = AppLocale.instance.isArabic;
           return MaterialApp(
-            title: 'Admin',
+            title: S.appName,
             debugShowCheckedModeBanner: false,
-            theme: ThemeClass.light(isArabic: isArabic),
-            darkTheme: ThemeClass.dark(isArabic: isArabic),
+            theme: ThemeClass.light(),
+            darkTheme: ThemeClass.dark(),
             themeMode: AppTheme.instance.materialThemeMode,
             locale: AppLocale.instance.locale,
             supportedLocales: const <Locale>[Locale('en'), Locale('ar')],

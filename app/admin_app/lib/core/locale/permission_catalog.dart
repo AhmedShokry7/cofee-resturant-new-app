@@ -1,0 +1,192 @@
+import 'package:admin_app/core/locale/app_locale.dart';
+
+/// The English name of every permission code of the dashboard.
+const Map<String, String> kPermissionNameEn = <String, String>{
+  'admin.role.read': 'View roles',
+  'admin.role.write': 'Manage roles',
+  'admin.staff.read': 'View staff',
+  'admin.staff.write': 'Manage staff',
+  'audit.read': 'Read audit log',
+  'catalog.category.write': 'Manage categories',
+  'catalog.product.write': 'Manage products',
+  'customers.read': 'View customers',
+  'customers.write': 'Manage customers',
+  'inventory.adjust': 'Adjust stock',
+  'inventory.read': 'View stock',
+  'kitchen.manage': 'Manage the kitchen',
+  'kitchen.read': 'View the kitchen',
+  'loyalty.read': 'View loyalty',
+  'loyalty.write': 'Manage loyalty',
+  'notifications.read': 'View notifications',
+  'notifications.send': 'Send notifications',
+  'notifications.manage': 'Manage notifications',
+  'orders.cancel': 'Cancel orders',
+  'orders.read': 'View orders',
+  'orders.status.update': 'Update order status',
+  'payments.read': 'View payments',
+  'pos.manage': 'Manage point of sale',
+  'reviews.moderate': 'Moderate reviews',
+  'settings.write': 'Manage settings',
+  'subscriptions.consume': 'Consume subscription cups',
+  'subscriptions.manage': 'Manage subscriptions',
+  'tables.read': 'View tables & rooms',
+  'tables.manage': 'Manage tables & rooms',
+};
+
+/// The Arabic name of every permission code of the dashboard.
+const Map<String, String> kPermissionNameAr = <String, String>{
+  'admin.role.read': 'عرض الأدوار',
+  'admin.role.write': 'إدارة الأدوار',
+  'admin.staff.read': 'عرض الموظفين',
+  'admin.staff.write': 'إدارة الموظفين',
+  'audit.read': 'قراءة سجل التدقيق',
+  'catalog.category.write': 'إدارة الفئات',
+  'catalog.product.write': 'إدارة المنتجات',
+  'customers.read': 'عرض العملاء',
+  'customers.write': 'إدارة العملاء',
+  'inventory.adjust': 'تعديل المخزون',
+  'inventory.read': 'عرض المخزون',
+  'kitchen.manage': 'إدارة المطبخ',
+  'kitchen.read': 'عرض المطبخ',
+  'loyalty.read': 'عرض الولاء',
+  'loyalty.write': 'إدارة الولاء',
+  'notifications.read': 'عرض الإشعارات',
+  'notifications.send': 'إرسال الإشعارات',
+  'notifications.manage': 'إدارة الإشعارات',
+  'orders.cancel': 'إلغاء الطلبات',
+  'orders.read': 'عرض الطلبات',
+  'orders.status.update': 'تحديث حالة الطلب',
+  'payments.read': 'عرض المدفوعات',
+  'pos.manage': 'إدارة نقطة البيع',
+  'reviews.moderate': 'مراجعة التقييمات',
+  'settings.write': 'إدارة الإعدادات',
+  'subscriptions.consume': 'استهلاك أكواب الاشتراك',
+  'subscriptions.manage': 'إدارة الاشتراكات',
+  'tables.read': 'عرض الطاولات والغرف',
+  'tables.manage': 'إدارة الطاولات والغرف',
+};
+
+/// The English description of every permission code of the dashboard.
+const Map<String, String> kPermissionDescEn = <String, String>{
+  'admin.role.read': 'View roles and their permissions.',
+  'admin.role.write': 'Create, edit and delete roles.',
+  'admin.staff.read': 'View staff members.',
+  'admin.staff.write': 'Add, edit and remove staff.',
+  'audit.read': 'View the audit log.',
+  'catalog.category.write': 'Create, edit and delete categories.',
+  'catalog.product.write': 'Create, edit and delete products.',
+  'customers.read': 'View customer profiles and history.',
+  'customers.write': 'Edit customer status and notes.',
+  'inventory.adjust': 'Adjust stock quantities.',
+  'inventory.read': 'View inventory levels.',
+  'kitchen.manage': 'Start, prepare and complete kitchen tickets.',
+  'kitchen.read': 'View the live kitchen board.',
+  'loyalty.read': 'View loyalty accounts and rules.',
+  'loyalty.write': 'Manage loyalty rules and rewards.',
+  'notifications.read': 'View all notifications.',
+  'notifications.send': 'Compose campaigns and resend pushes.',
+  'notifications.manage': 'Delete notifications and change their read state.',
+  'orders.cancel': 'Cancel orders.',
+  'orders.read': 'View orders.',
+  'orders.status.update': 'Change order status.',
+  'payments.read': 'View payment transactions.',
+  'pos.manage': 'Open the point of sale, run cashier shifts, take payment and close the drawer.',
+  'reviews.moderate': 'Approve or reject reviews.',
+  'settings.write': 'Manage app settings.',
+  'subscriptions.consume': 'Redeem subscription cups.',
+  'subscriptions.manage': 'Manage subscription plans.',
+  'tables.read': 'View tables, rooms and guest bookings.',
+  'tables.manage': 'Manage tables, rooms and guest bookings.',
+};
+
+/// The Arabic description of every permission code of the dashboard.
+const Map<String, String> kPermissionDescAr = <String, String>{
+  'admin.role.read': 'عرض الأدوار وصلاحياتها.',
+  'admin.role.write': 'إنشاء وتعديل وحذف الأدوار.',
+  'admin.staff.read': 'عرض الموظفين.',
+  'admin.staff.write': 'إضافة وتعديل وإزالة الموظفين.',
+  'audit.read': 'عرض سجل التدقيق.',
+  'catalog.category.write': 'إنشاء وتعديل وحذف الفئات.',
+  'catalog.product.write': 'إنشاء وتعديل وحذف المنتجات.',
+  'customers.read': 'عرض ملفات العملاء وتاريخهم.',
+  'customers.write': 'تعديل حالة العميل وملاحظاته.',
+  'inventory.adjust': 'تعديل كميات المخزون.',
+  'inventory.read': 'عرض مستويات المخزون.',
+  'kitchen.manage': 'بدء تحضير الطلبات وتسليمها.',
+  'kitchen.read': 'عرض شاشة المطبخ المباشرة.',
+  'loyalty.read': 'عرض حسابات وقواعد الولاء.',
+  'loyalty.write': 'إدارة قواعد ومكافآت الولاء.',
+  'notifications.read': 'عرض جميع الإشعارات.',
+  'notifications.send': 'إنشاء الحملات وإعادة إرسال Push.',
+  'notifications.manage': 'حذف الإشعارات وتغيير حالة القراءة.',
+  'orders.cancel': 'إلغاء الطلبات.',
+  'orders.read': 'عرض الطلبات.',
+  'orders.status.update': 'تغيير حالة الطلب.',
+  'payments.read': 'عرض معاملات الدفع.',
+  'pos.manage':
+      'فتح نقطة البيع وإدارة ورديات الكاشير وتحصيل المدفوعات وتقفيل الدرج.',
+  'reviews.moderate': 'الموافقة على التقييمات أو رفضها.',
+  'settings.write': 'إدارة إعدادات التطبيق.',
+  'subscriptions.consume': 'استهلاك أكواب الاشتراك.',
+  'subscriptions.manage': 'إدارة الاشتراكات.',
+  'tables.read': 'عرض الطاولات والغرف وحجوزات الضيوف.',
+  'tables.manage': 'إدارة الطاولات والغرف وحجوزات الضيوف.',
+};
+
+/// The order in which the permission groups are shown in the dialog.
+const List<String> kPermissionGroupOrder = <String>[
+  'admin',
+  'customers',
+  'orders',
+  'kitchen',
+  'pos',
+  'payments',
+  'catalog',
+  'inventory',
+  'subscriptions',
+  'loyalty',
+  'reviews',
+  'notifications',
+  'audit',
+  'settings',
+  'tables',
+];
+
+/// The group a permission code belongs to, such as `orders`.
+String permissionGroupCode(String code) {
+  final index = code.indexOf('.');
+  return index <= 0 ? 'other' : code.substring(0, index);
+}
+
+/// The localized name of a permission group.
+String permissionGroupName(String group) {
+  final ar = AppLocale.instance.isArabic;
+  return switch (group) {
+    'admin' => ar ? 'إدارة النظام' : 'Administration',
+    'audit' => ar ? 'سجل التدقيق' : 'Audit log',
+    'catalog' => ar ? 'الكتالوج' : 'Catalog',
+    'customers' => ar ? 'العملاء' : 'Customers',
+    'inventory' => ar ? 'المخزون' : 'Inventory',
+    'kitchen' => ar ? 'المطبخ' : 'Kitchen',
+    'loyalty' => ar ? 'الولاء' : 'Loyalty',
+    'notifications' => ar ? 'الإشعارات' : 'Notifications',
+    'orders' => ar ? 'الطلبات' : 'Orders',
+    'payments' => ar ? 'المدفوعات' : 'Payments',
+    'pos' => ar ? 'نقطة البيع' : 'Point of sale',
+    'reviews' => ar ? 'التقييمات' : 'Reviews',
+    'settings' => ar ? 'الإعدادات' : 'Settings',
+    'subscriptions' => ar ? 'الاشتراكات' : 'Subscriptions',
+    'tables' => ar ? 'الصالة والطاولات' : 'Tables & rooms',
+    _ => group,
+  };
+}
+
+/// The name of a permission in the language of the panel.
+String permissionName(String code, {required bool isArabic}) => isArabic
+    ? (kPermissionNameAr[code] ?? code)
+    : (kPermissionNameEn[code] ?? code);
+
+/// The description of a permission in the language of the panel.
+String permissionDescription(String code, {required bool isArabic}) => isArabic
+    ? (kPermissionDescAr[code] ?? '')
+    : (kPermissionDescEn[code] ?? '');

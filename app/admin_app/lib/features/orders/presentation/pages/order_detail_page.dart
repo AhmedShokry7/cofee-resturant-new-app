@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_actions.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_detail_app_bar.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_detail_body.dart';
 
 /// The whole content of one order, editable by the admin while the backend
@@ -66,19 +66,41 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       listenable: _controller,
       builder: (context, _) {
         final order = _controller.order;
+        final narrow = MediaQuery.sizeOf(context).width < 700;
         return Scaffold(
-          appBar: AppBar(title: Text('#${order.orderNumber}')),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(AppDimensions.pageHorizontalPadding),
-            child: OrderDetailBody(
-              controller: _controller,
-              navigationOrders: widget.navigationOrders,
-              onSelectOrder: _selectOrder,
-              onStatusChanged: (value) =>
-                  changeOrderStatus(context, _controller, value),
-              onRemoveItem: (itemId) =>
-                  removeOrderLine(context, _controller, itemId),
-              onAddProduct: () => addProductToOrder(context, _controller),
+          body: SafeArea(
+            child: Column(
+              children: [
+                OrderDetailAppBar(
+                  orderNumber: order.orderNumber,
+                  onBack: () => Navigator.maybePop(context),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: narrow ? 16 : 38,
+                      vertical: narrow ? 16 : 24,
+                    ),
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 1280),
+                        child: OrderDetailBody(
+                          controller: _controller,
+                          navigationOrders: widget.navigationOrders,
+                          onSelectOrder: _selectOrder,
+                          onStatusChanged: (value) =>
+                              changeOrderStatus(context, _controller, value),
+                          onRemoveItem: (itemId) =>
+                              removeOrderLine(context, _controller, itemId),
+                          onAddProduct: () =>
+                              addProductToOrder(context, _controller),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );

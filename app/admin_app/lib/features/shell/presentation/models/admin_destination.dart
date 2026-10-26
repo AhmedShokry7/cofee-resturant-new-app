@@ -14,9 +14,8 @@ class AdminDestination {
     required this.searchHint,
     this.permission,
     this.section,
-    this.badge,
     this.tables = const <String>[],
-    this.isImplemented = false,
+    this.immersive = false,
   });
 
   final String id;
@@ -31,22 +30,21 @@ class AdminDestination {
   /// Group this destination belongs to inside the sidebar.
   final String? section;
 
-  /// Optional pill shown next to the label, for example a "new" marker.
-  final String? badge;
-
   /// The database tables that back this feature.
   final List<String> tables;
 
-  /// Whether the feature is already implemented in the admin app.
-  final bool isImplemented;
+  /// Whether the page needs the whole width on smaller screens.
+  ///
+  /// A workspace page such as the counter trades the permanent sidebar for a
+  /// drawer, so its secondary panel still fits beside the main one.
+  final bool immersive;
 }
 
 /// Every admin feature, grouped by the area it belongs to.
 ///
 /// The list mirrors the database: each destination points at the tables that
-/// hold its data, and the ones that are not built yet are flagged so the
-/// sidebar shows what exists and what is still missing. The labels are read
-/// from [S] on every access so a language switch re-labels the sidebar.
+/// hold its data. The labels are read from [S] on every access so a language
+/// switch re-labels the sidebar.
 List<AdminDestination> get adminDestinations => <AdminDestination>[
   ...managementDestinations,
   ...operationsDestinations,

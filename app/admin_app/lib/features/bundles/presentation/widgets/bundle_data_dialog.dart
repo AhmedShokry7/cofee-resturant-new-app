@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
@@ -147,7 +150,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                     TextField(
                       controller: searchController,
                       decoration: InputDecoration(
-                        labelText: 'Search',
+                        labelText: S.search,
                         prefixIcon: const Icon(HugeIcons.strokeRoundedSearch01),
                       ),
                       onChanged: (value) {
@@ -204,7 +207,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                                     ),
                                   ),
                                   subtitle: Text(
-                                    '${product.categoryNameFor(AppLocale.instance.language)}  أ¢â‚¬آ¢  ${product.basePrice.toStringAsFixed(2)} SAR',
+                                    '${product.categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(product.basePrice))} ${S.currency}',
                                   ),
                                   selected: product.id == currentId,
                                   onTap: () =>
@@ -314,11 +317,11 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
     final nameEn = _nameEnController.text.trim();
 
     if (nameAr.isEmpty) {
-      setState(() => _error = 'Name is required');
+      setState(() => _error = S.nameRequired);
       return;
     }
     if (_components.isEmpty) {
-      setState(() => _error = 'Add at least one component');
+      setState(() => _error = S.addAtLeastOneComponent);
       return;
     }
 
@@ -388,8 +391,8 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _nameArController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name (Arabic) *',
+                      decoration: InputDecoration(
+                        labelText: '${S.name} (${S.arabicLabel}) *',
                       ),
                       textDirection: TextDirection.rtl,
                       onChanged: (_) => setState(() => _error = null),
@@ -399,8 +402,8 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _nameEnController,
-                      decoration: const InputDecoration(
-                        labelText: 'Name (English)',
+                      decoration: InputDecoration(
+                        labelText: '${S.name} (${S.englishLabel})',
                       ),
                     ),
                   ),
@@ -409,8 +412,8 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               const SizedBox(height: AppDimensions.md),
               TextField(
                 controller: _descriptionArController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (Arabic)',
+                decoration: InputDecoration(
+                  labelText: '${S.description} (${S.arabicLabel})',
                 ),
                 textDirection: TextDirection.rtl,
                 maxLines: 2,
@@ -418,8 +421,8 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               const SizedBox(height: AppDimensions.md),
               TextField(
                 controller: _descriptionEnController,
-                decoration: const InputDecoration(
-                  labelText: 'Description (English)',
+                decoration: InputDecoration(
+                  labelText: '${S.description} (${S.englishLabel})',
                 ),
                 maxLines: 2,
               ),
@@ -429,9 +432,9 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _priceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Bundle price',
-                        hintText: 'Leave empty for sum of components',
+                      decoration: InputDecoration(
+                        labelText: S.bundlePrice,
+                        hintText: S.bundlePriceHint,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -442,8 +445,8 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   Expanded(
                     child: TextField(
                       controller: _discountController,
-                      decoration: const InputDecoration(
-                        labelText: 'Discount %',
+                      decoration: InputDecoration(
+                        labelText: S.discountPercentage,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -457,9 +460,11 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               Row(
                 children: [
                   Text(
-                    'Components total: ${total.toStringAsFixed(2)} SAR',
+                    S.componentsTotal(
+                      '${localizeDigits(formatAmount(total))} ${S.currency}',
+                    ),
                     style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                        ?.copyWith(fontWeight: AppFontWeights.semiBold),
                   ),
                   const Spacer(),
                   TextButton(
@@ -471,7 +476,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               const SizedBox(height: AppDimensions.md),
               TextField(
                 controller: _sortOrderController,
-                decoration: const InputDecoration(labelText: 'Sort order'),
+                decoration: InputDecoration(labelText: S.sortOrder),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: AppDimensions.lg),
@@ -479,18 +484,14 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Bundle components',
+                    S.bundleComponents,
                     style: Theme.of(context).textTheme.titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                        ?.copyWith(fontWeight: AppFontWeights.semiBold),
                   ),
                   TextButton.icon(
                     onPressed: _addComponent,
                     icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
-                    label: Text(
-                      AppLocale.instance.isArabic
-                          ? 'ط¥ط¶ط§ظپط© ظ…ظƒظˆظ†'
-                          : 'Add component',
-                    ),
+                    label: Text(S.addComponent),
                   ),
                 ],
               ),
@@ -541,7 +542,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${_components[i].categoryNameFor(AppLocale.instance.language)}  أ¢â‚¬آ¢  ${_components[i].basePrice.toStringAsFixed(2)} SAR',
+                              '${_components[i].categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(_components[i].basePrice))} ${S.currency}',
                               style: Theme.of(context).textTheme.bodySmall
                                   ?.copyWith(color: AppColor.greyColor),
                               overflow: TextOverflow.ellipsis,
@@ -558,7 +559,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                           ),
                           keyboardType: TextInputType.number,
                           decoration: InputDecoration(
-                            labelText: 'Quantity',
+                            labelText: S.quantity,
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: AppDimensions.sm,
                               vertical: AppDimensions.sm,
@@ -598,7 +599,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                 Padding(
                   padding: const EdgeInsets.all(AppDimensions.md),
                   child: Text(
-                    'No components added yet',
+                    S.noComponentsAdded,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall
                         ?.copyWith(color: AppColor.greyColor),

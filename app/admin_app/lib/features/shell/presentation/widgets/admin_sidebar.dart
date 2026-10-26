@@ -4,7 +4,8 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_brand.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_item.dart';
@@ -18,6 +19,7 @@ class AdminSidebar extends StatelessWidget {
     required this.selectedId,
     required this.onSelected,
     required this.onSignOut,
+    this.badges = const <String, int>{},
   });
 
   final AdminSession session;
@@ -25,6 +27,9 @@ class AdminSidebar extends StatelessWidget {
   final String selectedId;
   final ValueChanged<String> onSelected;
   final VoidCallback onSignOut;
+
+  /// Work waiting per destination, keyed by the destination id.
+  final Map<String, int> badges;
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +55,7 @@ class AdminSidebar extends StatelessWidget {
                     AdminSidebarItem(
                       destination: destination,
                       isSelected: destination.id == selectedId,
+                      badgeCount: badges[destination.id],
                       onTap: () => onSelected(destination.id),
                     ),
                   ],
@@ -97,7 +103,7 @@ class _SidebarFooter extends StatelessWidget {
                   _initials(session.fullName),
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: AppColor.primaryColor,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: AppFontWeights.bold,
                   ),
                 ),
               ),
@@ -112,7 +118,7 @@ class _SidebarFooter extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: AppColor.whiteColor,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
                     Text(

@@ -39,6 +39,7 @@ class AdminMobileLayout extends StatelessWidget {
           session: data.session,
           destinations: data.destinations,
           selectedId: data.selectedId,
+          badges: data.badges,
           onSelected: (id) {
             data.onSelected(id);
             Navigator.of(context).pop();

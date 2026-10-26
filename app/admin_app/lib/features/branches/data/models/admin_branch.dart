@@ -11,10 +11,17 @@ class AdminBranch {
     this.latitude,
     this.longitude,
     this.phone,
+    this.legalName,
+    this.vatNumber,
     this.isActive = true,
     this.opensAt,
     this.closesAt,
     this.imageUrl,
+    this.staffCount = 0,
+    this.zoneCount = 0,
+    this.orders30d = 0,
+    this.lastOrderAt,
+    this.createdAt,
   });
 
   final String id;
@@ -25,6 +32,10 @@ class AdminBranch {
   final double? latitude;
   final double? longitude;
   final String? phone;
+
+  /// The seller identity printed on the ZATCA simplified tax invoice.
+  final String? legalName;
+  final String? vatNumber;
   final bool isActive;
 
   /// Opening time in HH:mm:ss format, or null when unset.
@@ -35,6 +46,22 @@ class AdminBranch {
 
   /// URL of the branch picture, or null when none.
   final String? imageUrl;
+
+  /// Active staff members whose role is scoped to this branch.
+  final int staffCount;
+
+  /// Active delivery zones assigned to this branch.
+  final int zoneCount;
+
+  /// Orders placed at this branch in the last 30 days, excluding cancellations.
+  final int orders30d;
+
+  final DateTime? lastOrderAt;
+  final DateTime? createdAt;
+
+  bool get hasLocation => latitude != null && longitude != null;
+
+  bool get needsSetup => !hasLocation || zoneCount == 0;
 
   String nameFor(AppLanguage language) {
     return language.isArabic ? nameAr : nameEn;
@@ -52,6 +79,10 @@ class AdminBranch {
     bool clearLongitude = false,
     String? phone,
     bool clearPhone = false,
+    String? legalName,
+    bool clearLegalName = false,
+    String? vatNumber,
+    bool clearVatNumber = false,
     bool? isActive,
     String? opensAt,
     bool clearOpensAt = false,
@@ -69,10 +100,17 @@ class AdminBranch {
       latitude: clearLatitude ? null : (latitude ?? this.latitude),
       longitude: clearLongitude ? null : (longitude ?? this.longitude),
       phone: clearPhone ? null : (phone ?? this.phone),
+      legalName: clearLegalName ? null : (legalName ?? this.legalName),
+      vatNumber: clearVatNumber ? null : (vatNumber ?? this.vatNumber),
       isActive: isActive ?? this.isActive,
       opensAt: clearOpensAt ? null : (opensAt ?? this.opensAt),
       closesAt: clearClosesAt ? null : (closesAt ?? this.closesAt),
       imageUrl: clearImageUrl ? null : (imageUrl ?? this.imageUrl),
+      staffCount: staffCount,
+      zoneCount: zoneCount,
+      orders30d: orders30d,
+      lastOrderAt: lastOrderAt,
+      createdAt: createdAt,
     );
   }
 
@@ -86,10 +124,27 @@ class AdminBranch {
       latitude: (row['latitude'] as num?)?.toDouble(),
       longitude: (row['longitude'] as num?)?.toDouble(),
       phone: row['phone'] as String?,
+      legalName: row['legal_name'] as String?,
+      vatNumber: row['vat_number'] as String?,
       isActive: row['is_active'] != false,
       opensAt: row['opens_at'] as String?,
       closesAt: row['closes_at'] as String?,
       imageUrl: row['image_url'] as String?,
+      staffCount: _count(row['staff_count']),
+      zoneCount: _count(row['zone_count']),
+      orders30d: _count(row['orders_30d']),
+      lastOrderAt: _date(row['last_order_at']),
+      createdAt: _date(row['created_at']),
     );
+  }
+
+  static int _count(Object? value) {
+    if (value is num) return value.toInt();
+    return int.tryParse('${value ?? ''}') ?? 0;
+  }
+
+  static DateTime? _date(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    return DateTime.tryParse(value);
   }
 }

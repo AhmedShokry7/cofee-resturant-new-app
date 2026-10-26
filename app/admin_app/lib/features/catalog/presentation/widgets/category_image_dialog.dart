@@ -94,7 +94,7 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
                 ),
                 title: Text(S.uploadFromDevice),
                 subtitle: Text(
-                  'JPG, PNG or WEBP',
+                  S.imageFormats,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColor.greyColor,
                   ),

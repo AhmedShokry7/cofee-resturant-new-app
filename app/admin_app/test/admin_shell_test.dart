@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_permission_scope.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
@@ -34,6 +35,19 @@ AdminSession _sessionWithProducts() => const AdminSession(
   roles: [],
   permissionScopes: [
     AdminPermissionScope(permissions: ['catalog.product.write']),
+  ],
+  canManageAllBranches: true,
+);
+
+/// A staff member that may run the counter.
+AdminSession _sessionWithPos() => const AdminSession(
+  staffId: 'u1',
+  email: 'admin@example.com',
+  fullName: 'Admin One',
+  status: 'active',
+  roles: [],
+  permissionScopes: [
+    AdminPermissionScope(permissions: ['pos.manage']),
   ],
   canManageAllBranches: true,
 );
@@ -223,5 +237,37 @@ void main() {
 
     expect(find.byType(AdminMobileLayout), findsOneWidget);
     expect(find.byType(AdminDesktopLayout), findsNothing);
+  });
+
+  testWidgets('the counter trades the sidebar for a drawer on smaller desks', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AdminShell(session: _sessionWithPos())),
+    );
+    await tester.pump();
+
+    // The dashboard still keeps the permanent sidebar at this width.
+    expect(find.byType(AdminSidebar), findsOneWidget);
+    expect(find.byTooltip(S.menu), findsNothing);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AdminSidebar),
+        matching: find.text(S.pos),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
+
+    // The counter needs the whole width for the current order panel.
+    expect(find.byType(AdminSidebar), findsNothing);
+    expect(find.byTooltip(S.menu), findsOneWidget);
+
+    await tester.tap(find.byTooltip(S.menu));
+    await tester.pumpAndSettle();
+    expect(find.byType(AdminSidebar), findsOneWidget);
   });
 }

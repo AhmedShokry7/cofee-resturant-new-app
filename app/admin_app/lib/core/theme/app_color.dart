@@ -68,11 +68,34 @@ class AppColor {
   /// Border of the compact toolbar buttons.
   static const adminControlBorder = Color(0xFFE3E9E4);
 
+  /// Primary text inside admin tables and record rows.
+  static const adminBody = Color(0xFF49584F);
+
+  /// Secondary line under a table name, such as an email address.
+  static const adminSubtle = Color(0xFF99A39D);
+
+  /// Amounts and strong inline values inside a table row.
+  static const adminAmount = Color(0xFF36473E);
+
+  /// Dates and quiet metadata inside a table row.
+  static const adminDate = Color(0xFF8A958E);
+
+  /// Fill of a selected table row.
+  static const adminRowSelected = Color(0xFFF6FAF7);
+
   /// Trend badge colours, matching the statistics cards.
   static const trendPositive = Color(0xFF3D8A68);
   static const trendPositiveSurface = Color(0xFFEDF6EF);
   static const trendNegative = Color(0xFFC65353);
   static const trendNegativeSurface = Color(0xFFFCEEEE);
+
+  /// Amber used for customer flags and in-progress order states.
+  static const adminWarning = Color(0xFFA47B2F);
+  static const adminWarningSurface = Color(0xFFFBF2DC);
+
+  /// Indigo used by quiet informational marks, such as the last-order tile.
+  static const adminInfo = Color(0xFF5F70A8);
+  static const adminInfoSurface = Color(0xFFE9EDF8);
 
   /// Light surface color used as fallback background for product images.
   static const surfaceColor = Color(0xffF7F8FA);

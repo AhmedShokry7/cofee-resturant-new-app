@@ -47,15 +47,15 @@ class CategoryExcelController {
   static String explainSaveError(Object error) {
     final message = error.toString();
     if (message.contains('duplicate') || message.contains('unique')) {
-      return 'Duplicate category name';
+      return S.duplicateCategoryName;
     }
     if (message.contains('network') || message.contains('connection')) {
-      return 'Network error';
+      return S.networkError;
     }
     if (message.contains('permission') || message.contains('unauthorized')) {
-      return 'Permission denied';
+      return S.permissionDenied;
     }
-    return 'Database error';
+    return S.databaseError;
   }
 
   /// Asks for a workbook, writes every row it holds and reloads the list.
@@ -70,9 +70,9 @@ class CategoryExcelController {
     try {
       final file = await FilePicker.pickFile(
         dialogTitle: S.importExcel,
-    // ignore: deprecated_member_use
+        // ignore: deprecated_member_use
         type: FileType.custom,
-    // ignore: deprecated_member_use
+        // ignore: deprecated_member_use
         allowedExtensions: const <String>['xlsx'],
       );
       if (file == null) return null;
@@ -154,12 +154,12 @@ class CategoryExcelController {
         fileName:
             'categories-${DateTime.now().toIso8601String().split('T').first}.xlsx',
         bytes: bytes,
-    // ignore: deprecated_member_use
+        // ignore: deprecated_member_use
         mimeType:
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    // ignore: deprecated_member_use
+        // ignore: deprecated_member_use
         type: FileType.custom,
-    // ignore: deprecated_member_use
+        // ignore: deprecated_member_use
         allowedExtensions: const <String>['xlsx'],
       );
       if (uri == null) return false;
@@ -190,12 +190,12 @@ class CategoryExcelController {
       dialogTitle: S.downloadSampleFile,
       fileName: 'categories-sample.xlsx',
       bytes: bytes,
-    // ignore: deprecated_member_use
+      // ignore: deprecated_member_use
       mimeType:
           'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    // ignore: deprecated_member_use
+      // ignore: deprecated_member_use
       type: FileType.custom,
-    // ignore: deprecated_member_use
+      // ignore: deprecated_member_use
       allowedExtensions: const <String>['xlsx'],
     );
     return uri != null;

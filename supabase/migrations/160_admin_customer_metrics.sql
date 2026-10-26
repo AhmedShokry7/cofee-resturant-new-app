@@ -57,9 +57,14 @@ security definer
 set search_path = ''
 as $fn$
 declare
-  v_month_start timestamptz := date_trunc('month', now());
-  v_previous_month_start timestamptz :=
-    date_trunc('month', now()) - interval '1 month';
+  v_month_start timestamptz := (
+    date_trunc('month', now() at time zone 'Asia/Riyadh')
+    at time zone 'Asia/Riyadh'
+  );
+  v_previous_month_start timestamptz := (
+    date_trunc('month', now() at time zone 'Asia/Riyadh')
+    at time zone 'Asia/Riyadh'
+  ) - interval '1 month';
 begin
   if not identity.is_staff() then
     raise exception 'not authenticated' using errcode = '42501';

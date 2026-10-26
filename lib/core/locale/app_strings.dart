@@ -47,8 +47,7 @@ class S {
   static String get couponDiscount => _ar ? 'خصم الكوبون' : 'Coupon discount';
 
   /// The discount a promotion on the product itself applied.
-  static String get productDiscount =>
-      _ar ? 'خصم المنتج' : 'Product discount';
+  static String get productDiscount => _ar ? 'خصم المنتج' : 'Product discount';
   static String get required => _ar ? 'مطلوب' : 'Required';
 
   // ---------- Navigation ----------
@@ -893,6 +892,14 @@ class S {
   static String get selectBranchBeforeRedeeming => _ar
       ? 'اختر الفرع قبل استبدال هذه المكافأة.'
       : 'Select a branch before redeeming this reward.';
+  static String get rewardRequiresAccount => _ar
+      ? 'سجّل الدخول لاستبدال مكافآت الباقات والاشتراكات.'
+      : 'Sign in to redeem bundle and subscription rewards.';
+  static String rewardSubscriptionActivated(String name) =>
+      _ar ? 'تم تفعيل اشتراك $name!' : 'Your $name subscription is active!';
+  static String rewardOrderCreated(String name) => _ar
+      ? 'تم إنشاء طلب مجاني لـ $name. تجده في طلباتك للاستلام من الفرع.'
+      : 'A free order for $name was created. Find it in your orders for pickup at the branch.';
   static String get orderPurchaseLabel => _ar ? 'شراء طلب' : 'Order purchase';
   static String get rewardRedeemedLabel =>
       _ar ? 'تم استبدال المكافأة' : 'Reward redeemed';
@@ -910,4 +917,5 @@ class S {
   static String get hidePassword => _ar ? 'إخفاء كلمة المرور' : 'Hide password';
   static String get saudiRiyal => _ar ? 'ريال سعودي' : 'Saudi Riyal';
   static String get bundleLabel => _ar ? 'باقة' : 'Bundle';
+  static String get subscriptionLabel => _ar ? 'اشتراك' : 'Subscription';
 }

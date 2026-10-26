@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_records.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_cards.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_filtering.dart';
 
 AdminOrder _order({
   String status = 'pending',
@@ -82,27 +83,16 @@ void main() {
     expect(find.textContaining(S.paymentStatusUnpaid), findsOneWidget);
   });
 
-  testWidgets('the filters narrow the list without a new query', (
-    tester,
-  ) async {
+  test('the status filter narrows the list without a new query', () {
     final orders = <AdminOrder>[
       _order(status: 'pending'),
       _order(status: 'completed').copyWithStatus('completed'),
     ];
-    await tester.pumpWidget(
-      _wrap(
-        OrderRecords(
-          orders: orders,
-          status: 'pending',
-          onChangeStatus: (_, _) {},
-          onOpen: (_) {},
-        ),
-      ),
-    );
 
-    expect(find.text('#1001'), findsOneWidget);
-    expect(find.text('Pending'), findsOneWidget);
-    expect(find.text('Completed'), findsNothing);
+    final filtered = filterOrders(orders, status: 'pending');
+
+    expect(filtered, hasLength(1));
+    expect(filtered.single.status, 'pending');
   });
 }
 

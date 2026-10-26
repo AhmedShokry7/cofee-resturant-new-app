@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_item_image.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_item_remove_button.dart';
+import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class OrderItemRow extends StatelessWidget {
@@ -15,63 +19,83 @@ class OrderItemRow extends StatelessWidget {
     required this.item,
     required this.onRemove,
   });
+
   final AdminOrder order;
   final AdminOrderItem item;
   final ValueChanged<String> onRemove;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: AppDimensions.md),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = adminIsDark(theme);
+    final note = item.note?.trim() ?? '';
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            OrderItemImage(item: item),
-            const SizedBox(width: AppDimensions.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        OrderItemImage(item: item),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item.productNameFor(AppLocale.instance.language),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: adminBodyColor(theme),
+                  fontSize: AppFontSizes.size11_5,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Row(
                 children: [
                   Text(
-                    item.productNameFor(AppLocale.instance.language),
-                    style: Theme.of(context).textTheme.bodyMedium
-                        ?.copyWith(fontWeight: FontWeight.w600),
+                    '${orderCount(item.quantity)} × ${orderMoney(item.unitPrice)}',
+                    style: TextStyle(
+                      color: adminMutedColor(theme),
+                      fontSize: AppFontSizes.size10,
+                      height: AppTextHeights.line1_5,
+                    ),
                   ),
-                  Text(
-                    '${item.quantity} × ${formatAmount(item.unitPrice)}',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: AppColor.greyColor),
-                  ),
+                  const SizedBox(width: 3),
+                  const CurrencyIcon(size: 10),
                 ],
               ),
-            ),
-          ],
-        ),
-        if (item.note?.trim().isNotEmpty == true)
-          Padding(
-            padding: const EdgeInsets.only(top: AppDimensions.xs),
-            child: Text(
-              item.note!,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+              if (note.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  note,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: adminSubtleColor(theme),
+                    fontSize: AppFontSizes.size9_5,
+                    fontStyle: FontStyle.italic,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+              ],
+            ],
           ),
-        const SizedBox(height: AppDimensions.xs),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
+        ),
+        const SizedBox(width: AppDimensions.sm),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              formatAmount(item.lineTotal),
-              style: Theme.of(context).textTheme.bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+            AdminMoneyText(
+              value: item.lineTotal,
+              fontSize: AppFontSizes.size11_5,
+              color: dark ? AppColor.darkText : AppColor.adminAmount,
+              formatter: orderMoney,
             ),
-            const SizedBox(width: AppDimensions.xs),
-            const CurrencyIcon(size: 14),
-            const SizedBox(width: AppDimensions.sm),
+            const SizedBox(height: 2),
             OrderItemRemoveButton(order: order, item: item, onRemove: onRemove),
           ],
         ),
       ],
-    ),
-  );
+    );
+  }
 }

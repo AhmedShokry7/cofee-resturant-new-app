@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/catalog/data/models/admin_category.dart';
 import 'package:admin_app/features/catalog/data/models/admin_product.dart';
@@ -143,7 +144,7 @@ class AdminProductRepository {
 
     final row = _asMap(response);
     if (row.isEmpty) {
-      throw const AdminProductException('The product was not saved.');
+      throw AdminProductException(S.productNotSaved);
     }
     return AdminProduct.fromRow(row);
   }
@@ -174,7 +175,7 @@ class AdminProductRepository {
 
     final row = _asMap(response);
     if (row.isEmpty) {
-      throw const AdminProductException('The category was not created.');
+      throw AdminProductException(S.categoryNotCreated);
     }
     return AdminCategory.fromRow(row);
   }
@@ -199,16 +200,30 @@ class AdminProductRepository {
 
     final row = _asMap(response);
     if (row.isEmpty) {
-      throw const AdminProductException('The category was not updated.');
+      throw AdminProductException(S.categoryNotUpdated);
     }
     return AdminCategory.fromRow(row);
   }
 
   Future<void> deleteCategory(String categoryId) async {
-    await _supabase.rpc(
-      'admin_delete_category',
-      params: {'p_category_id': categoryId},
-    );
+    try {
+      await _supabase.rpc(
+        'admin_delete_category',
+        params: {'p_category_id': categoryId},
+      );
+    } on PostgrestException catch (error) {
+      throw AdminProductException(_categoryDeleteMessage(error));
+    }
+  }
+
+  String _categoryDeleteMessage(PostgrestException error) {
+    if (error.message.contains('category_in_use')) {
+      return S.categoryDeleteBlockedByProducts;
+    }
+    if (error.message.contains('category_not_found')) {
+      return S.categoryNotFound;
+    }
+    return error.message;
   }
 
   Future<void> setCategoryActive(String categoryId, bool isActive) async {
@@ -420,7 +435,7 @@ class AdminProductRepository {
   }) async {
     final url = imageUrl.trim();
     if (url.isEmpty) {
-      throw const AdminProductException('The picture needs a url.');
+      throw AdminProductException(S.imageUrlMissing);
     }
 
     final current = await loadProductImages(productId);
@@ -449,7 +464,7 @@ class AdminProductRepository {
   }) async {
     final url = imageUrl.trim();
     if (url.isEmpty) {
-      throw const AdminProductException('The picture needs a url.');
+      throw AdminProductException(S.imageUrlMissing);
     }
 
     final changes = <String, dynamic>{'image_url': url};
@@ -538,9 +553,7 @@ class AdminProductRepository {
     );
 
     if (_asMap(response).isEmpty) {
-      throw const AdminProductException(
-        'The picture was not made the primary one.',
-      );
+      throw AdminProductException(S.imagePrimaryFailed);
     }
 
     return loadProductImages(image.productId);
@@ -666,15 +679,13 @@ class AdminProductRepository {
   /// than the bucket allows.
   void _checkImage(Uint8List bytes, String contentType) {
     if (!productImageTypes.contains(contentType)) {
-      throw const AdminProductException(
-        'The picture must be a JPG, a PNG or a WEBP file.',
-      );
+      throw AdminProductException(S.imageMustBeFormat);
     }
     if (bytes.isEmpty) {
-      throw const AdminProductException('The picture is empty.');
+      throw AdminProductException(S.imageIsEmpty);
     }
     if (bytes.length > maxProductImageBytes) {
-      throw const AdminProductException('The picture is bigger than 5 MB.');
+      throw AdminProductException(S.imageTooLarge);
     }
   }
 

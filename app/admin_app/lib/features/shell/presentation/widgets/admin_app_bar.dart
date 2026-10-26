@@ -3,6 +3,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_language_button.dart';
 import 'package:admin_app/shared/widgets/admin_theme_button.dart';
@@ -70,7 +71,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w700,
+                          fontWeight: AppFontWeights.bold,
                         ),
                       ),
                     ),
@@ -117,7 +118,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 }
 
-class _AdminSearchField extends StatelessWidget {
+class _AdminSearchField extends StatefulWidget {
   const _AdminSearchField({
     required this.hint,
     required this.searchController,
@@ -129,19 +130,55 @@ class _AdminSearchField extends StatelessWidget {
   final TextEditingController textController;
 
   @override
+  State<_AdminSearchField> createState() => _AdminSearchFieldState();
+}
+
+class _AdminSearchFieldState extends State<_AdminSearchField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.searchController.addListener(_syncQuery);
+  }
+
+  @override
+  void didUpdateWidget(_AdminSearchField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.searchController != widget.searchController) {
+      oldWidget.searchController.removeListener(_syncQuery);
+      widget.searchController.addListener(_syncQuery);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.searchController.removeListener(_syncQuery);
+    super.dispose();
+  }
+
+  /// Mirrors a query that a page wrote (for example its own search field).
+  void _syncQuery() {
+    final query = widget.searchController.query;
+    if (widget.textController.text.trim() == query) return;
+    widget.textController.value = TextEditingValue(
+      text: query,
+      selection: TextSelection.collapsed(offset: query.length),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListenableBuilder(
-      listenable: searchController,
+      listenable: widget.searchController,
       builder: (context, _) {
-        final hasQuery = searchController.hasQuery;
+        final hasQuery = widget.searchController.hasQuery;
         return TextField(
-          controller: textController,
-          onChanged: searchController.update,
+          controller: widget.textController,
+          onChanged: widget.searchController.update,
           textInputAction: TextInputAction.search,
           style: theme.textTheme.bodyMedium,
           decoration: InputDecoration(
-            hintText: hint,
+            hintText: widget.hint,
             hintStyle: theme.textTheme.bodyMedium?.copyWith(
               color: theme.hintColor,
             ),
@@ -163,8 +200,8 @@ class _AdminSearchField extends StatelessWidget {
                       color: theme.iconTheme.color,
                     ),
                     onPressed: () {
-                      textController.clear();
-                      searchController.clear();
+                      widget.textController.clear();
+                      widget.searchController.clear();
                     },
                   )
                 : null,

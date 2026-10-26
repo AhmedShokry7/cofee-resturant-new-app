@@ -15,3 +15,12 @@ String localizeDigits(String value) {
     return index < 0 ? character : _arabicDigits[index];
   }).join();
 }
+
+/// Converts Arabic-Indic numerals and separators back to Western ones so a
+/// field accepts `١٢٣` and `١٫٥` exactly like `123` and `1.5`.
+String normalizeDigits(String value) {
+  return value.split('').map((character) {
+    final index = _arabicDigits.indexOf(character);
+    return index < 0 ? character : _westernDigits[index];
+  }).join();
+}

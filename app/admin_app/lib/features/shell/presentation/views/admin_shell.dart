@@ -2,18 +2,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/auth/data/models/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
 import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
 import 'package:admin_app/features/carts/presentation/pages/cart_page.dart';
+import 'package:admin_app/features/coupons/presentation/pages/coupons_page.dart';
 import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
 import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
+import 'package:admin_app/features/inventory/presentation/pages/inventory_page.dart';
+import 'package:admin_app/features/inventory/presentation/pages/stock_movements_page.dart';
+import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
+import 'package:admin_app/features/loyalty/presentation/pages/loyalty_page.dart';
+import 'package:admin_app/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:admin_app/features/orders/presentation/pages/order_page.dart';
 import 'package:admin_app/features/payments/presentation/pages/payment_page.dart';
+import 'package:admin_app/features/pos/presentation/pages/pos_page.dart';
+import 'package:admin_app/features/reviews/presentation/pages/reviews_page.dart';
 import 'package:admin_app/features/roles/presentation/pages/role_page.dart';
 import 'package:admin_app/features/staff/presentation/pages/staff_page.dart';
+import 'package:admin_app/features/subscription_plans_admin/presentation/pages/subscription_plan_page.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/pages/subscription_admin_page.dart';
-import 'package:admin_app/features/auth/presentation/manager/admin_auth_cubit.dart';
+import 'package:admin_app/features/tables/presentation/pages/tables_page.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/branches/presentation/pages/branch_page.dart';
 import 'package:admin_app/features/bundles/presentation/pages/bundle_page.dart';
 import 'package:admin_app/features/catalog/presentation/pages/category_page.dart';
@@ -21,6 +32,8 @@ import 'package:admin_app/features/catalog/presentation/pages/product_page.dart'
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
+import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
+import 'package:admin_app/features/shell/presentation/manager/admin_nav_cubit.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_desktop_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sign_out_dialog.dart';
@@ -28,8 +41,9 @@ import 'package:admin_app/shared/widgets/admin_feature_placeholder.dart';
 
 /// The frame around every admin page.
 ///
-/// It owns the selected destination, the search state and the sign out flow,
-/// then hands everything to the desktop or the mobile layout.
+/// It owns the selected destination, the search state, the sidebar work
+/// counters and the sign out flow, then hands everything to the desktop or the
+/// mobile layout.
 class AdminShell extends StatefulWidget {
   const AdminShell({super.key, required this.session});
 
@@ -39,17 +53,40 @@ class AdminShell extends StatefulWidget {
   State<AdminShell> createState() => _AdminShellState();
 }
 
-class _AdminShellState extends State<AdminShell> {
+class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
+  /// Below this width a workspace page keeps its full width and moves the
+  /// navigation into a drawer.
+  static const double _immersiveMinWidth = 1380;
+
   String _selectedId = 'dashboard';
 
   final TextEditingController _searchTextController = TextEditingController();
   final AdminSearchController _searchController = AdminSearchController();
+  late final AdminNavCubit _navCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _navCubit = AdminNavCubit();
+    WidgetsBinding.instance.addObserver(this);
+    _navCubit.start(
+      watchOrders: widget.session.hasPermission('orders.read'),
+      watchKitchen: widget.session.hasPermission('kitchen.read'),
+    );
+  }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _navCubit.close();
     _searchTextController.dispose();
     _searchController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _navCubit.refresh();
   }
 
   List<AdminDestination> get _destinations => adminDestinations
@@ -78,13 +115,14 @@ class _AdminShellState extends State<AdminShell> {
       _searchController.clear();
       _searchTextController.clear();
     });
+    _navCubit.refresh();
   }
 
   Future<void> _confirmSignOut() async {
     final shouldSignOut = await showAdminSignOutDialog(context);
 
     if (shouldSignOut && mounted) {
-      await context.read<AdminAuthCubit>().signOut();
+      context.read<AuthBloc>().add(const AuthSignOutRequested());
     }
   }
 
@@ -110,6 +148,9 @@ class _AdminShellState extends State<AdminShell> {
       case 'branches':
         return BranchPage(
           searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('settings.write') ||
+              widget.session.isOwner,
           canManagePricing:
               widget.session.hasPermission('catalog.product.write') ||
               widget.session.isOwner,
@@ -120,6 +161,8 @@ class _AdminShellState extends State<AdminShell> {
         return BundlePage(searchController: _searchController);
       case 'payments':
         return PaymentPage(searchController: _searchController);
+      case 'pos':
+        return PosPage(searchController: _searchController);
       case 'orders':
         return OrderPage(searchController: _searchController);
       case 'banners':
@@ -130,6 +173,32 @@ class _AdminShellState extends State<AdminShell> {
         return const CustomerPreviewPage();
       case 'customers':
         return CustomerPage(searchController: _searchController);
+      case 'kitchen':
+        return KitchenPage(
+          searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('kitchen.manage') ||
+              widget.session.isOwner,
+        );
+      case 'tables':
+        return TablesPage(
+          canManage:
+              widget.session.hasPermission('tables.manage') ||
+              widget.session.isOwner,
+        );
+      case 'inventory':
+        return InventoryPage(
+          searchController: _searchController,
+          canAdjust: widget.session.hasPermission('inventory.adjust'),
+          canEdit:
+              widget.session.hasPermission('inventory.adjust') &&
+              widget.session.canManageAllBranches,
+        );
+      case 'stockMovements':
+        return StockMovementsPage(
+          searchController: _searchController,
+          canAdjust: widget.session.hasPermission('inventory.adjust'),
+        );
       case 'staff':
         return StaffPage(
           searchController: _searchController,
@@ -146,12 +215,45 @@ class _AdminShellState extends State<AdminShell> {
         );
       case 'subscriptions':
         return SubscriptionAdminPage(searchController: _searchController);
+      case 'subscriptionPlans':
+        return SubscriptionPlanPage(searchController: _searchController);
+      case 'loyalty':
+        return LoyaltyPage(
+          searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('loyalty.write') ||
+              widget.session.isOwner,
+        );
+      case 'coupons':
+        return CouponsPage(
+          searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('settings.write') ||
+              widget.session.isOwner,
+        );
+      case 'reviews':
+        return ReviewsPage(
+          searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('reviews.moderate') ||
+              widget.session.isOwner,
+        );
+      case 'notifications':
+        return NotificationsPage(
+          searchController: _searchController,
+          canSend:
+              widget.session.hasPermission('notifications.send') ||
+              widget.session.isOwner,
+          canManage:
+              widget.session.hasPermission('notifications.manage') ||
+              widget.session.isOwner,
+        );
       default:
         return AdminFeaturePlaceholder(destination: destination);
     }
   }
 
-  AdminShellLayoutData _buildLayoutData() {
+  AdminShellLayoutData _buildLayoutData(AdminNavCounts counts) {
     return AdminShellLayoutData(
       session: widget.session,
       destinations: _destinations,
@@ -162,6 +264,10 @@ class _AdminShellState extends State<AdminShell> {
       searchTextController: _searchTextController,
       title: _selected.label,
       searchHint: _selected.searchHint,
+      badges: <String, int>{
+        if (counts.newOrders > 0) 'orders': counts.newOrders,
+        if (counts.kitchenQueue > 0) 'kitchen': counts.kitchenQueue,
+      },
     );
   }
 
@@ -172,18 +278,27 @@ class _AdminShellState extends State<AdminShell> {
     // sidebar, the app bar and the page right away, without a restart.
     return ListenableBuilder(
       listenable: AppLocale.instance,
-      builder: (context, _) => _buildShell(context),
+      builder: (context, _) => BlocProvider<AdminNavCubit>.value(
+        value: _navCubit,
+        child: BlocBuilder<AdminNavCubit, AdminNavCounts>(
+          builder: (context, counts) => _buildShell(context, counts),
+        ),
+      ),
     );
   }
 
-  Widget _buildShell(BuildContext context) {
+  Widget _buildShell(BuildContext context, AdminNavCounts counts) {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= 900;
-    final data = _buildLayoutData();
+    final data = _buildLayoutData(counts);
     final content = _buildContent();
 
     if (isWide) {
-      return AdminDesktopLayout(data: data, content: content);
+      return AdminDesktopLayout(
+        data: data,
+        content: content,
+        collapseSidebar: _selected.immersive && width < _immersiveMinWidth,
+      );
     }
 
     return AdminMobileLayout(data: data, content: content);

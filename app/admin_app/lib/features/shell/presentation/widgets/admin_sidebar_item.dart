@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 
 /// A single navigation row inside the dark panel.
@@ -12,11 +13,15 @@ class AdminSidebarItem extends StatelessWidget {
     required this.destination,
     required this.isSelected,
     required this.onTap,
+    this.badgeCount,
   });
 
   final AdminDestination destination;
   final bool isSelected;
   final VoidCallback onTap;
+
+  /// Live work waiting in this destination, shown as a number.
+  final int? badgeCount;
 
   @override
   Widget build(BuildContext context) {
@@ -52,15 +57,13 @@ class AdminSidebarItem extends StatelessWidget {
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: foreground,
                       fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w400,
+                          ? AppFontWeights.semiBold
+                          : AppFontWeights.regular,
                     ),
                   ),
                 ),
-                if (destination.badge != null)
-                  _SidebarBadge(label: destination.badge!),
-                if (!destination.isImplemented)
-                  _SidebarBadge(label: S.soonBadge, muted: true),
+                if ((badgeCount ?? 0) > 0)
+                  _SidebarBadge(label: _countLabel(badgeCount!)),
               ],
             ),
           ),
@@ -68,29 +71,29 @@ class AdminSidebarItem extends StatelessWidget {
       ),
     );
   }
+
+  String _countLabel(int count) =>
+      localizeDigits(count > 99 ? '99+' : '$count');
 }
 
 class _SidebarBadge extends StatelessWidget {
-  const _SidebarBadge({required this.label, this.muted = false});
+  const _SidebarBadge({required this.label});
 
   final String label;
-  final bool muted;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: muted
-            ? AppColor.whiteColor.withValues(alpha: 0.12)
-            : AppColor.secondaryColor,
+        color: AppColor.secondaryColor,
         borderRadius: BorderRadius.circular(50),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: muted ? AppColor.whiteColor : AppColor.primaryColor,
-          fontWeight: FontWeight.w500,
+          color: AppColor.primaryColor,
+          fontWeight: AppFontWeights.medium,
         ),
       ),
     );
@@ -114,8 +117,10 @@ class AdminSidebarSectionTitle extends StatelessWidget {
       ),
       child: Text(
         title,
-        style: Theme.of(context).textTheme.bodyMedium
-            ?.copyWith(color: AppColor.secondaryColor, fontSize: 15),
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: AppColor.secondaryColor,
+          fontSize: AppFontSizes.size15,
+        ),
       ),
     );
   }

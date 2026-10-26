@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
 import 'package:admin_app/features/customers/data/repositories/admin_customer_repository.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_state.dart';
 
@@ -15,15 +17,15 @@ class AdminCustomerCubit extends Cubit<AdminCustomerState> {
   Future<void> load() async {
     emit(state.copyWith(status: AdminCustomerStatus.loading, clearError: true));
     try {
-      final customersFuture = _repository.loadCustomers();
-      final metricsFuture = _repository.loadMetrics();
-      final customers = await customersFuture;
-      final metrics = await metricsFuture;
+      final results = await Future.wait<Object>([
+        _repository.loadCustomers(),
+        _repository.loadMetrics(),
+      ]);
       emit(
         state.copyWith(
           status: AdminCustomerStatus.ready,
-          customers: customers,
-          metrics: metrics,
+          customers: results[0] as List<AdminCustomer>,
+          metrics: results[1] as AdminCustomerMetrics,
           clearError: true,
         ),
       );

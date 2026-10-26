@@ -6,7 +6,10 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
+import 'package:admin_app/shared/widgets/admin_selection_checkbox.dart';
 
 /// The categories whose name or description holds [search].
 List<AdminCategory> filterCategories(
@@ -36,6 +39,8 @@ class CategoryRecords extends StatelessWidget {
     this.onDelete,
     this.onToggleActive,
     this.onChangeImage,
+    this.selectedIds = const <String>{},
+    this.onSelect,
   });
 
   /// Every loaded category; the grid filters them with [search].
@@ -49,16 +54,21 @@ class CategoryRecords extends StatelessWidget {
   final ValueChanged<AdminCategory>? onToggleActive;
   final ValueChanged<AdminCategory>? onChangeImage;
 
+  /// The categories that are picked for a bulk action.
+  final Set<String> selectedIds;
+
+  final ValueChanged<AdminCategory>? onSelect;
+
   @override
   Widget build(BuildContext context) {
     final categories = filterCategories(this.categories, search);
     if (categories.isEmpty) {
-      return Center(
-        child: Text(
-          S.noCategoriesFound,
-          style: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColor.greyColor),
-        ),
+      final filtering = search.trim().isNotEmpty;
+      return AdminEmptyState(
+        icon: filtering
+            ? HugeIcons.strokeRoundedSearch01
+            : HugeIcons.strokeRoundedFolder01,
+        message: filtering ? S.noCategoriesFound : S.noCategoriesYet,
       );
     }
 
@@ -100,6 +110,8 @@ class CategoryRecords extends StatelessWidget {
               onChangeImage: onChangeImage == null
                   ? null
                   : () => onChangeImage!(category),
+              isSelected: selectedIds.contains(category.id),
+              onSelect: onSelect == null ? null : () => onSelect!(category),
             );
           },
         );
@@ -117,6 +129,9 @@ class CategoryCard extends StatelessWidget {
     this.onDelete,
     this.onToggleActive,
     this.onChangeImage,
+    this.countLabel,
+    this.isSelected = false,
+    this.onSelect,
   });
 
   final AdminCategory category;
@@ -125,13 +140,27 @@ class CategoryCard extends StatelessWidget {
   final VoidCallback? onToggleActive;
   final VoidCallback? onChangeImage;
 
+  /// Overrides the product count under the name, such as the number of
+  /// components of a bundle.
+  final String? countLabel;
+
+  /// The category is picked for a bulk action.
+  final bool isSelected;
+
+  final VoidCallback? onSelect;
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.greyColor;
     return Container(
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppDimensions.recordCardRadius),
-        border: Border.all(color: AppColor.recordBorder),
+        border: Border.all(
+          color: dark ? AppColor.darkBorder : AppColor.recordBorder,
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -148,6 +177,14 @@ class CategoryCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   _CategoryImage(url: category.imageUrl),
+                  PositionedDirectional(
+                    top: AppDimensions.recordImageInset,
+                    end: AppDimensions.recordImageInset,
+                    child: AdminSelectionCheckBox(
+                      checked: isSelected,
+                      onTap: onSelect,
+                    ),
+                  ),
                   if (!category.isActive)
                     PositionedDirectional(
                       top: AppDimensions.recordImageInset,
@@ -176,16 +213,15 @@ class CategoryCard extends StatelessWidget {
                   category.nameFor(AppLocale.instance.language),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColor.recordTextStrong,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: AppFontWeights.semiBold,
+                    color: dark ? AppColor.darkText : AppColor.recordTextStrong,
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  S.productsCount(category.productCount),
-                  style: Theme.of(context).textTheme.bodySmall
-                      ?.copyWith(color: AppColor.greyColor),
+                  countLabel ?? S.productsCount(category.productCount),
+                  style: theme.textTheme.bodySmall?.copyWith(color: muted),
                 ),
               ],
             ),
@@ -209,15 +245,20 @@ class _CategoryImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final background = dark
+        ? AppColor.darkSurfaceContainer
+        : AppColor.imagePlaceholder;
+    final iconColor = dark ? AppColor.darkTextSecondary : AppColor.greyColor;
     final image = url?.trim();
     if (image == null || image.isEmpty) {
-      return const ColoredBox(
-        color: AppColor.imagePlaceholder,
+      return ColoredBox(
+        color: background,
         child: Center(
           child: Icon(
             HugeIcons.strokeRoundedFolder01,
             size: 40,
-            color: AppColor.greyColor,
+            color: iconColor,
           ),
         ),
       );
@@ -225,17 +266,17 @@ class _CategoryImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: image,
       fit: BoxFit.cover,
-      placeholder: (context, url) => const ColoredBox(
-        color: AppColor.imagePlaceholder,
-        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      placeholder: (context, url) => ColoredBox(
+        color: background,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
       ),
-      errorWidget: (context, url, error) => const ColoredBox(
-        color: AppColor.imagePlaceholder,
+      errorWidget: (context, url, error) => ColoredBox(
+        color: background,
         child: Center(
           child: Icon(
             HugeIcons.strokeRoundedFolder01,
             size: 40,
-            color: AppColor.greyColor,
+            color: iconColor,
           ),
         ),
       ),
@@ -270,8 +311,8 @@ class _InactiveBadge extends StatelessWidget {
                 S.inactive,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: AppColor.whiteColor,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
+                  fontSize: AppFontSizes.size11,
+                  fontWeight: AppFontWeights.semiBold,
                 ),
               ),
             ],
@@ -301,8 +342,10 @@ class _ImagePill extends StatelessWidget {
             children: [
               Text(
                 S.addImageOrVideo,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColor.primaryColor, fontSize: 12),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColor.primaryColor,
+                  fontSize: AppFontSizes.size12,
+                ),
               ),
               const SizedBox(width: 5),
               const Icon(
@@ -334,9 +377,15 @@ class _CategoryCardFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
+    final border = dark ? AppColor.darkBorder : AppColor.recordBorder;
+    final textColor = dark ? AppColor.darkTextSecondary : AppColor.recordText;
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.greyColor;
+    final activeColor = dark ? AppColor.secondaryColor : AppColor.primaryColor;
+
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColor.recordBorder)),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: border)),
       ),
       child: Row(
         children: [
@@ -348,18 +397,18 @@ class _CategoryCardFooter extends StatelessWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(
+                    Icon(
                       HugeIcons.strokeRoundedEdit01,
                       size: 14,
-                      color: AppColor.recordText,
+                      color: textColor,
                     ),
                     const SizedBox(width: 5),
                     Text(
                       S.edit,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColor.recordText,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                        fontSize: AppFontSizes.size12,
+                        fontWeight: AppFontWeights.medium,
                       ),
                     ),
                   ],
@@ -369,10 +418,8 @@ class _CategoryCardFooter extends StatelessWidget {
           ),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
-                border: BorderDirectional(
-                  start: BorderSide(color: AppColor.recordBorder),
-                ),
+              decoration: BoxDecoration(
+                border: BorderDirectional(start: BorderSide(color: border)),
               ),
               child: InkWell(
                 onTap: onToggleActive,
@@ -386,19 +433,15 @@ class _CategoryCardFooter extends StatelessWidget {
                             ? HugeIcons.strokeRoundedCheckmarkCircle01
                             : HugeIcons.strokeRoundedCancelCircle,
                         size: 14,
-                        color: onToggleActive == null
-                            ? AppColor.greyColor
-                            : AppColor.primaryColor,
+                        color: onToggleActive == null ? muted : activeColor,
                       ),
                       const SizedBox(width: 5),
                       Text(
                         isActive ? S.active : S.inactive,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: onToggleActive == null
-                              ? AppColor.greyColor
-                              : AppColor.primaryColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          color: onToggleActive == null ? muted : activeColor,
+                          fontSize: AppFontSizes.size12,
+                          fontWeight: AppFontWeights.medium,
                         ),
                       ),
                     ],
@@ -409,10 +452,8 @@ class _CategoryCardFooter extends StatelessWidget {
           ),
           Expanded(
             child: Container(
-              decoration: const BoxDecoration(
-                border: BorderDirectional(
-                  start: BorderSide(color: AppColor.recordBorder),
-                ),
+              decoration: BoxDecoration(
+                border: BorderDirectional(start: BorderSide(color: border)),
               ),
               child: InkWell(
                 onTap: onDelete,
@@ -431,8 +472,8 @@ class _CategoryCardFooter extends StatelessWidget {
                         S.delete,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: AppColor.errorColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontSize: AppFontSizes.size12,
+                          fontWeight: AppFontWeights.medium,
                         ),
                       ),
                     ],

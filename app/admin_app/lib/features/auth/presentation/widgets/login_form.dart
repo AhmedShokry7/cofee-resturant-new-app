@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/core/config/app_config.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/features/auth/presentation/manager/admin_auth_cubit.dart';
-import 'package:admin_app/features/auth/presentation/manager/admin_auth_state.dart';
-import 'package:admin_app/features/auth/presentation/widgets/login_message_banner.dart';
+import 'package:admin_app/core/error/failure.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_state.dart';
+import 'package:admin_app/features/auth/presentation/widgets/login_email_field.dart';
+import 'package:admin_app/features/auth/presentation/widgets/login_heading.dart';
+import 'package:admin_app/features/auth/presentation/widgets/login_password_field.dart';
+import 'package:admin_app/shared/widgets/admin_error_banner.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
-import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+/// نموذج الدخول: يعرض الحقول والأخطاء ويرسل الأحداث إلى [AuthBloc].
 class LoginForm extends StatelessWidget {
   const LoginForm({
     super.key,
     required this.formKey,
     required this.emailController,
     required this.passwordController,
-    required this.obscurePassword,
-    required this.onTogglePassword,
     required this.onSubmit,
     required this.showConfigurationWarning,
   });
@@ -27,16 +28,19 @@ class LoginForm extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController emailController;
   final TextEditingController passwordController;
-  final bool obscurePassword;
-  final VoidCallback onTogglePassword;
   final VoidCallback onSubmit;
   final bool showConfigurationWarning;
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AdminAuthCubit, AdminAuthState>(
+    final scheme = Theme.of(context).colorScheme;
+
+    return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, state) {
-        final isSubmitting = state.isSubmitting;
+        final signedOut = state is AuthSignedOut
+            ? state
+            : const AuthSignedOut();
+        final failure = signedOut.failure;
 
         return Form(
           key: formKey,
@@ -44,79 +48,40 @@ class LoginForm extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                S.staffSignIn,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: Theme.of(context).colorScheme.onSurface,
-                ),
-              ),
-              const SizedBox(height: AppDimensions.sm),
-              Text(
-                S.staffSignInSubtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-              ),
+              const LoginHeading(),
               if (showConfigurationWarning) ...[
                 const SizedBox(height: AppDimensions.lg),
-                LoginMessageBanner(
-                  color: AppColor.errorColor,
-                  icon: HugeIcons.strokeRoundedCloudServer,
-                  message: AppConfig.missingConfigurationMessage,
+                AdminErrorBanner(
+                  message: S.supabaseNotConfigured,
+                  icon: AppIcons.server,
                 ),
               ],
-              if (state.errorMessage != null) ...[
+              if (failure != null) ...[
                 const SizedBox(height: AppDimensions.lg),
-                LoginMessageBanner(
-                  color: AppColor.errorColor,
-                  icon: HugeIcons.strokeRoundedAlertCircle,
-                  message: state.errorMessage!,
+                AdminErrorBanner(
+                  message: _messageFor(failure),
+                  icon: AppIcons.alert,
                 ),
               ],
               const SizedBox(height: AppDimensions.xl),
-              CustomTextFormField(
-                controller: emailController,
-                hint: 'you@example.com',
-                label: S.email,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                prefixIcon: const Icon(HugeIcons.strokeRoundedMail01),
-                validator: (value) {
-                  final text = value?.trim() ?? '';
-                  if (text.isEmpty) return S.emailRequired;
-                  if (!text.contains('@')) return S.validEmail;
-                  return null;
-                },
-              ),
+              LoginEmailField(controller: emailController),
               const SizedBox(height: AppDimensions.lg),
-              CustomTextFormField(
+              LoginPasswordField(
                 controller: passwordController,
-                hint: '*********',
-                label: S.password,
-                obscureText: obscurePassword,
-                textInputAction: TextInputAction.done,
-                prefixIcon: const Icon(HugeIcons.strokeRoundedLock),
-                suffixIcon: IconButton(
-                  onPressed: onTogglePassword,
-                  icon: Icon(
-                    obscurePassword
-                        ? HugeIcons.strokeRoundedViewOff
-                        : HugeIcons.strokeRoundedView,
-                  ),
+                obscurePassword: signedOut.obscurePassword,
+                onToggleVisibility: () => context.read<AuthBloc>().add(
+                  const AuthPasswordVisibilityToggled(),
                 ),
-                validator: (value) {
-                  if ((value ?? '').isEmpty) return S.passwordRequired;
-                  return null;
-                },
+                onSubmitted: onSubmit,
               ),
               const SizedBox(height: AppDimensions.xl),
               CustomBtn(
                 text: S.signIn,
-                onPressed: isSubmitting ? null : onSubmit,
-                isLoading: isSubmitting,
+                onPressed: signedOut.isSubmitting ? null : onSubmit,
+                isLoading: signedOut.isSubmitting,
                 width: double.infinity,
-                backgroundColor: AppColor.primaryColor,
+                backgroundColor: scheme.primary,
+                textColor: scheme.onPrimary,
               ),
             ],
           ),
@@ -125,3 +90,11 @@ class LoginForm extends StatelessWidget {
     );
   }
 }
+
+/// يختار نص الخطأ المعروض حسب نوع الفشل القادم من الطبقة الداخلية.
+String _messageFor(Failure failure) => switch (failure) {
+  InvalidCredentialsFailure() => S.invalidCredentials,
+  NotActiveStaffFailure() => S.notActiveStaff,
+  ConfigurationFailure() => S.supabaseNotConfigured,
+  UnknownFailure() => S.unableToSignIn,
+};

@@ -4,6 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/constants/app_images.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/typography.dart';
 
 /// The brand block at the top of the navigation panel: the logo and the app
 /// name.
@@ -41,7 +42,7 @@ class AdminSidebarBrand extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: AppColor.whiteColor,
-                fontWeight: FontWeight.w500,
+                fontWeight: AppFontWeights.medium,
                 height: AppDimensions.textHeightTight,
               ),
             ),
