@@ -1,8 +1,8 @@
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_member.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_overview.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_target_option.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 
 enum AdminLoyaltyStatus { initial, loading, ready, failure }
 

@@ -1,17 +1,20 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
-import 'package:admin_app/features/tables/data/repositories/dining_tables_repository.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_reservation_draft.dart';
+import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_cubit.dart';
-import 'package:admin_app/features/tables/presentation/widgets/dining_format.dart';
+import 'package:admin_app/features/tables/presentation/widgets/dining_messages.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -237,9 +240,14 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
       canPop: !_saving,
       child: Dialog(
         backgroundColor: theme.colorScheme.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xxl,
+        ),
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
         child: SizedBox(
           width: width,
           height: height,
@@ -255,7 +263,12 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Form(
@@ -283,7 +296,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                             required: true,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.px12),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -305,7 +318,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: AppSizes.px10),
                             Expanded(
                               child: TextFormField(
                                 controller: _party,
@@ -341,7 +354,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.px2),
                         DropdownButtonFormField<String>(
                           initialValue: _tableId,
                           isExpanded: true,
@@ -381,7 +394,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                               value == null ? S.reservationTableRequired : null,
                         ),
                         if (_tableLocked) ...[
-                          const SizedBox(height: 6),
+                          const SizedBox(height: AppSizes.px6),
                           Text(
                             S.reservationSeatedTableLocked,
                             style: TextStyle(
@@ -391,29 +404,29 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                             ),
                           ),
                         ],
-                        const SizedBox(height: 14),
+                        const SizedBox(height: AppSizes.px14),
                         Row(
                           children: [
                             Expanded(
                               child: _PickerField(
                                 label: S.reservationDate,
                                 value: localizedDate(_startsAt),
-                                icon: HugeIcons.strokeRoundedCalendar01,
+                                icon: AppIcons.calendar01,
                                 onTap: _saving ? null : _pickDate,
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: AppSizes.px10),
                             Expanded(
                               child: _PickerField(
                                 label: S.reservationTime,
                                 value: localizedTime(_startsAt),
-                                icon: HugeIcons.strokeRoundedClock01,
+                                icon: AppIcons.clock01,
                                 onTap: _saving ? null : _pickTime,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSizes.px10),
                         DropdownButtonFormField<int>(
                           initialValue: _duration,
                           isExpanded: true,
@@ -447,7 +460,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                                   setState(() => _duration = value);
                                 },
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSizes.px10),
                         TextFormField(
                           controller: _note,
                           enabled: !_saving,
@@ -466,11 +479,11 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                           ),
                         ),
                         if (_selectableTables.isEmpty) ...[
-                          const SizedBox(height: 10),
+                          const SizedBox(height: AppSizes.px10),
                           AdminErrorBanner(message: S.tablesEmptyHint),
                         ],
                         if (_error != null) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSizes.px12),
                           AdminErrorBanner(message: _error!),
                         ],
                       ],
@@ -520,20 +533,23 @@ class _PickerField extends StatelessWidget {
     final theme = Theme.of(context);
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(9),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: adminControlBorderColor(theme)),
           ),
           child: Row(
             children: [
-              HugeIcon(icon: icon, size: 15, color: adminMutedColor(theme)),
-              const SizedBox(width: 7),
+              AppIcon(icon, size: 15, color: adminMutedColor(theme)),
+              const SizedBox(width: AppSizes.px8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

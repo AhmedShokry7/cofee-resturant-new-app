@@ -1,16 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_type.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_target_option.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -112,11 +112,13 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screen.width < 600 ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: screen.width < AppBreakpoints.dialogPadding
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
@@ -126,10 +128,10 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
             children: [
               Container(
                 padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppDimensions.lg,
-                  AppDimensions.md,
-                  AppDimensions.sm,
-                  AppDimensions.md,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                  AppSpacing.md,
                 ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
@@ -175,8 +177,8 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedCancel01,
+                      icon: AppIcon(
+                        AppIcons.cancel01,
                         size: 18,
                         color: adminMutedColor(theme),
                       ),
@@ -186,9 +188,9 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
               ),
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppDimensions.lg,
-                  AppDimensions.md,
-                  AppDimensions.lg,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
                   0,
                 ),
                 child: CustomTextFormField(
@@ -197,8 +199,8 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
                   hint: S.loyaltyRewardTargetSearchHint,
                   keyboardType: TextInputType.text,
                   textInputAction: TextInputAction.search,
-                  prefixIcon: const Icon(HugeIcons.strokeRoundedSearch01),
-                  bottomPadding: AppDimensions.md,
+                  prefixIcon: const Icon(AppIcons.search01),
+                  bottomPadding: AppSpacing.md,
                   onChanged: (_) => setState(() {}),
                 ),
               ),
@@ -207,13 +209,14 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
                     ? _EmptyList(hasTargets: typeTargets.isNotEmpty)
                     : ListView.separated(
                         padding: const EdgeInsetsDirectional.fromSTEB(
-                          AppDimensions.md,
+                          AppSpacing.md,
                           0,
-                          AppDimensions.md,
-                          AppDimensions.md,
+                          AppSpacing.md,
+                          AppSpacing.md,
                         ),
                         itemCount: filtered.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 4),
+                        separatorBuilder: (_, _) =>
+                            const SizedBox(height: AppSizes.px4),
                         itemBuilder: (context, index) {
                           final target = filtered[index];
                           final disabled = _isDisabled(target);
@@ -234,10 +237,10 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
               ),
               Container(
                 padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppDimensions.lg,
-                  AppDimensions.sm,
-                  AppDimensions.lg,
-                  AppDimensions.sm,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
@@ -256,7 +259,7 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
                       onPressed: () => Navigator.of(context).pop(),
                       child: Text(S.cancel),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.px8),
                     FilledButton(
                       key: const Key('loyalty-reward-target-choose'),
                       onPressed: _selectedId == null
@@ -264,9 +267,11 @@ class _LoyaltyRewardTargetPickerState extends State<LoyaltyRewardTargetPicker> {
                           : () => Navigator.of(context).pop(_selectedTarget()),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(0, 38),
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                        ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                       ),
                       child: Text(
@@ -322,26 +327,29 @@ class _TargetTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final radius = BorderRadius.circular(10);
+    final radius = BorderRadius.circular(AppRadius.md);
     return Opacity(
       opacity: disabled ? .55 : 1,
       child: Material(
-        color: Colors.transparent,
+        color: AppColor.transparent,
         borderRadius: radius,
         child: InkWell(
           onTap: onTap,
           borderRadius: radius,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
             decoration: BoxDecoration(
               color: selected
                   ? adminTintedSurfaceColor(theme)
-                  : Colors.transparent,
+                  : AppColor.transparent,
               borderRadius: radius,
               border: Border.all(
                 color: selected
                     ? AppColor.adminAccent.withValues(alpha: .45)
-                    : Colors.transparent,
+                    : AppColor.transparent,
               ),
             ),
             child: Row(
@@ -351,7 +359,7 @@ class _TargetTile extends StatelessWidget {
                   size: 38,
                   icon: _typeIcon(target.type),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSizes.px10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,11 +416,9 @@ class _TargetTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                HugeIcon(
-                  icon: selected
-                      ? HugeIcons.strokeRoundedCheckmarkCircle02
-                      : HugeIcons.strokeRoundedCircle,
+                const SizedBox(width: AppSizes.px8),
+                AppIcon(
+                  selected ? AppIcons.checkmarkCircle02 : AppIcons.circle,
                   size: 18,
                   color: selected
                       ? AppColor.adminAccent
@@ -427,9 +433,9 @@ class _TargetTile extends StatelessWidget {
   }
 
   static IconData _typeIcon(AdminLoyaltyRewardType type) => switch (type) {
-    AdminLoyaltyRewardType.product => HugeIcons.strokeRoundedPackage,
-    AdminLoyaltyRewardType.bundle => HugeIcons.strokeRoundedShoppingBag01,
-    AdminLoyaltyRewardType.plan => HugeIcons.strokeRoundedRepeat,
+    AdminLoyaltyRewardType.product => AppIcons.package,
+    AdminLoyaltyRewardType.bundle => AppIcons.shoppingBag01,
+    AdminLoyaltyRewardType.plan => AppIcons.repeat,
   };
 }
 
@@ -444,16 +450,12 @@ class _EmptyList extends StatelessWidget {
     final muted = adminMutedColor(theme);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.lg),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedSearch01,
-              size: 26,
-              color: muted,
-            ),
-            const SizedBox(height: 8),
+            AppIcon(AppIcons.search01, size: 26, color: muted),
+            const SizedBox(height: AppSizes.px8),
             Text(
               hasTargets ? S.loyaltyNoTargetsFound : S.loyaltyProductsEmpty,
               textAlign: TextAlign.center,

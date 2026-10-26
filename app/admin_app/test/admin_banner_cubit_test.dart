@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/data/repositories/admin_banner_repository.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_state.dart';

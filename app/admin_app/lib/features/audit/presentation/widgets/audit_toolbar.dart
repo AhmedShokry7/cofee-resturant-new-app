@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/audit/presentation/models/audit_filters.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_format.dart';
@@ -60,16 +61,16 @@ class AuditToolbar extends StatelessWidget {
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 18,
+                          width: AppSizes.px18,
                           child: option == domain
-                              ? const HugeIcon(
-                                  icon: HugeIcons.strokeRoundedTick01,
+                              ? const AppIcon(
+                                  AppIcons.tick01,
                                   size: 15,
                                   color: AppColor.adminAccent,
                                 )
                               : null,
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: AppSizes.px6),
                         Flexible(
                           child: Text(
                             _domainLabel(option),
@@ -87,12 +88,12 @@ class AuditToolbar extends StatelessWidget {
               ],
               child: compact
                   ? AdminToolbarIcon(
-                      icon: HugeIcons.strokeRoundedFilter,
+                      icon: AppIcons.filter,
                       active: domain != AuditDomainFilter.all,
                     )
                   : AdminToolbarSurface(
                       label: _domainLabel(domain),
-                      icon: HugeIcons.strokeRoundedFilter,
+                      icon: AppIcons.filter,
                       active: domain != AuditDomainFilter.all,
                     ),
             ),
@@ -100,15 +101,15 @@ class AuditToolbar extends StatelessWidget {
               message: S.auditFilterCritical,
               child: InkWell(
                 onTap: () => onCriticalChanged(!criticalOnly),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 child: compact
                     ? AdminToolbarIcon(
-                        icon: HugeIcons.strokeRoundedShield01,
+                        icon: AppIcons.shield01,
                         active: criticalOnly,
                       )
                     : AdminToolbarSurface(
                         label: S.auditFilterCritical,
-                        icon: HugeIcons.strokeRoundedShield01,
+                        icon: AppIcons.shield01,
                         active: criticalOnly,
                       ),
               ),
@@ -122,8 +123,8 @@ class AuditToolbar extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding: EdgeInsets.zero,
                 ),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedCancel01,
+                icon: const AppIcon(
+                  AppIcons.cancel01,
                   size: 18,
                   color: AppColor.adminMuted,
                 ),
@@ -135,7 +136,7 @@ class AuditToolbar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               search,
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: actions,

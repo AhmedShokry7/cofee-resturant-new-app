@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_metrics.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_format.dart';
@@ -23,7 +24,7 @@ class AuditMetricsCards extends StatelessWidget {
         label: S.auditMetricTotal,
         caption: localizeDigits(S.auditMetricTotalHint(metrics.week)),
         value: localizeDigits('${metrics.total}'),
-        icon: HugeIcons.strokeRoundedClipboard,
+        icon: AppIcons.clipboard,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.adminAccent,
       ),
@@ -31,7 +32,7 @@ class AuditMetricsCards extends StatelessWidget {
         label: S.auditMetricToday,
         caption: localizeDigits(S.auditMetricTodayHint(latest)),
         value: localizeDigits('${metrics.today}'),
-        icon: HugeIcons.strokeRoundedCalendar03,
+        icon: AppIcons.calendar03,
         iconBackground: AppColor.adminInfoSurface,
         iconColor: AppColor.adminInfo,
       ),
@@ -41,7 +42,7 @@ class AuditMetricsCards extends StatelessWidget {
           S.auditMetricCriticalWeekHint(metrics.criticalWeek),
         ),
         value: localizeDigits('${metrics.critical}'),
-        icon: HugeIcons.strokeRoundedShield01,
+        icon: AppIcons.shield01,
         iconBackground: AppColor.trendNegativeSurface,
         iconColor: AppColor.trendNegative,
       ),
@@ -49,7 +50,7 @@ class AuditMetricsCards extends StatelessWidget {
         label: S.auditMetricActors,
         caption: localizeDigits(S.auditMetricActorsHint(metrics.branches)),
         value: localizeDigits('${metrics.actors}'),
-        icon: HugeIcons.strokeRoundedUserMultiple,
+        icon: AppIcons.userMultiple,
         iconBackground: AppColor.trendPositiveSurface,
         iconColor: AppColor.trendPositive,
       ),
@@ -58,7 +59,7 @@ class AuditMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

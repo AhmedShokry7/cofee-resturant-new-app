@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
-import 'package:admin_app/features/notifications/data/repositories/admin_notifications_repository.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_cubit.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_state.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
@@ -16,7 +17,7 @@ import 'package:admin_app/features/notifications/presentation/widgets/notificati
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_page_body.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_push_setup_dialog.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class NotificationsPage extends StatefulWidget {
@@ -205,7 +206,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
         final theme = Theme.of(context);
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           title: Text(
             S.notificationsDeleteTitle,
@@ -235,9 +236,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
                 minimumSize: const Size(0, 38),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
               ),
               child: Text(

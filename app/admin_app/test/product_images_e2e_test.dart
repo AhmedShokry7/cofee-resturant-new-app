@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
 
 /// The end-to-end test of the pictures of a product.

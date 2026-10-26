@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_directory.dart';
@@ -38,9 +39,9 @@ class StaffPageBody extends StatelessWidget {
           AdminPageHeader(title: S.staffLabel, subtitle: S.staffDescription),
           if (errorMessage != null)
             AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           StaffMetricsCards(staff: staff),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSizes.px16),
           Expanded(
             child: StaffDirectory(
               staff: staff,

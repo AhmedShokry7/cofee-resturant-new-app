@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_actions_menu.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_badges.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
@@ -34,7 +35,7 @@ class CouponCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: coupons.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final coupon = coupons[index];
         return _CouponCard(
@@ -77,14 +78,14 @@ class _CouponCard extends StatelessWidget {
         couponScopeHint(coupon);
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: canManage ? onOpen : null,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Column(
@@ -93,7 +94,7 @@ class _CouponCard extends StatelessWidget {
               Row(
                 children: [
                   CouponDiscountTile(coupon: coupon, size: 46),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +123,7 @@ class _CouponCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   CouponStatusBadge(coupon: coupon),
                   if (canManage)
                     CouponActionsMenu(
@@ -140,7 +141,7 @@ class _CouponCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
                   Flexible(
@@ -167,9 +168,9 @@ class _CouponCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 11),
+              const SizedBox(height: AppSizes.px12),
               CouponDashedLine(color: adminRowBorderColor(theme)),
-              const SizedBox(height: 11),
+              const SizedBox(height: AppSizes.px12),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final width = (constraints.maxWidth - 10) / 2;
@@ -180,7 +181,7 @@ class _CouponCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _Stat(
-                          icon: HugeIcons.strokeRoundedTag01,
+                          icon: AppIcons.tag01,
                           label: S.couponsTableScope,
                           value: couponScopeLabel(coupon),
                           caption: couponScopeHint(coupon),
@@ -189,7 +190,7 @@ class _CouponCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _Stat(
-                          icon: HugeIcons.strokeRoundedRefresh,
+                          icon: AppIcons.refresh,
                           label: S.couponsTableUsage,
                           value: couponUsageLabel(coupon),
                           caption: coupon.usageLimit == null
@@ -200,7 +201,7 @@ class _CouponCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _Stat(
-                          icon: HugeIcons.strokeRoundedCoins01,
+                          icon: AppIcons.coins01,
                           label: S.couponsTableGiven,
                           value: couponPerformanceLabel(coupon),
                           caption: couponPerformanceDetail(coupon),
@@ -209,7 +210,7 @@ class _CouponCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _Stat(
-                          icon: HugeIcons.strokeRoundedCalendar03,
+                          icon: AppIcons.calendar03,
                           label: S.couponsTableWindow,
                           value: couponWindowDetail(coupon),
                           caption: couponWindowLabel(coupon),
@@ -246,8 +247,8 @@ class _Stat extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
-        const SizedBox(width: 6),
+        AppIcon(icon, size: 14, color: adminMutedColor(theme)),
+        const SizedBox(width: AppSizes.px6),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

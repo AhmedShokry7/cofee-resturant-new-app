@@ -8,7 +8,7 @@ import 'package:admin_app/features/payments/presentation/manager/admin_payment_c
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_state.dart';
 import 'package:admin_app/features/payments/presentation/pages/payment_page.dart';
 import 'package:admin_app/features/payments/presentation/widgets/payment_records.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
 
 class _FakePaymentCubit extends AdminPaymentCubit {

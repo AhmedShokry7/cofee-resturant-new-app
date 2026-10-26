@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/manager/admin_subscription_plan_cubit.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/pages/subscription_plan_page.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_cubit.dart';

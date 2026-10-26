@@ -6,7 +6,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
 
 /// How one plan state is shown: its localized name and colour.
 class SubscriptionPlanStatusView {

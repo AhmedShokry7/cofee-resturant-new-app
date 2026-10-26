@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_cards.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_directory.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_page_body.dart';

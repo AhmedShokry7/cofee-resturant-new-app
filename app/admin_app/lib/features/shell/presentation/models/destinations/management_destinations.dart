@@ -1,21 +1,20 @@
-﻿import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The management domain: the dashboard, the catalogue and the orders.
 List<AdminDestination> get managementDestinations => <AdminDestination>[
   AdminDestination(
     id: 'dashboard',
     label: S.dashboard,
-    icon: HugeIcons.strokeRoundedDashboardSquare01,
+    icon: AppIcons.dashboardSquare01,
     searchHint: S.searchDashboardHint,
     section: S.sectionManagement,
   ),
   AdminDestination(
     id: 'orders',
     label: S.orders,
-    icon: HugeIcons.strokeRoundedReceiptDollar,
+    icon: AppIcons.receiptDollar,
     searchHint: S.searchOrdersHint,
     permission: 'orders.read',
     section: S.sectionManagement,
@@ -31,7 +30,7 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
   AdminDestination(
     id: 'products',
     label: S.products,
-    icon: HugeIcons.strokeRoundedShoppingBag01,
+    icon: AppIcons.shoppingBag01,
     searchHint: S.searchProductsHint,
     permission: 'catalog.product.write',
     section: S.sectionManagement,
@@ -48,7 +47,7 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
   AdminDestination(
     id: 'categories',
     label: S.categories,
-    icon: HugeIcons.strokeRoundedFolder01,
+    icon: AppIcons.folder01,
     searchHint: S.searchCategoriesHint,
     permission: 'catalog.category.write',
     section: S.sectionManagement,
@@ -61,7 +60,7 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
   AdminDestination(
     id: 'bundles',
     label: S.bundles,
-    icon: HugeIcons.strokeRoundedCube,
+    icon: AppIcons.cube,
     searchHint: S.searchBundlesHint,
     permission: 'catalog.product.write',
     section: S.sectionManagement,
@@ -70,7 +69,7 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
   AdminDestination(
     id: 'carts',
     label: S.carts,
-    icon: HugeIcons.strokeRoundedShoppingCart01,
+    icon: AppIcons.shoppingCart01,
     searchHint: S.searchCartsHint,
     permission: 'orders.read',
     section: S.sectionManagement,

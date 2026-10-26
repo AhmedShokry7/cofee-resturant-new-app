@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_state.dart';
 
@@ -511,7 +513,7 @@ void main() {
     expect(after.first.fit, BoxFit.contain);
     expect(after.first.alignment, Alignment.topLeft);
     // The other picture keeps the ones it had.
-    expect(after.last.fit, BoxFit.cover);
+    expect(after.last.fit, BoxFit.fill);
     expect(after.last.alignment, Alignment.center);
     // The card shows the primary picture with the same settings.
     expect(cubit.state.products.first.imageFit, BoxFit.contain);

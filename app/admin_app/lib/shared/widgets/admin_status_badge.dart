@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -20,14 +21,17 @@ class AdminStatusBadge extends StatelessWidget {
     final dark = adminIsDark(theme);
     final foreground = adminFlagForeground(theme, color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           color,
           Color.lerp(color, AppColor.whiteColor, .86)!,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: color.withValues(alpha: dark ? .35 : .18)),
       ),
       child: FittedBox(
@@ -46,13 +50,13 @@ class AdminStatusBadge extends StatelessWidget {
                 height: AppTextHeights.line1_5,
               ),
             ),
-            const SizedBox(width: 5),
+            const SizedBox(width: AppSizes.px6),
             Container(
               width: 5,
               height: 5,
               decoration: BoxDecoration(
                 color: foreground,
-                borderRadius: BorderRadius.circular(2.5),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
               ),
             ),
           ],

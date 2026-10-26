@@ -1,5 +1,5 @@
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/coupons/data/models/coupon_json.dart';
+import 'package:admin_app/features/coupons/domain/entities/coupon_json.dart';
 
 class AdminCouponCategoryTarget {
   const AdminCouponCategoryTarget({

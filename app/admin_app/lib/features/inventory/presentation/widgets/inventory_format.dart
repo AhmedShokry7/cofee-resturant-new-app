@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 
 const inventoryUnits = <String>[
@@ -53,9 +55,9 @@ Color inventoryStatusColor(String status) => switch (status) {
 };
 
 IconData inventoryStatusIcon(String status) => switch (status) {
-  'out' => HugeIcons.strokeRoundedPackageRemove,
-  'low' => HugeIcons.strokeRoundedAlert02,
-  _ => HugeIcons.strokeRoundedPackage,
+  'out' => AppIcons.packageRemove,
+  'low' => AppIcons.alert02,
+  _ => AppIcons.package,
 };
 
 String inventoryTypeFilterLabel(StockMovementTypeFilter filter) =>
@@ -102,11 +104,11 @@ Color stockMovementTypeColor(InventoryMovementType? type) => switch (type) {
 };
 
 IconData stockMovementTypeIcon(InventoryMovementType? type) => switch (type) {
-  InventoryMovementType.receipt => HugeIcons.strokeRoundedArrowDown01,
-  InventoryMovementType.issue => HugeIcons.strokeRoundedArrowUp01,
-  InventoryMovementType.waste => HugeIcons.strokeRoundedDelete02,
-  InventoryMovementType.count => HugeIcons.strokeRoundedClipboard,
-  null => HugeIcons.strokeRoundedExchange01,
+  InventoryMovementType.receipt => AppIcons.arrowDown01,
+  InventoryMovementType.issue => AppIcons.arrowUp01,
+  InventoryMovementType.waste => AppIcons.delete02,
+  InventoryMovementType.count => AppIcons.clipboard,
+  null => AppIcons.exchange01,
 };
 
 /// A grouped quantity without its unit, e.g. `1,250.5`.

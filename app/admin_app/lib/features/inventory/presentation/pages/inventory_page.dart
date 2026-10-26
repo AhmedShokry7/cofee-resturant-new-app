@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_cubit.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_state.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_material_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_movement_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class InventoryPage extends StatefulWidget {
@@ -111,7 +112,9 @@ class _InventoryPageState extends State<InventoryPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
         title: Text(
           S.materialDeleteTitle,
           style: const TextStyle(
@@ -136,9 +139,9 @@ class _InventoryPageState extends State<InventoryPage> {
             style: FilledButton.styleFrom(
               backgroundColor: AppColor.errorColor,
               minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
             child: Text(

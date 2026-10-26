@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
 /// A customer photo with a neutral placeholder behind it.
@@ -53,7 +53,7 @@ class AdminAvatarImage extends StatelessWidget {
       color: placeholderColor ?? AppColor.secondaryColor,
       child: Center(
         child: text.isEmpty
-            ? Icon(HugeIcons.strokeRoundedUser, size: _iconSize)
+            ? Icon(AppIcons.user, size: _iconSize)
             : Text(
                 text,
                 textAlign: TextAlign.center,
@@ -83,4 +83,16 @@ class AdminAvatarImage extends StatelessWidget {
       ),
     );
   }
+}
+
+/// خلفية وحبر الصورة الأولية لمعرف بعينه.
+///
+/// نفس المعرف يعطي نفس اللون دائمًا في كل الشاشات، فاللون يصير علامة صاحب
+/// السجل لا رقمًا يتغير بين جدول وآخر.
+(Color, Color) adminInitialTint(String id) {
+  var hash = 0;
+  for (final code in id.codeUnits) {
+    hash = (hash * 31 + code) & 0x7fffffff;
+  }
+  return AppColor.initialTints[hash % AppColor.initialTints.length];
 }

@@ -1,4 +1,4 @@
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 
 enum AdminCategoryStatus { initial, loading, ready, failure }
 

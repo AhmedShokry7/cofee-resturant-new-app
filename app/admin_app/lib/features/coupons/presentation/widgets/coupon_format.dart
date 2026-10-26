@@ -3,7 +3,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 
 String couponCount(int value) => localizeDigits(formatCount(value));
 

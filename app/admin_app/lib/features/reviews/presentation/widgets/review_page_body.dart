@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review_metrics.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_directory.dart';
@@ -47,15 +48,15 @@ class ReviewPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             ReviewMetricsCards(metrics: metrics),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSizes.px14),
             ReviewRatingSummary(
               metrics: metrics,
               selectedRating: selectedRating,
               onRatingSelected: onRatingSelected,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSizes.px14),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -63,7 +64,10 @@ class ReviewPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 640, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightLg,
+                    child: directory,
+                  ),
                 ],
               ),
             );

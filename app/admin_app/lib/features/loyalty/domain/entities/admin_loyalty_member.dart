@@ -1,4 +1,4 @@
-import 'package:admin_app/features/loyalty/data/models/loyalty_json.dart';
+import 'package:admin_app/features/loyalty/domain/entities/loyalty_json.dart';
 
 class AdminLoyaltyMember {
   const AdminLoyaltyMember({

@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -113,7 +114,10 @@ class CouponCodeChip extends StatelessWidget {
     final content = CustomPaint(
       painter: _DashedBorderPainter(color: border, radius: 7),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -133,9 +137,9 @@ class CouponCodeChip extends StatelessWidget {
               ),
             ),
             if (onCopy != null) ...[
-              const SizedBox(width: 6),
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedCopy01,
+              const SizedBox(width: AppSizes.px6),
+              AppIcon(
+                AppIcons.copy01,
                 size: 13,
                 color: onDark ? AppColor.white70 : adminMutedColor(theme),
               ),
@@ -146,12 +150,12 @@ class CouponCodeChip extends StatelessWidget {
     );
     final chip = Material(
       color: background,
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: onCopy == null
           ? content
           : InkWell(
               onTap: onCopy,
-              borderRadius: BorderRadius.circular(7),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               child: content,
             ),
     );
@@ -192,11 +196,11 @@ class CouponUsageMeter extends StatelessWidget {
             height: AppTextHeights.line1_5,
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSizes.px6),
         SizedBox(
           width: 102,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             child: LinearProgressIndicator(
               value: limited ? progress : 0,
               minHeight: 4,
@@ -205,7 +209,7 @@ class CouponUsageMeter extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSizes.px4),
         Text(
           limited
               ? S.couponsRemaining(coupon.remainingUses ?? 0)

@@ -1,24 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_usage.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/repositories/subscription_repository.dart';
 
-enum SubscriptionCancelOutcome {
-  cancelled,
-  notFound,
-  notCancellable,
-  reservedCups,
-  failed,
-}
-
-class AdminSubscriptionRepository {
+class AdminSubscriptionRepository implements SubscriptionRepository {
   AdminSubscriptionRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminSubscription>> loadSubscriptions() async {
     final response = await _supabase.rpc('admin_subscriptions');
     if (response is List) {
@@ -32,6 +26,7 @@ class AdminSubscriptionRepository {
     return const <AdminSubscription>[];
   }
 
+  @override
   Future<List<AdminSubscriptionUsage>> loadUsage(String subscriptionId) async {
     final response = await _supabase.rpc(
       'admin_subscription_usage',
@@ -49,6 +44,7 @@ class AdminSubscriptionRepository {
     return const <AdminSubscriptionUsage>[];
   }
 
+  @override
   Future<SubscriptionCancelOutcome> cancelSubscription(
     String subscriptionId,
   ) async {

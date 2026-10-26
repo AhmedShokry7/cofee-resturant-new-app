@@ -2,14 +2,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
+import 'package:admin_app/features/staff/domain/repositories/staff_repository.dart';
 
-class AdminStaffRepository {
+class AdminStaffRepository implements StaffRepository {
   AdminStaffRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminStaffMember>> loadStaff() async {
     final response = await _supabase.rpc('admin_staff');
     if (response is List) {
@@ -23,6 +25,7 @@ class AdminStaffRepository {
     return const <AdminStaffMember>[];
   }
 
+  @override
   Future<List<Map<String, dynamic>>> loadPermissions() async {
     final response = await _supabase.rpc('admin_permissions');
     if (response is List) {
@@ -34,6 +37,7 @@ class AdminStaffRepository {
     return const <Map<String, dynamic>>[];
   }
 
+  @override
   Future<void> setStaffPermission(
     String staffId,
     String permissionCode,

@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_draft.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_type.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_target_option.dart';
-import 'package:admin_app/features/loyalty/data/repositories/admin_loyalty_repository.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_draft.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
+import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_state.dart';
-import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
-import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_reward_target_picker.dart';
+import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
@@ -93,16 +93,17 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
   }
 
   Widget _buildDialog(BuildContext context, AdminLoyaltyState state) {
-    final narrow = MediaQuery.sizeOf(context).width < 600;
+    final narrow =
+        MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding;
 
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: narrow ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: narrow ? AppSpacing.md : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -118,10 +119,10 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppDimensions.lg,
-                  AppDimensions.sm,
-                  AppDimensions.lg,
-                  AppDimensions.lg,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
                 ),
                 child: Form(
                   key: _formKey,
@@ -160,7 +161,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                         onChanged: (value) => setState(() => _isActive = value),
                       ),
                       if (_error != null) ...[
-                        const SizedBox(height: AppDimensions.sm),
+                        const SizedBox(height: AppSpacing.sm),
                         AdminErrorBanner(message: _error!),
                       ],
                     ],
@@ -185,10 +186,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
   Widget _section(String title) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppDimensions.lg,
-        bottom: AppDimensions.sm,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
       child: Row(
         children: [
           Container(
@@ -196,10 +194,10 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
             height: 14,
             decoration: BoxDecoration(
               color: AppColor.adminAccent,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: AppSizes.px8),
           Text(
             title,
             style: TextStyle(
@@ -236,10 +234,10 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
     final loading = state.targetsLoading;
     final targetsEmpty = state.targets.isEmpty;
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -254,16 +252,16 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(color: adminCardBorderColor(theme)),
                   ),
-                  child: HugeIcon(
-                    icon: _typeIcon(_type),
+                  child: AppIcon(
+                    _typeIcon(_type),
                     size: 18,
                     color: adminMutedColor(theme),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSizes.px10),
                 Expanded(
                   child: Text(
                     _typeHint(_type),
@@ -274,7 +272,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSizes.px8),
                 _chooseButton(
                   key: const Key('loyalty-reward-choose-target'),
                   label: S.loyaltyRewardTargetChoose,
@@ -291,7 +289,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                   size: 42,
                   icon: _typeIcon(_type),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSizes.px10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,7 +318,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSizes.px8),
                 _chooseButton(
                   key: const Key('loyalty-reward-change-target'),
                   label: S.loyaltyRewardTargetChange,
@@ -343,15 +341,15 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
             ),
           if (state.targetsError != null)
             Padding(
-              padding: const EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: Row(
                 children: [
-                  const HugeIcon(
-                    icon: HugeIcons.strokeRoundedAlertCircle,
+                  const AppIcon(
+                    AppIcons.alert,
                     size: 14,
                     color: AppColor.errorColor,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   Expanded(
                     child: Text(
                       S.loyaltyProductsLoadFailed,
@@ -386,16 +384,16 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
       onPressed: busy ? null : onPressed,
       style: TextButton.styleFrom(
         minimumSize: const Size(0, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
         visualDensity: VisualDensity.compact,
       ),
       icon: busy
           ? const SizedBox(
-              width: 13,
-              height: 13,
+              width: AppSizes.px14,
+              height: AppSizes.px14,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const Icon(HugeIcons.strokeRoundedEdit01, size: 15),
+          : const Icon(AppIcons.edit01, size: 15),
       label: Text(label),
     );
   }
@@ -408,7 +406,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               for (var index = 0; index < children.length; index++) ...[
-                if (index > 0) const SizedBox(height: AppDimensions.sm),
+                if (index > 0) const SizedBox(height: AppSpacing.sm),
                 children[index],
               ],
             ],
@@ -418,7 +416,7 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (var index = 0; index < children.length; index++) ...[
-              if (index > 0) const SizedBox(width: AppDimensions.md),
+              if (index > 0) const SizedBox(width: AppSpacing.md),
               Expanded(child: children[index]),
             ],
           ],
@@ -613,9 +611,9 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
   };
 
   static IconData _typeIcon(AdminLoyaltyRewardType type) => switch (type) {
-    AdminLoyaltyRewardType.product => HugeIcons.strokeRoundedPackage,
-    AdminLoyaltyRewardType.bundle => HugeIcons.strokeRoundedShoppingBag01,
-    AdminLoyaltyRewardType.plan => HugeIcons.strokeRoundedRepeat,
+    AdminLoyaltyRewardType.product => AppIcons.package,
+    AdminLoyaltyRewardType.bundle => AppIcons.shoppingBag01,
+    AdminLoyaltyRewardType.plan => AppIcons.repeat,
   };
 
   static AdminLoyaltyTargetOption _optionFromReward(AdminLoyaltyReward reward) {
@@ -655,7 +653,7 @@ class _TypeChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final radius = BorderRadius.circular(9);
+    final radius = BorderRadius.circular(AppRadius.md);
     final foreground = selected ? AppColor.adminAccent : adminBodyColor(theme);
     return Material(
       color: selected
@@ -667,7 +665,7 @@ class _TypeChip extends StatelessWidget {
         borderRadius: radius,
         child: Container(
           height: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(
@@ -679,12 +677,12 @@ class _TypeChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: _LoyaltyRewardDialogState._typeIcon(type),
+              AppIcon(
+                _LoyaltyRewardDialogState._typeIcon(type),
                 size: 15,
                 color: foreground,
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 loyaltyRewardTypeLabel(type),
                 style: TextStyle(

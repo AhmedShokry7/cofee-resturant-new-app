@@ -1,11 +1,11 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_log.dart';
@@ -102,19 +102,19 @@ String auditDomainLabel(String domain) => switch (domain) {
 };
 
 IconData auditDomainIcon(String domain) => switch (domain) {
-  'core' => HugeIcons.strokeRoundedStore01,
-  'order' => HugeIcons.strokeRoundedShoppingCart01,
-  'kitchen' => HugeIcons.strokeRoundedChefHat,
-  'catalog' => HugeIcons.strokeRoundedPackage,
-  'marketing' => HugeIcons.strokeRoundedTag01,
-  'loyalty' => HugeIcons.strokeRoundedGift,
-  'subscription' => HugeIcons.strokeRoundedRepeat,
-  'engagement' => HugeIcons.strokeRoundedNotification01,
-  'stock' => HugeIcons.strokeRoundedCube,
-  'staff' => HugeIcons.strokeRoundedUserMultiple,
-  'payment' => HugeIcons.strokeRoundedCreditCard,
-  'identity' => HugeIcons.strokeRoundedSecurityCheck,
-  _ => HugeIcons.strokeRoundedClipboard,
+  'core' => AppIcons.store01,
+  'order' => AppIcons.shoppingCart01,
+  'kitchen' => AppIcons.chefHat,
+  'catalog' => AppIcons.package,
+  'marketing' => AppIcons.tag01,
+  'loyalty' => AppIcons.gift,
+  'subscription' => AppIcons.repeat,
+  'engagement' => AppIcons.notification01,
+  'stock' => AppIcons.cube,
+  'staff' => AppIcons.userMultiple,
+  'payment' => AppIcons.creditCard,
+  'identity' => AppIcons.securityCheck,
+  _ => AppIcons.clipboard,
 };
 
 Color auditDomainColor(String domain) => switch (domain) {

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'package:admin_app/core/error/failure.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 
 /// الحالات التي تمر بها شاشة المصادقة.
 sealed class AuthState extends Equatable {

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_member.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 import 'package:admin_app/features/loyalty/presentation/models/loyalty_filters.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_activity_cards.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_activity_table.dart';
@@ -197,7 +198,10 @@ class _LoyaltyDirectoryState extends State<LoyaltyDirectory> {
     final canClear = _hasActiveFilter || widget.search.trim().isNotEmpty;
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -208,13 +212,13 @@ class _LoyaltyDirectoryState extends State<LoyaltyDirectory> {
             activityCount: widget.transactionsTotal,
             onChanged: _setTab,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSizes.px12),
           _toolbar(),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           if (_tab == LoyaltyTab.activity &&
               widget.transactionsTotal > widget.transactions.length)
             Padding(
-              padding: const EdgeInsets.only(bottom: 10),
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: _ActivityWindowNote(
                 shown: widget.transactions.length,
                 total: widget.transactionsTotal,
@@ -334,17 +338,17 @@ class _LoyaltyDirectoryState extends State<LoyaltyDirectory> {
   Widget _emptyState({required bool canClear}) {
     final (icon, message, showAdd) = switch (_tab) {
       LoyaltyTab.rewards => (
-        HugeIcons.strokeRoundedGift,
+        AppIcons.gift,
         _hasAnyData ? S.loyaltyNoRewardsMatches : S.loyaltyNoRewards,
         !_hasAnyData,
       ),
       LoyaltyTab.members => (
-        HugeIcons.strokeRoundedUserMultiple,
+        AppIcons.userMultiple,
         _hasAnyData ? S.loyaltyNoMembersMatches : S.loyaltyNoMembers,
         false,
       ),
       LoyaltyTab.activity => (
-        HugeIcons.strokeRoundedClock01,
+        AppIcons.clock01,
         _hasAnyData ? S.loyaltyNoActivityMatches : S.loyaltyNoActivity,
         false,
       ),
@@ -357,7 +361,7 @@ class _LoyaltyDirectoryState extends State<LoyaltyDirectory> {
           : showAdd && widget.canManage
           ? TextButton.icon(
               onPressed: widget.onAdd,
-              icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
+              icon: const Icon(AppIcons.add01, size: 16),
               label: Text(S.loyaltyAddReward),
             )
           : null,
@@ -392,10 +396,10 @@ class _LoyaltyTabs extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Container(
-        padding: const EdgeInsets.all(3),
+        padding: const EdgeInsets.all(AppSpacing.xxs),
         decoration: BoxDecoration(
           color: adminTintedSurfaceColor(theme),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(color: adminCardBorderColor(theme)),
         ),
         child: Row(
@@ -415,21 +419,26 @@ class _LoyaltyTabs extends StatelessWidget {
     return Padding(
       padding: const EdgeInsetsDirectional.only(end: 3),
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        color: AppColor.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: () => onChanged(value),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: Container(
             constraints: const BoxConstraints(minHeight: 29),
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
-              color: selected ? theme.colorScheme.surface : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
+              color: selected
+                  ? theme.colorScheme.surface
+                  : AppColor.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(
                 color: selected
                     ? adminCardBorderColor(theme)
-                    : Colors.transparent,
+                    : AppColor.transparent,
               ),
             ),
             child: Row(
@@ -449,11 +458,11 @@ class _LoyaltyTabs extends StatelessWidget {
                     height: AppTextHeights.line1_5,
                   ),
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.px6),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 1,
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xxs,
                   ),
                   decoration: BoxDecoration(
                     color: selected
@@ -463,7 +472,7 @@ class _LoyaltyTabs extends StatelessWidget {
                             AppColor.adminAccentSurface,
                           )
                         : adminTintedSurfaceColor(theme),
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
                     loyaltyCount(count),
@@ -496,19 +505,22 @@ class _ActivityWindowNote extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedInformationCircle,
+          AppIcon(
+            AppIcons.informationCircle,
             size: 14,
             color: adminMutedColor(theme),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               localizeDigits(S.loyaltyActivityShowingNewest(shown, total)),

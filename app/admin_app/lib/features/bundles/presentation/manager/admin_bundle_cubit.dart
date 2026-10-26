@@ -2,28 +2,58 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
-import 'package:admin_app/features/bundles/data/repositories/admin_bundle_repository.dart';
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
+import 'package:admin_app/features/bundles/di/bundles_dependencies.dart';
+import 'package:admin_app/features/bundles/domain/repositories/bundle_repository.dart';
+import 'package:admin_app/features/bundles/domain/usecases/create_bundle.dart';
+import 'package:admin_app/features/bundles/domain/usecases/delete_bundle.dart';
+import 'package:admin_app/features/bundles/domain/usecases/delete_bundle_image_file.dart';
+import 'package:admin_app/features/bundles/domain/usecases/load_bundles.dart';
+import 'package:admin_app/features/bundles/domain/usecases/set_bundle_active.dart';
+import 'package:admin_app/features/bundles/domain/usecases/update_bundle.dart';
+import 'package:admin_app/features/bundles/domain/usecases/update_bundle_image.dart';
+import 'package:admin_app/features/bundles/domain/usecases/upload_bundle_image.dart';
+import 'package:admin_app/app_dependencies.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_state.dart';
 
 class AdminBundleCubit extends Cubit<AdminBundleState> {
   AdminBundleCubit({
-    AdminBundleRepository? repository,
-    AdminProductRepository? productRepository,
-  }) : _repository = repository ?? AdminBundleRepository(),
-       _productRepository = productRepository ?? AdminProductRepository(),
-       super(const AdminBundleState());
+    BundleRepository? repository,
+    CatalogData? productRepository,
+  }) : this._withUseCases(
+         repository ?? BundlesDependencies.repository,
+         productRepository ?? AppDependencies.catalog,
+       );
 
-  final AdminBundleRepository _repository;
-  final AdminProductRepository _productRepository;
+  AdminBundleCubit._withUseCases(
+    BundleRepository repository,
+    CatalogData productRepository,
+  ) : _loadBundles = LoadBundlesUseCase(repository),
+      _createBundle = CreateBundleUseCase(repository),
+      _updateBundle = UpdateBundleUseCase(repository),
+      _deleteBundle = DeleteBundleUseCase(repository),
+      _setBundleActive = SetBundleActiveUseCase(repository),
+      _updateBundleImage = UpdateBundleImageUseCase(repository),
+      _uploadBundleImage = UploadBundleImageUseCase(repository),
+      _deleteBundleImageFile = DeleteBundleImageFileUseCase(repository),
+      _productRepository = productRepository,
+      super(const AdminBundleState());
 
-  AdminBundleRepository get repository => _repository;
+  final LoadBundlesUseCase _loadBundles;
+  final CreateBundleUseCase _createBundle;
+  final UpdateBundleUseCase _updateBundle;
+  final DeleteBundleUseCase _deleteBundle;
+  final SetBundleActiveUseCase _setBundleActive;
+  final UpdateBundleImageUseCase _updateBundleImage;
+  final UploadBundleImageUseCase _uploadBundleImage;
+  final DeleteBundleImageFileUseCase _deleteBundleImageFile;
+  final CatalogData _productRepository;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminBundleStatus.loading, clearError: true));
     try {
-      final bundles = await _repository.loadBundles();
+      final bundles = await _loadBundles();
       final snapshot = await _productRepository.loadCatalog();
       emit(
         state.copyWith(
@@ -45,7 +75,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
   }
 
   Future<AdminBundle> createBundle(AdminBundle bundle) async {
-    final created = await _repository.createBundle(bundle);
+    final created = await _createBundle(bundle);
     emit(
       state.copyWith(
         bundles: <AdminBundle>[...state.bundles, created],
@@ -56,7 +86,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
   }
 
   Future<void> updateBundle(AdminBundle bundle) async {
-    final updated = await _repository.updateBundle(bundle);
+    final updated = await _updateBundle(bundle);
     emit(
       state.copyWith(
         bundles: state.bundles
@@ -68,7 +98,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
   }
 
   Future<void> deleteBundle(String bundleId) async {
-    await _repository.deleteBundle(bundleId);
+    await _deleteBundle(bundleId);
     emit(
       state.copyWith(
         bundles: state.bundles
@@ -111,7 +141,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
 
     for (final bundleId in requested) {
       try {
-        await _repository.deleteBundle(bundleId);
+        await _deleteBundle(bundleId);
         deleted.add(bundleId);
       } catch (_) {
         failures++;
@@ -134,7 +164,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
 
   Future<void> toggleActive(AdminBundle bundle) async {
     final next = !bundle.isActive;
-    await _repository.setBundleActive(bundle.id, next);
+    await _setBundleActive(bundle.id, next);
     emit(
       state.copyWith(
         bundles: state.bundles
@@ -146,7 +176,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
   }
 
   Future<String?> updateBundleImage(String bundleId, String? imageUrl) async {
-    await _repository.updateBundleImage(bundleId, imageUrl);
+    await _updateBundleImage(bundleId, imageUrl);
     emit(
       state.copyWith(
         bundles: state.bundles
@@ -171,7 +201,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
     required String fileName,
     required String contentType,
   }) async {
-    final url = await _repository.uploadBundleImage(
+    final url = await _uploadBundleImage(
       bundleId: bundleId,
       bytes: bytes,
       fileName: fileName,
@@ -182,6 +212,6 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
   }
 
   Future<void> deleteBundleImageFile(String? imageUrl) async {
-    await _repository.deleteBundleImageFile(imageUrl);
+    await _deleteBundleImageFile(imageUrl);
   }
 }

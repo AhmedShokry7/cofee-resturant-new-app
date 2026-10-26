@@ -1,80 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/tables/data/models/dining_overview.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
-
-enum DiningLoadFailure { permissionDenied, noBranch, failed }
-
-class DiningLoadException implements Exception {
-  const DiningLoadException(this.failure, [this.message]);
-
-  final DiningLoadFailure failure;
-  final String? message;
-
-  @override
-  String toString() => message ?? failure.name;
-}
-
-enum DiningTableSaveOutcome {
-  saved,
-  invalidName,
-  invalidArea,
-  invalidCapacity,
-  invalidNote,
-  invalidBranch,
-  duplicateName,
-  notFound,
-  permissionDenied,
-  failed,
-}
-
-enum DiningTableMutationOutcome {
-  success,
-  notFound,
-  inUse,
-  hasHistory,
-  permissionDenied,
-  failed,
-}
-
-enum DiningReservationSaveOutcome {
-  saved,
-  invalidName,
-  invalidPhone,
-  invalidParty,
-  invalidDuration,
-  invalidNote,
-  invalidTime,
-  invalidTable,
-  partyTooLarge,
-  overlap,
-  closedReservation,
-  seatedTableLocked,
-  notFound,
-  permissionDenied,
-  failed,
-}
-
-enum DiningReservationStatusOutcome {
-  success,
-  invalidStatus,
-  invalidTable,
-  tableBusy,
-  notFound,
-  permissionDenied,
-  failed,
-}
+import 'package:admin_app/features/tables/domain/entities/dining_overview.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_reservation_draft.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_table_draft.dart';
+import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 
 /// The dining floor and its guest bookings.
-class DiningTablesRepository {
+class DiningTablesRepository implements DiningTableRepository {
   DiningTablesRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<DiningOverview> loadOverview({String? branchId}) async {
     try {
       final response = await _supabase.rpc(
@@ -94,6 +34,7 @@ class DiningTablesRepository {
     }
   }
 
+  @override
   Future<DiningTableSaveOutcome> saveTable(DiningTableDraft draft) async {
     try {
       final response = await _supabase.rpc(
@@ -120,6 +61,7 @@ class DiningTablesRepository {
     }
   }
 
+  @override
   Future<DiningTableMutationOutcome> setTableActive(
     String tableId,
     bool active,
@@ -144,6 +86,7 @@ class DiningTablesRepository {
     }
   }
 
+  @override
   Future<DiningTableMutationOutcome> deleteTable(String tableId) async {
     try {
       final response = await _supabase.rpc(
@@ -166,6 +109,7 @@ class DiningTablesRepository {
     }
   }
 
+  @override
   Future<DiningReservationSaveOutcome> saveReservation(
     DiningReservationDraft draft,
   ) async {
@@ -199,6 +143,7 @@ class DiningTablesRepository {
     }
   }
 
+  @override
   Future<DiningReservationStatusOutcome> setReservationStatus(
     String reservationId,
     String status,
@@ -244,107 +189,5 @@ class DiningTablesRepository {
   static String? _blankToNull(String? value) {
     final trimmed = value?.trim();
     return trimmed == null || trimmed.isEmpty ? null : trimmed;
-  }
-}
-
-/// The editable fields of a table/room.
-class DiningTableDraft {
-  const DiningTableDraft({
-    this.id,
-    required this.branchId,
-    required this.name,
-    this.area = 'hall',
-    this.capacity = 2,
-    this.note = '',
-    this.sortOrder = 0,
-    this.isActive = true,
-  });
-
-  final String? id;
-  final String branchId;
-  final String name;
-  final String area;
-  final int capacity;
-  final String note;
-  final int sortOrder;
-  final bool isActive;
-
-  Map<String, Object?> toJson() {
-    return {
-      if (id != null) 'id': id,
-      'branch_id': branchId,
-      'name': name.trim(),
-      'area': area,
-      'capacity': capacity,
-      'note': note.trim(),
-      'sort_order': sortOrder,
-      'is_active': isActive,
-    };
-  }
-
-  factory DiningTableDraft.fromTable(DiningTable table) {
-    return DiningTableDraft(
-      id: table.id,
-      branchId: table.branchId,
-      name: table.name,
-      area: table.area.value,
-      capacity: table.capacity,
-      note: table.note,
-      sortOrder: table.sortOrder,
-      isActive: table.isActive,
-    );
-  }
-}
-
-/// The editable fields of a booking.
-class DiningReservationDraft {
-  const DiningReservationDraft({
-    this.id,
-    required this.tableId,
-    required this.customerName,
-    this.customerPhone = '',
-    this.partySize = 2,
-    required this.reservedFor,
-    this.durationMinutes = 90,
-    this.note = '',
-  });
-
-  final String? id;
-  final String tableId;
-  final String customerName;
-  final String customerPhone;
-  final int partySize;
-  final DateTime reservedFor;
-  final int durationMinutes;
-  final String note;
-
-  Map<String, Object?> toJson() {
-    return {
-      if (id != null) 'id': id,
-      'table_id': tableId,
-      'customer_name': customerName.trim(),
-      'customer_phone': customerPhone.trim(),
-      'party_size': partySize,
-      'reserved_for': reservedFor.toUtc().toIso8601String(),
-      'duration_minutes': durationMinutes,
-      'note': note.trim(),
-    };
-  }
-
-  factory DiningReservationDraft.fromReservation(
-    DiningReservation reservation,
-  ) {
-    return DiningReservationDraft(
-      id: reservation.id,
-      tableId: reservation.tableId,
-      customerName: reservation.customerName,
-      customerPhone: reservation.customerPhone,
-      partySize: reservation.partySize,
-      reservedFor:
-          reservation.reservedFor ??
-          DateTime.now().add(const Duration(hours: 1)),
-      durationMinutes: reservation.durationMinutes,
-      note: reservation.note,
-    );
   }
 }

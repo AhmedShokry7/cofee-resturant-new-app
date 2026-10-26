@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// A rounded network image with a quiet icon while it loads.
@@ -10,7 +10,7 @@ class AdminNetworkThumb extends StatelessWidget {
     super.key,
     this.imageUrl,
     this.size = 46,
-    this.icon = HugeIcons.strokeRoundedPackage,
+    this.icon = AppIcons.package,
     this.width,
     this.height,
     this.fit = BoxFit.fill,
@@ -40,11 +40,7 @@ class AdminNetworkThumb extends StatelessWidget {
         : resolvedHeight;
     final fallback = ColoredBox(
       color: adminTintedSurfaceColor(theme),
-      child: HugeIcon(
-        icon: icon,
-        size: shortest * .4,
-        color: adminMutedColor(theme),
-      ),
+      child: AppIcon(icon, size: shortest * .4, color: adminMutedColor(theme)),
     );
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.circular(size * .2),

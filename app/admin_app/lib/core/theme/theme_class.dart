@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'app_color.dart';
 
@@ -34,7 +34,7 @@ class ThemeClass {
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColor.whiteColor,
         foregroundColor: AppColor.blackColor,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColor.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -53,8 +53,8 @@ class ThemeClass {
           disabledForegroundColor: AppColor.greyColor,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.lg,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_radius),
@@ -63,12 +63,12 @@ class ThemeClass {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.transparent,
+          backgroundColor: AppColor.transparent,
           foregroundColor: AppColor.primaryColor,
           side: const BorderSide(color: AppColor.primaryColor),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.lg,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_radius),
@@ -83,8 +83,8 @@ class ThemeClass {
         fillColor: AppColor.lightGreyColor,
         hintStyle: const TextStyle(color: AppColor.greyColor),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.lg,
-          vertical: AppDimensions.md,
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
@@ -108,7 +108,7 @@ class ThemeClass {
       ),
       cardTheme: CardThemeData(
         color: AppColor.whiteColor,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColor.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -118,7 +118,7 @@ class ThemeClass {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColor.whiteColor,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColor.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_radius),
         ),
@@ -128,7 +128,7 @@ class ThemeClass {
           if (states.contains(WidgetState.selected)) {
             return AppColor.primaryColor;
           }
-          return Colors.transparent;
+          return AppColor.transparent;
         }),
         side: const BorderSide(color: AppColor.borderColor),
       ),
@@ -176,7 +176,7 @@ class ThemeClass {
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColor.darkSurface,
         foregroundColor: AppColor.darkText,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColor.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
@@ -195,8 +195,8 @@ class ThemeClass {
           disabledForegroundColor: AppColor.darkTextSecondary,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.lg,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_radius),
@@ -205,12 +205,12 @@ class ThemeClass {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.transparent,
+          backgroundColor: AppColor.transparent,
           foregroundColor: AppColor.primaryColor,
           side: const BorderSide(color: AppColor.primaryColor),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.lg,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(_radius),
@@ -225,8 +225,8 @@ class ThemeClass {
         fillColor: AppColor.darkSurfaceContainer,
         hintStyle: const TextStyle(color: AppColor.darkTextSecondary),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.lg,
-          vertical: AppDimensions.md,
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(_radius),
@@ -250,7 +250,7 @@ class ThemeClass {
       ),
       cardTheme: CardThemeData(
         color: AppColor.darkSurface,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColor.transparent,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -260,7 +260,7 @@ class ThemeClass {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: AppColor.darkSurface,
-        surfaceTintColor: Colors.transparent,
+        surfaceTintColor: AppColor.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(_radius),
         ),
@@ -270,7 +270,7 @@ class ThemeClass {
           if (states.contains(WidgetState.selected)) {
             return AppColor.primaryColor;
           }
-          return Colors.transparent;
+          return AppColor.transparent;
         }),
         side: const BorderSide(color: AppColor.darkBorder),
       ),

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_format.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_ticket_card.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
@@ -85,7 +86,7 @@ class _KitchenBoardState extends State<KitchenBoard> {
     if (widget.tickets.isEmpty) {
       return widget.hasActiveFilters
           ? AdminEmptyState(
-              icon: HugeIcons.strokeRoundedChefHat,
+              icon: AppIcons.chefHat,
               message: S.kitchenNoMatches,
               hint: S.kitchenNoMatchesHint,
               action: TextButton(
@@ -94,7 +95,7 @@ class _KitchenBoardState extends State<KitchenBoard> {
               ),
             )
           : AdminEmptyState(
-              icon: HugeIcons.strokeRoundedChefHat,
+              icon: AppIcons.chefHat,
               message: S.kitchenEmptyTitle,
               hint: S.kitchenEmptyHint,
             );
@@ -171,7 +172,7 @@ class _WideBoard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (var index = 0; index < kKitchenBoardStatuses.length; index++) ...[
-          if (index > 0) const SizedBox(width: 11),
+          if (index > 0) const SizedBox(width: AppSizes.px12),
           Expanded(
             child: _BoardColumn(
               status: kKitchenBoardStatuses[index],
@@ -221,14 +222,15 @@ class _BoardColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _ColumnHeader(status: status, count: tickets.length),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSizes.px8),
         Expanded(
           child: tickets.isEmpty
               ? _ColumnEmpty(status: status)
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   itemCount: tickets.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 9),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSizes.px10),
                   itemBuilder: (context, index) {
                     final ticket = tickets[index];
                     return KitchenTicketCard(
@@ -299,7 +301,7 @@ class _NarrowBoard extends StatelessWidget {
                 index < kKitchenBoardStatuses.length;
                 index++
               ) ...[
-                if (index > 0) const SizedBox(width: 6),
+                if (index > 0) const SizedBox(width: AppSizes.px6),
                 _StatusTab(
                   key: Key('kitchen-tab-${kKitchenBoardStatuses[index].value}'),
                   status: kKitchenBoardStatuses[index],
@@ -311,14 +313,15 @@ class _NarrowBoard extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 9),
+        const SizedBox(height: AppSizes.px10),
         Expanded(
           child: tickets.isEmpty
               ? _ColumnEmpty(status: selected)
               : ListView.separated(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   itemCount: tickets.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 9),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSizes.px10),
                   itemBuilder: (context, index) {
                     final ticket = tickets[index];
                     return KitchenTicketCard(
@@ -360,24 +363,23 @@ class _ColumnHeader extends StatelessWidget {
     final color = kitchenStatusColor(status);
     final foreground = adminFlagForeground(theme, color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           color,
-          Color.lerp(color, Colors.white, .9)!,
+          Color.lerp(color, AppColor.whiteColor, .9)!,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: color.withValues(alpha: dark ? .35 : .18)),
       ),
       child: Row(
         children: [
-          HugeIcon(
-            icon: kitchenStatusIcon(status),
-            size: 15,
-            color: foreground,
-          ),
-          const SizedBox(width: 6),
+          AppIcon(kitchenStatusIcon(status), size: 15, color: foreground),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               kitchenColumnLabel(status),
@@ -391,12 +393,15 @@ class _ColumnHeader extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSizes.px6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xxs,
+            ),
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               localizeDigits('$count'),
@@ -437,22 +442,25 @@ class _StatusTab extends StatelessWidget {
         ? adminFlagForeground(theme, color)
         : adminMutedColor(theme);
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(9),
+      color: AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
             color: selected
                 ? adminFlagBackground(
                     theme,
                     color,
-                    Color.lerp(color, Colors.white, .9)!,
+                    Color.lerp(color, AppColor.whiteColor, .9)!,
                   )
                 : theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: selected
                   ? color.withValues(alpha: .4)
@@ -462,12 +470,12 @@ class _StatusTab extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: kitchenStatusIcon(status),
+              AppIcon(
+                kitchenStatusIcon(status),
                 size: 14,
                 color: selected ? foreground : adminMutedColor(theme),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 kitchenColumnLabel(status),
                 style: TextStyle(
@@ -479,14 +487,17 @@ class _StatusTab extends StatelessWidget {
                   height: AppTextHeights.line1_4,
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xxs,
+                ),
                 decoration: BoxDecoration(
                   color: selected
                       ? theme.colorScheme.surface
                       : adminTintedSurfaceColor(theme),
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Text(
                   localizeDigits('$count'),
@@ -521,16 +532,16 @@ class _ColumnEmpty extends StatelessWidget {
     final muted = adminMutedColor(theme);
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: kitchenStatusIcon(status),
+            AppIcon(
+              kitchenStatusIcon(status),
               size: 24,
               color: muted.withValues(alpha: .45),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSizes.px6),
             Text(
               S.kitchenEmptyColumn,
               textAlign: TextAlign.center,

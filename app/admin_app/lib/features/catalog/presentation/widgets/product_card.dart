@@ -1,14 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_footer.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_image.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_rows.dart';
@@ -259,13 +259,13 @@ class _ProductCardState extends State<ProductCard> {
           child: Row(
             children: [
               Icon(
-                HugeIcons.strokeRoundedTick01,
+                AppIcons.tick01,
                 size: 16,
                 color: _draft.isFeatured
                     ? AppColor.primaryColor
                     : AppColor.greyColor,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               // The menu is as wide as the button, so the text gives way
               // instead of overflowing.
               Flexible(
@@ -279,11 +279,11 @@ class _ProductCardState extends State<ProductCard> {
           child: Row(
             children: [
               const Icon(
-                HugeIcons.strokeRoundedDelete01,
+                AppIcons.delete01,
                 size: 16,
                 color: AppColor.errorColor,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               Flexible(child: Text(S.delete, overflow: TextOverflow.ellipsis)),
             ],
           ),
@@ -455,9 +455,9 @@ class _ProductCardState extends State<ProductCard> {
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(
               12,
-              AppDimensions.md,
+              AppSpacing.md,
               12,
-              AppDimensions.md,
+              AppSpacing.md,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -467,14 +467,14 @@ class _ProductCardState extends State<ProductCard> {
                   onMore: () => _openMore(_nameMoreKey),
                   moreKey: _nameMoreKey,
                 ),
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppSpacing.md),
                 ProductCardPriceRow(
                   priceController: _priceController,
                   discountedPrice: _discountedPrice,
                   discountPercentage: _draft.discountPercentage,
                   discountActive: _draft.isDiscountActiveAt(DateTime.now()),
                 ),
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppSpacing.md),
                 ProductCardCategoryRow(
                   categoryName: _categoryName,
                   muted: _categoryId == null || _categoryId!.isEmpty,

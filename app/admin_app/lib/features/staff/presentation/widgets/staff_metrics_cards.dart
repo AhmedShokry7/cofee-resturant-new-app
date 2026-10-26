@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
@@ -19,37 +21,37 @@ class StaffMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.staffMetricTotal,
         value: staffMembersCount(staff.length),
-        icon: HugeIcons.strokeRoundedUserMultiple,
-        iconBackground: const Color(0xFFE8F3EC),
-        iconColor: const Color(0xFF3D8A68),
+        icon: AppIcons.userMultiple,
+        iconBackground: AppColor.tintGreenSurface,
+        iconColor: AppColor.trendPositive,
       ),
       _MetricData(
         label: S.staffMetricActive,
         value: staffMembersCount(countOf('active')),
-        icon: HugeIcons.strokeRoundedUserCheck01,
-        iconBackground: const Color(0xFFE9EDF8),
-        iconColor: const Color(0xFF5F70A8),
+        icon: AppIcons.userCheck01,
+        iconBackground: AppColor.adminInfoSurface,
+        iconColor: AppColor.adminInfo,
       ),
       _MetricData(
         label: S.staffMetricInvited,
         value: staffMembersCount(countOf('invited')),
-        icon: HugeIcons.strokeRoundedUserAdd01,
-        iconBackground: const Color(0xFFFBF2DC),
-        iconColor: const Color(0xFFA47B2F),
+        icon: AppIcons.userAdd01,
+        iconBackground: AppColor.adminWarningSurface,
+        iconColor: AppColor.adminWarning,
       ),
       _MetricData(
         label: S.staffMetricSuspended,
         value: staffMembersCount(countOf('suspended')),
-        icon: HugeIcons.strokeRoundedUserBlock01,
-        iconBackground: const Color(0xFFFDEBEA),
-        iconColor: const Color(0xFFB06663),
+        icon: AppIcons.userBlock01,
+        iconBackground: AppColor.tintRoseSurface,
+        iconColor: AppColor.tintRoseInk,
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

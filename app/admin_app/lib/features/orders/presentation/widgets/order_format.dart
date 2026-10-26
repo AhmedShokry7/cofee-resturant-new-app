@@ -2,7 +2,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 
 String orderMoney(double value) => localizeDigits(formatAmount(value));
 

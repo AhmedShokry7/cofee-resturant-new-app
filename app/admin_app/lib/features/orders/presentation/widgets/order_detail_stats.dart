@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
@@ -26,7 +26,7 @@ class OrderDetailStats extends StatelessWidget {
 
     final tiles = <Widget>[
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedReceiptDollar,
+        icon: AppIcons.receiptDollar,
         tint: AppColor.adminWarning,
         surface: AppColor.adminWarningSurface,
         money: order.grandTotal,
@@ -34,21 +34,21 @@ class OrderDetailStats extends StatelessWidget {
         label: S.grandTotal,
       ),
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedPackage,
+        icon: AppIcons.package,
         tint: AppColor.adminAccent,
         surface: AppColor.adminAccentSurface,
         value: orderCount(order.items.length),
         label: S.orderItemsLabel,
       ),
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedDeliveryBox01,
+        icon: AppIcons.deliveryBox01,
         tint: AppColor.adminInfo,
         surface: AppColor.adminInfoSurface,
         value: fulfillment.label,
         label: S.fulfillmentType,
       ),
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedPayment01,
+        icon: AppIcons.payment01,
         tint: AppColor.trendPositive,
         surface: AppColor.trendPositiveSurface,
         value: payment.label,
@@ -60,7 +60,7 @@ class OrderDetailStats extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 560 ? 4 : 2;
-        const gap = AppDimensions.md;
+        const gap = AppSpacing.md;
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         return Wrap(
           spacing: gap,

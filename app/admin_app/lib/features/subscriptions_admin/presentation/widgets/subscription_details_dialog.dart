@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_usage.dart';
-import 'package:admin_app/features/subscriptions_admin/data/repositories/admin_subscription_repository.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/repositories/subscription_repository.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_cubit.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_avatar.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_format.dart';
@@ -84,8 +84,8 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        icon: const HugeIcon(
-          icon: HugeIcons.strokeRoundedAlertCircle,
+        icon: const AppIcon(
+          AppIcons.alert,
           size: 26,
           color: AppColor.errorColor,
         ),
@@ -151,18 +151,19 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final narrow = MediaQuery.sizeOf(context).width < 600;
+    final narrow =
+        MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding;
     final status = SubscriptionStatusView.of(_subscription);
     final canCancel = _subscription.isActive || _subscription.isPendingPayment;
 
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: narrow ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: narrow ? AppSpacing.md : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
@@ -174,16 +175,16 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _CustomerPanel(subscription: _subscription, status: status),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _StatTiles(subscription: _subscription),
-                    const SizedBox(height: AppDimensions.lg),
+                    const SizedBox(height: AppSpacing.lg),
                     _CupsSection(subscription: _subscription),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final plan = _PlanSection(subscription: _subscription);
@@ -195,7 +196,7 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               plan,
-                              const SizedBox(height: AppDimensions.md),
+                              const SizedBox(height: AppSpacing.md),
                               period,
                             ],
                           );
@@ -204,13 +205,13 @@ class _SubscriptionDetailsDialogState extends State<SubscriptionDetailsDialog> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(child: plan),
-                            const SizedBox(width: AppDimensions.md),
+                            const SizedBox(width: AppSpacing.md),
                             Expanded(child: period),
                           ],
                         );
                       },
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _UsageSection(
                       subscription: _subscription,
                       usage: _usage,
@@ -248,10 +249,10 @@ class _DialogHeader extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.md,
-        AppDimensions.sm,
-        AppDimensions.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -280,8 +281,8 @@ class _DialogHeader extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+            icon: AppIcon(
+              AppIcons.cancel01,
               size: 18,
               color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
             ),
@@ -304,16 +305,16 @@ class _CustomerPanel extends StatelessWidget {
     final contact = subscriptionContactLine(subscription);
     final plan = subscriptionPlanName(subscription);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Row(
         children: [
           SubscriptionAvatar(subscription: subscription, size: 46),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -353,7 +354,7 @@ class _CustomerPanel extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           AdminStatusBadge(label: status.label, color: status.color),
         ],
       ),
@@ -370,30 +371,30 @@ class _StatTiles extends StatelessWidget {
   Widget build(BuildContext context) {
     final tiles = <Widget>[
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedCoffee02,
+        icon: AppIcons.coffee02,
         tint: AppColor.adminWarning,
         surface: AppColor.adminWarningSurface,
         label: S.subscriptionsCupsRemaining,
         value: subscriptionCupsRemaining(subscription),
       ),
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedTime01,
+        icon: AppIcons.time01,
         tint: AppColor.adminInfo,
         surface: AppColor.adminInfoSurface,
         label: S.subscriptionsDaysRemainingLabel,
         value: subscriptionDaysRemaining(subscription),
       ),
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedRepeat,
-        tint: const Color(0xFF7E57C2),
-        surface: const Color(0xFFF0EAFB),
+        icon: AppIcons.repeat,
+        tint: AppColor.tintVioletInk,
+        surface: AppColor.tintVioletSurface,
         label: S.subscriptionsUsageRedemptions,
         value: subscriptionCount(subscription.usageCount),
       ),
       AdminStatTile(
-        icon: HugeIcons.strokeRoundedClock01,
-        tint: const Color(0xFF3D8A68),
-        surface: const Color(0xFFE8F3EC),
+        icon: AppIcons.clock01,
+        tint: AppColor.trendPositive,
+        surface: AppColor.tintGreenSurface,
         label: S.subscriptionsColumnLastUsed,
         value: subscriptionLastUsed(subscription),
       ),
@@ -453,10 +454,10 @@ class _CupsSection extends StatelessWidget {
     ];
 
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -516,9 +517,9 @@ class _CupsSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 7,
@@ -526,7 +527,7 @@ class _CupsSection extends StatelessWidget {
               backgroundColor: adminTintedSurfaceColor(theme),
             ),
           ),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           LayoutBuilder(
             builder: (context, constraints) {
               final columns = constraints.maxWidth < 520 ? 2 : 4;
@@ -562,10 +563,13 @@ class _Fact extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -607,7 +611,7 @@ class _PlanSection extends StatelessWidget {
     final code = subscription.planCode?.trim() ?? '';
     return AdminSectionCard(
       title: S.subscriptionsPlanSection,
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -655,7 +659,7 @@ class _PeriodSection extends StatelessWidget {
     final reference = subscription.paymentReference?.trim() ?? '';
     return AdminSectionCard(
       title: S.subscriptionsPeriodSection,
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -699,7 +703,7 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -716,7 +720,7 @@ class _InfoRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             flex: 6,
             child: Text(
@@ -758,10 +762,10 @@ class _UsageSection extends StatelessWidget {
     final theme = Theme.of(context);
     return AdminSectionCard(
       title: S.subscriptionsUsageCountLabel(subscription.usageCount),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: loading
           ? const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppDimensions.md),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Center(
                 child: SizedBox(
                   width: AppDimensions.spinnerSize,
@@ -788,7 +792,7 @@ class _UsageSection extends StatelessWidget {
             )
           : usage.isEmpty
           ? AdminEmptyState(
-              icon: HugeIcons.strokeRoundedCoffee02,
+              icon: AppIcons.coffee02,
               message: S.subscriptionsNoUsage,
             )
           : Column(
@@ -801,7 +805,7 @@ class _UsageSection extends StatelessWidget {
                 ],
                 if (subscription.usageCount > usage.length)
                   Padding(
-                    padding: const EdgeInsets.only(top: AppDimensions.sm),
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
                       S.subscriptionsUsageLimited(
                         usage.length,
@@ -837,7 +841,7 @@ class _UsageRow extends StatelessWidget {
       if (branch != '—') branch,
     ].join(' • ');
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -847,15 +851,15 @@ class _UsageRow extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: adminTintedSurfaceColor(theme),
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedCoffee02,
+            child: AppIcon(
+              AppIcons.coffee02,
               size: 15,
               color: adminMutedColor(theme),
             ),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -875,7 +879,7 @@ class _UsageRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSizes.px6),
                     Text(
                       subscriptionUsageCups(usage),
                       maxLines: 1,
@@ -913,7 +917,7 @@ class _UsageRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           SizedBox(
             width: 92,
             child: Text(
@@ -959,20 +963,22 @@ class _DialogFooter extends StatelessWidget {
         backgroundColor: AppColor.errorColor,
         foregroundColor: AppColor.whiteColor,
         minimumSize: const Size(0, 38),
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
       ),
       icon: cancelling
           ? const SizedBox(
-              width: 14,
-              height: 14,
+              width: AppSizes.px14,
+              height: AppSizes.px14,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 color: AppColor.whiteColor,
               ),
             )
-          : const HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+          : const AppIcon(
+              AppIcons.cancel01,
               size: 16,
               color: AppColor.whiteColor,
             ),
@@ -986,10 +992,10 @@ class _DialogFooter extends StatelessWidget {
     );
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,

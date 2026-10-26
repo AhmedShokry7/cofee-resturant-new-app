@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
+
 /// The margins every admin page shares: a responsive gutter, a centred
 /// column and the same breathing room as the customers and orders pages.
 class AdminPageFrame extends StatelessWidget {
@@ -9,19 +11,33 @@ class AdminPageFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final narrow = MediaQuery.sizeOf(context).width < 700;
+    final narrow = MediaQuery.sizeOf(context).width < AppBreakpoints.pageCanvas;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: narrow ? 16 : 38),
+      padding: EdgeInsets.symmetric(
+        horizontal: narrow
+            ? AppDimensions.pageFrameGutterNarrow
+            : AppDimensions.pageFrameGutterWide,
+      ),
       child: Align(
         alignment: Alignment.topCenter,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1600),
+          constraints: const BoxConstraints(
+            maxWidth: AppDimensions.pageFrameMaxContentWidth,
+          ),
           child: Padding(
             padding: EdgeInsets.fromLTRB(
-              narrow ? 12 : 28,
-              narrow ? 16 : 24,
-              narrow ? 12 : 28,
-              narrow ? 12 : 21,
+              narrow
+                  ? AppDimensions.pageFrameInnerHorizontalNarrow
+                  : AppDimensions.pageFrameInnerHorizontalWide,
+              narrow
+                  ? AppDimensions.pageFrameInnerTopNarrow
+                  : AppDimensions.pageFrameInnerTopWide,
+              narrow
+                  ? AppDimensions.pageFrameInnerHorizontalNarrow
+                  : AppDimensions.pageFrameInnerHorizontalWide,
+              narrow
+                  ? AppDimensions.pageFrameInnerBottomNarrow
+                  : AppDimensions.pageFrameInnerBottomWide,
             ),
             child: child,
           ),

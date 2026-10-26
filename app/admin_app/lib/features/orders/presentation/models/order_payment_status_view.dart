@@ -25,10 +25,10 @@ class OrderPaymentStatusView {
     };
     final colors = <String, Color>{
       'unpaid': AppColor.greyColor,
-      'pending': const Color(0xFFF59E0B),
+      'pending': AppColor.statusAmber,
       'paid': AppColor.primaryColor,
       'failed': AppColor.errorColor,
-      'refunded': const Color(0xFF7C3AED),
+      'refunded': AppColor.statusViolet,
     };
     return OrderPaymentStatusView(
       code,

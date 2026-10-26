@@ -1,14 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_material_option.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_metrics.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
 
 void main() {
   group('AdminInventoryItem', () {

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
-import 'package:admin_app/features/kitchen/data/repositories/admin_kitchen_repository.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
 
 /// The age after which an active ticket is flagged for the kitchen.
 const int kKitchenLateMinutes = 15;
@@ -44,11 +44,11 @@ Color kitchenStatusColor(KitchenTicketStatus status) => switch (status) {
 };
 
 IconData kitchenStatusIcon(KitchenTicketStatus status) => switch (status) {
-  KitchenTicketStatus.queued => HugeIcons.strokeRoundedChefHat,
-  KitchenTicketStatus.preparing => HugeIcons.strokeRoundedKitchenUtensils,
-  KitchenTicketStatus.ready => HugeIcons.strokeRoundedCheckmarkCircle01,
-  KitchenTicketStatus.completed => HugeIcons.strokeRoundedTaskDone01,
-  KitchenTicketStatus.cancelled => HugeIcons.strokeRoundedCancel01,
+  KitchenTicketStatus.queued => AppIcons.chefHat,
+  KitchenTicketStatus.preparing => AppIcons.kitchenUtensils,
+  KitchenTicketStatus.ready => AppIcons.checkmarkCircle01,
+  KitchenTicketStatus.completed => AppIcons.taskDone01,
+  KitchenTicketStatus.cancelled => AppIcons.cancel01,
 };
 
 String kitchenItemStatusLabel(KitchenItemStatus status) => switch (status) {
@@ -64,17 +64,16 @@ String kitchenFulfillmentLabel(String type) => switch (type) {
 };
 
 IconData kitchenFulfillmentIcon(String type) => switch (type) {
-  'delivery' => HugeIcons.strokeRoundedDeliveryTruck01,
-  'dine_in' => HugeIcons.strokeRoundedRestaurantTable,
-  _ => HugeIcons.strokeRoundedShoppingBag01,
+  'delivery' => AppIcons.deliveryTruck01,
+  'dine_in' => AppIcons.restaurantTable,
+  _ => AppIcons.shoppingBag01,
 };
 
 String kitchenSourceLabel(String source) =>
     source == 'pos' ? S.kitchenSourcePos : S.kitchenSourceOnline;
 
-IconData kitchenSourceIcon(String source) => source == 'pos'
-    ? HugeIcons.strokeRoundedStore01
-    : HugeIcons.strokeRoundedGlobe02;
+IconData kitchenSourceIcon(String source) =>
+    source == 'pos' ? AppIcons.store01 : AppIcons.globe02;
 
 int kitchenElapsedMinutes(DateTime? placedAt, DateTime now) {
   if (placedAt == null) return 0;

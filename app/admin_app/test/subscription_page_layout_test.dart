@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_metrics.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_metrics.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/models/subscription_filter.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_page_body.dart';
 

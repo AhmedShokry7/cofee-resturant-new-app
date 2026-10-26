@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_member.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_member_bits.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -48,7 +49,7 @@ class _Header extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
         border: Border.all(color: adminRowBorderColor(theme)),
@@ -92,7 +93,7 @@ class _Row extends StatelessWidget {
     final contact = member.contactLine;
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: adminRowBorderColor(theme))),
       ),
@@ -103,7 +104,7 @@ class _Row extends StatelessWidget {
             child: Row(
               children: [
                 LoyaltyMemberAvatar(member: member),
-                const SizedBox(width: 9),
+                const SizedBox(width: AppSizes.px10),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -201,12 +202,12 @@ class _PointsCell extends StatelessWidget {
     final active = points > 0;
     return Row(
       children: [
-        HugeIcon(
-          icon: HugeIcons.strokeRoundedStar,
+        AppIcon(
+          AppIcons.star,
           size: 14,
           color: active ? AppColor.adminAccent : adminMutedColor(theme),
         ),
-        const SizedBox(width: 5),
+        const SizedBox(width: AppSizes.px6),
         Flexible(
           child: Text(
             loyaltyCount(points),

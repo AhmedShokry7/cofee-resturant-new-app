@@ -3,13 +3,14 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
@@ -138,12 +139,12 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
           child: Dialog(
             backgroundColor: theme.colorScheme.surface,
             insetPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 24,
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.xxl,
             ),
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
             ),
             child: SizedBox(
               width: width,
@@ -157,14 +158,19 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
                     onClose: state.isCreatingCustomer ? null : _close,
                   ),
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.none,
+                    ),
                     child: _ModeSwitch(
                       mode: _mode,
                       enabled: !state.isCreatingCustomer,
                       onChanged: _setMode,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSizes.px12),
                   Expanded(
                     child: _mode == _CustomerDialogMode.search
                         ? _buildSearch(context, state)
@@ -205,7 +211,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
       );
     } else if (results.isEmpty) {
       body = AdminEmptyState(
-        icon: HugeIcons.strokeRoundedUserSearch01,
+        icon: AppIcons.userSearch01,
         message: hasQuery ? S.posCustomerNoResults : S.posCustomerEmpty,
         hint: hasQuery ? S.posCustomerNoResultsHint : S.posCustomerEmptyHint,
         action: TextButton(
@@ -215,7 +221,10 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
       );
     } else {
       body = ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
         itemCount: results.length,
         separatorBuilder: (_, _) => Divider(
           height: 1,
@@ -240,7 +249,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: AdminSearchField(
             controller: _search,
             onChanged: _onQueryChanged,
@@ -249,17 +258,27 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
         ),
         if (waiting && results.isNotEmpty)
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.none,
+            ),
             child: LinearProgressIndicator(minHeight: 2),
           ),
         if (failure != null && results.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.none,
+            ),
             child: AdminErrorBanner(
               message: posCustomerSearchFailureMessage(failure),
             ),
           ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSizes.px8),
         Expanded(child: body),
       ],
     );
@@ -271,7 +290,12 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
     final enabled = !state.isCreatingCustomer;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.none,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       child: Form(
         key: _formKey,
@@ -279,21 +303,24 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
               decoration: BoxDecoration(
                 color: adminTintedSurfaceColor(theme),
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(color: adminControlBorderColor(theme)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedStore01,
+                  AppIcon(
+                    AppIcons.store01,
                     size: 15,
                     color: adminMutedColor(theme),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     child: Text(
                       S.posCustomerWalkInHint,
@@ -307,7 +334,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSizes.px12),
             TextFormField(
               controller: _name,
               enabled: enabled,
@@ -328,7 +355,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
                 required: true,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             TextFormField(
               controller: _phone,
               enabled: enabled,
@@ -345,7 +372,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
                 hint: S.posCustomerPhoneHint,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             TextFormField(
               controller: _email,
               enabled: enabled,
@@ -362,7 +389,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
                 hint: S.posCustomerEmailHint,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             TextFormField(
               controller: _note,
               enabled: enabled,
@@ -381,7 +408,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
               ),
             ),
             if (failure != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               AdminErrorBanner(
                 message: posCustomerCreateFailureMessage(failure),
               ),
@@ -400,7 +427,7 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
   }) {
     final theme = Theme.of(context);
     final border = adminControlBorderColor(theme);
-    final radius = BorderRadius.circular(9);
+    final radius = BorderRadius.circular(AppRadius.md);
     return InputDecoration(
       labelText: required ? '$label *' : label,
       hintText: hint,
@@ -419,7 +446,10 @@ class _PosCustomerDialogState extends State<_PosCustomerDialog> {
         color: adminMutedColor(theme),
         fontSize: AppFontSizes.size10_5,
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.md,
+      ),
       border: OutlineInputBorder(
         borderRadius: radius,
         borderSide: BorderSide(color: border),
@@ -456,10 +486,10 @@ class _ModeSwitch extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       height: 40,
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(AppSpacing.xxs),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
@@ -467,18 +497,18 @@ class _ModeSwitch extends StatelessWidget {
           Expanded(
             child: _ModeSegment(
               label: S.posCustomerSearchTab,
-              icon: HugeIcons.strokeRoundedUserSearch01,
+              icon: AppIcons.userSearch01,
               selected: mode == _CustomerDialogMode.search,
               onTap: enabled
                   ? () => onChanged(_CustomerDialogMode.search)
                   : null,
             ),
           ),
-          const SizedBox(width: 3),
+          const SizedBox(width: AppSizes.px4),
           Expanded(
             child: _ModeSegment(
               label: S.posCustomerAddTab,
-              icon: HugeIcons.strokeRoundedUserAdd01,
+              icon: AppIcons.userAdd01,
               selected: mode == _CustomerDialogMode.add,
               onTap: enabled ? () => onChanged(_CustomerDialogMode.add) : null,
             ),
@@ -509,26 +539,26 @@ class _ModeSegment extends StatelessWidget {
         ? adminFlagForeground(theme, AppColor.adminAccent)
         : adminMutedColor(theme);
     return Material(
-      color: selected ? theme.colorScheme.surface : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
+      color: selected ? theme.colorScheme.surface : AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: selected
                   ? AppColor.adminAccent.withValues(alpha: .3)
-                  : Colors.transparent,
+                  : AppColor.transparent,
             ),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(icon: icon, size: 14, color: foreground),
-              const SizedBox(width: 6),
+              AppIcon(icon, size: 14, color: foreground),
+              const SizedBox(width: AppSizes.px6),
               Flexible(
                 child: Text(
                   label,
@@ -590,22 +620,25 @@ class _CustomerTile extends StatelessWidget {
               AppColor.adminAccent,
               AppColor.adminAccentSurface,
             )
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
+          : AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           child: Row(
             children: [
               AdminAvatarImage(
                 url: customer.avatarUrl,
                 size: 42,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 fallbackText: _initials,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,7 +655,7 @@ class _CustomerTile extends StatelessWidget {
                       ),
                     ),
                     if (contact != null) ...[
-                      const SizedBox(height: 1),
+                      const SizedBox(height: AppSizes.px1),
                       Text(
                         contact,
                         maxLines: 1,
@@ -634,7 +667,7 @@ class _CustomerTile extends StatelessWidget {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 5),
+                    const SizedBox(height: AppSizes.px6),
                     Wrap(
                       spacing: 5,
                       runSpacing: 4,
@@ -656,7 +689,7 @@ class _CustomerTile extends StatelessWidget {
                             label: S.posCustomerVip,
                             color: AppColor.adminWarning,
                             surface: AppColor.adminWarningSurface,
-                            icon: HugeIcons.strokeRoundedStar,
+                            icon: AppIcons.star,
                           ),
                         if (customer.ordersCount > 0)
                           Text(
@@ -672,18 +705,16 @@ class _CustomerTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               if (selected)
-                const HugeIcon(
-                  icon: HugeIcons.strokeRoundedTick02,
+                const AppIcon(
+                  AppIcons.tick02,
                   size: 16,
                   color: AppColor.adminAccent,
                 )
               else
-                HugeIcon(
-                  icon: rtl
-                      ? HugeIcons.strokeRoundedArrowLeft01
-                      : HugeIcons.strokeRoundedArrowRight01,
+                AppIcon(
+                  rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                   size: 15,
                   color: adminMutedColor(theme),
                 ),
@@ -713,18 +744,21 @@ class _CustomerBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final foreground = adminFlagForeground(theme, color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, surface),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: Border.all(color: color.withValues(alpha: .22)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            HugeIcon(icon: icon!, size: 10, color: foreground),
-            const SizedBox(width: 3),
+            AppIcon(icon!, size: 10, color: foreground),
+            const SizedBox(width: AppSizes.px4),
           ],
           Text(
             label,
@@ -757,7 +791,7 @@ class _CustomerErrorState extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -769,13 +803,13 @@ class _CustomerErrorState extends StatelessWidget {
                 color: AppColor.errorColor.withValues(alpha: .08),
                 shape: BoxShape.circle,
               ),
-              child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedAlertCircle,
+              child: const AppIcon(
+                AppIcons.alert,
                 size: 22,
                 color: AppColor.errorColor,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -785,10 +819,10 @@ class _CustomerErrorState extends StatelessWidget {
                 height: AppTextHeights.line1_6,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             OutlinedButton.icon(
               onPressed: onRetry,
-              icon: const Icon(HugeIcons.strokeRoundedRefresh, size: 15),
+              icon: const Icon(AppIcons.refresh, size: 15),
               label: Text(S.retry),
             ),
             TextButton(onPressed: onAdd, child: Text(S.posCustomerAddTab)),

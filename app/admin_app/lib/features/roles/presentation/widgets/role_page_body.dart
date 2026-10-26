@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_directory.dart';
@@ -41,9 +42,9 @@ class RolePageBody extends StatelessWidget {
           ),
           if (errorMessage != null)
             AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           RoleMetricsCards(roles: roles),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSizes.px16),
           Expanded(
             child: RoleDirectory(
               roles: roles,

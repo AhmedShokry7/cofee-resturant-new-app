@@ -3,10 +3,30 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/features/catalog/di/catalog_dependencies.dart';
+import 'package:admin_app/features/catalog/domain/usecases/add_product_image.dart';
+import 'package:admin_app/features/catalog/domain/usecases/apply_product_image_settings.dart';
+import 'package:admin_app/features/catalog/domain/usecases/create_category.dart';
+import 'package:admin_app/features/catalog/domain/usecases/delete_product.dart';
+import 'package:admin_app/features/catalog/domain/usecases/delete_product_image.dart';
+import 'package:admin_app/features/catalog/domain/usecases/load_branch_product_pricing.dart';
+import 'package:admin_app/features/catalog/domain/usecases/load_branches.dart';
+import 'package:admin_app/features/catalog/domain/usecases/load_catalog.dart';
+import 'package:admin_app/features/catalog/domain/usecases/load_product_images.dart';
+import 'package:admin_app/features/catalog/domain/usecases/replace_product_image_with_file.dart';
+import 'package:admin_app/features/catalog/domain/usecases/save_branch_product_discount.dart';
+import 'package:admin_app/features/catalog/domain/usecases/save_product.dart';
+import 'package:admin_app/features/catalog/domain/usecases/set_featured.dart';
+import 'package:admin_app/features/catalog/domain/usecases/set_primary_product_image.dart';
+import 'package:admin_app/features/catalog/domain/usecases/update_product_image.dart';
+import 'package:admin_app/features/catalog/domain/usecases/update_product_image_settings.dart';
+import 'package:admin_app/features/catalog/domain/usecases/upload_product_image.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_state.dart';
 
 /// The products the dashboard edits.
@@ -14,11 +34,50 @@ import 'package:admin_app/features/catalog/presentation/manager/admin_product_st
 /// Every change of the catalogue goes through this cubit, so the widgets only
 /// read the state and ask for an action.
 class AdminProductCubit extends Cubit<AdminProductState> {
-  AdminProductCubit({AdminProductRepository? repository})
-    : _repository = repository ?? AdminProductRepository(),
+  AdminProductCubit({CatalogData? repository})
+    : this._withUseCases(repository ?? CatalogDependencies.catalog);
+
+  AdminProductCubit._withUseCases(CatalogData repository)
+    : _loadCatalog = LoadCatalogUseCase(repository),
+      _saveProduct = SaveProductUseCase(repository),
+      _deleteProduct = DeleteProductUseCase(repository),
+      _createCategory = CreateCategoryUseCase(repository),
+      _setFeatured = SetFeaturedUseCase(repository),
+      _loadProductImages = LoadProductImagesUseCase(repository),
+      _addProductImage = AddProductImageUseCase(repository),
+      _uploadProductImage = UploadProductImageUseCase(repository),
+      _updateProductImage = UpdateProductImageUseCase(repository),
+      _replaceProductImageWithFile = ReplaceProductImageWithFileUseCase(
+        repository,
+      ),
+      _updateProductImageSettings = UpdateProductImageSettingsUseCase(
+        repository,
+      ),
+      _applyProductImageSettings = ApplyProductImageSettingsUseCase(repository),
+      _deleteProductImage = DeleteProductImageUseCase(repository),
+      _setPrimaryProductImage = SetPrimaryProductImageUseCase(repository),
+      _loadBranches = LoadBranchesUseCase(repository),
+      _loadBranchProductPricing = LoadBranchProductPricingUseCase(repository),
+      _saveBranchProductDiscount = SaveBranchProductDiscountUseCase(repository),
       super(const AdminProductState());
 
-  final AdminProductRepository _repository;
+  final LoadCatalogUseCase _loadCatalog;
+  final SaveProductUseCase _saveProduct;
+  final DeleteProductUseCase _deleteProduct;
+  final CreateCategoryUseCase _createCategory;
+  final SetFeaturedUseCase _setFeatured;
+  final LoadProductImagesUseCase _loadProductImages;
+  final AddProductImageUseCase _addProductImage;
+  final UploadProductImageUseCase _uploadProductImage;
+  final UpdateProductImageUseCase _updateProductImage;
+  final ReplaceProductImageWithFileUseCase _replaceProductImageWithFile;
+  final UpdateProductImageSettingsUseCase _updateProductImageSettings;
+  final ApplyProductImageSettingsUseCase _applyProductImageSettings;
+  final DeleteProductImageUseCase _deleteProductImage;
+  final SetPrimaryProductImageUseCase _setPrimaryProductImage;
+  final LoadBranchesUseCase _loadBranches;
+  final LoadBranchProductPricingUseCase _loadBranchProductPricing;
+  final SaveBranchProductDiscountUseCase _saveBranchProductDiscount;
 
   /// Exposes a read of the catalogue for workflows that need every matching row,
   /// such as import and export, without changing the paged state of the page.
@@ -28,7 +87,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     int offset = 0,
     String? search,
   }) {
-    return _repository.loadCatalog(
+    return _loadCatalog(
       branchId: branchId,
       limit: limit,
       offset: offset,
@@ -44,10 +103,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   Future<void> load({String search = ''}) async {
     emit(state.copyWith(status: AdminProductStatus.loading, clearError: true));
     try {
-      final snapshot = await _repository.loadCatalog(
-        limit: pageSize,
-        search: search,
-      );
+      final snapshot = await _loadCatalog(limit: pageSize, search: search);
       emit(
         state.copyWith(
           status: AdminProductStatus.ready,
@@ -81,7 +137,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
 
     emit(state.copyWith(isLoadingMore: true));
     try {
-      final snapshot = await _repository.loadCatalog(
+      final snapshot = await _loadCatalog(
         limit: pageSize,
         offset: state.loadedCount,
         search: state.search,
@@ -118,10 +174,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
 
     emit(state.copyWith(clearError: true));
     try {
-      final snapshot = await _repository.loadCatalog(
-        limit: pageSize,
-        search: term,
-      );
+      final snapshot = await _loadCatalog(limit: pageSize, search: term);
       emit(
         state.copyWith(
           status: AdminProductStatus.ready,
@@ -144,10 +197,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   Future<void> saveProduct(AdminProduct product) async {
     emit(state.copyWith(savingProductId: product.id, clearError: true));
     try {
-      final saved = await _repository.saveProduct(
-        product,
-        branchId: state.branchId,
-      );
+      final saved = await _saveProduct(product, branchId: state.branchId);
       final products = <AdminProduct>[...state.products];
       final index = products.indexWhere((entry) => entry.id == product.id);
       if (index >= 0) {
@@ -179,7 +229,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   /// Removes the product from the catalogue.
   Future<void> deleteProduct(String productId) async {
     try {
-      await _repository.deleteProduct(productId);
+      await _deleteProduct(productId);
       emit(
         state.copyWith(
           products: state.products
@@ -208,7 +258,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     String? descriptionEn,
   }) async {
     try {
-      final category = await _repository.createCategory(
+      final category = await _createCategory(
         nameAr: nameAr,
         nameEn: nameEn,
         descriptionAr: descriptionAr,
@@ -231,7 +281,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   Future<void> toggleFeatured(AdminProduct product) async {
     final next = !product.isFeatured;
     try {
-      await _repository.setFeatured(product.id, next);
+      await _setFeatured(product.id, next);
       emit(
         state.copyWith(
           products: _replace(product.copyWith(isFeatured: next)),
@@ -280,7 +330,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
 
     try {
       while (offset < total) {
-        final snapshot = await _repository.loadCatalog(
+        final snapshot = await _loadCatalog(
           limit: pageSize,
           offset: offset,
           search: search,
@@ -326,7 +376,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
 
     for (final productId in requested) {
       try {
-        await _repository.deleteProduct(productId);
+        await _deleteProduct(productId);
         deleted.add(productId);
       } catch (_) {
         failures++;
@@ -365,10 +415,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     String productId, {
     String? fallbackImageUrl,
   }) {
-    return _repository.loadProductImages(
-      productId,
-      fallbackImageUrl: fallbackImageUrl,
-    );
+    return _loadProductImages(productId, fallbackImageUrl: fallbackImageUrl);
   }
 
   /// Adds a picture to a product and keeps the card in step with it.
@@ -376,7 +423,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     required String productId,
     required String imageUrl,
   }) async {
-    final images = await _repository.addProductImage(
+    final images = await _addProductImage(
       productId: productId,
       imageUrl: imageUrl,
     );
@@ -393,11 +440,8 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     void Function(AdminImageUploadPhase phase)? onPhase,
   }) async {
     final images = source.isLink
-        ? await _repository.addProductImage(
-            productId: productId,
-            imageUrl: source.url!,
-          )
-        : await _repository.uploadProductImage(
+        ? await _addProductImage(productId: productId, imageUrl: source.url!)
+        : await _uploadProductImage(
             productId: productId,
             bytes: source.bytes!,
             fileName: source.fileName!,
@@ -417,13 +461,13 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     void Function(AdminImageUploadPhase phase)? onPhase,
   }) async {
     final images = source.isLink
-        ? await _repository.updateProductImage(
+        ? await _updateProductImage(
             image: image,
             imageUrl: source.url!,
             fit: fit,
             alignment: alignment,
           )
-        : await _repository.replaceProductImageWithFile(
+        : await _replaceProductImageWithFile(
             image: image,
             bytes: source.bytes!,
             fileName: source.fileName!,
@@ -444,7 +488,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     BoxFit? fit,
     Alignment? alignment,
   }) async {
-    final images = await _repository.updateProductImageSettings(
+    final images = await _updateProductImageSettings(
       image: image,
       fit: fit,
       alignment: alignment,
@@ -459,7 +503,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     BoxFit? fit,
     Alignment? alignment,
   }) async {
-    final images = await _repository.applyProductImageSettings(
+    final images = await _applyProductImageSettings(
       productId: productId,
       fit: fit,
       alignment: alignment,
@@ -473,10 +517,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     required AdminProductImage image,
     required String imageUrl,
   }) async {
-    final images = await _repository.updateProductImage(
-      image: image,
-      imageUrl: imageUrl,
-    );
+    final images = await _updateProductImage(image: image, imageUrl: imageUrl);
     _refreshProductImage(image.productId, images);
     return images;
   }
@@ -485,7 +526,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   Future<List<AdminProductImage>> deleteProductImage(
     AdminProductImage image,
   ) async {
-    final images = await _repository.deleteProductImage(image);
+    final images = await _deleteProductImage(image);
     _refreshProductImage(image.productId, images);
     return images;
   }
@@ -494,7 +535,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   Future<List<AdminProductImage>> setPrimaryProductImage(
     AdminProductImage image,
   ) async {
-    final images = await _repository.setPrimaryProductImage(image);
+    final images = await _setPrimaryProductImage(image);
     _refreshProductImage(image.productId, images);
     return images;
   }
@@ -516,7 +557,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
               ? product.copyWith(
                   imageUrl: primary?.imageUrl,
                   clearImageUrl: primary == null,
-                  imageFit: primary?.fit ?? BoxFit.cover,
+                  imageFit: primary?.fit ?? BoxFit.fill,
                   imageAlignment: primary?.alignment ?? Alignment.center,
                 )
               : product,
@@ -552,12 +593,11 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   }
 
   /// Turns the words of the database into a message the admin understands.
-  Future<List<Map<String, dynamic>>> loadBranches() =>
-      _repository.loadBranches();
+  Future<List<Map<String, dynamic>>> loadBranches() => _loadBranches();
 
   Future<List<Map<String, dynamic>>> loadBranchProductPricing(
     String productId,
-  ) => _repository.loadBranchProductPricing(productId);
+  ) => _loadBranchProductPricing(productId);
 
   Future<void> saveBranchProductDiscount({
     required String branchId,
@@ -566,7 +606,7 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     DateTime? discountStartsAt,
     DateTime? discountEndsAt,
     required bool useGeneralDiscount,
-  }) => _repository.saveBranchProductDiscount(
+  }) => _saveBranchProductDiscount(
     branchId: branchId,
     productId: productId,
     discountPercentage: discountPercentage,

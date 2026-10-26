@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_excel_controller.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/category_actions.dart';
@@ -59,7 +59,7 @@ class CategoryPageBody extends StatelessWidget {
                 confirmDeleteSelectedCategories(context, cubit),
             isDeletingSelected: isDeletingSelected,
           ),
-          const SizedBox(height: AppDimensions.lg),
+          const SizedBox(height: AppSpacing.lg),
           Expanded(
             child: CategoryRecords(
               categories: categories,

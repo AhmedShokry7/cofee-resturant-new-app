@@ -1,5 +1,5 @@
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 
 enum BranchFilter {
   all,

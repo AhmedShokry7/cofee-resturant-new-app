@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/initials.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_activity_table.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
@@ -21,7 +22,7 @@ class LoyaltyActivityCards extends StatelessWidget {
   Widget build(BuildContext context) => ListView.separated(
     padding: EdgeInsets.zero,
     itemCount: transactions.length,
-    separatorBuilder: (_, _) => const SizedBox(height: 8),
+    separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
     itemBuilder: (context, index) =>
         _ActivityCard(transaction: transactions[index]),
   );
@@ -35,11 +36,11 @@ class _ActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final name = transaction.displayName(AppLocale.instance.language);
     final createdAt = transaction.createdAt;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: radius,
@@ -52,10 +53,10 @@ class _ActivityCard extends StatelessWidget {
             children: [
               AdminAvatarImage(
                 size: 34,
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 fallbackText: initialsOf(name),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,19 +85,15 @@ class _ActivityCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               LoyaltyPointsDelta(points: transaction.points),
             ],
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedLink01,
-                size: 13,
-                color: adminMutedColor(theme),
-              ),
-              const SizedBox(width: 5),
+              AppIcon(AppIcons.link01, size: 13, color: adminMutedColor(theme)),
+              const SizedBox(width: AppSizes.px6),
               Expanded(
                 child: Text(
                   loyaltyReference(transaction),
@@ -111,15 +108,15 @@ class _ActivityCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedClock01,
+              AppIcon(
+                AppIcons.clock01,
                 size: 13,
                 color: adminMutedColor(theme),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               Expanded(
                 child: Text(
                   createdAt == null

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -30,16 +31,16 @@ class NotificationPushHealthPanel extends StatelessWidget {
     final color = notificationPushHealthColor(status);
     final checks = notificationHealthChecks(health);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: adminIsDark(theme)
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
@@ -63,15 +64,15 @@ class NotificationPushHealthPanel extends StatelessWidget {
                         color,
                         notificationPushHealthSurface(status),
                       ),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedCloudServer,
+                    child: AppIcon(
+                      AppIcons.server,
                       size: 18,
                       color: adminFlagForeground(theme, color),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -91,7 +92,7 @@ class NotificationPushHealthPanel extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 8),
+                            const SizedBox(width: AppSizes.px8),
                             _StatusPill(status: status),
                           ],
                         ),
@@ -120,17 +121,19 @@ class NotificationPushHealthPanel extends StatelessWidget {
                     onPressed: refreshing ? null : onRecheck,
                     style: TextButton.styleFrom(
                       minimumSize: const Size(0, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
                     icon: refreshing
                         ? const SizedBox(
-                            width: 13,
-                            height: 13,
+                            width: AppSizes.px14,
+                            height: AppSizes.px14,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : HugeIcon(
-                            icon: HugeIcons.strokeRoundedRefresh,
+                        : AppIcon(
+                            AppIcons.refresh,
                             size: 14,
                             color: adminMutedColor(theme),
                           ),
@@ -148,11 +151,13 @@ class NotificationPushHealthPanel extends StatelessWidget {
                     onPressed: onSetup,
                     style: TextButton.styleFrom(
                       minimumSize: const Size(0, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     ),
-                    icon: const HugeIcon(
-                      icon: HugeIcons.strokeRoundedKey01,
+                    icon: const AppIcon(
+                      AppIcons.passwordKey,
                       size: 14,
                       color: AppColor.adminAccent,
                     ),
@@ -172,7 +177,7 @@ class NotificationPushHealthPanel extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     heading,
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSizes.px8),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
                       child: actions,
@@ -184,18 +189,18 @@ class NotificationPushHealthPanel extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(child: heading),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   actions,
                 ],
               );
             },
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: AppSizes.px12),
           _CheckGrid(checks: checks),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSizes.px10),
           _StatsRow(health: health),
           if (status != NotificationPushHealthStatus.ready) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             _ProblemList(health: health, status: status),
           ],
         ],
@@ -214,14 +219,17 @@ class _StatusPill extends StatelessWidget {
     final theme = Theme.of(context);
     final color = notificationPushHealthColor(status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           color,
           notificationPushHealthSurface(status),
         ),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: color.withValues(alpha: adminIsDark(theme) ? .35 : .18),
         ),
@@ -249,9 +257,9 @@ class _CheckGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 520
+        final columns = width < AppBreakpoints.cardGrid
             ? 2
-            : width < 900
+            : width < AppBreakpoints.wideLayout
             ? 3
             : checks.length;
         const spacing = 8.0;
@@ -282,22 +290,23 @@ class _CheckItem extends StatelessWidget {
     final theme = Theme.of(context);
     final color = check.ok ? AppColor.trendPositive : AppColor.trendNegative;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminRowBorderColor(theme)),
       ),
       child: Row(
         children: [
-          HugeIcon(
-            icon: check.ok
-                ? HugeIcons.strokeRoundedCheckmarkCircle01
-                : HugeIcons.strokeRoundedCancelCircle,
+          AppIcon(
+            check.ok ? AppIcons.checkmarkCircle01 : AppIcons.cancelCircle,
             size: 14,
             color: adminFlagForeground(theme, color),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,15 +352,15 @@ class _StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final stats = <_Stat>[
       _Stat(
-        icon: HugeIcons.strokeRoundedUserCheck01,
+        icon: AppIcons.userCheck01,
         label: S.notificationsPushReachable(health.reachableCustomers),
       ),
       _Stat(
-        icon: HugeIcons.strokeRoundedNotification01,
+        icon: AppIcons.notification01,
         label: S.notificationsPushOptIn(health.pushEnabledCustomers),
       ),
       _Stat(
-        icon: HugeIcons.strokeRoundedSmartPhone01,
+        icon: AppIcons.smartPhone01,
         label: S.notificationsPushDevices(
           health.devicesAndroid,
           health.devicesIos,
@@ -359,14 +368,14 @@ class _StatsRow extends StatelessWidget {
       ),
       if (health.lastSuccessAt != null)
         _Stat(
-          icon: HugeIcons.strokeRoundedSent,
+          icon: AppIcons.sent,
           label: S.notificationsPushLastSuccess(
             notificationDateTimeLabel(health.lastSuccessAt),
           ),
         ),
       if (health.lastWebhookStatus != null)
         _Stat(
-          icon: HugeIcons.strokeRoundedLink01,
+          icon: AppIcons.link01,
           label: S.notificationsPushLastWebhook(
             localizeDigits('HTTP ${health.lastWebhookStatus}'),
           ),
@@ -380,12 +389,12 @@ class _StatsRow extends StatelessWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: stat.icon,
+              AppIcon(
+                stat.icon,
                 size: 12,
                 color: adminMutedColor(Theme.of(context)),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.px4),
               Text(
                 stat.label,
                 style: TextStyle(
@@ -458,14 +467,17 @@ class _ProblemList extends StatelessWidget {
         ? AppColor.trendNegative
         : AppColor.adminWarning;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           color,
           notificationPushHealthSurface(status),
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: color.withValues(alpha: adminIsDark(theme) ? .35 : .18),
         ),
@@ -480,17 +492,17 @@ class _ProblemList extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 5),
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
                     child: Container(
                       width: 4,
                       height: 4,
                       decoration: BoxDecoration(
                         color: adminFlagForeground(theme, color),
-                        borderRadius: BorderRadius.circular(2),
+                        borderRadius: BorderRadius.circular(AppRadius.xs),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   Expanded(
                     child: Text(
                       messages[index],

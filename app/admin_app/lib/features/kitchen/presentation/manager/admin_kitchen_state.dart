@@ -1,6 +1,6 @@
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
 
 enum AdminKitchenStatus { initial, loading, ready, failure }
 

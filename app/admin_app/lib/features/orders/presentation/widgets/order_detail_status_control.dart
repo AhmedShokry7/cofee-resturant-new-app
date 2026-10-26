@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_dropdown.dart';
 
@@ -41,10 +41,10 @@ class OrderDetailStatusControl extends StatelessWidget {
           ),
         ),
         if (saving) ...[
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           const SizedBox(
-            width: 18,
-            height: 18,
+            width: AppSizes.px18,
+            height: AppSizes.px18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: AppColor.adminAccent,

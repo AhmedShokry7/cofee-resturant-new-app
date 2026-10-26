@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_actions_menu.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -33,7 +34,7 @@ class InventoryCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: items.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final item = items[index];
         return _InventoryCard(
@@ -79,14 +80,14 @@ class _InventoryCard extends StatelessWidget {
 
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: canEdit ? onEdit : null,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Column(
@@ -102,15 +103,15 @@ class _InventoryCard extends StatelessWidget {
                       color: adminIsDark(theme)
                           ? statusColor.withValues(alpha: .16)
                           : Color.lerp(statusColor, AppColor.whiteColor, .88),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: HugeIcon(
-                      icon: inventoryStatusIcon(item.status),
+                    child: AppIcon(
+                      inventoryStatusIcon(item.status),
                       size: 21,
                       color: adminFlagForeground(theme, statusColor),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,7 +140,7 @@ class _InventoryCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   AdminStatusBadge(
                     label: inventoryStatusLabel(item.status),
                     color: statusColor,
@@ -162,7 +163,7 @@ class _InventoryCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final width = (constraints.maxWidth - 16) / 3;
@@ -173,7 +174,7 @@ class _InventoryCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedPackage,
+                          icon: AppIcons.package,
                           label: S.inventoryTableOnHand,
                           value: inventoryQuantity(
                             item.quantityOnHand,
@@ -190,7 +191,7 @@ class _InventoryCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedAlert02,
+                          icon: AppIcons.alert02,
                           label: S.inventoryTableReorder,
                           value: inventoryQuantity(
                             item.reorderLevel,
@@ -202,7 +203,7 @@ class _InventoryCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedCoins01,
+                          icon: AppIcons.coins01,
                           label: S.inventoryTableValue,
                           value: inventoryMoney(item.stockValue),
                           caption: S.materialUnitCost,
@@ -212,15 +213,15 @@ class _InventoryCard extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedClock01,
+                  AppIcon(
+                    AppIcons.clock01,
                     size: 13,
                     color: adminMutedColor(theme),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.px4),
                   Expanded(
                     child: Text(
                       item.lastMovementAt == null
@@ -266,15 +267,15 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
-          const SizedBox(width: 6),
+          AppIcon(icon, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

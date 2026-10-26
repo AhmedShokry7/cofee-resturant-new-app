@@ -1,8 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_page_header.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_records.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
@@ -87,7 +87,7 @@ class ProductPageBody extends StatelessWidget {
               importProgress: importProgress,
               exportProgress: exportProgress,
             ),
-            const SizedBox(height: AppDimensions.lg),
+            const SizedBox(height: AppSpacing.lg),
             ProductRecords(
               products: products,
               categories: categories,

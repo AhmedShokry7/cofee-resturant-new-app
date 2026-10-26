@@ -1,4 +1,4 @@
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 
 enum AdminSubscriptionStatus { initial, loading, ready, failure }
 

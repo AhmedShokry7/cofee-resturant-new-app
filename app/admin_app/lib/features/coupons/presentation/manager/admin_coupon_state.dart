@@ -1,6 +1,6 @@
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_metrics.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_targets.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_targets.dart';
 
 enum AdminCouponPageStatus { initial, loading, ready, failure }
 

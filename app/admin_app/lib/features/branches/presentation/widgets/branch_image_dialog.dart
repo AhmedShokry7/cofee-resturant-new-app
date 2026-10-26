@@ -1,15 +1,16 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_exception.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_cubit.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_messages.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
 
 /// Opens the dialog that replaces or removes the picture of a branch.
 Future<bool?> showBranchImageDialog({
@@ -76,7 +77,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
     return AlertDialog(
       title: Text(S.branchesImageAction),
       content: SizedBox(
-        width: 520,
+        width: AppDimensions.dialogBodyWidthPanel,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -84,7 +85,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
             if (widget.currentImageUrl != null &&
                 widget.currentImageUrl!.trim().isNotEmpty) ...[
               ClipRRect(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 child: SizedBox(
                   width: double.infinity,
                   height: 260,
@@ -93,19 +94,17 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
                     fit: BoxFit.fill,
                     errorWidget: (_, _, _) => const ColoredBox(
                       color: AppColor.secondaryColor,
-                      child: Center(
-                        child: Icon(HugeIcons.strokeRoundedImageAdd01),
-                      ),
+                      child: Center(child: Icon(AppIcons.imageAdd01)),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
             ],
             if (_busy) ...[
               const Center(child: CircularProgressIndicator()),
               if (_phaseText != null) ...[
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   _phaseText!,
                   textAlign: TextAlign.center,
@@ -116,10 +115,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
               ],
             ] else ...[
               ListTile(
-                leading: const Icon(
-                  HugeIcons.strokeRoundedImageAdd01,
-                  size: 20,
-                ),
+                leading: const Icon(AppIcons.imageAdd01, size: 20),
                 title: Text(S.uploadFromDevice),
                 subtitle: Text(
                   S.imageFormats,
@@ -130,7 +126,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
                 onTap: _busy ? null : _pickFromDevice,
               ),
               ListTile(
-                leading: const Icon(HugeIcons.strokeRoundedLink01, size: 20),
+                leading: const Icon(AppIcons.link01, size: 20),
                 title: Text(S.useImageLink),
                 onTap: _busy ? null : _askForLink,
               ),
@@ -140,7 +136,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
                 const Divider(),
                 ListTile(
                   leading: const Icon(
-                    HugeIcons.strokeRoundedDelete01,
+                    AppIcons.delete01,
                     size: 20,
                     color: AppColor.errorColor,
                   ),

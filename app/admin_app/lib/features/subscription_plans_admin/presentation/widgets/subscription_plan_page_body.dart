@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_metrics.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_metrics.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_directory.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_metrics_cards.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
@@ -48,9 +48,9 @@ class SubscriptionPlanPageBody extends StatelessWidget {
               CustomBtn(
                 text: S.subscriptionPlanAddAction,
                 onPressed: onAdd,
-                leadingIcon: const Icon(HugeIcons.strokeRoundedAdd01, size: 18),
+                leadingIcon: const Icon(AppIcons.add01, size: 18),
                 height: 42,
-                borderRadius: AppDimensions.radiusPill,
+                borderRadius: AppRadius.pill,
                 backgroundColor: AppColor.primaryColor,
                 textColor: AppColor.whiteColor,
               ),
@@ -58,9 +58,9 @@ class SubscriptionPlanPageBody extends StatelessWidget {
           ),
           if (errorMessage != null)
             AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           SubscriptionPlanMetricsCards(metrics: metrics),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSizes.px16),
           Expanded(
             child: SubscriptionPlanDirectory(
               plans: plans,

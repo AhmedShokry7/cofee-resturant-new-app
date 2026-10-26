@@ -1,5 +1,5 @@
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule.dart';
-import 'package:admin_app/features/loyalty/data/models/loyalty_json.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
+import 'package:admin_app/features/loyalty/domain/entities/loyalty_json.dart';
 
 class AdminLoyaltyOverview {
   const AdminLoyaltyOverview({

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/presentation/manager/customer_preview_cubit.dart';
-import 'package:admin_app/features/customer_preview/presentation/widgets/phone_frame.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/android_emulator_preview.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/phone_frame.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/preview_surface/preview_surface.dart';
 
 class CustomerPreviewPage extends StatelessWidget {
@@ -38,19 +37,19 @@ class _CustomerPreviewView extends StatelessWidget {
         return DefaultTabController(
           length: 2,
           child: Padding(
-            padding: const EdgeInsets.all(AppDimensions.lg),
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _Header(isDirty: state.isDirty),
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppSpacing.md),
                 TabBar(
                   tabs: [
                     Tab(text: S.browserPreview),
                     Tab(text: S.androidEmulator),
                   ],
                 ),
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppSpacing.md),
                 Expanded(
                   child: TabBarView(
                     children: [
@@ -68,13 +67,13 @@ class _CustomerPreviewView extends StatelessWidget {
                               children: [
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: AppDimensions.sm,
-                                    vertical: 4,
+                                    horizontal: AppSpacing.sm,
+                                    vertical: AppSpacing.xs,
                                   ),
                                   decoration: BoxDecoration(
                                     color: AppColor.lightGreyColor,
                                     borderRadius: BorderRadius.circular(
-                                      AppDimensions.radiusPill,
+                                      AppRadius.pill,
                                     ),
                                   ),
                                   child: Text(
@@ -86,14 +85,14 @@ class _CustomerPreviewView extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: AppDimensions.md),
+                                const SizedBox(height: AppSpacing.md),
                                 PhoneFrame(
                                   width: width,
                                   child: url.isEmpty
                                       ? Center(
                                           child: Padding(
                                             padding: const EdgeInsets.all(
-                                              AppDimensions.md,
+                                              AppSpacing.md,
                                             ),
                                             child: Text(
                                               '${S.previewCustomerAppUrl}\n'
@@ -114,10 +113,10 @@ class _CustomerPreviewView extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 SizedBox(
-                                  width: 320,
+                                  width: AppDimensions.dialogBodyWidthCompact,
                                   child: SingleChildScrollView(child: controls),
                                 ),
-                                const SizedBox(width: AppDimensions.lg),
+                                const SizedBox(width: AppSpacing.lg),
                                 Expanded(child: preview),
                               ],
                             );
@@ -126,7 +125,7 @@ class _CustomerPreviewView extends StatelessWidget {
                             child: Column(
                               children: [
                                 controls,
-                                const SizedBox(height: AppDimensions.lg),
+                                const SizedBox(height: AppSpacing.lg),
                                 preview,
                               ],
                             ),
@@ -189,8 +188,8 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(HugeIcons.strokeRoundedSmartPhone01, size: 20),
-        const SizedBox(width: AppDimensions.sm),
+        const Icon(AppIcons.smartPhone01, size: 20),
+        const SizedBox(width: AppSpacing.sm),
         Text(S.customerPreview, style: Theme.of(context).textTheme.titleLarge),
         const Spacer(),
         Text(
@@ -215,7 +214,7 @@ class _Controls extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(AppDimensions.md),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -224,7 +223,7 @@ class _Controls extends StatelessWidget {
               controller: TextEditingController(text: state.customerAppUrl),
               onChanged: cubit.updateCustomerAppUrl,
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<PreviewScreen>(
               initialValue: state.screen,
               decoration: InputDecoration(labelText: S.previewScreen),
@@ -240,7 +239,7 @@ class _Controls extends StatelessWidget {
                 if (v != null) cubit.updateScreen(v);
               },
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             DropdownButtonFormField<PreviewViewport>(
               initialValue: state.viewport,
               decoration: InputDecoration(labelText: S.previewViewport),
@@ -256,7 +255,7 @@ class _Controls extends StatelessWidget {
                 if (v != null) cubit.updateViewport(v);
               },
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             _ColorField(
               label: S.previewPrimaryColor,
               color: state.draft.primaryColor,
@@ -277,14 +276,14 @@ class _Controls extends StatelessWidget {
               color: state.draft.surfaceColor,
               onChanged: cubit.updateSurfaceColor,
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             Wrap(
-              spacing: AppDimensions.sm,
-              runSpacing: AppDimensions.sm,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 ElevatedButton.icon(
                   onPressed: cubit.refresh,
-                  icon: const Icon(HugeIcons.strokeRoundedRefresh, size: 16),
+                  icon: const Icon(AppIcons.refresh, size: 16),
                   label: Text(S.previewRefresh),
                 ),
                 OutlinedButton(
@@ -346,7 +345,7 @@ class _ColorFieldState extends State<_ColorField> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.sm),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: TextField(
         controller: _controller,
         decoration: InputDecoration(labelText: widget.label),

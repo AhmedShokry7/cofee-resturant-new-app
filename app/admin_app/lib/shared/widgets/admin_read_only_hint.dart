@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -15,19 +16,18 @@ class AdminReadOnlyHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedLock,
-            size: 14,
-            color: adminMutedColor(theme),
-          ),
-          const SizedBox(width: 6),
+          AppIcon(AppIcons.password, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               message,

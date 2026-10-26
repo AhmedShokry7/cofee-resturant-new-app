@@ -1,14 +1,13 @@
-﻿import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The content domain: the store content and the application settings.
 List<AdminDestination> get contentDestinations => <AdminDestination>[
   AdminDestination(
     id: 'content',
     label: S.content,
-    icon: HugeIcons.strokeRoundedNote01,
+    icon: AppIcons.note01,
     searchHint: S.searchContentHint,
     permission: 'settings.write',
     section: S.sectionContent,
@@ -21,7 +20,7 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
   AdminDestination(
     id: 'appSettings',
     label: S.appSettings,
-    icon: HugeIcons.strokeRoundedSettings01,
+    icon: AppIcons.settings01,
     searchHint: S.searchAppSettingsHint,
     permission: 'settings.write',
     section: S.sectionContent,
@@ -30,7 +29,7 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
   AdminDestination(
     id: 'customerPreview',
     label: S.customerPreview,
-    icon: HugeIcons.strokeRoundedSmartPhone01,
+    icon: AppIcons.smartPhone01,
     searchHint: S.customerPreviewHint,
     permission: 'settings.write',
     section: S.sectionContent,

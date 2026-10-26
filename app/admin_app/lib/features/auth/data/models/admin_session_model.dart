@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:admin_app/features/auth/domain/entities/admin_permission_scope.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_role_scope.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_permission_scope.dart';
+import 'package:admin_app/core/auth/admin_role_scope.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 
 /// يحوّل رد دالة `admin_get_my_staff_record` إلى كيان [AdminSession].
 ///

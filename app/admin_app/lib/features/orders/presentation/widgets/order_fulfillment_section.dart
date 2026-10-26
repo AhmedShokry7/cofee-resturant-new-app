@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_fulfillment_row.dart';
@@ -36,37 +37,26 @@ class OrderFulfillmentSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           OrderFulfillmentRow(
-            icon: view.isDelivery
-                ? HugeIcons.strokeRoundedDeliveryTruck01
-                : HugeIcons.strokeRoundedStore01,
+            icon: view.isDelivery ? AppIcons.deliveryTruck01 : AppIcons.store01,
             label: view.label,
             strong: true,
           ),
           if (!view.isDelivery && branch.isNotEmpty)
-            OrderFulfillmentRow(
-              icon: HugeIcons.strokeRoundedStore01,
-              label: branch,
-            ),
+            OrderFulfillmentRow(icon: AppIcons.store01, label: branch),
           if (view.isDelivery && label.isNotEmpty)
-            OrderFulfillmentRow(
-              icon: HugeIcons.strokeRoundedMapPin,
-              label: label,
-            ),
+            OrderFulfillmentRow(icon: AppIcons.mapPin, label: label),
           if (view.isDelivery && details.isNotEmpty && details != label)
-            OrderFulfillmentRow(
-              icon: HugeIcons.strokeRoundedMapPin,
-              label: details,
-            ),
+            OrderFulfillmentRow(icon: AppIcons.mapPin, label: details),
           if (view.isDelivery && !hasAddress)
             OrderFulfillmentRow(
-              icon: HugeIcons.strokeRoundedAlertCircle,
+              icon: AppIcons.alert,
               label: S.noDeliveryAddress,
               muted: true,
             ),
           if (view.isDelivery) ...[
             Divider(height: 14, color: adminRowBorderColor(theme)),
             OrderFulfillmentRow(
-              icon: HugeIcons.strokeRoundedBicycle01,
+              icon: AppIcons.bicycle01,
               label: S.deliveryFee,
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -80,7 +70,7 @@ class OrderFulfillmentSection extends StatelessWidget {
                       height: AppTextHeights.line1_5,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.px4),
                   const CurrencyIcon(size: 11),
                 ],
               ),

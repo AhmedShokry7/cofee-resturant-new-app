@@ -3,15 +3,16 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_records.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 
 class _FakePageRepository extends AdminProductRepository {
   final List<AdminProduct> saved = <AdminProduct>[];

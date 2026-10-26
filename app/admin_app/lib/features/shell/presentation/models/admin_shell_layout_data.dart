@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 
 /// Everything the responsive shell layouts need to render themselves.
 ///

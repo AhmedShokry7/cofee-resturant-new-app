@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/models/subscription_plan_filter.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_cards.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_table.dart';
@@ -111,7 +112,10 @@ class _SubscriptionPlanDirectoryState extends State<SubscriptionPlanDirectory> {
         widget.search.trim().isNotEmpty;
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -131,13 +135,11 @@ class _SubscriptionPlanDirectoryState extends State<SubscriptionPlanDirectory> {
             filterLabel: S.subscriptionPlansFilter,
             hasActiveFilter: _filter != SubscriptionPlanFilter.all,
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: filtered.isEmpty
                 ? AdminEmptyState(
-                    icon: hasAny
-                        ? HugeIcons.strokeRoundedSearch01
-                        : HugeIcons.strokeRoundedPackage,
+                    icon: hasAny ? AppIcons.search01 : AppIcons.package,
                     message: hasAny
                         ? S.subscriptionPlansNoMatches
                         : S.noSubscriptionPlans,
@@ -150,10 +152,7 @@ class _SubscriptionPlanDirectoryState extends State<SubscriptionPlanDirectory> {
                         ? null
                         : TextButton.icon(
                             onPressed: widget.onAdd,
-                            icon: const Icon(
-                              HugeIcons.strokeRoundedAdd01,
-                              size: 16,
-                            ),
+                            icon: const Icon(AppIcons.add01, size: 16),
                             label: Text(S.subscriptionPlanAddAction),
                           ),
                   )

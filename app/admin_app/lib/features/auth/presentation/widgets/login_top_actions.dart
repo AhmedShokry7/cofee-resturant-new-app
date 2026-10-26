@@ -14,7 +14,7 @@ class LoginTopActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         AdminLanguageButton(),
-        SizedBox(width: AppDimensions.sm),
+        SizedBox(width: AppSpacing.sm),
         AdminThemeButton(),
       ],
     );

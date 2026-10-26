@@ -40,7 +40,7 @@ class AdminPageHeader extends StatelessWidget {
       children: [
         if (progress != null) ...[
           _ProgressRow(progress: progress!, label: progressLabel, dark: dark),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
         ],
         LayoutBuilder(
           builder: (context, constraints) {
@@ -73,8 +73,8 @@ class AdminPageHeader extends StatelessWidget {
             if (actions.isEmpty) return heading;
 
             final actionRow = Wrap(
-              spacing: AppDimensions.sm,
-              runSpacing: AppDimensions.sm,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: actions,
             );
@@ -84,7 +84,7 @@ class AdminPageHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   heading,
-                  const SizedBox(height: AppDimensions.md),
+                  const SizedBox(height: AppSpacing.md),
                   Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: actionRow,
@@ -101,10 +101,7 @@ class AdminPageHeader extends StatelessWidget {
             );
           },
         ),
-        if (footer != null) ...[
-          const SizedBox(height: AppDimensions.sm),
-          footer!,
-        ],
+        if (footer != null) ...[const SizedBox(height: AppSpacing.sm), footer!],
       ],
     );
   }
@@ -135,7 +132,7 @@ class _ProgressRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppDimensions.sm),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           localizeDigits('${(progress * 100).toInt()}%'),
           style: theme.textTheme.bodySmall?.copyWith(
@@ -144,7 +141,7 @@ class _ProgressRow extends StatelessWidget {
           ),
         ),
         if (label != null && label!.isNotEmpty) ...[
-          const SizedBox(width: AppDimensions.xs),
+          const SizedBox(width: AppSpacing.xs),
           Text(
             label!,
             style: theme.textTheme.bodySmall?.copyWith(color: muted),

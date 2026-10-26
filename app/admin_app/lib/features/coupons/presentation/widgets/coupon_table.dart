@@ -2,11 +2,12 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_actions_menu.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_badges.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
@@ -81,7 +82,7 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -167,12 +168,12 @@ class _Row extends StatelessWidget {
         coupon.descriptionFor(AppLocale.instance.language) ??
         couponScopeHint(coupon);
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: canManage ? onOpen : null,
         child: Container(
           height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -184,7 +185,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     CouponDiscountTile(coupon: coupon),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

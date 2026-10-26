@@ -2,17 +2,17 @@ import 'dart:typed_data';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_image_editor.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_image_settings.dart';
@@ -373,12 +373,12 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(HugeIcons.strokeRoundedImageAdd01, size: 20),
+              leading: const Icon(AppIcons.imageAdd01, size: 20),
               title: Text(S.uploadFromDevice),
               onTap: () => Navigator.of(context).pop(_ImageChoice.device),
             ),
             ListTile(
-              leading: const Icon(HugeIcons.strokeRoundedLink01, size: 20),
+              leading: const Icon(AppIcons.link01, size: 20),
               title: Text(S.useImageLink),
               onTap: () => Navigator.of(context).pop(_ImageChoice.link),
             ),
@@ -451,7 +451,7 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
-    final isNarrow = size.width < 640;
+    final isNarrow = size.width < AppBreakpoints.imageWorkspace;
     final dialogWidth = isNarrow ? size.width - 32 : 820.0;
     final dialogHeight = (size.height * 0.85).clamp(420.0, 780.0);
     final selected = _selected;
@@ -466,7 +466,7 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
           children: [
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Text(
                   _error!,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -481,7 +481,7 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
                   ? _narrowLayout(selected)
                   : _wideLayout(selected),
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             _Actions(
               image: selected,
               busy: _busy,
@@ -518,7 +518,7 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(flex: 3, child: _Preview(image: selected)),
-        const SizedBox(width: AppDimensions.lg),
+        const SizedBox(width: AppSpacing.lg),
         SizedBox(
           width: 104,
           child: _Thumbnails(
@@ -538,9 +538,9 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(flex: 3, child: _Preview(image: selected)),
-        const SizedBox(height: AppDimensions.md),
+        const SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 84,
+          height: AppDimensions.imageThumbnailTileSize,
           child: _Thumbnails(
             images: _images,
             pending: _pending,
@@ -598,7 +598,7 @@ class _Preview extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           color: AppColor.recordCellBackground,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         alignment: Alignment.center,
         child: Text(
@@ -613,7 +613,7 @@ class _Preview extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: AppColor.recordCellBackground,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       clipBehavior: Clip.antiAlias,
       child: CachedNetworkImage(
@@ -631,11 +631,7 @@ class _Preview extends StatelessWidget {
           ),
         ),
         errorWidget: (context, url, error) => Center(
-          child: Icon(
-            HugeIcons.strokeRoundedImage01,
-            size: 40,
-            color: AppColor.greyColor,
-          ),
+          child: Icon(AppIcons.image01, size: 40, color: AppColor.greyColor),
         ),
       ),
     );
@@ -693,15 +689,17 @@ class _Thumbnails extends StatelessWidget {
       return ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: tiles.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppDimensions.sm),
-        itemBuilder: (context, index) =>
-            SizedBox(width: 84, child: tiles[index]),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+        itemBuilder: (context, index) => SizedBox(
+          width: AppDimensions.imageThumbnailTileSize,
+          child: tiles[index],
+        ),
       );
     }
 
     return ListView.separated(
       itemCount: tiles.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.sm),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) => tiles[index],
     );
   }
@@ -723,11 +721,11 @@ class _Thumbnail extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
-        height: 84,
+        height: AppDimensions.imageThumbnailTileSize,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(
             color: isSelected ? AppColor.primaryColor : AppColor.recordBorder,
             width: isSelected ? 2 : 1,
@@ -746,7 +744,7 @@ class _Thumbnail extends StatelessWidget {
               errorWidget: (context, url, error) => const ColoredBox(
                 color: AppColor.recordCellBackground,
                 child: Icon(
-                  HugeIcons.strokeRoundedImage01,
+                  AppIcons.image01,
                   size: 20,
                   color: AppColor.greyColor,
                 ),
@@ -770,10 +768,13 @@ class _PrimaryBadge extends StatelessWidget {
       top: 4,
       start: 4,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.xxs,
+        ),
         decoration: BoxDecoration(
           color: AppColor.primaryColor,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
         child: Text(
           S.primary,
@@ -804,11 +805,11 @@ class _PendingTile extends StatelessWidget {
 
     return InkWell(
       onTap: onSelect,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: Container(
-        height: 84,
+        height: AppDimensions.imageThumbnailTileSize,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(color: AppColor.primaryColor, width: 2),
         ),
         clipBehavior: Clip.antiAlias,
@@ -818,7 +819,7 @@ class _PendingTile extends StatelessWidget {
             if (bytes != null)
               Image.memory(
                 bytes,
-                fit: BoxFit.cover,
+                fit: BoxFit.fill,
                 errorBuilder: (context, error, stackTrace) =>
                     const ColoredBox(color: AppColor.recordCellBackground),
               )
@@ -839,7 +840,7 @@ class _PendingTile extends StatelessWidget {
                         color: AppColor.primaryColor,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: AppSizes.px4),
                     Text(
                       pending.phase == AdminImageUploadPhase.uploading
                           ? S.uploadingImage
@@ -887,37 +888,37 @@ class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Wrap(
-      spacing: AppDimensions.sm,
-      runSpacing: AppDimensions.sm,
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
       children: [
         FilledButton.icon(
           onPressed: busy ? null : onAdd,
-          icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 18),
+          icon: const Icon(AppIcons.add01, size: 18),
           label: Text(S.addImage),
         ),
         OutlinedButton.icon(
           onPressed: busy ? null : onReplace,
-          icon: const Icon(HugeIcons.strokeRoundedImageAdd01, size: 18),
+          icon: const Icon(AppIcons.imageAdd01, size: 18),
           label: Text(S.replaceImage),
         ),
         OutlinedButton.icon(
           onPressed: busy ? null : onSetPrimary,
-          icon: const Icon(HugeIcons.strokeRoundedTick01, size: 18),
+          icon: const Icon(AppIcons.tick01, size: 18),
           label: Text(S.setPrimaryImage),
         ),
         OutlinedButton.icon(
           onPressed: busy ? null : onEdit,
-          icon: const Icon(HugeIcons.strokeRoundedEdit01, size: 18),
+          icon: const Icon(AppIcons.edit01, size: 18),
           label: Text(S.editImage),
         ),
         OutlinedButton.icon(
           onPressed: busy ? null : onSettings,
-          icon: const Icon(HugeIcons.strokeRoundedSettings01, size: 18),
+          icon: const Icon(AppIcons.settings01, size: 18),
           label: Text(S.imageSettings),
         ),
         OutlinedButton.icon(
           onPressed: busy ? null : onDelete,
-          icon: const Icon(HugeIcons.strokeRoundedDelete01, size: 18),
+          icon: const Icon(AppIcons.delete01, size: 18),
           label: Text(S.delete),
           style: OutlinedButton.styleFrom(foregroundColor: AppColor.errorColor),
         ),

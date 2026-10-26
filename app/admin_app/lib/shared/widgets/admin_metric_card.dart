@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
@@ -36,20 +37,23 @@ class AdminMetricCard extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 105),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
+        ),
         decoration: ShapeDecoration(
           color: theme.colorScheme.surface,
           shape: RoundedRectangleBorder(
             side: BorderSide(
               color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
             ),
-            borderRadius: BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           shadows: dark
               ? const []
               : const [
                   BoxShadow(
-                    color: Color(0x0A1B362B),
+                    color: AppColor.inkWashFaint,
                     blurRadius: 24,
                     offset: Offset(0, 5),
                   ),
@@ -65,7 +69,7 @@ class AdminMetricCard extends StatelessWidget {
               iconColor: iconColor,
               iconBackground: iconBackground,
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             Text(
               value,
               textAlign: TextAlign.start,
@@ -78,7 +82,7 @@ class AdminMetricCard extends StatelessWidget {
                 height: 1.5,
               ),
             ),
-            const SizedBox(height: 1),
+            const SizedBox(height: AppSizes.px1),
             Text(
               label,
               textAlign: TextAlign.start,
@@ -140,12 +144,15 @@ class _MetricBadge extends StatelessWidget {
           if (label != null)
             Flexible(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: positive
                       ? AppColor.trendPositiveSurface
                       : AppColor.trendNegativeSurface,
-                  borderRadius: BorderRadius.circular(5),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Directionality(
                   textDirection: TextDirection.rtl,
@@ -165,7 +172,7 @@ class _MetricBadge extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 3),
+                      const SizedBox(width: AppSizes.px4),
                       Icon(
                         positive
                             ? Icons.trending_up_rounded
@@ -180,14 +187,14 @@ class _MetricBadge extends StatelessWidget {
             )
           else
             const SizedBox.shrink(),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Container(
             width: 33,
             height: 33,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: iconBackground,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Icon(icon, size: 19, color: iconColor),
           ),

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
 class KitchenMetricsCards extends StatelessWidget {
@@ -25,7 +26,7 @@ class KitchenMetricsCards extends StatelessWidget {
         label: S.kitchenMetricQueued,
         caption: queuedHint,
         value: localizeDigits('${metrics.queued}'),
-        icon: HugeIcons.strokeRoundedChefHat,
+        icon: AppIcons.chefHat,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
       ),
@@ -33,7 +34,7 @@ class KitchenMetricsCards extends StatelessWidget {
         label: S.kitchenMetricPreparing,
         caption: preparingHint,
         value: localizeDigits('${metrics.preparing}'),
-        icon: HugeIcons.strokeRoundedKitchenUtensils,
+        icon: AppIcons.kitchenUtensils,
         iconBackground: AppColor.adminInfoSurface,
         iconColor: AppColor.adminInfo,
       ),
@@ -41,7 +42,7 @@ class KitchenMetricsCards extends StatelessWidget {
         label: S.kitchenMetricReady,
         caption: S.kitchenMetricReadyHint,
         value: localizeDigits('${metrics.ready}'),
-        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+        icon: AppIcons.checkmarkCircle01,
         iconBackground: AppColor.trendPositiveSurface,
         iconColor: AppColor.trendPositive,
       ),
@@ -49,7 +50,7 @@ class KitchenMetricsCards extends StatelessWidget {
         label: S.kitchenMetricLate,
         caption: localizeDigits(S.kitchenMetricLateHint),
         value: localizeDigits('${metrics.late}'),
-        icon: HugeIcons.strokeRoundedAlarmClock,
+        icon: AppIcons.alarmClock,
         iconBackground: AppColor.trendNegativeSurface,
         iconColor: AppColor.trendNegative,
       ),
@@ -58,7 +59,7 @@ class KitchenMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 760 ? 2 : 4;
+        final columns = width < AppBreakpoints.kitchenMetricsGrid ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

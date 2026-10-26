@@ -2,21 +2,39 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_material_option.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_metrics.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/di/inventory_dependencies.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
+import 'package:admin_app/features/inventory/domain/repositories/inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/usecases/load_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/usecases/load_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/usecases/load_movements.dart';
+import 'package:admin_app/features/inventory/domain/usecases/record_movement.dart';
+import 'package:admin_app/features/inventory/domain/usecases/search_materials.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_stock_movements_state.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 
 class AdminStockMovementsCubit extends Cubit<AdminStockMovementsState> {
-  AdminStockMovementsCubit({AdminInventoryRepository? repository})
-    : _repository = repository ?? AdminInventoryRepository(),
+  AdminStockMovementsCubit({InventoryRepository? repository})
+    : this._withUseCases(repository ?? InventoryDependencies.repository);
+
+  AdminStockMovementsCubit._withUseCases(InventoryRepository repository)
+    : _loadMovements = LoadMovementsUseCase(repository),
+      _loadMovementMetrics = LoadMovementMetricsUseCase(repository),
+      _loadInventoryFilters = LoadInventoryFiltersUseCase(repository),
+      _searchMaterials = SearchMaterialsUseCase(repository),
+      _recordMovement = RecordMovementUseCase(repository),
       super(const AdminStockMovementsState());
 
-  final AdminInventoryRepository _repository;
+  final LoadMovementsUseCase _loadMovements;
+  final LoadMovementMetricsUseCase _loadMovementMetrics;
+  final LoadInventoryFiltersUseCase _loadInventoryFilters;
+  final SearchMaterialsUseCase _searchMaterials;
+  final RecordMovementUseCase _recordMovement;
   Timer? _searchTimer;
   int _requestId = 0;
 
@@ -93,13 +111,13 @@ class AdminStockMovementsCubit extends Cubit<AdminStockMovementsState> {
     String? search,
     String? branchId,
   }) {
-    return _repository.searchMaterials(search: search, branchId: branchId);
+    return _searchMaterials(search: search, branchId: branchId);
   }
 
   Future<InventoryMovementOutcome> recordMovement(
     AdminStockMovementDraft draft,
   ) async {
-    final outcome = await _repository.recordMovement(draft);
+    final outcome = await _recordMovement(draft);
     if (outcome == InventoryMovementOutcome.success) await refresh();
     return outcome;
   }
@@ -118,7 +136,7 @@ class AdminStockMovementsCubit extends Cubit<AdminStockMovementsState> {
       emit(state.copyWith(isRefreshingRows: true, clearError: true));
     }
 
-    final rowsFuture = _repository.loadMovements(
+    final rowsFuture = _loadMovements(
       search: state.search,
       type: state.type.value,
       period: state.period.value,
@@ -182,7 +200,7 @@ class AdminStockMovementsCubit extends Cubit<AdminStockMovementsState> {
 
   Future<AdminStockMovementMetrics?> _loadMetricsSafely() async {
     try {
-      return await _repository.loadMovementMetrics(
+      return await _loadMovementMetrics(
         branchId: state.branchId,
         period: state.period.value,
       );
@@ -193,7 +211,7 @@ class AdminStockMovementsCubit extends Cubit<AdminStockMovementsState> {
 
   Future<AdminInventoryFilters?> _loadFiltersSafely() async {
     try {
-      return await _repository.loadFilters();
+      return await _loadInventoryFilters();
     } catch (_) {
       return null;
     }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_cards.dart';
@@ -110,7 +111,10 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -125,12 +129,12 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
             onPushChanged: widget.onPushChanged,
             onClearFilters: widget.onClearFilters,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           SizedBox(
-            height: 2,
+            height: AppSizes.px2,
             child: widget.isRefreshingRows
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       minHeight: 2,
                       backgroundColor:
@@ -142,7 +146,7 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
                   )
                 : null,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           Expanded(
             child: widget.total == 0
                 ? _emptyState()
@@ -183,7 +187,7 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
 
   Widget _emptyState() {
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedNotification01,
+      icon: AppIcons.notification01,
       message: _hasActiveFilters
           ? S.notificationsNoMatches
           : S.notificationsEmpty,

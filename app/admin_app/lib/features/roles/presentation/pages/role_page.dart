@@ -5,7 +5,7 @@ import 'package:admin_app/features/roles/presentation/manager/admin_role_cubit.d
 import 'package:admin_app/features/roles/presentation/manager/admin_role_state.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_permissions_dialog.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class RolePage extends StatefulWidget {

@@ -5,8 +5,9 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/features/customer_preview/domain/repositories/emulator_bridge.dart';
 
-class EmulatorBridgeClient {
+class EmulatorBridgeClient implements EmulatorBridge {
   EmulatorBridgeClient({http.Client? client})
     : _client = client ?? http.Client();
 
@@ -18,6 +19,7 @@ class EmulatorBridgeClient {
         '$_baseUrl$path',
       ).replace(queryParameters: <String, String>{'token': token, ...?query});
 
+  @override
   Future<bool> check(String token) async {
     final response = await _client
         .get(_uri('/health', token))
@@ -25,6 +27,7 @@ class EmulatorBridgeClient {
     return response.statusCode == 200;
   }
 
+  @override
   Future<Uint8List> screenshot(String token) async {
     final response = await _client
         .get(_uri('/screen', token))
@@ -35,9 +38,11 @@ class EmulatorBridgeClient {
     return response.bodyBytes;
   }
 
+  @override
   Future<void> tap(String token, int x, int y) =>
       _command(token, '/tap', <String, String>{'x': '$x', 'y': '$y'});
 
+  @override
   Future<void> swipe(
     String token,
     int x1,
@@ -53,11 +58,14 @@ class EmulatorBridgeClient {
     'duration': '$duration',
   });
 
+  @override
   Future<void> key(String token, String key) =>
       _command(token, '/key', <String, String>{'key': key});
 
+  @override
   Future<void> refresh(String token) => _command(token, '/refresh');
 
+  @override
   Future<void> sendText(String token, String value) async {
     final response = await _client
         .post(
@@ -93,5 +101,6 @@ class EmulatorBridgeClient {
     return S.bridgeRequestFailed(response.statusCode);
   }
 
+  @override
   void dispose() => _client.close();
 }

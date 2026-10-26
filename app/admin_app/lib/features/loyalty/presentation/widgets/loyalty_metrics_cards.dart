@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_overview.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
@@ -17,37 +19,37 @@ class LoyaltyMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.loyaltyMetricMembers,
         value: loyaltyCount(overview.members),
-        icon: HugeIcons.strokeRoundedUserMultiple,
-        iconBackground: const Color(0xFFE9EDF8),
-        iconColor: const Color(0xFF5F70A8),
+        icon: AppIcons.userMultiple,
+        iconBackground: AppColor.adminInfoSurface,
+        iconColor: AppColor.adminInfo,
       ),
       _MetricData(
         label: S.loyaltyMetricPointsOutstanding,
         value: loyaltyCount(overview.pointsOutstanding),
-        icon: HugeIcons.strokeRoundedStar,
-        iconBackground: const Color(0xFFFBF2DC),
-        iconColor: const Color(0xFFA47B2F),
+        icon: AppIcons.star,
+        iconBackground: AppColor.adminWarningSurface,
+        iconColor: AppColor.adminWarning,
       ),
       _MetricData(
         label: S.loyaltyMetricRedemptions,
         value: loyaltyCount(overview.redemptions),
-        icon: HugeIcons.strokeRoundedGift,
-        iconBackground: const Color(0xFFE8F3EC),
-        iconColor: const Color(0xFF3D8A68),
+        icon: AppIcons.gift,
+        iconBackground: AppColor.tintGreenSurface,
+        iconColor: AppColor.trendPositive,
       ),
       _MetricData(
         label: S.loyaltyMetricActiveRewards,
         value: loyaltyCount(overview.activeRewards),
-        icon: HugeIcons.strokeRoundedCheckmarkBadge01,
-        iconBackground: const Color(0xFFF0EAFB),
-        iconColor: const Color(0xFF7E57C2),
+        icon: AppIcons.checkmarkBadge01,
+        iconBackground: AppColor.tintVioletSurface,
+        iconColor: AppColor.tintVioletInk,
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

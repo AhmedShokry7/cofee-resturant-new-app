@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 enum InventoryMaterialAction { movement, edit, delete }
@@ -38,7 +39,7 @@ class InventoryActionsMenu extends StatelessWidget {
             value: InventoryMaterialAction.movement,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedExchange01,
+              icon: AppIcons.exchange01,
               label: S.stockMovementAction,
               direction: rtl,
             ),
@@ -48,7 +49,7 @@ class InventoryActionsMenu extends StatelessWidget {
             value: InventoryMaterialAction.edit,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedPencilEdit02,
+              icon: AppIcons.pencilEdit02,
               label: S.edit,
               direction: rtl,
             ),
@@ -58,7 +59,7 @@ class InventoryActionsMenu extends StatelessWidget {
             value: InventoryMaterialAction.delete,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedDelete02,
+              icon: AppIcons.delete02,
               label: S.delete,
               direction: rtl,
               color: AppColor.errorColor,
@@ -66,8 +67,8 @@ class InventoryActionsMenu extends StatelessWidget {
           ),
         ],
       ],
-      child: HugeIcon(
-        icon: HugeIcons.strokeRoundedMoreHorizontal,
+      child: AppIcon(
+        AppIcons.moreHorizontal,
         size: 18,
         color: adminMutedColor(theme),
       ),
@@ -83,8 +84,8 @@ class InventoryActionsMenu extends StatelessWidget {
   }) => Row(
     textDirection: direction ? TextDirection.rtl : TextDirection.ltr,
     children: [
-      HugeIcon(icon: icon, size: 16, color: color ?? adminBodyColor(theme)),
-      const SizedBox(width: 8),
+      AppIcon(icon, size: 16, color: color ?? adminBodyColor(theme)),
+      const SizedBox(width: AppSizes.px8),
       Flexible(
         child: Text(
           label,

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/models/coupon_filter.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_cards.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_table.dart';
@@ -122,7 +123,10 @@ class _CouponDirectoryState extends State<CouponDirectory> {
         .toList(growable: false);
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -139,7 +143,7 @@ class _CouponDirectoryState extends State<CouponDirectory> {
             filterLabel: S.couponsFilter,
             hasActiveFilter: _filter != AdminCouponFilter.all,
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: count == 0
                 ? _emptyState(canClear: canClear)
@@ -183,7 +187,7 @@ class _CouponDirectoryState extends State<CouponDirectory> {
   Widget _emptyState({required bool canClear}) {
     final noData = widget.coupons.isEmpty;
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedTicket01,
+      icon: AppIcons.ticket01,
       message: noData ? S.couponsEmpty : S.couponsNoMatches,
       hint: noData ? S.couponsEmptyHint : null,
       action: canClear
@@ -191,7 +195,7 @@ class _CouponDirectoryState extends State<CouponDirectory> {
           : noData && widget.canManage
           ? TextButton.icon(
               onPressed: widget.onAdd,
-              icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
+              icon: const Icon(AppIcons.add01, size: 16),
               label: Text(S.couponsNew),
             )
           : null,

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_financial_summary.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_payment_status_control.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -33,9 +34,9 @@ class OrderPaymentSection extends StatelessWidget {
             saving: saving,
             onChanged: onPaymentStatusChanged,
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSizes.px14),
           Divider(height: 1, color: adminRowBorderColor(theme)),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSizes.px12),
           OrderFinancialSummary(
             order: order,
             paymentMethodLabel: paymentMethodLabel,

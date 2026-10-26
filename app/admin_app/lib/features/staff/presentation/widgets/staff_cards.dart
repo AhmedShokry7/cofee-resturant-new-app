@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -27,7 +28,7 @@ class StaffCards extends StatelessWidget {
   Widget build(BuildContext context) => ListView.separated(
     padding: EdgeInsets.zero,
     itemCount: staff.length,
-    separatorBuilder: (_, _) => const SizedBox(height: 8),
+    separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
     itemBuilder: (context, index) {
       final member = staff[index];
       return _StaffCard(
@@ -54,7 +55,7 @@ class _StaffCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = adminIsDark(theme);
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final body = adminBodyColor(theme);
     final subtle = adminSubtleColor(theme);
     final status = StaffStatusView.of(member.status);
@@ -67,7 +68,7 @@ class _StaffCard extends StatelessWidget {
         onTap: onManage,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(color: adminCardBorderColor(theme)),
@@ -78,7 +79,7 @@ class _StaffCard extends StatelessWidget {
               Row(
                 children: [
                   StaffAvatar(member: member, size: 38),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,11 +109,11 @@ class _StaffCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   AdminStatusBadge(label: status.label, color: status.color),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -132,7 +133,7 @@ class _StaffCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     flex: 2,
                     child: AdminLabeledValue(
@@ -151,7 +152,7 @@ class _StaffCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [

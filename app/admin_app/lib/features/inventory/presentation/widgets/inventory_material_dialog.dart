@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_cubit.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
@@ -186,13 +186,14 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.sizeOf(context).width < 600
-            ? AppDimensions.md
-            : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal:
+            MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 640),
@@ -210,13 +211,13 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_error != null) ...[
                       AdminErrorBanner(message: _error!),
-                      const SizedBox(height: AppDimensions.md),
+                      const SizedBox(height: AppSpacing.md),
                     ],
                     LayoutBuilder(
                       builder: (context, constraints) {
@@ -235,31 +236,31 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                             ? Column(
                                 children: [
                                   sku,
-                                  const SizedBox(height: AppDimensions.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   category,
                                 ],
                               )
                             : Row(
                                 children: [
                                   Expanded(child: sku),
-                                  const SizedBox(width: AppDimensions.md),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(child: category),
                                 ],
                               );
                       },
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _MaterialField(
                       controller: _nameArController,
                       label: '${S.nameAr} *',
                       textDirection: TextDirection.rtl,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _MaterialField(
                       controller: _nameEnController,
                       label: S.nameEn,
                     ),
-                    const SizedBox(height: AppDimensions.lg),
+                    const SizedBox(height: AppSpacing.lg),
                     Text(
                       S.materialIdentity,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -267,7 +268,7 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                         fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
-                    const SizedBox(height: AppDimensions.sm),
+                    const SizedBox(height: AppSpacing.sm),
                     DropdownButtonFormField<String>(
                       initialValue: _unit,
                       decoration: InputDecoration(
@@ -288,15 +289,15 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                             },
                     ),
                     if (_unitLocked) ...[
-                      const SizedBox(height: 5),
+                      const SizedBox(height: AppSizes.px6),
                       Row(
                         children: [
-                          const HugeIcon(
-                            icon: HugeIcons.strokeRoundedLock,
+                          const AppIcon(
+                            AppIcons.password,
                             size: 13,
                             color: AppColor.adminMuted,
                           ),
-                          const SizedBox(width: 5),
+                          const SizedBox(width: AppSizes.px6),
                           Expanded(
                             child: Text(
                               S.materialUnitLocked,
@@ -310,7 +311,7 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                         ],
                       ),
                     ],
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final cost = _MaterialField(
@@ -337,20 +338,20 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                             ? Column(
                                 children: [
                                   cost,
-                                  const SizedBox(height: AppDimensions.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   reorder,
                                 ],
                               )
                             : Row(
                                 children: [
                                   Expanded(child: cost),
-                                  const SizedBox(width: AppDimensions.md),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(child: reorder),
                                 ],
                               );
                       },
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _MaterialField(
                       controller: _notesController,
                       label: S.materialNotes,

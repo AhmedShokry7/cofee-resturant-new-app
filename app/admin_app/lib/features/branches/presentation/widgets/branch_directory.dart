@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
 import 'package:admin_app/features/branches/presentation/models/branch_filter.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_cards.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_table.dart';
@@ -140,7 +141,10 @@ class _BranchDirectoryState extends State<BranchDirectory> {
         _filter != BranchFilter.all || widget.search.trim().isNotEmpty;
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -162,7 +166,7 @@ class _BranchDirectoryState extends State<BranchDirectory> {
               count: setupCount,
               onReview: () => _setFilter(BranchFilter.needsSetup),
             ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: count == 0
                 ? _emptyState(canClear: canClear)
@@ -212,7 +216,7 @@ class _BranchDirectoryState extends State<BranchDirectory> {
   Widget _emptyState({required bool canClear}) {
     final noData = widget.branches.isEmpty;
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedStore01,
+      icon: AppIcons.store01,
       message: noData ? S.noBranchesFound : S.branchesNoMatches,
       hint: noData ? S.branchesEmptyHint : S.branchesNoMatchesHint,
       action: canClear
@@ -220,7 +224,7 @@ class _BranchDirectoryState extends State<BranchDirectory> {
           : noData && widget.canManage
           ? TextButton.icon(
               onPressed: widget.onAdd,
-              icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
+              icon: const Icon(AppIcons.add01, size: 16),
               label: Text(S.addBranch),
             )
           : null,
@@ -240,7 +244,7 @@ class _SetupBanner extends StatelessWidget {
     final dark = adminIsDark(theme);
     final foreground = adminFlagForeground(theme, AppColor.adminWarning);
     return Container(
-      margin: const EdgeInsets.only(top: 10),
+      margin: const EdgeInsets.only(top: AppSpacing.sm),
       padding: const EdgeInsetsDirectional.fromSTEB(10, 7, 6, 7),
       decoration: BoxDecoration(
         color: adminFlagBackground(
@@ -248,19 +252,15 @@ class _SetupBanner extends StatelessWidget {
           AppColor.adminWarning,
           AppColor.adminWarningSurface,
         ),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColor.adminWarning.withValues(alpha: dark ? .35 : .18),
         ),
       ),
       child: Row(
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            size: 16,
-            color: foreground,
-          ),
-          const SizedBox(width: 7),
+          AppIcon(AppIcons.alert, size: 16, color: foreground),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -289,12 +289,12 @@ class _SetupBanner extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.px4),
           TextButton(
             onPressed: onReview,
             style: TextButton.styleFrom(
               foregroundColor: foreground,
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               minimumSize: const Size(0, 32),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),

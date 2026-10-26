@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_metrics.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_metrics.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
 class SubscriptionPlanMetricsCards extends StatelessWidget {
@@ -17,37 +19,37 @@ class SubscriptionPlanMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.subscriptionPlansTotalMetric,
         value: localizeDigits('${metrics.total}'),
-        icon: HugeIcons.strokeRoundedPackage,
-        iconBackground: const Color(0xFFE9EDF8),
-        iconColor: const Color(0xFF5F70A8),
+        icon: AppIcons.package,
+        iconBackground: AppColor.adminInfoSurface,
+        iconColor: AppColor.adminInfo,
       ),
       _MetricData(
         label: S.subscriptionPlansOnSaleMetric,
         value: localizeDigits('${metrics.onSale}'),
-        icon: HugeIcons.strokeRoundedCheckmarkCircle02,
-        iconBackground: const Color(0xFFE8F3EC),
-        iconColor: const Color(0xFF3D8A68),
+        icon: AppIcons.checkmarkCircle02,
+        iconBackground: AppColor.tintGreenSurface,
+        iconColor: AppColor.trendPositive,
       ),
       _MetricData(
         label: S.subscriptionPlansActiveSubscribersMetric,
         value: localizeDigits('${metrics.activeSubscribers}'),
-        icon: HugeIcons.strokeRoundedUserMultiple,
-        iconBackground: const Color(0xFFF0EAFB),
-        iconColor: const Color(0xFF7E57C2),
+        icon: AppIcons.userMultiple,
+        iconBackground: AppColor.tintVioletSurface,
+        iconColor: AppColor.tintVioletInk,
       ),
       _MetricData(
         label: S.subscriptionPlansAutoRenewMetric,
         value: localizeDigits('${metrics.autoRenewPlans}'),
-        icon: HugeIcons.strokeRoundedRefresh,
-        iconBackground: const Color(0xFFFBF2DC),
-        iconColor: const Color(0xFFA47B2F),
+        icon: AppIcons.refresh,
+        iconBackground: AppColor.adminWarningSurface,
+        iconColor: AppColor.adminWarning,
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

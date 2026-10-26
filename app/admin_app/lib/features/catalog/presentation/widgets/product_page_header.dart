@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/shared/widgets/admin_bulk_selection_bar.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -55,23 +55,23 @@ class ProductPageHeader extends StatelessWidget {
         if (onPickFile != null || onDownloadSample != null)
           _circleIcon(
             context,
-            icon: HugeIcons.strokeRoundedUpload02,
+            icon: AppIcons.upload02,
             tooltip: S.importExcel,
             onTap: busy ? null : () => _showImportDialog(context),
           ),
         if (onExport != null)
           _circleIcon(
             context,
-            icon: HugeIcons.strokeRoundedDownload02,
+            icon: AppIcons.download02,
             tooltip: S.exportExcel,
             onTap: busy ? null : onExport,
           ),
         CustomBtn(
           text: S.addProduct,
           onPressed: busy ? null : onAdd,
-          leadingIcon: const Icon(HugeIcons.strokeRoundedAdd01, size: 18),
+          leadingIcon: const Icon(AppIcons.add01, size: 18),
           height: 42,
-          borderRadius: AppDimensions.radiusPill,
+          borderRadius: AppRadius.pill,
           backgroundColor: AppColor.primaryColor,
           textColor: AppColor.whiteColor,
         ),
@@ -118,7 +118,7 @@ class ProductPageHeader extends StatelessWidget {
         child: Tooltip(
           message: tooltip,
           child: Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             child: Icon(icon, size: 20, color: foreground),
           ),
         ),

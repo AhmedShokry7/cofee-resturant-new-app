@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -71,10 +72,13 @@ class NotificationPushReadyChip extends StatelessWidget {
         ? AppColor.trendPositiveSurface
         : AppColor.adminTableHeader;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, background),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: color.withValues(alpha: adminIsDark(theme) ? .35 : .18),
         ),
@@ -82,14 +86,12 @@ class NotificationPushReadyChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: ready
-                ? HugeIcons.strokeRoundedSmartPhone01
-                : HugeIcons.strokeRoundedCancelCircle,
+          AppIcon(
+            ready ? AppIcons.smartPhone01 : AppIcons.cancelCircle,
             size: 10,
             color: adminFlagForeground(theme, color),
           ),
-          const SizedBox(width: 3),
+          const SizedBox(width: AppSizes.px4),
           Text(
             ready
                 ? S.notificationsComposePushReady

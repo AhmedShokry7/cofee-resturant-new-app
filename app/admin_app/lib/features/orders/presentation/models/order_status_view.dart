@@ -30,11 +30,11 @@ class OrderStatusView {
       'cancelled': S.statusCancelled,
     };
     final colors = <String, Color>{
-      'pending': const Color(0xFFF59E0B),
-      'confirmed': const Color(0xFF2563EB),
-      'preparing': const Color(0xFFEA580C),
-      'ready': const Color(0xFF7C3AED),
-      'out_for_delivery': const Color(0xFF4F46E5),
+      'pending': AppColor.statusAmber,
+      'confirmed': AppColor.statusBlue,
+      'preparing': AppColor.statusOrange,
+      'ready': AppColor.statusViolet,
+      'out_for_delivery': AppColor.statusIndigo,
       'completed': AppColor.primaryColor,
       'cancelled': AppColor.errorColor,
     };

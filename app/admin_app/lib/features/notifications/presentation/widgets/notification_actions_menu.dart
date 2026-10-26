@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 enum NotificationAction { details, toggleRead, resend, delete }
@@ -36,7 +37,7 @@ class NotificationActionsMenu extends StatelessWidget {
           value: NotificationAction.details,
           child: _item(
             theme,
-            icon: HugeIcons.strokeRoundedEye,
+            icon: AppIcons.eyeIcon,
             label: S.notificationsViewDetails,
             rtl: rtl,
           ),
@@ -47,8 +48,8 @@ class NotificationActionsMenu extends StatelessWidget {
             child: _item(
               theme,
               icon: notification.isRead
-                  ? HugeIcons.strokeRoundedCircle
-                  : HugeIcons.strokeRoundedCheckmarkCircle02,
+                  ? AppIcons.circle
+                  : AppIcons.checkmarkCircle02,
               label: notification.isRead
                   ? S.notificationsMarkUnread
                   : S.notificationsMarkRead,
@@ -60,7 +61,7 @@ class NotificationActionsMenu extends StatelessWidget {
             value: NotificationAction.resend,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedSent,
+              icon: AppIcons.sent,
               label: S.notificationsResend,
               rtl: rtl,
             ),
@@ -71,15 +72,15 @@ class NotificationActionsMenu extends StatelessWidget {
             value: NotificationAction.delete,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedDelete02,
+              icon: AppIcons.delete02,
               label: S.notificationsDelete,
               rtl: rtl,
               color: AppColor.errorColor,
             ),
           ),
       ],
-      child: HugeIcon(
-        icon: HugeIcons.strokeRoundedMoreHorizontal,
+      child: AppIcon(
+        AppIcons.moreHorizontal,
         size: 18,
         color: adminMutedColor(theme),
       ),
@@ -95,8 +96,8 @@ class NotificationActionsMenu extends StatelessWidget {
   }) => Row(
     textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
     children: [
-      HugeIcon(icon: icon, size: 16, color: color ?? adminBodyColor(theme)),
-      const SizedBox(width: 8),
+      AppIcon(icon, size: 16, color: color ?? adminBodyColor(theme)),
+      const SizedBox(width: AppSizes.px8),
       Text(
         label,
         style: TextStyle(

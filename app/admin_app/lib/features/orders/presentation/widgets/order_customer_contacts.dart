@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -32,26 +33,11 @@ class OrderCustomerContacts extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (phone != null)
-          _row(
-            context,
-            HugeIcons.strokeRoundedCall02,
-            S.customerPhoneLabel,
-            phone!,
-          ),
+          _row(context, AppIcons.call02, S.customerPhoneLabel, phone!),
         if (email != null)
-          _row(
-            context,
-            HugeIcons.strokeRoundedMail01,
-            S.customerEmailLabel,
-            email!,
-          ),
+          _row(context, AppIcons.email, S.customerEmailLabel, email!),
         if (address != null)
-          _row(
-            context,
-            HugeIcons.strokeRoundedMapPin,
-            S.customerAddressLabel,
-            address!,
-          ),
+          _row(context, AppIcons.mapPin, S.customerAddressLabel, address!),
       ],
     );
   }
@@ -59,19 +45,15 @@ class OrderCustomerContacts extends StatelessWidget {
   Widget _row(BuildContext context, dynamic icon, String label, String value) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 2),
-            child: HugeIcon(
-              icon: icon,
-              size: 13,
-              color: adminSubtleColor(theme),
-            ),
+            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+            child: AppIcon(icon, size: 13, color: adminSubtleColor(theme)),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

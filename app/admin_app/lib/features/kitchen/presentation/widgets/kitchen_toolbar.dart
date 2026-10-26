@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
 
@@ -70,12 +71,12 @@ class KitchenToolbar extends StatelessWidget {
                 ],
                 child: compact
                     ? AdminToolbarIcon(
-                        icon: HugeIcons.strokeRoundedStore01,
+                        icon: AppIcons.store01,
                         active: branchId != null,
                       )
                     : AdminToolbarSurface(
                         label: _branchLabel,
-                        icon: HugeIcons.strokeRoundedStore01,
+                        icon: AppIcons.store01,
                         active: branchId != null,
                       ),
               );
@@ -88,8 +89,8 @@ class KitchenToolbar extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding: EdgeInsets.zero,
                 ),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedCancel01,
+                icon: const AppIcon(
+                  AppIcons.cancel01,
                   size: 18,
                   color: AppColor.adminMuted,
                 ),
@@ -102,14 +103,17 @@ class KitchenToolbar extends StatelessWidget {
             children: [
               search,
               if (branchMenu != null || clear != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSizes.px8),
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       ?branchMenu,
-                      if (clear != null) ...[const SizedBox(width: 8), clear],
+                      if (clear != null) ...[
+                        const SizedBox(width: AppSizes.px8),
+                        clear,
+                      ],
                     ],
                   ),
                 ),
@@ -126,7 +130,7 @@ class KitchenToolbar extends StatelessWidget {
             ),
             const Spacer(),
             ?branchMenu,
-            if (clear != null) ...[const SizedBox(width: 8), clear],
+            if (clear != null) ...[const SizedBox(width: AppSizes.px8), clear],
           ],
         );
       },
@@ -143,16 +147,16 @@ class KitchenToolbar extends StatelessWidget {
     child: Row(
       children: [
         SizedBox(
-          width: 18,
+          width: AppSizes.px18,
           child: selected
-              ? const HugeIcon(
-                  icon: HugeIcons.strokeRoundedTick01,
+              ? const AppIcon(
+                  AppIcons.tick01,
                   size: 15,
                   color: AppColor.adminAccent,
                 )
               : null,
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSizes.px6),
         Flexible(
           child: Text(
             label,

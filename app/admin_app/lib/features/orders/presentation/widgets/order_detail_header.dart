@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_detail_meta_row.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_detail_status_control.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
@@ -28,10 +29,10 @@ class OrderDetailHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final branch = order.branchNameFor(AppLocale.instance.language);
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -50,23 +51,23 @@ class OrderDetailHeader extends StatelessWidget {
                   height: AppTextHeights.line1_4,
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Flexible(child: OrderStatusPill(status: order.status)),
             ],
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.px6),
           OrderDetailMetaRow(
-            icon: HugeIcons.strokeRoundedCalendar01,
+            icon: AppIcons.calendar01,
             label: S.orderPlacedAt,
             value: orderDateTime(order.placedAt),
           ),
           if (branch.isNotEmpty)
             OrderDetailMetaRow(
-              icon: HugeIcons.strokeRoundedStore01,
+              icon: AppIcons.store01,
               label: S.ordersBranch,
               value: branch,
             ),
-          const SizedBox(height: 14),
+          const SizedBox(height: AppSizes.px14),
           OrderDetailStatusControl(
             order: order,
             saving: saving,

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
-import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_cart_panel.dart';
+import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_menu_toolbar.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_product_card.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
@@ -105,7 +106,7 @@ class PosPageBody extends StatelessWidget {
                   _BranchPicker(state: state, onChanged: onBranchChanged),
                   AdminToolbarButton(
                     label: S.refresh,
-                    icon: HugeIcons.strokeRoundedRefresh,
+                    icon: AppIcons.refresh,
                     busy: state.isRefreshing,
                     onPressed: onRefresh,
                   ),
@@ -113,14 +114,14 @@ class PosPageBody extends StatelessWidget {
               ),
               if (inlineError != null)
                 AdminInlineError(message: inlineError!, onRetry: onRefresh),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSizes.px14),
               Expanded(
                 child: wide
                     ? Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Expanded(child: _buildMenu(bottomInset: 0)),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: AppSizes.px16),
                           SizedBox(width: cartWidth, child: _buildCart()),
                         ],
                       )
@@ -159,15 +160,15 @@ class PosPageBody extends StatelessWidget {
           onCategoryChanged: onCategoryChanged,
           totalProducts: state.products.length,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSizes.px12),
         Expanded(
           child: visible.isEmpty
               ? Padding(
                   padding: EdgeInsets.only(bottom: bottomInset),
                   child: AdminEmptyState(
                     icon: state.hasProducts
-                        ? HugeIcons.strokeRoundedSearch01
-                        : HugeIcons.strokeRoundedCoffee01,
+                        ? AppIcons.search01
+                        : AppIcons.coffee01,
                     message: state.hasProducts
                         ? S.posNoMatches
                         : S.posNoMenuTitle,
@@ -252,16 +253,16 @@ class _BranchPicker extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 18,
+                  width: AppSizes.px18,
                   child: option.id == branch.id
-                      ? const HugeIcon(
-                          icon: HugeIcons.strokeRoundedTick01,
+                      ? const AppIcon(
+                          AppIcons.tick01,
                           size: 15,
                           color: AppColor.adminAccent,
                         )
                       : null,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.px6),
                 Flexible(
                   child: Text(
                     option.nameFor(AppLocale.instance.language),
@@ -279,7 +280,7 @@ class _BranchPicker extends StatelessWidget {
       ],
       child: AdminToolbarSurface(
         label: branch.nameFor(AppLocale.instance.language),
-        icon: HugeIcons.strokeRoundedStore01,
+        icon: AppIcons.store01,
         active: true,
       ),
     );
@@ -300,7 +301,7 @@ class _ShiftButton extends StatelessWidget {
       return AdminToolbarButton(
         key: const Key('pos-shift-button'),
         label: state.shiftKnown ? S.posShiftOpenAction : S.posShift,
-        icon: HugeIcons.strokeRoundedCashier,
+        icon: AppIcons.cashier,
         busy: state.isLoadingShift,
         onPressed: onPressed,
       );
@@ -314,14 +315,17 @@ class _ShiftButton extends StatelessWidget {
 
     return Material(
       key: const Key('pos-shift-button'),
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
+      color: AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
           constraints: const BoxConstraints(maxWidth: 240),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
             color: adminFlagBackground(
               theme,
@@ -331,17 +335,13 @@ class _ShiftButton extends StatelessWidget {
             border: Border.all(
               color: AppColor.adminAccent.withValues(alpha: .45),
             ),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedCashier,
-                size: 17,
-                color: accent,
-              ),
-              const SizedBox(width: 8),
+              AppIcon(AppIcons.cashier, size: 17, color: accent),
+              const SizedBox(width: AppSizes.px8),
               Flexible(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -391,16 +391,16 @@ class _CartBar extends StatelessWidget {
     final theme = Theme.of(context);
     final summary = state.cartSummary;
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: adminIsDark(theme)
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x141B362B),
+                  color: AppColor.inkWashSoft,
                   blurRadius: 20,
                   offset: Offset(0, 6),
                 ),
@@ -420,13 +420,13 @@ class _CartBar extends StatelessWidget {
               ),
               shape: BoxShape.circle,
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedShoppingBag01,
+            child: AppIcon(
+              AppIcons.shoppingBag01,
               size: 18,
               color: adminFlagForeground(theme, AppColor.adminAccent),
             ),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -455,14 +455,14 @@ class _CartBar extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           FilledButton(
             onPressed: state.isPlacingOrder ? null : onOpen,
             style: FilledButton.styleFrom(
               minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
             child: Text(

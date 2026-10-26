@@ -1,7 +1,7 @@
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_overview.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_overview.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 enum DiningStatus { initial, loading, ready, failure }
 

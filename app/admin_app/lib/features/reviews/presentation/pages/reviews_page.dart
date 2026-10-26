@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
-import 'package:admin_app/features/reviews/data/repositories/admin_reviews_repository.dart';
+import 'package:admin_app/features/reviews/domain/repositories/review_repository.dart';
 import 'package:admin_app/features/reviews/presentation/manager/admin_reviews_cubit.dart';
 import 'package:admin_app/features/reviews/presentation/manager/admin_reviews_state.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_details_dialog.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_directory.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_format.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class ReviewsPage extends StatefulWidget {
@@ -131,7 +132,7 @@ class _ReviewsPageState extends State<ReviewsPage> {
         final theme = Theme.of(context);
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           title: Text(
             S.reviewsDeleteTitle,
@@ -159,9 +160,9 @@ class _ReviewsPageState extends State<ReviewsPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
                 minimumSize: const Size(0, 38),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
               ),
               child: Text(

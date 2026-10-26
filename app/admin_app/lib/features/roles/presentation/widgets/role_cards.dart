@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_format.dart';
@@ -27,7 +28,7 @@ class RoleCards extends StatelessWidget {
   Widget build(BuildContext context) => ListView.separated(
     padding: EdgeInsets.zero,
     itemCount: roles.length,
-    separatorBuilder: (_, _) => const SizedBox(height: 8),
+    separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
     itemBuilder: (context, index) {
       final role = roles[index];
       return _RoleCard(
@@ -49,7 +50,7 @@ class _RoleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final body = adminBodyColor(theme);
     final subtle = adminSubtleColor(theme);
     final accent = adminIsDark(theme)
@@ -63,7 +64,7 @@ class _RoleCard extends StatelessWidget {
         onTap: onManage,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(color: adminCardBorderColor(theme)),
@@ -74,7 +75,7 @@ class _RoleCard extends StatelessWidget {
               Row(
                 children: [
                   RoleIcon(role: role, size: 38),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,14 +104,14 @@ class _RoleCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   AdminStatusBadge(
                     label: roleTypeLabel(role),
                     color: roleTypeColor(role),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               AdminLabeledValue(
                 label: S.rolesTablePermissions,
                 child: Column(
@@ -140,7 +141,7 @@ class _RoleCard extends StatelessWidget {
                 ),
               ),
               if (onManage != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.px4),
                 Align(
                   alignment: AlignmentDirectional.centerEnd,
                   child: TextButton.icon(
@@ -148,17 +149,17 @@ class _RoleCard extends StatelessWidget {
                     style: TextButton.styleFrom(
                       foregroundColor: accent,
                       minimumSize: const Size(0, 30),
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
                       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       textStyle: const TextStyle(
                         fontSize: AppFontSizes.size10_5,
                         fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
-                    icon: HugeIcon(
-                      icon: canManage
-                          ? HugeIcons.strokeRoundedUserSettings01
-                          : HugeIcons.strokeRoundedEye,
+                    icon: AppIcon(
+                      canManage ? AppIcons.userSettings01 : AppIcons.eyeIcon,
                       size: 15,
                       color: accent,
                     ),

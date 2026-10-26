@@ -3,17 +3,18 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
-import 'package:admin_app/features/pos/data/models/pos_order_result.dart';
-import 'package:admin_app/features/pos/data/models/pos_shift.dart';
-import 'package:admin_app/features/pos/data/models/pos_table.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_table.dart';
 import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 const _branches = <PosBranch>[
   PosBranch(id: 'b1', code: 'MAADI', nameAr: 'المعادي', nameEn: 'Maadi'),

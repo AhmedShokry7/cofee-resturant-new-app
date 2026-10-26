@@ -34,7 +34,7 @@ String roleTypeLabel(AdminRole role) =>
     role.isSystem ? S.systemRole : S.roleCustom;
 
 Color roleTypeColor(AdminRole role) =>
-    role.isSystem ? AppColor.adminAccent : const Color(0xFF5F70A8);
+    role.isSystem ? AppColor.adminAccent : AppColor.adminInfo;
 
 String roleCode(AdminRole role) {
   final code = role.code.trim();

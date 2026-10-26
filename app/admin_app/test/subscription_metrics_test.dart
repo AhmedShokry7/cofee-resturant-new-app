@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_metrics.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_metrics.dart';
 
 AdminSubscription _subscription({
   required String id,

@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_excel_controller.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_page_view.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 
 /// The products of the catalogue, with their images and their Excel jobs.
 ///

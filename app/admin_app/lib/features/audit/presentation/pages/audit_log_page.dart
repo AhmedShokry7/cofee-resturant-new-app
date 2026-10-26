@@ -7,7 +7,7 @@ import 'package:admin_app/features/audit/presentation/manager/admin_audit_state.
 import 'package:admin_app/features/audit/presentation/widgets/audit_details_dialog.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_directory.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class AuditLogPage extends StatefulWidget {

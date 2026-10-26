@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
@@ -48,7 +48,7 @@ class CartDetailsDialog extends StatelessWidget {
     return AlertDialog(
       title: Text(S.cartDetailsTitle),
       content: SizedBox(
-        width: 520,
+        width: AppDimensions.dialogBodyWidthPanel,
         child: ConstrainedBox(
           constraints: BoxConstraints(
             maxHeight: MediaQuery.sizeOf(context).height * .6,
@@ -87,7 +87,7 @@ class CartDetailsDialog extends StatelessWidget {
                     label: S.updatedAt,
                     value: updated,
                   ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.px2),
                 Row(
                   children: [
                     Text(
@@ -98,16 +98,16 @@ class CartDetailsDialog extends StatelessWidget {
                         height: AppTextHeights.line1_5,
                       ),
                     ),
-                    const SizedBox(width: AppDimensions.sm),
+                    const SizedBox(width: AppSpacing.sm),
                     AdminStatusBadge(label: status.label, color: status.color),
                   ],
                 ),
-                const SizedBox(height: AppDimensions.md),
+                const SizedBox(height: AppSpacing.md),
                 Container(
-                  padding: const EdgeInsets.all(AppDimensions.md),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
                     color: adminTintedSurfaceColor(theme),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(color: adminCardBorderColor(theme)),
                   ),
                   child: Row(
@@ -135,7 +135,7 @@ class CartDetailsDialog extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: AppDimensions.lg),
+                const SizedBox(height: AppSpacing.lg),
                 Text(
                   S.itemsTitle,
                   style: TextStyle(
@@ -145,7 +145,7 @@ class CartDetailsDialog extends StatelessWidget {
                     height: AppTextHeights.line1_5,
                   ),
                 ),
-                const SizedBox(height: AppDimensions.sm),
+                const SizedBox(height: AppSpacing.sm),
                 if (cart.items.isEmpty)
                   Text(
                     S.noCartItems,
@@ -158,7 +158,7 @@ class CartDetailsDialog extends StatelessWidget {
                 else
                   for (final item in cart.items)
                     Padding(
-                      padding: const EdgeInsets.only(bottom: AppDimensions.sm),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: _CartItemRow(item: item, language: language),
                     ),
               ],
@@ -182,7 +182,7 @@ class CartDetailsDialog extends StatelessWidget {
     required String value,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -227,10 +227,10 @@ class _CartItemRow extends StatelessWidget {
     return Row(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: SizedBox(
-            width: 40,
-            height: 40,
+            width: AppSizes.px40,
+            height: AppSizes.px40,
             child: image != null && image.isNotEmpty
                 ? CachedNetworkImage(
                     imageUrl: image,
@@ -246,7 +246,7 @@ class _CartItemRow extends StatelessWidget {
                   ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSizes.px10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,7 +276,7 @@ class _CartItemRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: AppDimensions.sm),
+        const SizedBox(width: AppSpacing.sm),
         Text(
           formatMoneyWithCurrency(item.lineTotal),
           maxLines: 1,
@@ -303,11 +303,7 @@ class _ItemImagePlaceholder extends StatelessWidget {
     return ColoredBox(
       color: background,
       child: Center(
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedShoppingBag01,
-          size: 18,
-          color: color,
-        ),
+        child: AppIcon(AppIcons.shoppingBag01, size: 18, color: color),
       ),
     );
   }

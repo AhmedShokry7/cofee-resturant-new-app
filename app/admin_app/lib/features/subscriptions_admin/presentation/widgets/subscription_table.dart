@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_avatar.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -60,7 +61,7 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -114,12 +115,12 @@ class _Row extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: 58,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -134,7 +135,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     SubscriptionAvatar(subscription: subscription),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -255,10 +256,8 @@ class _Row extends StatelessWidget {
                   alignment: AlignmentDirectional.centerEnd,
                   child: Tooltip(
                     message: S.subscriptionsViewAction,
-                    child: HugeIcon(
-                      icon: rtl
-                          ? HugeIcons.strokeRoundedArrowLeft01
-                          : HugeIcons.strokeRoundedArrowRight01,
+                    child: AppIcon(
+                      rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                       size: 16,
                       color: AppColor.adminMuted,
                     ),
@@ -285,9 +284,9 @@ class _CupsCell extends StatelessWidget {
     return Row(
       children: [
         SizedBox(
-          width: 42,
+          width: AppSizes.px42,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
             child: LinearProgressIndicator(
               value: subscription.cupsProgress,
               minHeight: 4,
@@ -300,7 +299,7 @@ class _CupsCell extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 7),
+        const SizedBox(width: AppSizes.px8),
         Flexible(
           child: Text(
             subscriptionCupsValue(subscription),

@@ -1,62 +1,28 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_material_option.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_metrics.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_metrics.dart';
-
-enum InventoryMaterialSaveOutcome {
-  saved,
-  duplicateSku,
-  invalidName,
-  invalidSku,
-  invalidCategory,
-  invalidUnit,
-  invalidCost,
-  invalidReorder,
-  invalidNotes,
-  unitLocked,
-  notFound,
-  permissionDenied,
-  failed,
-}
-
-enum InventoryMutationOutcome {
-  success,
-  notFound,
-  hasMovements,
-  hasStock,
-  inUse,
-  permissionDenied,
-  failed,
-}
-
-enum InventoryMovementOutcome {
-  success,
-  materialNotFound,
-  invalidBranch,
-  invalidType,
-  invalidQuantity,
-  invalidCost,
-  insufficientStock,
-  noChange,
-  permissionDenied,
-  failed,
-}
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
+import 'package:admin_app/features/inventory/domain/repositories/inventory_repository.dart';
 
 /// Raw-material inventory and its movement ledger.
-class AdminInventoryRepository {
+class AdminInventoryRepository implements InventoryRepository {
   AdminInventoryRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<AdminInventoryPage> loadPage({
     String? search,
     String? category,
@@ -82,6 +48,7 @@ class AdminInventoryRepository {
     return const AdminInventoryPage();
   }
 
+  @override
   Future<AdminInventoryMetrics> loadMetrics({String? branchId}) async {
     final response = await _supabase.rpc(
       'admin_inventory_metrics',
@@ -95,6 +62,7 @@ class AdminInventoryRepository {
     return AdminInventoryMetrics.empty;
   }
 
+  @override
   Future<AdminInventoryFilters> loadFilters() async {
     final response = await _supabase.rpc('admin_inventory_filters');
     if (response is Map) {
@@ -105,6 +73,7 @@ class AdminInventoryRepository {
     return AdminInventoryFilters.empty;
   }
 
+  @override
   Future<List<AdminInventoryMaterialOption>> searchMaterials({
     String? search,
     String? branchId,
@@ -129,6 +98,7 @@ class AdminInventoryRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<InventoryMaterialSaveOutcome> saveMaterial(
     AdminInventoryDraft draft,
   ) async {
@@ -160,6 +130,7 @@ class AdminInventoryRepository {
     }
   }
 
+  @override
   Future<InventoryMutationOutcome> deleteMaterial(String materialId) async {
     try {
       final response = await _supabase.rpc(
@@ -183,6 +154,7 @@ class AdminInventoryRepository {
     }
   }
 
+  @override
   Future<InventoryMovementOutcome> recordMovement(
     AdminStockMovementDraft draft,
   ) async {
@@ -213,6 +185,7 @@ class AdminInventoryRepository {
     }
   }
 
+  @override
   Future<AdminStockMovementPage> loadMovements({
     String? search,
     String? type,
@@ -240,6 +213,7 @@ class AdminInventoryRepository {
     return const AdminStockMovementPage();
   }
 
+  @override
   Future<AdminStockMovementMetrics> loadMovementMetrics({
     String? branchId,
     String? period,

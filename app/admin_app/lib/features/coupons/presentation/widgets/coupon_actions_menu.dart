@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 enum CouponAction { edit, toggle, delete }
@@ -32,7 +33,7 @@ class CouponActionsMenu extends StatelessWidget {
           value: CouponAction.edit,
           child: _item(
             theme,
-            icon: HugeIcons.strokeRoundedPencilEdit02,
+            icon: AppIcons.pencilEdit02,
             label: S.couponsEdit,
             direction: rtl,
           ),
@@ -41,9 +42,7 @@ class CouponActionsMenu extends StatelessWidget {
           value: CouponAction.toggle,
           child: _item(
             theme,
-            icon: coupon.isActive
-                ? HugeIcons.strokeRoundedPause
-                : HugeIcons.strokeRoundedPlay,
+            icon: coupon.isActive ? AppIcons.pause : AppIcons.play,
             label: coupon.isActive ? S.couponsPause : S.couponsActivate,
             direction: rtl,
           ),
@@ -53,15 +52,15 @@ class CouponActionsMenu extends StatelessWidget {
           value: CouponAction.delete,
           child: _item(
             theme,
-            icon: HugeIcons.strokeRoundedDelete02,
+            icon: AppIcons.delete02,
             label: S.couponsDelete,
             direction: rtl,
             color: AppColor.errorColor,
           ),
         ),
       ],
-      child: HugeIcon(
-        icon: HugeIcons.strokeRoundedMoreHorizontal,
+      child: AppIcon(
+        AppIcons.moreHorizontal,
         size: 18,
         color: adminMutedColor(theme),
       ),
@@ -77,8 +76,8 @@ class CouponActionsMenu extends StatelessWidget {
   }) => Row(
     textDirection: direction ? TextDirection.rtl : TextDirection.ltr,
     children: [
-      HugeIcon(icon: icon, size: 16, color: color ?? adminBodyColor(theme)),
-      const SizedBox(width: 8),
+      AppIcon(icon, size: 16, color: color ?? adminBodyColor(theme)),
+      const SizedBox(width: AppSizes.px8),
       Text(
         label,
         style: TextStyle(

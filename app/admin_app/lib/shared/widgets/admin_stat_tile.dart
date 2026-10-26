@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -39,10 +38,10 @@ class AdminStatTile extends StatelessWidget {
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     return Container(
       constraints: const BoxConstraints(minHeight: 88),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
         ),
@@ -50,7 +49,7 @@ class AdminStatTile extends StatelessWidget {
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
@@ -60,7 +59,7 @@ class AdminStatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AdminIconTile(icon: icon, tint: tint, surface: surface),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
           if (money != null)
             AdminMoneyText(
               value: money!,
@@ -80,7 +79,7 @@ class AdminStatTile extends StatelessWidget {
                 height: AppTextHeights.line1_4,
               ),
             ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.px2),
           Text(
             label,
             maxLines: 1,
@@ -119,11 +118,11 @@ class AdminIconTile extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: dark ? tint.withValues(alpha: .16) : surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Center(
-        child: HugeIcon(
-          icon: icon,
+        child: AppIcon(
+          icon,
           size: size * .58,
           color: dark ? Color.lerp(tint, AppColor.whiteColor, .35)! : tint,
         ),
@@ -169,7 +168,7 @@ class AdminMoneyText extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: AppDimensions.xs),
+        const SizedBox(width: AppSpacing.xs),
         CurrencyIcon(size: fontSize - 1, color: muted),
       ],
     );

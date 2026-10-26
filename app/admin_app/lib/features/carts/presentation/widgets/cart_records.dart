@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/features/carts/data/models/admin_cart.dart';
@@ -59,15 +59,13 @@ class CartRecords extends StatelessWidget {
     return AdminDirectoryPanel(
       child: carts.isEmpty
           ? AdminEmptyState(
-              icon: filtering
-                  ? HugeIcons.strokeRoundedSearch01
-                  : HugeIcons.strokeRoundedShoppingBag01,
+              icon: filtering ? AppIcons.search01 : AppIcons.shoppingBag01,
               message: filtering ? S.noCartsFound : S.noCartsYet,
             )
           : ListView.separated(
               padding: EdgeInsets.zero,
               itemCount: carts.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
               itemBuilder: (context, index) {
                 final cart = carts[index];
                 return CartCard(
@@ -98,7 +96,7 @@ class CartCard extends StatelessWidget {
     final status = CartStatusView.of(cart.status);
     final name = cart.customerName?.trim();
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final muted = adminSubtleColor(theme);
 
     return Material(
@@ -108,7 +106,7 @@ class CartCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.all(AppDimensions.md),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(color: adminCardBorderColor(theme)),
@@ -131,29 +129,23 @@ class CartCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.sm),
+                  const SizedBox(width: AppSpacing.sm),
                   AdminStatusBadge(label: status.label, color: status.color),
                   if (onTap != null) ...[
-                    const SizedBox(width: AppDimensions.sm),
-                    HugeIcon(
-                      icon: rtl
-                          ? HugeIcons.strokeRoundedArrowLeft01
-                          : HugeIcons.strokeRoundedArrowRight01,
+                    const SizedBox(width: AppSpacing.sm),
+                    AppIcon(
+                      rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                       size: 16,
                       color: adminMutedColor(theme),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedShoppingBag01,
-                    size: 14,
-                    color: muted,
-                  ),
-                  const SizedBox(width: 6),
+                  AppIcon(AppIcons.shoppingBag01, size: 14, color: muted),
+                  const SizedBox(width: AppSizes.px6),
                   Expanded(
                     child: Text(
                       S.cartItemsCount(cart.items.length),
@@ -166,7 +158,7 @@ class CartCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.sm),
+                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     formatMoneyWithCurrency(cart.total),
                     maxLines: 1,

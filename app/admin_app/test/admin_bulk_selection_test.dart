@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/data/repositories/admin_bundle_repository.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/category_records.dart';
 import 'package:admin_app/shared/widgets/admin_selection_checkbox.dart';

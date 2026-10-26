@@ -50,22 +50,22 @@ class LoginForm extends StatelessWidget {
             children: [
               const LoginHeading(),
               if (showConfigurationWarning) ...[
-                const SizedBox(height: AppDimensions.lg),
+                const SizedBox(height: AppSpacing.lg),
                 AdminErrorBanner(
                   message: S.supabaseNotConfigured,
                   icon: AppIcons.server,
                 ),
               ],
               if (failure != null) ...[
-                const SizedBox(height: AppDimensions.lg),
+                const SizedBox(height: AppSpacing.lg),
                 AdminErrorBanner(
                   message: _messageFor(failure),
                   icon: AppIcons.alert,
                 ),
               ],
-              const SizedBox(height: AppDimensions.xl),
+              const SizedBox(height: AppSpacing.xxl),
               LoginEmailField(controller: emailController),
-              const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: AppSpacing.lg),
               LoginPasswordField(
                 controller: passwordController,
                 obscurePassword: signedOut.obscurePassword,
@@ -74,7 +74,7 @@ class LoginForm extends StatelessWidget {
                 ),
                 onSubmitted: onSubmit,
               ),
-              const SizedBox(height: AppDimensions.xl),
+              const SizedBox(height: AppSpacing.xxl),
               CustomBtn(
                 text: S.signIn,
                 onPressed: signedOut.isSubmitting ? null : onSubmit,

@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_product.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/repositories/admin_subscription_plan_repository.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_product.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/repositories/subscription_plan_repository.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/manager/admin_subscription_plan_cubit.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/manager/admin_subscription_plan_state.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
@@ -136,16 +136,17 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
   ) {
     final theme = Theme.of(context);
     final dark = adminIsDark(theme);
-    final narrow = MediaQuery.sizeOf(context).width < 600;
+    final narrow =
+        MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding;
 
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: narrow ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: narrow ? AppSpacing.md : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 780),
@@ -161,10 +162,10 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppDimensions.lg,
-                  AppDimensions.md,
-                  AppDimensions.lg,
-                  AppDimensions.lg,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
                 ),
                 child: Form(
                   key: _formKey,
@@ -348,7 +349,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                       ),
                       if (_isEditing) _scopePanel(widget.plan!),
                       if (_error != null) ...[
-                        const SizedBox(height: AppDimensions.sm),
+                        const SizedBox(height: AppSpacing.sm),
                         _ErrorBanner(message: _error!),
                       ],
                     ],
@@ -371,10 +372,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
   Widget _section(String title) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppDimensions.lg,
-        bottom: AppDimensions.sm,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
       child: Row(
         children: [
           Container(
@@ -382,10 +380,10 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
             height: 14,
             decoration: BoxDecoration(
               color: AppColor.adminAccent,
-              borderRadius: BorderRadius.circular(2),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: AppSizes.px8),
           Text(
             title,
             style: TextStyle(
@@ -407,7 +405,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var index = 0; index < children.length; index++) ...[
-            if (index > 0) const SizedBox(width: AppDimensions.md),
+            if (index > 0) const SizedBox(width: AppSpacing.md),
             Expanded(child: children[index]),
           ],
         ],
@@ -449,7 +447,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
   }) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.md),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -462,7 +460,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.px6),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -528,11 +526,11 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
     final selected = _selectedProducts.values.toList(growable: false);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.md),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -546,7 +544,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -590,7 +588,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           Text(
             scopeSelected
                 ? S.subscriptionPlanProductsSelectedHint
@@ -602,18 +600,18 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
             ),
           ),
           if (scopeSelected) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             if (planState.productOptionsLoading && options.isEmpty)
               _ProductOptionsMessage(
-                icon: HugeIcons.strokeRoundedLoading03,
+                icon: AppIcons.loading03,
                 message: S.subscriptionPlanProductsLoading,
                 busy: true,
               )
             else if (options.isEmpty)
               _ProductOptionsMessage(
                 icon: planState.productOptionsError != null
-                    ? HugeIcons.strokeRoundedAlertCircle
-                    : HugeIcons.strokeRoundedPackage,
+                    ? AppIcons.alert
+                    : AppIcons.package,
                 message: planState.productOptionsError != null
                     ? S.subscriptionPlanProductsLoadFailed
                     : S.subscriptionPlanProductsEmptyCatalog,
@@ -645,10 +643,12 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                     onPressed: _saving ? null : _pickProducts,
                     style: TextButton.styleFrom(
                       minimumSize: const Size(0, 32),
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                      ),
                       visualDensity: VisualDensity.compact,
                     ),
-                    icon: const Icon(HugeIcons.strokeRoundedEdit01, size: 15),
+                    icon: const Icon(AppIcons.edit01, size: 15),
                     label: Text(
                       selected.isEmpty
                           ? S.subscriptionPlanProductsChoose
@@ -659,7 +659,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
               ),
             if (selected.isEmpty)
               Padding(
-                padding: const EdgeInsets.only(top: 6),
+                padding: const EdgeInsets.only(top: AppSpacing.xs),
                 child: Text(
                   S.subscriptionPlanProductsNoneSelected,
                   style: TextStyle(
@@ -671,7 +671,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
               )
             else
               Padding(
-                padding: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
                 child: Wrap(
                   spacing: 6,
                   runSpacing: 6,
@@ -693,10 +693,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                             : () => setState(
                                 () => _selectedProducts.remove(product.id),
                               ),
-                        deleteIcon: const Icon(
-                          HugeIcons.strokeRoundedCancel01,
-                          size: 14,
-                        ),
+                        deleteIcon: const Icon(AppIcons.cancel01, size: 14),
                         deleteButtonTooltipMessage:
                             S.subscriptionPlanProductRemove,
                         visualDensity: VisualDensity.compact,
@@ -741,11 +738,11 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
   Widget _scopePanel(AdminSubscriptionPlan plan) {
     final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.sm),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -905,10 +902,10 @@ class _DialogHeader extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.md,
-        AppDimensions.sm,
-        AppDimensions.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -937,8 +934,8 @@ class _DialogHeader extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+            icon: AppIcon(
+              AppIcons.cancel01,
               size: 18,
               color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
             ),
@@ -966,10 +963,10 @@ class _DialogFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -986,14 +983,14 @@ class _DialogFooter extends StatelessWidget {
             onPressed: saving ? null : onCancel,
             child: Text(S.cancel),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           FilledButton(
             onPressed: saving ? null : onSave,
             style: FilledButton.styleFrom(
               minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
             child: Row(
@@ -1001,14 +998,14 @@ class _DialogFooter extends StatelessWidget {
               children: [
                 if (saving) ...[
                   const SizedBox(
-                    width: 14,
-                    height: 14,
+                    width: AppSizes.px14,
+                    height: AppSizes.px14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: AppColor.whiteColor,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                 ],
                 Text(
                   saving
@@ -1048,13 +1045,13 @@ class _ProductOptionsMessage extends StatelessWidget {
       children: [
         if (busy)
           const SizedBox(
-            width: 14,
-            height: 14,
+            width: AppSizes.px14,
+            height: AppSizes.px14,
             child: CircularProgressIndicator(strokeWidth: 2),
           )
         else
-          HugeIcon(icon: icon, size: 16, color: adminMutedColor(theme)),
-        const SizedBox(width: 8),
+          AppIcon(icon, size: 16, color: adminMutedColor(theme)),
+        const SizedBox(width: AppSizes.px8),
         Expanded(
           child: Text(
             message,
@@ -1114,21 +1111,20 @@ class _ErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColor.errorColor.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColor.errorColor.withValues(alpha: .3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            size: 16,
-            color: AppColor.errorColor,
-          ),
-          const SizedBox(width: 8),
+          const AppIcon(AppIcons.alert, size: 16, color: AppColor.errorColor),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Text(
               message,

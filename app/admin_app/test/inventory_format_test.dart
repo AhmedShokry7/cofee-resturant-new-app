@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 

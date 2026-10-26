@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
 
 /// Placeholder for a feature that already exists in the database but is not
 /// implemented in the admin app yet.
@@ -34,7 +34,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
               fontWeight: AppFontWeights.bold,
             ),
           ),
-          const SizedBox(height: AppDimensions.xl),
+          const SizedBox(height: AppSpacing.xxl),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(AppDimensions.pageCardPadding),
@@ -48,7 +48,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                         height: AppDimensions.placeholderIconBox,
                         decoration: BoxDecoration(
                           color: AppColor.primaryColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(AppRadius.xxl),
                         ),
                         child: Icon(
                           destination.icon,
@@ -56,7 +56,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                           color: AppColor.primaryColor,
                         ),
                       ),
-                      const SizedBox(width: AppDimensions.lg),
+                      const SizedBox(width: AppSpacing.lg),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,7 +67,7 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                                 fontWeight: AppFontWeights.bold,
                               ),
                             ),
-                            const SizedBox(height: AppDimensions.xs),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               S.featureNotBuilt,
                               style: theme.textTheme.bodyMedium?.copyWith(
@@ -79,14 +79,14 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppDimensions.xl),
+                  const SizedBox(height: AppSpacing.xxl),
                   Text(
                     S.databaseTables,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: AppFontWeights.bold,
                     ),
                   ),
-                  const SizedBox(height: AppDimensions.md),
+                  const SizedBox(height: AppSpacing.md),
                   if (destination.tables.isEmpty)
                     Text(
                       S.noDatabaseTables,
@@ -96,8 +96,8 @@ class AdminFeaturePlaceholder extends StatelessWidget {
                     )
                   else
                     Wrap(
-                      spacing: AppDimensions.sm,
-                      runSpacing: AppDimensions.sm,
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
                       children: [
                         for (final table in destination.tables)
                           _TableChip(table: table),
@@ -124,12 +124,12 @@ class _TableChip extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.md,
-        vertical: 6,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: theme.dividerColor),
       ),
       child: Text(

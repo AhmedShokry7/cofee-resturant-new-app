@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:image/image.dart' as img;
 
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_image_editor.dart';
 
 /// A picture of 40x20 pixels, so the cut is easy to check.
@@ -73,7 +73,7 @@ void main() {
         'image_url': 'https://example.com/one.png',
       });
 
-      expect(image.fit, BoxFit.cover);
+      expect(image.fit, BoxFit.fill);
       expect(image.alignment, Alignment.center);
     });
 
@@ -100,9 +100,9 @@ void main() {
     });
 
     test('an unknown name falls back to the safe default', () {
-      expect(fitFromName('somethingElse'), BoxFit.cover);
+      expect(fitFromName('somethingElse'), BoxFit.fill);
       expect(alignmentFromName('somethingElse'), Alignment.center);
-      expect(fitFromName(null), BoxFit.cover);
+      expect(fitFromName(null), BoxFit.fill);
     });
 
     test('every way to fill the space has a name the database accepts', () {

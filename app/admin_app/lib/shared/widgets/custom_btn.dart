@@ -1,4 +1,4 @@
-﻿import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:flutter/material.dart';
@@ -63,7 +63,7 @@ class CustomBtn extends StatelessWidget {
         bgColor = backgroundColor ?? AppColor.lightGreyColor;
         fgColor = textColor ?? AppColor.greyColor;
       case BtnVariant.outlined:
-        bgColor = backgroundColor ?? Colors.transparent;
+        bgColor = backgroundColor ?? AppColor.transparent;
         fgColor = textColor ?? AppColor.primaryColor;
       case BtnVariant.destructive:
         bgColor = backgroundColor ?? AppColor.errorColor;
@@ -77,7 +77,8 @@ class CustomBtn extends StatelessWidget {
             : null);
     final radius = borderRadius ?? 14;
     final btnHeight = height ?? 52;
-    final effectivePadding = padding ?? EdgeInsets.symmetric(horizontal: 16);
+    final effectivePadding =
+        padding ?? EdgeInsets.symmetric(horizontal: AppSpacing.lg);
 
     if (effectiveGradient != null) {
       return SizedBox(
@@ -158,7 +159,7 @@ class CustomBtn extends StatelessWidget {
                 color: fgColor,
               ),
             ),
-            SizedBox(width: 10),
+            SizedBox(width: AppSizes.px10),
             Text(loadingText!, style: ts),
           ],
         );
@@ -185,11 +186,11 @@ class CustomBtn extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (hasLeading) ...[leadingIcon!, SizedBox(width: 8)],
+        if (hasLeading) ...[leadingIcon!, SizedBox(width: AppSizes.px8)],
         Flexible(
           child: Text(text, style: ts, textAlign: TextAlign.center),
         ),
-        if (hasTrailing) ...[SizedBox(width: 8), trailingIcon!],
+        if (hasTrailing) ...[SizedBox(width: AppSizes.px8), trailingIcon!],
       ],
     );
   }

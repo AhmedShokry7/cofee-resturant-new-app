@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_metrics.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_product.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_metrics.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_product.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/models/subscription_plan_filter.dart';
 
 AdminSubscriptionPlan _plan({

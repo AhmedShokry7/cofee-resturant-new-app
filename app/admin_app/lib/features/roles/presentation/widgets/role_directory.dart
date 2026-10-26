@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/models/role_filter.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_cards.dart';
@@ -110,7 +111,10 @@ class _RoleDirectoryState extends State<RoleDirectory> {
     final hasFilter = _filter != RoleFilter.all;
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -127,13 +131,13 @@ class _RoleDirectoryState extends State<RoleDirectory> {
             filterLabel: S.rolesFilter,
             hasActiveFilter: hasFilter,
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: filtered.isEmpty
                 ? AdminEmptyState(
                     icon: widget.roles.isEmpty || (!searching && !hasFilter)
-                        ? HugeIcons.strokeRoundedShield01
-                        : HugeIcons.strokeRoundedSearch01,
+                        ? AppIcons.shield01
+                        : AppIcons.search01,
                     message: searching
                         ? S.rolesNoMatches
                         : hasFilter

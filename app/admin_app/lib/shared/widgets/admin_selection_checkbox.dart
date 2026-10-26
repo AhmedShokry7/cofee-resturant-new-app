@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The square pick used on record cards for a bulk action.
 ///
@@ -37,7 +37,7 @@ class AdminSelectionCheckBox extends StatelessWidget {
             ),
             child: checked
                 ? const Icon(
-                    HugeIcons.strokeRoundedTick01,
+                    AppIcons.tick01,
                     size: 14,
                     color: AppColor.primaryColor,
                   )

@@ -1,14 +1,13 @@
-﻿import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The people domain: customers, staff, permissions and the branches.
 List<AdminDestination> get peopleDestinations => <AdminDestination>[
   AdminDestination(
     id: 'customers',
     label: S.customers,
-    icon: HugeIcons.strokeRoundedUserMultiple,
+    icon: AppIcons.userMultiple,
     searchHint: S.searchCustomersHint,
     permission: 'customers.read',
     section: S.sectionPeople,
@@ -17,7 +16,7 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
   AdminDestination(
     id: 'staff',
     label: S.staffLabel,
-    icon: HugeIcons.strokeRoundedUser,
+    icon: AppIcons.user,
     searchHint: S.searchStaffHint,
     permission: 'admin.staff.read',
     section: S.sectionPeople,
@@ -26,7 +25,7 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
   AdminDestination(
     id: 'roles',
     label: S.rolesAndPermissions,
-    icon: HugeIcons.strokeRoundedKey01,
+    icon: AppIcons.passwordKey,
     searchHint: S.searchRolesHint,
     permission: 'admin.role.read',
     section: S.sectionPeople,
@@ -39,7 +38,7 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
   AdminDestination(
     id: 'auditLog',
     label: S.auditLog,
-    icon: HugeIcons.strokeRoundedClipboard,
+    icon: AppIcons.clipboard,
     searchHint: S.searchAuditLogHint,
     permission: 'audit.read',
     section: S.sectionPeople,
@@ -48,7 +47,7 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
   AdminDestination(
     id: 'branches',
     label: S.branches,
-    icon: HugeIcons.strokeRoundedStore01,
+    icon: AppIcons.store01,
     searchHint: S.searchBranchesHint,
     permission: 'settings.write',
     section: S.sectionPeople,

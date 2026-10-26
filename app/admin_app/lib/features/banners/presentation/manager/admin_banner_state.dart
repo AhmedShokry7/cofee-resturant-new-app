@@ -1,4 +1,4 @@
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 
 enum AdminBannerStatus { initial, loading, ready, failure }
 

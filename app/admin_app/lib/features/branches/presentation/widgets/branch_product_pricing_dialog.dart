@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/app_dependencies.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
 
 Future<void> showBranchProductPricingDialog({
   required BuildContext context,
@@ -24,7 +25,7 @@ class BranchProductPricingDialog extends StatefulWidget {
   });
 
   final AdminBranch branch;
-  final AdminProductRepository? repository;
+  final CatalogData? repository;
 
   @override
   State<BranchProductPricingDialog> createState() =>
@@ -35,7 +36,7 @@ class _BranchProductPricingDialogState
     extends State<BranchProductPricingDialog> {
   static const _pageSize = 40;
 
-  late final AdminProductRepository _repository;
+  late final CatalogData _repository;
   final _search = TextEditingController();
   final _scroll = ScrollController();
   final List<AdminProduct> _products = [];
@@ -47,7 +48,7 @@ class _BranchProductPricingDialogState
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? AdminProductRepository();
+    _repository = widget.repository ?? AppDependencies.catalog;
     _scroll.addListener(_onScroll);
     _load(reset: true);
   }
@@ -130,7 +131,7 @@ class _BranchProductPricingDialogState
     return AlertDialog(
       title: Text(S.branchPricingFor(branchName)),
       content: SizedBox(
-        width: 620,
+        width: AppDimensions.dialogBodyWidthExtraWide,
         height: 560,
         child: Column(
           children: [
@@ -148,7 +149,7 @@ class _BranchProductPricingDialogState
               ),
               onSubmitted: (_) => _load(reset: true),
             ),
-            const SizedBox(height: AppDimensions.sm),
+            const SizedBox(height: AppSpacing.sm),
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
@@ -175,7 +176,7 @@ class _BranchProductPricingDialogState
                       itemBuilder: (context, index) {
                         if (index == _products.length) {
                           return const Padding(
-                            padding: EdgeInsets.all(AppDimensions.md),
+                            padding: EdgeInsets.all(AppSpacing.md),
                             child: Center(child: CircularProgressIndicator()),
                           );
                         }
@@ -218,7 +219,7 @@ class _BranchProductDiscountDialog extends StatefulWidget {
 
   final AdminBranch branch;
   final AdminProduct product;
-  final AdminProductRepository repository;
+  final CatalogData repository;
 
   @override
   State<_BranchProductDiscountDialog> createState() =>
@@ -327,7 +328,7 @@ class _BranchProductDiscountDialogState
     return AlertDialog(
       title: Text(productName),
       content: SizedBox(
-        width: 440,
+        width: AppDimensions.dialogBodyWidthWide,
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : Column(

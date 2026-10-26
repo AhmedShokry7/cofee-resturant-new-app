@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_status_pill.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -22,14 +23,14 @@ class CustomerPreviousOrderItem extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: adminRowBorderColor(theme)),
           ),
           child: Column(
@@ -59,15 +60,15 @@ class CustomerPreviousOrderItem extends StatelessWidget {
                       height: AppTextHeights.line1_5,
                     ),
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: AppSizes.px4),
                   const CurrencyIcon(size: 10),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSizes.px6),
               Row(
                 children: [
                   OrderStatusPill(status: order.status, dense: true),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     child: Text(
                       orderDate(order.placedAt),
@@ -80,10 +81,8 @@ class CustomerPreviousOrderItem extends StatelessWidget {
                       ),
                     ),
                   ),
-                  HugeIcon(
-                    icon: rtl
-                        ? HugeIcons.strokeRoundedArrowLeft01
-                        : HugeIcons.strokeRoundedArrowRight01,
+                  AppIcon(
+                    rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                     size: 13,
                     color: adminSubtleColor(theme),
                   ),

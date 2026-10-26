@@ -1,5 +1,5 @@
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
 
 enum SubscriptionPlanFilter { all, onSale, hidden, paused }
 

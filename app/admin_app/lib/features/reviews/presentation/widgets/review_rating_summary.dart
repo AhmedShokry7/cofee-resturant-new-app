@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review_metrics.dart';
@@ -34,16 +35,19 @@ class ReviewRatingSummary extends StatelessWidget {
       onRatingSelected: onRatingSelected,
     );
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.lg,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: adminIsDark(theme)
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
@@ -56,9 +60,9 @@ class ReviewRatingSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 average,
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSizes.px12),
                 Divider(height: 1, color: adminRowBorderColor(theme)),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSizes.px12),
                 distribution,
               ],
             );
@@ -70,7 +74,7 @@ class ReviewRatingSummary extends StatelessWidget {
               Container(
                 width: 1,
                 height: 104,
-                margin: const EdgeInsets.symmetric(horizontal: 20),
+                margin: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
                 color: adminRowBorderColor(theme),
               ),
               Expanded(child: distribution),
@@ -106,7 +110,7 @@ class _AverageBlock extends StatelessWidget {
             height: AppTextHeights.line1_4,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: AppSizes.px2),
         Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -121,9 +125,9 @@ class _AverageBlock extends StatelessWidget {
                 letterSpacing: AppLetterSpacings.spaceNegative0_8,
               ),
             ),
-            const SizedBox(width: 3),
+            const SizedBox(width: AppSizes.px4),
             Padding(
-              padding: const EdgeInsets.only(bottom: 4),
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               child: Text(
                 '/ 5',
                 textDirection: TextDirection.ltr,
@@ -135,10 +139,10 @@ class _AverageBlock extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSizes.px12),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.only(bottom: 3),
+                padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -147,7 +151,7 @@ class _AverageBlock extends StatelessWidget {
                       rating: hasReviews ? metrics.averageRating : 0,
                       size: 14,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.px2),
                     Text(
                       localizeDigits(S.reviewsBasedOn(metrics.total)),
                       maxLines: 1,
@@ -165,25 +169,25 @@ class _AverageBlock extends StatelessWidget {
           ],
         ),
         if (hasReviews) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           Wrap(
             spacing: 6,
             runSpacing: 5,
             children: [
               _SummaryChip(
-                icon: HugeIcons.strokeRoundedThumbsUp,
+                icon: AppIcons.thumbsUp,
                 label: S.reviewsSatisfactionChip(
                   reviewPercentValue(metrics.satisfactionRate),
                 ),
                 color: AppColor.trendPositive,
               ),
               _SummaryChip(
-                icon: HugeIcons.strokeRoundedCheckmarkBadge02,
+                icon: AppIcons.checkmarkBadge02,
                 label: localizeDigits(S.reviewsVerifiedCount(metrics.verified)),
                 color: AppColor.adminInfo,
               ),
               _SummaryChip(
-                icon: HugeIcons.strokeRoundedCalendar03,
+                icon: AppIcons.calendar03,
                 label: localizeDigits(
                   S.reviewsThisMonthCount(metrics.thisMonth),
                 ),
@@ -213,20 +217,23 @@ class _SummaryChip extends StatelessWidget {
     final theme = Theme.of(context);
     final foreground = adminFlagForeground(theme, color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           color,
           Color.lerp(color, AppColor.whiteColor, .88)!,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(icon: icon, size: 11, color: foreground),
-          const SizedBox(width: 4),
+          AppIcon(icon, size: 11, color: foreground),
+          const SizedBox(width: AppSizes.px4),
           Text(
             label,
             maxLines: 1,
@@ -276,7 +283,7 @@ class _DistributionBars extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.px8),
             Text(
               S.reviewsDistributionHint,
               maxLines: 1,
@@ -289,7 +296,7 @@ class _DistributionBars extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: AppSizes.px6),
         for (var rating = 5; rating >= 1; rating--)
           _DistributionRow(
             rating: rating,
@@ -335,17 +342,20 @@ class _DistributionRow extends StatelessWidget {
                   AppColor.adminAccent,
                   AppColor.adminAccentSurface,
                 )
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
+              : AppColor.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.xs,
+                vertical: AppSpacing.xxs,
+              ),
               child: Row(
                 children: [
                   SizedBox(
-                    width: 27,
+                    width: AppSizes.px28,
                     child: Directionality(
                       textDirection: TextDirection.ltr,
                       child: Row(
@@ -360,7 +370,7 @@ class _DistributionRow extends StatelessWidget {
                               height: AppTextHeights.line1_4,
                             ),
                           ),
-                          const SizedBox(width: 2),
+                          const SizedBox(width: AppSizes.px2),
                           const Icon(
                             Icons.star_rounded,
                             size: 11,
@@ -370,10 +380,10 @@ class _DistributionRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(3),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
                       child: LinearProgressIndicator(
                         value: ratio,
                         minHeight: 6,
@@ -386,9 +396,9 @@ class _DistributionRow extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   SizedBox(
-                    width: 34,
+                    width: AppSizes.px34,
                     child: Text(
                       reviewCountValue(count),
                       textAlign: TextAlign.end,

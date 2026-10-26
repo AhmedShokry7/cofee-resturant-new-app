@@ -1,6 +1,7 @@
+import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/constants/app_images.dart';
 import 'package:admin_app/core/theme/app_theme.dart';
 
@@ -16,11 +17,7 @@ class AdminThemeButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final appTheme = AppTheme.instance;
-    final theme = Theme.of(context);
-    final scheme = theme.colorScheme;
-    final accent = theme.brightness == Brightness.dark
-        ? scheme.secondary
-        : scheme.primary;
+    Theme.of(context);
 
     return ListenableBuilder(
       listenable: appTheme,
@@ -30,17 +27,17 @@ class AdminThemeButton extends StatelessWidget {
         return Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: accent),
+            border: Border.all(color: AppColor.adminAccentSurface),
           ),
           child: Material(
-            color: Colors.transparent,
+            color: AppColor.transparent,
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: () => appTheme.setMode(
                 isDark ? AppThemeMode.light : AppThemeMode.dark,
               ),
               child: Padding(
-                padding: const EdgeInsets.all(8),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 child: Image.asset(
                   isDark ? AppImages.moon : AppImages.sun,
                   width: AppDimensions.iconSizeSm,

@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule_draft.dart';
-import 'package:admin_app/features/loyalty/data/repositories/admin_loyalty_repository.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule_draft.dart';
+import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_rule_dialog.dart';
 

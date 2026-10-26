@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
-import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_cart_panel.dart';
@@ -18,7 +20,6 @@ import 'package:admin_app/features/pos/presentation/widgets/pos_page_body.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_receipt_dialog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_shift_dialog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_table_dialog.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
@@ -217,7 +218,7 @@ class _PosPageState extends State<PosPage> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: AppColor.transparent,
       builder: (sheetContext) {
         return AnimatedPadding(
           duration: const Duration(milliseconds: 160),
@@ -228,7 +229,12 @@ class _PosPageState extends State<PosPage> {
           child: FractionallySizedBox(
             heightFactor: .92,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm,
+                AppSpacing.sm,
+                AppSpacing.sm,
+                AppSpacing.sm,
+              ),
               child: BlocProvider<PosCubit>.value(
                 value: _cubit,
                 child: BlocBuilder<PosCubit, PosState>(
@@ -320,7 +326,7 @@ class _PosPageState extends State<PosPage> {
               return AdminPageFrame(
                 child: Center(
                   child: AdminEmptyState(
-                    icon: HugeIcons.strokeRoundedStore01,
+                    icon: AppIcons.store01,
                     message: S.posNoBranchTitle,
                     hint: S.posNoBranchHint,
                     action: TextButton(

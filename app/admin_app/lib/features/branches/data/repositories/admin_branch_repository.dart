@@ -5,54 +5,23 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_draft.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_metrics.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
-
-class AdminBranchException implements Exception {
-  const AdminBranchException(this.message);
-  final String message;
-  @override
-  String toString() => message;
-}
-
-enum BranchSaveOutcome {
-  saved,
-  duplicateCode,
-  invalidCode,
-  invalidName,
-  invalidAddress,
-  invalidHours,
-  invalidLocation,
-  invalidVatNumber,
-  invalidLegalName,
-  noBrand,
-  notFound,
-  permissionDenied,
-  failed,
-}
-
-enum BranchMutationOutcome {
-  success,
-  notFound,
-  hasOrders,
-  hasUsage,
-  hasStaff,
-  lastActive,
-  inUse,
-  invalidUrl,
-  permissionDenied,
-  failed,
-}
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_draft.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_exception.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_save_outcome.dart';
+import 'package:admin_app/features/branches/domain/repositories/branch_repository.dart';
 
 /// The branches of the brand the dashboard manages.
-class AdminBranchRepository {
+class AdminBranchRepository implements BranchRepository {
   AdminBranchRepository();
 
   SupabaseClient get _supabase => SupabaseService.client;
 
   /// Loads every branch with its staff, zone and order counters.
+  @override
   Future<List<AdminBranch>> loadBranches() async {
     final response = await _supabase.rpc('admin_branches');
     if (response is! List) return const <AdminBranch>[];
@@ -62,12 +31,14 @@ class AdminBranchRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<AdminBranchMetrics> loadMetrics() async {
     final response = await _supabase.rpc('admin_branch_metrics');
     if (response is! Map) return AdminBranchMetrics.empty;
     return AdminBranchMetrics.fromJson(Map<String, dynamic>.from(response));
   }
 
+  @override
   Future<BranchSaveOutcome> saveBranch(AdminBranchDraft draft) async {
     try {
       final response = await _supabase.rpc(
@@ -97,6 +68,7 @@ class AdminBranchRepository {
     }
   }
 
+  @override
   Future<BranchMutationOutcome> setBranchActive(
     String branchId,
     bool active,
@@ -107,10 +79,12 @@ class AdminBranchRepository {
     );
   }
 
+  @override
   Future<BranchMutationOutcome> deleteBranch(String branchId) async {
     return _mutation('admin_delete_branch', params: {'p_branch_id': branchId});
   }
 
+  @override
   Future<BranchMutationOutcome> setBranchImage(
     String branchId,
     String? imageUrl,
@@ -121,6 +95,7 @@ class AdminBranchRepository {
     );
   }
 
+  @override
   Future<BranchMutationOutcome> uploadBranchImage({
     required String branchId,
     required Uint8List bytes,
@@ -156,6 +131,7 @@ class AdminBranchRepository {
     return outcome;
   }
 
+  @override
   Future<void> deleteBranchImageFile(String? imageUrl) async {
     if (imageUrl == null || imageUrl.trim().isEmpty) return;
     final marker = '/product-images/';

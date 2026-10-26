@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_overview.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_overview.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_state.dart';
-import 'package:admin_app/features/tables/presentation/widgets/dining_format.dart';
 import 'package:admin_app/features/tables/presentation/widgets/dining_reservation_panel.dart';
 import 'package:admin_app/features/tables/presentation/widgets/dining_table_card.dart';
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
@@ -131,24 +132,29 @@ class _DiningDirectoryState extends State<DiningDirectory> {
               Expanded(
                 child: AdminDirectoryPanel(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 17,
-                    vertical: 15,
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _toolbar(compact: false),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSizes.px12),
                       Expanded(child: _tablesContent()),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: 13),
+              const SizedBox(width: AppSizes.px14),
               SizedBox(
                 width: 328,
                 child: AdminDirectoryPanel(
-                  padding: const EdgeInsets.fromLTRB(13, 14, 13, 12),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                  ),
                   child: _reservationPane(),
                 ),
               ),
@@ -157,12 +163,15 @@ class _DiningDirectoryState extends State<DiningDirectory> {
         }
 
         return AdminDirectoryPanel(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _toolbar(compact: true),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               _ViewSwitch(
                 value: widget.view,
                 counts: [
@@ -171,7 +180,7 @@ class _DiningDirectoryState extends State<DiningDirectory> {
                 ],
                 onChanged: widget.onViewChanged,
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Expanded(
                 child: widget.view == DiningView.tables
                     ? _tablesContent()
@@ -199,33 +208,33 @@ class _DiningDirectoryState extends State<DiningDirectory> {
               ),
             ),
             if (widget.branches.isNotEmpty) ...[
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               _BranchChip(
                 name:
                     selectedBranch?.nameFor(AppLocale.instance.language) ??
                     S.tablesFilterBranch,
-                icon: HugeIcons.strokeRoundedStore01,
+                icon: AppIcons.store01,
                 branches: widget.branches,
                 selectedId: widget.branchId,
                 enabled: widget.branches.length > 1,
                 onChanged: widget.onBranchChanged,
               ),
             ],
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.px8),
             _RefreshButton(
               busy: widget.isRefreshing,
               onPressed: widget.onRefresh,
             ),
           ],
         ),
-        const SizedBox(height: 9),
+        const SizedBox(height: AppSizes.px10),
         _AreaChips(
           allTables: widget.allTables,
           selected: widget.area,
           onChanged: widget.onAreaChanged,
         ),
         if (widget.hasActiveFilters) ...[
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSizes.px6),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: TextButton.icon(
@@ -233,11 +242,11 @@ class _DiningDirectoryState extends State<DiningDirectory> {
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 minimumSize: const Size(0, 28),
-                padding: const EdgeInsets.symmetric(horizontal: 6),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              icon: const HugeIcon(
-                icon: HugeIcons.strokeRoundedCancel01,
+              icon: const AppIcon(
+                AppIcons.cancel01,
                 size: 13,
                 color: AppColor.adminMuted,
               ),
@@ -265,14 +274,14 @@ class _DiningDirectoryState extends State<DiningDirectory> {
   Widget _tablesContent() {
     if (widget.allTables.isEmpty) {
       return AdminEmptyState(
-        icon: HugeIcons.strokeRoundedTable01,
+        icon: AppIcons.table01,
         message: S.tablesEmptyTitle,
         hint: S.tablesEmptyHint,
         action: widget.canManage
             ? TextButton.icon(
                 onPressed: widget.onAddTable,
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedAdd01,
+                icon: const AppIcon(
+                  AppIcons.add01,
                   size: 15,
                   color: AppColor.adminAccent,
                 ),
@@ -286,7 +295,7 @@ class _DiningDirectoryState extends State<DiningDirectory> {
     }
     if (widget.tables.isEmpty) {
       return AdminEmptyState(
-        icon: HugeIcons.strokeRoundedSearch01,
+        icon: AppIcons.search01,
         message: S.tablesNoMatches,
         hint: S.tablesNoMatchesHint,
         action: TextButton(
@@ -305,7 +314,7 @@ class _DiningDirectoryState extends State<DiningDirectory> {
             ? 2
             : 1;
         return GridView.builder(
-          padding: const EdgeInsets.only(bottom: 2),
+          padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
             crossAxisSpacing: 11,
@@ -367,10 +376,10 @@ class _ViewSwitch extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(3),
+      padding: const EdgeInsets.all(AppSpacing.xxs),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
@@ -380,18 +389,18 @@ class _ViewSwitch extends StatelessWidget {
               view: DiningView.tables,
               label: S.tablesViewTables,
               count: counts.isNotEmpty ? counts.first : 0,
-              icon: HugeIcons.strokeRoundedTable01,
+              icon: AppIcons.table01,
               key: const Key('dining-view-tables'),
             ),
           ),
-          const SizedBox(width: 3),
+          const SizedBox(width: AppSizes.px4),
           Expanded(
             child: _segment(
               context,
               view: DiningView.reservations,
               label: S.tablesViewReservations,
               count: counts.length > 1 ? counts[1] : 0,
-              icon: HugeIcons.strokeRoundedCalendar01,
+              icon: AppIcons.calendar01,
               key: const Key('dining-view-reservations'),
             ),
           ),
@@ -415,22 +424,25 @@ class _ViewSwitch extends StatelessWidget {
         : adminMutedColor(theme);
     return Material(
       key: key,
-      color: selected ? theme.colorScheme.surface : Colors.transparent,
-      borderRadius: BorderRadius.circular(7),
+      color: selected ? theme.colorScheme.surface : AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: selected ? null : () => onChanged(view),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              HugeIcon(
-                icon: icon,
+              AppIcon(
+                icon,
                 size: 14,
                 color: selected ? AppColor.adminAccent : foreground,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               Flexible(
                 child: Text(
                   label,
@@ -447,7 +459,7 @@ class _ViewSwitch extends StatelessWidget {
                 ),
               ),
               if (count > 0) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSizes.px4),
                 Text(
                   localizeDigits('$count'),
                   style: TextStyle(
@@ -489,7 +501,7 @@ class _AreaChips extends StatelessWidget {
         _AreaChip(
           label: S.tablesAreaAll,
           count: _count(null),
-          icon: HugeIcons.strokeRoundedMenu01,
+          icon: AppIcons.menu01,
           selected: selected == null,
           onTap: () => onChanged(null),
         ),
@@ -534,15 +546,18 @@ class _AreaChip extends StatelessWidget {
               AppColor.adminAccent,
               AppColor.adminAccentSurface,
             )
-          : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
+          : AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: selected ? null : onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: selected
                   ? AppColor.adminAccent.withValues(alpha: .4)
@@ -552,12 +567,12 @@ class _AreaChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: icon,
+              AppIcon(
+                icon,
                 size: 13,
                 color: selected ? AppColor.adminAccent : foreground,
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 label,
                 style: TextStyle(
@@ -570,17 +585,17 @@ class _AreaChip extends StatelessWidget {
                 ),
               ),
               if (count > 0) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: AppSizes.px4),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 1,
+                    horizontal: AppSpacing.xs,
+                    vertical: AppSpacing.xxs,
                   ),
                   decoration: BoxDecoration(
                     color: selected
                         ? AppColor.adminAccent.withValues(alpha: .14)
                         : adminTintedSurfaceColor(theme),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
                     localizeDigits('$count'),
@@ -623,10 +638,13 @@ class _BranchChip extends StatelessWidget {
     final theme = Theme.of(context);
     final chip = Container(
       constraints: const BoxConstraints(maxWidth: 170),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
@@ -645,8 +663,8 @@ class _BranchChip extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 6),
-          HugeIcon(icon: icon, size: 15, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
+          AppIcon(icon, size: 15, color: adminMutedColor(theme)),
         ],
       ),
     );
@@ -665,16 +683,16 @@ class _BranchChip extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 18,
+                  width: AppSizes.px18,
                   child: branch.id == selectedId
-                      ? const HugeIcon(
-                          icon: HugeIcons.strokeRoundedTick01,
+                      ? const AppIcon(
+                          AppIcons.tick01,
                           size: 15,
                           color: AppColor.adminAccent,
                         )
                       : null,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.px6),
                 Flexible(
                   child: Text(
                     branch.nameFor(AppLocale.instance.language),
@@ -707,31 +725,31 @@ class _RefreshButton extends StatelessWidget {
     return Tooltip(
       message: S.refresh,
       child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        color: AppColor.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: busy ? null : onPressed,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: Container(
             width: 37,
             height: 37,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               border: Border.all(color: adminControlBorderColor(theme)),
             ),
             child: busy
                 ? SizedBox(
-                    width: 14,
-                    height: 14,
+                    width: AppSizes.px14,
+                    height: AppSizes.px14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: adminMutedColor(theme),
                     ),
                   )
-                : HugeIcon(
-                    icon: HugeIcons.strokeRoundedRefresh,
+                : AppIcon(
+                    AppIcons.refresh,
                     size: 16,
                     color: adminMutedColor(theme),
                   ),

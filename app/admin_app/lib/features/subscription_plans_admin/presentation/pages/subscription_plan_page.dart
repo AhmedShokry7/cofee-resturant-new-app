@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_metrics.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_metrics.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/manager/admin_subscription_plan_cubit.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/manager/admin_subscription_plan_state.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_dialog.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -20,11 +20,11 @@ class OrderDetailMetaRow extends StatelessWidget {
     if (value.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 13, color: adminSubtleColor(theme)),
-          const SizedBox(width: 6),
+          AppIcon(icon, size: 13, color: adminSubtleColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Text(
             '$label: ',
             style: TextStyle(

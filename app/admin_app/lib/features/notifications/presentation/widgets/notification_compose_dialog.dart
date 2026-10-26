@@ -3,16 +3,16 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_composer.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_cubit.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_badges.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
@@ -306,11 +306,13 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
       key: const Key('notification-compose-dialog'),
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screen.width < 700 ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: screen.width < AppBreakpoints.pageCanvas
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 860),
@@ -328,10 +330,10 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsetsDirectional.fromSTEB(
-                      AppDimensions.lg,
-                      AppDimensions.md,
-                      AppDimensions.lg,
-                      AppDimensions.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -339,17 +341,17 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                         _typeAndAudience(theme),
                         if (_audience ==
                             AdminNotificationAudience.customer) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSizes.px12),
                           _customerPicker(theme),
                         ],
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.px12),
                         _estimateCard(theme),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: AppSizes.px14),
                         _ComposerBox(
                           title: S.notificationsDetailsContent,
                           child: _messageFields(),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: AppSizes.px14),
                         _ComposerBox(
                           title: S.notificationsComposePreview,
                           hint: S.notificationsComposePreviewHint,
@@ -362,10 +364,10 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                 if (_sendError != null)
                   Padding(
                     padding: const EdgeInsetsDirectional.fromSTEB(
-                      AppDimensions.lg,
+                      AppSpacing.lg,
                       0,
-                      AppDimensions.lg,
-                      AppDimensions.sm,
+                      AppSpacing.lg,
+                      AppSpacing.sm,
                     ),
                     child: AdminErrorBanner(message: _sendError!),
                   ),
@@ -407,12 +409,12 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
             value: audience,
             child: Row(
               children: [
-                HugeIcon(
-                  icon: _audienceIcon(audience),
+                AppIcon(
+                  _audienceIcon(audience),
                   size: 14,
                   color: adminMutedColor(theme),
                 ),
-                const SizedBox(width: 7),
+                const SizedBox(width: AppSizes.px8),
                 Flexible(child: Text(notificationAudienceLabel(audience))),
               ],
             ),
@@ -425,14 +427,18 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
         if (constraints.maxWidth < 560) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [typeField, const SizedBox(height: 12), audienceField],
+            children: [
+              typeField,
+              const SizedBox(height: AppSizes.px12),
+              audienceField,
+            ],
           );
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: typeField),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSizes.px12),
             Expanded(child: audienceField),
           ],
         );
@@ -458,11 +464,11 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
               onChanged: _onCustomerSearch,
               hintText: S.notificationsComposeCustomerSearch,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.px8),
             _customerResults(theme),
           ],
           if (_customerError) ...[
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSizes.px6),
             Text(
               S.notificationsComposeCustomerRequired,
               style: const TextStyle(
@@ -480,11 +486,11 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
   Widget _customerResults(ThemeData theme) {
     if (_loadingCustomers && _customers.isEmpty) {
       return const SizedBox(
-        height: 44,
+        height: AppSizes.px44,
         child: Center(
           child: SizedBox(
-            width: 16,
-            height: 16,
+            width: AppSizes.px16,
+            height: AppSizes.px16,
             child: CircularProgressIndicator(strokeWidth: 2),
           ),
         ),
@@ -492,14 +498,14 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
     }
     if (_customersFailed) {
       return _InlineMessage(
-        icon: HugeIcons.strokeRoundedAlertCircle,
+        icon: AppIcons.alert,
         message: S.notificationsComposeCustomersFailed,
         color: AppColor.errorColor,
       );
     }
     if (_customers.isEmpty && _customersLoaded) {
       return _InlineMessage(
-        icon: HugeIcons.strokeRoundedUser,
+        icon: AppIcons.user,
         message: S.notificationsComposeNoCustomers,
         color: adminMutedColor(theme),
       );
@@ -507,12 +513,12 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
     return Container(
       constraints: const BoxConstraints(maxHeight: 190),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: ListView.separated(
         shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
         itemCount: _customers.length,
         separatorBuilder: (_, _) =>
             Divider(height: 1, color: adminRowBorderColor(theme)),
@@ -522,7 +528,10 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
             key: Key('notification-compose-customer-${customer.id}'),
             onTap: _sending ? null : () => _selectCustomer(customer),
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
               child: Row(
                 children: [
                   AdminAvatarImage(
@@ -530,7 +539,7 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                     size: 26,
                     fallbackText: _customerInitial(customer),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -561,7 +570,7 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   NotificationPushReadyChip(ready: customer.hasPush),
                 ],
               ),
@@ -574,14 +583,17 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
 
   Widget _estimateCard(ThemeData theme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.adminAccent,
           AppColor.adminAccentSurface,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColor.adminAccent.withValues(
             alpha: adminIsDark(theme) ? .3 : .16,
@@ -591,12 +603,12 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedUserCheck01,
+          const AppIcon(
+            AppIcons.userCheck01,
             size: 17,
             color: AppColor.adminAccent,
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -611,7 +623,7 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                     letterSpacing: AppLetterSpacings.space0_2,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.px2),
                 _estimateBody(theme),
               ],
             ),
@@ -749,20 +761,24 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
             if (constraints.maxWidth < 620) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [arabic, const SizedBox(height: 10), english],
+                children: [
+                  arabic,
+                  const SizedBox(height: AppSizes.px10),
+                  english,
+                ],
               );
             }
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(child: arabic),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSizes.px12),
                 Expanded(child: english),
               ],
             );
           },
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSizes.px12),
         CustomTextFormField(
           controller: _payloadController,
           label: S.notificationsComposePayload,
@@ -783,10 +799,10 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
         .trim();
     final typeColor = notificationTypeColor(_type);
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminRowBorderColor(theme)),
       ),
       child: Directionality(
@@ -804,15 +820,15 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                   typeColor,
                   notificationTypeSurface(_type),
                 ),
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: HugeIcon(
-                icon: notificationTypeIcon(_type),
+              child: AppIcon(
+                notificationTypeIcon(_type),
                 size: 17,
                 color: adminFlagForeground(theme, typeColor),
               ),
             ),
-            const SizedBox(width: 9),
+            const SizedBox(width: AppSizes.px10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -836,7 +852,7 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSizes.px8),
                       Text(
                         S.notificationsComposePreviewNow,
                         style: TextStyle(
@@ -847,7 +863,7 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
+                  const SizedBox(height: AppSizes.px4),
                   Text(
                     body.isEmpty
                         ? S.notificationsComposePreviewEmptyBody
@@ -873,12 +889,10 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
 
   IconData _audienceIcon(AdminNotificationAudience audience) =>
       switch (audience) {
-        AdminNotificationAudience.all => HugeIcons.strokeRoundedGlobe,
-        AdminNotificationAudience.pushEnabled =>
-          HugeIcons.strokeRoundedNotification01,
-        AdminNotificationAudience.hasDevice =>
-          HugeIcons.strokeRoundedSmartPhone01,
-        AdminNotificationAudience.customer => HugeIcons.strokeRoundedUser,
+        AdminNotificationAudience.all => AppIcons.globe,
+        AdminNotificationAudience.pushEnabled => AppIcons.notification01,
+        AdminNotificationAudience.hasDevice => AppIcons.smartPhone01,
+        AdminNotificationAudience.customer => AppIcons.user,
       };
 
   String _customerName(AdminNotificationComposerCustomer customer) {
@@ -922,7 +936,7 @@ class _LabeledDropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       borderSide: BorderSide(color: adminControlBorderColor(theme)),
     );
     return Column(
@@ -937,12 +951,12 @@ class _LabeledDropdown<T> extends StatelessWidget {
             height: AppTextHeights.line1_4,
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: AppSizes.px6),
         DropdownButtonFormField<T>(
           initialValue: value,
           isExpanded: true,
-          icon: HugeIcon(
-            icon: HugeIcons.strokeRoundedArrowDown01,
+          icon: AppIcon(
+            AppIcons.arrowDown01,
             size: 16,
             color: adminMutedColor(theme),
           ),
@@ -958,13 +972,13 @@ class _LabeledDropdown<T> extends StatelessWidget {
             filled: true,
             fillColor: theme.colorScheme.surface,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: 11,
-              vertical: 12,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
             ),
             border: border,
             enabledBorder: border,
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
               borderSide: BorderSide(color: theme.colorScheme.primary),
             ),
           ),
@@ -989,12 +1003,12 @@ class _TypeItem extends StatelessWidget {
     final color = notificationTypeColor(type);
     return Row(
       children: [
-        HugeIcon(
-          icon: notificationTypeIcon(type),
+        AppIcon(
+          notificationTypeIcon(type),
           size: 14,
           color: adminFlagForeground(theme, color),
         ),
-        const SizedBox(width: 7),
+        const SizedBox(width: AppSizes.px8),
         Flexible(child: Text(notificationTypeLabel(type))),
       ],
     );
@@ -1019,7 +1033,7 @@ class _SelectedCustomer extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(9, 7, 4, 7),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminRowBorderColor(theme)),
       ),
       child: Row(
@@ -1029,7 +1043,7 @@ class _SelectedCustomer extends StatelessWidget {
             size: 28,
             fallbackText: initial,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1062,7 +1076,7 @@ class _SelectedCustomer extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           NotificationPushReadyChip(ready: customer.hasPush),
           IconButton(
             key: const Key('notification-compose-customer-clear'),
@@ -1073,8 +1087,8 @@ class _SelectedCustomer extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+            icon: AppIcon(
+              AppIcons.cancel01,
               size: 15,
               color: adminMutedColor(theme),
             ),
@@ -1099,12 +1113,12 @@ class _InlineMessage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          HugeIcon(icon: icon, size: 14, color: color),
-          const SizedBox(width: 6),
+          AppIcon(icon, size: 14, color: color),
+          const SizedBox(width: AppSizes.px6),
           Flexible(
             child: Text(
               message,
@@ -1132,9 +1146,9 @@ class _ComposerBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -1158,7 +1172,7 @@ class _ComposerBox extends StatelessWidget {
                 height: AppTextHeights.line1_5,
               ),
             ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSizes.px10),
           child,
         ],
       ),

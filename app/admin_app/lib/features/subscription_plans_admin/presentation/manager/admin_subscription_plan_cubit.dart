@@ -1,15 +1,32 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/repositories/admin_subscription_plan_repository.dart';
+import 'package:admin_app/features/subscription_plans_admin/di/subscription_plans_admin_dependencies.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/repositories/subscription_plan_repository.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/usecases/load_plans.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/usecases/load_product_options.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/usecases/save_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/usecases/set_active.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/manager/admin_subscription_plan_state.dart';
 
 class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
-  AdminSubscriptionPlanCubit({AdminSubscriptionPlanRepository? repository})
-    : _repository = repository ?? AdminSubscriptionPlanRepository(),
+  AdminSubscriptionPlanCubit({SubscriptionPlanRepository? repository})
+    : this._withUseCases(
+        repository ?? SubscriptionPlansAdminDependencies.repository,
+      );
+
+  AdminSubscriptionPlanCubit._withUseCases(
+    SubscriptionPlanRepository repository,
+  ) : _loadPlans = LoadPlansUseCase(repository),
+      _loadProductOptions = LoadProductOptionsUseCase(repository),
+      _savePlan = SavePlanUseCase(repository),
+      _setActive = SetActiveUseCase(repository),
       super(const AdminSubscriptionPlanState());
 
-  final AdminSubscriptionPlanRepository _repository;
+  final LoadPlansUseCase _loadPlans;
+  final LoadProductOptionsUseCase _loadProductOptions;
+  final SavePlanUseCase _savePlan;
+  final SetActiveUseCase _setActive;
 
   Future<void> load() async {
     if (isClosed) return;
@@ -20,7 +37,7 @@ class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
       ),
     );
     try {
-      final plans = await _repository.loadPlans();
+      final plans = await _loadPlans();
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -50,7 +67,7 @@ class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
       ),
     );
     try {
-      final options = await _repository.loadProductOptions();
+      final options = await _loadProductOptions();
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -74,7 +91,7 @@ class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
     AdminSubscriptionPlanDraft draft,
   ) async {
     try {
-      final outcome = await _repository.savePlan(draft);
+      final outcome = await _savePlan(draft);
       if (outcome == SubscriptionPlanSaveOutcome.saved) await load();
       return outcome;
     } catch (_) {
@@ -84,7 +101,7 @@ class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
 
   Future<bool> setActive(String planId, bool active) async {
     try {
-      final changed = await _repository.setActive(planId, active);
+      final changed = await _setActive(planId, active);
       if (changed) await load();
       return changed;
     } catch (_) {

@@ -2,14 +2,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
+import 'package:admin_app/features/roles/domain/repositories/role_repository.dart';
 
-class AdminRoleRepository {
+class AdminRoleRepository implements RoleRepository {
   AdminRoleRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminRole>> loadRoles() async {
     final response = await _supabase.rpc('admin_roles');
     if (response is List) {
@@ -21,6 +23,7 @@ class AdminRoleRepository {
     return const <AdminRole>[];
   }
 
+  @override
   Future<List<Map<String, dynamic>>> loadPermissions() async {
     final response = await _supabase.rpc('admin_permissions');
     if (response is List) {
@@ -32,6 +35,7 @@ class AdminRoleRepository {
     return const <Map<String, dynamic>>[];
   }
 
+  @override
   Future<void> setRolePermission(
     String roleId,
     String code,

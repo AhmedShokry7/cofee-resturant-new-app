@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_product_picker_tile.dart';
 
 class ProductPickerDialog extends StatefulWidget {
@@ -49,7 +49,7 @@ class _OrderProductPickerDialogState extends State<ProductPickerDialog> {
               decoration: InputDecoration(labelText: S.ordersSearch),
               onChanged: _search,
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             Expanded(
               child: _filtered.isEmpty
                   ? Center(child: Text(S.ordersNoProductsFound))

@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/models/customer_filter.dart';
 
 AdminCustomer _customer({

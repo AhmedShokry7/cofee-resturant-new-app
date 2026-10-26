@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_cubit.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_avatar.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_format.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 part 'customer_detail_sections.dart';
@@ -149,13 +150,14 @@ class _CustomerDetailDialogState extends State<CustomerDetailDialog> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.sizeOf(context).width < 600
-            ? AppDimensions.md
-            : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal:
+            MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
@@ -165,7 +167,7 @@ class _CustomerDetailDialogState extends State<CustomerDetailDialog> {
             _DialogHeader(onClose: _close, enabled: !_saving),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -176,11 +178,11 @@ class _CustomerDetailDialogState extends State<CustomerDetailDialog> {
                       isVip: _isVip,
                       isBlacklisted: _isBlacklisted,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _CustomerStatsGrid(customer: customer, joinedAt: joinedAt),
-                    const SizedBox(height: AppDimensions.xl),
+                    const SizedBox(height: AppSpacing.xxl),
                     _SectionTitle(title: S.customerManagement),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _ManagementPanel(
                       isVip: _isVip,
                       isBlacklisted: _isBlacklisted,
@@ -190,33 +192,33 @@ class _CustomerDetailDialogState extends State<CustomerDetailDialog> {
                       onBlacklistChanged: (value) =>
                           setState(() => _isBlacklisted = value),
                     ),
-                    const SizedBox(height: AppDimensions.xl),
+                    const SizedBox(height: AppSpacing.xxl),
                     _SectionTitle(
                       title: S.customerAddressesLabel,
                       count: addresses.length,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     if (addresses.isEmpty)
                       _EmptySection(text: S.noAddresses)
                     else
                       _AddressList(addresses: addresses),
-                    const SizedBox(height: AppDimensions.xl),
+                    const SizedBox(height: AppSpacing.xxl),
                     _SectionTitle(
                       title: S.customerOrdersLabel,
                       count: orders.length,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     if (orders.isEmpty)
                       _EmptySection(text: S.noOrders)
                     else
                       _OrderList(orders: orders),
                     if (subscriptions.isNotEmpty) ...[
-                      const SizedBox(height: AppDimensions.xl),
+                      const SizedBox(height: AppSpacing.xxl),
                       _SectionTitle(
                         title: S.customerSubscriptionsLabel,
                         count: subscriptions.length,
                       ),
-                      const SizedBox(height: AppDimensions.md),
+                      const SizedBox(height: AppSpacing.md),
                       _SubscriptionList(subscriptions: subscriptions),
                     ],
                   ],

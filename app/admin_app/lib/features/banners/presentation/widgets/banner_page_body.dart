@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_records.dart';
 import 'package:admin_app/shared/widgets/admin_page_title.dart';
 
@@ -44,12 +44,12 @@ class BannerPageBody extends StatelessWidget {
               AdminPageTitle(S.banners),
               FilledButton.icon(
                 onPressed: onAdd,
-                icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 18),
+                icon: const Icon(AppIcons.add01, size: 18),
                 label: Text(S.addBanner),
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.lg),
+          const SizedBox(height: AppSpacing.lg),
           Expanded(
             child: BannerRecords(
               banners: banners,

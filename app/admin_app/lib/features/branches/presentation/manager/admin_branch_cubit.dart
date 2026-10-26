@@ -2,21 +2,47 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_draft.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_metrics.dart';
-import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/features/branches/di/branches_dependencies.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_draft.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_save_outcome.dart';
+import 'package:admin_app/features/branches/domain/repositories/branch_repository.dart';
+import 'package:admin_app/features/branches/domain/usecases/delete_branch.dart';
+import 'package:admin_app/features/branches/domain/usecases/delete_branch_image_file.dart';
+import 'package:admin_app/features/branches/domain/usecases/load_branch_metrics.dart';
+import 'package:admin_app/features/branches/domain/usecases/load_branches.dart';
+import 'package:admin_app/features/branches/domain/usecases/save_branch.dart';
+import 'package:admin_app/features/branches/domain/usecases/set_branch_active.dart';
+import 'package:admin_app/features/branches/domain/usecases/set_branch_image.dart';
+import 'package:admin_app/features/branches/domain/usecases/upload_branch_image.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_state.dart';
 
 class AdminBranchCubit extends Cubit<AdminBranchState> {
-  AdminBranchCubit({AdminBranchRepository? repository})
-    : _repository = repository ?? AdminBranchRepository(),
+  AdminBranchCubit({BranchRepository? repository})
+    : this._withUseCases(repository ?? BranchesDependencies.repository);
+
+  AdminBranchCubit._withUseCases(BranchRepository repository)
+    : _loadBranches = LoadBranchesUseCase(repository),
+      _loadBranchMetrics = LoadBranchMetricsUseCase(repository),
+      _saveBranch = SaveBranchUseCase(repository),
+      _setBranchActive = SetBranchActiveUseCase(repository),
+      _deleteBranch = DeleteBranchUseCase(repository),
+      _setBranchImage = SetBranchImageUseCase(repository),
+      _uploadBranchImage = UploadBranchImageUseCase(repository),
+      _deleteBranchImageFile = DeleteBranchImageFileUseCase(repository),
       super(const AdminBranchState());
 
-  final AdminBranchRepository _repository;
+  final LoadBranchesUseCase _loadBranches;
+  final LoadBranchMetricsUseCase _loadBranchMetrics;
+  final SaveBranchUseCase _saveBranch;
+  final SetBranchActiveUseCase _setBranchActive;
+  final DeleteBranchUseCase _deleteBranch;
+  final SetBranchImageUseCase _setBranchImage;
+  final UploadBranchImageUseCase _uploadBranchImage;
+  final DeleteBranchImageFileUseCase _deleteBranchImageFile;
   int _requestId = 0;
-
-  AdminBranchRepository get repository => _repository;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminBranchStatus.loading, clearError: true));
@@ -29,10 +55,10 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
   Future<void> _fetch() async {
     final request = ++_requestId;
     try {
-      final branches = await _repository.loadBranches();
+      final branches = await _loadBranches();
       var metrics = state.metrics;
       try {
-        metrics = await _repository.loadMetrics();
+        metrics = await _loadBranchMetrics();
       } catch (_) {
         metrics = AdminBranchMetrics.empty;
       }
@@ -57,7 +83,7 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
   }
 
   Future<BranchSaveOutcome> saveBranch(AdminBranchDraft draft) async {
-    final outcome = await _repository.saveBranch(draft);
+    final outcome = await _saveBranch(draft);
     if (outcome == BranchSaveOutcome.saved) await refresh();
     return outcome;
   }
@@ -66,13 +92,13 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
     AdminBranch branch,
     bool active,
   ) async {
-    final outcome = await _repository.setBranchActive(branch.id, active);
+    final outcome = await _setBranchActive(branch.id, active);
     if (outcome == BranchMutationOutcome.success) await refresh();
     return outcome;
   }
 
   Future<BranchMutationOutcome> deleteBranch(String branchId) async {
-    final outcome = await _repository.deleteBranch(branchId);
+    final outcome = await _deleteBranch(branchId);
     if (outcome == BranchMutationOutcome.success) await refresh();
     return outcome;
   }
@@ -81,7 +107,7 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
     String branchId,
     String? imageUrl,
   ) async {
-    final outcome = await _repository.setBranchImage(branchId, imageUrl);
+    final outcome = await _setBranchImage(branchId, imageUrl);
     if (outcome == BranchMutationOutcome.success) await refresh();
     return outcome;
   }
@@ -92,7 +118,7 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
     required String fileName,
     required String contentType,
   }) async {
-    final outcome = await _repository.uploadBranchImage(
+    final outcome = await _uploadBranchImage(
       branchId: branchId,
       bytes: bytes,
       fileName: fileName,
@@ -103,6 +129,6 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
   }
 
   Future<void> deleteBranchImageFile(String? imageUrl) async {
-    await _repository.deleteBranchImageFile(imageUrl);
+    await _deleteBranchImageFile(imageUrl);
   }
 }

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_metrics.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movements_directory.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movements_metrics_cards.dart';
@@ -107,12 +107,9 @@ class StockMovementsPageBody extends StatelessWidget {
                     key: const Key('stock-movements-record-movement'),
                     text: S.stockMovementAction,
                     onPressed: onRecordMovement,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 18,
-                    ),
+                    leadingIcon: const Icon(AppIcons.add01, size: 18),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.primaryColor,
                     textColor: AppColor.whiteColor,
                   ),
@@ -123,9 +120,9 @@ class StockMovementsPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             StockMovementsMetricsCards(metrics: metrics),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSizes.px16),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -133,7 +130,10 @@ class StockMovementsPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 700, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightXxl,
+                    child: directory,
+                  ),
                 ],
               ),
             );

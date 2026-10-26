@@ -22,10 +22,13 @@ class DiscountPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: muted ? AppColor.greyColor : AppColor.primaryColor,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         '$percent%',

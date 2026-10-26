@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -34,7 +35,7 @@ class ReviewActionsMenu extends StatelessWidget {
           value: ReviewAction.details,
           child: _item(
             theme,
-            icon: HugeIcons.strokeRoundedEye,
+            icon: AppIcons.eyeIcon,
             label: S.reviewsViewDetails,
             direction: rtl,
           ),
@@ -45,8 +46,8 @@ class ReviewActionsMenu extends StatelessWidget {
             child: _item(
               theme,
               icon: review.isPublished
-                  ? HugeIcons.strokeRoundedViewOff
-                  : HugeIcons.strokeRoundedCheckmarkCircle02,
+                  ? AppIcons.eyeOff
+                  : AppIcons.checkmarkCircle02,
               label: review.isPublished ? S.reviewsHide : S.reviewsPublish,
               direction: rtl,
             ),
@@ -56,7 +57,7 @@ class ReviewActionsMenu extends StatelessWidget {
             value: ReviewAction.delete,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedDelete02,
+              icon: AppIcons.delete02,
               label: S.reviewsDelete,
               direction: rtl,
               color: AppColor.errorColor,
@@ -64,8 +65,8 @@ class ReviewActionsMenu extends StatelessWidget {
           ),
         ],
       ],
-      child: HugeIcon(
-        icon: HugeIcons.strokeRoundedMoreHorizontal,
+      child: AppIcon(
+        AppIcons.moreHorizontal,
         size: 18,
         color: adminMutedColor(theme),
       ),
@@ -81,8 +82,8 @@ class ReviewActionsMenu extends StatelessWidget {
   }) => Row(
     textDirection: direction ? TextDirection.rtl : TextDirection.ltr,
     children: [
-      HugeIcon(icon: icon, size: 16, color: color ?? adminBodyColor(theme)),
-      const SizedBox(width: 8),
+      AppIcon(icon, size: 16, color: color ?? adminBodyColor(theme)),
+      const SizedBox(width: AppSizes.px8),
       Text(
         label,
         style: TextStyle(

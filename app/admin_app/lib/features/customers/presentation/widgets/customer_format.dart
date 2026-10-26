@@ -4,7 +4,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/initials.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 
 String customerMoney(double value) => localizeDigits(formatAmount(value));
 

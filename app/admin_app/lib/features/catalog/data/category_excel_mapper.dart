@@ -1,6 +1,6 @@
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/catalog/data/category_excel_service.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 
 /// A single row that failed to import, with the reason.
 class CategoryImportRowError {

@@ -44,8 +44,8 @@ class LoginScreen extends StatelessWidget {
             },
           ),
           const PositionedDirectional(
-            top: AppDimensions.md,
-            end: AppDimensions.md,
+            top: AppSpacing.md,
+            end: AppSpacing.md,
             child: LoginTopActions(),
           ),
         ],
@@ -58,11 +58,9 @@ class LoginScreen extends StatelessWidget {
       child: SingleChildScrollView(
         padding: EdgeInsets.symmetric(
           horizontal: wide
-              ? AppDimensions.xxl
+              ? AppSpacing.xxxl
               : AppDimensions.pageHorizontalPadding,
-          vertical: wide
-              ? AppDimensions.xxl
-              : AppDimensions.pageVerticalPadding,
+          vertical: wide ? AppSpacing.xxxl : AppDimensions.pageVerticalPadding,
         ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(
@@ -70,9 +68,7 @@ class LoginScreen extends StatelessWidget {
           ),
           child: Card(
             child: Padding(
-              padding: EdgeInsets.all(
-                wide ? AppDimensions.xxl : AppDimensions.xl,
-              ),
+              padding: EdgeInsets.all(wide ? AppSpacing.xxxl : AppSpacing.xxl),
               child: LoginForm(
                 formKey: formKey,
                 emailController: emailController,

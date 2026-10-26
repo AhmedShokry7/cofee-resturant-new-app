@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:admin_app/features/catalog/data/product_excel_service.dart';
+import 'package:admin_app/core/services/product_excel_service.dart';
 
 /// Reads and writes categories to .xlsx format.
 class CategoryExcelService {

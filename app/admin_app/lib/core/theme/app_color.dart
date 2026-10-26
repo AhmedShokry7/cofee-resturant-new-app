@@ -127,4 +127,92 @@ class AppColor {
 
   /// Fill of the delete circle on the product image.
   static const dangerSurface = Color(0xFFF55157);
+
+  // Washes and scrims
+  /// الغسلة الخضراء الداكنة التي تُظلل البطاقات والصفوف فوق الأسطح الفاتحة،
+  /// بثلاث درجات: خفيفة للظلال، متوسطة للفواصل، قوية للحواف المنتخبة.
+  static const inkWashFaint = Color(0x0A1B362B);
+  static const inkWashSoft = Color(0x141B362B);
+  static const inkWashStrong = Color(0x331B362B);
+
+  /// أسود شفاف يُظلل إطار الجهاز في المعاينة.
+  static const black20 = Color(0x33000000);
+
+  /// أبيض شفاف يرسم الخط المتقطع فوق صورة الكوبون.
+  static const white24 = Color(0x3DFFFFFF);
+
+  // Tinted icon pairs
+  /// خلفية فاتحة وحبر غامق عليها: الاستخدام الوحيد المتكرر في لوحة الإدارة هو
+  /// أيقونة بطاقة المؤشر وسطر التفاصيل الملون. ألوان الحالات والرسوم
+  /// التوضيحية تستعمل هذه الأزواج بدل كتابة رقم لون في أي شاشة.
+  static const tintBronzeSurface = Color(0xFFF3E6DD);
+  static const tintBronzeInk = Color(0xFFB67653);
+
+  /// أخضر أغمق من [trendPositive] مخصص لحبر الصور الأولية.
+  static const tintGreenSurface = Color(0xFFE8F3EC);
+  static const tintGreenInk = Color(0xFF4F8168);
+
+  static const tintMauveSurface = Color(0xFFF4EAF5);
+  static const tintMauveInk = Color(0xFF92679B);
+
+  static const tintRoseSurface = Color(0xFFFDEBEA);
+  static const tintRoseInk = Color(0xFFB06663);
+
+  static const tintVioletSurface = Color(0xFFF0EAFB);
+  static const tintVioletInk = Color(0xFF7E57C2);
+
+  static const tintClaySurface = Color(0xFFFFF0E6);
+  static const tintClayInk = Color(0xFFC4763F);
+
+  /// أزرق مائل للرمادي لبطاقات ملخص الطلب.
+  static const tintSteelSurface = Color(0xFFE7F1F7);
+  static const tintSteelInk = Color(0xFF5180A7);
+
+  /// نسخ أغمق قليلًا من حبر البنفسجي والعسلي تستخدمها بطاقات ملخص الطلب فقط؛
+  /// محفوظة بقيمها الأصلية حتى تُراجع بصريًا كدفعة واحدة.
+  static const tintIrisInk = Color(0xFF7656A6);
+  static const tintHoneyInk = Color(0xFFAA7C31);
+
+  /// لوح الصور الأولية للحروف: six أزواج مرتبة، والاختيار بحسب معرف العنصر.
+  static const initialTints = <(Color, Color)>[
+    (tintBronzeSurface, tintBronzeInk),
+    (tintGreenSurface, tintGreenInk),
+    (adminInfoSurface, adminInfo),
+    (tintMauveSurface, tintMauveInk),
+    (adminWarningSurface, adminWarning),
+    (tintRoseSurface, tintRoseInk),
+  ];
+
+  // Status palette
+  /// لوحة ألوان الحالات في شارات الطلبات والدفع والسلال وشرائح الحالة:
+  /// العنبري للبانتظار، الأزرق للمؤكد والمدفوع، البرتقالي للتحضير،
+  /// البنفسجي للجاهز والمسترجع، والنيلي للتوصيل.
+  static const statusAmber = Color(0xFFF59E0B);
+  static const statusBlue = Color(0xFF2563EB);
+  static const statusOrange = Color(0xFFEA580C);
+  static const statusViolet = Color(0xFF7C3AED);
+  static const statusIndigo = Color(0xFF4F46E5);
+
+  /// شريحة الحالة غير المختارة: نصها وخلفيتها.
+  static const statusTabIdleInk = Color(0xFF718078);
+  static const statusTabIdleSurface = Color(0xFFD5E8DD);
+
+  /// أيقونات الملاحقة: الحالة العادي والمطمئن والمعطّل.
+  static const paginationIdleInk = Color(0xFF8A968E);
+  static const paginationMutedInk = Color(0xFF758178);
+  static const paginationDisabledInk = Color(0x59758178);
+
+  /// رمادي محايد هادئ لنصوص الجدول الثانوية.
+  static const quietNeutralInk = Color(0xFF767676);
+
+  /// جسم محاكي أندرويد الداكن حول شاشة المعاينة.
+  static const deviceChrome = Color(0xFF111318);
+
+  /// خلفية شفافة تُستخدم بدل `Colors.transparent` لإلغاء لون أو حدود.
+  static const transparent = Color(0x00000000);
+
+  /// طبقات الخريطة في نموذج منطقة التوصيل: مساحة التوصيل وعلم الفرع ومركز الطلب.
+  static const mapRadiusSurface = Color(0xFF2196F3);
+  static const mapBranchPin = Color(0xFF009688);
+  static const mapZonePin = Color(0xFFF44336);
 }

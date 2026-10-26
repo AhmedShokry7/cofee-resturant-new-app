@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_badges.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
@@ -32,7 +33,7 @@ class NotificationCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: notifications.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final notification = notifications[index];
         return _NotificationCard(
@@ -72,14 +73,14 @@ class _NotificationCard extends StatelessWidget {
     final typeColor = notificationTypeColor(notification.type);
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Column(
@@ -98,15 +99,15 @@ class _NotificationCard extends StatelessWidget {
                         typeColor,
                         notificationTypeSurface(notification.type),
                       ),
-                      borderRadius: BorderRadius.circular(9),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: HugeIcon(
-                      icon: notificationTypeIcon(notification.type),
+                    child: AppIcon(
+                      notificationTypeIcon(notification.type),
                       size: 17,
                       color: adminFlagForeground(theme, typeColor),
                     ),
                   ),
-                  const SizedBox(width: 9),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,7 +123,7 @@ class _NotificationCard extends StatelessWidget {
                                   shape: BoxShape.circle,
                                 ),
                               ),
-                              const SizedBox(width: 5),
+                              const SizedBox(width: AppSizes.px6),
                             ],
                             Expanded(
                               child: Text(
@@ -139,7 +140,7 @@ class _NotificationCard extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.px2),
                         Row(
                           children: [
                             AdminAvatarImage(
@@ -147,7 +148,7 @@ class _NotificationCard extends StatelessWidget {
                               size: 18,
                               fallbackText: initial,
                             ),
-                            const SizedBox(width: 5),
+                            const SizedBox(width: AppSizes.px6),
                             Expanded(
                               child: Text(
                                 notificationCustomerName(notification),
@@ -165,7 +166,7 @@ class _NotificationCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   NotificationActionsMenu(
                     notification: notification,
                     canSend: canSend,
@@ -175,7 +176,7 @@ class _NotificationCard extends StatelessWidget {
                 ],
               ),
               if (excerpt != null) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSizes.px8),
                 Text(
                   excerpt,
                   maxLines: 2,
@@ -187,7 +188,7 @@ class _NotificationCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -199,12 +200,12 @@ class _NotificationCard extends StatelessWidget {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedCalendar03,
+                      AppIcon(
+                        AppIcons.calendar03,
                         size: 11,
                         color: adminMutedColor(theme),
                       ),
-                      const SizedBox(width: 4),
+                      const SizedBox(width: AppSizes.px4),
                       Text(
                         notificationDateLabel(notification.createdAt),
                         style: TextStyle(

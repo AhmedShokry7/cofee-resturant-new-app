@@ -1,27 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
-
-enum KitchenMutationOutcome {
-  success,
-  notFound,
-  invalidStatus,
-  invalidTransition,
-  permissionDenied,
-  failed,
-}
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
 
 /// The live kitchen board and the two actions the kitchen performs.
-class AdminKitchenRepository {
+class AdminKitchenRepository implements KitchenRepository {
   AdminKitchenRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<AdminKitchenBoard> loadBoard({
     String? search,
     String? branchId,
@@ -41,6 +34,7 @@ class AdminKitchenRepository {
     return const AdminKitchenBoard();
   }
 
+  @override
   Future<AdminKitchenMetrics> loadMetrics({String? branchId}) async {
     final response = await _supabase.rpc(
       'admin_kitchen_metrics',
@@ -52,6 +46,7 @@ class AdminKitchenRepository {
     return AdminKitchenMetrics.empty;
   }
 
+  @override
   Future<AdminKitchenFilters> loadFilters() async {
     final response = await _supabase.rpc('admin_kitchen_filters');
     if (response is Map) {
@@ -60,6 +55,7 @@ class AdminKitchenRepository {
     return AdminKitchenFilters.empty;
   }
 
+  @override
   Future<KitchenMutationOutcome> setTicketStatus(
     String ticketId,
     KitchenTicketStatus status,
@@ -70,6 +66,7 @@ class AdminKitchenRepository {
     );
   }
 
+  @override
   Future<KitchenMutationOutcome> setItemStatus(
     String itemId,
     KitchenItemStatus status,

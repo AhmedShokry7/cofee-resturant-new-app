@@ -7,7 +7,7 @@ import 'package:admin_app/features/carts/presentation/manager/admin_cart_cubit.d
 import 'package:admin_app/features/carts/presentation/manager/admin_cart_state.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_details_dialog.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_records.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -68,7 +68,7 @@ class _CartPageState extends State<CartPage> {
                     message: state.errorMessage ?? '',
                     onRetry: _cubit.load,
                   ),
-                const SizedBox(height: AppDimensions.lg),
+                const SizedBox(height: AppSpacing.lg),
                 Expanded(
                   child: firstLoad && state.isLoading
                       ? const AdminLoadingView()

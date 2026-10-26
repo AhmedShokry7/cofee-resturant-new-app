@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -76,8 +77,8 @@ class StockMovementsToolbar extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding: EdgeInsets.zero,
                 ),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedCancel01,
+                icon: const AppIcon(
+                  AppIcons.cancel01,
                   size: 18,
                   color: AppColor.adminMuted,
                 ),
@@ -89,7 +90,7 @@ class StockMovementsToolbar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               search,
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: actions,
@@ -126,13 +127,10 @@ class StockMovementsToolbar extends StatelessWidget {
           ),
       ],
       child: compact
-          ? AdminToolbarIcon(
-              icon: HugeIcons.strokeRoundedExchange01,
-              active: active,
-            )
+          ? AdminToolbarIcon(icon: AppIcons.exchange01, active: active)
           : AdminToolbarSurface(
               label: inventoryTypeFilterLabel(type),
-              icon: HugeIcons.strokeRoundedExchange01,
+              icon: AppIcons.exchange01,
               active: active,
             ),
     );
@@ -153,13 +151,10 @@ class StockMovementsToolbar extends StatelessWidget {
           ),
       ],
       child: compact
-          ? AdminToolbarIcon(
-              icon: HugeIcons.strokeRoundedCalendar03,
-              active: active,
-            )
+          ? AdminToolbarIcon(icon: AppIcons.calendar03, active: active)
           : AdminToolbarSurface(
               label: inventoryPeriodLabel(period),
-              icon: HugeIcons.strokeRoundedCalendar03,
+              icon: AppIcons.calendar03,
               active: active,
             ),
     );
@@ -186,13 +181,10 @@ class StockMovementsToolbar extends StatelessWidget {
           ),
       ],
       child: compact
-          ? AdminToolbarIcon(
-              icon: HugeIcons.strokeRoundedStore01,
-              active: active,
-            )
+          ? AdminToolbarIcon(icon: AppIcons.store01, active: active)
           : AdminToolbarSurface(
               label: _branchLabel,
-              icon: HugeIcons.strokeRoundedStore01,
+              icon: AppIcons.store01,
               active: active,
             ),
     );
@@ -208,16 +200,16 @@ class StockMovementsToolbar extends StatelessWidget {
     child: Row(
       children: [
         SizedBox(
-          width: 18,
+          width: AppSizes.px18,
           child: selected
-              ? const HugeIcon(
-                  icon: HugeIcons.strokeRoundedTick01,
+              ? const AppIcon(
+                  AppIcons.tick01,
                   size: 15,
                   color: AppColor.adminAccent,
                 )
               : null,
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSizes.px6),
         Flexible(
           child: Text(
             label,

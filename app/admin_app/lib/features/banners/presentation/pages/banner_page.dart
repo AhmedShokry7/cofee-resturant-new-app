@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_state.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_data_dialog.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_image_dialog.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class BannerPage extends StatefulWidget {

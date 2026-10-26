@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/models/subscription_filter.dart';
 
 AdminSubscription _subscription({

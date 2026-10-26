@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_customer_contacts.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_customer_identity.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -45,9 +45,9 @@ class OrderCustomerSection extends StatelessWidget {
             avatarUrl:
                 _text(order.customerAvatarUrl) ?? _text(data['avatar_url']),
           ),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           Divider(height: 1, color: adminRowBorderColor(theme)),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           OrderCustomerContacts(
             phone: _text(order.customerPhone) ?? _text(data['phone']),
             email: _text(order.customerEmail) ?? _text(data['email']),

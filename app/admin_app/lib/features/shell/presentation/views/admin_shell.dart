@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
 import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
 import 'package:admin_app/features/carts/presentation/pages/cart_page.dart';
@@ -29,8 +29,9 @@ import 'package:admin_app/features/branches/presentation/pages/branch_page.dart'
 import 'package:admin_app/features/bundles/presentation/pages/bundle_page.dart';
 import 'package:admin_app/features/catalog/presentation/pages/category_page.dart';
 import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
 import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
 import 'package:admin_app/features/shell/presentation/manager/admin_nav_cubit.dart';

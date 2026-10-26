@@ -3,10 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_permission_scope.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/auth/admin_permission_scope.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
 import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/shell/presentation/views/admin_shell.dart';

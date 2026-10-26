@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The row under a page header that drives a bulk action on picked records.
 class AdminBulkSelectionBar extends StatelessWidget {
@@ -46,8 +46,8 @@ class AdminBulkSelectionBar extends StatelessWidget {
     final allSelected = selectedCount >= totalCount;
 
     return Wrap(
-      spacing: AppDimensions.sm,
-      runSpacing: AppDimensions.xs,
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
@@ -62,14 +62,12 @@ class AdminBulkSelectionBar extends StatelessWidget {
               : onSelectAll,
           icon: isSelectingAll
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSizes.px16,
+                  height: AppSizes.px16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
               : Icon(
-                  allSelected
-                      ? HugeIcons.strokeRoundedCancel01
-                      : HugeIcons.strokeRoundedTick01,
+                  allSelected ? AppIcons.cancel01 : AppIcons.tick01,
                   size: 18,
                 ),
           label: Text(allSelected ? S.clearSelection : selectAllLabel),
@@ -78,11 +76,11 @@ class AdminBulkSelectionBar extends StatelessWidget {
           onPressed: _busy ? null : onDelete,
           icon: isDeletingSelected
               ? const SizedBox(
-                  width: 16,
-                  height: 16,
+                  width: AppSizes.px16,
+                  height: AppSizes.px16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(HugeIcons.strokeRoundedDelete01, size: 18),
+              : const Icon(AppIcons.delete01, size: 18),
           label: Text(deleteLabel),
           style: FilledButton.styleFrom(foregroundColor: AppColor.errorColor),
         ),

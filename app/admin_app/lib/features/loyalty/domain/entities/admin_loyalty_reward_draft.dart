@@ -1,4 +1,4 @@
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
 
 class AdminLoyaltyRewardDraft {
   const AdminLoyaltyRewardDraft({

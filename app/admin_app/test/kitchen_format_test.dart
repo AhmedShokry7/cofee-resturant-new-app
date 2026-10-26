@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
-import 'package:admin_app/features/kitchen/data/repositories/admin_kitchen_repository.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_format.dart';
 
 AdminKitchenTicketItem _item({

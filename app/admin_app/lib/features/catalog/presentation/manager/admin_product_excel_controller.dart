@@ -1,9 +1,9 @@
 import 'package:file_picker/file_picker.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/product_excel_mapper.dart';
-import 'package:admin_app/features/catalog/data/product_excel_service.dart';
+import 'package:admin_app/core/services/product_excel_service.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 
 /// The outcome of one Excel import of products.

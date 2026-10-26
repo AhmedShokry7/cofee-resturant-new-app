@@ -4,12 +4,12 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/initials.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_member.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_type.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_target_option.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 
 String loyaltyCount(int value) => localizeDigits(formatCount(value));
 

@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/customers/data/customer_excel_exporter.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_cubit.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_state.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_detail_dialog.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 part 'customer_page_export.dart';

@@ -1,26 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan_product.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_product.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/repositories/subscription_plan_repository.dart';
 
-enum SubscriptionPlanSaveOutcome {
-  saved,
-  duplicateCode,
-  invalidData,
-  missingProducts,
-  invalidProducts,
-  notFound,
-  failed,
-}
-
-class AdminSubscriptionPlanRepository {
+class AdminSubscriptionPlanRepository implements SubscriptionPlanRepository {
   AdminSubscriptionPlanRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminSubscriptionPlan>> loadPlans() async {
     final response = await _supabase.rpc('admin_subscription_plans');
     if (response is List) {
@@ -35,6 +27,7 @@ class AdminSubscriptionPlanRepository {
     return const <AdminSubscriptionPlan>[];
   }
 
+  @override
   Future<List<AdminSubscriptionPlanProduct>> loadProductOptions() async {
     final response = await _supabase.rpc('admin_subscription_product_options');
     if (response is List) {
@@ -50,6 +43,7 @@ class AdminSubscriptionPlanRepository {
     return const <AdminSubscriptionPlanProduct>[];
   }
 
+  @override
   Future<SubscriptionPlanSaveOutcome> savePlan(
     AdminSubscriptionPlanDraft draft,
   ) async {
@@ -78,6 +72,7 @@ class AdminSubscriptionPlanRepository {
     };
   }
 
+  @override
   Future<bool> setActive(String planId, bool active) async {
     final response = await _supabase.rpc(
       'admin_set_subscription_plan_active',

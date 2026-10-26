@@ -2,20 +2,49 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_composer.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_metrics.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
-import 'package:admin_app/features/notifications/data/repositories/admin_notifications_repository.dart';
+import 'package:admin_app/features/notifications/di/notifications_dependencies.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
+import 'package:admin_app/features/notifications/domain/usecases/delete_notification.dart';
+import 'package:admin_app/features/notifications/domain/usecases/load_audience.dart';
+import 'package:admin_app/features/notifications/domain/usecases/load_customers.dart';
+import 'package:admin_app/features/notifications/domain/usecases/load_metrics.dart';
+import 'package:admin_app/features/notifications/domain/usecases/load_notifications.dart';
+import 'package:admin_app/features/notifications/domain/usecases/load_push_health.dart';
+import 'package:admin_app/features/notifications/domain/usecases/resend_notification.dart';
+import 'package:admin_app/features/notifications/domain/usecases/send_notification.dart';
+import 'package:admin_app/features/notifications/domain/usecases/set_read.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_state.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
 
 class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
-  AdminNotificationsCubit({AdminNotificationsRepository? repository})
-    : _repository = repository ?? AdminNotificationsRepository(),
+  AdminNotificationsCubit({NotificationsRepository? repository})
+    : this._withUseCases(repository ?? NotificationsDependencies.repository);
+
+  AdminNotificationsCubit._withUseCases(NotificationsRepository repository)
+    : _loadNotifications = LoadNotificationsUseCase(repository),
+      _loadMetrics = LoadMetricsUseCase(repository),
+      _loadPushHealth = LoadPushHealthUseCase(repository),
+      _loadCustomers = LoadCustomersUseCase(repository),
+      _loadAudience = LoadAudienceUseCase(repository),
+      _sendNotification = SendNotificationUseCase(repository),
+      _resendNotification = ResendNotificationUseCase(repository),
+      _setRead = SetReadUseCase(repository),
+      _deleteNotification = DeleteNotificationUseCase(repository),
       super(const AdminNotificationsState());
 
-  final AdminNotificationsRepository _repository;
+  final LoadNotificationsUseCase _loadNotifications;
+  final LoadMetricsUseCase _loadMetrics;
+  final LoadPushHealthUseCase _loadPushHealth;
+  final LoadCustomersUseCase _loadCustomers;
+  final LoadAudienceUseCase _loadAudience;
+  final SendNotificationUseCase _sendNotification;
+  final ResendNotificationUseCase _resendNotification;
+  final SetReadUseCase _setRead;
+  final DeleteNotificationUseCase _deleteNotification;
   Timer? _searchTimer;
   int _requestId = 0;
 
@@ -84,20 +113,16 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
 
   Future<List<AdminNotificationComposerCustomer>> searchCustomers(
     String search,
-  ) => _repository.loadCustomers(search: search, limit: 20);
+  ) => _loadCustomers(search: search, limit: 20);
 
   Future<AdminAudienceEstimate> estimateAudience({
     required AdminNotificationType type,
     required AdminNotificationAudience audience,
     String? customerId,
-  }) => _repository.loadAudience(
-    type: type,
-    audience: audience,
-    customerId: customerId,
-  );
+  }) => _loadAudience(type: type, audience: audience, customerId: customerId);
 
   Future<AdminSendResult> send(AdminNotificationDraft draft) async {
-    final result = await _repository.sendNotification(
+    final result = await _sendNotification(
       type: draft.type,
       titleAr: draft.titleAr,
       titleEn: draft.titleEn,
@@ -115,7 +140,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   }
 
   Future<AdminResendResult> resend(String notificationId) async {
-    final result = await _repository.resendNotification(notificationId);
+    final result = await _resendNotification(notificationId);
     if (result.ok) await _fetch(withSummary: true);
     return result;
   }
@@ -124,7 +149,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
     String notificationId,
     bool read,
   ) async {
-    final outcome = await _repository.setRead(notificationId, read);
+    final outcome = await _setRead(notificationId, read);
     if (outcome == NotificationMutationOutcome.success) {
       await _fetch(withSummary: true);
     }
@@ -132,7 +157,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   }
 
   Future<NotificationMutationOutcome> delete(String notificationId) async {
-    final outcome = await _repository.deleteNotification(notificationId);
+    final outcome = await _deleteNotification(notificationId);
     if (outcome == NotificationMutationOutcome.success) {
       final targetPage = state.notifications.length == 1 && state.page > 0
           ? state.page - 1
@@ -157,7 +182,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
       emit(state.copyWith(isRefreshingRows: true, clearError: true));
     }
 
-    final rowsFuture = _repository.loadNotifications(
+    final rowsFuture = _loadNotifications(
       search: state.search,
       type: state.type.value,
       isRead: state.readFilter.value,
@@ -213,7 +238,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
 
   Future<AdminNotificationMetrics?> _loadMetricsSafely() async {
     try {
-      return await _repository.loadMetrics();
+      return await _loadMetrics();
     } catch (_) {
       return null;
     }
@@ -221,7 +246,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
 
   Future<AdminPushHealth?> _loadHealthSafely() async {
     try {
-      return await _repository.loadPushHealth();
+      return await _loadPushHealth();
     } catch (_) {
       return null;
     }

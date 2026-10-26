@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card.dart';
 
 /// Responsive product-card grid. Cards keep the Figma proportions while
@@ -57,7 +57,7 @@ class ProductRecords extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final spacing = AppDimensions.lg;
+        final spacing = AppSpacing.lg;
         final columns = _columnsFor(constraints.maxWidth, spacing);
         final width =
             (constraints.maxWidth - spacing * (columns - 1)) / columns;

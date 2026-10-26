@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_cart.dart';
-import 'package:admin_app/features/pos/data/models/pos_receipt.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/data/pos_receipt_print_service.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
@@ -78,9 +78,14 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
 
     return Dialog(
       backgroundColor: theme.colorScheme.surface,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xxl,
+      ),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 520,
@@ -96,23 +101,23 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     _SuccessBanner(receipt: receipt),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSizes.px14),
                     _DetailGrid(receipt: receipt),
                     if (receipt.lines.isNotEmpty) ...[
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _ItemsCard(receipt: receipt),
                     ],
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.px12),
                     _TotalsCard(receipt: receipt),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.px12),
                     _TaxInvoiceCard(receipt: receipt, ready: _taxInvoiceReady),
                     if (receipt.orderNote.isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSizes.px12),
                       _NoteCard(note: receipt.orderNote),
                     ],
                   ],
@@ -121,10 +126,10 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
             ),
             Container(
               padding: const EdgeInsetsDirectional.fromSTEB(
-                AppDimensions.lg,
-                AppDimensions.sm,
-                AppDimensions.lg,
-                AppDimensions.sm,
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.sm,
               ),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surface,
@@ -136,14 +141,14 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 42,
+                      height: AppSizes.px42,
                       child: OutlinedButton(
                         onPressed: _printing
                             ? null
                             : () => Navigator.of(context).pop(),
                         style: OutlinedButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
                           side: BorderSide(
                             color: adminControlBorderColor(theme),
@@ -159,30 +164,30 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: SizedBox(
-                      height: 42,
+                      height: AppSizes.px42,
                       child: FilledButton.icon(
                         onPressed: _printing || !_taxInvoiceReady
                             ? null
                             : _print,
                         style: FilledButton.styleFrom(
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(9),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
                           ),
                         ),
                         icon: _printing
                             ? const SizedBox(
-                                width: 15,
-                                height: 15,
+                                width: AppSizes.px16,
+                                height: AppSizes.px16,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   color: AppColor.whiteColor,
                                 ),
                               )
-                            : const HugeIcon(
-                                icon: HugeIcons.strokeRoundedPrinter,
+                            : const AppIcon(
+                                AppIcons.printer,
                                 size: 16,
                                 color: AppColor.whiteColor,
                               ),
@@ -217,14 +222,14 @@ class _SuccessBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.trendPositive,
           AppColor.trendPositiveSurface,
         ),
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: AppColor.trendPositive.withValues(alpha: .25),
         ),
@@ -239,13 +244,13 @@ class _SuccessBanner extends StatelessWidget {
               color: AppColor.trendPositive,
               shape: BoxShape.circle,
             ),
-            child: const HugeIcon(
-              icon: HugeIcons.strokeRoundedTick02,
+            child: const AppIcon(
+              AppIcons.tick02,
               size: 20,
               color: AppColor.whiteColor,
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +263,7 @@ class _SuccessBanner extends StatelessWidget {
                     height: AppTextHeights.line1_5,
                   ),
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSizes.px1),
                 Text(
                   receipt.orderNumber,
                   textDirection: TextDirection.ltr,
@@ -269,15 +274,15 @@ class _SuccessBanner extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSizes.px4),
                 Row(
                   children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedChefHat,
+                    AppIcon(
+                      AppIcons.chefHat,
                       size: 13,
                       color: adminFlagForeground(theme, AppColor.trendPositive),
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: AppSizes.px6),
                     Expanded(
                       child: Text(
                         S.posKitchenReceiptNote,
@@ -359,10 +364,13 @@ class _DetailField extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Column(
@@ -378,7 +386,7 @@ class _DetailField extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.px2),
           Text(
             value,
             maxLines: 2,
@@ -406,9 +414,9 @@ class _ItemsCard extends StatelessWidget {
     final theme = Theme.of(context);
     final language = AppLocale.instance.language;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -435,7 +443,7 @@ class _ItemsCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           for (var index = 0; index < receipt.lines.length; index++) ...[
             if (index > 0)
               Divider(height: 15, color: adminRowBorderColor(theme)),
@@ -472,10 +480,13 @@ class _ReceiptLineTile extends StatelessWidget {
       children: [
         Container(
           constraints: const BoxConstraints(minWidth: 24),
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.xxs,
+          ),
           decoration: BoxDecoration(
             color: adminTintedSurfaceColor(theme),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Text(
             '×${localizeDigits('${line.quantity}')}',
@@ -488,7 +499,7 @@ class _ReceiptLineTile extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSizes.px8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -503,7 +514,7 @@ class _ReceiptLineTile extends StatelessWidget {
                 ),
               ),
               if (options.isNotEmpty) ...[
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSizes.px1),
                 Text(
                   options,
                   style: TextStyle(
@@ -514,7 +525,7 @@ class _ReceiptLineTile extends StatelessWidget {
                 ),
               ],
               if (note.isNotEmpty) ...[
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSizes.px1),
                 Text(
                   note,
                   style: TextStyle(
@@ -528,7 +539,7 @@ class _ReceiptLineTile extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSizes.px8),
         Text(
           posMoney(line.lineTotal, currencyCode),
           style: TextStyle(
@@ -553,10 +564,10 @@ class _TotalsCard extends StatelessWidget {
     final result = receipt.result;
     final currency = receipt.currencyCode;
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Column(
@@ -566,13 +577,13 @@ class _TotalsCard extends StatelessWidget {
               label: S.posBeforeDiscount,
               value: posMoney(result.beforeDiscount, currency),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.px4),
             _AmountRow(
               label: S.posDiscount,
               value: '- ${posMoney(result.discountAmount, currency)}',
               valueColor: AppColor.trendPositive,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.px4),
             _AmountRow(
               label: S.posAfterDiscount,
               value: posMoney(result.subtotal, currency),
@@ -582,23 +593,23 @@ class _TotalsCard extends StatelessWidget {
               label: S.posSubtotal,
               value: posMoney(result.subtotal, currency),
             ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           _AmountRow(
             label: S.posTaxableAmount,
             value: posMoney(result.invoiceTaxable, currency),
           ),
           if (result.taxRate > 0) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.px4),
             _AmountRow(label: S.posVatRate, value: posPercent(result.taxRate)),
           ],
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           _AmountRow(
             label: S.posVatAmount,
             value: posMoney(result.invoiceVat, currency),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           Divider(height: 1, color: adminRowBorderColor(theme)),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           Row(
             children: [
               Text(
@@ -637,14 +648,14 @@ class _TaxInvoiceCard extends StatelessWidget {
     final theme = Theme.of(context);
     if (!ready) {
       return Container(
-        padding: const EdgeInsets.all(11),
+        padding: const EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: adminFlagBackground(
             theme,
             AppColor.adminWarning,
             AppColor.adminWarningSurface,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: AppColor.adminWarning.withValues(alpha: .35),
           ),
@@ -652,12 +663,12 @@ class _TaxInvoiceCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedAlertCircle,
+            AppIcon(
+              AppIcons.alert,
               size: 16,
               color: adminFlagForeground(theme, AppColor.adminWarning),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.px8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,7 +681,7 @@ class _TaxInvoiceCard extends StatelessWidget {
                       fontWeight: AppFontWeights.bold,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.px2),
                   Text(
                     S.posVatNumberMissing,
                     style: TextStyle(
@@ -691,9 +702,9 @@ class _TaxInvoiceCard extends StatelessWidget {
     final result = receipt.result;
     final address = result.sellerAddressFor(language);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColor.adminAccent.withValues(alpha: .3)),
         color: adminFlagBackground(
           theme,
@@ -706,12 +717,12 @@ class _TaxInvoiceCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedQrCode,
+              AppIcon(
+                AppIcons.qrCode,
                 size: 16,
                 color: adminFlagForeground(theme, AppColor.adminAccent),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 S.posTaxInvoiceBadge,
                 style: TextStyle(
@@ -722,7 +733,7 @@ class _TaxInvoiceCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           Text(
             result.sellerLegalNameFor(language),
             style: TextStyle(
@@ -732,7 +743,7 @@ class _TaxInvoiceCard extends StatelessWidget {
             ),
           ),
           if (address.isNotEmpty) ...[
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.px2),
             Text(
               address,
               style: TextStyle(
@@ -742,7 +753,7 @@ class _TaxInvoiceCard extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSizes.px4),
           Text(
             '${S.posSellerVatNumber}: ${localizeDigits(result.sellerVatNumber.trim())}',
             textDirection: TextDirection.rtl,
@@ -752,9 +763,9 @@ class _TaxInvoiceCard extends StatelessWidget {
               fontWeight: AppFontWeights.semiBold,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           Divider(height: 1, color: adminRowBorderColor(theme)),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           Text(
             S.posInvoiceQrCaption,
             style: TextStyle(
@@ -811,9 +822,12 @@ class _NoteCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Column(
@@ -827,7 +841,7 @@ class _NoteCard extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSizes.px4),
           Text(
             note,
             style: TextStyle(

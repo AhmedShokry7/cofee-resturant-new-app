@@ -5,10 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_cart.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
-import 'package:admin_app/features/pos/data/models/pos_order_result.dart';
-import 'package:admin_app/features/pos/data/models/pos_receipt.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/data/pos_receipt_print_service.dart';
 
 const _latte = PosProduct(

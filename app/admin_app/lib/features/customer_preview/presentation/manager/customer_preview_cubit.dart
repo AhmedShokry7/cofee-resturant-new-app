@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:admin_app/features/customer_preview/data/models/preview_draft.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/preview_draft.dart';
 
 enum PreviewScreen { home, categories, product, cart, account }
 

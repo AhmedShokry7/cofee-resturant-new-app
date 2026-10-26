@@ -4,15 +4,28 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/pos/data/models/pos_cart.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
-import 'package:admin_app/features/pos/data/models/pos_receipt.dart';
-import 'package:admin_app/features/pos/data/models/pos_shift.dart';
-import 'package:admin_app/features/pos/data/models/pos_table.dart';
-import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_table.dart';
+import 'package:admin_app/features/pos/di/pos_dependencies.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
+import 'package:admin_app/features/pos/domain/usecases/close_shift.dart';
+import 'package:admin_app/features/pos/domain/usecases/create_customer.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_catalog.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_open_shift.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_shift_detail.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_shift_history.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_tables.dart';
+import 'package:admin_app/features/pos/domain/usecases/open_shift.dart';
+import 'package:admin_app/features/pos/domain/usecases/place_order.dart';
+import 'package:admin_app/features/pos/domain/usecases/record_cash_movement.dart';
+import 'package:admin_app/features/pos/domain/usecases/search_customers.dart';
+import 'package:admin_app/features/pos/domain/usecases/seat_reservation.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 enum PosCheckoutOutcome {
   success,
@@ -36,14 +49,42 @@ enum PosCheckoutOutcome {
 
 /// The point-of-sale basket and the counter sale.
 class PosCubit extends Cubit<PosState> {
-  PosCubit({
-    AdminPosRepository? repository,
-    String Function()? checkoutKeyFactory,
-  }) : _repository = repository ?? AdminPosRepository(),
-       _checkoutKeyFactory = checkoutKeyFactory ?? _defaultCheckoutKey,
-       super(const PosState());
+  PosCubit({PosRepository? repository, String Function()? checkoutKeyFactory})
+    : this._withUseCases(
+        repository ?? PosDependencies.repository,
+        checkoutKeyFactory ?? _defaultCheckoutKey,
+      );
 
-  final AdminPosRepository _repository;
+  PosCubit._withUseCases(
+    PosRepository repository,
+    String Function() checkoutKeyFactory,
+  ) : _loadCatalog = LoadCatalogUseCase(repository),
+      _loadTables = LoadTablesUseCase(repository),
+      _seatReservation = SeatReservationUseCase(repository),
+      _placeOrder = PlaceOrderUseCase(repository),
+      _searchCustomers = SearchCustomersUseCase(repository),
+      _createCustomer = CreateCustomerUseCase(repository),
+      _loadOpenShift = LoadOpenShiftUseCase(repository),
+      _openShift = OpenShiftUseCase(repository),
+      _recordCashMovement = RecordCashMovementUseCase(repository),
+      _closeShift = CloseShiftUseCase(repository),
+      _loadShiftHistory = LoadShiftHistoryUseCase(repository),
+      _loadShiftDetail = LoadShiftDetailUseCase(repository),
+      _checkoutKeyFactory = checkoutKeyFactory,
+      super(const PosState());
+
+  final LoadCatalogUseCase _loadCatalog;
+  final LoadTablesUseCase _loadTables;
+  final SeatReservationUseCase _seatReservation;
+  final PlaceOrderUseCase _placeOrder;
+  final SearchCustomersUseCase _searchCustomers;
+  final CreateCustomerUseCase _createCustomer;
+  final LoadOpenShiftUseCase _loadOpenShift;
+  final OpenShiftUseCase _openShift;
+  final RecordCashMovementUseCase _recordCashMovement;
+  final CloseShiftUseCase _closeShift;
+  final LoadShiftHistoryUseCase _loadShiftHistory;
+  final LoadShiftDetailUseCase _loadShiftDetail;
   final String Function() _checkoutKeyFactory;
 
   String? _checkoutKey;
@@ -271,7 +312,7 @@ class PosCubit extends Cubit<PosState> {
     }
 
     emit(state.copyWith(isSeating: true));
-    final outcome = await _repository.seatReservation(reservation.id);
+    final outcome = await _seatReservation(reservation.id);
     if (isClosed) return outcome;
     emit(state.copyWith(isSeating: false));
     if (outcome != PosSeatOutcome.success) return outcome;
@@ -291,7 +332,7 @@ class PosCubit extends Cubit<PosState> {
     final request = ++_tablesRequestId;
     emit(state.copyWith(isLoadingTables: true, clearTablesFailure: true));
     try {
-      final tables = await _repository.loadTables(branchId);
+      final tables = await _loadTables(branchId);
       if (isClosed || request != _tablesRequestId) return;
       if (state.branchId != branchId) return;
       _publishTables(tables);
@@ -344,7 +385,7 @@ class PosCubit extends Cubit<PosState> {
     );
 
     try {
-      final customers = await _repository.searchCustomers(query: normalized);
+      final customers = await _searchCustomers(query: normalized);
       if (isClosed || request != _customerRequestId) return;
       emit(
         state.copyWith(
@@ -371,7 +412,7 @@ class PosCubit extends Cubit<PosState> {
     emit(state.copyWith(isCreatingCustomer: true, clearCustomerFailure: true));
 
     try {
-      final customer = await _repository.createCustomer(
+      final customer = await _createCustomer(
         fullName: fullName,
         phone: phone,
         email: email,
@@ -550,7 +591,7 @@ class PosCubit extends Cubit<PosState> {
 
     emit(state.copyWith(isPlacingOrder: true, clearError: true));
     try {
-      final result = await _repository.placeOrder(
+      final result = await _placeOrder(
         branchId: branchId,
         lines: lines,
         fulfillmentType: PosFulfillmentType.dineIn.value,
@@ -657,7 +698,7 @@ class PosCubit extends Cubit<PosState> {
     final request = ++_shiftRequestId;
     emit(state.copyWith(isLoadingShift: true, clearShiftFailure: true));
     try {
-      final shift = await _repository.loadOpenShift(branchId);
+      final shift = await _loadOpenShift(branchId);
       if (isClosed || request != _shiftRequestId) return shift;
       if (state.branchId != branchId) return shift;
       emit(
@@ -692,7 +733,7 @@ class PosCubit extends Cubit<PosState> {
 
     emit(state.copyWith(isOpeningShift: true, clearShiftFailure: true));
     try {
-      final shift = await _repository.openShift(
+      final shift = await _openShift(
         branchId: branchId,
         openingFloat: openingFloat,
         note: note,
@@ -738,7 +779,7 @@ class PosCubit extends Cubit<PosState> {
 
     emit(state.copyWith(isSavingMovement: true, clearShiftFailure: true));
     try {
-      final updated = await _repository.recordCashMovement(
+      final updated = await _recordCashMovement(
         shiftId: shift.id,
         kind: kind,
         amount: amount,
@@ -785,7 +826,7 @@ class PosCubit extends Cubit<PosState> {
 
     emit(state.copyWith(isClosingShift: true, clearShiftFailure: true));
     try {
-      final closed = await _repository.closeShift(
+      final closed = await _closeShift(
         shiftId: shift.id,
         countedCash: countedCash,
         closeNote: note,
@@ -837,7 +878,7 @@ class PosCubit extends Cubit<PosState> {
       ),
     );
     try {
-      final shifts = await _repository.loadShiftHistory(
+      final shifts = await _loadShiftHistory(
         branchId,
         limit: PosState.shiftHistoryPageSize,
         offset: offset,
@@ -888,7 +929,7 @@ class PosCubit extends Cubit<PosState> {
       ),
     );
     try {
-      final detail = await _repository.loadShiftDetail(shiftId);
+      final detail = await _loadShiftDetail(shiftId);
       if (isClosed) return detail;
       emit(
         state.copyWith(
@@ -957,7 +998,7 @@ class PosCubit extends Cubit<PosState> {
     }
 
     try {
-      final catalog = await _repository.loadCatalog(branchId: target);
+      final catalog = await _loadCatalog(branchId: target);
       if (isClosed || request != _requestId) return;
 
       final resolvedBranch = catalog.branchId.isNotEmpty
@@ -974,7 +1015,7 @@ class PosCubit extends Cubit<PosState> {
       PosTablesFailure? tablesFailure;
       if (resolvedBranch != null && resolvedBranch.isNotEmpty) {
         try {
-          tables = await _repository.loadTables(resolvedBranch);
+          tables = await _loadTables(resolvedBranch);
         } on PosTablesException catch (error) {
           tablesFailure = error.failure;
         } catch (_) {
@@ -996,7 +1037,7 @@ class PosCubit extends Cubit<PosState> {
       } else {
         final shiftRequest = ++_shiftRequestId;
         try {
-          shift = await _repository.loadOpenShift(resolvedBranch);
+          shift = await _loadOpenShift(resolvedBranch);
           shiftKnown = true;
         } on PosShiftException catch (error) {
           shiftFailure = error.failure;

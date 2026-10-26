@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/presentation/widgets/dining_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -60,15 +61,15 @@ class DiningReservationPanel extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: AppColor.adminAccentSurface,
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedCalendar01,
+              child: const AppIcon(
+                AppIcons.calendar01,
                 size: 16,
                 color: AppColor.adminAccent,
               ),
             ),
-            const SizedBox(width: 9),
+            const SizedBox(width: AppSizes.px10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -112,15 +113,15 @@ class DiningReservationPanel extends StatelessWidget {
                   backgroundColor: AppColor.adminAccentSurface,
                   foregroundColor: AppColor.adminAccent,
                 ),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedAdd01,
+                icon: const AppIcon(
+                  AppIcons.add01,
                   size: 17,
                   color: AppColor.adminAccent,
                 ),
               ),
           ],
         ),
-        const SizedBox(height: 11),
+        const SizedBox(height: AppSizes.px12),
         Expanded(
           child: ListView(
             padding: EdgeInsets.zero,
@@ -132,8 +133,8 @@ class DiningReservationPanel extends StatelessWidget {
                   action: canManage && onAdd != null
                       ? TextButton.icon(
                           onPressed: onAdd,
-                          icon: const HugeIcon(
-                            icon: HugeIcons.strokeRoundedAdd01,
+                          icon: const AppIcon(
+                            AppIcons.add01,
                             size: 15,
                             color: AppColor.adminAccent,
                           ),
@@ -158,10 +159,10 @@ class DiningReservationPanel extends StatelessWidget {
                     onCancel: onCancel,
                     onNoShow: onNoShow,
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSizes.px8),
                 ],
               if (closedRows.isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.px4),
                 Row(
                   children: [
                     Expanded(
@@ -184,19 +185,19 @@ class DiningReservationPanel extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSizes.px6),
                 for (final reservation in closedRows) ...[
                   _HistoryTile(
                     key: Key('dining-history-${reservation.id}'),
                     reservation: reservation,
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSizes.px6),
                 ],
               ],
               if (openRows.isEmpty && closedRows.isEmpty)
-                const SizedBox(height: 2)
+                const SizedBox(height: AppSizes.px2)
               else
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.px4),
             ],
           ),
         ),
@@ -243,7 +244,7 @@ class _ReservationTile extends StatelessWidget {
     final phone = reservation.customerPhone.trim();
 
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: seated
             ? adminFlagBackground(
@@ -252,7 +253,7 @@ class _ReservationTile extends StatelessWidget {
                 AppColor.adminInfoSurface,
               )
             : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: seated
               ? AppColor.adminInfo.withValues(
@@ -279,43 +280,40 @@ class _ReservationTile extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               AdminStatusBadge(
                 label: diningReservationStatusLabel(reservation.status),
                 color: statusColor,
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: AppSizes.px6),
           Wrap(
             spacing: 9,
             runSpacing: 3,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               _Meta(
-                icon: HugeIcons.strokeRoundedClock01,
+                icon: AppIcons.clock01,
                 text: diningReservationWindow(reservation),
                 strong: true,
               ),
               _Meta(
-                icon: HugeIcons.strokeRoundedTable01,
+                icon: AppIcons.table01,
                 text: localizeDigits(
                   S.tableReservationFor(reservation.tableName),
                 ),
               ),
               _Meta(
-                icon: HugeIcons.strokeRoundedUserGroup,
+                icon: AppIcons.userGroup,
                 text: localizeDigits(S.tableGuests(reservation.partySize)),
               ),
               if (phone.isNotEmpty)
-                _Meta(
-                  icon: HugeIcons.strokeRoundedCall02,
-                  text: localizeDigits(phone),
-                ),
+                _Meta(icon: AppIcons.call02, text: localizeDigits(phone)),
             ],
           ),
           if (note.isNotEmpty) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.px4),
             Text(
               note,
               maxLines: 2,
@@ -328,7 +326,7 @@ class _ReservationTile extends StatelessWidget {
             ),
           ],
           if (reservation.hasOrder) ...[
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.px4),
             Text(
               S.reservationOrderAttached,
               style: const TextStyle(
@@ -340,13 +338,13 @@ class _ReservationTile extends StatelessWidget {
             ),
           ],
           if (canManage && reservation.isOpen) ...[
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             Row(
               children: [
                 _ReservationActionButton(
                   icon: seated
-                      ? HugeIcons.strokeRoundedCheckmarkCircle02
-                      : HugeIcons.strokeRoundedUserCheck01,
+                      ? AppIcons.checkmarkCircle02
+                      : AppIcons.userCheck01,
                   label: seated ? S.reservationComplete : S.reservationSeat,
                   color: seated ? AppColor.trendPositive : AppColor.adminAccent,
                   onTap: () => seated
@@ -410,7 +408,7 @@ class _HistoryTile extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSizes.px6),
         AdminStatusBadge(
           label: diningReservationStatusLabel(reservation.status),
           color: diningReservationStatusColor(reservation.status),
@@ -434,8 +432,8 @@ class _Meta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        HugeIcon(icon: icon, size: 12, color: color),
-        const SizedBox(width: 4),
+        AppIcon(icon, size: 12, color: color),
+        const SizedBox(width: AppSizes.px4),
         Flexible(
           child: Text(
             text,
@@ -478,21 +476,20 @@ class _ReservationActionButton extends StatelessWidget {
         color,
         Color.lerp(color, AppColor.whiteColor, .88)!,
       ),
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: icon,
-                size: 13,
-                color: adminFlagForeground(theme, color),
-              ),
-              const SizedBox(width: 5),
+              AppIcon(icon, size: 13, color: adminFlagForeground(theme, color)),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 label,
                 style: TextStyle(
@@ -546,7 +543,7 @@ class _ReservationMenu extends StatelessWidget {
           value: _ReservationAction.edit,
           child: _item(
             theme,
-            icon: HugeIcons.strokeRoundedPencilEdit02,
+            icon: AppIcons.pencilEdit02,
             label: S.editReservation,
             direction: rtl,
           ),
@@ -555,7 +552,7 @@ class _ReservationMenu extends StatelessWidget {
           value: _ReservationAction.cancel,
           child: _item(
             theme,
-            icon: HugeIcons.strokeRoundedCancelCircle,
+            icon: AppIcons.cancelCircle,
             label: S.reservationCancel,
             direction: rtl,
             color: AppColor.errorColor,
@@ -566,7 +563,7 @@ class _ReservationMenu extends StatelessWidget {
             value: _ReservationAction.noShow,
             child: _item(
               theme,
-              icon: HugeIcons.strokeRoundedUserBlock01,
+              icon: AppIcons.userBlock01,
               label: S.reservationNoShow,
               direction: rtl,
               color: AppColor.errorColor,
@@ -574,9 +571,9 @@ class _ReservationMenu extends StatelessWidget {
           ),
       ],
       child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: HugeIcon(
-          icon: HugeIcons.strokeRoundedMoreHorizontal,
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: AppIcon(
+          AppIcons.moreHorizontal,
           size: 17,
           color: adminMutedColor(theme),
         ),
@@ -593,8 +590,8 @@ class _ReservationMenu extends StatelessWidget {
   }) => Row(
     textDirection: direction ? TextDirection.rtl : TextDirection.ltr,
     children: [
-      HugeIcon(icon: icon, size: 16, color: color ?? adminBodyColor(theme)),
-      const SizedBox(width: 8),
+      AppIcon(icon, size: 16, color: color ?? adminBodyColor(theme)),
+      const SizedBox(width: AppSizes.px8),
       Flexible(
         child: Text(
           label,
@@ -623,16 +620,19 @@ class _PanelEmpty extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = adminMutedColor(theme);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 8),
+      padding: const EdgeInsets.symmetric(
+        vertical: AppSpacing.lg,
+        horizontal: AppSpacing.sm,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedCalendar01,
+          AppIcon(
+            AppIcons.calendar01,
             size: 30,
             color: muted.withValues(alpha: .55),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           Text(
             message,
             textAlign: TextAlign.center,
@@ -642,7 +642,7 @@ class _PanelEmpty extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSizes.px4),
           Text(
             hint,
             textAlign: TextAlign.center,
@@ -652,7 +652,10 @@ class _PanelEmpty extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          if (action != null) ...[const SizedBox(height: 2), action!],
+          if (action != null) ...[
+            const SizedBox(height: AppSizes.px2),
+            action!,
+          ],
         ],
       ),
     );

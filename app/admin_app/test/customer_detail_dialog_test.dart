@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_detail_dialog.dart';
 
 Map<String, dynamic> _order(int index) => <String, dynamic>{

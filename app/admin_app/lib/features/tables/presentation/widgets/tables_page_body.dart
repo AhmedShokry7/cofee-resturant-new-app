@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_state.dart';
 import 'package:admin_app/features/tables/presentation/widgets/dining_directory.dart';
 import 'package:admin_app/features/tables/presentation/widgets/dining_metrics_cards.dart';
@@ -116,12 +116,9 @@ class TablesPageBody extends StatelessWidget {
                     key: const Key('tables-add'),
                     text: S.addTable,
                     onPressed: onAddTable,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 18,
-                    ),
+                    leadingIcon: const Icon(AppIcons.add01, size: 18),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.primaryColor,
                     textColor: AppColor.whiteColor,
                   ),
@@ -131,12 +128,9 @@ class TablesPageBody extends StatelessWidget {
                     text: S.addReservation,
                     onPressed: onAddReservation,
                     enabled: state.tables.isNotEmpty,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedCalendarAdd01,
-                      size: 17,
-                    ),
+                    leadingIcon: const Icon(AppIcons.calendarAdd01, size: 17),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.adminAccentSurface,
                     textColor: AppColor.adminAccent,
                   ),
@@ -147,9 +141,9 @@ class TablesPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             DiningMetricsCards(metrics: metrics),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSizes.px16),
           ];
 
           if (compact) {
@@ -158,7 +152,10 @@ class TablesPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 760, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightHuge,
+                    child: directory,
+                  ),
                 ],
               ),
             );

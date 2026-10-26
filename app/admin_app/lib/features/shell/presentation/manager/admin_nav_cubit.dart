@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
-import 'package:admin_app/features/shell/data/repositories/admin_nav_repository.dart';
+import 'package:admin_app/features/shell/di/shell_dependencies.dart';
+import 'package:admin_app/features/shell/domain/repositories/nav_repository.dart';
+import 'package:admin_app/features/shell/domain/usecases/load_counts.dart';
 
 /// Keeps the sidebar counters in step with the server.
 ///
@@ -13,12 +15,14 @@ import 'package:admin_app/features/shell/data/repositories/admin_nav_repository.
 /// zero because one request failed.
 class AdminNavCubit extends Cubit<AdminNavCounts> {
   AdminNavCubit({
-    AdminNavRepository? repository,
+    NavRepository? repository,
     this.refreshInterval = const Duration(seconds: 45),
-  }) : _repository = repository ?? AdminNavRepository(),
+  }) : _loadCounts = LoadCountsUseCase(
+         repository ?? ShellDependencies.repository,
+       ),
        super(AdminNavCounts.empty);
 
-  final AdminNavRepository _repository;
+  final LoadCountsUseCase _loadCounts;
   final Duration refreshInterval;
 
   Timer? _timer;
@@ -41,7 +45,7 @@ class AdminNavCubit extends Cubit<AdminNavCounts> {
     if (isClosed || !_isWatching || _isRefreshing) return;
     _isRefreshing = true;
     try {
-      final counts = await _repository.loadCounts();
+      final counts = await _loadCounts();
       if (!isClosed && counts != state) emit(counts);
     } catch (_) {
       // The last numbers stay until the next poll succeeds.

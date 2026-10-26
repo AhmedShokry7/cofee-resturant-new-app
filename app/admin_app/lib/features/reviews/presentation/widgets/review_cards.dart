@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_actions_menu.dart';
@@ -33,7 +34,7 @@ class ReviewCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: reviews.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final review = reviews[index];
         return _ReviewCard(
@@ -74,14 +75,14 @@ class _ReviewCard extends StatelessWidget {
     final customerDetail = reviewCustomerDetail(review);
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Column(
@@ -96,7 +97,7 @@ class _ReviewCard extends StatelessWidget {
                   ),
                   const Spacer(),
                   ReviewStatusBadge(review: review),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.px4),
                   ReviewActionsMenu(
                     review: review,
                     canManage: canManage,
@@ -113,7 +114,7 @@ class _ReviewCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 7),
+              const SizedBox(height: AppSizes.px8),
               Text(
                 reviewHeadline(review),
                 maxLines: 1,
@@ -126,7 +127,7 @@ class _ReviewCard extends StatelessWidget {
                 ),
               ),
               if (excerpt != null) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.px2),
                 Text(
                   excerpt,
                   maxLines: 2,
@@ -138,9 +139,9 @@ class _ReviewCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Divider(height: 1, color: adminRowBorderColor(theme)),
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               _ContextRow(
                 leading: AdminNetworkThumb(
                   imageUrl: review.product.imageUrl,
@@ -153,7 +154,7 @@ class _ReviewCard extends StatelessWidget {
                         ? S.reviewsTableProduct
                         : S.reviewsSku(review.product.sku!)),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               _ContextRow(
                 leading: AdminAvatarImage(
                   url: review.customer.avatarUrl,
@@ -163,7 +164,7 @@ class _ReviewCard extends StatelessWidget {
                 title: reviewCustomerName(review),
                 detail: customerDetail,
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               Wrap(
                 spacing: 8,
                 runSpacing: 6,
@@ -174,11 +175,11 @@ class _ReviewCard extends StatelessWidget {
                   else
                     const ReviewUnverifiedLabel(),
                   _Meta(
-                    icon: HugeIcons.strokeRoundedInvoice01,
+                    icon: AppIcons.invoice01,
                     label: reviewOrderReference(review),
                   ),
                   _Meta(
-                    icon: HugeIcons.strokeRoundedCalendar03,
+                    icon: AppIcons.calendar03,
                     label: reviewDateLabel(review.createdAt),
                   ),
                 ],
@@ -204,7 +205,7 @@ class _ContextRow extends StatelessWidget {
     return Row(
       children: [
         leading,
-        const SizedBox(width: 8),
+        const SizedBox(width: AppSizes.px8),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -251,8 +252,8 @@ class _Meta extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        HugeIcon(icon: icon, size: 11, color: adminMutedColor(theme)),
-        const SizedBox(width: 4),
+        AppIcon(icon, size: 11, color: adminMutedColor(theme)),
+        const SizedBox(width: AppSizes.px4),
         Text(
           label,
           textDirection: TextDirection.ltr,

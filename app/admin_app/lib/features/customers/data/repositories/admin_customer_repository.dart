@@ -1,16 +1,20 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/customers/customer_details_reader.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
+import 'package:admin_app/features/customers/domain/repositories/customer_repository.dart';
 
-class AdminCustomerRepository {
+class AdminCustomerRepository
+    implements CustomerDetailsReader, CustomerRepository {
   AdminCustomerRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminCustomer>> loadCustomers() async {
     final response = await _supabase.rpc('admin_customers');
     if (response is List) {
@@ -22,6 +26,7 @@ class AdminCustomerRepository {
     return const <AdminCustomer>[];
   }
 
+  @override
   Future<AdminCustomerMetrics> loadMetrics() async {
     final response = await _supabase.rpc('admin_customer_metrics');
     if (response is Map) {
@@ -30,6 +35,7 @@ class AdminCustomerRepository {
     return AdminCustomerMetrics.empty;
   }
 
+  @override
   Future<Map<String, dynamic>> loadCustomerDetails(String customerId) async {
     final response = await _supabase.rpc(
       'admin_customer_details',
@@ -44,6 +50,7 @@ class AdminCustomerRepository {
     return <String, dynamic>{};
   }
 
+  @override
   Future<void> updateCustomer(
     String customerId, {
     bool? isVip,

@@ -4,7 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
 
 /// A single navigation row inside the dark panel.
 class AdminSidebarItem extends StatelessWidget {
@@ -31,24 +31,24 @@ class AdminSidebarItem extends StatelessWidget {
         : AppColor.whiteColor;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Material(
         color: isSelected
             ? AppColor.sidebarActiveBackground
-            : Colors.transparent,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            : AppColor.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: Padding(
             padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.lg,
-              vertical: AppDimensions.md,
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
             ),
             child: Row(
               children: [
                 Icon(destination.icon, size: 18, color: foreground),
-                const SizedBox(width: AppDimensions.md),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
                     destination.label,
@@ -84,10 +84,13 @@ class _SidebarBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: AppColor.secondaryColor,
-        borderRadius: BorderRadius.circular(50),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
@@ -110,10 +113,10 @@ class AdminSidebarSectionTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppDimensions.lg,
-        AppDimensions.lg,
-        AppDimensions.lg,
-        AppDimensions.xs,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xs,
       ),
       child: Text(
         title,

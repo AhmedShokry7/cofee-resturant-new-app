@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 /// Confirms taking a table off the floor plan before it disappears from the POS.
 Future<bool> confirmDiningTableDeactivation(
@@ -113,7 +114,9 @@ class _DiningConfirmDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
       title: Text(
         title,
         style: TextStyle(
@@ -140,9 +143,9 @@ class _DiningConfirmDialog extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: confirmColor,
             minimumSize: const Size(0, 38),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
           ),
           child: Text(

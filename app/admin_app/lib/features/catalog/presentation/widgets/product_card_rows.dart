@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_fields.dart';
@@ -27,7 +27,7 @@ class ProductCardNameRow extends StatelessWidget {
       children: [
         RecordActionBox(
           key: moreKey,
-          icon: HugeIcons.strokeRoundedPackage,
+          icon: AppIcons.package,
           onTap: onMore,
           radiusStart: true,
         ),
@@ -74,7 +74,7 @@ class ProductCardPriceRow extends StatelessWidget {
     final row = Row(
       children: [
         RecordActionBox(
-          icon: HugeIcons.strokeRoundedMoney01,
+          icon: AppIcons.money01,
           onTap: onMore,
           radiusStart: true,
         ),
@@ -127,7 +127,7 @@ class ProductCardCategoryRow extends StatelessWidget {
           ),
         ),
         RecordActionLabelBox(
-          icon: HugeIcons.strokeRoundedAdd01,
+          icon: AppIcons.add01,
           label: S.addCategoryShort,
           onTap: onAddCategory,
           radiusEnd: true,

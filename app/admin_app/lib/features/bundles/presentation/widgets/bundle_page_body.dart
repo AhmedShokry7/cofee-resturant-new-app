@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_page_header.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
@@ -54,7 +54,7 @@ class BundlePageBody extends StatelessWidget {
             onDeleteSelected: onDeleteSelected,
             isDeletingSelected: isDeletingSelected,
           ),
-          const SizedBox(height: AppDimensions.lg),
+          const SizedBox(height: AppSpacing.lg),
           Expanded(
             child: BundleRecords(
               bundles: bundles,

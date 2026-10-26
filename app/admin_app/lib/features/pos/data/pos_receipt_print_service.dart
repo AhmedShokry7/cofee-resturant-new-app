@@ -3,7 +3,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/html_print_runner.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_receipt.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/data/pos_invoice_qr.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 

@@ -1,16 +1,38 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/repositories/dining_tables_repository.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/features/tables/di/tables_dependencies.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_reservation_draft.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_table_draft.dart';
+import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
+import 'package:admin_app/features/tables/domain/usecases/delete_table.dart';
+import 'package:admin_app/features/tables/domain/usecases/load_overview.dart';
+import 'package:admin_app/features/tables/domain/usecases/save_reservation.dart';
+import 'package:admin_app/features/tables/domain/usecases/save_table.dart';
+import 'package:admin_app/features/tables/domain/usecases/set_reservation_status.dart';
+import 'package:admin_app/features/tables/domain/usecases/set_table_active.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_state.dart';
 
 /// The dining floor for one branch: tables, live statuses and bookings.
 class DiningTablesCubit extends Cubit<DiningTablesState> {
-  DiningTablesCubit({DiningTablesRepository? repository})
-    : _repository = repository ?? DiningTablesRepository(),
+  DiningTablesCubit({DiningTableRepository? repository})
+    : this._withUseCases(repository ?? TablesDependencies.repository);
+
+  DiningTablesCubit._withUseCases(DiningTableRepository repository)
+    : _loadOverview = LoadOverviewUseCase(repository),
+      _saveTable = SaveTableUseCase(repository),
+      _setTableActive = SetTableActiveUseCase(repository),
+      _deleteTable = DeleteTableUseCase(repository),
+      _saveReservation = SaveReservationUseCase(repository),
+      _setReservationStatus = SetReservationStatusUseCase(repository),
       super(const DiningTablesState());
 
-  final DiningTablesRepository _repository;
+  final LoadOverviewUseCase _loadOverview;
+  final SaveTableUseCase _saveTable;
+  final SetTableActiveUseCase _setTableActive;
+  final DeleteTableUseCase _deleteTable;
+  final SaveReservationUseCase _saveReservation;
+  final SetReservationStatusUseCase _setReservationStatus;
   int _requestId = 0;
 
   Future<void> load() async {
@@ -52,7 +74,7 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
   }
 
   Future<DiningTableSaveOutcome> saveTable(DiningTableDraft draft) async {
-    final outcome = await _repository.saveTable(draft);
+    final outcome = await _saveTable(draft);
     if (outcome == DiningTableSaveOutcome.saved) await _fetch();
     return outcome;
   }
@@ -61,13 +83,13 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
     String tableId,
     bool active,
   ) async {
-    final outcome = await _repository.setTableActive(tableId, active);
+    final outcome = await _setTableActive(tableId, active);
     if (outcome == DiningTableMutationOutcome.success) await _fetch();
     return outcome;
   }
 
   Future<DiningTableMutationOutcome> deleteTable(String tableId) async {
-    final outcome = await _repository.deleteTable(tableId);
+    final outcome = await _deleteTable(tableId);
     if (outcome == DiningTableMutationOutcome.success) await _fetch();
     return outcome;
   }
@@ -75,7 +97,7 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
   Future<DiningReservationSaveOutcome> saveReservation(
     DiningReservationDraft draft,
   ) async {
-    final outcome = await _repository.saveReservation(draft);
+    final outcome = await _saveReservation(draft);
     if (outcome == DiningReservationSaveOutcome.saved) await _fetch();
     return outcome;
   }
@@ -84,10 +106,7 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
     String reservationId,
     DiningReservationStatus status,
   ) async {
-    final outcome = await _repository.setReservationStatus(
-      reservationId,
-      status.value,
-    );
+    final outcome = await _setReservationStatus(reservationId, status.value);
     if (outcome == DiningReservationStatusOutcome.success) await _fetch();
     return outcome;
   }
@@ -107,7 +126,7 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
     }
 
     try {
-      final overview = await _repository.loadOverview(branchId: state.branchId);
+      final overview = await _loadOverview(branchId: state.branchId);
       if (isClosed || request != _requestId) return;
 
       emit(

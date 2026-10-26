@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_actions.dart';
@@ -66,7 +67,8 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
       listenable: _controller,
       builder: (context, _) {
         final order = _controller.order;
-        final narrow = MediaQuery.sizeOf(context).width < 700;
+        final narrow =
+            MediaQuery.sizeOf(context).width < AppBreakpoints.pageCanvas;
         return Scaffold(
           body: SafeArea(
             child: Column(
@@ -78,13 +80,19 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
-                      horizontal: narrow ? 16 : 38,
-                      vertical: narrow ? 16 : 24,
+                      horizontal: narrow
+                          ? AppDimensions.pageFrameGutterNarrow
+                          : AppDimensions.pageFrameGutterWide,
+                      vertical: narrow
+                          ? AppDimensions.pageFrameInnerTopNarrow
+                          : AppDimensions.pageFrameInnerTopWide,
                     ),
                     child: Align(
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 1280),
+                        constraints: const BoxConstraints(
+                          maxWidth: AppDimensions.detailMaxContentWidth,
+                        ),
                         child: OrderDetailBody(
                           controller: _controller,
                           navigationOrders: widget.navigationOrders,

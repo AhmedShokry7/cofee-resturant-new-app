@@ -8,7 +8,7 @@ import 'package:admin_app/features/bundles/presentation/widgets/bundle_image_dia
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_page_actions.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_page_body.dart';
 import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class BundlePage extends StatefulWidget {

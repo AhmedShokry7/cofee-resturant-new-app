@@ -27,7 +27,7 @@ class CartStatusView {
         return CartStatusView(
           code,
           S.cartStatusAbandoned,
-          const Color(0xFFF59E0B),
+          AppColor.statusAmber,
         );
       default:
         return CartStatusView(

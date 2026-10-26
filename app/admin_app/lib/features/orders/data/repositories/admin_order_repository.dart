@@ -1,15 +1,17 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
+import 'package:admin_app/features/orders/domain/repositories/order_repository.dart';
 
-class AdminOrderRepository {
+class AdminOrderRepository implements OrderRepository {
   AdminOrderRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminOrder>> loadOrders() async {
     final response = await _supabase.rpc('admin_orders');
     if (response is List) {
@@ -21,6 +23,7 @@ class AdminOrderRepository {
     return const <AdminOrder>[];
   }
 
+  @override
   Future<void> updateOrderStatus(String orderId, String status) async {
     await _supabase.rpc(
       'admin_update_order_status',
@@ -28,6 +31,7 @@ class AdminOrderRepository {
     );
   }
 
+  @override
   Future<void> updatePaymentStatus(String orderId, String paymentStatus) async {
     await _supabase.rpc(
       'admin_update_payment_status',
@@ -35,6 +39,7 @@ class AdminOrderRepository {
     );
   }
 
+  @override
   Future<void> addOrderItem(
     String orderId,
     String productId,
@@ -50,6 +55,7 @@ class AdminOrderRepository {
     );
   }
 
+  @override
   Future<void> removeOrderItem(String orderItemId) async {
     await _supabase.rpc(
       'admin_remove_order_item',

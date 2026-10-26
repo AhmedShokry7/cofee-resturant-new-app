@@ -1,15 +1,19 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/delivery_zones/data/models/admin_delivery_zone.dart';
+import 'package:admin_app/core/delivery_zones/delivery_zone_repository.dart';
+import 'package:admin_app/core/models/admin_delivery_zone.dart';
+import 'package:admin_app/features/delivery_zones/domain/repositories/zone_repository.dart';
 
-class AdminDeliveryZoneRepository {
+class AdminDeliveryZoneRepository
+    implements DeliveryZoneRepository, ZoneRepository {
   AdminDeliveryZoneRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminDeliveryZone>> loadZones() async {
     final rows = await _supabase
         .from('delivery_zones')
@@ -23,6 +27,7 @@ class AdminDeliveryZoneRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<List<Map<String, dynamic>>> loadZoneBranches() async {
     final rows = await _supabase.from('delivery_zone_branches').select();
     return (rows as List)
@@ -34,6 +39,7 @@ class AdminDeliveryZoneRepository {
   /// Saves a zone within one branch's settings and binds it to that branch in
   /// the same database transaction. Shared zones are copied on edit so their
   /// geometry and price cannot unexpectedly affect a different branch.
+  @override
   Future<AdminDeliveryZone> saveForBranch({
     required String branchId,
     required AdminDeliveryZone zone,

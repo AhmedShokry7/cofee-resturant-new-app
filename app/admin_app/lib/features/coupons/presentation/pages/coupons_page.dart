@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/repositories/admin_coupon_repository.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
 import 'package:admin_app/features/coupons/presentation/manager/admin_coupon_cubit.dart';
 import 'package:admin_app/features/coupons/presentation/manager/admin_coupon_state.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_directory.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_editor_dialog.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class CouponsPage extends StatefulWidget {
@@ -141,7 +142,7 @@ class _CouponsPageState extends State<CouponsPage> {
         final theme = Theme.of(context);
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           title: Text(
             S.couponsDeleteTitle,
@@ -169,9 +170,9 @@ class _CouponsPageState extends State<CouponsPage> {
               style: FilledButton.styleFrom(
                 backgroundColor: AppColor.errorColor,
                 minimumSize: const Size(0, 38),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
               ),
               child: Text(
@@ -195,7 +196,7 @@ class _CouponsPageState extends State<CouponsPage> {
         final theme = Theme.of(context);
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           title: Text(
             S.couponsDeleteTitle,
@@ -223,9 +224,11 @@ class _CouponsPageState extends State<CouponsPage> {
                 onPressed: () => Navigator.of(context).pop(true),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(0, 38),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                 ),
                 child: Text(

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_log.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_format.dart';
@@ -21,7 +22,7 @@ class AuditCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: logs.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final log = logs[index];
         return _AuditCard(
@@ -52,14 +53,14 @@ class _AuditCard extends StatelessWidget {
         : '${auditEntityLabel(log.entityType)} • $entityId';
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Row(
@@ -75,15 +76,15 @@ class _AuditCard extends StatelessWidget {
                     domainColor,
                     auditDomainSurface(domain),
                   ),
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: HugeIcon(
-                  icon: auditDomainIcon(domain),
+                child: AppIcon(
+                  auditDomainIcon(domain),
                   size: 17,
                   color: adminFlagForeground(theme, domainColor),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,7 +106,7 @@ class _AuditCard extends StatelessWidget {
                           ),
                         ),
                         if (log.isCritical) ...[
-                          const SizedBox(width: 6),
+                          const SizedBox(width: AppSizes.px6),
                           AdminStatusBadge(
                             label: S.auditCriticalBadge,
                             color: AppColor.trendNegative,
@@ -113,7 +114,7 @@ class _AuditCard extends StatelessWidget {
                         ],
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.px2),
                     Text(
                       subtitle,
                       maxLines: 1,
@@ -124,7 +125,7 @@ class _AuditCard extends StatelessWidget {
                         height: AppTextHeights.line1_4,
                       ),
                     ),
-                    const SizedBox(height: 7),
+                    const SizedBox(height: AppSizes.px8),
                     Wrap(
                       spacing: 10,
                       runSpacing: 5,
@@ -136,13 +137,13 @@ class _AuditCard extends StatelessWidget {
                           leading: _Initial(log: log),
                         ),
                         _Meta(
-                          icon: HugeIcons.strokeRoundedStore01,
+                          icon: AppIcons.store01,
                           label: branch.isEmpty
                               ? S.auditDetailsNoBranch
                               : branch,
                         ),
                         _Meta(
-                          icon: HugeIcons.strokeRoundedCalendar03,
+                          icon: AppIcons.calendar03,
                           label: auditRelativeTimeLabel(log.createdAt),
                         ),
                       ],
@@ -209,8 +210,8 @@ class _Meta extends StatelessWidget {
         if (leading != null)
           leading!
         else if (icon != null)
-          HugeIcon(icon: icon!, size: 11, color: color),
-        const SizedBox(width: 4),
+          AppIcon(icon!, size: 11, color: color),
+        const SizedBox(width: AppSizes.px4),
         Flexible(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 190),

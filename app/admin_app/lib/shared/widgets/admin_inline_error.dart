@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// A quiet inline error with an optional retry action.
 class AdminInlineError extends StatelessWidget {
@@ -19,20 +20,16 @@ class AdminInlineError extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    margin: const EdgeInsets.only(top: 8),
+    margin: const EdgeInsets.only(top: AppSpacing.sm),
     padding: const EdgeInsetsDirectional.fromSTEB(12, 6, 6, 6),
     decoration: BoxDecoration(
       color: AppColor.errorColor.withValues(alpha: .08),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.md),
     ),
     child: Row(
       children: [
-        const HugeIcon(
-          icon: HugeIcons.strokeRoundedAlertCircle,
-          size: 18,
-          color: AppColor.errorColor,
-        ),
-        const SizedBox(width: 8),
+        const AppIcon(AppIcons.alert, size: 18, color: AppColor.errorColor),
+        const SizedBox(width: AppSizes.px8),
         Expanded(
           child: Text(
             message,

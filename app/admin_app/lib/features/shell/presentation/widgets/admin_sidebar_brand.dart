@@ -17,24 +17,24 @@ class AdminSidebarBrand extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-        AppDimensions.lg,
-        AppDimensions.lg,
-        AppDimensions.lg,
-        AppDimensions.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
             child: Image.asset(
               AppImages.logo,
               width: AppDimensions.sidebarLogoSize,
               height: AppDimensions.sidebarLogoSize,
-              fit: BoxFit.cover,
+              fit: BoxFit.fill,
             ),
           ),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
               S.appName,

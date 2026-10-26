@@ -1,13 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -36,11 +36,13 @@ class StockMovementDetailsDialog extends StatelessWidget {
       key: const Key('stock-movement-details-dialog'),
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screen.width < 700 ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: screen.width < AppBreakpoints.pageCanvas
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
@@ -56,20 +58,20 @@ class StockMovementDetailsDialog extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsetsDirectional.fromSTEB(
-                    AppDimensions.lg,
-                    AppDimensions.md,
-                    AppDimensions.lg,
-                    AppDimensions.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _EventBanner(movement: movement),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _StatsGrid(movement: movement),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _InfoSection(movement: movement),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSizes.px12),
                       _NoteSection(movement: movement),
                     ],
                   ),
@@ -97,10 +99,10 @@ class _EventBanner extends StatelessWidget {
     final sku = movement.materialSku?.trim() ?? '';
     final branch = inventoryMovementBranchName(movement);
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, AppColor.adminAccentSurface),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: color.withValues(alpha: adminIsDark(theme) ? .35 : .16),
         ),
@@ -114,15 +116,15 @@ class _EventBanner extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: HugeIcon(
-              icon: stockMovementTypeIcon(type),
+            child: AppIcon(
+              stockMovementTypeIcon(type),
               size: 21,
               color: adminFlagForeground(theme, color),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,7 +152,7 @@ class _EventBanner extends StatelessWidget {
                       height: AppTextHeights.line1_5,
                     ),
                   ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSizes.px6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 5,
@@ -164,12 +166,12 @@ class _EventBanner extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        HugeIcon(
-                          icon: HugeIcons.strokeRoundedCalendar03,
+                        AppIcon(
+                          AppIcons.calendar03,
                           size: 12,
                           color: adminMutedColor(theme),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSizes.px4),
                         Text(
                           inventoryRelativeLabel(movement.createdAt),
                           style: TextStyle(
@@ -205,23 +207,23 @@ class _StatsGrid extends StatelessWidget {
         : null;
     final tiles = <Widget>[
       _DetailTile(
-        icon: HugeIcons.strokeRoundedExchange01,
+        icon: AppIcons.exchange01,
         label: S.stockMovementQuantityChange,
         value: inventoryDelta(movement.quantityDelta, movement.unit),
         valueColor: changeColor,
       ),
       _DetailTile(
-        icon: HugeIcons.strokeRoundedPackage,
+        icon: AppIcons.package,
         label: S.stockMovementBalanceAfter,
         value: inventoryQuantity(movement.balanceAfter, movement.unit),
       ),
       _DetailTile(
-        icon: HugeIcons.strokeRoundedInvoice01,
+        icon: AppIcons.invoice01,
         label: S.stockMovementUnitCost,
         value: inventoryMoney(movement.unitCost),
       ),
       _DetailTile(
-        icon: HugeIcons.strokeRoundedCoins01,
+        icon: AppIcons.coins01,
         label: S.stockMovementValue,
         value: inventoryMoney(movement.movementValue),
       ),
@@ -258,15 +260,15 @@ class _DetailTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 17, color: adminMutedColor(theme)),
-          const SizedBox(width: 8),
+          AppIcon(icon, size: 17, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,33 +313,33 @@ class _InfoSection extends StatelessWidget {
     final theme = Theme.of(context);
     final reference = movement.reference?.trim() ?? '';
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _InfoRow(
-            icon: HugeIcons.strokeRoundedCalendar03,
+            icon: AppIcons.calendar03,
             label: S.stockMovementDateTime,
             value: inventoryDateTimeLabel(movement.createdAt),
           ),
           _InfoRow(
-            icon: HugeIcons.strokeRoundedStore01,
+            icon: AppIcons.store01,
             label: S.movementBranch,
             value: inventoryMovementBranchName(movement),
             caption: movement.branchCode.isEmpty ? null : movement.branchCode,
           ),
           _InfoRow(
-            icon: HugeIcons.strokeRoundedUser,
+            icon: AppIcons.user,
             label: S.stockMovementsTableActor,
             value: inventoryMovementActorName(movement),
             caption: movement.actorEmail,
           ),
           _InfoRow(
-            icon: HugeIcons.strokeRoundedInvoice01,
+            icon: AppIcons.invoice01,
             label: S.reference,
             value: reference.isEmpty ? S.stockMovementNoReference : reference,
             last: true,
@@ -371,8 +373,8 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
-          const SizedBox(width: 7),
+          AppIcon(icon, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px8),
           SizedBox(
             width: 116,
             child: Text(
@@ -432,10 +434,10 @@ class _NoteSection extends StatelessWidget {
     final theme = Theme.of(context);
     final note = movement.note?.trim() ?? '';
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminRowBorderColor(theme)),
       ),
       child: Column(
@@ -450,7 +452,7 @@ class _NoteSection extends StatelessWidget {
               height: AppTextHeights.line1_4,
             ),
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSizes.px4),
           Text(
             note.isEmpty ? S.stockMovementNoNote : note,
             style: TextStyle(
@@ -476,10 +478,10 @@ class _Footer extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,

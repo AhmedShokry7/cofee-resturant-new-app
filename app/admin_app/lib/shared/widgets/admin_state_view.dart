@@ -34,11 +34,11 @@ class AdminFailureView extends StatelessWidget {
         children: [
           if (message != null)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: Text(message!, textAlign: TextAlign.center),
             ),
           if (onRetry != null) ...[
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             TextButton(onPressed: onRetry, child: Text(S.retry)),
           ],
         ],

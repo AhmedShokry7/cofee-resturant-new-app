@@ -5,8 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_customer_dialog.dart';
 

@@ -1,8 +1,8 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/formatters.dart';
-import 'package:admin_app/features/catalog/data/product_excel_service.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/core/services/product_excel_service.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 
 class OrderExcelExporter {

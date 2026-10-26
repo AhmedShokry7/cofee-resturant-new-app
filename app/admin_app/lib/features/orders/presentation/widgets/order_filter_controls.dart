@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_dropdown.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_values.dart';
@@ -61,10 +61,10 @@ class OrderFilterControls extends StatelessWidget {
             ? (filters.length > 1 ? 2 : 1)
             : filters.length;
         final width =
-            (constraints.maxWidth - (columns - 1) * AppDimensions.sm) / columns;
+            (constraints.maxWidth - (columns - 1) * AppSpacing.sm) / columns;
         return Wrap(
-          spacing: AppDimensions.sm,
-          runSpacing: AppDimensions.sm,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             for (final filter in filters) SizedBox(width: width, child: filter),
           ],

@@ -1,19 +1,20 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_cart.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
-import 'package:admin_app/features/tables/presentation/widgets/dining_format.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
@@ -181,13 +182,13 @@ class _PosCartPanelState extends State<PosCartPanel> {
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: adminIsDark(theme)
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
@@ -213,15 +214,15 @@ class _PosCartPanelState extends State<PosCartPanel> {
               Expanded(
                 child: _state.cart.isEmpty
                     ? AdminEmptyState(
-                        icon: HugeIcons.strokeRoundedShoppingBag01,
+                        icon: AppIcons.shoppingBag01,
                         message: S.posCartEmptyTitle,
                         hint: S.posCartEmptyHint,
                       )
                     : ListView.separated(
                         key: const PageStorageKey<String>('pos-cart-lines'),
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
                         ),
                         itemCount: _state.cart.length,
                         separatorBuilder: (_, _) => Divider(
@@ -262,16 +263,16 @@ class _PosCartPanelState extends State<PosCartPanel> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _CartLabel(text: S.posCustomer),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AppSizes.px6),
                         _CustomerCard(
                           customer: _state.customer,
                           enabled: !_state.isPlacingOrder,
                           onChoose: widget.onChooseCustomer,
                           onClear: widget.onClearCustomer,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.px12),
                         const _DineInHeader(),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AppSizes.px6),
                         _TableCard(
                           state: _state,
                           enabled: !_state.isPlacingOrder,
@@ -279,7 +280,7 @@ class _PosCartPanelState extends State<PosCartPanel> {
                           onClear: widget.onClearTable,
                           onRefresh: widget.onRefreshTables,
                         ),
-                        const SizedBox(height: 9),
+                        const SizedBox(height: AppSizes.px10),
                         TextField(
                           controller: _note,
                           enabled: !_state.isPlacingOrder,
@@ -298,9 +299,9 @@ class _PosCartPanelState extends State<PosCartPanel> {
                             hint: S.posOrderNoteHint,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSizes.px10),
                         _CartLabel(text: S.posPayment),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: AppSizes.px6),
                         _PaymentSelector(
                           state: _state,
                           cashController: _splitCash,
@@ -312,21 +313,21 @@ class _PosCartPanelState extends State<PosCartPanel> {
                           onSplitCashChanged: _onSplitCashChanged,
                           onSplitCardChanged: _onSplitCardChanged,
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.px12),
                         _Totals(state: _state, summary: summary),
                         if (widget.checkoutError != null) ...[
-                          const SizedBox(height: 9),
+                          const SizedBox(height: AppSizes.px10),
                           _CheckoutError(message: widget.checkoutError!),
                         ] else if (_state.checkoutBlocker != null &&
                             !_state.isCartEmpty) ...[
-                          const SizedBox(height: 9),
+                          const SizedBox(height: AppSizes.px10),
                           _CheckoutHint(
                             message: posCheckoutBlockerMessage(
                               _state.checkoutBlocker!,
                             ),
                           ),
                         ],
-                        const SizedBox(height: 10),
+                        const SizedBox(height: AppSizes.px10),
                         _CheckoutButton(
                           state: _state,
                           summary: summary,
@@ -353,7 +354,7 @@ InputDecoration _posFieldDecoration(
 }) {
   final theme = Theme.of(context);
   final border = adminControlBorderColor(theme);
-  final radius = BorderRadius.circular(9);
+  final radius = BorderRadius.circular(AppRadius.md);
   return InputDecoration(
     labelText: label,
     hintText: hint,
@@ -377,7 +378,10 @@ InputDecoration _posFieldDecoration(
       color: adminMutedColor(theme),
       fontSize: AppFontSizes.size10,
     ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.md,
+    ),
     border: OutlineInputBorder(
       borderRadius: radius,
       borderSide: BorderSide(color: border),
@@ -415,12 +419,12 @@ class _CartHeader extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 8, 10),
       child: Row(
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedShoppingBag01,
+          AppIcon(
+            AppIcons.shoppingBag01,
             size: 16,
             color: adminMutedColor(theme),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: AppSizes.px8),
           Text(
             S.posCartTitle,
             style: TextStyle(
@@ -429,16 +433,19 @@ class _CartHeader extends StatelessWidget {
               fontWeight: AppFontWeights.bold,
             ),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: AppSizes.px8),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xxs,
+            ),
             decoration: BoxDecoration(
               color: adminFlagBackground(
                 theme,
                 AppColor.adminAccent,
                 AppColor.adminAccentSurface,
               ),
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               localizeDigits('$quantity'),
@@ -458,8 +465,8 @@ class _CartHeader extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedDelete02,
+            icon: AppIcon(
+              AppIcons.delete02,
               size: 16,
               color: canClear
                   ? adminMutedColor(theme)
@@ -500,7 +507,7 @@ class _CartLineTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AdminNetworkThumb(imageUrl: line.product.imageUrl, size: 40),
-        const SizedBox(width: 9),
+        const SizedBox(width: AppSizes.px10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -521,7 +528,7 @@ class _CartLineTile extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Text(
                     posMoney(line.lineTotal, currencyCode),
                     style: TextStyle(
@@ -533,7 +540,7 @@ class _CartLineTile extends StatelessWidget {
                 ],
               ),
               if (options.isNotEmpty) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.px2),
                 Text(
                   options,
                   maxLines: 2,
@@ -546,7 +553,7 @@ class _CartLineTile extends StatelessWidget {
                 ),
               ],
               if (line.note.trim().isNotEmpty) ...[
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.px2),
                 Text(
                   line.note.trim(),
                   maxLines: 2,
@@ -559,7 +566,7 @@ class _CartLineTile extends StatelessWidget {
                   ),
                 ),
               ],
-              const SizedBox(height: 7),
+              const SizedBox(height: AppSizes.px8),
               Row(
                 children: [
                   _MiniStepper(
@@ -569,7 +576,7 @@ class _CartLineTile extends StatelessWidget {
                     onDecrease: onDecrease,
                     onIncrease: onIncrease,
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Text(
                     '× ${posMoney(line.unitPrice, currencyCode)}',
                     style: TextStyle(
@@ -582,11 +589,11 @@ class _CartLineTile extends StatelessWidget {
                     message: S.posRemove,
                     child: InkWell(
                       onTap: busy ? null : onRemove,
-                      borderRadius: BorderRadius.circular(6),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                       child: Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: HugeIcon(
-                          icon: HugeIcons.strokeRoundedDelete01,
+                        padding: const EdgeInsets.all(AppSpacing.xs),
+                        child: AppIcon(
+                          AppIcons.delete01,
                           size: 14,
                           color: busy
                               ? adminMutedColor(theme).withValues(alpha: .4)
@@ -626,19 +633,19 @@ class _MiniStepper extends StatelessWidget {
     return Container(
       height: 27,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _StepIcon(
-            icon: HugeIcons.strokeRoundedRemove01,
+            icon: AppIcons.remove01,
             tooltip: S.posDecreaseQuantity,
             onTap: canDecrease ? onDecrease : null,
           ),
           SizedBox(
-            width: 26,
+            width: AppSizes.px26,
             child: Text(
               localizeDigits('$quantity'),
               textAlign: TextAlign.center,
@@ -650,7 +657,7 @@ class _MiniStepper extends StatelessWidget {
             ),
           ),
           _StepIcon(
-            icon: HugeIcons.strokeRoundedAdd01,
+            icon: AppIcons.add01,
             tooltip: S.posIncreaseQuantity,
             onTap: canIncrease ? onIncrease : null,
           ),
@@ -678,12 +685,12 @@ class _StepIcon extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: SizedBox(
-          width: 27,
-          height: 25,
-          child: HugeIcon(
-            icon: icon,
+          width: AppSizes.px28,
+          height: AppSizes.px26,
+          child: AppIcon(
+            icon,
             size: 12,
             color: onTap == null
                 ? adminMutedColor(theme).withValues(alpha: .4)
@@ -747,7 +754,7 @@ class _CustomerCard extends StatelessWidget {
           AppColor.adminAccent,
           AppColor.adminAccentSurface,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColor.adminAccent.withValues(alpha: .28)),
       ),
       child: Row(
@@ -755,10 +762,10 @@ class _CustomerCard extends StatelessWidget {
           AdminAvatarImage(
             url: selected.avatarUrl,
             size: 36,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             fallbackText: _initialsFor(selected.fullName),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -775,7 +782,7 @@ class _CustomerCard extends StatelessWidget {
                   ),
                 ),
                 if (contact != null) ...[
-                  const SizedBox(height: 1),
+                  const SizedBox(height: AppSizes.px1),
                   Text(
                     contact,
                     maxLines: 1,
@@ -787,7 +794,7 @@ class _CustomerCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.px4),
                 Wrap(
                   spacing: 4,
                   runSpacing: 3,
@@ -815,12 +822,12 @@ class _CustomerCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.px4),
           TextButton(
             onPressed: enabled ? onChoose : null,
             style: TextButton.styleFrom(
               minimumSize: const Size(0, 28),
-              padding: const EdgeInsets.symmetric(horizontal: 7),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: foreground,
             ),
@@ -840,8 +847,8 @@ class _CustomerCard extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedDelete01,
+            icon: AppIcon(
+              AppIcons.delete01,
               size: 14,
               color: enabled
                   ? adminMutedColor(theme)
@@ -870,14 +877,14 @@ class _EmptyCustomerCard extends StatelessWidget {
         AppColor.adminAccent,
         AppColor.adminAccentSurface,
       ),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: AppColor.adminAccent.withValues(alpha: .28),
             ),
@@ -892,13 +899,13 @@ class _EmptyCustomerCard extends StatelessWidget {
                   color: theme.colorScheme.surface,
                   shape: BoxShape.circle,
                 ),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedUserAdd01,
+                child: AppIcon(
+                  AppIcons.userAdd01,
                   size: 16,
                   color: adminFlagForeground(theme, AppColor.adminAccent),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -912,7 +919,7 @@ class _EmptyCustomerCard extends StatelessWidget {
                         height: AppTextHeights.line1_4,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: AppSizes.px1),
                     Text(
                       S.posCustomerNoneHint,
                       maxLines: 2,
@@ -926,11 +933,9 @@ class _EmptyCustomerCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
-              HugeIcon(
-                icon: rtl
-                    ? HugeIcons.strokeRoundedArrowLeft01
-                    : HugeIcons.strokeRoundedArrowRight01,
+              const SizedBox(width: AppSizes.px6),
+              AppIcon(
+                rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                 size: 15,
                 color: adminMutedColor(theme),
               ),
@@ -957,10 +962,13 @@ class _CustomerTag extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, surface),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         border: Border.all(color: color.withValues(alpha: .22)),
       ),
       child: Text(
@@ -996,13 +1004,13 @@ class _DineInHeader extends StatelessWidget {
             ),
             shape: BoxShape.circle,
           ),
-          child: HugeIcon(
-            icon: HugeIcons.strokeRoundedStore01,
+          child: AppIcon(
+            AppIcons.store01,
             size: 13,
             color: adminFlagForeground(theme, AppColor.adminAccent),
           ),
         ),
-        const SizedBox(width: 7),
+        const SizedBox(width: AppSizes.px8),
         Text(
           S.posDineIn,
           style: TextStyle(
@@ -1054,7 +1062,7 @@ class _TableCard extends StatelessWidget {
     }
     if (state.tablesFailure != null && state.tables.isEmpty) {
       return _TableNotice(
-        icon: HugeIcons.strokeRoundedAlertCircle,
+        icon: AppIcons.alert,
         message: posTablesFailureMessage(state.tablesFailure),
         hint: S.posNoTablesHint,
         actionLabel: S.retry,
@@ -1063,7 +1071,7 @@ class _TableCard extends StatelessWidget {
     }
     if (state.isLoadingTables && state.tables.isEmpty) {
       return _TableNotice(
-        icon: HugeIcons.strokeRoundedTable01,
+        icon: AppIcons.table01,
         message: S.posChooseTable,
         hint: S.posTableOptionalHint,
         busy: true,
@@ -1071,7 +1079,7 @@ class _TableCard extends StatelessWidget {
     }
     if (state.tables.isEmpty) {
       return _TableNotice(
-        icon: HugeIcons.strokeRoundedTable01,
+        icon: AppIcons.table01,
         message: S.posNoTables,
         hint: S.posNoTablesHint,
         actionLabel: S.refresh,
@@ -1111,7 +1119,7 @@ class _SelectedTableCard extends StatelessWidget {
           AppColor.adminAccent,
           AppColor.adminAccentSurface,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColor.adminAccent.withValues(alpha: .28)),
       ),
       child: Row(
@@ -1128,13 +1136,13 @@ class _SelectedTableCard extends StatelessWidget {
               ),
               shape: BoxShape.circle,
             ),
-            child: HugeIcon(
-              icon: diningTableStatusIcon(table.status),
+            child: AppIcon(
+              diningTableStatusIcon(table.status),
               size: 17,
               color: adminFlagForeground(theme, statusColor),
             ),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1154,14 +1162,14 @@ class _SelectedTableCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 5),
+                    const SizedBox(width: AppSizes.px6),
                     AdminStatusBadge(
                       label: diningTableStatusLabel(table.status),
                       color: statusColor,
                     ),
                   ],
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSizes.px1),
                 Text(
                   '${diningAreaLabel(table.area)} • '
                   '${S.tableCapacity(table.capacity)}',
@@ -1174,7 +1182,7 @@ class _SelectedTableCard extends StatelessWidget {
                   ),
                 ),
                 if (order != null) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.px2),
                   Text(
                     '${S.posTableOrderOpen(order.orderNumber)} • '
                     '${posMoney(order.grandTotal, currencyCode)}',
@@ -1187,7 +1195,7 @@ class _SelectedTableCard extends StatelessWidget {
                     ),
                   ),
                 ] else ...[
-                  const SizedBox(height: 1),
+                  const SizedBox(height: AppSizes.px1),
                   Text(
                     S.posTableSelectedHint,
                     maxLines: 2,
@@ -1202,12 +1210,12 @@ class _SelectedTableCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 2),
+          const SizedBox(width: AppSizes.px2),
           TextButton(
             onPressed: enabled ? onChange : null,
             style: TextButton.styleFrom(
               minimumSize: const Size(0, 28),
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: adminFlagForeground(theme, AppColor.adminAccent),
             ),
@@ -1227,8 +1235,8 @@ class _SelectedTableCard extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedDelete01,
+            icon: AppIcon(
+              AppIcons.delete01,
               size: 14,
               color: enabled
                   ? adminMutedColor(theme)
@@ -1257,15 +1265,15 @@ class _EmptyTableCard extends StatelessWidget {
         AppColor.adminAccent,
         AppColor.adminAccentSurface,
       ),
-      borderRadius: BorderRadius.circular(10),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         key: const Key('pos-choose-table'),
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: AppColor.adminAccent.withValues(alpha: .28),
             ),
@@ -1280,13 +1288,13 @@ class _EmptyTableCard extends StatelessWidget {
                   color: theme.colorScheme.surface,
                   shape: BoxShape.circle,
                 ),
-                child: HugeIcon(
-                  icon: HugeIcons.strokeRoundedTable01,
+                child: AppIcon(
+                  AppIcons.table01,
                   size: 16,
                   color: adminFlagForeground(theme, AppColor.adminAccent),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1300,7 +1308,7 @@ class _EmptyTableCard extends StatelessWidget {
                         height: AppTextHeights.line1_4,
                       ),
                     ),
-                    const SizedBox(height: 1),
+                    const SizedBox(height: AppSizes.px1),
                     Text(
                       S.posTableOptionalHint,
                       maxLines: 2,
@@ -1314,11 +1322,9 @@ class _EmptyTableCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
-              HugeIcon(
-                icon: rtl
-                    ? HugeIcons.strokeRoundedArrowLeft01
-                    : HugeIcons.strokeRoundedArrowRight01,
+              const SizedBox(width: AppSizes.px6),
+              AppIcon(
+                rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                 size: 15,
                 color: adminMutedColor(theme),
               ),
@@ -1351,16 +1357,19 @@ class _TableNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 16, color: adminMutedColor(theme)),
-          const SizedBox(width: 8),
+          AppIcon(icon, size: 16, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1374,7 +1383,7 @@ class _TableNotice extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                const SizedBox(height: 1),
+                const SizedBox(height: AppSizes.px1),
                 Text(
                   hint,
                   maxLines: 2,
@@ -1389,19 +1398,19 @@ class _TableNotice extends StatelessWidget {
             ),
           ),
           if (busy) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.px8),
             const SizedBox(
-              width: 14,
-              height: 14,
+              width: AppSizes.px14,
+              height: AppSizes.px14,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
           ] else if (onAction != null && actionLabel != null) ...[
-            const SizedBox(width: 6),
+            const SizedBox(width: AppSizes.px6),
             TextButton(
               onPressed: onAction,
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, 28),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: Text(
@@ -1466,7 +1475,7 @@ class _PaymentSelector extends StatelessWidget {
             if (state.cashMethod != null)
               _PaymentChip(
                 label: S.posPayCash,
-                icon: HugeIcons.strokeRoundedCoins01,
+                icon: AppIcons.coins01,
                 selected: state.paymentMode == PosPaymentMode.cash,
                 onTap: enabled
                     ? () => onModeChanged(PosPaymentMode.cash)
@@ -1475,7 +1484,7 @@ class _PaymentSelector extends StatelessWidget {
             if (state.cardMethod != null)
               _PaymentChip(
                 label: S.posPayCard,
-                icon: HugeIcons.strokeRoundedCreditCard,
+                icon: AppIcons.creditCard,
                 selected: state.paymentMode == PosPaymentMode.card,
                 onTap: enabled
                     ? () => onModeChanged(PosPaymentMode.card)
@@ -1484,7 +1493,7 @@ class _PaymentSelector extends StatelessWidget {
             if (state.canSplitPayment)
               _PaymentChip(
                 label: S.posPaySplit,
-                icon: HugeIcons.strokeRoundedInvoice01,
+                icon: AppIcons.invoice01,
                 selected: state.paymentMode == PosPaymentMode.split,
                 onTap: enabled
                     ? () => onModeChanged(PosPaymentMode.split)
@@ -1493,7 +1502,7 @@ class _PaymentSelector extends StatelessWidget {
           ],
         ),
         if (state.paymentMode == PosPaymentMode.split) ...[
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1519,7 +1528,7 @@ class _PaymentSelector extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 7),
+              const SizedBox(width: AppSizes.px8),
               Expanded(
                 child: TextField(
                   key: const Key('pos-split-card'),
@@ -1544,7 +1553,7 @@ class _PaymentSelector extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: AppSizes.px6),
           Text(
             error ?? S.posSplitHint,
             style: TextStyle(
@@ -1609,14 +1618,17 @@ class _PaymentChip extends StatelessWidget {
               AppColor.adminAccentSurface,
             )
           : theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: selected
                   ? AppColor.adminAccent.withValues(alpha: .45)
@@ -1626,8 +1638,8 @@ class _PaymentChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(icon: icon, size: 13, color: foreground),
-              const SizedBox(width: 5),
+              AppIcon(icon, size: 13, color: foreground),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 label,
                 style: TextStyle(
@@ -1654,21 +1666,20 @@ class _CheckoutError extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColor.errorColor.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColor.errorColor.withValues(alpha: .22)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            size: 14,
-            color: AppColor.errorColor,
-          ),
-          const SizedBox(width: 6),
+          const AppIcon(AppIcons.alert, size: 14, color: AppColor.errorColor),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               message,
@@ -1701,13 +1712,13 @@ class _Totals extends StatelessWidget {
             label: S.posBeforeDiscount,
             value: posMoney(summary.beforeDiscount, state.currencyCode),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           _TotalRow(
             label: S.posDiscount,
             value: '- ${posMoney(summary.discount, state.currencyCode)}',
             valueColor: AppColor.trendPositive,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           _TotalRow(
             label: S.posAfterDiscount,
             value: posMoney(summary.subtotal, state.currencyCode),
@@ -1718,20 +1729,20 @@ class _Totals extends StatelessWidget {
             value: posMoney(summary.subtotal, state.currencyCode),
           ),
         if (summary.tax > 0) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           _TotalRow(
             label: S.posTax,
             value: posMoney(summary.tax, state.currencyCode),
           ),
         ] else if (summary.vat > 0) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           _TotalRow(
             label: S.posVatIncluded,
             value: posMoney(summary.vat, state.currencyCode),
           ),
         ],
         if (state.taxIncluded && state.taxRate > 0) ...[
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: Text(
@@ -1743,9 +1754,9 @@ class _Totals extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 7),
+        const SizedBox(height: AppSizes.px8),
         Divider(height: 1, color: adminRowBorderColor(theme)),
-        const SizedBox(height: 7),
+        const SizedBox(height: AppSizes.px8),
         Row(
           children: [
             Text(
@@ -1816,12 +1827,12 @@ class _CheckoutHint extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HugeIcon(
-          icon: HugeIcons.strokeRoundedInformationCircle,
+        AppIcon(
+          AppIcons.informationCircle,
           size: 13,
           color: adminFlagForeground(theme, AppColor.adminWarning),
         ),
-        const SizedBox(width: 6),
+        const SizedBox(width: AppSizes.px6),
         Expanded(
           child: Text(
             message,
@@ -1852,29 +1863,29 @@ class _CheckoutButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       width: double.infinity,
-      height: 44,
+      height: AppSizes.px44,
       child: FilledButton(
         key: const Key('pos-checkout'),
         onPressed: state.isPlacingOrder ? null : onCheckout,
         style: FilledButton.styleFrom(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 14),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         ),
         child: state.isPlacingOrder
             ? Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const SizedBox(
-                    width: 15,
-                    height: 15,
+                    width: AppSizes.px16,
+                    height: AppSizes.px16,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: AppColor.whiteColor,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Text(
                     S.posPlacingOrder,
                     style: const TextStyle(
@@ -1886,12 +1897,12 @@ class _CheckoutButton extends StatelessWidget {
               )
             : Row(
                 children: [
-                  const HugeIcon(
-                    icon: HugeIcons.strokeRoundedTick02,
+                  const AppIcon(
+                    AppIcons.tick02,
                     size: 16,
                     color: AppColor.whiteColor,
                   ),
-                  const SizedBox(width: 7),
+                  const SizedBox(width: AppSizes.px8),
                   Flexible(
                     child: Text(
                       S.posPlaceOrder,
@@ -1903,7 +1914,7 @@ class _CheckoutButton extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Text(
                     posMoney(summary.total, state.currencyCode),
                     maxLines: 1,

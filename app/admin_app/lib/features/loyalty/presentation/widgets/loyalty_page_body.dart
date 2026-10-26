@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_overview.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_directory.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_metrics_cards.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_program_card.dart';
@@ -54,12 +54,9 @@ class LoyaltyPageBody extends StatelessWidget {
                   CustomBtn(
                     text: S.loyaltyAddReward,
                     onPressed: onAdd,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 18,
-                    ),
+                    leadingIcon: const Icon(AppIcons.add01, size: 18),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.primaryColor,
                     textColor: AppColor.whiteColor,
                   ),
@@ -68,15 +65,15 @@ class LoyaltyPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             LoyaltyMetricsCards(overview: overview),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSizes.px12),
             LoyaltyProgramCard(
               rule: overview.rule,
               canManage: canManage,
               onEdit: onEditRule,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSizes.px16),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -84,7 +81,10 @@ class LoyaltyPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 560, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightSm,
+                    child: directory,
+                  ),
                 ],
               ),
             );
@@ -109,19 +109,18 @@ class _ReadOnlyHint extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedLock,
-            size: 14,
-            color: adminMutedColor(theme),
-          ),
-          const SizedBox(width: 6),
+          AppIcon(AppIcons.password, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               S.loyaltyReadOnly,

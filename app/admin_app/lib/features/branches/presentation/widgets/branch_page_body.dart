@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_metrics.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_directory.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_metrics_cards.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
@@ -81,12 +81,9 @@ class BranchPageBody extends StatelessWidget {
                     key: const Key('branch-add'),
                     text: S.addBranch,
                     onPressed: onAdd,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 18,
-                    ),
+                    leadingIcon: const Icon(AppIcons.add01, size: 18),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.primaryColor,
                     textColor: AppColor.whiteColor,
                   ),
@@ -97,9 +94,9 @@ class BranchPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             BranchMetricsCards(metrics: metrics),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSizes.px16),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -107,7 +104,10 @@ class BranchPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 620, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightMd,
+                    child: directory,
+                  ),
                 ],
               ),
             );

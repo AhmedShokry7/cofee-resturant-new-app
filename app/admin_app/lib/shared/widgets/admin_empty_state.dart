@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
@@ -27,12 +27,12 @@ class AdminEmptyState extends StatelessWidget {
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     return Center(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(icon: icon, size: 38, color: muted.withValues(alpha: .6)),
-            const SizedBox(height: 10),
+            AppIcon(icon, size: 38, color: muted.withValues(alpha: .6)),
+            const SizedBox(height: AppSizes.px10),
             Text(
               message,
               textAlign: TextAlign.center,
@@ -43,7 +43,7 @@ class AdminEmptyState extends StatelessWidget {
               ),
             ),
             if (hint != null) ...[
-              const SizedBox(height: 3),
+              const SizedBox(height: AppSizes.px4),
               Text(
                 hint!,
                 textAlign: TextAlign.center,
@@ -54,7 +54,10 @@ class AdminEmptyState extends StatelessWidget {
                 ),
               ),
             ],
-            if (action != null) ...[const SizedBox(height: 4), action!],
+            if (action != null) ...[
+              const SizedBox(height: AppSizes.px4),
+              action!,
+            ],
           ],
         ),
       ),

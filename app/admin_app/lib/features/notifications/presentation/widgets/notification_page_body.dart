@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_metrics.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_directory.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_metrics_cards.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_push_health_panel.dart';
@@ -60,12 +60,9 @@ class NotificationPageBody extends StatelessWidget {
                     key: const Key('notification-compose-open'),
                     text: S.notificationsCompose,
                     onPressed: onCompose,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 18,
-                    ),
+                    leadingIcon: const Icon(AppIcons.add01, size: 18),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.primaryColor,
                     textColor: AppColor.whiteColor,
                   ),
@@ -76,16 +73,16 @@ class NotificationPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             NotificationMetricsCards(metrics: metrics),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSizes.px14),
             NotificationPushHealthPanel(
               health: health,
               refreshing: refreshingHealth,
               onRecheck: onRecheck,
               onSetup: onSetup,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSizes.px14),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -93,7 +90,10 @@ class NotificationPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 720, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightXxxl,
+                    child: directory,
+                  ),
                 ],
               ),
             );

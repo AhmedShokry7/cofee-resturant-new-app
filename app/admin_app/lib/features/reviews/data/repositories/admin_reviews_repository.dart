@@ -3,16 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review_metrics.dart';
+import 'package:admin_app/features/reviews/domain/repositories/review_repository.dart';
 
-enum ReviewMutationOutcome { success, notFound, failed }
-
-class AdminReviewsRepository {
+class AdminReviewsRepository implements ReviewRepository {
   AdminReviewsRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminReview>> loadReviews() async {
     final response = await _supabase.rpc('admin_reviews');
     if (response is! List) return const <AdminReview>[];
@@ -22,6 +22,7 @@ class AdminReviewsRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<AdminReviewMetrics> loadMetrics() async {
     final response = await _supabase.rpc('admin_review_metrics');
     if (response is Map) {
@@ -30,6 +31,7 @@ class AdminReviewsRepository {
     return AdminReviewMetrics.empty;
   }
 
+  @override
   Future<ReviewMutationOutcome> setPublished(
     String reviewId,
     bool published,
@@ -45,6 +47,7 @@ class AdminReviewsRepository {
     };
   }
 
+  @override
   Future<ReviewMutationOutcome> deleteReview(String reviewId) async {
     final response = await _supabase.rpc(
       'admin_delete_review',

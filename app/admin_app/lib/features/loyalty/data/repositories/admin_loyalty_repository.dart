@@ -1,49 +1,23 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_member.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_overview.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_draft.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule_draft.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_target_option.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_draft.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule_draft.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 
-enum LoyaltyRuleSaveOutcome {
-  saved,
-  invalidRate,
-  invalidValue,
-  notFound,
-  failed,
-}
-
-enum LoyaltyRewardSaveOutcome {
-  saved,
-  duplicateTarget,
-  invalidTarget,
-  invalidType,
-  targetUnavailable,
-  invalidPoints,
-  invalidStock,
-  notFound,
-  failed,
-}
-
-enum LoyaltyRewardMutationOutcome {
-  success,
-  notFound,
-  hasRedemptions,
-  targetUnavailable,
-  failed,
-}
-
-class AdminLoyaltyRepository {
+class AdminLoyaltyRepository implements LoyaltyRepository {
   AdminLoyaltyRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<AdminLoyaltyOverview> loadOverview() async {
     final response = await _supabase.rpc('admin_loyalty_overview');
     if (response is Map) {
@@ -52,21 +26,25 @@ class AdminLoyaltyRepository {
     return AdminLoyaltyOverview.empty;
   }
 
+  @override
   Future<List<AdminLoyaltyReward>> loadRewards() async {
     final response = await _supabase.rpc('admin_loyalty_rewards');
     return _mapList(response, AdminLoyaltyReward.fromJson);
   }
 
+  @override
   Future<List<AdminLoyaltyTargetOption>> loadTargetOptions() async {
     final response = await _supabase.rpc('admin_loyalty_reward_targets');
     return _mapList(response, AdminLoyaltyTargetOption.fromJson);
   }
 
+  @override
   Future<List<AdminLoyaltyMember>> loadMembers() async {
     final response = await _supabase.rpc('admin_loyalty_members');
     return _mapList(response, AdminLoyaltyMember.fromJson);
   }
 
+  @override
   Future<AdminLoyaltyTransactionFeed> loadTransactions({
     int limit = 300,
   }) async {
@@ -82,6 +60,7 @@ class AdminLoyaltyRepository {
     return AdminLoyaltyTransactionFeed.empty;
   }
 
+  @override
   Future<LoyaltyRuleSaveOutcome> saveRule(AdminLoyaltyRuleDraft draft) async {
     final response = await _supabase.rpc(
       'admin_save_loyalty_rule',
@@ -96,6 +75,7 @@ class AdminLoyaltyRepository {
     };
   }
 
+  @override
   Future<LoyaltyRewardSaveOutcome> saveReward(
     AdminLoyaltyRewardDraft draft,
   ) async {
@@ -116,6 +96,7 @@ class AdminLoyaltyRepository {
     };
   }
 
+  @override
   Future<LoyaltyRewardMutationOutcome> setRewardActive(
     String rewardId,
     bool active,
@@ -132,6 +113,7 @@ class AdminLoyaltyRepository {
     };
   }
 
+  @override
   Future<LoyaltyRewardMutationOutcome> deleteReward(String rewardId) async {
     final response = await _supabase.rpc(
       'admin_delete_loyalty_reward',

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 
 String notificationCountValue(int value) => localizeDigits(formatCount(value));
 
@@ -27,11 +27,11 @@ String notificationTypeLabel(AdminNotificationType type) => switch (type) {
 };
 
 IconData notificationTypeIcon(AdminNotificationType type) => switch (type) {
-  AdminNotificationType.orderStatus => HugeIcons.strokeRoundedShoppingBag01,
-  AdminNotificationType.promo => HugeIcons.strokeRoundedPromotion,
-  AdminNotificationType.system => HugeIcons.strokeRoundedSettings01,
-  AdminNotificationType.loyalty => HugeIcons.strokeRoundedGift,
-  AdminNotificationType.subscription => HugeIcons.strokeRoundedRepeat,
+  AdminNotificationType.orderStatus => AppIcons.shoppingBag01,
+  AdminNotificationType.promo => AppIcons.promotion,
+  AdminNotificationType.system => AppIcons.settings01,
+  AdminNotificationType.loyalty => AppIcons.gift,
+  AdminNotificationType.subscription => AppIcons.repeat,
 };
 
 Color notificationTypeColor(AdminNotificationType type) => switch (type) {

@@ -2,13 +2,14 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/initials.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_transaction.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -51,7 +52,7 @@ class _Header extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
         border: Border.all(color: adminRowBorderColor(theme)),
@@ -92,7 +93,7 @@ class _Row extends StatelessWidget {
     final name = transaction.displayName(AppLocale.instance.language);
     return Container(
       height: 56,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: adminRowBorderColor(theme))),
       ),
@@ -104,10 +105,10 @@ class _Row extends StatelessWidget {
               children: [
                 AdminAvatarImage(
                   size: 27,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                   fallbackText: initialsOf(name),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSizes.px8),
                 Expanded(
                   child: Text(
                     name,
@@ -207,7 +208,10 @@ class LoyaltyPointsDelta extends StatelessWidget {
     final accent = earning ? AppColor.trendPositive : AppColor.adminWarning;
     final foreground = adminFlagForeground(theme, accent);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
@@ -216,7 +220,7 @@ class LoyaltyPointsDelta extends StatelessWidget {
               ? AppColor.trendPositiveSurface
               : AppColor.adminWarningSurface,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
         loyaltySignedPoints(points),

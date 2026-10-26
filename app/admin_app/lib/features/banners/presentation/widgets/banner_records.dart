@@ -1,13 +1,13 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 
 class BannerRecords extends StatelessWidget {
   const BannerRecords({
@@ -58,7 +58,7 @@ class BannerRecords extends StatelessWidget {
 
     return ListView.separated(
       itemCount: banners.length,
-      separatorBuilder: (_, _) => const SizedBox(height: AppDimensions.md),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, index) {
         final banner = banners[index];
         return _BannerCard(
@@ -120,17 +120,17 @@ class _BannerCard extends StatelessWidget {
                         fit: BoxFit.fill,
                         errorWidget: (_, _, _) => const ColoredBox(
                           color: AppColor.secondaryColor,
-                          child: Icon(HugeIcons.strokeRoundedImageAdd01),
+                          child: Icon(AppIcons.imageAdd01),
                         ),
                       )
                     : const ColoredBox(
                         color: AppColor.secondaryColor,
-                        child: Icon(HugeIcons.strokeRoundedImageAdd01),
+                        child: Icon(AppIcons.imageAdd01),
                       ),
               ),
             ),
           ),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,12 +170,12 @@ class _BannerCard extends StatelessWidget {
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(HugeIcons.strokeRoundedEdit01),
+                    icon: const Icon(AppIcons.edit01),
                     onPressed: onEdit,
                   ),
                   IconButton(
                     icon: const Icon(
-                      HugeIcons.strokeRoundedDelete01,
+                      AppIcons.delete01,
                       color: AppColor.errorColor,
                     ),
                     onPressed: onDelete,

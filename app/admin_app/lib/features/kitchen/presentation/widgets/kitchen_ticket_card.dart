@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -69,13 +70,13 @@ class KitchenTicketCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: borderColor),
         boxShadow: dark
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 20,
                   offset: Offset(0, 4),
                 ),
@@ -91,7 +92,12 @@ class KitchenTicketCard extends StatelessWidget {
                 : statusColor.withValues(alpha: dark ? .8 : .55),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 0),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.none,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -112,14 +118,17 @@ class KitchenTicketCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (late) ...[const _LateBadge(), const SizedBox(width: 5)],
+                    if (late) ...[
+                      const _LateBadge(),
+                      const SizedBox(width: AppSizes.px6),
+                    ],
                     _ElapsedChip(
                       label: kitchenElapsedLabel(ticket.placedAt, now),
                       late: late,
                     ),
                   ],
                 ),
-                const SizedBox(height: 7),
+                const SizedBox(height: AppSizes.px8),
                 Wrap(
                   spacing: 5,
                   runSpacing: 5,
@@ -134,19 +143,13 @@ class KitchenTicketCard extends StatelessWidget {
                       emphasize: ticket.isPos,
                     ),
                     if (showBranch && branchName.isNotEmpty)
-                      _MetaPill(
-                        icon: HugeIcons.strokeRoundedStore01,
-                        label: branchName,
-                      ),
+                      _MetaPill(icon: AppIcons.store01, label: branchName),
                     if (customer.isNotEmpty)
-                      _MetaPill(
-                        icon: HugeIcons.strokeRoundedUser,
-                        label: customer,
-                      ),
+                      _MetaPill(icon: AppIcons.user, label: customer),
                   ],
                 ),
                 if (ticket.itemCount > 0) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSizes.px8),
                   Row(
                     children: [
                       Expanded(
@@ -177,9 +180,9 @@ class KitchenTicketCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSizes.px4),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(2),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       value: progress,
                       minHeight: 3,
@@ -189,16 +192,21 @@ class KitchenTicketCard extends StatelessWidget {
                   ),
                 ],
                 if (ticket.hasCustomerNote) ...[
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSizes.px8),
                   _CustomerNote(note: ticket.customerNote),
                 ],
-                const SizedBox(height: 5),
+                const SizedBox(height: AppSizes.px6),
               ],
             ),
           ),
           if (ticket.items.isEmpty)
             Padding(
-              padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
               child: Text(
                 S.kitchenNoItems,
                 style: TextStyle(
@@ -210,7 +218,7 @@ class KitchenTicketCard extends StatelessWidget {
             )
           else
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
               child: Column(
                 children: [
                   for (var index = 0; index < ticket.items.length; index++) ...[
@@ -242,7 +250,7 @@ class KitchenTicketCard extends StatelessWidget {
       KitchenTicketStatus.queued => _TicketAction(
         key: Key('kitchen-start-${ticket.id}'),
         label: S.kitchenStart,
-        icon: HugeIcons.strokeRoundedPlayCircle,
+        icon: AppIcons.playCircle,
         primary: true,
         loading: isBusy,
         onTap: onStart,
@@ -250,7 +258,7 @@ class KitchenTicketCard extends StatelessWidget {
       KitchenTicketStatus.preparing => _TicketAction(
         key: Key('kitchen-ready-${ticket.id}'),
         label: S.kitchenMarkReady,
-        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+        icon: AppIcons.checkmarkCircle01,
         primary: true,
         loading: isBusy,
         onTap: onReady,
@@ -261,17 +269,17 @@ class KitchenTicketCard extends StatelessWidget {
             child: _TicketAction(
               key: Key('kitchen-complete-${ticket.id}'),
               label: S.kitchenComplete,
-              icon: HugeIcons.strokeRoundedTaskDone01,
+              icon: AppIcons.taskDone01,
               primary: true,
               loading: isBusy,
               onTap: onComplete,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           _TicketAction(
             key: Key('kitchen-recall-${ticket.id}'),
             label: S.kitchenRecall,
-            icon: HugeIcons.strokeRoundedRefresh,
+            icon: AppIcons.refresh,
             tooltip: S.kitchenRecallHint,
             loading: isBusy,
             onTap: isBusy ? null : onRecall,
@@ -292,11 +300,11 @@ class KitchenTicketCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           _TicketAction(
             key: Key('kitchen-recall-${ticket.id}'),
             label: S.kitchenRecall,
-            icon: HugeIcons.strokeRoundedRefresh,
+            icon: AppIcons.refresh,
             tooltip: S.kitchenRecallHint,
             loading: isBusy,
             onTap: isBusy ? null : onRecall,
@@ -307,7 +315,12 @@ class KitchenTicketCard extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         border: Border(top: BorderSide(color: adminRowBorderColor(theme))),
       ),
@@ -337,16 +350,22 @@ class _KitchenItemRow extends StatelessWidget {
     final note = item.note.trim();
 
     final row = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            margin: const EdgeInsets.only(top: 1),
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+            margin: const EdgeInsets.only(top: AppSpacing.xxs),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xxs,
+            ),
             decoration: BoxDecoration(
               color: adminTintedSurfaceColor(theme),
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               localizeDigits('${item.quantity}×'),
@@ -358,7 +377,7 @@ class _KitchenItemRow extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,14 +410,14 @@ class _KitchenItemRow extends StatelessWidget {
                   ),
                 if (note.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(top: 2),
+                    padding: const EdgeInsets.only(top: AppSpacing.xxs),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(top: 1),
-                          child: HugeIcon(
-                            icon: HugeIcons.strokeRoundedNote,
+                          padding: const EdgeInsets.only(top: AppSpacing.xxs),
+                          child: AppIcon(
+                            AppIcons.note,
                             size: 10,
                             color: adminFlagForeground(
                               theme,
@@ -406,7 +425,7 @@ class _KitchenItemRow extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: AppSizes.px4),
                         Expanded(
                           child: Text(
                             note,
@@ -426,7 +445,7 @@ class _KitchenItemRow extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           _ItemCheck(status: item.status, busy: busy),
         ],
       ),
@@ -437,11 +456,11 @@ class _KitchenItemRow extends StatelessWidget {
     return Tooltip(
       message: ready ? S.kitchenItemMarkPending : S.kitchenItemMarkReady,
       child: Material(
-        color: Colors.transparent,
+        color: AppColor.transparent,
         child: InkWell(
           key: Key('kitchen-item-toggle-${item.id}'),
           onTap: busy ? null : onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: row,
         ),
       ),
@@ -468,12 +487,12 @@ class _ItemCheck extends StatelessWidget {
 
     if (busy) {
       return SizedBox(
-        width: 24,
-        height: 24,
+        width: AppSizes.px24,
+        height: AppSizes.px24,
         child: Center(
           child: SizedBox(
-            width: 14,
-            height: 14,
+            width: AppSizes.px14,
+            height: AppSizes.px14,
             child: CircularProgressIndicator(strokeWidth: 2, color: color),
           ),
         ),
@@ -481,8 +500,8 @@ class _ItemCheck extends StatelessWidget {
     }
 
     return SizedBox(
-      width: 24,
-      height: 24,
+      width: AppSizes.px24,
+      height: AppSizes.px24,
       child: Center(
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
@@ -498,7 +517,7 @@ class _ItemCheck extends StatelessWidget {
                     AppColor.adminInfo,
                     AppColor.adminInfoSurface,
                   )
-                : Colors.transparent,
+                : AppColor.transparent,
             shape: BoxShape.circle,
             border: Border.all(
               color: ready
@@ -510,14 +529,14 @@ class _ItemCheck extends StatelessWidget {
             ),
           ),
           child: ready
-              ? const HugeIcon(
-                  icon: HugeIcons.strokeRoundedTick01,
+              ? const AppIcon(
+                  AppIcons.tick01,
                   size: 12,
                   color: AppColor.whiteColor,
                 )
               : preparing
-              ? const HugeIcon(
-                  icon: HugeIcons.strokeRoundedTimer01,
+              ? const AppIcon(
+                  AppIcons.timer01,
                   size: 11,
                   color: AppColor.adminInfo,
                 )
@@ -538,27 +557,28 @@ class _CustomerNote extends StatelessWidget {
     final theme = Theme.of(context);
     final foreground = adminFlagForeground(theme, AppColor.adminWarning);
     return Container(
-      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.sm,
+        AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.adminWarning,
           AppColor.adminWarningSurface,
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(top: 1),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedNote,
-              size: 13,
-              color: foreground,
-            ),
+            padding: const EdgeInsets.only(top: AppSpacing.xxs),
+            child: AppIcon(AppIcons.note, size: 13, color: foreground),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -596,14 +616,17 @@ class _LateBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.trendNegative,
           AppColor.trendNegativeSurface,
         ),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
         S.kitchenLate,
@@ -631,7 +654,10 @@ class _ElapsedChip extends StatelessWidget {
         ? adminFlagForeground(theme, AppColor.trendNegative)
         : adminMutedColor(theme);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: late
             ? adminFlagBackground(
@@ -640,17 +666,13 @@ class _ElapsedChip extends StatelessWidget {
                 AppColor.trendNegativeSurface,
               )
             : adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedAlarmClock,
-            size: 11,
-            color: color,
-          ),
-          const SizedBox(width: 3),
+          AppIcon(AppIcons.alarmClock, size: 11, color: color),
+          const SizedBox(width: AppSizes.px4),
           Text(
             label,
             style: TextStyle(
@@ -685,7 +707,10 @@ class _MetaPill extends StatelessWidget {
         : adminMutedColor(theme);
     return Container(
       constraints: const BoxConstraints(maxWidth: 150),
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: emphasize
             ? adminFlagBackground(
@@ -694,13 +719,13 @@ class _MetaPill extends StatelessWidget {
                 AppColor.adminInfoSurface,
               )
             : adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(icon: icon, size: 11, color: color),
-          const SizedBox(width: 3),
+          AppIcon(icon, size: 11, color: color),
+          const SizedBox(width: AppSizes.px4),
           Flexible(
             child: Text(
               label,
@@ -752,12 +777,12 @@ class _TicketAction extends StatelessWidget {
 
     final content = Container(
       height: 32,
-      padding: const EdgeInsets.symmetric(horizontal: 8),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: enabled
             ? background
             : background.withValues(alpha: primary ? .5 : .7),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: primary
             ? null
             : Border.all(color: adminControlBorderColor(theme)),
@@ -768,16 +793,16 @@ class _TicketAction extends StatelessWidget {
         children: [
           if (loading)
             SizedBox(
-              width: 13,
-              height: 13,
+              width: AppSizes.px14,
+              height: AppSizes.px14,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 color: primary ? AppColor.whiteColor : AppColor.adminAccent,
               ),
             )
           else
-            HugeIcon(icon: icon, size: 14, color: foreground),
-          const SizedBox(width: 5),
+            AppIcon(icon, size: 14, color: foreground),
+          const SizedBox(width: AppSizes.px6),
           Flexible(
             child: Text(
               label,
@@ -797,11 +822,11 @@ class _TicketAction extends StatelessWidget {
     );
 
     final button = Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(9),
+      color: AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: content,
       ),
     );

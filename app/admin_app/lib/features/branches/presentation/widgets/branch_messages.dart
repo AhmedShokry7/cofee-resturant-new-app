@@ -1,5 +1,6 @@
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_save_outcome.dart';
 
 /// The message the save dialog shows for a rejected save.
 String branchSaveErrorMessage(BranchSaveOutcome outcome) => switch (outcome) {

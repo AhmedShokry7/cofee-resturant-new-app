@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_stock_movements_cubit.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_stock_movements_state.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_movement_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movement_details_dialog.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movements_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class StockMovementsPage extends StatefulWidget {

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
 
 void main() {
   group('AdminCustomerMetrics', () {

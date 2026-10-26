@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/customer_previous_order_item.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -26,11 +27,11 @@ class CustomerPreviousOrders extends StatelessWidget {
     final Widget body;
     if (loading) {
       body = const Padding(
-        padding: EdgeInsets.symmetric(vertical: 14),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Center(
           child: SizedBox(
-            width: 18,
-            height: 18,
+            width: AppSizes.px18,
+            height: AppSizes.px18,
             child: CircularProgressIndicator(
               strokeWidth: 2,
               color: AppColor.adminAccent,
@@ -52,7 +53,7 @@ class CustomerPreviousOrders extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (var index = 0; index < orders.take(5).length; index++) ...[
-            if (index > 0) const SizedBox(height: 8),
+            if (index > 0) const SizedBox(height: AppSizes.px8),
             CustomerPreviousOrderItem(
               order: orders[index],
               onTap: onOpen == null ? null : () => onOpen!(orders[index]),

@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/category_excel_mapper.dart';
 import 'package:admin_app/features/catalog/data/product_excel_mapper.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
@@ -383,7 +383,9 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final dialogWidth = size.width < 600 ? size.width - 32 : 560.0;
+    final dialogWidth = size.width < AppBreakpoints.dialogPadding
+        ? size.width - 32
+        : 560.0;
     final dialogHeight = (size.height * 0.85).clamp(460.0, 780.0);
 
     final locale = AppLocale.instance.language.isArabic
@@ -453,7 +455,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
               ),
             ]),
             Padding(
-              padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+              padding: const EdgeInsets.only(bottom: AppSpacing.lg),
               child: Text(
                 _discountStatus(),
                 style: Theme.of(context).textTheme.bodySmall
@@ -463,7 +465,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
             // What the customer pays while the discount runs.
             if (_priceAfterDiscount != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
                 child: Row(
                   children: [
                     DiscountPill(
@@ -473,7 +475,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
                           )?.round() ??
                           0,
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: AppSizes.px6),
                     Text(
                       '${S.priceAfterDiscount}: '
                       '${_priceAfterDiscount!.toStringAsFixed(2)}',
@@ -540,10 +542,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   Widget _section(String title) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(
-        top: AppDimensions.lg,
-        bottom: AppDimensions.sm,
-      ),
+      padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
       child: Text(
         title,
         style: theme.textTheme.titleSmall?.copyWith(
@@ -563,7 +562,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     TextDirection? textDirection,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: TextField(
         controller: controller,
         maxLines: lines,
@@ -579,11 +578,11 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
           labelStyle: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AppColor.greyColor),
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.md,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
         ),
       ),
@@ -621,24 +620,24 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           QuillSimpleToolbar(controller: controller, config: toolbarConfig),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
           Container(
             height: 160,
             decoration: BoxDecoration(
               border: Border.all(
                 color: AppColor.greyColor.withValues(alpha: 0.4),
               ),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Directionality(
               textDirection: direction,
               child: Padding(
-                padding: const EdgeInsets.all(AppDimensions.md),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: QuillEditor.basic(
                   controller: controller,
                   config: QuillEditorConfig(placeholder: label),
@@ -657,7 +656,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     ValueChanged<String>? onChanged,
   }) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: TextField(
         controller: controller,
         keyboardType: TextInputType.datetime,
@@ -668,7 +667,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
           hintText: 'YYYY-MM-DD',
           suffixIcon: IconButton(
             tooltip: S.date,
-            icon: const Icon(HugeIcons.strokeRoundedCalendar01, size: 18),
+            icon: const Icon(AppIcons.calendar01, size: 18),
             onPressed: () async {
               final initial =
                   DateTime.tryParse(controller.text.trim()) ?? DateTime.now();
@@ -689,11 +688,11 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
           labelStyle: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AppColor.greyColor),
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.md,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
         ),
       ),
@@ -702,7 +701,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
 
   Widget _prepTimeField() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -718,16 +717,16 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
                 labelStyle: Theme.of(context).textTheme.bodyMedium
                     ?.copyWith(color: AppColor.greyColor),
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.md,
-                  vertical: AppDimensions.md,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
               ),
             ),
           ),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           SizedBox(
             width: 120,
             child: DropdownButtonFormField<ProductPrepTimeUnit>(
@@ -736,11 +735,11 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
               decoration: InputDecoration(
                 labelText: S.prepUnit,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: AppDimensions.md,
-                  vertical: AppDimensions.md,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
                 ),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
               ),
               items: <DropdownMenuItem<ProductPrepTimeUnit>>[
@@ -772,7 +771,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   Widget _errorRow(String message) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.md),
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: Text(
         message,
         style: theme.textTheme.bodySmall?.copyWith(color: AppColor.errorColor),
@@ -787,7 +786,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(child: a),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(child: b),
         ],
       );
@@ -800,7 +799,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     if (wide) {
       final rowChildren = <Widget>[];
       for (var i = 0; i < children.length; i++) {
-        if (i > 0) rowChildren.add(const SizedBox(width: AppDimensions.md));
+        if (i > 0) rowChildren.add(const SizedBox(width: AppSpacing.md));
         rowChildren.add(Expanded(child: children[i]));
       }
       return Row(
@@ -816,18 +815,18 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     final language = AppLocale.instance.language;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppDimensions.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: DropdownButtonFormField<String>(
         initialValue: _categoryId,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: S.category,
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.md,
-            vertical: AppDimensions.md,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
         ),
         items: [
@@ -897,7 +896,7 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
     return AlertDialog(
       title: Text(S.addCategory),
       content: SizedBox(
-        width: 360,
+        width: AppDimensions.dialogBodyWidthSmall,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -906,17 +905,17 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
               autofocus: true,
               decoration: InputDecoration(labelText: S.nameAr),
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _nameEnController,
               decoration: InputDecoration(labelText: S.nameEn),
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _descriptionArController,
               decoration: InputDecoration(labelText: S.descriptionAr),
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _descriptionEnController,
               decoration: InputDecoration(labelText: S.descriptionEn),
@@ -959,40 +958,38 @@ class ImportReportDialog extends StatelessWidget {
       title: Row(
         children: [
           Icon(
-            hasErrors
-                ? HugeIcons.strokeRoundedAlert01
-                : HugeIcons.strokeRoundedCheckmarkCircle01,
+            hasErrors ? AppIcons.alert01 : AppIcons.checkmarkCircle01,
             size: 24,
             color: hasErrors ? AppColor.errorColor : AppColor.primaryColor,
           ),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(child: Text(S.importSummary)),
         ],
       ),
       content: SizedBox(
-        width: 500,
+        width: AppDimensions.dialogBodyWidthContent,
         height: 400,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              padding: const EdgeInsets.all(AppDimensions.md),
+              padding: const EdgeInsets.all(AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColor.lightGreyColor,
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _summaryRow(context, S.rowsCount, '$rowCount'),
-                  const SizedBox(height: AppDimensions.xs),
+                  const SizedBox(height: AppSpacing.xs),
                   _summaryRow(
                     context,
                     S.createdProducts,
                     '$created',
                     color: AppColor.primaryColor,
                   ),
-                  const SizedBox(height: AppDimensions.xs),
+                  const SizedBox(height: AppSpacing.xs),
                   _summaryRow(
                     context,
                     S.updatedProducts,
@@ -1000,7 +997,7 @@ class ImportReportDialog extends StatelessWidget {
                     color: AppColor.primaryColor,
                   ),
                   if (hasErrors) ...[
-                    const SizedBox(height: AppDimensions.xs),
+                    const SizedBox(height: AppSpacing.xs),
                     _summaryRow(
                       context,
                       S.failedProducts,
@@ -1012,29 +1009,29 @@ class ImportReportDialog extends StatelessWidget {
               ),
             ),
             if (hasErrors) ...[
-              const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 S.invalidRows,
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: AppFontWeights.semiBold,
                 ),
               ),
-              const SizedBox(height: AppDimensions.sm),
+              const SizedBox(height: AppSpacing.sm),
               Expanded(
                 child: Container(
                   decoration: BoxDecoration(
                     border: Border.all(color: AppColor.borderColor),
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
                   child: ListView.separated(
-                    padding: const EdgeInsets.all(AppDimensions.sm),
+                    padding: const EdgeInsets.all(AppSpacing.sm),
                     itemCount: errors.length,
                     separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final error = errors[index];
                       return Padding(
                         padding: const EdgeInsets.symmetric(
-                          vertical: AppDimensions.xs,
+                          vertical: AppSpacing.xs,
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1056,7 +1053,9 @@ class ImportReportDialog extends StatelessWidget {
                                   if (error.productName != null &&
                                       error.productName!.isNotEmpty)
                                     Padding(
-                                      padding: const EdgeInsets.only(bottom: 2),
+                                      padding: const EdgeInsets.only(
+                                        bottom: AppSpacing.xxs,
+                                      ),
                                       child: Text(
                                         error.productName!,
                                         style: theme.textTheme.bodySmall
@@ -1142,7 +1141,7 @@ class CategoryPickerDialog extends StatelessWidget {
     return AlertDialog(
       title: Text(S.category),
       content: SizedBox(
-        width: 320,
+        width: AppDimensions.dialogBodyWidthCompact,
         height: 320,
         child: ListView.separated(
           itemCount: categories.length,
@@ -1163,7 +1162,7 @@ class CategoryPickerDialog extends StatelessWidget {
               ),
               trailing: isSelected
                   ? const Icon(
-                      HugeIcons.strokeRoundedTick01,
+                      AppIcons.tick01,
                       size: 16,
                       color: AppColor.primaryColor,
                     )
@@ -1213,7 +1212,7 @@ class _ImageUrlDialogState extends State<ImageUrlDialog> {
     return AlertDialog(
       title: Text(S.changeImage),
       content: SizedBox(
-        width: 360,
+        width: AppDimensions.dialogBodyWidthSmall,
         child: TextField(
           controller: _controller,
           autofocus: true,
@@ -1296,7 +1295,7 @@ class _CategoryDataDialogState extends State<CategoryDataDialog> {
       widget.initialCategory != null ? S.editCategory : S.addCategory,
     ),
     content: SizedBox(
-      width: 600,
+      width: AppDimensions.dialogBodyWidthExtra,
       child: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -1312,7 +1311,7 @@ class _CategoryDataDialogState extends State<CategoryDataDialog> {
                     onChanged: (_) => setState(() {}),
                   ),
                 ),
-                const SizedBox(width: AppDimensions.md),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: TextField(
                     controller: _nameEn,
@@ -1321,14 +1320,14 @@ class _CategoryDataDialogState extends State<CategoryDataDialog> {
                 ),
               ],
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _descriptionAr,
               decoration: InputDecoration(labelText: S.descriptionAr),
               textDirection: TextDirection.rtl,
               maxLines: 3,
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _descriptionEn,
               decoration: InputDecoration(labelText: S.descriptionEn),
@@ -1378,7 +1377,7 @@ class CategoryImportReportDialog extends StatelessWidget {
   Widget build(BuildContext context) => AlertDialog(
     title: Text(S.importSummary),
     content: SizedBox(
-      width: 480,
+      width: AppDimensions.dialogBodyWidthLarge,
       height: 380,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1387,7 +1386,7 @@ class CategoryImportReportDialog extends StatelessWidget {
           Text('${S.createdCategories}: $created'),
           Text('${S.updatedCategories}: $updated'),
           if (errors.isNotEmpty) ...[
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             Text(S.invalidRows, style: Theme.of(context).textTheme.titleSmall),
             Expanded(
               child: ListView.builder(
@@ -1439,12 +1438,12 @@ class ImportExcelDialog extends StatelessWidget {
       ),
       OutlinedButton.icon(
         onPressed: onDownloadSample,
-        icon: const Icon(HugeIcons.strokeRoundedDownload01, size: 18),
+        icon: const Icon(AppIcons.download01, size: 18),
         label: Text(S.downloadSampleFile),
       ),
       FilledButton.icon(
         onPressed: onPickFile,
-        icon: const Icon(HugeIcons.strokeRoundedUpload01, size: 18),
+        icon: const Icon(AppIcons.upload01, size: 18),
         label: Text(S.uploadFromDevice),
       ),
     ],

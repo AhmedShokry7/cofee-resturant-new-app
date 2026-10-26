@@ -2,22 +2,48 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/inventory/data/models/admin_inventory_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_material_option.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_metrics.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_draft.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/di/inventory_dependencies.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
+import 'package:admin_app/features/inventory/domain/repositories/inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/usecases/delete_material.dart';
+import 'package:admin_app/features/inventory/domain/usecases/load_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/usecases/load_inventory_metrics.dart';
+import 'package:admin_app/features/inventory/domain/usecases/load_inventory_page.dart';
+import 'package:admin_app/features/inventory/domain/usecases/record_movement.dart';
+import 'package:admin_app/features/inventory/domain/usecases/save_material.dart';
+import 'package:admin_app/features/inventory/domain/usecases/search_materials.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_state.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 
 class AdminInventoryCubit extends Cubit<AdminInventoryState> {
-  AdminInventoryCubit({AdminInventoryRepository? repository})
-    : _repository = repository ?? AdminInventoryRepository(),
+  AdminInventoryCubit({InventoryRepository? repository})
+    : this._withUseCases(repository ?? InventoryDependencies.repository);
+
+  AdminInventoryCubit._withUseCases(InventoryRepository repository)
+    : _loadInventoryPage = LoadInventoryPageUseCase(repository),
+      _loadInventoryMetrics = LoadInventoryMetricsUseCase(repository),
+      _loadInventoryFilters = LoadInventoryFiltersUseCase(repository),
+      _searchMaterials = SearchMaterialsUseCase(repository),
+      _saveMaterial = SaveMaterialUseCase(repository),
+      _deleteMaterial = DeleteMaterialUseCase(repository),
+      _recordMovement = RecordMovementUseCase(repository),
       super(const AdminInventoryState());
 
-  final AdminInventoryRepository _repository;
+  final LoadInventoryPageUseCase _loadInventoryPage;
+  final LoadInventoryMetricsUseCase _loadInventoryMetrics;
+  final LoadInventoryFiltersUseCase _loadInventoryFilters;
+  final SearchMaterialsUseCase _searchMaterials;
+  final SaveMaterialUseCase _saveMaterial;
+  final DeleteMaterialUseCase _deleteMaterial;
+  final RecordMovementUseCase _recordMovement;
   Timer? _searchTimer;
   int _requestId = 0;
 
@@ -96,19 +122,19 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
     String? search,
     String? branchId,
   }) {
-    return _repository.searchMaterials(search: search, branchId: branchId);
+    return _searchMaterials(search: search, branchId: branchId);
   }
 
   Future<InventoryMaterialSaveOutcome> saveMaterial(
     AdminInventoryDraft draft,
   ) async {
-    final outcome = await _repository.saveMaterial(draft);
+    final outcome = await _saveMaterial(draft);
     if (outcome == InventoryMaterialSaveOutcome.saved) await refresh();
     return outcome;
   }
 
   Future<InventoryMutationOutcome> deleteMaterial(String materialId) async {
-    final outcome = await _repository.deleteMaterial(materialId);
+    final outcome = await _deleteMaterial(materialId);
     if (outcome == InventoryMutationOutcome.success) await refresh();
     return outcome;
   }
@@ -116,7 +142,7 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
   Future<InventoryMovementOutcome> recordMovement(
     AdminStockMovementDraft draft,
   ) async {
-    final outcome = await _repository.recordMovement(draft);
+    final outcome = await _recordMovement(draft);
     if (outcome == InventoryMovementOutcome.success) await refresh();
     return outcome;
   }
@@ -135,7 +161,7 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
       emit(state.copyWith(isRefreshingRows: true, clearError: true));
     }
 
-    final rowsFuture = _repository.loadPage(
+    final rowsFuture = _loadInventoryPage(
       search: state.search,
       category: state.category,
       status: state.statusFilter.value,
@@ -201,7 +227,7 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
 
   Future<AdminInventoryMetrics?> _loadMetricsSafely() async {
     try {
-      return await _repository.loadMetrics(branchId: state.branchId);
+      return await _loadInventoryMetrics(branchId: state.branchId);
     } catch (_) {
       return null;
     }
@@ -209,7 +235,7 @@ class AdminInventoryCubit extends Cubit<AdminInventoryState> {
 
   Future<AdminInventoryFilters?> _loadFiltersSafely() async {
     try {
-      return await _repository.loadFilters();
+      return await _loadInventoryFilters();
     } catch (_) {
       return null;
     }

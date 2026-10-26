@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -29,10 +29,8 @@ class RoleIcon extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(size * 0.3),
       ),
-      child: HugeIcon(
-        icon: role.isSystem
-            ? HugeIcons.strokeRoundedShield01
-            : HugeIcons.strokeRoundedKey01,
+      child: AppIcon(
+        role.isSystem ? AppIcons.shield01 : AppIcons.passwordKey,
         size: size * 0.53,
         color: adminFlagForeground(theme, color),
       ),

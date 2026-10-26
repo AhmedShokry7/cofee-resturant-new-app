@@ -15,7 +15,7 @@ class LoginHeading extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(S.staffSignIn, style: AppFonts.bold24(context)),
-        const SizedBox(height: AppDimensions.sm),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           S.staffSignInSubtitle,
           style: theme.textTheme.bodyMedium?.copyWith(

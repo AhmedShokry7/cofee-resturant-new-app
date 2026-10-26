@@ -4,7 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_item_image.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_item_remove_button.dart';
@@ -33,7 +33,7 @@ class OrderItemRow extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         OrderItemImage(item: item),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSizes.px10),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,7 +49,7 @@ class OrderItemRow extends StatelessWidget {
                   height: AppTextHeights.line1_5,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: AppSizes.px2),
               Row(
                 children: [
                   Text(
@@ -60,12 +60,12 @@ class OrderItemRow extends StatelessWidget {
                       height: AppTextHeights.line1_5,
                     ),
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: AppSizes.px4),
                   const CurrencyIcon(size: 10),
                 ],
               ),
               if (note.isNotEmpty) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.px4),
                 Text(
                   note,
                   maxLines: 2,
@@ -81,7 +81,7 @@ class OrderItemRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: AppDimensions.sm),
+        const SizedBox(width: AppSpacing.sm),
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
@@ -91,7 +91,7 @@ class OrderItemRow extends StatelessWidget {
               color: dark ? AppColor.darkText : AppColor.adminAmount,
               formatter: orderMoney,
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: AppSizes.px2),
             OrderItemRemoveButton(order: order, item: item, onRemove: onRemove),
           ],
         ),

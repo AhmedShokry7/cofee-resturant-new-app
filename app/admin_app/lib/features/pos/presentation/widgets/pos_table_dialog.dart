@@ -2,20 +2,21 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_table.dart';
-import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_table.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
-import 'package:admin_app/features/tables/presentation/widgets/dining_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -155,12 +156,12 @@ class _PosTableDialogState extends State<_PosTableDialog> {
           key: const Key('pos-table-dialog'),
           backgroundColor: theme.colorScheme.surface,
           insetPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 24,
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.xxl,
           ),
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(AppRadius.xl),
           ),
           child: SizedBox(
             width: width,
@@ -176,7 +177,9 @@ class _PosTableDialogState extends State<_PosTableDialog> {
                       : () => Navigator.of(context).pop(),
                 ),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   child: Row(
                     children: [
                       Expanded(
@@ -186,10 +189,10 @@ class _PosTableDialogState extends State<_PosTableDialog> {
                           hintText: S.posTableSearchHint,
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: AppSizes.px8),
                       AdminToolbarButton(
                         label: S.refresh,
-                        icon: HugeIcons.strokeRoundedRefresh,
+                        icon: AppIcons.refresh,
                         busy: state.isLoadingTables,
                         onPressed: state.isSeating
                             ? null
@@ -200,13 +203,18 @@ class _PosTableDialogState extends State<_PosTableDialog> {
                 ),
                 if (state.isLoadingTables && state.tables.isNotEmpty)
                   const Padding(
-                    padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    padding: EdgeInsets.fromLTRB(
+                      AppSpacing.lg,
+                      AppSpacing.sm,
+                      AppSpacing.lg,
+                      AppSpacing.none,
+                    ),
                     child: LinearProgressIndicator(minHeight: 2),
                   ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSizes.px8),
                 if (state.isSeating)
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                     child: LinearProgressIndicator(minHeight: 2),
                   ),
                 Expanded(child: _buildBody(context, state)),
@@ -227,7 +235,7 @@ class _PosTableDialogState extends State<_PosTableDialog> {
 
     if (state.tablesFailure != null && state.tables.isEmpty) {
       return AdminEmptyState(
-        icon: HugeIcons.strokeRoundedAlertCircle,
+        icon: AppIcons.alert,
         message: posTablesFailureMessage(state.tablesFailure),
         hint: S.posNoTablesHint,
         action: TextButton(
@@ -240,7 +248,7 @@ class _PosTableDialogState extends State<_PosTableDialog> {
 
     if (state.tables.isEmpty) {
       return AdminEmptyState(
-        icon: HugeIcons.strokeRoundedTable01,
+        icon: AppIcons.table01,
         message: S.posNoTables,
         hint: S.posNoTablesHint,
         action: TextButton(
@@ -252,7 +260,7 @@ class _PosTableDialogState extends State<_PosTableDialog> {
 
     if (visible.isEmpty) {
       return AdminEmptyState(
-        icon: HugeIcons.strokeRoundedSearch01,
+        icon: AppIcons.search01,
         message: S.posNoTableMatches,
         hint: S.posNoTableMatchesHint,
         action: TextButton(
@@ -283,7 +291,7 @@ class _PosTableDialogState extends State<_PosTableDialog> {
             onSeat: () => _seat(table),
           ),
         );
-        children.add(const SizedBox(height: 6));
+        children.add(const SizedBox(height: AppSizes.px6));
       }
     }
 
@@ -313,12 +321,12 @@ class _AreaHeader extends StatelessWidget {
       padding: EdgeInsetsDirectional.fromSTEB(2, first ? 4 : 12, 2, 6),
       child: Row(
         children: [
-          HugeIcon(
-            icon: diningAreaIcon(area),
+          AppIcon(
+            diningAreaIcon(area),
             size: 14,
             color: adminMutedColor(theme),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Text(
             diningAreaLabel(area),
             style: TextStyle(
@@ -327,12 +335,15 @@ class _AreaHeader extends StatelessWidget {
               fontWeight: AppFontWeights.bold,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.xxs,
+            ),
             decoration: BoxDecoration(
               color: adminTintedSurfaceColor(theme),
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               localizeDigits('$count'),
@@ -384,14 +395,17 @@ class _TableTile extends StatelessWidget {
               AppColor.adminAccentSurface,
             )
           : theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(11),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: selectable ? onSelect : null,
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(
               color: selected
                   ? AppColor.adminAccent.withValues(alpha: .45)
@@ -412,13 +426,13 @@ class _TableTile extends StatelessWidget {
                   ),
                   shape: BoxShape.circle,
                 ),
-                child: HugeIcon(
-                  icon: diningTableStatusIcon(table.status),
+                child: AppIcon(
+                  diningTableStatusIcon(table.status),
                   size: 17,
                   color: adminFlagForeground(theme, statusColor),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -438,14 +452,14 @@ class _TableTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: AppSizes.px6),
                         AdminStatusBadge(
                           label: diningTableStatusLabel(table.status),
                           color: statusColor,
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.px2),
                     Text(
                       '${diningAreaLabel(table.area)} • '
                       '${S.tableCapacity(table.capacity)}',
@@ -458,7 +472,7 @@ class _TableTile extends StatelessWidget {
                       ),
                     ),
                     if (_contextLine(table) case final line?) ...[
-                      const SizedBox(height: 2),
+                      const SizedBox(height: AppSizes.px2),
                       Text(
                         line,
                         maxLines: 1,
@@ -473,14 +487,16 @@ class _TableTile extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               if (canSeat)
                 TextButton(
                   key: Key('pos-table-seat-${table.id}'),
                   onPressed: onSeat,
                   style: TextButton.styleFrom(
                     minimumSize: const Size(0, 30),
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
                     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     foregroundColor: adminFlagForeground(
                       theme,
@@ -489,8 +505,8 @@ class _TableTile extends StatelessWidget {
                   ),
                   child: seating
                       ? const SizedBox(
-                          width: 14,
-                          height: 14,
+                          width: AppSizes.px14,
+                          height: AppSizes.px14,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Text(
@@ -502,20 +518,20 @@ class _TableTile extends StatelessWidget {
                         ),
                 )
               else if (selectable)
-                HugeIcon(
-                  icon: selected
-                      ? HugeIcons.strokeRoundedCheckmarkCircle02
+                AppIcon(
+                  selected
+                      ? AppIcons.checkmarkCircle02
                       : (Directionality.of(context) == TextDirection.rtl
-                            ? HugeIcons.strokeRoundedArrowLeft01
-                            : HugeIcons.strokeRoundedArrowRight01),
+                            ? AppIcons.arrowLeft01
+                            : AppIcons.arrowRight01),
                   size: 16,
                   color: selected
                       ? adminFlagForeground(theme, AppColor.adminAccent)
                       : adminMutedColor(theme),
                 )
               else
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedLock,
+                AppIcon(
+                  AppIcons.password,
                   size: 15,
                   color: adminMutedColor(theme).withValues(alpha: .6),
                 ),

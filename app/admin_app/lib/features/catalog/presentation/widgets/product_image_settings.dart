@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 
 /// Who the display settings of a picture are applied to.
 enum ImageSettingsScope {
@@ -57,7 +57,7 @@ class _ProductImageSettingsState extends State<ProductImageSettings> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
-    final isNarrow = size.width < 640;
+    final isNarrow = size.width < AppBreakpoints.imageWorkspace;
 
     return AlertDialog(
       title: Text(S.imageSettings),
@@ -69,7 +69,7 @@ class _ProductImageSettingsState extends State<ProductImageSettings> {
           children: [
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Text(
                   _error!,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -82,12 +82,12 @@ class _ProductImageSettingsState extends State<ProductImageSettings> {
               fit: _fit,
               alignment: _alignment,
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             Text(S.imageFit, style: theme.textTheme.titleSmall),
-            const SizedBox(height: AppDimensions.sm),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
-              spacing: AppDimensions.sm,
-              runSpacing: AppDimensions.sm,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 for (final fit in imageFitOptions)
                   ChoiceChip(
@@ -97,12 +97,12 @@ class _ProductImageSettingsState extends State<ProductImageSettings> {
                   ),
               ],
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             Text(S.imageAlignment, style: theme.textTheme.titleSmall),
-            const SizedBox(height: AppDimensions.sm),
+            const SizedBox(height: AppSpacing.sm),
             Wrap(
-              spacing: AppDimensions.sm,
-              runSpacing: AppDimensions.sm,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 for (final alignment in imageAlignmentOptions)
                   ChoiceChip(
@@ -113,9 +113,9 @@ class _ProductImageSettingsState extends State<ProductImageSettings> {
                   ),
               ],
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             Text(S.imageScope, style: theme.textTheme.titleSmall),
-            const SizedBox(height: AppDimensions.sm),
+            const SizedBox(height: AppSpacing.sm),
             RadioGroup<ImageSettingsScope>(
               groupValue: _scope,
               onChanged: (value) {
@@ -228,7 +228,7 @@ class _Preview extends StatelessWidget {
       height: 180,
       decoration: BoxDecoration(
         color: AppColor.recordCellBackground,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       clipBehavior: Clip.antiAlias,
       child: CachedNetworkImage(

@@ -2,110 +2,22 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
-import 'package:admin_app/features/pos/data/models/pos_order_result.dart';
-import 'package:admin_app/features/pos/data/models/pos_shift.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
-
-enum PosCatalogFailure { permissionDenied, noBranch, failed }
-
-class PosCatalogException implements Exception {
-  const PosCatalogException(this.failure, [this.message]);
-
-  final PosCatalogFailure failure;
-  final String? message;
-
-  @override
-  String toString() => message ?? failure.name;
-}
-
-enum PosTablesFailure { permissionDenied, noBranch, failed }
-
-class PosTablesException implements Exception {
-  const PosTablesException(this.failure, [this.message]);
-
-  final PosTablesFailure failure;
-  final String? message;
-
-  @override
-  String toString() => message ?? failure.name;
-}
-
-enum PosSeatOutcome {
-  success,
-  tooEarly,
-  invalidStatus,
-  tableBusy,
-  invalidTable,
-  notFound,
-  permissionDenied,
-  failed,
-}
-
-enum PosCustomerFailure { permissionDenied, invalid, failed }
-
-class PosCustomerException implements Exception {
-  const PosCustomerException(this.failure, [this.message]);
-
-  final PosCustomerFailure failure;
-  final String? message;
-
-  @override
-  String toString() => message ?? failure.name;
-}
-
-enum PosCheckoutFailure {
-  permissionDenied,
-  shiftRequired,
-  tableUnavailable,
-  stockUnavailable,
-  productUnavailable,
-  branchUnavailable,
-  paymentUnavailable,
-  customerUnavailable,
-  invalid,
-  conflict,
-  failed,
-}
-
-class PosCheckoutException implements Exception {
-  const PosCheckoutException(this.failure, [this.message]);
-
-  final PosCheckoutFailure failure;
-  final String? message;
-
-  @override
-  String toString() => message ?? failure.name;
-}
-
-enum PosShiftFailure {
-  permissionDenied,
-  branchUnavailable,
-  notFound,
-  alreadyClosed,
-  invalid,
-  failed,
-}
-
-class PosShiftException implements Exception {
-  const PosShiftException(this.failure, [this.message]);
-
-  final PosShiftFailure failure;
-  final String? message;
-
-  @override
-  String toString() => message ?? failure.name;
-}
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 /// The point-of-sale menu and the counter checkout.
-class AdminPosRepository {
+class AdminPosRepository implements PosRepository {
   AdminPosRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<PosCatalog> loadCatalog({String? branchId}) async {
     try {
       final response = await _supabase.rpc(
@@ -132,6 +44,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<List<DiningTable>> loadTables(String branchId) async {
     try {
       final response = await _supabase.rpc(
@@ -164,6 +77,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosSeatOutcome> seatReservation(String reservationId) async {
     try {
       final response = await _supabase.rpc(
@@ -203,6 +117,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosOrderResult> placeOrder({
     required String branchId,
     required List<Map<String, Object?>> lines,
@@ -267,6 +182,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<List<PosCustomer>> searchCustomers({String? query}) async {
     try {
       final response = await _supabase.rpc(
@@ -300,6 +216,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosCustomer> createCustomer({
     required String fullName,
     String? phone,
@@ -337,6 +254,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosShift?> loadOpenShift(String branchId) async {
     try {
       final response = await _supabase.rpc(
@@ -365,6 +283,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosShift> openShift({
     required String branchId,
     required double openingFloat,
@@ -398,6 +317,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosShift> recordCashMovement({
     required String shiftId,
     required PosCashMovementKind kind,
@@ -433,6 +353,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosShift> closeShift({
     required String shiftId,
     required double countedCash,
@@ -467,6 +388,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<List<PosShift>> loadShiftHistory(
     String branchId, {
     int limit = 20,
@@ -502,6 +424,7 @@ class AdminPosRepository {
     }
   }
 
+  @override
   Future<PosShift> loadShiftDetail(String shiftId) async {
     try {
       final response = await _supabase.rpc(

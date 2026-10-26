@@ -1,7 +1,6 @@
-import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The operations domain: the counter, the kitchen, stock, stock movements and
 /// payments.
@@ -9,7 +8,7 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
   AdminDestination(
     id: 'pos',
     label: S.pos,
-    icon: HugeIcons.strokeRoundedCashier,
+    icon: AppIcons.cashier,
     searchHint: S.posSearchHint,
     permission: 'pos.manage',
     section: S.sectionOperations,
@@ -24,7 +23,7 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
   AdminDestination(
     id: 'kitchen',
     label: S.kitchen,
-    icon: HugeIcons.strokeRoundedChefHat,
+    icon: AppIcons.chefHat,
     searchHint: S.searchKitchenHint,
     permission: 'kitchen.read',
     section: S.sectionOperations,
@@ -33,7 +32,7 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
   AdminDestination(
     id: 'tables',
     label: S.tables,
-    icon: HugeIcons.strokeRoundedRestaurantTable,
+    icon: AppIcons.restaurantTable,
     searchHint: S.tablesSearchHint,
     permission: 'tables.read',
     section: S.sectionOperations,
@@ -42,7 +41,7 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
   AdminDestination(
     id: 'inventory',
     label: S.inventory,
-    icon: HugeIcons.strokeRoundedPackage,
+    icon: AppIcons.package,
     searchHint: S.searchInventoryHint,
     permission: 'inventory.read',
     section: S.sectionOperations,
@@ -51,7 +50,7 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
   AdminDestination(
     id: 'stockMovements',
     label: S.stockMovements,
-    icon: HugeIcons.strokeRoundedExchange01,
+    icon: AppIcons.exchange01,
     searchHint: S.searchStockMovementsHint,
     permission: 'inventory.read',
     section: S.sectionOperations,
@@ -60,7 +59,7 @@ List<AdminDestination> get operationsDestinations => <AdminDestination>[
   AdminDestination(
     id: 'payments',
     label: S.payments,
-    icon: HugeIcons.strokeRoundedPayment01,
+    icon: AppIcons.payment01,
     searchHint: S.searchPaymentsHint,
     permission: 'payments.read',
     section: S.sectionOperations,

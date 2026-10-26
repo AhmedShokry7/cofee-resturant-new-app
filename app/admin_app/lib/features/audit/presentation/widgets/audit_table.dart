@@ -1,11 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_log.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_format.dart';
@@ -62,7 +63,7 @@ class _Header extends StatelessWidget {
     final dark = adminIsDark(Theme.of(context));
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -125,12 +126,12 @@ class _Row extends StatelessWidget {
         : '${auditEntityLabel(log.entityType)} • $entityId';
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onOpen,
         child: Container(
           height: 74,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -142,7 +143,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     _DomainIcon(domain: domain, color: domainColor),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -159,7 +160,7 @@ class _Row extends StatelessWidget {
                               height: AppTextHeights.line1_5,
                             ),
                           ),
-                          const SizedBox(height: 1),
+                          const SizedBox(height: AppSizes.px1),
                           Text(
                             subtitle,
                             maxLines: 1,
@@ -181,7 +182,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     _ActorInitial(log: log),
-                    const SizedBox(width: 7),
+                    const SizedBox(width: AppSizes.px8),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -272,10 +273,8 @@ class _Row extends StatelessWidget {
                   alignment: AlignmentDirectional.centerEnd,
                   child: Tooltip(
                     message: S.auditOpenDetails,
-                    child: HugeIcon(
-                      icon: rtl
-                          ? HugeIcons.strokeRoundedArrowLeft01
-                          : HugeIcons.strokeRoundedArrowRight01,
+                    child: AppIcon(
+                      rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                       size: 16,
                       color: adminMutedColor(theme),
                     ),
@@ -305,10 +304,10 @@ class _DomainIcon extends StatelessWidget {
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, auditDomainSurface(domain)),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: HugeIcon(
-        icon: auditDomainIcon(domain),
+      child: AppIcon(
+        auditDomainIcon(domain),
         size: 17,
         color: adminFlagForeground(theme, color),
       ),

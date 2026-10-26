@@ -1,17 +1,37 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_draft.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_metrics.dart';
-import 'package:admin_app/features/coupons/data/repositories/admin_coupon_repository.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
+import 'package:admin_app/features/coupons/di/coupons_dependencies.dart';
+import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
+import 'package:admin_app/features/coupons/domain/usecases/delete_coupon.dart';
+import 'package:admin_app/features/coupons/domain/usecases/load_coupons.dart';
+import 'package:admin_app/features/coupons/domain/usecases/load_metrics.dart';
+import 'package:admin_app/features/coupons/domain/usecases/load_targets.dart';
+import 'package:admin_app/features/coupons/domain/usecases/save_coupon.dart';
+import 'package:admin_app/features/coupons/domain/usecases/set_coupon_active.dart';
 import 'package:admin_app/features/coupons/presentation/manager/admin_coupon_state.dart';
 
 class AdminCouponCubit extends Cubit<AdminCouponState> {
-  AdminCouponCubit({AdminCouponRepository? repository})
-    : _repository = repository ?? AdminCouponRepository(),
+  AdminCouponCubit({CouponRepository? repository})
+    : this._withUseCases(repository ?? CouponsDependencies.repository);
+
+  AdminCouponCubit._withUseCases(CouponRepository repository)
+    : _loadCoupons = LoadCouponsUseCase(repository),
+      _loadMetrics = LoadMetricsUseCase(repository),
+      _loadTargets = LoadTargetsUseCase(repository),
+      _saveCoupon = SaveCouponUseCase(repository),
+      _setCouponActive = SetCouponActiveUseCase(repository),
+      _deleteCoupon = DeleteCouponUseCase(repository),
       super(const AdminCouponState());
 
-  final AdminCouponRepository _repository;
+  final LoadCouponsUseCase _loadCoupons;
+  final LoadMetricsUseCase _loadMetrics;
+  final LoadTargetsUseCase _loadTargets;
+  final SaveCouponUseCase _saveCoupon;
+  final SetCouponActiveUseCase _setCouponActive;
+  final DeleteCouponUseCase _deleteCoupon;
 
   Future<void> load() async {
     if (state.isLoading) return;
@@ -20,8 +40,8 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
     );
     try {
       final results = await Future.wait<Object>([
-        _repository.loadCoupons(),
-        _repository.loadMetrics(),
+        _loadCoupons(),
+        _loadMetrics(),
       ]);
       emit(
         state.copyWith(
@@ -45,7 +65,7 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
     if (state.targetsLoading) return;
     emit(state.copyWith(targetsLoading: true, clearTargetsError: true));
     try {
-      final targets = await _repository.loadTargets();
+      final targets = await _loadTargets();
       emit(
         state.copyWith(
           targets: targets,
@@ -59,7 +79,7 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
   }
 
   Future<CouponSaveOutcome> saveCoupon(AdminCouponDraft draft) async {
-    final outcome = await _repository.saveCoupon(draft);
+    final outcome = await _saveCoupon(draft);
     if (outcome == CouponSaveOutcome.saved) {
       await load();
       await _refreshTargets();
@@ -71,13 +91,13 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
     String couponId,
     bool active,
   ) async {
-    final outcome = await _repository.setCouponActive(couponId, active);
+    final outcome = await _setCouponActive(couponId, active);
     if (outcome == CouponMutationOutcome.success) await load();
     return outcome;
   }
 
   Future<CouponMutationOutcome> deleteCoupon(String couponId) async {
-    final outcome = await _repository.deleteCoupon(couponId);
+    final outcome = await _deleteCoupon(couponId);
     if (outcome == CouponMutationOutcome.success) await load();
     return outcome;
   }
@@ -85,7 +105,7 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
   Future<void> _refreshTargets() async {
     if (state.targets.isEmpty) return;
     try {
-      final targets = await _repository.loadTargets();
+      final targets = await _loadTargets();
       emit(state.copyWith(targets: targets));
     } catch (_) {
       // The editor reloads the catalogue the next time it opens.

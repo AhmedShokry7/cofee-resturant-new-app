@@ -27,7 +27,7 @@ class StaffStatusView {
         return StaffStatusView(
           code,
           S.staffStatusInvited,
-          const Color(0xFFF59E0B),
+          AppColor.statusAmber,
         );
       case 'suspended':
         return StaffStatusView(

@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -67,7 +68,7 @@ class _Header extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
         border: Border.all(
@@ -142,12 +143,12 @@ class _Row extends StatelessWidget {
         : adminMutedColor(theme);
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onOpen,
         child: Container(
           height: 68,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -159,7 +160,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     _MovementIcon(type: type, color: typeColor),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -246,10 +247,8 @@ class _Row extends StatelessWidget {
                   alignment: AlignmentDirectional.centerEnd,
                   child: Tooltip(
                     message: S.stockMovementDetailsTitle,
-                    child: HugeIcon(
-                      icon: rtl
-                          ? HugeIcons.strokeRoundedArrowLeft01
-                          : HugeIcons.strokeRoundedArrowRight01,
+                    child: AppIcon(
+                      rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                       size: 16,
                       color: adminMutedColor(theme),
                     ),
@@ -281,10 +280,10 @@ class _MovementIcon extends StatelessWidget {
         color: adminIsDark(theme)
             ? color.withValues(alpha: .16)
             : Color.lerp(color, AppColor.whiteColor, .88),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: HugeIcon(
-        icon: stockMovementTypeIcon(type),
+      child: AppIcon(
+        stockMovementTypeIcon(type),
         size: 18,
         color: adminFlagForeground(theme, color),
       ),

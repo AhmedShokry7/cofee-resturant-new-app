@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/data/order_excel_exporter.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_state.dart';
 import 'package:admin_app/features/orders/presentation/pages/order_detail_page.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 part 'order_page_export.dart';

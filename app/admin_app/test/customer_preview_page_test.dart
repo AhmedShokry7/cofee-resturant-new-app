@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_permission_scope.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_permission_scope.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
 import 'package:admin_app/features/shell/presentation/views/admin_shell.dart';
 

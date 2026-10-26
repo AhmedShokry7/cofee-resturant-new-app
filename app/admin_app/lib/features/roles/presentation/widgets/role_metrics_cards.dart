@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
@@ -18,37 +20,37 @@ class RoleMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.rolesMetricTotal,
         value: rolesCount(roles.length),
-        icon: HugeIcons.strokeRoundedShield01,
-        iconBackground: const Color(0xFFE8F3EC),
-        iconColor: const Color(0xFF3D8A68),
+        icon: AppIcons.shield01,
+        iconBackground: AppColor.tintGreenSurface,
+        iconColor: AppColor.trendPositive,
       ),
       _MetricData(
         label: S.rolesMetricSystem,
         value: rolesCount(system),
-        icon: HugeIcons.strokeRoundedSecurityCheck,
-        iconBackground: const Color(0xFFE9EDF8),
-        iconColor: const Color(0xFF5F70A8),
+        icon: AppIcons.securityCheck,
+        iconBackground: AppColor.adminInfoSurface,
+        iconColor: AppColor.adminInfo,
       ),
       _MetricData(
         label: S.rolesMetricCustom,
         value: rolesCount(roles.length - system),
-        icon: HugeIcons.strokeRoundedUserSettings01,
-        iconBackground: const Color(0xFFF4EAF5),
-        iconColor: const Color(0xFF92679B),
+        icon: AppIcons.userSettings01,
+        iconBackground: AppColor.tintMauveSurface,
+        iconColor: AppColor.tintMauveInk,
       ),
       _MetricData(
         label: S.rolesMetricPermissions,
         value: rolesCount(distinctPermissions(roles)),
-        icon: HugeIcons.strokeRoundedKey01,
-        iconBackground: const Color(0xFFFBF2DC),
-        iconColor: const Color(0xFFA47B2F),
+        icon: AppIcons.passwordKey,
+        iconBackground: AppColor.adminWarningSurface,
+        iconColor: AppColor.adminWarning,
       ),
     ];
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

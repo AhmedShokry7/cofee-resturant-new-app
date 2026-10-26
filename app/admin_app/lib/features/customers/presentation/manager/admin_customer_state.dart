@@ -1,5 +1,5 @@
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
 
 enum AdminCustomerStatus { initial, loading, ready, failure }
 

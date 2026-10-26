@@ -31,13 +31,13 @@ class PaymentStatusView {
         return PaymentStatusView(
           code,
           S.paymentStatusAuthorized,
-          const Color(0xFF2563EB),
+          AppColor.statusBlue,
         );
       case 'pending':
         return PaymentStatusView(
           code,
           S.paymentStatusPending,
-          const Color(0xFFF59E0B),
+          AppColor.statusAmber,
         );
       case 'failed':
         return PaymentStatusView(
@@ -49,7 +49,7 @@ class PaymentStatusView {
         return PaymentStatusView(
           code,
           S.paymentStatusRefunded,
-          const Color(0xFF7C3AED),
+          AppColor.statusViolet,
         );
       case 'voided':
         return PaymentStatusView(

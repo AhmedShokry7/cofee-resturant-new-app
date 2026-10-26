@@ -1,16 +1,19 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
-import 'package:admin_app/features/tables/data/repositories/dining_tables_repository.dart';
+import 'package:admin_app/core/utils/dining_format.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_table_draft.dart';
+import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_cubit.dart';
-import 'package:admin_app/features/tables/presentation/widgets/dining_format.dart';
+import 'package:admin_app/features/tables/presentation/widgets/dining_messages.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -122,9 +125,14 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
       canPop: !_saving,
       child: Dialog(
         backgroundColor: theme.colorScheme.surface,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        insetPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.xxl,
+        ),
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+        ),
         child: SizedBox(
           width: width,
           height: height,
@@ -140,7 +148,12 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
               ),
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
+                  ),
                   keyboardDismissBehavior:
                       ScrollViewKeyboardDismissBehavior.onDrag,
                   child: Form(
@@ -168,7 +181,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                             required: true,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: AppSizes.px12),
                         Text(
                           S.tableArea,
                           style: TextStyle(
@@ -177,13 +190,13 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                             fontWeight: AppFontWeights.semiBold,
                           ),
                         ),
-                        const SizedBox(height: 7),
+                        const SizedBox(height: AppSizes.px8),
                         _AreaPicker(
                           value: _area,
                           enabled: !_saving,
                           onChanged: (value) => setState(() => _area = value),
                         ),
-                        const SizedBox(height: 14),
+                        const SizedBox(height: AppSizes.px14),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -215,7 +228,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: AppSizes.px10),
                             Expanded(
                               child: TextFormField(
                                 controller: _sort,
@@ -236,7 +249,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: AppSizes.px2),
                         TextFormField(
                           controller: _note,
                           enabled: !_saving,
@@ -254,29 +267,29 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                             hint: S.tableNoteHint,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSizes.px8),
                         Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 9,
+                            horizontal: AppSpacing.md,
+                            vertical: AppSpacing.sm,
                           ),
                           decoration: BoxDecoration(
                             color: adminTintedSurfaceColor(theme),
-                            borderRadius: BorderRadius.circular(9),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
                             border: Border.all(
                               color: adminControlBorderColor(theme),
                             ),
                           ),
                           child: Row(
                             children: [
-                              HugeIcon(
-                                icon: HugeIcons.strokeRoundedCheckmarkCircle02,
+                              AppIcon(
+                                AppIcons.checkmarkCircle02,
                                 size: 16,
                                 color: _active
                                     ? AppColor.trendPositive
                                     : adminMutedColor(theme),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: AppSizes.px8),
                               Expanded(
                                 child: Text(
                                   S.tableActiveLabel,
@@ -298,7 +311,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                           ),
                         ),
                         if (_error != null) ...[
-                          const SizedBox(height: 12),
+                          const SizedBox(height: AppSizes.px12),
                           AdminErrorBanner(message: _error!),
                         ],
                       ],
@@ -375,14 +388,17 @@ class _AreaOption extends StatelessWidget {
               AppColor.adminAccentSurface,
             )
           : theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(9),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: selected
                   ? AppColor.adminAccent.withValues(alpha: .4)
@@ -392,14 +408,14 @@ class _AreaOption extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              HugeIcon(
-                icon: diningAreaIcon(area),
+              AppIcon(
+                diningAreaIcon(area),
                 size: 15,
                 color: selected
                     ? adminFlagForeground(theme, AppColor.adminAccent)
                     : adminMutedColor(theme),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 diningAreaLabel(area),
                 style: TextStyle(

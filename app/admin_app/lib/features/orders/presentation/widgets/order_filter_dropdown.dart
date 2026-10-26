@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
 class OrderFilterDropdown extends StatelessWidget {
@@ -34,13 +35,9 @@ class OrderFilterDropdown extends StatelessWidget {
         fontSize: AppFontSizes.size11,
         height: AppTextHeights.line1_5,
       ),
-      icon: HugeIcon(
-        icon: HugeIcons.strokeRoundedArrowDown01,
-        size: 16,
-        color: muted,
-      ),
+      icon: AppIcon(AppIcons.arrowDown01, size: 16, color: muted),
       dropdownColor: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(9),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(
@@ -57,19 +54,19 @@ class OrderFilterDropdown extends StatelessWidget {
         fillColor: theme.colorScheme.surface,
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(9),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: AppColor.adminAccent),
         ),
       ),

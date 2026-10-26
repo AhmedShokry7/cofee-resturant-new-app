@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_app_bar.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
@@ -103,7 +103,7 @@ class _SidebarMenuButton extends StatelessWidget {
     return Builder(
       builder: (context) => IconButton(
         tooltip: S.menu,
-        icon: const Icon(HugeIcons.strokeRoundedMenu01),
+        icon: const Icon(AppIcons.menu01),
         onPressed: () => Scaffold.of(context).openDrawer(),
       ),
     );

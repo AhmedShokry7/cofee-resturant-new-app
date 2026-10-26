@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_edit_rules.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -48,8 +48,8 @@ class OrderItemRemoveButton extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         disabledForegroundColor: adminSubtleColor(theme),
       ),
-      icon: HugeIcon(
-        icon: HugeIcons.strokeRoundedDelete02,
+      icon: AppIcon(
+        AppIcons.delete02,
         size: 15,
         color: allowed && item.id != null
             ? AppColor.errorColor

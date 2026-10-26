@@ -1,4 +1,4 @@
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 
 class OrderSummaryMetricCounts {
   static bool inRange(AdminOrder order, DateTime from, DateTime to) =>

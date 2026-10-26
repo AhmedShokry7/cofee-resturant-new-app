@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_add_product_button.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_item_row.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';

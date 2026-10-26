@@ -2,13 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -39,11 +39,13 @@ class NotificationPushSetupDialog extends StatelessWidget {
       key: const Key('notification-push-setup-dialog'),
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screen.width < 700 ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: screen.width < AppBreakpoints.pageCanvas
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 780),
@@ -59,43 +61,43 @@ class NotificationPushSetupDialog extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsetsDirectional.fromSTEB(
-                    AppDimensions.lg,
-                    AppDimensions.md,
-                    AppDimensions.lg,
-                    AppDimensions.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _Intro(message: S.notificationsSetupIntro),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _SetupStep(
                         number: 1,
                         title: S.notificationsSetupStep1Title,
                         body: S.notificationsSetupStep1Body,
                         code: _vaultSql,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSizes.px12),
                       _SetupStep(
                         number: 2,
                         title: S.notificationsSetupStep2Title,
                         body: S.notificationsSetupStep2Body,
                         code: _functionUrlSql(functionUrl),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSizes.px12),
                       _SetupStep(
                         number: 3,
                         title: S.notificationsSetupStep3Title,
                         body: S.notificationsSetupStep3Body,
                         code: _deployCommands,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSizes.px12),
                       _SetupStep(
                         number: 4,
                         title: S.notificationsSetupStep4Title,
                         body: S.notificationsSetupStep4Body,
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _Note(message: S.notificationsSetupNote),
                     ],
                   ),
@@ -137,14 +139,14 @@ class _Intro extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.adminInfo,
           AppColor.adminInfoSurface,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColor.adminInfo.withValues(
             alpha: adminIsDark(theme) ? .35 : .18,
@@ -154,12 +156,12 @@ class _Intro extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedInformationCircle,
+          AppIcon(
+            AppIcons.informationCircle,
             size: 16,
             color: adminFlagForeground(theme, AppColor.adminInfo),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Text(
               message,
@@ -185,14 +187,14 @@ class _Note extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.adminWarning,
           AppColor.adminWarningSurface,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColor.adminWarning.withValues(
             alpha: adminIsDark(theme) ? .35 : .18,
@@ -202,12 +204,12 @@ class _Note extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedLock,
+          AppIcon(
+            AppIcons.password,
             size: 16,
             color: adminFlagForeground(theme, AppColor.adminWarning),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Text(
               message,
@@ -241,9 +243,9 @@ class _SetupStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -262,7 +264,7 @@ class _SetupStep extends StatelessWidget {
                     AppColor.adminAccent,
                     AppColor.adminAccentSurface,
                   ),
-                  borderRadius: BorderRadius.circular(7),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: Text(
                   '$number',
@@ -273,7 +275,7 @@ class _SetupStep extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +289,7 @@ class _SetupStep extends StatelessWidget {
                         height: AppTextHeights.line1_5,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.px2),
                     Text(
                       body,
                       style: TextStyle(
@@ -302,7 +304,7 @@ class _SetupStep extends StatelessWidget {
             ],
           ),
           if (code != null) ...[
-            const SizedBox(height: 9),
+            const SizedBox(height: AppSizes.px10),
             _CodeBlock(code: code!),
           ],
         ],
@@ -333,7 +335,7 @@ class _CodeBlock extends StatelessWidget {
       padding: const EdgeInsetsDirectional.fromSTEB(10, 8, 4, 8),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkBackground : AppColor.adminTableHeader,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: dark ? AppColor.darkBorder : AppColor.adminTableBorder,
         ),
@@ -355,7 +357,7 @@ class _CodeBlock extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.px4),
           IconButton(
             tooltip: S.notificationsSetupCopy,
             onPressed: () => _copy(context),
@@ -364,8 +366,8 @@ class _CodeBlock extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCopy01,
+            icon: AppIcon(
+              AppIcons.copy01,
               size: 15,
               color: adminMutedColor(theme),
             ),
@@ -385,10 +387,10 @@ class _Footer extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,

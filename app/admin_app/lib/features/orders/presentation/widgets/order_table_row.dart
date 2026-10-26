@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_status_pill.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_table.dart';
@@ -28,12 +29,12 @@ class OrderTableRow extends StatelessWidget {
     final contact = _contactLine(order);
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -62,7 +63,7 @@ class OrderTableRow extends StatelessWidget {
                 child: Row(
                   children: [
                     AdminAvatarImage(url: order.customerAvatarUrl, size: 29),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -141,7 +142,7 @@ class OrderTableRow extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.px4),
                     const CurrencyIcon(size: 13),
                   ],
                 ),
@@ -157,10 +158,8 @@ class OrderTableRow extends StatelessWidget {
                 width: OrderTable.actionWidth,
                 child: Align(
                   alignment: AlignmentDirectional.centerEnd,
-                  child: HugeIcon(
-                    icon: rtl
-                        ? HugeIcons.strokeRoundedArrowLeft01
-                        : HugeIcons.strokeRoundedArrowRight01,
+                  child: AppIcon(
+                    rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                     size: 16,
                     color: dark
                         ? AppColor.darkTextSecondary

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movements_cards.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/stock_movements_table.dart';
@@ -110,7 +111,10 @@ class _StockMovementsDirectoryState extends State<StockMovementsDirectory> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -126,12 +130,12 @@ class _StockMovementsDirectoryState extends State<StockMovementsDirectory> {
             branches: widget.filters.branches,
             onClearFilters: widget.onClearFilters,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           SizedBox(
-            height: 2,
+            height: AppSizes.px2,
             child: widget.isRefreshingRows
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       minHeight: 2,
                       backgroundColor:
@@ -143,7 +147,7 @@ class _StockMovementsDirectoryState extends State<StockMovementsDirectory> {
                   )
                 : null,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           Expanded(
             child: widget.total == 0
                 ? _emptyState()
@@ -179,7 +183,7 @@ class _StockMovementsDirectoryState extends State<StockMovementsDirectory> {
   Widget _emptyState() {
     final noData = !_hasActiveFilters;
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedExchange01,
+      icon: AppIcons.exchange01,
       message: noData ? S.stockMovementsEmpty : S.stockMovementsNoMatches,
       hint: noData ? S.stockMovementsEmptyHint : S.stockMovementsNoMatchesHint,
       action: !noData
@@ -187,7 +191,7 @@ class _StockMovementsDirectoryState extends State<StockMovementsDirectory> {
           : widget.canAdjust
           ? TextButton.icon(
               onPressed: widget.onRecordMovement,
-              icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
+              icon: const Icon(AppIcons.add01, size: 16),
               label: Text(S.stockMovementAction),
             )
           : null,

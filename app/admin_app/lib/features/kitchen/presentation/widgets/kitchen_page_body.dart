@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_board.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_metrics_cards.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_toolbar.dart';
@@ -99,7 +100,7 @@ class KitchenPageBody extends StatelessWidget {
                   _CompletedTodayChip(count: metrics.completedToday),
                 AdminToolbarButton(
                   label: S.refresh,
-                  icon: HugeIcons.strokeRoundedRefresh,
+                  icon: AppIcons.refresh,
                   onPressed: onRefresh,
                   busy: isRefreshing,
                 ),
@@ -110,9 +111,9 @@ class KitchenPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             KitchenMetricsCards(metrics: metrics),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSizes.px14),
             KitchenToolbar(
               searchController: searchController,
               onSearchChanged: onSearchChanged,
@@ -122,12 +123,12 @@ class KitchenPageBody extends StatelessWidget {
               hasActiveFilters: hasActiveFilters,
               onClearFilters: onClearFilters,
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSizes.px6),
             SizedBox(
-              height: 2,
+              height: AppSizes.px2,
               child: isRefreshing
                   ? ClipRRect(
-                      borderRadius: BorderRadius.circular(1),
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
                       child: LinearProgressIndicator(
                         minHeight: 2,
                         backgroundColor:
@@ -139,7 +140,7 @@ class KitchenPageBody extends StatelessWidget {
                     )
                   : null,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.px8),
           ];
 
           if (compact) {
@@ -148,7 +149,10 @@ class KitchenPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 660, child: board),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightXl,
+                    child: board,
+                  ),
                 ],
               ),
             );
@@ -181,14 +185,17 @@ class _LivePill extends StatelessWidget {
     return Tooltip(
       message: updated,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: adminFlagBackground(
             theme,
             AppColor.trendPositive,
             AppColor.trendPositiveSurface,
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
             color: AppColor.trendPositive.withValues(alpha: .25),
           ),
@@ -204,7 +211,7 @@ class _LivePill extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: AppSizes.px6),
             Text(
               S.kitchenLive,
               style: TextStyle(
@@ -215,10 +222,10 @@ class _LivePill extends StatelessWidget {
               ),
             ),
             if (isRefreshing) ...[
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               SizedBox(
-                width: 11,
-                height: 11,
+                width: AppSizes.px12,
+                height: AppSizes.px12,
                 child: CircularProgressIndicator(
                   strokeWidth: 1.6,
                   color: adminFlagForeground(theme, AppColor.trendPositive),
@@ -241,21 +248,20 @@ class _CompletedTodayChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedTaskDone01,
-            size: 14,
-            color: adminMutedColor(theme),
-          ),
-          const SizedBox(width: 5),
+          AppIcon(AppIcons.taskDone01, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Text(
             localizeDigits(S.kitchenCompletedTodayValue(count)),
             style: TextStyle(

@@ -1,5 +1,5 @@
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_metrics.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
 
 enum AdminBranchStatus { initial, loading, ready, failure }
 

@@ -1,5 +1,5 @@
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 
 enum AdminBundleStatus { initial, loading, ready, failure }
 

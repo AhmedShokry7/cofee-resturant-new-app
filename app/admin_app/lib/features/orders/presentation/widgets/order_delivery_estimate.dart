@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
@@ -20,7 +21,7 @@ class OrderDeliveryEstimate extends StatelessWidget {
               '${S.estimatedDelivery}: '
               '${localizeDigits('${(distanceKm! * 2 + 5).round()}')} min';
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
       child: Text(
         text,
         maxLines: 2,

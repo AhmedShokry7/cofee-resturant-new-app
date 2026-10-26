@@ -4,7 +4,7 @@ import 'package:admin_app/core/error/failure.dart';
 import 'package:admin_app/core/result/result.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/auth/data/models/admin_session_model.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
 
 /// تنفيذ [AuthRepository] فوق Supabase Auth ووظيفة سجل الموظف.

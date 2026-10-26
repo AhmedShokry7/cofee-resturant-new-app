@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_state.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 
@@ -26,14 +26,14 @@ class ProductPageFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     if (state.isLoadingMore) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppDimensions.xl),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxl),
         child: Center(child: CircularProgressIndicator()),
       );
     }
     if (state.status == AdminProductStatus.failure) {
       final dark = Theme.of(context).brightness == Brightness.dark;
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimensions.lg),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -53,25 +53,23 @@ class ProductPageFooter extends StatelessWidget {
     }
     if (state.status == AdminProductStatus.loading && !state.hasProducts) {
       return const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppDimensions.xxl),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
         child: Center(child: CircularProgressIndicator()),
       );
     }
     if (!state.hasProducts) {
       final filtering = state.search.trim().isNotEmpty;
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimensions.lg),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         child: AdminEmptyState(
-          icon: filtering
-              ? HugeIcons.strokeRoundedSearch01
-              : HugeIcons.strokeRoundedPackage,
+          icon: filtering ? AppIcons.search01 : AppIcons.package,
           message: filtering ? S.noProductsFound : S.noProductsYet,
         ),
       );
     }
     if (state.hasMore) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppDimensions.lg),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
         child: Center(
           child: TextButton(onPressed: onLoadMore, child: Text(S.more)),
         ),

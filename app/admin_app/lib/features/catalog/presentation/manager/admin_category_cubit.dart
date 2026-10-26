@@ -2,23 +2,47 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/features/catalog/di/catalog_dependencies.dart';
+import 'package:admin_app/features/catalog/domain/usecases/create_category.dart';
+import 'package:admin_app/features/catalog/domain/usecases/delete_category.dart';
+import 'package:admin_app/features/catalog/domain/usecases/delete_category_image_file.dart';
+import 'package:admin_app/features/catalog/domain/usecases/load_catalog.dart';
+import 'package:admin_app/features/catalog/domain/usecases/set_category_active.dart';
+import 'package:admin_app/features/catalog/domain/usecases/update_category.dart';
+import 'package:admin_app/features/catalog/domain/usecases/update_category_image.dart';
+import 'package:admin_app/features/catalog/domain/usecases/upload_category_image.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_state.dart';
 
 class AdminCategoryCubit extends Cubit<AdminCategoryState> {
-  AdminCategoryCubit({AdminProductRepository? repository})
-    : _repository = repository ?? AdminProductRepository(),
+  AdminCategoryCubit({CatalogData? repository})
+    : this._withUseCases(repository ?? CatalogDependencies.catalog);
+
+  AdminCategoryCubit._withUseCases(CatalogData repository)
+    : _loadCatalog = LoadCatalogUseCase(repository),
+      _createCategory = CreateCategoryUseCase(repository),
+      _updateCategory = UpdateCategoryUseCase(repository),
+      _deleteCategory = DeleteCategoryUseCase(repository),
+      _setCategoryActive = SetCategoryActiveUseCase(repository),
+      _updateCategoryImage = UpdateCategoryImageUseCase(repository),
+      _uploadCategoryImage = UploadCategoryImageUseCase(repository),
+      _deleteCategoryImageFile = DeleteCategoryImageFileUseCase(repository),
       super(const AdminCategoryState());
 
-  final AdminProductRepository _repository;
-
-  AdminProductRepository get repository => _repository;
+  final LoadCatalogUseCase _loadCatalog;
+  final CreateCategoryUseCase _createCategory;
+  final UpdateCategoryUseCase _updateCategory;
+  final DeleteCategoryUseCase _deleteCategory;
+  final SetCategoryActiveUseCase _setCategoryActive;
+  final UpdateCategoryImageUseCase _updateCategoryImage;
+  final UploadCategoryImageUseCase _uploadCategoryImage;
+  final DeleteCategoryImageFileUseCase _deleteCategoryImageFile;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminCategoryStatus.loading, clearError: true));
     try {
-      final snapshot = await _repository.loadCatalog();
+      final snapshot = await _loadCatalog();
       final counts = <String, int>{};
       for (final product in snapshot.products) {
         final categoryId = product.categoryId;
@@ -56,7 +80,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
     String? descriptionAr,
     String? descriptionEn,
   }) async {
-    final category = await _repository.createCategory(
+    final category = await _createCategory(
       nameAr: nameAr,
       nameEn: nameEn,
       descriptionAr: descriptionAr,
@@ -78,7 +102,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
     String? descriptionAr,
     String? descriptionEn,
   }) async {
-    final updated = await _repository.updateCategory(
+    final updated = await _updateCategory(
       categoryId: categoryId,
       nameAr: nameAr,
       nameEn: nameEn,
@@ -97,7 +121,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
   }
 
   Future<void> deleteCategory(String categoryId) async {
-    await _repository.deleteCategory(categoryId);
+    await _deleteCategory(categoryId);
     emit(
       state.copyWith(
         categories: state.categories
@@ -140,7 +164,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
 
     for (final categoryId in requested) {
       try {
-        await _repository.deleteCategory(categoryId);
+        await _deleteCategory(categoryId);
         deleted.add(categoryId);
       } catch (_) {
         failures++;
@@ -163,7 +187,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
 
   Future<void> toggleActive(AdminCategory category) async {
     final next = !category.isActive;
-    await _repository.setCategoryActive(category.id, next);
+    await _setCategoryActive(category.id, next);
     emit(
       state.copyWith(
         categories: state.categories
@@ -178,7 +202,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
     String categoryId,
     String? imageUrl,
   ) async {
-    await _repository.updateCategoryImage(categoryId, imageUrl);
+    await _updateCategoryImage(categoryId, imageUrl);
     emit(
       state.copyWith(
         categories: state.categories
@@ -203,7 +227,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
     required String fileName,
     required String contentType,
   }) async {
-    final url = await _repository.uploadCategoryImage(
+    final url = await _uploadCategoryImage(
       categoryId: categoryId,
       bytes: bytes,
       fileName: fileName,
@@ -214,6 +238,6 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
   }
 
   Future<void> deleteCategoryImageFile(String? imageUrl) async {
-    await _repository.deleteCategoryImageFile(imageUrl);
+    await _deleteCategoryImageFile(imageUrl);
   }
 }

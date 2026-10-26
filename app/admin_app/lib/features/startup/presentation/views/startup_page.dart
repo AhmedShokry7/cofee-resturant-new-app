@@ -30,16 +30,16 @@ class StartupPage extends StatelessWidget {
                   AppImages.logo,
                   width: AppDimensions.logoMedium,
                   height: AppDimensions.logoMedium,
-                  fit: BoxFit.contain,
+                  fit: BoxFit.fill,
                 ),
               ),
-              const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: AppSpacing.lg),
               Text(
                 S.admin,
                 style: Theme.of(context).textTheme.headlineMedium
                     ?.copyWith(fontWeight: AppFontWeights.bold),
               ),
-              const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: AppSpacing.lg),
               if (!configured)
                 Text(S.supabaseNotConfigured, textAlign: TextAlign.center)
               else

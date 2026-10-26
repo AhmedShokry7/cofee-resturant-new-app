@@ -1,4 +1,4 @@
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 
 enum NotificationTypeFilter {
   all(null),

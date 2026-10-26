@@ -4,7 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_dropdown.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -44,7 +44,7 @@ class OrderPaymentStatusControl extends StatelessWidget {
           ],
         ),
         if (onChanged != null) ...[
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSizes.px10),
           OrderFilterDropdown(
             key: ValueKey(order.paymentStatus),
             label: S.changePaymentStatus,
@@ -63,7 +63,7 @@ class OrderPaymentStatusControl extends StatelessWidget {
           ),
           if (saving)
             const Padding(
-              padding: EdgeInsets.only(top: AppDimensions.xs),
+              padding: EdgeInsets.only(top: AppSpacing.xs),
               child: LinearProgressIndicator(
                 minHeight: 2,
                 color: AppColor.adminAccent,
@@ -88,12 +88,15 @@ class _PaymentPill extends StatelessWidget {
     final dark = adminIsDark(theme);
     final foreground = adminFlagForeground(theme, color);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: dark
             ? color.withValues(alpha: .16)
             : Color.lerp(color, AppColor.whiteColor, .86),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: color.withValues(alpha: dark ? .35 : .18)),
       ),
       child: Row(
@@ -112,13 +115,13 @@ class _PaymentPill extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSizes.px6),
           Container(
             width: 5,
             height: 5,
             decoration: BoxDecoration(
               color: foreground,
-              borderRadius: BorderRadius.circular(2.5),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
         ],

@@ -1,14 +1,17 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/inventory/data/models/admin_inventory_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_material_option.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_metrics.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_draft.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
 import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_material_save_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_mutation_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_cubit.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_state.dart';
 import 'package:admin_app/features/inventory/presentation/manager/admin_stock_movements_cubit.dart';

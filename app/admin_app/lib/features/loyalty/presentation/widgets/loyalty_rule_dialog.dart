@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule_draft.dart';
-import 'package:admin_app/features/loyalty/data/repositories/admin_loyalty_repository.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule_draft.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
+import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
@@ -80,15 +80,16 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final narrow = MediaQuery.sizeOf(context).width < 600;
+    final narrow =
+        MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding;
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: narrow ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: narrow ? AppSpacing.md : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 560),
@@ -102,10 +103,10 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
             Flexible(
               child: SingleChildScrollView(
                 padding: const EdgeInsetsDirectional.fromSTEB(
-                  AppDimensions.lg,
-                  AppDimensions.md,
-                  AppDimensions.lg,
-                  AppDimensions.lg,
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.lg,
                 ),
                 child: Form(
                   key: _formKey,
@@ -114,7 +115,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _intro(),
-                      const SizedBox(height: AppDimensions.md),
+                      const SizedBox(height: AppSpacing.md),
                       _field(
                         fieldKey: const Key('loyalty-rule-rate'),
                         controller: _rate,
@@ -132,10 +133,10 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                         validator: _validateValue,
                       ),
                       _preview(),
-                      const SizedBox(height: AppDimensions.sm),
+                      const SizedBox(height: AppSpacing.sm),
                       _switchTile(),
                       if (_error != null) ...[
-                        const SizedBox(height: AppDimensions.sm),
+                        const SizedBox(height: AppSpacing.sm),
                         AdminErrorBanner(message: _error!),
                       ],
                     ],
@@ -160,10 +161,10 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
   Widget _intro() {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Row(
@@ -179,15 +180,15 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                 AppColor.adminAccent,
                 AppColor.adminAccentSurface,
               ),
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedGift,
+            child: AppIcon(
+              AppIcons.gift,
               size: 17,
               color: adminFlagForeground(theme, AppColor.adminAccent),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Text(
               S.loyaltyProgramDialogIntro,
@@ -252,14 +253,14 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     final points = valid ? (_previewAmount * rate).floor() : 0;
     final worth = valid ? _previewPoints * value : 0;
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.adminAccent,
           AppColor.adminAccentSurface,
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
           color: AppColor.adminAccent.withValues(
             alpha: adminIsDark(theme) ? .28 : .16,
@@ -271,12 +272,12 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
         children: [
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedChartLineData01,
+              AppIcon(
+                AppIcons.chartLineData01,
                 size: 15,
                 color: adminFlagForeground(theme, AppColor.adminAccent),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 S.loyaltyProgramPreviewTitle,
                 style: TextStyle(
@@ -288,7 +289,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
               ),
             ],
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           if (!valid)
             Text(
               S.loyaltyProgramPreviewPending,
@@ -300,15 +301,15 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
             )
           else ...[
             _previewRow(
-              icon: HugeIcons.strokeRoundedShoppingBag01,
+              icon: AppIcons.shoppingBag01,
               text: S.loyaltyProgramPreviewEarn(
                 '${loyaltyCompactNumber(_previewAmount)} ${S.currency}',
                 loyaltyCompactNumber(points),
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: AppSizes.px6),
             _previewRow(
-              icon: HugeIcons.strokeRoundedStar,
+              icon: AppIcons.star,
               text: S.loyaltyProgramPreviewWorth(
                 loyaltyCompactNumber(_previewPoints),
                 '${loyaltyCompactNumber(worth)} ${S.currency}',
@@ -324,12 +325,12 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     final theme = Theme.of(context);
     return Row(
       children: [
-        HugeIcon(
-          icon: icon,
+        AppIcon(
+          icon,
           size: 14,
           color: adminFlagForeground(theme, AppColor.adminAccent),
         ),
-        const SizedBox(width: 7),
+        const SizedBox(width: AppSizes.px8),
         Expanded(
           child: Text(
             text,

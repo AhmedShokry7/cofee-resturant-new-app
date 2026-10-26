@@ -1,15 +1,15 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -136,8 +136,13 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
     return Dialog(
       backgroundColor: theme.colorScheme.surface,
       clipBehavior: Clip.antiAlias,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.xxl,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxWidth: 460,
@@ -153,7 +158,7 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -162,7 +167,7 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
                       currentPrice: _unitPrice,
                       currencyCode: widget.currencyCode,
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: AppSizes.px14),
                     for (final group in _product.optionGroups) ...[
                       _OptionGroupSection(
                         group: group,
@@ -171,7 +176,7 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
                         currencyCode: widget.currencyCode,
                         onToggle: (value) => _toggle(group, value),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSizes.px10),
                     ],
                     Row(
                       children: [
@@ -188,7 +193,7 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSizes.px12),
                     TextField(
                       controller: _note,
                       maxLength: 240,
@@ -203,7 +208,7 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
                         counterText: '',
                         isDense: true,
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(9),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                       ),
                     ),
@@ -247,10 +252,10 @@ class _PriceSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
@@ -266,7 +271,7 @@ class _PriceSummary extends StatelessWidget {
                     fontSize: AppFontSizes.size9_5,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: AppSizes.px2),
                 Text(
                   posMoney(currentPrice, currencyCode),
                   style: TextStyle(
@@ -314,9 +319,9 @@ class _OptionGroupSection extends StatelessWidget {
     final atMax = group.isSingle || selection.length < max;
 
     return Container(
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -334,11 +339,11 @@ class _OptionGroupSection extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               _GroupHint(group: group),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           for (final value in group.values) ...[
             _OptionValueTile(
               value: value,
@@ -348,7 +353,8 @@ class _OptionGroupSection extends StatelessWidget {
               currencyCode: currencyCode,
               onTap: () => onToggle(value),
             ),
-            if (value != group.values.last) const SizedBox(height: 6),
+            if (value != group.values.last)
+              const SizedBox(height: AppSizes.px6),
           ],
         ],
       ),
@@ -377,9 +383,12 @@ class _GroupHint extends StatelessWidget {
             ),
           ),
         if (!group.isSingle && group.effectiveMax != null)
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.xxs,
+          ),
           decoration: BoxDecoration(
             color: required
                 ? adminFlagBackground(
@@ -388,7 +397,7 @@ class _GroupHint extends StatelessWidget {
                     AppColor.adminAccentSurface,
                   )
                 : adminTintedSurfaceColor(theme),
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Text(
             required ? S.posRequiredBadge : S.posOptionalBadge,
@@ -434,13 +443,16 @@ class _OptionValueTile extends StatelessWidget {
       child: Opacity(
         opacity: enabled ? 1 : .45,
         child: Material(
-          color: Colors.transparent,
+          color: AppColor.transparent,
           child: InkWell(
             onTap: enabled ? onTap : null,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             child: Container(
               constraints: const BoxConstraints(minHeight: 38),
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
               decoration: BoxDecoration(
                 color: selected
                     ? adminFlagBackground(
@@ -449,7 +461,7 @@ class _OptionValueTile extends StatelessWidget {
                         AppColor.adminAccentSurface,
                       )
                     : theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: selected
                       ? AppColor.adminAccent.withValues(alpha: .45)
@@ -459,7 +471,7 @@ class _OptionValueTile extends StatelessWidget {
               child: Row(
                 children: [
                   _SelectionMark(selected: selected, single: single),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     child: Text(
                       value.nameFor(language),
@@ -473,7 +485,7 @@ class _OptionValueTile extends StatelessWidget {
                     ),
                   ),
                   if (value.priceDelta != 0) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.px8),
                     Text(
                       '+ ${posMoney(value.priceDelta, currencyCode)}',
                       style: TextStyle(
@@ -506,7 +518,7 @@ class _SelectionMark extends StatelessWidget {
       width: 17,
       height: 17,
       decoration: BoxDecoration(
-        color: selected ? AppColor.adminAccent : Colors.transparent,
+        color: selected ? AppColor.adminAccent : AppColor.transparent,
         borderRadius: BorderRadius.circular(single ? 999 : 5),
         border: Border.all(
           color: selected
@@ -515,11 +527,7 @@ class _SelectionMark extends StatelessWidget {
         ),
       ),
       child: selected
-          ? const HugeIcon(
-              icon: HugeIcons.strokeRoundedTick01,
-              size: 11,
-              color: AppColor.whiteColor,
-            )
+          ? const AppIcon(AppIcons.tick01, size: 11, color: AppColor.whiteColor)
           : null,
     );
   }
@@ -546,19 +554,19 @@ class _QuantityStepper extends StatelessWidget {
     return Container(
       height: 34,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminControlBorderColor(theme)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           _StepButton(
-            icon: HugeIcons.strokeRoundedRemove01,
+            icon: AppIcons.remove01,
             tooltip: S.posDecreaseQuantity,
             onTap: canDecrease ? onDecrease : null,
           ),
           SizedBox(
-            width: 34,
+            width: AppSizes.px34,
             child: Text(
               localizeDigits('$quantity'),
               textAlign: TextAlign.center,
@@ -570,7 +578,7 @@ class _QuantityStepper extends StatelessWidget {
             ),
           ),
           _StepButton(
-            icon: HugeIcons.strokeRoundedAdd01,
+            icon: AppIcons.add01,
             tooltip: S.posIncreaseQuantity,
             onTap: canIncrease ? onIncrease : null,
           ),
@@ -598,12 +606,12 @@ class _StepButton extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: SizedBox(
-          width: 32,
-          height: 32,
-          child: HugeIcon(
-            icon: icon,
+          width: AppSizes.px32,
+          height: AppSizes.px32,
+          child: AppIcon(
+            icon,
             size: 14,
             color: onTap == null
                 ? adminMutedColor(theme).withValues(alpha: .4)
@@ -652,10 +660,10 @@ class _OptionsFooter extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -694,13 +702,13 @@ class _OptionsFooter extends StatelessWidget {
             onPressed: enabled ? onAdd : null,
             style: FilledButton.styleFrom(
               minimumSize: const Size(0, 40),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
-            icon: const HugeIcon(
-              icon: HugeIcons.strokeRoundedAdd01,
+            icon: const AppIcon(
+              AppIcons.add01,
               size: 15,
               color: AppColor.whiteColor,
             ),

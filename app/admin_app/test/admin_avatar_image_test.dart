@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 
 void main() {
@@ -14,7 +14,7 @@ void main() {
       wrap(const AdminAvatarImage(url: 'a1b2-c3d4/avatar.jpg')),
     );
 
-    expect(find.byIcon(HugeIcons.strokeRoundedUser), findsOneWidget);
+    expect(find.byIcon(AppIcons.user), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -22,10 +22,10 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(wrap(const AdminAvatarImage()));
-    expect(find.byIcon(HugeIcons.strokeRoundedUser), findsOneWidget);
+    expect(find.byIcon(AppIcons.user), findsOneWidget);
 
     await tester.pumpWidget(wrap(const AdminAvatarImage(url: '   ')));
-    expect(find.byIcon(HugeIcons.strokeRoundedUser), findsOneWidget);
+    expect(find.byIcon(AppIcons.user), findsOneWidget);
   });
 
   testWidgets('the circle keeps the size the caller asked for', (tester) async {

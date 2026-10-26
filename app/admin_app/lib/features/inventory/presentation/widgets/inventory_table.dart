@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_actions_menu.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -80,7 +80,7 @@ class _Header extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
         border: Border.all(
@@ -159,12 +159,12 @@ class _Row extends StatelessWidget {
         : '$sku · ${inventoryCategoryLabel(item.category)}';
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: canEdit ? onEdit : null,
         child: Container(
           height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -176,7 +176,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     _MaterialIcon(status: item.status, color: statusColor),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -304,10 +304,10 @@ class _MaterialIcon extends StatelessWidget {
         color: adminIsDark(theme)
             ? color.withValues(alpha: .16)
             : Color.lerp(color, AppColor.whiteColor, .88),
-        borderRadius: BorderRadius.circular(11),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      child: HugeIcon(
-        icon: inventoryStatusIcon(status),
+      child: AppIcon(
+        inventoryStatusIcon(status),
         size: 19,
         color: adminFlagForeground(theme, color),
       ),

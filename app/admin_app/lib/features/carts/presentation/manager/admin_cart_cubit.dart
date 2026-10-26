@@ -1,21 +1,24 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/carts/data/repositories/admin_cart_repository.dart';
+import 'package:admin_app/features/carts/di/carts_dependencies.dart';
+import 'package:admin_app/features/carts/domain/repositories/cart_repository.dart';
+import 'package:admin_app/features/carts/domain/usecases/load_carts.dart';
 import 'package:admin_app/features/carts/presentation/manager/admin_cart_state.dart';
 
 class AdminCartCubit extends Cubit<AdminCartState> {
-  AdminCartCubit({AdminCartRepository? repository})
-    : _repository = repository ?? AdminCartRepository(),
+  AdminCartCubit({CartRepository? repository})
+    : this._withUseCases(repository ?? CartsDependencies.repository);
+
+  AdminCartCubit._withUseCases(CartRepository repository)
+    : _loadCarts = LoadCartsUseCase(repository),
       super(const AdminCartState());
 
-  final AdminCartRepository _repository;
-
-  AdminCartRepository get repository => _repository;
+  final LoadCartsUseCase _loadCarts;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminCartStatus.loading, clearError: true));
     try {
-      final carts = await _repository.loadCarts();
+      final carts = await _loadCarts();
       emit(
         state.copyWith(
           status: AdminCartStatus.ready,

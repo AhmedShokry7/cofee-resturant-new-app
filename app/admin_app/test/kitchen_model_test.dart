@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
 
 void main() {
   setUp(() => AppLocale.instance.debugSet(AppLanguage.english));

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_log.dart';
 import 'package:admin_app/features/audit/presentation/models/audit_filters.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_cards.dart';
@@ -97,7 +98,10 @@ class _AuditDirectoryState extends State<AuditDirectory> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -110,12 +114,12 @@ class _AuditDirectoryState extends State<AuditDirectory> {
             onCriticalChanged: widget.onCriticalChanged,
             onClearFilters: widget.onClearFilters,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           SizedBox(
-            height: 2,
+            height: AppSizes.px2,
             child: widget.isRefreshingRows
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       minHeight: 2,
                       backgroundColor:
@@ -127,7 +131,7 @@ class _AuditDirectoryState extends State<AuditDirectory> {
                   )
                 : null,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           Expanded(
             child: widget.total == 0
                 ? _emptyState()
@@ -162,7 +166,7 @@ class _AuditDirectoryState extends State<AuditDirectory> {
 
   Widget _emptyState() {
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedClipboard,
+      icon: AppIcons.clipboard,
       message: _hasActiveFilters ? S.auditNoMatches : S.auditEmpty,
       hint: _hasActiveFilters ? null : S.auditEmptyHint,
       action: _hasActiveFilters

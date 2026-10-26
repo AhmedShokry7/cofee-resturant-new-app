@@ -2,26 +2,27 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/customer_preview/data/emulator_bridge_client.dart';
+import 'package:admin_app/features/customer_preview/di/customer_preview_dependencies.dart';
+import 'package:admin_app/features/customer_preview/domain/repositories/emulator_bridge.dart';
 
 class AndroidEmulatorPreview extends StatefulWidget {
   const AndroidEmulatorPreview({super.key, this.bridge});
 
-  final EmulatorBridgeClient? bridge;
+  final EmulatorBridge? bridge;
 
   @override
   State<AndroidEmulatorPreview> createState() => _AndroidEmulatorPreviewState();
 }
 
 class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
-  late final EmulatorBridgeClient _bridge =
-      widget.bridge ?? EmulatorBridgeClient();
+  late final EmulatorBridge _bridge =
+      widget.bridge ?? CustomerPreviewDependencies.newEmulatorBridge();
   final _tokenController = TextEditingController();
   final _textController = TextEditingController();
   Timer? _frameTimer;
@@ -194,14 +195,14 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(S.emulatorPreviewTitle, style: theme.textTheme.headlineSmall),
-          const SizedBox(height: AppDimensions.xs),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             S.emulatorPreviewDescription,
             style: theme.textTheme.bodyMedium?.copyWith(
               color: AppColor.greyColor,
             ),
           ),
-          const SizedBox(height: AppDimensions.lg),
+          const SizedBox(height: AppSpacing.lg),
           LayoutBuilder(
             builder: (context, constraints) {
               final compact = constraints.maxWidth < 820;
@@ -209,14 +210,18 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
               final controls = _buildConnectionPanel(theme);
               if (compact) {
                 return Column(
-                  children: [device, const SizedBox(height: 20), controls],
+                  children: [
+                    device,
+                    const SizedBox(height: AppSizes.px20),
+                    controls,
+                  ],
                 );
               }
               return Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(flex: 6, child: device),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: AppSizes.px24),
                   Expanded(flex: 5, child: controls),
                 ],
               );
@@ -236,7 +241,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
             Row(
               children: [
                 _statusDot(_connected),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSizes.px8),
                 Expanded(
                   child: Text(
                     _connected ? S.emulatorConnected : S.emulatorDisconnected,
@@ -246,32 +251,32 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                 IconButton(
                   tooltip: S.reloadSavedAppData,
                   onPressed: _connected && !_working ? _refreshApp : null,
-                  icon: const Icon(HugeIcons.strokeRoundedRefresh),
+                  icon: const Icon(AppIcons.refresh),
                 ),
                 IconButton(
                   tooltip: S.back,
                   onPressed: _connected
                       ? () => _run(() => _bridge.key(_token, 'back'))
                       : null,
-                  icon: const Icon(HugeIcons.strokeRoundedArrowLeft01),
+                  icon: const Icon(AppIcons.arrowLeft01),
                 ),
                 IconButton(
                   tooltip: S.homeScreen,
                   onPressed: _connected
                       ? () => _run(() => _bridge.key(_token, 'home'))
                       : null,
-                  icon: const Icon(HugeIcons.strokeRoundedHome01),
+                  icon: const Icon(AppIcons.home01),
                 ),
               ],
             ),
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: const Color(0xff111318),
-                borderRadius: BorderRadius.circular(36),
+                color: AppColor.deviceChrome,
+                borderRadius: BorderRadius.circular(AppRadius.emulatorBody),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(29),
+                borderRadius: BorderRadius.circular(AppRadius.emulatorScreen),
                 child: AspectRatio(
                   aspectRatio: 1440 / 3120,
                   child: LayoutBuilder(
@@ -283,7 +288,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                             _handlePointerUp(event, constraints.biggest),
                         child: _frame == null
                             ? ColoredBox(
-                                color: const Color(0xfff7f8fa),
+                                color: AppColor.surfaceColor,
                                 child: Center(child: _connectionMessage(theme)),
                               )
                             : Image.memory(
@@ -298,7 +303,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
               ),
             ),
             if (_connected) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               Row(
                 children: [
                   Expanded(
@@ -311,7 +316,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                               suffixIcon: IconButton(
                                 tooltip: S.send,
                                 onPressed: _sendText,
-                                icon: const Icon(HugeIcons.strokeRoundedSent),
+                                icon: const Icon(AppIcons.sent),
                               ),
                             ),
                             onSubmitted: (_) => _sendText(),
@@ -319,10 +324,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                         : OutlinedButton.icon(
                             onPressed: () =>
                                 setState(() => _showKeyboardInput = true),
-                            icon: const Icon(
-                              HugeIcons.strokeRoundedKeyboard,
-                              size: 18,
-                            ),
+                            icon: const Icon(AppIcons.keyboard, size: 18),
                             label: Text(S.typeIntoAppButton),
                           ),
                   ),
@@ -344,11 +346,8 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
           children: [
             Row(
               children: [
-                const Icon(
-                  HugeIcons.strokeRoundedSmartPhone01,
-                  color: AppColor.primaryColor,
-                ),
-                const SizedBox(width: 10),
+                const Icon(AppIcons.smartPhone01, color: AppColor.primaryColor),
+                const SizedBox(width: AppSizes.px10),
                 Expanded(
                   child: Text(
                     S.connectRealEmulator,
@@ -359,9 +358,9 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSizes.px12),
             Text(S.emulatorBridgeHint),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             const SelectableText(
               r'powershell -ExecutionPolicy Bypass -File "app\admin_app\tools\android_emulator_bridge.ps1"',
               textDirection: TextDirection.ltr,
@@ -370,7 +369,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                 fontSize: AppFontSizes.size12,
               ),
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: AppSizes.px18),
             TextField(
               controller: _tokenController,
               textDirection: TextDirection.ltr,
@@ -378,33 +377,33 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
                 labelText: S.bridgeTokenLabel,
                 hintText: S.bridgeTokenHint,
                 border: OutlineInputBorder(),
-                prefixIcon: Icon(HugeIcons.strokeRoundedKey01, size: 18),
+                prefixIcon: Icon(AppIcons.passwordKey, size: 18),
               ),
               onSubmitted: (_) => _connect(),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSizes.px12),
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed: _working ? null : _connect,
                 icon: _working
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: AppSizes.px18,
+                        height: AppSizes.px18,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Icon(HugeIcons.strokeRoundedLink01, size: 18),
+                    : const Icon(AppIcons.link01, size: 18),
                 label: Text(_working ? S.connecting : S.connectToEmulator),
               ),
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: theme.colorScheme.errorContainer,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
                 ),
                 child: Text(
                   _error!,
@@ -416,7 +415,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
             _helpRow(theme, '1', S.emulatorStepSave),
             _helpRow(theme, '2', S.emulatorStepReload),
             _helpRow(theme, '3', S.emulatorStepInteract),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSizes.px4),
             Text(
               S.emulatorBridgeNote,
               style: theme.textTheme.bodySmall?.copyWith(
@@ -430,7 +429,7 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
   }
 
   Widget _helpRow(ThemeData theme, String number, String text) => Padding(
-    padding: const EdgeInsets.only(bottom: 8),
+    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -441,29 +440,27 @@ class _AndroidEmulatorPreviewState extends State<AndroidEmulatorPreview> {
             number,
             style: const TextStyle(
               fontSize: AppFontSizes.size11,
-              color: Colors.white,
+              color: AppColor.whiteColor,
             ),
           ),
         ),
-        const SizedBox(width: 9),
+        const SizedBox(width: AppSizes.px10),
         Expanded(child: Text(text, style: theme.textTheme.bodySmall)),
       ],
     ),
   );
 
   Widget _connectionMessage(ThemeData theme) => Padding(
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(AppSpacing.xl),
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          _connected
-              ? HugeIcons.strokeRoundedLoading03
-              : HugeIcons.strokeRoundedSmartPhone01,
+          _connected ? AppIcons.loading03 : AppIcons.smartPhone01,
           size: 30,
           color: AppColor.greyColor,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSizes.px10),
         Text(
           _connected ? S.loadingEmulatorScreen : S.startBridgeThenConnect,
           textAlign: TextAlign.center,

@@ -4,7 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -33,16 +33,19 @@ class OrderFinancialSummary extends StatelessWidget {
         if (order.fulfillmentType == 'delivery')
           _amountRow(context, S.deliveryFee, order.deliveryFee),
         if (order.taxTotal > 0) _amountRow(context, S.tax, order.taxTotal),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSizes.px10),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           decoration: BoxDecoration(
             color: adminFlagBackground(
               theme,
               AppColor.adminAccent,
               AppColor.adminAccentSurface,
             ),
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
               color: AppColor.adminAccent.withValues(
                 alpha: adminIsDark(theme) ? .35 : .18,
@@ -78,7 +81,7 @@ class OrderFinancialSummary extends StatelessWidget {
   Widget _amountRow(BuildContext context, String label, double value) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Row(
         children: [
           Expanded(
@@ -100,7 +103,7 @@ class OrderFinancialSummary extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(width: AppDimensions.xs),
+          const SizedBox(width: AppSpacing.xs),
           const CurrencyIcon(size: 11),
         ],
       ),
@@ -110,7 +113,7 @@ class OrderFinancialSummary extends StatelessWidget {
   Widget _textRow(BuildContext context, String label, String value) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Row(
         children: [
           Expanded(

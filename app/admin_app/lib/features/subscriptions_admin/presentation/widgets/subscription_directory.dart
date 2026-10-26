@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/models/subscription_filter.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_cards.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_table.dart';
@@ -107,7 +108,10 @@ class _SubscriptionDirectoryState extends State<SubscriptionDirectory> {
         _filter != SubscriptionFilter.all || widget.search.trim().isNotEmpty;
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -127,13 +131,11 @@ class _SubscriptionDirectoryState extends State<SubscriptionDirectory> {
             filterLabel: S.subscriptionsFilter,
             hasActiveFilter: _filter != SubscriptionFilter.all,
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: filtered.isEmpty
                 ? AdminEmptyState(
-                    icon: hasAny
-                        ? HugeIcons.strokeRoundedSearch01
-                        : HugeIcons.strokeRoundedRepeat,
+                    icon: hasAny ? AppIcons.search01 : AppIcons.repeat,
                     message: hasAny
                         ? S.subscriptionsNoMatches
                         : S.noSubscriptions,

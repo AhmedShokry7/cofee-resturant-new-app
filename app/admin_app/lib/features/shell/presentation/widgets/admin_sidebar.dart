@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_brand.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_item.dart';
 
@@ -44,8 +44,8 @@ class AdminSidebar extends StatelessWidget {
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.only(
-                  top: AppDimensions.sm,
-                  bottom: AppDimensions.lg,
+                  top: AppSpacing.sm,
+                  bottom: AppSpacing.lg,
                 ),
                 children: [
                   for (final destination in destinations) ...[
@@ -90,7 +90,7 @@ class _SidebarFooter extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColor.sidebarMuted)),
       ),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -107,7 +107,7 @@ class _SidebarFooter extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppDimensions.sm),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -134,7 +134,7 @@ class _SidebarFooter extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           _SignOutButton(onPressed: onSignOut),
         ],
       ),
@@ -173,21 +173,21 @@ class _SignOutButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+      color: AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppDimensions.sm),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Row(
             children: [
               const Icon(
-                HugeIcons.strokeRoundedLogout01,
+                AppIcons.logout01,
                 size: 18,
                 color: AppColor.whiteColor,
               ),
-              const SizedBox(width: AppDimensions.sm),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   S.signOut,

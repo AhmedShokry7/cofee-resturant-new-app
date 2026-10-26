@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_image_gallery.dart';

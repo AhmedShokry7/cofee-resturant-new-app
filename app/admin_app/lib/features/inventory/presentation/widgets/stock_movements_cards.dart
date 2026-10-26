@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -23,7 +24,7 @@ class StockMovementsCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: movements.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final movement = movements[index];
         return _MovementCard(
@@ -60,14 +61,14 @@ class _MovementCard extends StatelessWidget {
 
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: onOpen,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Column(
@@ -83,15 +84,15 @@ class _MovementCard extends StatelessWidget {
                       color: adminIsDark(theme)
                           ? typeColor.withValues(alpha: .16)
                           : Color.lerp(typeColor, AppColor.whiteColor, .88),
-                      borderRadius: BorderRadius.circular(11),
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: HugeIcon(
-                      icon: stockMovementTypeIcon(type),
+                    child: AppIcon(
+                      stockMovementTypeIcon(type),
                       size: 20,
                       color: adminFlagForeground(theme, typeColor),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -120,7 +121,7 @@ class _MovementCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Text(
                     inventoryDelta(movement.quantityDelta, movement.unit),
                     maxLines: 1,
@@ -134,15 +135,15 @@ class _MovementCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedPackage,
+                  AppIcon(
+                    AppIcons.package,
                     size: 14,
                     color: adminMutedColor(theme),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   Expanded(
                     child: Text(
                       inventoryMovementMaterialName(movement),
@@ -169,7 +170,7 @@ class _MovementCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final width = (constraints.maxWidth - 16) / 3;
@@ -180,7 +181,7 @@ class _MovementCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedPackage,
+                          icon: AppIcons.package,
                           label: S.stockMovementBalanceAfter,
                           value: inventoryQuantity(
                             movement.balanceAfter,
@@ -191,7 +192,7 @@ class _MovementCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedCoins01,
+                          icon: AppIcons.coins01,
                           label: S.stockMovementValue,
                           value: inventoryMoney(movement.movementValue),
                         ),
@@ -199,7 +200,7 @@ class _MovementCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedInvoice01,
+                          icon: AppIcons.invoice01,
                           label: S.stockMovementUnitCost,
                           value: inventoryMoney(movement.unitCost),
                         ),
@@ -208,15 +209,15 @@ class _MovementCard extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedStore01,
+                  AppIcon(
+                    AppIcons.store01,
                     size: 13,
                     color: adminMutedColor(theme),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.px4),
                   Expanded(
                     child: Text(
                       inventoryMovementBranchName(movement),
@@ -229,12 +230,12 @@ class _MovementCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedUser,
+                  AppIcon(
+                    AppIcons.user,
                     size: 13,
                     color: adminMutedColor(theme),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: AppSizes.px4),
                   Flexible(
                     child: Text(
                       inventoryMovementActorName(movement),
@@ -250,15 +251,15 @@ class _MovementCard extends StatelessWidget {
                 ],
               ),
               if ((movement.reference?.trim() ?? '').isNotEmpty) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSizes.px6),
                 Row(
                   children: [
-                    HugeIcon(
-                      icon: HugeIcons.strokeRoundedInvoice01,
+                    AppIcon(
+                      AppIcons.invoice01,
                       size: 13,
                       color: adminMutedColor(theme),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.px4),
                     Expanded(
                       child: Text(
                         movement.reference!.trim(),
@@ -297,15 +298,15 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
-          const SizedBox(width: 6),
+          AppIcon(icon, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

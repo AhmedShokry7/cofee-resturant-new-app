@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
@@ -40,11 +40,13 @@ class AuditDetailsDialog extends StatelessWidget {
       key: const Key('audit-details-dialog'),
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screen.width < 700 ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: screen.width < AppBreakpoints.pageCanvas
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 780),
@@ -60,20 +62,20 @@ class AuditDetailsDialog extends StatelessWidget {
               Expanded(
                 child: SingleChildScrollView(
                   padding: const EdgeInsetsDirectional.fromSTEB(
-                    AppDimensions.lg,
-                    AppDimensions.md,
-                    AppDimensions.lg,
-                    AppDimensions.lg,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _EventBanner(log: log),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _IdentityGrid(log: log),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: AppSizes.px16),
                       _ChangesSection(log: log),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: AppSizes.px14),
                       _TechnicalSection(log: log),
                     ],
                   ),
@@ -99,10 +101,10 @@ class _EventBanner extends StatelessWidget {
     final domain = auditDomainKey(log);
     final color = auditDomainColor(domain);
     return Container(
-      padding: const EdgeInsets.all(13),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, auditDomainSurface(domain)),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: color.withValues(alpha: adminIsDark(theme) ? .35 : .16),
         ),
@@ -116,15 +118,15 @@ class _EventBanner extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: theme.colorScheme.surface,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: HugeIcon(
-              icon: auditDomainIcon(domain),
+            child: AppIcon(
+              auditDomainIcon(domain),
               size: 20,
               color: adminFlagForeground(theme, color),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,7 +142,7 @@ class _EventBanner extends StatelessWidget {
                     height: AppTextHeights.line1_5,
                   ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSizes.px6),
                 Wrap(
                   spacing: 6,
                   runSpacing: 5,
@@ -161,12 +163,12 @@ class _EventBanner extends StatelessWidget {
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        HugeIcon(
-                          icon: HugeIcons.strokeRoundedCalendar03,
+                        AppIcon(
+                          AppIcons.calendar03,
                           size: 12,
                           color: adminMutedColor(theme),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: AppSizes.px4),
                         Text(
                           auditRelativeTimeLabel(log.createdAt),
                           style: TextStyle(
@@ -205,9 +207,9 @@ class _IdentityGrid extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               actor,
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               when,
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               entity,
             ],
           );
@@ -219,11 +221,11 @@ class _IdentityGrid extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(flex: 3, child: actor),
-                const SizedBox(width: 10),
+                const SizedBox(width: AppSizes.px10),
                 Expanded(flex: 2, child: when),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             entity,
           ],
         );
@@ -269,7 +271,7 @@ class _ActorCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -297,7 +299,7 @@ class _ActorCard extends StatelessWidget {
                       height: AppTextHeights.line1_4,
                     ),
                   ),
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSizes.px4),
                 Wrap(
                   spacing: 5,
                   runSpacing: 4,
@@ -339,15 +341,15 @@ class _WhenCard extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSizes.px4),
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedStore01,
+              AppIcon(
+                AppIcons.store01,
                 size: 12,
                 color: adminMutedColor(theme),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.px4),
               Expanded(
                 child: Text(
                   branch.isEmpty ? S.auditDetailsNoBranch : branch,
@@ -382,7 +384,7 @@ class _EntityCard extends StatelessWidget {
       child: Row(
         children: [
           _TextPill(label: auditEntityLabel(log.entityType)),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Text(
               id.isEmpty ? S.auditDetailsNoValue : '#$id',
@@ -436,12 +438,12 @@ class _ChangesSection extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSizes.px8),
         if (changes.isEmpty)
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(color: adminCardBorderColor(theme)),
             ),
             child: Text(
@@ -456,7 +458,7 @@ class _ChangesSection extends StatelessWidget {
         else
           for (final change in changes)
             Padding(
-              padding: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: _ChangeRow(change: change),
             ),
       ],
@@ -485,9 +487,9 @@ class _ChangeRow extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Container(
       key: Key('audit-change-${change.key}'),
-      padding: const EdgeInsets.all(11),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -502,13 +504,17 @@ class _ChangeRow extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           LayoutBuilder(
             builder: (context, constraints) {
               if (constraints.maxWidth < 520) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [before, const SizedBox(height: 5), after],
+                  children: [
+                    before,
+                    const SizedBox(height: AppSizes.px6),
+                    after,
+                  ],
                 );
               }
               return Row(
@@ -516,13 +522,13 @@ class _ChangeRow extends StatelessWidget {
                 children: [
                   Expanded(child: before),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 7),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
                     child: Padding(
-                      padding: const EdgeInsets.only(top: 14),
-                      child: HugeIcon(
-                        icon: rtl
-                            ? HugeIcons.strokeRoundedArrowLeft01
-                            : HugeIcons.strokeRoundedArrowRight01,
+                      padding: const EdgeInsets.only(top: AppSpacing.md),
+                      child: AppIcon(
+                        rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                         size: 14,
                         color: adminMutedColor(theme),
                       ),
@@ -554,10 +560,13 @@ class _ValueBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminRowBorderColor(theme)),
       ),
       child: Column(
@@ -572,7 +581,7 @@ class _ValueBlock extends StatelessWidget {
               height: AppTextHeights.line1_4,
             ),
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSizes.px2),
           Text(
             value,
             maxLines: 4,
@@ -599,23 +608,19 @@ class _TechnicalSection extends StatelessWidget {
     final theme = Theme.of(context);
     final muted = adminMutedColor(theme);
     return Theme(
-      data: theme.copyWith(dividerColor: Colors.transparent),
+      data: theme.copyWith(dividerColor: AppColor.transparent),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           border: Border.all(color: adminCardBorderColor(theme)),
         ),
         child: ExpansionTile(
           key: const Key('audit-technical-section'),
-          tilePadding: const EdgeInsets.symmetric(horizontal: 12),
+          tilePadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           childrenPadding: const EdgeInsetsDirectional.fromSTEB(12, 0, 12, 12),
           iconColor: muted,
           collapsedIconColor: muted,
-          leading: HugeIcon(
-            icon: HugeIcons.strokeRoundedSecurityCheck,
-            size: 17,
-            color: muted,
-          ),
+          leading: AppIcon(AppIcons.securityCheck, size: 17, color: muted),
           title: Text(
             S.auditDetailsTechnical,
             style: TextStyle(
@@ -641,9 +646,9 @@ class _TechnicalSection extends StatelessWidget {
               value: log.entityId ?? S.auditDetailsNoValue,
               ltr: true,
             ),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             _RawJson(title: S.auditDetailsBefore, value: log.oldValues),
-            const SizedBox(height: 6),
+            const SizedBox(height: AppSizes.px6),
             _RawJson(title: S.auditDetailsAfter, value: log.newValues),
           ],
         ),
@@ -663,7 +668,7 @@ class _MetaLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -720,12 +725,12 @@ class _RawJson extends StatelessWidget {
             height: AppTextHeights.line1_4,
           ),
         ),
-        const SizedBox(height: 3),
+        const SizedBox(height: AppSizes.px4),
         Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
             color: adminTintedSurfaceColor(theme),
-            borderRadius: BorderRadius.circular(7),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: adminRowBorderColor(theme)),
           ),
           child: Directionality(
@@ -758,9 +763,9 @@ class _InfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -776,7 +781,7 @@ class _InfoCard extends StatelessWidget {
               letterSpacing: AppLetterSpacings.space0_2,
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           child,
         ],
       ),
@@ -793,10 +798,13 @@ class _TextPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(color: adminRowBorderColor(theme)),
       ),
       child: Text(
@@ -823,10 +831,10 @@ class _Footer extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,

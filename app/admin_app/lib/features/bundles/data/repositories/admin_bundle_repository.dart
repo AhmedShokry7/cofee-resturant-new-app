@@ -4,9 +4,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
+import 'package:admin_app/features/bundles/domain/repositories/bundle_repository.dart';
 
 class AdminBundleException implements Exception {
   const AdminBundleException(this.message);
@@ -18,14 +19,14 @@ class AdminBundleException implements Exception {
 }
 
 /// Reads and writes bundles of the admin dashboard.
-class AdminBundleRepository {
+class AdminBundleRepository implements BundleRepository {
   AdminBundleRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
-  /// Loads all bundles with their components.
+  @override
   Future<List<AdminBundle>> loadBundles() async {
     final rows = await _supabase
         .from('bundles')
@@ -62,7 +63,7 @@ class AdminBundleRepository {
         .toList(growable: false);
   }
 
-  /// Loads all products (for the component picker).
+  @override
   Future<List<Map<String, dynamic>>> loadProducts() async {
     final rows = await _supabase
         .from('products')
@@ -75,7 +76,7 @@ class AdminBundleRepository {
         .toList(growable: false);
   }
 
-  /// Creates a bundle.
+  @override
   Future<AdminBundle> createBundle(AdminBundle bundle) async {
     final response = await _supabase
         .from('bundles')
@@ -88,7 +89,7 @@ class AdminBundleRepository {
     return created.copyWith(components: bundle.components);
   }
 
-  /// Updates a bundle.
+  @override
   Future<AdminBundle> updateBundle(AdminBundle bundle) async {
     await _supabase.from('bundles').update(bundle.toJson()).eq('id', bundle.id);
 
@@ -99,7 +100,7 @@ class AdminBundleRepository {
     return bundle;
   }
 
-  /// Deletes a bundle.
+  @override
   Future<void> deleteBundle(String bundleId) async {
     try {
       await _supabase.rpc(
@@ -121,7 +122,7 @@ class AdminBundleRepository {
     return error.message;
   }
 
-  /// Activates or deactivates a bundle.
+  @override
   Future<void> setBundleActive(String bundleId, bool isActive) async {
     await _supabase
         .from('bundles')
@@ -129,7 +130,7 @@ class AdminBundleRepository {
         .eq('id', bundleId);
   }
 
-  /// Points a bundle at another image url.
+  @override
   Future<void> updateBundleImage(String bundleId, String? imageUrl) async {
     await _supabase
         .from('bundles')
@@ -137,7 +138,7 @@ class AdminBundleRepository {
         .eq('id', bundleId);
   }
 
-  /// Uploads a picture of a bundle to the bucket and saves its url.
+  @override
   Future<String> uploadBundleImage({
     String? bundleId,
     required Uint8List bytes,
@@ -173,7 +174,7 @@ class AdminBundleRepository {
     return url;
   }
 
-  /// Removes the file of a bundle image.
+  @override
   Future<void> deleteBundleImageFile(String? imageUrl) async {
     if (imageUrl == null || imageUrl.trim().isEmpty) return;
     final marker = '/product-images/';

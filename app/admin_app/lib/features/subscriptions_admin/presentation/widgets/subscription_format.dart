@@ -7,8 +7,8 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/initials.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_usage.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
 
 /// How one subscription status is shown: its localized name and colour.
 ///

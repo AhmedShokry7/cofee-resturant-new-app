@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric_format.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric_counts.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric_format.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_summary_metric.dart';
 
+/// يبني بطاقات مؤشرات ملخص الطلب من الطلبات المفلترة على الفرع المختار.
 class OrderSummaryMetricDataBuilder {
   static List<OrderSummaryMetric> build(
     List<AdminOrder> orders,
@@ -32,9 +33,9 @@ class OrderSummaryMetricDataBuilder {
         value: OrderSummaryMetricFormat.money(
           OrderSummaryMetricCounts.paid(scoped),
         ),
-        icon: HugeIcons.strokeRoundedMoney01,
-        iconBackground: const Color(0xFFF0EAFB),
-        iconColor: const Color(0xFF7656A6),
+        icon: AppIcons.money01,
+        iconBackground: AppColor.tintVioletSurface,
+        iconColor: AppColor.tintIrisInk,
         changeLabel: OrderSummaryMetricFormat.percent(
           OrderSummaryMetricCounts.paid(current),
           OrderSummaryMetricCounts.paid(previous),
@@ -48,9 +49,9 @@ class OrderSummaryMetricDataBuilder {
         value: OrderSummaryMetricFormat.count(
           OrderSummaryMetricCounts.shipped(scoped),
         ),
-        icon: HugeIcons.strokeRoundedDeliveryTruck01,
-        iconBackground: const Color(0xFFE7F1F7),
-        iconColor: const Color(0xFF5180A7),
+        icon: AppIcons.deliveryTruck01,
+        iconBackground: AppColor.tintSteelSurface,
+        iconColor: AppColor.tintSteelInk,
         changeLabel: OrderSummaryMetricFormat.percent(
           OrderSummaryMetricCounts.shipped(current).toDouble(),
           OrderSummaryMetricCounts.shipped(previous).toDouble(),
@@ -64,9 +65,9 @@ class OrderSummaryMetricDataBuilder {
         value: OrderSummaryMetricFormat.count(
           OrderSummaryMetricCounts.awaiting(scoped),
         ),
-        icon: HugeIcons.strokeRoundedClock01,
-        iconBackground: const Color(0xFFFBF2DC),
-        iconColor: const Color(0xFFAA7C31),
+        icon: AppIcons.clock01,
+        iconBackground: AppColor.adminWarningSurface,
+        iconColor: AppColor.tintHoneyInk,
         changeLabel:
             '${OrderSummaryMetricFormat.count(OrderSummaryMetricCounts.newToday(scoped, now))} ${S.orderNewOrders}',
         isPositive: true,
@@ -74,9 +75,9 @@ class OrderSummaryMetricDataBuilder {
       OrderSummaryMetric(
         label: S.allOrders,
         value: OrderSummaryMetricFormat.count(scoped.length),
-        icon: HugeIcons.strokeRoundedShoppingBag01,
-        iconBackground: const Color(0xFFE8F3EC),
-        iconColor: const Color(0xFF267660),
+        icon: AppIcons.shoppingBag01,
+        iconBackground: AppColor.tintGreenSurface,
+        iconColor: AppColor.adminAccent,
         changeLabel: OrderSummaryMetricFormat.percent(
           current.length.toDouble(),
           previous.length.toDouble(),

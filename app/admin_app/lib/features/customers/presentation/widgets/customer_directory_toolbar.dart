@@ -1,11 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customers/presentation/models/customer_filter.dart';
+import 'package:admin_app/shared/widgets/admin_export_button.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
 
 class CustomerDirectoryToolbar extends StatelessWidget {
@@ -46,7 +48,7 @@ class CustomerDirectoryToolbar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               search,
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: actions,
@@ -57,7 +59,9 @@ class CustomerDirectoryToolbar extends StatelessWidget {
         return Row(
           children: [
             SizedBox(
-              width: constraints.maxWidth >= 900 ? 320 : 240,
+              width: constraints.maxWidth >= AppBreakpoints.wideLayout
+                  ? AppDimensions.searchFieldWidth
+                  : AppDimensions.searchFieldWidthCompact,
               child: search,
             ),
             const Spacer(),
@@ -73,7 +77,13 @@ class CustomerDirectoryToolbar extends StatelessWidget {
     runSpacing: 8,
     crossAxisAlignment: WrapCrossAlignment.center,
     children: [
-      _exportButton(),
+      AdminExportButton(
+        label: S.customersExport,
+        busyLabel: S.customersExporting,
+        onPressed: onExport,
+        busy: exporting,
+        enabled: exportEnabled,
+      ),
       _filterButton(compact: compact),
       if (filter != CustomerFilter.all)
         IconButton(
@@ -84,34 +94,14 @@ class CustomerDirectoryToolbar extends StatelessWidget {
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             padding: EdgeInsets.zero,
           ),
-          icon: const HugeIcon(
-            icon: HugeIcons.strokeRoundedCancel01,
+          icon: const AppIcon(
+            AppIcons.cancel01,
             size: 18,
             color: AppColor.adminMuted,
           ),
         ),
     ],
   );
-
-  Widget _exportButton() {
-    final listenable = exporting;
-    if (listenable == null) {
-      return AdminToolbarButton(
-        label: S.customersExport,
-        icon: HugeIcons.strokeRoundedDownload02,
-        onPressed: exportEnabled ? onExport : null,
-      );
-    }
-    return ValueListenableBuilder<bool>(
-      valueListenable: listenable,
-      builder: (context, busy, _) => AdminToolbarButton(
-        label: busy ? S.customersExporting : S.customersExport,
-        icon: HugeIcons.strokeRoundedDownload02,
-        busy: busy,
-        onPressed: exportEnabled && !busy ? onExport : null,
-      ),
-    );
-  }
 
   Widget _filterButton({required bool compact}) =>
       PopupMenuButton<CustomerFilter>(
@@ -124,16 +114,16 @@ class CustomerDirectoryToolbar extends StatelessWidget {
               child: Row(
                 children: [
                   SizedBox(
-                    width: 18,
+                    width: AppSizes.px18,
                     child: option == filter
-                        ? const HugeIcon(
-                            icon: HugeIcons.strokeRoundedTick01,
+                        ? const AppIcon(
+                            AppIcons.tick01,
                             size: 15,
                             color: AppColor.adminAccent,
                           )
                         : null,
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   Flexible(
                     child: Text(
                       option.label,
@@ -151,14 +141,14 @@ class CustomerDirectoryToolbar extends StatelessWidget {
         ],
         child: compact
             ? AdminToolbarIcon(
-                icon: HugeIcons.strokeRoundedFilter,
+                icon: AppIcons.filter,
                 active: filter != CustomerFilter.all,
               )
             : AdminToolbarSurface(
                 label: filter == CustomerFilter.all
                     ? S.customersFilter
                     : filter.label,
-                icon: HugeIcons.strokeRoundedFilter,
+                icon: AppIcons.filter,
                 active: filter != CustomerFilter.all,
               ),
       );

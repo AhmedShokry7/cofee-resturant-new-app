@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 
@@ -32,7 +33,9 @@ class AdminPagination extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final muted = dark ? AppColor.darkTextSecondary : const Color(0xFF8A968E);
+    final muted = dark
+        ? AppColor.darkTextSecondary
+        : AppColor.paginationIdleInk;
     return LayoutBuilder(
       builder: (context, constraints) {
         final first = count == 0 ? 0 : page * pageSize + 1;
@@ -57,7 +60,7 @@ class AdminPagination extends StatelessWidget {
         );
         return Container(
           width: double.infinity,
-          padding: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.only(top: AppSpacing.lg),
           decoration: BoxDecoration(
             border: Border(
               top: BorderSide(
@@ -73,7 +76,7 @@ class AdminPagination extends StatelessWidget {
                       alignment: AlignmentDirectional.centerStart,
                       child: label,
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: AppSizes.px8),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
                       child: controls,
@@ -108,31 +111,31 @@ class _PaginationControls extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       _PaginationArrow(
-        icon: HugeIcons.strokeRoundedArrowLeft01,
+        icon: AppIcons.arrowLeft01,
         tooltip: S.previousPage,
         enabled: page > 0,
         onTap: () => onChanged(page - 1),
       ),
-      const SizedBox(width: 4),
+      const SizedBox(width: AppSizes.px4),
       for (final number in _pageNumbers(page, pages, compact))
         number == null
             ? SizedBox(
-                width: 24,
+                width: AppSizes.px24,
                 child: Text(
                   '…',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Theme.of(context).brightness == Brightness.dark
                         ? AppColor.darkTextSecondary
-                        : const Color(0xFF8A968E),
+                        : AppColor.paginationIdleInk,
                     fontSize: AppFontSizes.size10,
                   ),
                 ),
               )
             : _pageButton(context, number),
-      const SizedBox(width: 4),
+      const SizedBox(width: AppSizes.px4),
       _PaginationArrow(
-        icon: HugeIcons.strokeRoundedArrowRight01,
+        icon: AppIcons.arrowRight01,
         tooltip: S.nextPage,
         enabled: page + 1 < pages,
         onTap: () => onChanged(page + 1),
@@ -145,14 +148,14 @@ class _PaginationControls extends StatelessWidget {
     final selected = page + 1 == number;
     return InkWell(
       onTap: () => onChanged(number - 1),
-      borderRadius: BorderRadius.circular(7),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: Container(
         width: 27,
         height: 27,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AppColor.adminAccentSurface : Colors.transparent,
-          borderRadius: BorderRadius.circular(7),
+          color: selected ? AppColor.adminAccentSurface : AppColor.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Text(
           localizeDigits(number.toString()),
@@ -162,7 +165,7 @@ class _PaginationControls extends StatelessWidget {
                 ? AppColor.adminAccent
                 : dark
                 ? AppColor.darkTextSecondary
-                : const Color(0xFF758178),
+                : AppColor.paginationMutedInk,
             fontSize: AppFontSizes.size10,
             fontWeight: selected ? AppFontWeights.bold : AppFontWeights.regular,
             height: AppTextHeights.line1_5,
@@ -205,19 +208,17 @@ class _PaginationArrow extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final color = enabled
-        ? (dark ? AppColor.darkTextSecondary : const Color(0xFF758178))
-        : (dark ? AppColor.darkBorder : const Color(0x59758178));
+        ? (dark ? AppColor.darkTextSecondary : AppColor.paginationMutedInk)
+        : (dark ? AppColor.darkBorder : AppColor.paginationDisabledInk);
     return Tooltip(
       message: tooltip,
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: SizedBox(
-          width: 27,
-          height: 27,
-          child: Center(
-            child: HugeIcon(icon: icon, size: 16, color: color),
-          ),
+          width: AppSizes.px28,
+          height: AppSizes.px28,
+          child: Center(child: AppIcon(icon, size: 16, color: color)),
         ),
       ),
     );

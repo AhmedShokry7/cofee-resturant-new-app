@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_metrics.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_directory.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_metrics_cards.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
@@ -49,12 +49,9 @@ class CouponPageBody extends StatelessWidget {
                   CustomBtn(
                     text: S.couponsNew,
                     onPressed: onAdd,
-                    leadingIcon: const Icon(
-                      HugeIcons.strokeRoundedAdd01,
-                      size: 18,
-                    ),
+                    leadingIcon: const Icon(AppIcons.add01, size: 18),
                     height: 42,
-                    borderRadius: AppDimensions.radiusPill,
+                    borderRadius: AppRadius.pill,
                     backgroundColor: AppColor.primaryColor,
                     textColor: AppColor.whiteColor,
                   ),
@@ -65,9 +62,9 @@ class CouponPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             CouponMetricsCards(metrics: metrics),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSizes.px16),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -75,7 +72,10 @@ class CouponPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 620, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightMd,
+                    child: directory,
+                  ),
                 ],
               ),
             );

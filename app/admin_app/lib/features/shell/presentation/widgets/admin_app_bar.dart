@@ -1,10 +1,10 @@
-﻿import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_language_button.dart';
 import 'package:admin_app/shared/widgets/admin_theme_button.dart';
 
@@ -62,9 +62,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                   Expanded(
                     child: Padding(
                       padding: EdgeInsetsDirectional.only(
-                        start: leading == null
-                            ? AppDimensions.lg
-                            : AppDimensions.sm,
+                        start: leading == null ? AppSpacing.lg : AppSpacing.sm,
                       ),
                       child: Text(
                         title,
@@ -77,7 +75,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                     ),
                   ),
                   if (!isCompact) ...[
-                    const SizedBox(width: AppDimensions.lg),
+                    const SizedBox(width: AppSpacing.lg),
                     SizedBox(
                       width: AppDimensions.searchFieldWidth,
                       child: _AdminSearchField(
@@ -86,12 +84,12 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                         textController: searchTextController,
                       ),
                     ),
-                    const SizedBox(width: AppDimensions.md),
+                    const SizedBox(width: AppSpacing.md),
                   ],
                   const AdminLanguageButton(),
-                  const SizedBox(width: AppDimensions.sm),
+                  const SizedBox(width: AppSpacing.sm),
                   const AdminThemeButton(),
-                  const SizedBox(width: AppDimensions.lg),
+                  const SizedBox(width: AppSpacing.lg),
                 ],
               ),
             ),
@@ -100,9 +98,9 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                 preferredSize: const Size.fromHeight(_compactSearchHeight),
                 child: Padding(
                   padding: const EdgeInsetsDirectional.only(
-                    start: AppDimensions.md,
-                    end: AppDimensions.md,
-                    bottom: AppDimensions.sm,
+                    start: AppSpacing.md,
+                    end: AppSpacing.md,
+                    bottom: AppSpacing.sm,
                   ),
                   child: _AdminSearchField(
                     hint: searchHint,
@@ -183,7 +181,7 @@ class _AdminSearchFieldState extends State<_AdminSearchField> {
               color: theme.hintColor,
             ),
             prefixIcon: Icon(
-              HugeIcons.strokeRoundedSearch01,
+              AppIcons.search01,
               size: 18,
               color: theme.iconTheme.color,
             ),
@@ -195,7 +193,7 @@ class _AdminSearchFieldState extends State<_AdminSearchField> {
                 ? IconButton(
                     tooltip: S.clearSearch,
                     icon: Icon(
-                      HugeIcons.strokeRoundedCancel01,
+                      AppIcons.cancel01,
                       size: 18,
                       color: theme.iconTheme.color,
                     ),
@@ -207,21 +205,21 @@ class _AdminSearchFieldState extends State<_AdminSearchField> {
                 : null,
             isDense: true,
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.md,
-              vertical: AppDimensions.md,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
             ),
             filled: true,
             fillColor: theme.colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide(color: theme.dividerColor),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide(color: theme.dividerColor),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               borderSide: BorderSide(color: theme.colorScheme.primary),
             ),
           ),

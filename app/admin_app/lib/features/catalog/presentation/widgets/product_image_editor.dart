@@ -554,7 +554,7 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final size = MediaQuery.sizeOf(context);
-    final isNarrow = size.width < 640;
+    final isNarrow = size.width < AppBreakpoints.imageWorkspace;
 
     return AlertDialog(
       title: Text(S.editImage),
@@ -566,7 +566,7 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
           children: [
             if (_error != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Text(
                   _error!,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -601,7 +601,7 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
                           setState(() => _offset = value),
                     ),
             ),
-            const SizedBox(height: AppDimensions.md),
+            const SizedBox(height: AppSpacing.md),
             _EditorToolbar(
               aspect: _aspect,
               rotation: _rotation,
@@ -742,7 +742,7 @@ class _EditorCanvasState extends State<_EditorCanvas> {
           child: Container(
             decoration: BoxDecoration(
               color: AppColor.recordCellBackground,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             clipBehavior: Clip.antiAlias,
             child: Stack(
@@ -952,8 +952,8 @@ class _EditorToolbar extends StatelessWidget {
       children: [
         // Aspect ratio presets
         Wrap(
-          spacing: AppDimensions.sm,
-          runSpacing: AppDimensions.sm,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             for (final preset in ImageAspectPreset.values)
               ChoiceChip(
@@ -963,11 +963,11 @@ class _EditorToolbar extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: AppDimensions.sm),
+        const SizedBox(height: AppSpacing.sm),
         // Toolbar actions
         Wrap(
-          spacing: AppDimensions.sm,
-          runSpacing: AppDimensions.sm,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             IconButton(
               onPressed: onZoomOut,
@@ -1011,11 +1011,11 @@ class _EditorToolbar extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: AppDimensions.md),
+        const SizedBox(height: AppSpacing.md),
         // Toggle panels
         Wrap(
-          spacing: AppDimensions.sm,
-          runSpacing: AppDimensions.sm,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             FilterChip(
               label: Text(S.adjustments),
@@ -1036,7 +1036,7 @@ class _EditorToolbar extends StatelessWidget {
         ),
         // Adjustments panel
         if (showAdjustments) ...[
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           _AdjustmentSlider(
             label: S.brightness,
             value: brightness,
@@ -1104,10 +1104,10 @@ class _EditorToolbar extends StatelessWidget {
         ],
         // Filters panel
         if (showFilters) ...[
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           Wrap(
-            spacing: AppDimensions.sm,
-            runSpacing: AppDimensions.sm,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: [
               for (final preset in _FilterPreset.values)
                 ChoiceChip(
@@ -1117,7 +1117,7 @@ class _EditorToolbar extends StatelessWidget {
                 ),
             ],
           ),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
           _AdjustmentSlider(
             label: S.intensity,
             value: filterIntensity,
@@ -1174,7 +1174,7 @@ class _AdjustmentSlider extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

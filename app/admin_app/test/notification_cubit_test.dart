@@ -1,11 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_composer.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_metrics.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/data/repositories/admin_notifications_repository.dart';
+import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_cubit.dart';
 import 'package:admin_app/features/notifications/presentation/manager/admin_notifications_state.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';

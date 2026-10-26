@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
 /// The compact search box shared by the admin directories.
@@ -24,11 +25,11 @@ class AdminSearchField extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     final border = dark ? AppColor.darkBorder : AppColor.adminControlBorder;
-    final radius = BorderRadius.circular(9);
+    final radius = BorderRadius.circular(AppRadius.md);
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
       builder: (context, value, _) => SizedBox(
-        height: 37,
+        height: AppSizes.px38,
         child: TextField(
           controller: controller,
           onChanged: onChanged,
@@ -45,11 +46,7 @@ class AdminSearchField extends StatelessWidget {
               fontSize: AppFontSizes.size11,
               height: AppTextHeights.line1_5,
             ),
-            prefixIcon: HugeIcon(
-              icon: HugeIcons.strokeRoundedSearch01,
-              size: 16,
-              color: muted,
-            ),
+            prefixIcon: AppIcon(AppIcons.search01, size: 16, color: muted),
             prefixIconConstraints: const BoxConstraints(
               minWidth: 34,
               minHeight: 34,
@@ -67,18 +64,14 @@ class AdminSearchField extends StatelessWidget {
                       height: 32,
                     ),
                     padding: EdgeInsets.zero,
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedCancel01,
-                      size: 14,
-                      color: muted,
-                    ),
+                    icon: AppIcon(AppIcons.cancel01, size: 14, color: muted),
                   ),
             suffixIconConstraints: const BoxConstraints(
               minWidth: 32,
               minHeight: 32,
             ),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(vertical: 9),
+            contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             filled: true,
             fillColor: theme.colorScheme.surface,
             border: OutlineInputBorder(
@@ -120,11 +113,11 @@ class AdminToolbarButton extends StatelessWidget {
   Widget build(BuildContext context) => Opacity(
     opacity: onPressed == null && !busy && !active ? .5 : 1,
     child: Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(10),
+      color: AppColor.transparent,
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: InkWell(
         onTap: busy ? null : onPressed,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: AdminToolbarSurface(
           label: label,
           icon: icon,
@@ -158,9 +151,9 @@ class AdminToolbarIcon extends StatelessWidget {
               ? AppColor.adminAccent.withValues(alpha: .45)
               : (dark ? AppColor.darkBorder : AppColor.adminControlBorder),
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: HugeIcon(icon: icon, size: 16, color: foreground),
+      child: AppIcon(icon, size: 16, color: foreground),
     );
   }
 }
@@ -185,7 +178,10 @@ class AdminToolbarSurface extends StatelessWidget {
     final dark = theme.brightness == Brightness.dark;
     final foreground = _foreground(dark, active);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: _background(theme, active),
         border: Border.all(
@@ -193,7 +189,7 @@ class AdminToolbarSurface extends StatelessWidget {
               ? AppColor.adminAccent.withValues(alpha: .45)
               : (dark ? AppColor.darkBorder : AppColor.adminControlBorder),
         ),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -209,18 +205,18 @@ class AdminToolbarSurface extends StatelessWidget {
               height: AppTextHeights.line1_5,
             ),
           ),
-          const SizedBox(width: 9),
+          const SizedBox(width: AppSizes.px10),
           if (busy)
             SizedBox(
-              width: 16,
-              height: 16,
+              width: AppSizes.px16,
+              height: AppSizes.px16,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 color: foreground,
               ),
             )
           else
-            HugeIcon(icon: icon, size: 16, color: foreground),
+            AppIcon(icon, size: 16, color: foreground),
         ],
       ),
     );

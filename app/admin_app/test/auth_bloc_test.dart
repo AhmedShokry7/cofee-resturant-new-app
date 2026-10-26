@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/error/failure.dart';
 import 'package:admin_app/core/result/result.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:admin_app/features/auth/domain/usecases/check_session.dart';
 import 'package:admin_app/features/auth/domain/usecases/sign_in.dart';

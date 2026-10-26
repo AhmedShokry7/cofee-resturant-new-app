@@ -1,17 +1,17 @@
-﻿import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 
 /// Opens the dialog that writes a new bundle through the cubit of the page.
 Future<void> showBundleCreateDialog({
@@ -143,7 +143,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
             return AlertDialog(
               title: Text(S.selectProduct),
               content: SizedBox(
-                width: 400,
+                width: AppDimensions.dialogBodyWidthMedium,
                 height: 400,
                 child: Column(
                   children: [
@@ -151,7 +151,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                       controller: searchController,
                       decoration: InputDecoration(
                         labelText: S.search,
-                        prefixIcon: const Icon(HugeIcons.strokeRoundedSearch01),
+                        prefixIcon: const Icon(AppIcons.search01),
                       ),
                       onChanged: (value) {
                         setDialogState(() {
@@ -159,7 +159,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                         });
                       },
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     Expanded(
                       child: filtered.isEmpty
                           ? Center(child: Text(S.noProductsFound))
@@ -170,11 +170,11 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                                 return ListTile(
                                   leading: ClipRRect(
                                     borderRadius: BorderRadius.circular(
-                                      AppDimensions.radiusMd,
+                                      AppRadius.lg,
                                     ),
                                     child: SizedBox(
-                                      width: 40,
-                                      height: 40,
+                                      width: AppSizes.px40,
+                                      height: AppSizes.px40,
                                       child:
                                           product.imageUrl != null &&
                                               product.imageUrl!
@@ -187,17 +187,12 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                                                   const ColoredBox(
                                                     color:
                                                         AppColor.secondaryColor,
-                                                    child: Icon(
-                                                      HugeIcons
-                                                          .strokeRoundedCube,
-                                                    ),
+                                                    child: Icon(AppIcons.cube),
                                                   ),
                                             )
                                           : const ColoredBox(
                                               color: AppColor.secondaryColor,
-                                              child: Icon(
-                                                HugeIcons.strokeRoundedCube,
-                                              ),
+                                              child: Icon(AppIcons.cube),
                                             ),
                                     ),
                                   ),
@@ -370,7 +365,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
     return AlertDialog(
       title: Text(widget.initialBundle != null ? S.editBundle : S.addBundle),
       content: SizedBox(
-        width: 600,
+        width: AppDimensions.dialogBodyWidthExtra,
         height: 560,
         child: SingleChildScrollView(
           child: Column(
@@ -379,7 +374,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
             children: [
               if (_error != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
                     _error!,
                     style: Theme.of(context).textTheme.bodySmall
@@ -398,7 +393,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                       onChanged: (_) => setState(() => _error = null),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: TextField(
                       controller: _nameEnController,
@@ -409,7 +404,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _descriptionArController,
                 decoration: InputDecoration(
@@ -418,7 +413,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                 textDirection: TextDirection.rtl,
                 maxLines: 2,
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _descriptionEnController,
                 decoration: InputDecoration(
@@ -426,7 +421,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                 ),
                 maxLines: 2,
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -441,7 +436,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: TextField(
                       controller: _discountController,
@@ -456,7 +451,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.sm),
+              const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
                   Text(
@@ -473,13 +468,13 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _sortOrderController,
                 decoration: InputDecoration(labelText: S.sortOrder),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: AppDimensions.lg),
+              const SizedBox(height: AppSpacing.lg),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -490,24 +485,22 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                   ),
                   TextButton.icon(
                     onPressed: _addComponent,
-                    icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
+                    icon: const Icon(AppIcons.add01, size: 16),
                     label: Text(S.addComponent),
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.sm),
+              const SizedBox(height: AppSpacing.sm),
               for (var i = 0; i < _components.length; i++)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimensions.sm),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Row(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.radiusMd,
-                        ),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
                         child: SizedBox(
-                          width: 48,
-                          height: 48,
+                          width: AppSizes.px48,
+                          height: AppSizes.px48,
                           child:
                               _components[i].imageUrl != null &&
                                   _components[i].imageUrl!.trim().isNotEmpty
@@ -516,16 +509,16 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                                   fit: BoxFit.fill,
                                   errorWidget: (_, _, _) => const ColoredBox(
                                     color: AppColor.secondaryColor,
-                                    child: Icon(HugeIcons.strokeRoundedCube),
+                                    child: Icon(AppIcons.cube),
                                   ),
                                 )
                               : const ColoredBox(
                                   color: AppColor.secondaryColor,
-                                  child: Icon(HugeIcons.strokeRoundedCube),
+                                  child: Icon(AppIcons.cube),
                                 ),
                         ),
                       ),
-                      const SizedBox(width: AppDimensions.sm),
+                      const SizedBox(width: AppSpacing.sm),
                       Expanded(
                         flex: 3,
                         child: Column(
@@ -540,7 +533,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSizes.px2),
                             Text(
                               '${_components[i].categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(_components[i].basePrice))} ${S.currency}',
                               style: Theme.of(context).textTheme.bodySmall
@@ -550,7 +543,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: AppDimensions.sm),
+                      const SizedBox(width: AppSpacing.sm),
                       SizedBox(
                         width: 80,
                         child: TextField(
@@ -561,13 +554,11 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                           decoration: InputDecoration(
                             labelText: S.quantity,
                             contentPadding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.sm,
-                              vertical: AppDimensions.sm,
+                              horizontal: AppSpacing.sm,
+                              vertical: AppSpacing.sm,
                             ),
                             border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppDimensions.radiusMd,
-                              ),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
                             ),
                           ),
                           onChanged: (value) {
@@ -578,16 +569,16 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                           },
                         ),
                       ),
-                      const SizedBox(width: AppDimensions.sm),
+                      const SizedBox(width: AppSpacing.sm),
                       Text(
                         (_components[i].basePrice * _components[i].quantity)
                             .toStringAsFixed(2),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      const SizedBox(width: AppDimensions.sm),
+                      const SizedBox(width: AppSpacing.sm),
                       IconButton(
                         icon: const Icon(
-                          HugeIcons.strokeRoundedDelete01,
+                          AppIcons.delete01,
                           color: AppColor.errorColor,
                         ),
                         onPressed: () => _removeComponent(i),
@@ -597,7 +588,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                 ),
               if (_components.isEmpty)
                 Padding(
-                  padding: const EdgeInsets.all(AppDimensions.md),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: Text(
                     S.noComponentsAdded,
                     textAlign: TextAlign.center,

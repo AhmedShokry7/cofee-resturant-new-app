@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -28,16 +29,19 @@ class LoyaltyProgramCard extends StatelessWidget {
     final theme = Theme.of(context);
     final current = rule;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: adminIsDark(theme)
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
@@ -64,7 +68,7 @@ class LoyaltyProgramCard extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 header,
-                const SizedBox(height: 9),
+                const SizedBox(height: AppSizes.px10),
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 49),
                   child: stats,
@@ -75,7 +79,7 @@ class LoyaltyProgramCard extends StatelessWidget {
           return Row(
             children: [
               Expanded(flex: 2, child: header),
-              const SizedBox(width: 16),
+              const SizedBox(width: AppSizes.px16),
               Flexible(flex: 3, child: stats),
             ],
           );
@@ -129,15 +133,15 @@ class _Header extends StatelessWidget {
               AppColor.adminAccent,
               AppColor.adminAccentSurface,
             ),
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
-          child: HugeIcon(
-            icon: HugeIcons.strokeRoundedGift,
+          child: AppIcon(
+            AppIcons.gift,
             size: 18,
             color: adminFlagForeground(theme, AppColor.adminAccent),
           ),
         ),
-        const SizedBox(width: 11),
+        const SizedBox(width: AppSizes.px12),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,7 +163,7 @@ class _Header extends StatelessWidget {
                     ),
                   ),
                   if (current != null) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.px8),
                     AdminStatusBadge(
                       label: loyaltyProgramStatusLabel(current),
                       color: _statusColor(current),
@@ -194,7 +198,7 @@ class _Header extends StatelessWidget {
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 foregroundColor: AppColor.adminAccent,
               ),
-              icon: const Icon(HugeIcons.strokeRoundedEdit01, size: 16),
+              icon: const Icon(AppIcons.edit01, size: 16),
             )
           else
             TextButton.icon(
@@ -202,7 +206,7 @@ class _Header extends StatelessWidget {
               onPressed: onEdit,
               style: TextButton.styleFrom(
                 minimumSize: const Size(0, 30),
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
                 visualDensity: VisualDensity.compact,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 foregroundColor: AppColor.adminAccent,
@@ -211,7 +215,7 @@ class _Header extends StatelessWidget {
                   fontWeight: AppFontWeights.semiBold,
                 ),
               ),
-              icon: const Icon(HugeIcons.strokeRoundedEdit01, size: 15),
+              icon: const Icon(AppIcons.edit01, size: 15),
               label: Text(
                 current == null ? S.loyaltyProgramSetup : S.loyaltyProgramEdit,
                 maxLines: 1,

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
 import 'package:admin_app/features/inventory/presentation/models/inventory_filters.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_cards.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_table.dart';
@@ -115,7 +116,10 @@ class _InventoryDirectoryState extends State<InventoryDirectory> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -132,12 +136,12 @@ class _InventoryDirectoryState extends State<InventoryDirectory> {
             branches: widget.filters.branches,
             onClearFilters: widget.onClearFilters,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           SizedBox(
-            height: 2,
+            height: AppSizes.px2,
             child: widget.isRefreshingRows
                 ? ClipRRect(
-                    borderRadius: BorderRadius.circular(1),
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
                     child: LinearProgressIndicator(
                       minHeight: 2,
                       backgroundColor:
@@ -149,7 +153,7 @@ class _InventoryDirectoryState extends State<InventoryDirectory> {
                   )
                 : null,
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           Expanded(
             child: widget.total == 0
                 ? _emptyState()
@@ -193,7 +197,7 @@ class _InventoryDirectoryState extends State<InventoryDirectory> {
   Widget _emptyState() {
     final noData = !_hasActiveFilters;
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedPackage,
+      icon: AppIcons.package,
       message: noData ? S.rawMaterialsEmpty : S.rawMaterialsNoMatches,
       hint: noData ? S.rawMaterialsEmptyHint : S.rawMaterialsNoMatchesHint,
       action: !noData
@@ -201,7 +205,7 @@ class _InventoryDirectoryState extends State<InventoryDirectory> {
           : widget.canEdit
           ? TextButton.icon(
               onPressed: widget.onAdd,
-              icon: const Icon(HugeIcons.strokeRoundedAdd01, size: 16),
+              icon: const Icon(AppIcons.add01, size: 16),
               label: Text(S.addRawMaterial),
             )
           : null,

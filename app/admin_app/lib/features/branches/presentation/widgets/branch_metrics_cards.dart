@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_metrics.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
 class BranchMetricsCards extends StatelessWidget {
@@ -18,7 +19,7 @@ class BranchMetricsCards extends StatelessWidget {
       AdminMetricCard(
         label: S.branchesMetricTotal,
         value: localizeDigits('${metrics.total}'),
-        icon: HugeIcons.strokeRoundedStore01,
+        icon: AppIcons.store01,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.adminAccent,
         caption: localizeDigits(
@@ -28,7 +29,7 @@ class BranchMetricsCards extends StatelessWidget {
       AdminMetricCard(
         label: S.branchesMetricActive,
         value: localizeDigits('${metrics.active}'),
-        icon: HugeIcons.strokeRoundedCheckmarkCircle02,
+        icon: AppIcons.checkmarkCircle02,
         iconBackground: AppColor.trendPositiveSurface,
         iconColor: AppColor.trendPositive,
         caption: localizeDigits(
@@ -38,7 +39,7 @@ class BranchMetricsCards extends StatelessWidget {
       AdminMetricCard(
         label: S.branchesMetricOrders,
         value: localizeDigits('${metrics.orders30d}'),
-        icon: HugeIcons.strokeRoundedShoppingBag01,
+        icon: AppIcons.shoppingBag01,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
         caption: S.branchesMetricOrdersCaption,
@@ -46,7 +47,7 @@ class BranchMetricsCards extends StatelessWidget {
       AdminMetricCard(
         label: S.branchesMetricZones,
         value: localizeDigits('${metrics.zonesCovered}'),
-        icon: HugeIcons.strokeRoundedDeliveryTruck01,
+        icon: AppIcons.deliveryTruck01,
         iconBackground: AppColor.adminInfoSurface,
         iconColor: AppColor.adminInfo,
         caption: S.branchesMetricZonesCaption,
@@ -56,7 +57,7 @@ class BranchMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

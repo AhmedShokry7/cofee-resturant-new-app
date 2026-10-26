@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 class OrderDetailNavigation extends StatelessWidget {
@@ -43,9 +44,7 @@ class OrderDetailNavigation extends StatelessWidget {
           context,
           S.olderOrder,
           older,
-          rtl
-              ? HugeIcons.strokeRoundedArrowRight01
-              : HugeIcons.strokeRoundedArrowLeft01,
+          rtl ? AppIcons.arrowRight01 : AppIcons.arrowLeft01,
         ),
         Text(
           current,
@@ -59,9 +58,7 @@ class OrderDetailNavigation extends StatelessWidget {
           context,
           S.newerOrder,
           newer,
-          rtl
-              ? HugeIcons.strokeRoundedArrowLeft01
-              : HugeIcons.strokeRoundedArrowRight01,
+          rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
         ),
       ],
     );
@@ -81,16 +78,18 @@ class OrderDetailNavigation extends StatelessWidget {
         disabledForegroundColor: adminSubtleColor(theme),
         side: BorderSide(color: adminControlBorderColor(theme)),
         minimumSize: const Size(0, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
         textStyle: const TextStyle(
           fontSize: AppFontSizes.size10_5,
           fontWeight: AppFontWeights.medium,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
       ),
-      icon: HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
+      icon: AppIcon(icon, size: 14, color: adminMutedColor(theme)),
       label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
     );
   }

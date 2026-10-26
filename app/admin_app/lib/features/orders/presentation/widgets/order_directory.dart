@@ -1,12 +1,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_cards.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_directory_toolbar.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_controls.dart';
@@ -130,18 +131,21 @@ class _OrderDirectoryState extends State<OrderDirectory> {
         border: Border.all(
           color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         boxShadow: dark
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
               ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -157,9 +161,9 @@ class _OrderDirectoryState extends State<OrderDirectory> {
             exporting: widget.exporting,
             exportEnabled: filtered.isNotEmpty,
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: AppSizes.px12),
           SizedBox(
-            height: 36,
+            height: AppSizes.px36,
             child: OrderStatusTabs(
               orders: _branchOrders,
               value: widget.filters.status,
@@ -168,14 +172,14 @@ class _OrderDirectoryState extends State<OrderDirectory> {
             ),
           ),
           if (_filtersExpanded) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             OrderFilterControls(
               value: widget.filters,
               branches: widget.branches,
               onChanged: _updateFilters,
             ),
           ],
-          const SizedBox(height: 11),
+          const SizedBox(height: AppSizes.px12),
           Expanded(
             child: filtered.isEmpty
                 ? _EmptyState(
@@ -230,12 +234,12 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedShoppingBag01,
+            AppIcon(
+              AppIcons.shoppingBag01,
               size: 38,
               color: muted.withValues(alpha: .6),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             Text(
               hasOrders ? S.noOrdersForFilter : S.noOrdersFound,
               textAlign: TextAlign.center,

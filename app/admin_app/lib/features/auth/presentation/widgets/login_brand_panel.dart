@@ -19,7 +19,7 @@ class LoginBrandPanel extends StatelessWidget {
       color: theme.colorScheme.primary,
       child: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.xxxl),
+          padding: const EdgeInsets.all(AppSpacing.huge),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -28,22 +28,22 @@ class LoginBrandPanel extends StatelessWidget {
                   AppImages.logo,
                   width: AppDimensions.logoMedium * 2,
                   height: AppDimensions.logoMedium * 2,
-                  fit: BoxFit.contain,
+                  fit: BoxFit.fill,
                 ),
               ),
-              const SizedBox(height: AppDimensions.xl),
+              const SizedBox(height: AppSpacing.xxl),
               Text(
                 S.appName,
                 textAlign: TextAlign.center,
                 style: AppFonts.bold36(context).copyWith(color: onBrand),
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 S.brandTitle,
                 textAlign: TextAlign.center,
                 style: AppFonts.semiBold16(context).copyWith(color: onBrand),
               ),
-              const SizedBox(height: AppDimensions.sm),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 S.brandDescription,
                 textAlign: TextAlign.center,

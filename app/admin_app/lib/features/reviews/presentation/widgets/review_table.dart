@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -78,7 +79,7 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -150,12 +151,12 @@ class _Row extends StatelessWidget {
     final category = reviewProductCategory(review);
     final initial = reviewCustomerInitial(review);
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onOpen,
         child: Container(
           height: 78,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -171,7 +172,7 @@ class _Row extends StatelessWidget {
                     Row(
                       children: [
                         ReviewStars(rating: review.rating.toDouble(), size: 11),
-                        const SizedBox(width: 6),
+                        const SizedBox(width: AppSizes.px6),
                         Text(
                           reviewAverageValue(review.rating.toDouble()),
                           textDirection: TextDirection.ltr,
@@ -184,7 +185,7 @@ class _Row extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSizes.px2),
                     Text(
                       reviewHeadline(review),
                       maxLines: 1,
@@ -197,7 +198,7 @@ class _Row extends StatelessWidget {
                       ),
                     ),
                     if (excerpt != null) ...[
-                      const SizedBox(height: 1),
+                      const SizedBox(height: AppSizes.px1),
                       Text(
                         excerpt,
                         maxLines: 1,
@@ -220,7 +221,7 @@ class _Row extends StatelessWidget {
                       imageUrl: review.product.imageUrl,
                       size: 34,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.px8),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -265,7 +266,7 @@ class _Row extends StatelessWidget {
                       size: 28,
                       fallbackText: initial,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.px8),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -308,7 +309,7 @@ class _Row extends StatelessWidget {
                       const ReviewVerifiedChip(compact: true)
                     else
                       const ReviewUnverifiedLabel(),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: AppSizes.px4),
                     Text(
                       reviewOrderReference(review),
                       maxLines: 1,

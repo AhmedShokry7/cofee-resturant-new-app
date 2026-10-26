@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -20,7 +21,7 @@ class OrderCustomerIdentity extends StatelessWidget {
     return Row(
       children: [
         AdminAvatarImage(url: avatarUrl, size: 44),
-        const SizedBox(width: 10),
+        const SizedBox(width: AppSizes.px10),
         Expanded(
           child: Text(
             name,

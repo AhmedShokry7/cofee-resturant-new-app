@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/models/order_edit_rules.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -35,19 +36,17 @@ class OrderAddProductButton extends StatelessWidget {
               : AppColor.lightGreyColor,
           disabledForegroundColor: adminMutedColor(theme),
           minimumSize: const Size(0, 32),
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           textStyle: const TextStyle(
             fontSize: AppFontSizes.size10_5,
             fontWeight: AppFontWeights.semiBold,
           ),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
         ),
-        icon: HugeIcon(
-          icon: HugeIcons.strokeRoundedAdd01,
-          size: 15,
-          color: iconColor,
-        ),
+        icon: AppIcon(AppIcons.add01, size: 15, color: iconColor),
         label: Text(S.ordersAddProduct, maxLines: 1),
       ),
     );

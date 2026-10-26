@@ -1,5 +1,5 @@
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 
 enum CustomerFilter { all, vip, blacklisted, buyers, noOrders }
 

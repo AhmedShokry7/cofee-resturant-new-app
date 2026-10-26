@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
@@ -136,7 +137,10 @@ class _ReviewDirectoryState extends State<ReviewDirectory> {
         .toList(growable: false);
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -154,7 +158,7 @@ class _ReviewDirectoryState extends State<ReviewDirectory> {
             hasActiveFilter: _filter != AdminReviewFilter.all,
           ),
           if (widget.ratingFilter != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.px8),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: _RatingFilterChip(
@@ -163,7 +167,7 @@ class _ReviewDirectoryState extends State<ReviewDirectory> {
               ),
             ),
           ],
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: count == 0
                 ? _emptyState(canClear: canClear)
@@ -205,7 +209,7 @@ class _ReviewDirectoryState extends State<ReviewDirectory> {
   Widget _emptyState({required bool canClear}) {
     final noData = widget.reviews.isEmpty;
     return AdminEmptyState(
-      icon: HugeIcons.strokeRoundedComment01,
+      icon: AppIcons.comment01,
       message: noData ? S.reviewsEmpty : S.reviewsNoMatches,
       hint: noData ? S.reviewsEmptyHint : null,
       action: canClear
@@ -233,12 +237,15 @@ class _RatingFilterChip extends StatelessWidget {
           AppColor.adminAccent,
           AppColor.adminAccentSurface,
         ),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: onClear,
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xs,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -247,7 +254,7 @@ class _RatingFilterChip extends StatelessWidget {
                   size: 13,
                   color: AppColor.adminWarning,
                 ),
-                const SizedBox(width: 5),
+                const SizedBox(width: AppSizes.px6),
                 Text(
                   S.reviewsStarsCount(rating),
                   style: TextStyle(
@@ -257,12 +264,8 @@ class _RatingFilterChip extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                const SizedBox(width: 5),
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedCancel01,
-                  size: 12,
-                  color: foreground,
-                ),
+                const SizedBox(width: AppSizes.px6),
+                AppIcon(AppIcons.cancel01, size: 12, color: foreground),
               ],
             ),
           ),

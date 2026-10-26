@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_excel_controller.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';

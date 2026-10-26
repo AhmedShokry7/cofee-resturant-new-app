@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/app_dependencies.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/delivery_zones/data/models/admin_delivery_zone.dart';
-import 'package:admin_app/features/delivery_zones/data/repositories/admin_delivery_zone_repository.dart';
-import 'package:admin_app/features/delivery_zones/presentation/widgets/delivery_zone_form_dialog.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_delivery_zone.dart';
+import 'package:admin_app/core/delivery_zones/delivery_zone_repository.dart';
+import 'package:admin_app/shared/widgets/delivery_zone_form_dialog.dart';
 
 Future<void> showBranchDeliverySettingsDialog({
   required BuildContext context,
@@ -32,7 +33,7 @@ class BranchDeliverySettingsDialog extends StatefulWidget {
 
   final AdminBranch branch;
   final VoidCallback onEditBranch;
-  final AdminDeliveryZoneRepository? repository;
+  final DeliveryZoneRepository? repository;
 
   @override
   State<BranchDeliverySettingsDialog> createState() =>
@@ -41,7 +42,7 @@ class BranchDeliverySettingsDialog extends StatefulWidget {
 
 class _BranchDeliverySettingsDialogState
     extends State<BranchDeliverySettingsDialog> {
-  late final AdminDeliveryZoneRepository _repository;
+  late final DeliveryZoneRepository _repository;
   List<AdminDeliveryZone> _zones = const [];
   Map<String, Set<String>> _assignments = const {};
   bool _loading = true;
@@ -57,7 +58,7 @@ class _BranchDeliverySettingsDialogState
   @override
   void initState() {
     super.initState();
-    _repository = widget.repository ?? AdminDeliveryZoneRepository();
+    _repository = widget.repository ?? AppDependencies.deliveryZones;
     _load();
   }
 
@@ -144,12 +145,12 @@ class _BranchDeliverySettingsDialogState
     final activeCount = zones.where((zone) => zone.isActive).length;
 
     return Dialog(
-      insetPadding: const EdgeInsets.all(AppDimensions.lg),
+      insetPadding: const EdgeInsets.all(AppSpacing.lg),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: SizedBox(
-        width: width < 900 ? width - 40 : 820,
+        width: width < AppBreakpoints.wideLayout ? width - 40 : 820,
         height: height < 900 ? height - 40 : 760,
         child: Column(
           children: [
@@ -179,10 +180,10 @@ class _BranchDeliverySettingsDialogState
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(
-            AppDimensions.lg,
-            AppDimensions.md,
-            AppDimensions.lg,
-            AppDimensions.sm,
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.sm,
           ),
           child: Column(
             children: [
@@ -194,7 +195,7 @@ class _BranchDeliverySettingsDialogState
                   widget.onEditBranch();
                 },
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -218,7 +219,7 @@ class _BranchDeliverySettingsDialogState
         ),
         if (_error != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: MaterialBanner(
               content: Text(_error!),
               leading: const Icon(Icons.error_outline),
@@ -233,14 +234,14 @@ class _BranchDeliverySettingsDialogState
                 )
               : ListView.separated(
                   padding: const EdgeInsets.fromLTRB(
-                    AppDimensions.lg,
-                    AppDimensions.sm,
-                    AppDimensions.lg,
-                    AppDimensions.lg,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                    AppSpacing.lg,
+                    AppSpacing.lg,
                   ),
                   itemCount: zones.length,
                   separatorBuilder: (_, _) =>
-                      const SizedBox(height: AppDimensions.sm),
+                      const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, index) => _ZoneCard(
                     zone: zones[index],
                     isArabic: isArabic,
@@ -252,7 +253,7 @@ class _BranchDeliverySettingsDialogState
                 ),
         ),
         Padding(
-          padding: const EdgeInsets.all(AppDimensions.md),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Align(
             alignment: AlignmentDirectional.centerEnd,
             child: TextButton(
@@ -281,11 +282,11 @@ class _DialogHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColor.primaryColor.withValues(alpha: 0.06),
         borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppDimensions.radiusLg),
+          top: Radius.circular(AppRadius.xl),
         ),
       ),
       child: Row(
@@ -295,14 +296,14 @@ class _DialogHeader extends StatelessWidget {
             height: 48,
             decoration: BoxDecoration(
               color: AppColor.primaryColor,
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: const Icon(
               Icons.delivery_dining,
               color: AppColor.whiteColor,
             ),
           ),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +318,7 @@ class _DialogHeader extends StatelessWidget {
                     fontWeight: AppFontWeights.bold,
                   ),
                 ),
-                const SizedBox(height: AppDimensions.xs),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   S.branchDeliveryDescription,
                   style: theme.textTheme.bodySmall?.copyWith(
@@ -349,12 +350,12 @@ class _BranchLocationCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: hasLocation
             ? Theme.of(context).colorScheme.surfaceContainerLow
             : Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: AppColor.recordBorder),
       ),
       child: Row(
@@ -365,7 +366,7 @@ class _BranchLocationCard extends StatelessWidget {
                 : Icons.location_off_outlined,
             color: hasLocation ? AppColor.primaryColor : AppColor.errorColor,
           ),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -380,7 +381,7 @@ class _BranchLocationCard extends StatelessWidget {
                     fontWeight: AppFontWeights.semiBold,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: AppSizes.px4),
                 Text(
                   hasLocation
                       ? '${branch.latitude!.toStringAsFixed(5)}, ${branch.longitude!.toStringAsFixed(5)}'
@@ -430,11 +431,11 @@ class _ZoneCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
         border: Border.all(color: AppColor.recordBorder),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         children: [
@@ -443,11 +444,11 @@ class _ZoneCard extends StatelessWidget {
             height: 44,
             decoration: BoxDecoration(
               color: AppColor.primaryColor.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: const Icon(Icons.radar, color: AppColor.primaryColor),
           ),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -465,10 +466,10 @@ class _ZoneCard extends StatelessWidget {
                     _StatusPill(active: zone.isActive),
                   ],
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: AppSizes.px6),
                 Wrap(
-                  spacing: AppDimensions.md,
-                  runSpacing: AppDimensions.xs,
+                  spacing: AppSpacing.md,
+                  runSpacing: AppSpacing.xs,
                   children: [
                     _Detail(
                       icon: Icons.radar,
@@ -484,7 +485,7 @@ class _ZoneCard extends StatelessWidget {
                   ],
                 ),
                 if (isShared) ...[
-                  const SizedBox(height: 6),
+                  const SizedBox(height: AppSizes.px6),
                   Text(
                     S.zoneSharedBranchNotice,
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -495,7 +496,7 @@ class _ZoneCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           IconButton(
             tooltip: S.edit,
             onPressed: saving ? null : onEdit,
@@ -522,7 +523,7 @@ class _Detail extends StatelessWidget {
     mainAxisSize: MainAxisSize.min,
     children: [
       Icon(icon, size: 15, color: AppColor.greyColor),
-      const SizedBox(width: 4),
+      const SizedBox(width: AppSizes.px4),
       Text(text, style: Theme.of(context).textTheme.bodySmall),
     ],
   );
@@ -535,12 +536,15 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xs,
+    ),
     decoration: BoxDecoration(
       color: active
           ? AppColor.primaryColor.withValues(alpha: 0.1)
           : AppColor.lightGreyColor,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
     ),
     child: Text(
       active ? S.active : S.inactive,
@@ -561,7 +565,7 @@ class _EmptyZones extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: const EdgeInsets.all(AppDimensions.xl),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -578,20 +582,20 @@ class _EmptyZones extends StatelessWidget {
               color: AppColor.primaryColor,
             ),
           ),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           Text(
             S.noBranchDeliveryZones,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleSmall,
           ),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
           FilledButton.icon(
             onPressed: onAdd,
             icon: const Icon(Icons.add),
             label: Text(S.addDeliveryZone),
           ),
           if (!hasLocation) ...[
-            const SizedBox(height: AppDimensions.sm),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               S.branchLocationNeeded,
               textAlign: TextAlign.center,

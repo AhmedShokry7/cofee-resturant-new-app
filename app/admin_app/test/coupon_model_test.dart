@@ -2,10 +2,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_draft.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_metrics.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_targets.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_targets.dart';
 import 'package:admin_app/features/coupons/presentation/models/coupon_filter.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
 

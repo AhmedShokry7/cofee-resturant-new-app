@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_avatar.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_format.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
@@ -73,7 +74,7 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -145,12 +146,12 @@ class _Row extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
 
     return Material(
-      color: selected ? selectedColor : Colors.transparent,
+      color: selected ? selectedColor : AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: 56,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -175,7 +176,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     CustomerAvatar(customer: customer),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -241,7 +242,7 @@ class _Row extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: AppSizes.px4),
                     const CurrencyIcon(size: 13),
                   ],
                 ),
@@ -276,10 +277,8 @@ class _Row extends StatelessWidget {
                 width: CustomerTable._actionWidth,
                 child: Align(
                   alignment: AlignmentDirectional.centerEnd,
-                  child: HugeIcon(
-                    icon: rtl
-                        ? HugeIcons.strokeRoundedArrowLeft01
-                        : HugeIcons.strokeRoundedArrowRight01,
+                  child: AppIcon(
+                    rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                     size: 16,
                     color: AppColor.adminMuted,
                   ),
@@ -309,8 +308,8 @@ class CustomerCheckbox extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final checkbox = SizedBox(
-      width: 20,
-      height: 20,
+      width: AppSizes.px20,
+      height: AppSizes.px20,
       child: Checkbox(
         value: value,
         tristate: true,
@@ -318,12 +317,14 @@ class CustomerCheckbox extends StatelessWidget {
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
         side: BorderSide(
-          color: dark ? AppColor.darkTextSecondary : const Color(0xFF767676),
+          color: dark ? AppColor.darkTextSecondary : AppColor.quietNeutralInk,
           width: 1,
         ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(2.5)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+        ),
         activeColor: AppColor.adminAccent,
-        checkColor: Colors.white,
+        checkColor: AppColor.whiteColor,
       ),
     );
     final text = label?.trim() ?? '';

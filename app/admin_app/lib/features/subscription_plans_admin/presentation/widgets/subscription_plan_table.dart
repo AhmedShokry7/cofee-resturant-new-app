@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -56,7 +57,7 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -122,12 +123,12 @@ class _Row extends StatelessWidget {
     final description = subscriptionPlanDescription(plan);
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
           height: 58,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -145,17 +146,17 @@ class _Row extends StatelessWidget {
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
                         color: adminTintedSurfaceColor(theme),
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedPackage,
+                      child: AppIcon(
+                        AppIcons.package,
                         size: 16,
                         color: dark
                             ? AppColor.darkTextSecondary
                             : AppColor.adminMuted,
                       ),
                     ),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -262,8 +263,8 @@ class _Row extends StatelessWidget {
                   alignment: AlignmentDirectional.centerEnd,
                   child: Tooltip(
                     message: S.subscriptionPlanEditAction,
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedEdit01,
+                    child: AppIcon(
+                      AppIcons.edit01,
                       size: 16,
                       color: AppColor.adminMuted,
                     ),

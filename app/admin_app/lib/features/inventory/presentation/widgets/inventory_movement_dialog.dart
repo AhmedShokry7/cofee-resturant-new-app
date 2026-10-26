@@ -2,20 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_filters.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_item.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_material_option.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_draft.dart';
-import 'package:admin_app/features/inventory/data/repositories/admin_inventory_repository.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_filters.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_item.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_material_option.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_draft.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
+import 'package:admin_app/features/inventory/domain/entities/inventory_movement_outcome.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -331,13 +331,14 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.sizeOf(context).width < 600
-            ? AppDimensions.md
-            : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal:
+            MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 620),
@@ -351,13 +352,13 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_error != null) ...[
                       AdminErrorBanner(message: _error!),
-                      const SizedBox(height: AppDimensions.md),
+                      const SizedBox(height: AppSpacing.md),
                     ],
                     Text(
                       S.movementTypeLabel,
@@ -366,7 +367,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                         fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
-                    const SizedBox(height: AppDimensions.sm),
+                    const SizedBox(height: AppSpacing.sm),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -376,8 +377,8 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                             label: Text(stockMovementTypeLabel(type)),
                             selected: _type == type,
                             showCheckmark: false,
-                            avatar: HugeIcon(
-                              icon: stockMovementTypeIcon(type),
+                            avatar: AppIcon(
+                              stockMovementTypeIcon(type),
                               size: 15,
                               color: stockMovementTypeColor(type),
                             ),
@@ -385,7 +386,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                           ),
                       ],
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     if (widget.branches.isEmpty)
                       Text(
                         S.movementNoBranches,
@@ -409,9 +410,9 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                         ],
                         onChanged: _saving ? null : _setBranch,
                       ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _buildMaterialPicker(context),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final quantity = _MovementField(
@@ -436,7 +437,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                             ? Column(
                                 children: [
                                   quantity,
-                                  const SizedBox(height: AppDimensions.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   _MovementField(
                                     controller: _unitCostController,
                                     label: S.movementUnitCost,
@@ -454,7 +455,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Expanded(child: quantity),
-                                  const SizedBox(width: AppDimensions.md),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(
                                     child: _MovementField(
                                       controller: _unitCostController,
@@ -473,7 +474,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                       },
                     ),
                     if (_selectedMaterial != null) ...[
-                      const SizedBox(height: AppDimensions.sm),
+                      const SizedBox(height: AppSpacing.sm),
                       _BalancePreview(
                         current: inventoryQuantity(
                           _selectedMaterial!.quantityOnHand,
@@ -487,13 +488,13 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                               ),
                       ),
                     ],
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _MovementField(
                       controller: _referenceController,
                       label: S.reference,
                       hint: S.movementReferenceHint,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _MovementField(
                       controller: _noteController,
                       label: S.materialNotes,
@@ -522,19 +523,22 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
     final theme = Theme.of(context);
     if (_needsBranch) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
         decoration: BoxDecoration(
           color: adminTintedSurfaceColor(theme),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Row(
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedWarehouse,
+            AppIcon(
+              AppIcons.warehouse,
               size: 16,
               color: adminMutedColor(theme),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.px8),
             Text(
               S.movementSelectBranch,
               style: TextStyle(
@@ -550,20 +554,16 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
     final selected = _selectedMaterial;
     if (selected != null) {
       return Container(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
           color: adminTintedSurfaceColor(theme),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(color: adminCardBorderColor(theme)),
         ),
         child: Row(
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedPackage,
-              size: 18,
-              color: AppColor.adminAccent,
-            ),
-            const SizedBox(width: 8),
+            AppIcon(AppIcons.package, size: 18, color: AppColor.adminAccent),
+            const SizedBox(width: AppSizes.px8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,8 +605,8 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                 padding: EdgeInsets.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
-              icon: HugeIcon(
-                icon: HugeIcons.strokeRoundedCancel01,
+              icon: AppIcon(
+                AppIcons.cancel01,
                 size: 16,
                 color: adminMutedColor(theme),
               ),
@@ -625,27 +625,27 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
           decoration: InputDecoration(
             labelText: S.movementMaterial,
             hintText: S.movementMaterialSearch,
-            prefixIcon: HugeIcon(
-              icon: HugeIcons.strokeRoundedSearch01,
+            prefixIcon: AppIcon(
+              AppIcons.search01,
               size: 17,
               color: adminMutedColor(theme),
             ),
           ),
         ),
-        const SizedBox(height: 7),
+        const SizedBox(height: AppSizes.px8),
         Container(
           height: 152,
           decoration: BoxDecoration(
             color: theme.colorScheme.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           clipBehavior: Clip.antiAlias,
           child: _loadingOptions
               ? const Center(
                   child: SizedBox(
-                    width: 20,
-                    height: 20,
+                    width: AppSizes.px20,
+                    height: AppSizes.px20,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   ),
                 )
@@ -680,8 +680,8 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                       onTap: () => _selectMaterial(option),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 8,
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.sm,
                         ),
                         child: Row(
                           children: [
@@ -720,8 +720,8 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                 ],
                               ),
                             ),
-                            HugeIcon(
-                              icon: HugeIcons.strokeRoundedArrowRight01,
+                            AppIcon(
+                              AppIcons.arrowRight01,
                               size: 15,
                               color: adminMutedColor(theme),
                             ),

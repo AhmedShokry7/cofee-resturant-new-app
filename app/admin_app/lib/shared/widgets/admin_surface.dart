@@ -47,7 +47,7 @@ class AdminSectionCard extends StatelessWidget {
     required this.child,
     this.count,
     this.trailing,
-    this.padding = const EdgeInsets.all(AppDimensions.lg),
+    this.padding = const EdgeInsets.all(AppSpacing.lg),
   });
 
   final String title;
@@ -64,13 +64,13 @@ class AdminSectionCard extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: dark
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
@@ -95,11 +95,11 @@ class AdminSectionCard extends StatelessWidget {
                 ),
               ),
               if (count != null) ...[
-                const SizedBox(width: AppDimensions.sm),
+                const SizedBox(width: AppSpacing.sm),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2,
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xxs,
                   ),
                   decoration: BoxDecoration(
                     color: adminFlagBackground(
@@ -107,7 +107,7 @@ class AdminSectionCard extends StatelessWidget {
                       AppColor.adminAccent,
                       AppColor.adminAccentSurface,
                     ),
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
                   ),
                   child: Text(
                     localizeDigits('$count'),
@@ -121,12 +121,12 @@ class AdminSectionCard extends StatelessWidget {
                 ),
               ],
               if (trailing != null) ...[
-                const SizedBox(width: AppDimensions.sm),
+                const SizedBox(width: AppSpacing.sm),
                 trailing!,
               ],
             ],
           ),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           child,
         ],
       ),

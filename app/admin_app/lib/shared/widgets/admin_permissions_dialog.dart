@@ -1,12 +1,13 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/locale/permission_catalog.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -156,8 +157,13 @@ class _AdminPermissionsDialogState extends State<AdminPermissionsDialog> {
     final height = math.min(680.0, size.height - 48);
     return Dialog(
       clipBehavior: Clip.antiAlias,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xxl,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: 680, maxHeight: height),
         child: SizedBox(
@@ -170,7 +176,12 @@ class _AdminPermissionsDialogState extends State<AdminPermissionsDialog> {
                 subtitle: widget.subtitle ?? S.permissionsDialogSubtitle,
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                ),
                 child: AdminSearchField(
                   controller: _searchController,
                   onChanged: (value) => setState(() => _query = value),
@@ -179,23 +190,28 @@ class _AdminPermissionsDialogState extends State<AdminPermissionsDialog> {
               ),
               if (!widget.canManage)
                 Container(
-                  margin: const EdgeInsets.fromLTRB(18, 0, 18, 8),
+                  margin: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    AppSpacing.none,
+                    AppSpacing.lg,
+                    AppSpacing.sm,
+                  ),
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
                     color: adminTintedSurfaceColor(theme),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Row(
                     children: [
-                      HugeIcon(
-                        icon: HugeIcons.strokeRoundedInformationCircle,
+                      AppIcon(
+                        AppIcons.informationCircle,
                         size: 15,
                         color: adminMutedColor(theme),
                       ),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: AppSizes.px8),
                       Expanded(
                         child: Text(
                           S.permissionsReadOnly,
@@ -211,7 +227,12 @@ class _AdminPermissionsDialogState extends State<AdminPermissionsDialog> {
                 ),
               Expanded(child: _list(context, dark)),
               Container(
-                padding: const EdgeInsets.fromLTRB(18, 10, 12, 10),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg,
+                  AppSpacing.sm,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
                 decoration: BoxDecoration(
                   border: Border(
                     top: BorderSide(color: adminRowBorderColor(theme)),
@@ -248,7 +269,7 @@ class _AdminPermissionsDialogState extends State<AdminPermissionsDialog> {
     if (visible.isEmpty) {
       final stillSearching = _query.trim().isNotEmpty;
       return AdminEmptyState(
-        icon: HugeIcons.strokeRoundedSearch01,
+        icon: AppIcons.search01,
         message: stillSearching
             ? S.permissionsNoMatches
             : widget.emptyMessage ?? S.permissionsNoMatches,
@@ -256,7 +277,12 @@ class _AdminPermissionsDialogState extends State<AdminPermissionsDialog> {
     }
     final groups = _grouped(visible);
     return ListView(
-      padding: const EdgeInsets.fromLTRB(18, 0, 18, 6),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.none,
+        AppSpacing.lg,
+        AppSpacing.xs,
+      ),
       children: [
         for (final entry in groups.entries) ...[
           _GroupHeader(group: entry.key, count: entry.value.length),
@@ -285,7 +311,12 @@ class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 10, 14),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.md,
+      ),
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: adminRowBorderColor(theme))),
       ),
@@ -301,15 +332,15 @@ class _Header extends StatelessWidget {
                 AppColor.adminAccent,
                 AppColor.adminAccentSurface,
               ),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedSecurityCheck,
+            child: AppIcon(
+              AppIcons.securityCheck,
               size: 19,
               color: adminFlagForeground(theme, AppColor.adminAccent),
             ),
           ),
-          const SizedBox(width: 11),
+          const SizedBox(width: AppSizes.px12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -341,8 +372,8 @@ class _Header extends StatelessWidget {
           IconButton(
             tooltip: S.close,
             onPressed: () => Navigator.of(context).pop(),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+            icon: AppIcon(
+              AppIcons.cancel01,
               size: 18,
               color: adminMutedColor(theme),
             ),
@@ -363,11 +394,14 @@ class _GroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      margin: const EdgeInsets.only(top: 8, bottom: 2),
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      margin: const EdgeInsets.only(top: AppSpacing.sm, bottom: AppSpacing.xxs),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         children: [
@@ -420,9 +454,12 @@ class _PermissionRow extends StatelessWidget {
     final muted = adminMutedColor(theme);
     return InkWell(
       onTap: enabled && !saving ? () => onChanged(!granted) : null,
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(AppRadius.md),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 7),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: adminRowBorderColor(theme))),
         ),
@@ -430,11 +467,11 @@ class _PermissionRow extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: 32,
-              height: 28,
+              width: AppSizes.px32,
+              height: AppSizes.px28,
               child: saving
                   ? const Padding(
-                      padding: EdgeInsets.all(6),
+                      padding: EdgeInsets.all(AppSpacing.xs),
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : Checkbox(
@@ -446,7 +483,7 @@ class _PermissionRow extends StatelessWidget {
                       visualDensity: VisualDensity.compact,
                     ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSizes.px8),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

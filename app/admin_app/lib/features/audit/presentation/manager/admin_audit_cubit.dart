@@ -4,16 +4,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/features/audit/data/models/admin_audit_log.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_metrics.dart';
-import 'package:admin_app/features/audit/data/repositories/admin_audit_repository.dart';
+import 'package:admin_app/features/audit/di/audit_dependencies.dart';
+import 'package:admin_app/features/audit/domain/repositories/audit_repository.dart';
+import 'package:admin_app/features/audit/domain/usecases/load_metrics.dart';
+import 'package:admin_app/features/audit/domain/usecases/load_page.dart';
 import 'package:admin_app/features/audit/presentation/manager/admin_audit_state.dart';
 import 'package:admin_app/features/audit/presentation/models/audit_filters.dart';
 
 class AdminAuditCubit extends Cubit<AdminAuditState> {
-  AdminAuditCubit({AdminAuditRepository? repository})
-    : _repository = repository ?? AdminAuditRepository(),
+  AdminAuditCubit({AuditRepository? repository})
+    : this._withUseCases(repository ?? AuditDependencies.repository);
+
+  AdminAuditCubit._withUseCases(AuditRepository repository)
+    : _loadPage = LoadPageUseCase(repository),
+      _loadMetrics = LoadMetricsUseCase(repository),
       super(const AdminAuditState());
 
-  final AdminAuditRepository _repository;
+  final LoadPageUseCase _loadPage;
+  final LoadMetricsUseCase _loadMetrics;
   Timer? _searchTimer;
   int _requestId = 0;
 
@@ -87,7 +95,7 @@ class AdminAuditCubit extends Cubit<AdminAuditState> {
       emit(state.copyWith(isRefreshingRows: true, clearError: true));
     }
 
-    final rowsFuture = _repository.loadPage(
+    final rowsFuture = _loadPage(
       search: state.search,
       domain: state.domain.value,
       criticalOnly: state.criticalOnly,
@@ -136,7 +144,7 @@ class AdminAuditCubit extends Cubit<AdminAuditState> {
 
   Future<AdminAuditMetrics?> _loadMetricsSafely() async {
     try {
-      return await _repository.loadMetrics();
+      return await _loadMetrics();
     } catch (_) {
       return null;
     }

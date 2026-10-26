@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -37,15 +38,13 @@ class OrderDetailAppBar extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: rtl
-                  ? HugeIcons.strokeRoundedArrowRight01
-                  : HugeIcons.strokeRoundedArrowLeft01,
+            icon: AppIcon(
+              rtl ? AppIcons.arrowRight01 : AppIcons.arrowLeft01,
               size: 18,
               color: adminMutedColor(theme),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               S.orderDetails,
@@ -59,7 +58,7 @@ class OrderDetailAppBar extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSizes.px12),
           Flexible(
             child: Text(
               '#$orderNumber',

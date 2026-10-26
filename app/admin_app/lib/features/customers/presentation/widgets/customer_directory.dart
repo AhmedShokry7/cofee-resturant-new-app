@@ -1,11 +1,12 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/models/customer_filter.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_cards.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_directory_toolbar.dart';
@@ -157,18 +158,21 @@ class _CustomerDirectoryState extends State<CustomerDirectory> {
         border: Border.all(
           color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
         ),
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         boxShadow: dark
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 24,
                   offset: Offset(0, 5),
                 ),
               ],
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -182,7 +186,7 @@ class _CustomerDirectoryState extends State<CustomerDirectory> {
             exporting: widget.exporting,
             exportEnabled: filtered.isNotEmpty,
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: filtered.isEmpty
                 ? _EmptyState(
@@ -251,12 +255,12 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedUserMultiple,
+            AppIcon(
+              AppIcons.userMultiple,
               size: 38,
               color: muted.withValues(alpha: .6),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             Text(
               hasCustomers ? S.customersNoMatches : S.noCustomersFound,
               textAlign: TextAlign.center,

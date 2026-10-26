@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_badges.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
@@ -79,7 +79,7 @@ class _Header extends StatelessWidget {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
         border: Border.all(
@@ -155,12 +155,12 @@ class _Row extends StatelessWidget {
     final initial = notificationCustomerInitial(notification);
     final typeColor = notificationTypeColor(notification.type);
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onOpen,
         child: Container(
           height: 78,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -181,15 +181,15 @@ class _Row extends StatelessWidget {
                           typeColor,
                           notificationTypeSurface(notification.type),
                         ),
-                        borderRadius: BorderRadius.circular(9),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: HugeIcon(
-                        icon: notificationTypeIcon(notification.type),
+                      child: AppIcon(
+                        notificationTypeIcon(notification.type),
                         size: 17,
                         color: adminFlagForeground(theme, typeColor),
                       ),
                     ),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -206,7 +206,7 @@ class _Row extends StatelessWidget {
                                     shape: BoxShape.circle,
                                   ),
                                 ),
-                                const SizedBox(width: 5),
+                                const SizedBox(width: AppSizes.px6),
                               ],
                               Expanded(
                                 child: Text(
@@ -224,7 +224,7 @@ class _Row extends StatelessWidget {
                             ],
                           ),
                           if (excerpt != null) ...[
-                            const SizedBox(height: 1),
+                            const SizedBox(height: AppSizes.px1),
                             Text(
                               excerpt,
                               maxLines: 1,
@@ -251,7 +251,7 @@ class _Row extends StatelessWidget {
                       size: 28,
                       fallbackText: initial,
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: AppSizes.px8),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,

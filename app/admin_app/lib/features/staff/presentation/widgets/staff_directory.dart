@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/models/staff_filter.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_cards.dart';
@@ -110,7 +111,10 @@ class _StaffDirectoryState extends State<StaffDirectory> {
     final hasFilter = _filter != StaffFilter.all;
 
     return AdminDirectoryPanel(
-      padding: const EdgeInsets.symmetric(horizontal: 19, vertical: 17),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.lg,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -127,13 +131,13 @@ class _StaffDirectoryState extends State<StaffDirectory> {
             filterLabel: S.staffFilter,
             hasActiveFilter: hasFilter,
           ),
-          const SizedBox(height: 13),
+          const SizedBox(height: AppSizes.px14),
           Expanded(
             child: filtered.isEmpty
                 ? AdminEmptyState(
                     icon: widget.staff.isEmpty || (!searching && !hasFilter)
-                        ? HugeIcons.strokeRoundedUserMultiple
-                        : HugeIcons.strokeRoundedUserSearch01,
+                        ? AppIcons.userMultiple
+                        : AppIcons.userSearch01,
                     message: searching
                         ? S.staffNoMatches
                         : hasFilter

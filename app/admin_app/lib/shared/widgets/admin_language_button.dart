@@ -1,5 +1,6 @@
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 
@@ -8,10 +9,7 @@ import 'package:admin_app/core/locale/app_locale.dart';
 /// The brand secondary tone is reserved for the dark appearance; light mode
 /// keeps the primary accent so the control stays readable on white.
 class AdminLanguageButton extends StatelessWidget {
-  const AdminLanguageButton({
-    super.key,
-    this.icon = HugeIcons.strokeRoundedTranslate,
-  });
+  const AdminLanguageButton({super.key, this.icon = AppIcons.translate});
 
   final IconData icon;
 
@@ -29,7 +27,7 @@ class AdminLanguageButton extends StatelessWidget {
       builder: (context, _) {
         return ActionChip(
           avatar: Icon(icon, size: 18, color: accent),
-          side: BorderSide(color: accent),
+          side: BorderSide(color: AppColor.adminAccentSurface),
           label: Text(
             locale.isArabic ? 'EN' : 'عربي',
             style: Theme.of(context).textTheme.labelLarge

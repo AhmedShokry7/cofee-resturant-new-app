@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_avatar.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_format.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_table.dart';
@@ -28,7 +29,7 @@ class CustomerCards extends StatelessWidget {
   Widget build(BuildContext context) => ListView.separated(
     padding: EdgeInsets.zero,
     itemCount: customers.length,
-    separatorBuilder: (_, _) => const SizedBox(height: 8),
+    separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
     itemBuilder: (context, index) {
       final customer = customers[index];
       return _CustomerCard(
@@ -58,7 +59,7 @@ class _CustomerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final body = dark ? AppColor.darkText : AppColor.adminBody;
     final subtle = dark ? AppColor.darkTextSecondary : AppColor.adminSubtle;
     final rtl = Directionality.of(context) == TextDirection.rtl;
@@ -74,7 +75,7 @@ class _CustomerCard extends StatelessWidget {
         onTap: onOpen,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(
@@ -90,9 +91,9 @@ class _CustomerCard extends StatelessWidget {
                     value: selected,
                     onChanged: (_) => onToggle(),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   CustomerAvatar(customer: customer, size: 38),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,16 +123,14 @@ class _CustomerCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  HugeIcon(
-                    icon: rtl
-                        ? HugeIcons.strokeRoundedArrowLeft01
-                        : HugeIcons.strokeRoundedArrowRight01,
+                  AppIcon(
+                    rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                     size: 16,
                     color: AppColor.adminMuted,
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
                   Expanded(
@@ -167,7 +166,7 @@ class _CustomerCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSizes.px4),
                           const CurrencyIcon(size: 13),
                         ],
                       ),
@@ -175,7 +174,7 @@ class _CustomerCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Row(
                 children: [
                   Expanded(

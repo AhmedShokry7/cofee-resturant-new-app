@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/inventory/data/models/admin_inventory_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_inventory_metrics.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
@@ -27,7 +28,7 @@ class InventoryMetricsCards extends StatelessWidget {
           S.inventoryMetricTotalHint(metrics.categories, metrics.branches),
         ),
         value: localizeDigits('${metrics.total}'),
-        icon: HugeIcons.strokeRoundedPackage,
+        icon: AppIcons.package,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.adminAccent,
       ),
@@ -35,7 +36,7 @@ class InventoryMetricsCards extends StatelessWidget {
         label: S.inventoryMetricValue,
         caption: S.inventoryMetricValueHint,
         value: inventoryMoney(metrics.stockValue),
-        icon: HugeIcons.strokeRoundedCoins01,
+        icon: AppIcons.coins01,
         iconBackground: AppColor.trendPositiveSurface,
         iconColor: AppColor.trendPositive,
       ),
@@ -43,7 +44,7 @@ class InventoryMetricsCards extends StatelessWidget {
         label: S.inventoryMetricLow,
         caption: S.inventoryMetricLowHint,
         value: localizeDigits('${metrics.low}'),
-        icon: HugeIcons.strokeRoundedAlert02,
+        icon: AppIcons.alert02,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
       ),
@@ -51,7 +52,7 @@ class InventoryMetricsCards extends StatelessWidget {
         label: S.inventoryMetricOut,
         caption: latest,
         value: localizeDigits('${metrics.out}'),
-        icon: HugeIcons.strokeRoundedPackageRemove,
+        icon: AppIcons.packageRemove,
         iconBackground: AppColor.trendNegativeSurface,
         iconColor: AppColor.trendNegative,
       ),
@@ -60,7 +61,7 @@ class InventoryMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

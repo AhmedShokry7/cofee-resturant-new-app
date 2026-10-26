@@ -1,24 +1,24 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_composer.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_metrics.dart';
-import 'package:admin_app/features/notifications/data/models/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
 
 enum NotificationSendOutcome { success, noRecipients, customerNotFound, failed }
 
 enum NotificationResendOutcome { queued, pushNotConfigured, notFound, failed }
 
-enum NotificationMutationOutcome { success, notFound, failed }
-
-class AdminNotificationsRepository {
+class AdminNotificationsRepository implements NotificationsRepository {
   AdminNotificationsRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<AdminNotificationPage> loadNotifications({
     String? search,
     AdminNotificationType? type,
@@ -46,6 +46,7 @@ class AdminNotificationsRepository {
     return const AdminNotificationPage();
   }
 
+  @override
   Future<AdminNotificationMetrics> loadMetrics() async {
     final response = await _supabase.rpc('admin_notification_metrics');
     if (response is Map) {
@@ -56,6 +57,7 @@ class AdminNotificationsRepository {
     return AdminNotificationMetrics.empty;
   }
 
+  @override
   Future<AdminPushHealth> loadPushHealth() async {
     final response = await _supabase.rpc('admin_push_health');
     if (response is Map) {
@@ -64,6 +66,7 @@ class AdminNotificationsRepository {
     return const AdminPushHealth();
   }
 
+  @override
   Future<List<AdminNotificationComposerCustomer>> loadCustomers({
     String? search,
     int limit = 20,
@@ -83,6 +86,7 @@ class AdminNotificationsRepository {
         .toList(growable: false);
   }
 
+  @override
   Future<AdminAudienceEstimate> loadAudience({
     required AdminNotificationType type,
     required AdminNotificationAudience audience,
@@ -104,6 +108,7 @@ class AdminNotificationsRepository {
     return AdminAudienceEstimate.empty;
   }
 
+  @override
   Future<AdminSendResult> sendNotification({
     required AdminNotificationType type,
     required String titleAr,
@@ -133,6 +138,7 @@ class AdminNotificationsRepository {
     return const AdminSendResult(ok: false);
   }
 
+  @override
   Future<AdminResendResult> resendNotification(String notificationId) async {
     final response = await _supabase.rpc(
       'admin_resend_notification',
@@ -144,6 +150,7 @@ class AdminNotificationsRepository {
     return const AdminResendResult(ok: false);
   }
 
+  @override
   Future<NotificationMutationOutcome> setRead(
     String notificationId,
     bool read,
@@ -158,6 +165,7 @@ class AdminNotificationsRepository {
         : NotificationMutationOutcome.failed;
   }
 
+  @override
   Future<NotificationMutationOutcome> deleteNotification(
     String notificationId,
   ) async {

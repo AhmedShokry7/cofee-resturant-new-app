@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_cubit.dart';
-import 'package:admin_app/features/catalog/presentation/widgets/category_image_dialog.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
 

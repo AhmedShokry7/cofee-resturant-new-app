@@ -1,21 +1,30 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/staff/data/repositories/admin_staff_repository.dart';
+import 'package:admin_app/features/staff/di/staff_dependencies.dart';
+import 'package:admin_app/features/staff/domain/repositories/staff_repository.dart';
+import 'package:admin_app/features/staff/domain/usecases/load_permissions.dart';
+import 'package:admin_app/features/staff/domain/usecases/load_staff.dart';
+import 'package:admin_app/features/staff/domain/usecases/set_staff_permission.dart';
 import 'package:admin_app/features/staff/presentation/manager/admin_staff_state.dart';
 
 class AdminStaffCubit extends Cubit<AdminStaffState> {
-  AdminStaffCubit({AdminStaffRepository? repository})
-    : _repository = repository ?? AdminStaffRepository(),
+  AdminStaffCubit({StaffRepository? repository})
+    : this._withUseCases(repository ?? StaffDependencies.repository);
+
+  AdminStaffCubit._withUseCases(StaffRepository repository)
+    : _loadStaff = LoadStaffUseCase(repository),
+      _loadPermissions = LoadPermissionsUseCase(repository),
+      _setStaffPermission = SetStaffPermissionUseCase(repository),
       super(const AdminStaffState());
 
-  final AdminStaffRepository _repository;
-
-  AdminStaffRepository get repository => _repository;
+  final LoadStaffUseCase _loadStaff;
+  final LoadPermissionsUseCase _loadPermissions;
+  final SetStaffPermissionUseCase _setStaffPermission;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminStaffStatus.loading, clearError: true));
     try {
-      final staff = await _repository.loadStaff();
+      final staff = await _loadStaff();
       emit(
         state.copyWith(
           status: AdminStaffStatus.ready,
@@ -33,9 +42,8 @@ class AdminStaffCubit extends Cubit<AdminStaffState> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> loadPermissions() =>
-      _repository.loadPermissions();
+  Future<List<Map<String, dynamic>>> loadPermissions() => _loadPermissions();
 
   Future<void> setStaffPermission(String staffId, String code, bool granted) =>
-      _repository.setStaffPermission(staffId, code, granted);
+      _setStaffPermission(staffId, code, granted);
 }

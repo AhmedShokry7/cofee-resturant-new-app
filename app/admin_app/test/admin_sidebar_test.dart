@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
 
 AdminSession _session() => const AdminSession(

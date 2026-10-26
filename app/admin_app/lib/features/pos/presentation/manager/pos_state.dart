@@ -1,11 +1,11 @@
-import 'package:admin_app/features/pos/data/models/pos_cart.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
-import 'package:admin_app/features/pos/data/models/pos_customer.dart';
-import 'package:admin_app/features/pos/data/models/pos_receipt.dart';
-import 'package:admin_app/features/pos/data/models/pos_shift.dart';
-import 'package:admin_app/features/pos/data/models/pos_table.dart';
-import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_table.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 enum PosStatus { initial, loading, ready, failure }
 

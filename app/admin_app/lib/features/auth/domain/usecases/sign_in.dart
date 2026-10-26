@@ -1,6 +1,6 @@
 import 'package:admin_app/core/result/result.dart';
 import 'package:admin_app/core/usecase/use_case.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
 
 /// معطيات تسجيل الدخول.

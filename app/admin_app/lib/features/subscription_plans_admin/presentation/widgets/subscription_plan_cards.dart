@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/subscription_plans_admin/data/models/admin_subscription_plan.dart';
+import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
 import 'package:admin_app/shared/widgets/admin_labeled_value.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -24,7 +25,7 @@ class SubscriptionPlanCards extends StatelessWidget {
   Widget build(BuildContext context) => ListView.separated(
     padding: EdgeInsets.zero,
     itemCount: plans.length,
-    separatorBuilder: (_, _) => const SizedBox(height: 8),
+    separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
     itemBuilder: (context, index) {
       final plan = plans[index];
       return _PlanCard(plan: plan, onTap: () => onEdit(plan));
@@ -42,7 +43,7 @@ class _PlanCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = adminIsDark(theme);
-    final radius = BorderRadius.circular(12);
+    final radius = BorderRadius.circular(AppRadius.lg);
     final body = adminBodyColor(theme);
     final muted = adminMutedColor(theme);
     final subtle = adminSubtleColor(theme);
@@ -56,7 +57,7 @@ class _PlanCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: radius,
         child: Container(
-          padding: const EdgeInsets.all(12),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             borderRadius: radius,
             border: Border.all(color: adminCardBorderColor(theme)),
@@ -72,17 +73,17 @@ class _PlanCard extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
                       color: adminTintedSurfaceColor(theme),
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: HugeIcon(
-                      icon: HugeIcons.strokeRoundedPackage,
+                    child: AppIcon(
+                      AppIcons.package,
                       size: 18,
                       color: dark
                           ? AppColor.darkTextSecondary
                           : AppColor.adminMuted,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,17 +112,17 @@ class _PlanCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   AdminStatusBadge(label: status.label, color: status.color),
-                  const SizedBox(width: 2),
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedEdit01,
+                  const SizedBox(width: AppSizes.px2),
+                  AppIcon(
+                    AppIcons.edit01,
                     size: 16,
                     color: AppColor.adminMuted,
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 children: [
                   Expanded(
@@ -152,7 +153,7 @@ class _PlanCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Flexible(
                     child: Text(
                       subscriptionPlanSubscribers(plan),
@@ -168,7 +169,7 @@ class _PlanCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -220,15 +221,11 @@ class _PlanCard extends StatelessWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Row(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedStore01,
-                    size: 13,
-                    color: muted,
-                  ),
-                  const SizedBox(width: 5),
+                  AppIcon(AppIcons.store01, size: 13, color: muted),
+                  const SizedBox(width: AppSizes.px6),
                   Expanded(
                     child: Text(
                       subscriptionPlanBranchesScope(plan),
@@ -241,12 +238,8 @@ class _PlanCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedPackage,
-                    size: 13,
-                    color: muted,
-                  ),
-                  const SizedBox(width: 5),
+                  AppIcon(AppIcons.package, size: 13, color: muted),
+                  const SizedBox(width: AppSizes.px6),
                   Expanded(
                     child: Text(
                       subscriptionPlanProductsScope(plan),

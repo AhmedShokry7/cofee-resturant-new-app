@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/inventory/data/models/admin_stock_movement_metrics.dart';
+import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement_metrics.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
@@ -23,7 +24,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
           S.stockMovementsMetricTotalHint(metrics.counts, metrics.actors),
         ),
         value: localizeDigits('${metrics.total}'),
-        icon: HugeIcons.strokeRoundedExchange01,
+        icon: AppIcons.exchange01,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.adminAccent,
       ),
@@ -35,7 +36,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
                 inventoryMoney(metrics.receivedValue),
               ),
         value: localizeDigits('${metrics.receipts}'),
-        icon: HugeIcons.strokeRoundedArrowDown01,
+        icon: AppIcons.arrowDown01,
         iconBackground: AppColor.trendPositiveSurface,
         iconColor: AppColor.trendPositive,
       ),
@@ -47,7 +48,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
                 inventoryMoney(metrics.issuedValue),
               ),
         value: localizeDigits('${metrics.issues}'),
-        icon: HugeIcons.strokeRoundedArrowUp01,
+        icon: AppIcons.arrowUp01,
         iconBackground: AppColor.adminInfoSurface,
         iconColor: AppColor.adminInfo,
       ),
@@ -59,7 +60,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
                 inventoryMoney(metrics.wasteValue),
               ),
         value: localizeDigits('${metrics.waste}'),
-        icon: HugeIcons.strokeRoundedDelete02,
+        icon: AppIcons.delete02,
         iconBackground: AppColor.trendNegativeSurface,
         iconColor: AppColor.trendNegative,
       ),
@@ -68,7 +69,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

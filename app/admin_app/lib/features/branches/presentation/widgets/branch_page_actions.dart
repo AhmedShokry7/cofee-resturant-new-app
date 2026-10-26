@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_format.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
 
@@ -58,7 +59,9 @@ class _BranchConfirmDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
       title: Text(
         title,
         style: TextStyle(
@@ -84,9 +87,9 @@ class _BranchConfirmDialog extends StatelessWidget {
           style: FilledButton.styleFrom(
             backgroundColor: confirmColor,
             minimumSize: const Size(0, 38),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(9),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
           ),
           child: Text(

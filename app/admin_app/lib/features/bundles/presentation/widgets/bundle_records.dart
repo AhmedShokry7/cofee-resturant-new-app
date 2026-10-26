@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/presentation/widgets/category_records.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
+import 'package:admin_app/shared/widgets/category_card.dart';
 
 /// The bundles whose name or description holds [search].
 List<AdminBundle> filterBundles(List<AdminBundle> bundles, String search) {
@@ -64,9 +64,7 @@ class BundleRecords extends StatelessWidget {
     if (bundles.isEmpty) {
       final filtering = search.trim().isNotEmpty;
       return AdminEmptyState(
-        icon: filtering
-            ? HugeIcons.strokeRoundedSearch01
-            : HugeIcons.strokeRoundedPackage,
+        icon: filtering ? AppIcons.search01 : AppIcons.package,
         message: filtering ? S.noBundlesFound : S.noBundlesYet,
       );
     }
@@ -87,13 +85,13 @@ class BundleRecords extends StatelessWidget {
           columns = 1;
         }
 
-        final cardWidth = (width - (columns - 1) * AppDimensions.md) / columns;
+        final cardWidth = (width - (columns - 1) * AppSpacing.md) / columns;
 
         return GridView.builder(
           gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: columns,
-            crossAxisSpacing: AppDimensions.md,
-            mainAxisSpacing: AppDimensions.md,
+            crossAxisSpacing: AppSpacing.md,
+            mainAxisSpacing: AppSpacing.md,
             childAspectRatio: cardWidth / (cardWidth + 100),
           ),
           itemCount: bundles.length,

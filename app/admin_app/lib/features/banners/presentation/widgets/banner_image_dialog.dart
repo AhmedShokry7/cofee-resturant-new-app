@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
-import 'package:admin_app/features/catalog/presentation/widgets/category_image_dialog.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 
 /// Opens the dialog that replaces or removes the picture of a banner.
 Future<void> showBannerImageDialog({

@@ -1,38 +1,26 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_draft.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_metrics.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_targets.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_targets.dart';
+import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
 
-enum CouponSaveOutcome {
-  saved,
-  duplicateCode,
-  invalidCode,
-  invalidTitle,
-  invalidDiscount,
-  invalidLimit,
-  invalidWindow,
-  invalidScope,
-  notFound,
-  failed,
-}
-
-enum CouponMutationOutcome { success, notFound, hasRedemptions, failed }
-
-class AdminCouponRepository {
+class AdminCouponRepository implements CouponRepository {
   AdminCouponRepository([this._client]);
 
   final SupabaseClient? _client;
 
   SupabaseClient get _supabase => _client ?? SupabaseService.client;
 
+  @override
   Future<List<AdminCoupon>> loadCoupons() async {
     final response = await _supabase.rpc('admin_coupons');
     return _mapList(response, AdminCoupon.fromJson);
   }
 
+  @override
   Future<AdminCouponMetrics> loadMetrics() async {
     final response = await _supabase.rpc('admin_coupon_metrics');
     if (response is Map) {
@@ -41,6 +29,7 @@ class AdminCouponRepository {
     return AdminCouponMetrics.empty;
   }
 
+  @override
   Future<AdminCouponTargets> loadTargets() async {
     final response = await _supabase.rpc('admin_coupon_targets');
     if (response is Map) {
@@ -49,6 +38,7 @@ class AdminCouponRepository {
     return AdminCouponTargets.empty;
   }
 
+  @override
   Future<CouponSaveOutcome> saveCoupon(AdminCouponDraft draft) async {
     final response = await _supabase.rpc(
       'admin_save_coupon',
@@ -68,6 +58,7 @@ class AdminCouponRepository {
     };
   }
 
+  @override
   Future<CouponMutationOutcome> setCouponActive(
     String couponId,
     bool active,
@@ -83,6 +74,7 @@ class AdminCouponRepository {
     };
   }
 
+  @override
   Future<CouponMutationOutcome> deleteCoupon(String couponId) async {
     final response = await _supabase.rpc(
       'admin_delete_coupon',

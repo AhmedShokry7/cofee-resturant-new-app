@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_selection_checkbox.dart';
 
@@ -17,7 +17,7 @@ class ProductCardImage extends StatelessWidget {
     this.onChangeImage,
     this.onSelect,
     this.onOpenImages,
-    this.fit = BoxFit.cover,
+    this.fit = BoxFit.fill,
     this.alignment = Alignment.center,
   });
 
@@ -79,7 +79,7 @@ class ProductCardImage extends StatelessWidget {
 class _CoverImage extends StatelessWidget {
   const _CoverImage({
     required this.url,
-    this.fit = BoxFit.cover,
+    this.fit = BoxFit.fill,
     this.alignment = Alignment.center,
   });
   final String? url;
@@ -115,7 +115,7 @@ class _ImagePlaceholder extends StatelessWidget {
       color: dark ? AppColor.darkSurfaceContainer : AppColor.imagePlaceholder,
       child: Center(
         child: Icon(
-          HugeIcons.strokeRoundedImage01,
+          AppIcons.image01,
           size: 40,
           color: dark ? AppColor.darkTextSecondary : AppColor.greyColor,
         ),
@@ -133,11 +133,11 @@ class _FeaturedBadge extends StatelessWidget {
     final theme = Theme.of(context);
     return Material(
       color: AppColor.primaryColor,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
       child: Padding(
         padding: const EdgeInsets.symmetric(
-          horizontal: AppDimensions.sm,
-          vertical: 4,
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
         ),
         child: Text(
           S.featured,
@@ -160,12 +160,15 @@ class _MediaPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColor.whiteColor,
-      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+      borderRadius: BorderRadius.circular(AppRadius.pill),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -176,9 +179,9 @@ class _MediaPill extends StatelessWidget {
                   fontSize: AppFontSizes.size12,
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               const Icon(
-                HugeIcons.strokeRoundedImageAdd01,
+                AppIcons.imageAdd01,
                 size: 14,
                 color: AppColor.primaryColor,
               ),

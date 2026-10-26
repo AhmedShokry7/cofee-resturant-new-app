@@ -1,11 +1,12 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/core/utils/formatters.dart';
 
 class OrderProductPickerTile extends StatelessWidget {
   const OrderProductPickerTile({
@@ -19,14 +20,14 @@ class OrderProductPickerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListTile(
     leading: ClipRRect(
-      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: SizedBox(
-        width: 40,
-        height: 40,
+        width: AppSizes.px40,
+        height: AppSizes.px40,
         child: product.imageUrl?.isNotEmpty == true
             ? CachedNetworkImage(
                 imageUrl: product.imageUrl!,
-                fit: BoxFit.cover,
+                fit: BoxFit.fill,
                 errorWidget: (_, _, _) => _placeholder(),
               )
             : _placeholder(),
@@ -43,8 +44,8 @@ class OrderProductPickerTile extends StatelessWidget {
 
   Widget _placeholder() => const ColoredBox(
     color: AppColor.secondaryColor,
-    child: HugeIcon(
-      icon: HugeIcons.strokeRoundedShoppingBag01,
+    child: AppIcon(
+      AppIcons.shoppingBag01,
       size: 20,
       color: AppColor.primaryColor,
     ),

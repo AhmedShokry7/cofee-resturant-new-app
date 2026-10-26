@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_actions_menu.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_format.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
@@ -41,7 +42,7 @@ class BranchCards extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.zero,
       itemCount: branches.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),
       itemBuilder: (context, index) {
         final branch = branches[index];
         return _BranchCard(
@@ -94,14 +95,14 @@ class _BranchCard extends StatelessWidget {
     final phone = branch.phone?.trim() ?? '';
     return Material(
       color: theme.colorScheme.surface,
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
       child: InkWell(
         onTap: canManage ? onEdit : null,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: Container(
-          padding: const EdgeInsets.all(13),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             border: Border.all(color: adminCardBorderColor(theme)),
           ),
           child: Column(
@@ -112,9 +113,9 @@ class _BranchCard extends StatelessWidget {
                   AdminNetworkThumb(
                     imageUrl: branch.imageUrl,
                     size: 46,
-                    icon: HugeIcons.strokeRoundedStore01,
+                    icon: AppIcons.store01,
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: AppSizes.px10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +144,7 @@ class _BranchCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: AppSizes.px6),
                   AdminStatusBadge(
                     label: branch.isActive ? S.active : S.inactive,
                     color: branch.isActive
@@ -174,13 +175,13 @@ class _BranchCard extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 9),
+              const SizedBox(height: AppSizes.px10),
               _MetaLine(
-                icon: HugeIcons.strokeRoundedLocation01,
+                icon: AppIcons.location01,
                 text: branch.address,
                 color: adminMutedColor(theme),
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               LayoutBuilder(
                 builder: (context, constraints) {
                   final width = (constraints.maxWidth - 16) / 3;
@@ -191,7 +192,7 @@ class _BranchCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedShoppingBag01,
+                          icon: AppIcons.shoppingBag01,
                           label: S.branchesTableOperations,
                           value: branchOrdersLabel(branch),
                           caption: branchLastOrder(branch),
@@ -200,7 +201,7 @@ class _BranchCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedUserMultiple,
+                          icon: AppIcons.userMultiple,
                           label: S.branchesStaff,
                           value: branchStaffLabel(branch),
                           caption: S.branchesStaffShort,
@@ -209,7 +210,7 @@ class _BranchCard extends StatelessWidget {
                       SizedBox(
                         width: width,
                         child: _StatBox(
-                          icon: HugeIcons.strokeRoundedDeliveryTruck01,
+                          icon: AppIcons.deliveryTruck01,
                           label: S.branchesZones,
                           value: branchZonesLabel(branch),
                           caption: S.branchesZonesShort,
@@ -219,14 +220,14 @@ class _BranchCard extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: AppSizes.px10),
               Wrap(
                 spacing: 12,
                 runSpacing: 5,
                 crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _MetaLine(
-                    icon: HugeIcons.strokeRoundedCall02,
+                    icon: AppIcons.call02,
                     text: phone.isEmpty
                         ? S.branchesNoPhone
                         : localizeDigits(phone),
@@ -235,7 +236,7 @@ class _BranchCard extends StatelessWidget {
                         : adminBodyColor(theme),
                   ),
                   _MetaLine(
-                    icon: HugeIcons.strokeRoundedClock01,
+                    icon: AppIcons.clock01,
                     text: hours ?? S.branchesHoursNotSet,
                     color: hours == null
                         ? AppColor.adminWarning
@@ -244,19 +245,19 @@ class _BranchCard extends StatelessWidget {
                 ],
               ),
               if (branch.needsSetup) ...[
-                const SizedBox(height: 9),
+                const SizedBox(height: AppSizes.px10),
                 Wrap(
                   spacing: 6,
                   runSpacing: 6,
                   children: [
                     if (!branch.hasLocation)
                       _IssueChip(
-                        icon: HugeIcons.strokeRoundedLocation01,
+                        icon: AppIcons.location01,
                         label: S.branchesMissingLocation,
                       ),
                     if (branch.zoneCount == 0)
                       _IssueChip(
-                        icon: HugeIcons.strokeRoundedDeliveryTruck01,
+                        icon: AppIcons.deliveryTruck01,
                         label: S.branchesNoCoverage,
                       ),
                   ],
@@ -287,15 +288,15 @@ class _StatBox extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
-          HugeIcon(icon: icon, size: 14, color: adminMutedColor(theme)),
-          const SizedBox(width: 6),
+          AppIcon(icon, size: 14, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,8 +356,8 @@ class _MetaLine extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
-      HugeIcon(icon: icon, size: 13, color: color),
-      const SizedBox(width: 4),
+      AppIcon(icon, size: 13, color: color),
+      const SizedBox(width: AppSizes.px4),
       Flexible(
         child: Text(
           text,
@@ -383,14 +384,17 @@ class _IssueChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.adminWarning,
           AppColor.adminWarningSurface,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: AppColor.adminWarning.withValues(
             alpha: adminIsDark(theme) ? .35 : .18,
@@ -400,12 +404,12 @@ class _IssueChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: icon,
+          AppIcon(
+            icon,
             size: 11,
             color: adminFlagForeground(theme, AppColor.adminWarning),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSizes.px4),
           Text(
             label,
             style: TextStyle(

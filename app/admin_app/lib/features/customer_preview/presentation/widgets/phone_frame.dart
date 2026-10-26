@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 
 class PhoneFrame extends StatelessWidget {
   const PhoneFrame({super.key, required this.child, this.width = 320});
@@ -17,19 +17,19 @@ class PhoneFrame extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: AppColor.blackColor,
-        borderRadius: BorderRadius.circular(40),
+        borderRadius: BorderRadius.circular(AppRadius.phoneBody),
         border: Border.all(color: AppColor.borderColor, width: 2),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x33000000),
+            color: AppColor.black20,
             blurRadius: 24,
             offset: Offset(0, 12),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(AppDimensions.sm),
+      padding: const EdgeInsets.all(AppSpacing.sm),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(AppRadius.phoneScreen),
         child: Stack(
           children: [
             Positioned.fill(child: child),
@@ -43,7 +43,7 @@ class PhoneFrame extends StatelessWidget {
                   height: 20,
                   decoration: BoxDecoration(
                     color: AppColor.blackColor,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                   ),
                 ),
               ),

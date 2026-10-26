@@ -1,14 +1,16 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -97,13 +99,13 @@ class _RewardCoupon extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
         boxShadow: dark
             ? const []
             : const [
                 BoxShadow(
-                  color: Color(0x0A1B362B),
+                  color: AppColor.inkWashFaint,
                   blurRadius: 18,
                   offset: Offset(0, 4),
                 ),
@@ -126,7 +128,7 @@ class _RewardCoupon extends StatelessWidget {
                         size: 44,
                         icon: _targetIcon(reward.type),
                       ),
-                      const SizedBox(width: 9),
+                      const SizedBox(width: AppSizes.px10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,7 +145,7 @@ class _RewardCoupon extends StatelessWidget {
                                 height: AppTextHeights.line1_35,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSizes.px2),
                             Text(
                               caption,
                               maxLines: 1,
@@ -171,7 +173,7 @@ class _RewardCoupon extends StatelessWidget {
                               PopupMenuItem(
                                 value: _RewardAction.edit,
                                 child: _MenuItem(
-                                  icon: HugeIcons.strokeRoundedEdit01,
+                                  icon: AppIcons.edit01,
                                   label: S.loyaltyRewardEdit,
                                 ),
                               ),
@@ -180,9 +182,8 @@ class _RewardCoupon extends StatelessWidget {
                                 value: _RewardAction.toggle,
                                 child: _MenuItem(
                                   icon: reward.isActive
-                                      ? HugeIcons.strokeRoundedTime01
-                                      : HugeIcons
-                                            .strokeRoundedCheckmarkCircle02,
+                                      ? AppIcons.time01
+                                      : AppIcons.checkmarkCircle02,
                                   label: reward.isActive
                                       ? S.loyaltyRewardPause
                                       : S.loyaltyRewardActivate,
@@ -191,19 +192,18 @@ class _RewardCoupon extends StatelessWidget {
                             PopupMenuItem(
                               value: _RewardAction.delete,
                               child: _MenuItem(
-                                icon: HugeIcons.strokeRoundedDelete02,
+                                icon: AppIcons.delete02,
                                 label: S.loyaltyRewardDelete,
                                 destructive: true,
                               ),
                             ),
                           ],
                           child: SizedBox(
-                            width: 28,
-                            height: 28,
+                            width: AppSizes.px28,
+                            height: AppSizes.px28,
                             child: Center(
-                              child: HugeIcon(
-                                icon: HugeIcons
-                                    .strokeRoundedMoreHorizontalCircle01,
+                              child: AppIcon(
+                                AppIcons.moreHorizontalCircle01,
                                 size: 17,
                                 color: adminMutedColor(theme),
                               ),
@@ -221,12 +221,12 @@ class _RewardCoupon extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const HugeIcon(
-                            icon: HugeIcons.strokeRoundedArchive02,
+                          const AppIcon(
+                            AppIcons.archive02,
                             size: 12,
                             color: AppColor.adminMuted,
                           ),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSizes.px4),
                           Expanded(
                             child: Text(
                               S.loyaltyRewardUnavailable,
@@ -266,9 +266,9 @@ class _RewardCoupon extends StatelessWidget {
 }
 
 IconData _targetIcon(AdminLoyaltyRewardType type) => switch (type) {
-  AdminLoyaltyRewardType.product => HugeIcons.strokeRoundedPackage,
-  AdminLoyaltyRewardType.bundle => HugeIcons.strokeRoundedShoppingBag01,
-  AdminLoyaltyRewardType.plan => HugeIcons.strokeRoundedRepeat,
+  AdminLoyaltyRewardType.product => AppIcons.package,
+  AdminLoyaltyRewardType.bundle => AppIcons.shoppingBag01,
+  AdminLoyaltyRewardType.plan => AppIcons.repeat,
 };
 
 class _CouponPerforation extends StatelessWidget {
@@ -285,7 +285,7 @@ class _CouponPerforation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 14,
+      height: AppSizes.px14,
       child: CustomPaint(
         painter: _CouponPerforationPainter(
           lineColor: lineColor,
@@ -403,7 +403,7 @@ class _PointsStub extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 3),
+                        const SizedBox(width: AppSizes.px4),
                         Text(
                           S.loyaltyPointUnit,
                           maxLines: 1,
@@ -419,24 +419,24 @@ class _PointsStub extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: AppSizes.px6),
               AdminStatusBadge(
                 label: loyaltyRewardStatusLabel(reward),
                 color: _statusColor(reward),
               ),
             ],
           ),
-          const SizedBox(height: 3),
+          const SizedBox(height: AppSizes.px4),
           Row(
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedPackage,
+              AppIcon(
+                AppIcons.package,
                 size: 12,
                 color: reward.isOutOfStock
                     ? AppColor.errorColor
                     : adminMutedColor(theme),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: AppSizes.px4),
               Expanded(
                 child: Text(
                   loyaltyRewardStockText(reward),
@@ -451,12 +451,8 @@ class _PointsStub extends StatelessWidget {
                   ),
                 ),
               ),
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedGift,
-                size: 12,
-                color: adminMutedColor(theme),
-              ),
-              const SizedBox(width: 4),
+              AppIcon(AppIcons.gift, size: 12, color: adminMutedColor(theme)),
+              const SizedBox(width: AppSizes.px4),
               Flexible(
                 child: Text(
                   loyaltyRewardRedemptionsText(reward),
@@ -504,8 +500,8 @@ class _MenuItem extends StatelessWidget {
         : Theme.of(context).colorScheme.onSurface;
     return Row(
       children: [
-        HugeIcon(icon: icon, size: 16, color: color),
-        const SizedBox(width: 8),
+        AppIcon(icon, size: 16, color: color),
+        const SizedBox(width: AppSizes.px8),
         Flexible(
           child: Text(
             label,

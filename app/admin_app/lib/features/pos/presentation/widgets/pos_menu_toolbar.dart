@@ -1,13 +1,14 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
@@ -58,7 +59,7 @@ class PosMenuToolbar extends StatelessWidget {
                 else
                   Expanded(child: search),
                 if (wide) ...[
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSizes.px12),
                   Text(
                     S.categoriesCount(categories.length),
                     style: TextStyle(
@@ -71,7 +72,10 @@ class PosMenuToolbar extends StatelessWidget {
                 ],
               ],
             ),
-            if (categories.isNotEmpty) ...[const SizedBox(height: 10), rail],
+            if (categories.isNotEmpty) ...[
+              const SizedBox(height: AppSizes.px10),
+              rail,
+            ],
           ],
         );
       },
@@ -148,16 +152,16 @@ class _CategoryRailState extends State<_CategoryRail> {
               controller: _controller,
               scrollDirection: Axis.horizontal,
               primary: false,
-              padding: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
               itemCount: widget.categories.length + 1,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSizes.px8),
               itemBuilder: (context, index) {
                 if (index == 0) {
                   return _CategoryCard(
                     label: S.posAllCategories,
                     count: widget.totalProducts,
                     selected: widget.categoryId == null,
-                    icon: HugeIcons.strokeRoundedDashboardSquare01,
+                    icon: AppIcons.dashboardSquare01,
                     onTap: () => widget.onCategoryChanged(null),
                   );
                 }
@@ -214,15 +218,15 @@ class _CategoryCard extends StatelessWidget {
                 AppColor.adminAccentSurface,
               )
             : theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Container(
             width: 152,
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(AppSpacing.sm),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               border: Border.all(
                 color: selected
                     ? AppColor.adminAccent.withValues(alpha: .45)
@@ -234,9 +238,9 @@ class _CategoryCard extends StatelessWidget {
                 AdminNetworkThumb(
                   imageUrl: imageUrl,
                   size: 46,
-                  icon: icon ?? HugeIcons.strokeRoundedCoffee01,
+                  icon: icon ?? AppIcons.coffee01,
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSizes.px8),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -255,7 +259,7 @@ class _CategoryCard extends StatelessWidget {
                           height: AppTextHeights.line1_35,
                         ),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: AppSizes.px4),
                       Text(
                         localizeDigits('$count'),
                         style: TextStyle(

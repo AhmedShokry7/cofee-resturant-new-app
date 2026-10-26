@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch_draft.dart';
-import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
+import 'package:admin_app/features/branches/domain/entities/admin_branch_draft.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_save_outcome.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_cubit.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_location_picker.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_messages.dart';
@@ -220,13 +220,14 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
     return Dialog(
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: MediaQuery.sizeOf(context).width < 600
-            ? AppDimensions.md
-            : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal:
+            MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 620),
@@ -240,13 +241,13 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
             ),
             Flexible(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppDimensions.lg),
+                padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (_error != null) ...[
                       AdminErrorBanner(message: _error!),
-                      const SizedBox(height: AppDimensions.md),
+                      const SizedBox(height: AppSpacing.md),
                     ],
                     LayoutBuilder(
                       builder: (context, constraints) {
@@ -266,31 +267,31 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                             ? Column(
                                 children: [
                                   fields[0],
-                                  const SizedBox(height: AppDimensions.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   fields[1],
                                 ],
                               )
                             : Row(
                                 children: [
                                   Expanded(child: fields[0]),
-                                  const SizedBox(width: AppDimensions.md),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(child: fields[1]),
                                 ],
                               );
                       },
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _BranchField(
                       controller: _nameArController,
                       label: '${S.nameAr} *',
                       textDirection: TextDirection.rtl,
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     _BranchField(
                       controller: _nameEnController,
                       label: S.nameEn,
                     ),
-                    const SizedBox(height: AppDimensions.lg),
+                    const SizedBox(height: AppSpacing.lg),
                     Row(
                       children: [
                         Text(
@@ -305,15 +306,12 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                         if (_pickedLatitude != null && _pickedLongitude != null)
                           TextButton.icon(
                             onPressed: _saving ? null : _clearLocation,
-                            icon: const Icon(
-                              HugeIcons.strokeRoundedCancel01,
-                              size: 15,
-                            ),
+                            icon: const Icon(AppIcons.cancel01, size: 15),
                             label: Text(S.branchClearLocation),
                           ),
                       ],
                     ),
-                    const SizedBox(height: AppDimensions.sm),
+                    const SizedBox(height: AppSpacing.sm),
                     AdminLocationPicker(
                       key: ValueKey(_locationKey),
                       initialLatitude: _pickedLatitude,
@@ -330,7 +328,7 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                         });
                       },
                     ),
-                    const SizedBox(height: AppDimensions.lg),
+                    const SizedBox(height: AppSpacing.lg),
                     Row(
                       children: [
                         Expanded(
@@ -341,7 +339,7 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                             keyboardType: TextInputType.datetime,
                           ),
                         ),
-                        const SizedBox(width: AppDimensions.md),
+                        const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: _BranchField(
                             controller: _closesAtController,
@@ -352,9 +350,9 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: AppDimensions.xl),
+                    const SizedBox(height: AppSpacing.xxl),
                     const Divider(height: 1),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     Text(
                       S.branchTaxInvoiceSection,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -362,13 +360,13 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                         fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
-                    const SizedBox(height: AppDimensions.xs),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       S.branchTaxInvoiceHint,
                       style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: AppColor.greyColor),
                     ),
-                    const SizedBox(height: AppDimensions.md),
+                    const SizedBox(height: AppSpacing.md),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final fields = [
@@ -387,14 +385,14 @@ class _BranchDataDialogState extends State<BranchDataDialog> {
                             ? Column(
                                 children: [
                                   fields[0],
-                                  const SizedBox(height: AppDimensions.md),
+                                  const SizedBox(height: AppSpacing.md),
                                   fields[1],
                                 ],
                               )
                             : Row(
                                 children: [
                                   Expanded(flex: 3, child: fields[0]),
-                                  const SizedBox(width: AppDimensions.md),
+                                  const SizedBox(width: AppSpacing.md),
                                   Expanded(flex: 2, child: fields[1]),
                                 ],
                               );

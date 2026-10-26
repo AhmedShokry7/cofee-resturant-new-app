@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/shared/widgets/admin_bulk_selection_bar.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
@@ -37,9 +37,9 @@ class BundlePageHeader extends StatelessWidget {
         CustomBtn(
           text: S.addBundle,
           onPressed: onAdd,
-          leadingIcon: const Icon(HugeIcons.strokeRoundedAdd01, size: 18),
+          leadingIcon: const Icon(AppIcons.add01, size: 18),
           height: 42,
-          borderRadius: AppDimensions.radiusPill,
+          borderRadius: AppRadius.pill,
           backgroundColor: AppColor.primaryColor,
           textColor: AppColor.whiteColor,
         ),

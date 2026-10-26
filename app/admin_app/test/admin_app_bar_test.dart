@@ -1,11 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:admin_app/core/constants/app_images.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/app_theme.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_app_bar.dart';
 
 void main() {
@@ -36,7 +36,7 @@ void main() {
 
     expect(find.text('Dashboard'), findsOneWidget);
     expect(find.text('Search orders and customers...'), findsOneWidget);
-    expect(find.byIcon(HugeIcons.strokeRoundedTranslate), findsOneWidget);
+    expect(find.byIcon(AppIcons.translate), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -104,7 +104,7 @@ void main() {
     await tester.pump();
 
     expect(searchController.query, 'order-1024');
-    expect(find.byIcon(HugeIcons.strokeRoundedCancel01), findsOneWidget);
+    expect(find.byIcon(AppIcons.cancel01), findsOneWidget);
 
     searchController.dispose();
     textController.dispose();

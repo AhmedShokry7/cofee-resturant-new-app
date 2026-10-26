@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:admin_app/features/pos/data/models/pos_table.dart';
-import 'package:admin_app/features/tables/data/models/dining_enums.dart';
-import 'package:admin_app/features/tables/data/models/dining_overview.dart';
-import 'package:admin_app/features/tables/data/models/dining_reservation.dart';
-import 'package:admin_app/features/tables/data/models/dining_table.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_table.dart';
+import 'package:admin_app/core/models/dining_enums.dart';
+import 'package:admin_app/features/tables/domain/entities/dining_overview.dart';
+import 'package:admin_app/core/models/dining_reservation.dart';
+import 'package:admin_app/core/models/dining_table.dart';
 
 DiningTable _table({
   DiningTableStatus status = DiningTableStatus.available,

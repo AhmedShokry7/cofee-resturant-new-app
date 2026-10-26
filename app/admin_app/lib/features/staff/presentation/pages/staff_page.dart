@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/staff/presentation/manager/admin_staff_cubit.dart';
 import 'package:admin_app/features/staff/presentation/manager/admin_staff_state.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_permissions_dialog.dart';

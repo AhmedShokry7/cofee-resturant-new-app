@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_format.dart';
@@ -41,7 +42,7 @@ class ReviewVerifiedChip extends StatelessWidget {
           AppColor.adminInfo,
           AppColor.adminInfoSurface,
         ),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: AppColor.adminInfo.withValues(
             alpha: adminIsDark(theme) ? .35 : .18,
@@ -54,12 +55,12 @@ class ReviewVerifiedChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            HugeIcon(
-              icon: HugeIcons.strokeRoundedCheckmarkBadge02,
+            AppIcon(
+              AppIcons.checkmarkBadge02,
               size: compact ? 11 : 12,
               color: color,
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: AppSizes.px4),
             Text(
               S.reviewsVerified,
               maxLines: 1,
@@ -89,12 +90,8 @@ class ReviewUnverifiedLabel extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: HugeIcons.strokeRoundedCircle,
-            size: 11,
-            color: adminMutedColor(theme),
-          ),
-          const SizedBox(width: 4),
+          AppIcon(AppIcons.circle, size: 11, color: adminMutedColor(theme)),
+          const SizedBox(width: AppSizes.px4),
           Text(
             S.reviewsUnverified,
             style: TextStyle(

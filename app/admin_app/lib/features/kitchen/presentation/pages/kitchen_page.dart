@@ -5,13 +5,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
-import 'package:admin_app/features/kitchen/data/repositories/admin_kitchen_repository.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
 import 'package:admin_app/features/kitchen/presentation/manager/admin_kitchen_cubit.dart';
 import 'package:admin_app/features/kitchen/presentation/manager/admin_kitchen_state.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_format.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class KitchenPage extends StatefulWidget {

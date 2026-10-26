@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_status_tab.dart';
 
 class OrderStatusTabs extends StatelessWidget {
@@ -27,13 +27,13 @@ class OrderStatusTabs extends StatelessWidget {
     ];
 
     return SizedBox(
-      height: 36,
+      height: AppSizes.px36,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
         padding: EdgeInsets.zero,
         itemCount: tabs.length,
-        separatorBuilder: (_, _) => const SizedBox(width: AppDimensions.xs),
+        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.xs),
         itemBuilder: (context, index) {
           final (code, label) = tabs[index];
           final isSelected = value == code;

@@ -1,5 +1,5 @@
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 
 enum SubscriptionFilter {
   all,

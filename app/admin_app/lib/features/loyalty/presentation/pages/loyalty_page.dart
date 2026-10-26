@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_reward.dart';
-import 'package:admin_app/features/loyalty/data/models/admin_loyalty_rule.dart';
-import 'package:admin_app/features/loyalty/data/repositories/admin_loyalty_repository.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
+import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
+import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_state.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_directory.dart';
@@ -14,7 +15,7 @@ import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.d
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_page_body.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_reward_dialog.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_rule_dialog.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class LoyaltyPage extends StatefulWidget {
@@ -131,7 +132,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
         final theme = Theme.of(context);
         return AlertDialog(
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
           title: Text(
             S.loyaltyRewardDeleteTitle,
@@ -162,9 +163,11 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColor.errorColor,
                   minimumSize: const Size(0, 38),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(9),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                 ),
                 child: Text(

@@ -5,10 +5,10 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_draft.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_targets.dart';
-import 'package:admin_app/features/coupons/data/repositories/admin_coupon_repository.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_targets.dart';
+import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
 import 'package:admin_app/features/coupons/presentation/manager/admin_coupon_cubit.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_editor_dialog.dart';
 

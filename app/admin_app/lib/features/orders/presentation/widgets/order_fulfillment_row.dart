@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
@@ -24,7 +25,7 @@ class OrderFulfillmentRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -36,10 +37,10 @@ class OrderFulfillmentRow extends StatelessWidget {
                 : AppColor.adminAccentSurface,
             size: 24,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(top: 3),
+              padding: const EdgeInsets.only(top: AppSpacing.xxs),
               child: Text(
                 label,
                 maxLines: 3,
@@ -56,8 +57,11 @@ class OrderFulfillmentRow extends StatelessWidget {
             ),
           ),
           if (trailing != null) ...[
-            const SizedBox(width: 8),
-            Padding(padding: const EdgeInsets.only(top: 2), child: trailing),
+            const SizedBox(width: AppSizes.px8),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xxs),
+              child: trailing,
+            ),
           ],
         ],
       ),

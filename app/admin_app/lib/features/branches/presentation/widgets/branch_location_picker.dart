@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// A simplified location picker for the admin: a map with a draggable pin
 /// and a search field. Returns a `PickedLocation` with the point and label.
@@ -157,7 +157,7 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
                 onChanged: widget.onAddressChanged,
               ),
             ),
-            const SizedBox(width: AppDimensions.sm),
+            const SizedBox(width: AppSpacing.sm),
             Material(
               color: AppColor.lightGreyColor,
               shape: const CircleBorder(),
@@ -165,15 +165,15 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
                 customBorder: const CircleBorder(),
                 onTap: _isLocating ? null : _useCurrentLocation,
                 child: Padding(
-                  padding: const EdgeInsets.all(10),
+                  padding: const EdgeInsets.all(AppSpacing.sm),
                   child: _isLocating
                       ? const SizedBox(
-                          width: 20,
-                          height: 20,
+                          width: AppSizes.px20,
+                          height: AppSizes.px20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(
-                          HugeIcons.strokeRoundedLocation01,
+                          AppIcons.location01,
                           size: 20,
                           color: AppColor.primaryColor,
                         ),
@@ -182,11 +182,11 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
             ),
           ],
         ),
-        const SizedBox(height: AppDimensions.md),
+        const SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 300,
+          height: AppDimensions.dialogBodyHeightPicker,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             child: FlutterMap(
               mapController: _mapController,
               options: MapOptions(
@@ -207,7 +207,7 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
                         width: 40,
                         height: 40,
                         child: Icon(
-                          HugeIcons.strokeRoundedLocation01,
+                          AppIcons.location01,
                           size: 36,
                           color: AppColor.primaryColor,
                         ),
@@ -218,7 +218,7 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
             ),
           ),
         ),
-        const SizedBox(height: AppDimensions.sm),
+        const SizedBox(height: AppSpacing.sm),
         if (_point != null)
           Text(
             'Lat: ${_point!.latitude.toStringAsFixed(5)}, '

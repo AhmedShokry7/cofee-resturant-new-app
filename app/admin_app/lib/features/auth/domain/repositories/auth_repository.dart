@@ -1,5 +1,5 @@
 import 'package:admin_app/core/result/result.dart';
-import 'package:admin_app/features/auth/domain/entities/admin_session.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
 
 /// العقد الذي تعتمد عليه طبقة المجال للتحدث مع المصادقة.
 ///

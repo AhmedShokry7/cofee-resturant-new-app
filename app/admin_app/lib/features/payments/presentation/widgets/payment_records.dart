@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/features/payments/data/models/admin_payment.dart';
@@ -57,15 +57,13 @@ class PaymentRecords extends StatelessWidget {
     return AdminDirectoryPanel(
       child: payments.isEmpty
           ? AdminEmptyState(
-              icon: searching
-                  ? HugeIcons.strokeRoundedSearch01
-                  : HugeIcons.strokeRoundedInvoice01,
+              icon: searching ? AppIcons.search01 : AppIcons.invoice01,
               message: searching ? S.noPaymentsFound : S.noPaymentsYet,
             )
           : ListView.separated(
               padding: EdgeInsets.zero,
               itemCount: payments.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
               itemBuilder: (context, index) {
                 final payment = payments[index];
                 return PaymentCard(
@@ -102,9 +100,9 @@ class PaymentCard extends StatelessWidget {
     final subtle = adminSubtleColor(theme);
 
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Column(
@@ -125,11 +123,11 @@ class PaymentCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppDimensions.sm),
+              const SizedBox(width: AppSpacing.sm),
               AdminStatusBadge(label: status.label, color: status.color),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSizes.px8),
           Row(
             children: [
               Expanded(
@@ -147,7 +145,7 @@ class PaymentCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: AppDimensions.sm),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 paymentMoney(payment),
                 maxLines: 1,
@@ -159,7 +157,7 @@ class PaymentCard extends StatelessWidget {
                 ),
               ),
               if (onPrint != null) ...[
-                const SizedBox(width: 2),
+                const SizedBox(width: AppSizes.px2),
                 IconButton(
                   tooltip: S.paymentPrintOne,
                   onPressed: onPrint,
@@ -169,16 +167,12 @@ class PaymentCard extends StatelessWidget {
                     padding: EdgeInsets.zero,
                     visualDensity: VisualDensity.compact,
                   ),
-                  icon: HugeIcon(
-                    icon: HugeIcons.strokeRoundedPrinter,
-                    size: 16,
-                    color: accent,
-                  ),
+                  icon: AppIcon(AppIcons.printer, size: 16, color: accent),
                 ),
               ],
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSizes.px10),
           Wrap(
             spacing: 22,
             runSpacing: 8,
@@ -224,15 +218,11 @@ class PaymentCard extends StatelessWidget {
             ],
           ),
           if (payment.verifiedByServer) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSizes.px8),
             Row(
               children: [
-                HugeIcon(
-                  icon: HugeIcons.strokeRoundedCheckmarkBadge01,
-                  size: 14,
-                  color: accent,
-                ),
-                const SizedBox(width: 5),
+                AppIcon(AppIcons.checkmarkBadge01, size: 14, color: accent),
+                const SizedBox(width: AppSizes.px6),
                 Expanded(
                   child: Text(
                     S.verifiedByServer,

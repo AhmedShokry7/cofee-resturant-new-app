@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/pos/data/models/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -52,7 +53,7 @@ class PosProductCard extends StatelessWidget {
             Material(
               color: theme.colorScheme.surface,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 side: BorderSide(color: adminCardBorderColor(theme)),
               ),
               clipBehavior: Clip.antiAlias,
@@ -64,7 +65,12 @@ class PosProductCard extends StatelessWidget {
                     // The image takes every pixel the content does not need.
                     Expanded(child: _ProductImage(product: product)),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(12, 9, 12, 10),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                      ),
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,7 +87,7 @@ class PosProductCard extends StatelessWidget {
                             ),
                           ),
                           if (category.isNotEmpty || prep != null) ...[
-                            const SizedBox(height: 4),
+                            const SizedBox(height: AppSizes.px4),
                             Row(
                               children: [
                                 if (category.isNotEmpty)
@@ -99,9 +105,9 @@ class PosProductCard extends StatelessWidget {
                                   ),
                                 if (prep != null) ...[
                                   if (category.isNotEmpty)
-                                    const SizedBox(width: 5),
+                                    const SizedBox(width: AppSizes.px6),
                                   _MetaChip(
-                                    icon: HugeIcons.strokeRoundedTimer01,
+                                    icon: AppIcons.timer01,
                                     label: S.posPrepTimeShort(prep),
                                     color: AppColor.adminInfo,
                                     surface: AppColor.adminInfoSurface,
@@ -110,7 +116,7 @@ class PosProductCard extends StatelessWidget {
                               ],
                             ),
                           ],
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSizes.px8),
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
@@ -135,7 +141,7 @@ class PosProductCard extends StatelessWidget {
                                             height: AppTextHeights.line1_2,
                                           ),
                                         ),
-                                        const SizedBox(width: 3),
+                                        const SizedBox(width: AppSizes.px4),
                                         Flexible(
                                           child: Text(
                                             currencyCode,
@@ -151,15 +157,15 @@ class PosProductCard extends StatelessWidget {
                                       ],
                                     ),
                                     if (product.hasDiscount) ...[
-                                      const SizedBox(height: 3),
+                                      const SizedBox(height: AppSizes.px4),
                                       Row(
                                         children: [
                                           if (discount > 0) ...[
                                             Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
-                                                    horizontal: 5,
-                                                    vertical: 1,
+                                                    horizontal: AppSpacing.xs,
+                                                    vertical: AppSpacing.xxs,
                                                   ),
                                               decoration: BoxDecoration(
                                                 color: adminFlagBackground(
@@ -168,7 +174,9 @@ class PosProductCard extends StatelessWidget {
                                                   AppColor.trendNegativeSurface,
                                                 ),
                                                 borderRadius:
-                                                    BorderRadius.circular(5),
+                                                    BorderRadius.circular(
+                                                      AppRadius.sm,
+                                                    ),
                                               ),
                                               child: Text(
                                                 '-${localizeDigits('$discount')}%',
@@ -188,7 +196,7 @@ class PosProductCard extends StatelessWidget {
                                                 ),
                                               ),
                                             ),
-                                            const SizedBox(width: 4),
+                                            const SizedBox(width: AppSizes.px4),
                                           ],
                                           Flexible(
                                             child: Text(
@@ -210,7 +218,7 @@ class PosProductCard extends StatelessWidget {
                                   ],
                                 ),
                               ),
-                              const SizedBox(width: 8),
+                              const SizedBox(width: AppSizes.px8),
                               if (_enabled)
                                 _AddButton(
                                   tooltip: product.hasOptions
@@ -239,17 +247,17 @@ class PosProductCard extends StatelessWidget {
                 end: 8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 7,
-                    vertical: 2.5,
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xxs,
                   ),
                   decoration: BoxDecoration(
                     color: adminFlagForeground(theme, AppColor.adminAccent),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     boxShadow: adminIsDark(theme)
                         ? const []
                         : const [
                             BoxShadow(
-                              color: Color(0x331B362B),
+                              color: AppColor.inkWashStrong,
                               blurRadius: 8,
                               offset: Offset(0, 2),
                             ),
@@ -290,7 +298,7 @@ class _ProductImage extends StatelessWidget {
             height: constraints.maxHeight,
             fit: BoxFit.fill,
             borderRadius: BorderRadius.zero,
-            icon: HugeIcons.strokeRoundedCoffee01,
+            icon: AppIcons.coffee01,
           ),
         ),
         if (product.isFeatured)
@@ -305,8 +313,8 @@ class _ProductImage extends StatelessWidget {
                 color: AppColor.adminAccent,
                 shape: BoxShape.circle,
               ),
-              child: const HugeIcon(
-                icon: HugeIcons.strokeRoundedStar,
+              child: const AppIcon(
+                AppIcons.star,
                 size: 12,
                 color: AppColor.whiteColor,
               ),
@@ -334,20 +342,19 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(theme, color, surface),
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          HugeIcon(
-            icon: icon,
-            size: 10,
-            color: adminFlagForeground(theme, color),
-          ),
-          const SizedBox(width: 2),
+          AppIcon(icon, size: 10, color: adminFlagForeground(theme, color)),
+          const SizedBox(width: AppSizes.px2),
           Text(
             label,
             style: TextStyle(
@@ -385,10 +392,10 @@ class _AddButton extends StatelessWidget {
           onTap: onTap,
           customBorder: const CircleBorder(),
           child: SizedBox(
-            width: 34,
-            height: 34,
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedAdd01,
+            width: AppSizes.px34,
+            height: AppSizes.px34,
+            child: AppIcon(
+              AppIcons.add01,
               size: 17,
               color: adminFlagForeground(theme, AppColor.adminAccent),
             ),
@@ -408,14 +415,17 @@ class _DisabledBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: adminFlagBackground(
           theme,
           AppColor.errorColor,
           AppColor.errorColor.withValues(alpha: .08),
         ),
-        borderRadius: BorderRadius.circular(7),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColor.errorColor.withValues(alpha: .22)),
       ),
       child: Text(

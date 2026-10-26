@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/features/bundles/data/models/admin_bundle.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
-import 'package:admin_app/features/catalog/presentation/widgets/category_image_dialog.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 
 /// Opens the dialog that replaces or removes the picture of a bundle.
 Future<void> showBundleImageDialog({

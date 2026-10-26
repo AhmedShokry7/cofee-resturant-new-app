@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/customers/data/models/admin_customer_metrics.dart';
+import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
@@ -17,9 +19,9 @@ class CustomerMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.customersAverageSpend,
         value: customerMoneyWithCurrency(metrics.averageSpendCurrent),
-        icon: HugeIcons.strokeRoundedWallet01,
-        iconBackground: const Color(0xFFFBF2DC),
-        iconColor: const Color(0xFFA47B2F),
+        icon: AppIcons.wallet01,
+        iconBackground: AppColor.adminWarningSurface,
+        iconColor: AppColor.adminWarning,
         trend: _percentTrend(
           metrics.averageSpendCurrent,
           metrics.averageSpendPrevious,
@@ -28,9 +30,9 @@ class CustomerMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.customersRepeatRate,
         value: customerPercent(metrics.repeatRateCurrent * 100),
-        icon: HugeIcons.strokeRoundedRepeat,
-        iconBackground: const Color(0xFFF0EAFB),
-        iconColor: const Color(0xFF7E57C2),
+        icon: AppIcons.repeat,
+        iconBackground: AppColor.tintVioletSurface,
+        iconColor: AppColor.tintVioletInk,
         trend: _pointTrend(
           metrics.repeatRateCurrent,
           metrics.repeatRatePrevious,
@@ -39,9 +41,9 @@ class CustomerMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.customersNewThisMonth,
         value: customerCount(metrics.newCustomers),
-        icon: HugeIcons.strokeRoundedUserAdd01,
-        iconBackground: const Color(0xFFFFF0E6),
-        iconColor: const Color(0xFFC4763F),
+        icon: AppIcons.userAdd01,
+        iconBackground: AppColor.tintClaySurface,
+        iconColor: AppColor.tintClayInk,
         trend: _percentTrend(
           metrics.newCustomers,
           metrics.previousNewCustomers,
@@ -50,9 +52,9 @@ class CustomerMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.customersTotal,
         value: customerCount(metrics.totalCustomers),
-        icon: HugeIcons.strokeRoundedUserMultiple,
-        iconBackground: const Color(0xFFE8F3EC),
-        iconColor: const Color(0xFF3D8A68),
+        icon: AppIcons.userMultiple,
+        iconBackground: AppColor.tintGreenSurface,
+        iconColor: AppColor.trendPositive,
         trend: _percentTrend(
           metrics.totalCustomers,
           metrics.previousTotalCustomers,
@@ -63,7 +65,7 @@ class CustomerMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

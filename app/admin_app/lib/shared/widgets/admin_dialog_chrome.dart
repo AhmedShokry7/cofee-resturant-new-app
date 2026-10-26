@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -25,10 +25,10 @@ class AdminDialogHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.md,
-        AppDimensions.sm,
-        AppDimensions.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -74,8 +74,8 @@ class AdminDialogHeader extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+            icon: AppIcon(
+              AppIcons.cancel01,
               size: 18,
               color: adminMutedColor(theme),
             ),
@@ -113,10 +113,10 @@ class AdminDialogFooter extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.sm,
-        AppDimensions.lg,
-        AppDimensions.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -141,9 +141,9 @@ class AdminDialogFooter extends StatelessWidget {
             onPressed: saving ? null : onSave,
             style: FilledButton.styleFrom(
               minimumSize: const Size(0, 38),
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(9),
+                borderRadius: BorderRadius.circular(AppRadius.md),
               ),
             ),
             child: Row(
@@ -151,14 +151,14 @@ class AdminDialogFooter extends StatelessWidget {
               children: [
                 if (saving) ...[
                   const SizedBox(
-                    width: 14,
-                    height: 14,
+                    width: AppSizes.px14,
+                    height: AppSizes.px14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
                       color: AppColor.whiteColor,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                 ],
                 Text(
                   saving ? savingLabel : saveLabel,
@@ -185,7 +185,7 @@ InputDecoration adminDialogFieldDecoration(
 }) {
   final theme = Theme.of(context);
   final border = adminControlBorderColor(theme);
-  final radius = BorderRadius.circular(9);
+  final radius = BorderRadius.circular(AppRadius.md);
   return InputDecoration(
     labelText: required ? '$label *' : label,
     hintText: hint,
@@ -204,7 +204,10 @@ InputDecoration adminDialogFieldDecoration(
       color: adminMutedColor(theme),
       fontSize: AppFontSizes.size10_5,
     ),
-    contentPadding: const EdgeInsets.symmetric(horizontal: 11, vertical: 12),
+    contentPadding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.md,
+    ),
     border: OutlineInputBorder(
       borderRadius: radius,
       borderSide: BorderSide(color: border),
@@ -232,21 +235,20 @@ class AdminErrorBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       decoration: BoxDecoration(
         color: AppColor.errorColor.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(9),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColor.errorColor.withValues(alpha: .3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const HugeIcon(
-            icon: HugeIcons.strokeRoundedAlertCircle,
-            size: 16,
-            color: AppColor.errorColor,
-          ),
-          const SizedBox(width: 8),
+          const AppIcon(AppIcons.alert, size: 16, color: AppColor.errorColor),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Text(
               message,

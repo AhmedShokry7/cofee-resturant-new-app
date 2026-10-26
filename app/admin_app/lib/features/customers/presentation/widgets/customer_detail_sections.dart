@@ -59,10 +59,10 @@ class _DialogHeader extends StatelessWidget {
     final dark = _isDark(theme);
     return Container(
       padding: const EdgeInsetsDirectional.fromSTEB(
-        AppDimensions.lg,
-        AppDimensions.md,
-        AppDimensions.sm,
-        AppDimensions.md,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -95,8 +95,8 @@ class _DialogHeader extends StatelessWidget {
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            icon: HugeIcon(
-              icon: HugeIcons.strokeRoundedCancel01,
+            icon: AppIcon(
+              AppIcons.cancel01,
               size: 18,
               color: _mutedColor(theme),
             ),
@@ -124,8 +124,8 @@ class _DialogFooter extends StatelessWidget {
     final dark = _isDark(theme);
     return Container(
       padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.lg,
-        vertical: AppDimensions.md,
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.md,
       ),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -139,22 +139,22 @@ class _DialogFooter extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton(onPressed: saving ? null : onClose, child: Text(S.close)),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           FilledButton(
             onPressed: saving ? null : onSave,
             style: FilledButton.styleFrom(
               backgroundColor: AppColor.adminAccent,
               foregroundColor: AppColor.whiteColor,
               minimumSize: const Size(96, AppDimensions.dialogButtonHeight),
-              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.lg),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
               ),
             ),
             child: saving
                 ? const SizedBox(
-                    width: 18,
-                    height: 18,
+                    width: AppSizes.px18,
+                    height: AppSizes.px18,
                     child: CircularProgressIndicator(
                       strokeWidth: AppDimensions.spinnerStroke,
                       color: AppColor.whiteColor,
@@ -194,17 +194,17 @@ class _CustomerProfilePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: _tintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _cardBorderColor(theme)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CustomerAvatar(customer: customer, size: 56),
-          const SizedBox(width: AppDimensions.lg),
+          const SizedBox(width: AppSpacing.lg),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -221,17 +221,11 @@ class _CustomerProfilePanel extends StatelessWidget {
                     height: 1.4,
                   ),
                 ),
-                const SizedBox(height: AppDimensions.xs),
+                const SizedBox(height: AppSpacing.xs),
                 if (email.isNotEmpty)
-                  _ContactLine(
-                    icon: HugeIcons.strokeRoundedMail01,
-                    text: email,
-                  ),
+                  _ContactLine(icon: AppIcons.email, text: email),
                 if (phone.isNotEmpty)
-                  _ContactLine(
-                    icon: HugeIcons.strokeRoundedCall02,
-                    text: phone,
-                  ),
+                  _ContactLine(icon: AppIcons.call02, text: phone),
                 if (email.isEmpty && phone.isEmpty)
                   Text(
                     S.customerContactUnavailable,
@@ -242,7 +236,7 @@ class _CustomerProfilePanel extends StatelessWidget {
                     ),
                   ),
                 if (isVip || isBlacklisted) ...[
-                  const SizedBox(height: AppDimensions.sm),
+                  const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -250,14 +244,14 @@ class _CustomerProfilePanel extends StatelessWidget {
                       if (isVip)
                         _ProfileTag(
                           label: S.vip,
-                          icon: HugeIcons.strokeRoundedStar,
+                          icon: AppIcons.star,
                           foreground: AppColor.adminWarning,
                           background: AppColor.adminWarningSurface,
                         ),
                       if (isBlacklisted)
                         _ProfileTag(
                           label: S.blacklist,
-                          icon: HugeIcons.strokeRoundedBlocked,
+                          icon: AppIcons.blocked,
                           foreground: AppColor.trendNegative,
                           background: AppColor.trendNegativeSurface,
                         ),
@@ -283,13 +277,13 @@ class _ContactLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: AppDimensions.xs),
+      padding: const EdgeInsets.only(top: AppSpacing.xs),
       child: Directionality(
         textDirection: TextDirection.ltr,
         child: Row(
           children: [
-            HugeIcon(icon: icon, size: 13, color: _mutedColor(theme)),
-            const SizedBox(width: 6),
+            AppIcon(icon, size: 13, color: _mutedColor(theme)),
+            const SizedBox(width: AppSizes.px6),
             Expanded(
               child: Text(
                 text,
@@ -323,17 +317,20 @@ class _ProfileTag extends StatelessWidget {
     final theme = Theme.of(context);
     final color = _flagForeground(theme, foreground);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: _flagBackground(theme, foreground, background),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            HugeIcon(icon: icon!, size: 11, color: color),
-            const SizedBox(width: 3),
+            AppIcon(icon!, size: 11, color: color),
+            const SizedBox(width: AppSizes.px4),
           ],
           Text(
             label,
@@ -362,18 +359,18 @@ class _CustomerStatsGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final columns = constraints.maxWidth >= 560 ? 4 : 2;
-        const gap = AppDimensions.sm;
+        const gap = AppSpacing.sm;
         final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
         final tiles = <Widget>[
           AdminStatTile(
-            icon: HugeIcons.strokeRoundedShoppingBag01,
+            icon: AppIcons.shoppingBag01,
             tint: AppColor.adminAccent,
             surface: AppColor.adminAccentSurface,
             value: customerCount(customer.ordersCount),
             label: S.ordersCountLabel,
           ),
           AdminStatTile(
-            icon: HugeIcons.strokeRoundedWallet01,
+            icon: AppIcons.wallet01,
             tint: AppColor.adminWarning,
             surface: AppColor.adminWarningSurface,
             money: customer.totalSpent,
@@ -381,14 +378,14 @@ class _CustomerStatsGrid extends StatelessWidget {
             label: S.totalSpent,
           ),
           AdminStatTile(
-            icon: HugeIcons.strokeRoundedClock01,
+            icon: AppIcons.clock01,
             tint: AppColor.adminInfo,
             surface: AppColor.adminInfoSurface,
             value: customerLastOrder(customer.lastOrderAt),
             label: S.lastOrder,
           ),
           AdminStatTile(
-            icon: HugeIcons.strokeRoundedCalendar01,
+            icon: AppIcons.calendar01,
             tint: AppColor.trendPositive,
             surface: AppColor.trendPositiveSurface,
             value: customerDate(joinedAt),
@@ -436,16 +433,19 @@ class _SectionTitle extends StatelessWidget {
           ),
         ),
         if (count != null) ...[
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.xxs,
+            ),
             decoration: BoxDecoration(
               color: _flagBackground(
                 theme,
                 AppColor.adminAccent,
                 AppColor.adminAccentSurface,
               ),
-              borderRadius: BorderRadius.circular(5),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
             child: Text(
               customerCount(count!),
@@ -485,22 +485,22 @@ class _ManagementPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _cardBorderColor(theme)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Wrap(
-            spacing: AppDimensions.sm,
-            runSpacing: AppDimensions.sm,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.sm,
             children: [
               _FlagToggle(
                 label: S.vip,
-                icon: HugeIcons.strokeRoundedStar,
+                icon: AppIcons.star,
                 selected: isVip,
                 tint: AppColor.adminWarning,
                 surface: AppColor.adminWarningSurface,
@@ -508,7 +508,7 @@ class _ManagementPanel extends StatelessWidget {
               ),
               _FlagToggle(
                 label: S.blacklist,
-                icon: HugeIcons.strokeRoundedBlocked,
+                icon: AppIcons.blocked,
                 selected: isBlacklisted,
                 tint: AppColor.trendNegative,
                 surface: AppColor.trendNegativeSurface,
@@ -516,7 +516,7 @@ class _ManagementPanel extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.md),
+          const SizedBox(height: AppSpacing.md),
           TextField(
             controller: notesController,
             enabled: enabled,
@@ -530,26 +530,26 @@ class _ManagementPanel extends StatelessWidget {
               isDense: true,
               filled: true,
               fillColor: _tintedSurfaceColor(theme),
-              contentPadding: const EdgeInsets.all(AppDimensions.md),
+              contentPadding: const EdgeInsets.all(AppSpacing.md),
               labelStyle: _textStyle(
                 theme,
                 size: 11,
                 color: _mutedColor(theme),
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 borderSide: BorderSide(color: _controlBorderColor(theme)),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 borderSide: BorderSide(color: _controlBorderColor(theme)),
               ),
               disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 borderSide: BorderSide(color: _controlBorderColor(theme)),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                borderRadius: BorderRadius.circular(AppRadius.lg),
                 borderSide: const BorderSide(
                   color: AppColor.adminAccent,
                   width: AppDimensions.borderStrong,
@@ -599,19 +599,22 @@ class _FlagToggle extends StatelessWidget {
       child: Material(
         color: background,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           side: BorderSide(color: border),
         ),
         child: InkWell(
           onTap: onChanged == null ? null : () => onChanged!(!selected),
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                HugeIcon(icon: icon, size: 15, color: foreground),
-                const SizedBox(width: 6),
+                AppIcon(icon, size: 15, color: foreground),
+                const SizedBox(width: AppSizes.px6),
                 Text(
                   label,
                   style: _textStyle(
@@ -621,11 +624,9 @@ class _FlagToggle extends StatelessWidget {
                     weight: AppFontWeights.semiBold,
                   ),
                 ),
-                const SizedBox(width: 6),
-                HugeIcon(
-                  icon: selected
-                      ? HugeIcons.strokeRoundedCheckmarkCircle02
-                      : HugeIcons.strokeRoundedCircle,
+                const SizedBox(width: AppSizes.px6),
+                AppIcon(
+                  selected ? AppIcons.checkmarkCircle02 : AppIcons.circle,
                   size: 14,
                   color: foreground,
                 ),
@@ -654,7 +655,7 @@ class _AddressList extends StatelessWidget {
       final address = addresses[index];
       if (address is! Map) continue;
       if (widgets.isNotEmpty) {
-        widgets.add(const SizedBox(height: AppDimensions.sm));
+        widgets.add(const SizedBox(height: AppSpacing.sm));
       }
       widgets.add(_AddressCard(address: address));
     }
@@ -679,21 +680,21 @@ class _AddressCard extends StatelessWidget {
         ? details
         : '\u2014';
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _rowBorderColor(theme)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AdminIconTile(
-            icon: HugeIcons.strokeRoundedLocation01,
+            icon: AppIcons.location01,
             tint: AppColor.adminAccent,
             surface: AppColor.adminAccentSurface,
           ),
-          const SizedBox(width: AppDimensions.md),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -710,7 +711,7 @@ class _AddressCard extends StatelessWidget {
                   ),
                 ),
                 if (label.isNotEmpty && details.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSizes.px2),
                   Text(
                     details,
                     maxLines: 2,
@@ -726,10 +727,10 @@ class _AddressCard extends StatelessWidget {
             ),
           ),
           if (isDefault) ...[
-            const SizedBox(width: AppDimensions.sm),
+            const SizedBox(width: AppSpacing.sm),
             _ProfileTag(
               label: S.customerDefaultAddress,
-              icon: HugeIcons.strokeRoundedTick01,
+              icon: AppIcons.tick01,
               foreground: AppColor.adminAccent,
               background: AppColor.adminAccentSurface,
             ),
@@ -804,11 +805,11 @@ class _CustomerOrderCard extends StatelessWidget {
     ].where((value) => value.trim().isNotEmpty).join('  \u2022  ');
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.sm),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _rowBorderColor(theme)),
       ),
       child: Column(
@@ -818,7 +819,7 @@ class _CustomerOrderCard extends StatelessWidget {
             children: [
               if (status.isNotEmpty) ...[
                 _StatusPill(label: S.orderStatusLabel(status), status: status),
-                const SizedBox(width: AppDimensions.sm),
+                const SizedBox(width: AppSpacing.sm),
               ],
               Expanded(
                 child: Align(
@@ -833,16 +834,16 @@ class _CustomerOrderCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppDimensions.xs),
+          const SizedBox(height: AppSpacing.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedCalendar01,
+              AppIcon(
+                AppIcons.calendar01,
                 size: 12,
                 color: _subtleColor(theme),
               ),
-              const SizedBox(width: AppDimensions.xs),
+              const SizedBox(width: AppSpacing.xs),
               Expanded(
                 child: Text(
                   meta.isEmpty ? '\u2014' : meta,
@@ -858,7 +859,7 @@ class _CustomerOrderCard extends StatelessWidget {
             ],
           ),
           if (itemLines.isNotEmpty) ...[
-            Divider(height: AppDimensions.lg, color: _rowBorderColor(theme)),
+            Divider(height: AppSpacing.lg, color: _rowBorderColor(theme)),
             ...itemLines,
           ],
         ],
@@ -888,7 +889,7 @@ class _OrderItemLine extends StatelessWidget {
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: AppSizes.px6),
           Expanded(
             child: Text(
               name,
@@ -897,7 +898,7 @@ class _OrderItemLine extends StatelessWidget {
               style: _textStyle(theme, size: 10.5),
             ),
           ),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           Text(
             '\u00d7${customerCount(quantity)}',
             style: _textStyle(theme, size: 10, color: _mutedColor(theme)),
@@ -919,10 +920,13 @@ class _StatusPill extends StatelessWidget {
     final theme = Theme.of(context);
     final (foreground, background) = _statusColors(theme, status);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
         label,
@@ -1012,11 +1016,11 @@ class _SubscriptionCard extends StatelessWidget {
         : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: AppDimensions.sm),
-      padding: const EdgeInsets.all(AppDimensions.md),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _rowBorderColor(theme)),
       ),
       child: Column(
@@ -1038,12 +1042,12 @@ class _SubscriptionCard extends StatelessWidget {
                 ),
               ),
               if (status.isNotEmpty) ...[
-                const SizedBox(width: AppDimensions.sm),
+                const SizedBox(width: AppSpacing.sm),
                 _StatusPill(label: statusLabel, status: status),
               ],
             ],
           ),
-          const SizedBox(height: AppDimensions.xs),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             '${S.subscriptionStarts}: ${customerDate(startsAt)}  \u2022  '
             '${S.subscriptionEnds}: ${customerDate(endsAt)}',
@@ -1051,15 +1055,15 @@ class _SubscriptionCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: _textStyle(theme, size: 10.5, color: _mutedColor(theme)),
           ),
-          const SizedBox(height: AppDimensions.sm),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             '${S.subscriptionCups}: '
             '${customerCount(used)} / ${customerCount(entitled)}',
             style: _textStyle(theme, size: 10.5),
           ),
-          const SizedBox(height: AppDimensions.xs),
+          const SizedBox(height: AppSpacing.xs),
           ClipRRect(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
+            borderRadius: BorderRadius.circular(AppRadius.md),
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 4,
@@ -1086,10 +1090,10 @@ class _EmptySection extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: _tintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: _rowBorderColor(theme)),
       ),
       child: Text(

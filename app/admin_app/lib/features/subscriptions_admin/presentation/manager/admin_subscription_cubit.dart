@@ -1,17 +1,28 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_usage.dart';
-import 'package:admin_app/features/subscriptions_admin/data/repositories/admin_subscription_repository.dart';
+import 'package:admin_app/features/subscriptions_admin/di/subscriptions_admin_dependencies.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/repositories/subscription_repository.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/usecases/cancel_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/usecases/load_subscriptions.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/usecases/load_usage.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_state.dart';
 
 class AdminSubscriptionCubit extends Cubit<AdminSubscriptionState> {
-  AdminSubscriptionCubit({AdminSubscriptionRepository? repository})
-    : _repository = repository ?? AdminSubscriptionRepository(),
+  AdminSubscriptionCubit({SubscriptionRepository? repository})
+    : this._withUseCases(
+        repository ?? SubscriptionsAdminDependencies.repository,
+      );
+
+  AdminSubscriptionCubit._withUseCases(SubscriptionRepository repository)
+    : _loadSubscriptions = LoadSubscriptionsUseCase(repository),
+      _loadUsage = LoadUsageUseCase(repository),
+      _cancelSubscription = CancelSubscriptionUseCase(repository),
       super(const AdminSubscriptionState());
 
-  final AdminSubscriptionRepository _repository;
-
-  AdminSubscriptionRepository get repository => _repository;
+  final LoadSubscriptionsUseCase _loadSubscriptions;
+  final LoadUsageUseCase _loadUsage;
+  final CancelSubscriptionUseCase _cancelSubscription;
 
   Future<void> load() async {
     if (isClosed) return;
@@ -19,7 +30,7 @@ class AdminSubscriptionCubit extends Cubit<AdminSubscriptionState> {
       state.copyWith(status: AdminSubscriptionStatus.loading, clearError: true),
     );
     try {
-      final subs = await _repository.loadSubscriptions();
+      final subs = await _loadSubscriptions();
       if (isClosed) return;
       emit(
         state.copyWith(
@@ -40,13 +51,13 @@ class AdminSubscriptionCubit extends Cubit<AdminSubscriptionState> {
   }
 
   Future<List<AdminSubscriptionUsage>> loadUsage(String subscriptionId) =>
-      _repository.loadUsage(subscriptionId);
+      _loadUsage(subscriptionId);
 
   Future<SubscriptionCancelOutcome> cancelSubscription(
     String subscriptionId,
   ) async {
     try {
-      final outcome = await _repository.cancelSubscription(subscriptionId);
+      final outcome = await _cancelSubscription(subscriptionId);
       if (outcome == SubscriptionCancelOutcome.cancelled) await load();
       return outcome;
     } catch (_) {

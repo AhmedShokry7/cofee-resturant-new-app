@@ -7,43 +7,31 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
-
-class AdminProductException implements Exception {
-  const AdminProductException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
-}
-
-/// The catalogue the dashboard works on: the products, the categories they
-/// can be put in and the branch whose stock is reviewed.
-class AdminCatalogSnapshot {
-  const AdminCatalogSnapshot({
-    required this.products,
-    required this.categories,
-    this.branchId,
-    this.total = 0,
-  });
-
-  final List<AdminProduct> products;
-  final List<AdminCategory> categories;
-  final String? branchId;
-
-  /// How many products match the query, before the page is cut out of them.
-  final int total;
-}
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
+import 'package:admin_app/core/catalog/branch_pricing_repository.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/core/catalog/catalog_repository.dart';
+import 'package:admin_app/core/catalog/category_repository.dart';
+import 'package:admin_app/core/catalog/product_image_repository.dart';
+import 'package:admin_app/core/catalog/product_repository.dart';
 
 /// Reads and writes the products of the admin dashboard.
 ///
 /// The writes go through the `public.admin_*` functions of the database: the
 /// PostgREST API only exposes the `public` schema, so the catalogue tables
 /// are reached through functions that check the permissions of the caller.
-class AdminProductRepository {
+class AdminProductRepository
+    implements
+        CatalogData,
+        CatalogRepository,
+        ProductRepository,
+        CategoryRepository,
+        ProductImageRepository,
+        BranchPricingRepository {
   AdminProductRepository([this._client]);
 
   final SupabaseClient? _client;
@@ -75,6 +63,7 @@ class AdminProductRepository {
   ///
   /// The page is cut out of the database, so the dashboard never asks for
   /// the whole catalogue at once.
+  @override
   Future<AdminCatalogSnapshot> loadCatalog({
     String? branchId,
     int? limit,
@@ -112,6 +101,7 @@ class AdminProductRepository {
   ///
   /// The card has no stock field, so the stock of the branch is left alone:
   /// the database keeps the quantity it already holds.
+  @override
   Future<AdminProduct> saveProduct(
     AdminProduct product, {
     String? branchId,
@@ -149,6 +139,7 @@ class AdminProductRepository {
     return AdminProduct.fromRow(row);
   }
 
+  @override
   Future<void> deleteProduct(String productId) async {
     await _supabase.rpc(
       'admin_delete_product',
@@ -157,6 +148,7 @@ class AdminProductRepository {
   }
 
   /// Creates a category of its own for the dashboard.
+  @override
   Future<AdminCategory> createCategory({
     required String nameAr,
     required String nameEn,
@@ -180,6 +172,7 @@ class AdminProductRepository {
     return AdminCategory.fromRow(row);
   }
 
+  @override
   Future<AdminCategory> updateCategory({
     required String categoryId,
     required String nameAr,
@@ -205,6 +198,7 @@ class AdminProductRepository {
     return AdminCategory.fromRow(row);
   }
 
+  @override
   Future<void> deleteCategory(String categoryId) async {
     try {
       await _supabase.rpc(
@@ -226,6 +220,7 @@ class AdminProductRepository {
     return error.message;
   }
 
+  @override
   Future<void> setCategoryActive(String categoryId, bool isActive) async {
     await _supabase.rpc(
       'admin_set_category_active',
@@ -233,6 +228,7 @@ class AdminProductRepository {
     );
   }
 
+  @override
   Future<void> updateCategoryImage(String categoryId, String? imageUrl) async {
     await _supabase
         .from('categories')
@@ -241,6 +237,7 @@ class AdminProductRepository {
   }
 
   /// Uploads a picture of a category to the bucket and saves its url.
+  @override
   Future<String> uploadCategoryImage({
     required String categoryId,
     required Uint8List bytes,
@@ -273,6 +270,7 @@ class AdminProductRepository {
   }
 
   /// Removes the picture of a category from the bucket.
+  @override
   Future<void> deleteCategoryImageFile(String? imageUrl) async {
     if (imageUrl == null || imageUrl.trim().isEmpty) return;
     final path = _pathOf(imageUrl);
@@ -287,6 +285,7 @@ class AdminProductRepository {
     return 'products/category-$categoryId/${stamp}_$random$extension';
   }
 
+  @override
   Future<void> setFeatured(String productId, bool isFeatured) async {
     await _supabase.rpc(
       'admin_set_product_featured',
@@ -295,6 +294,7 @@ class AdminProductRepository {
   }
 
   /// Lists the active branches the dashboard may configure.
+  @override
   Future<List<Map<String, dynamic>>> loadBranches() async {
     final rows = await _supabase
         .from('branches')
@@ -308,6 +308,7 @@ class AdminProductRepository {
   }
 
   /// Reads the branch-specific pricing rows of a product.
+  @override
   Future<List<Map<String, dynamic>>> loadBranchProductPricing(
     String productId,
   ) async {
@@ -325,6 +326,7 @@ class AdminProductRepository {
   ///
   /// The price override and availability columns are left untouched when they
   /// are not supplied, so a discount edit never resets the branch price.
+  @override
   Future<void> saveBranchProductDiscount({
     required String branchId,
     required String productId,
@@ -357,6 +359,7 @@ class AdminProductRepository {
   /// The tables are addressed without their schema: PostgREST exposes the
   /// tables of the exposed schemas under their own name, and the address
   /// with the schema (`catalog.product_images`) is answered with a 404.
+  @override
   Future<List<AdminProductImage>> loadProductImages(
     String productId, {
     String? fallbackImageUrl,
@@ -429,6 +432,7 @@ class AdminProductRepository {
   /// The first picture of a product becomes the primary one, so the cards
   /// and the lists always show something. The picture of the product itself
   /// is kept in step by the database.
+  @override
   Future<List<AdminProductImage>> addProductImage({
     required String productId,
     required String imageUrl,
@@ -456,6 +460,7 @@ class AdminProductRepository {
   ///
   /// The display settings of the picture are written with it, so a picture
   /// keeps the way it is shown.
+  @override
   Future<List<AdminProductImage>> updateProductImage({
     required AdminProductImage image,
     required String imageUrl,
@@ -479,6 +484,7 @@ class AdminProductRepository {
   /// Changes the display settings of one picture.
   ///
   /// The file of the picture is not touched: only the way it is shown.
+  @override
   Future<List<AdminProductImage>> updateProductImageSettings({
     required AdminProductImage image,
     BoxFit? fit,
@@ -498,6 +504,7 @@ class AdminProductRepository {
   ///
   /// The files of the pictures are not touched, and the pictures that are not
   /// part of the product are not touched either.
+  @override
   Future<List<AdminProductImage>> applyProductImageSettings({
     required String productId,
     BoxFit? fit,
@@ -520,6 +527,7 @@ class AdminProductRepository {
   ///
   /// The product keeps a picture: when the primary one goes, the next picture
   /// takes its place.
+  @override
   Future<List<AdminProductImage>> deleteProductImage(
     AdminProductImage image,
   ) async {
@@ -544,6 +552,7 @@ class AdminProductRepository {
   /// The move happens in the database, in one transaction, so the product is
   /// never left with two primary pictures or with none. The picture of the
   /// product follows the new primary one.
+  @override
   Future<List<AdminProductImage>> setPrimaryProductImage(
     AdminProductImage image,
   ) async {
@@ -566,6 +575,7 @@ class AdminProductRepository {
   /// never keeps a picture that no product points at.
   ///
   /// [onPhase] tells the caller which step is running.
+  @override
   Future<List<AdminProductImage>> uploadProductImage({
     required String productId,
     required Uint8List bytes,
@@ -601,6 +611,7 @@ class AdminProductRepository {
   ///
   /// The old picture stays untouched until the new file is uploaded and its
   /// row is written.
+  @override
   Future<List<AdminProductImage>> replaceProductImageWithFile({
     required AdminProductImage image,
     required Uint8List bytes,

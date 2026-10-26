@@ -1,10 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/roles/data/models/admin_role.dart';
 import 'package:admin_app/features/roles/presentation/widgets/role_format.dart';
@@ -64,7 +65,7 @@ class _Header extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
         border: Border.all(
@@ -109,12 +110,12 @@ class _Row extends StatelessWidget {
     final subtle = adminSubtleColor(theme);
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: onManage,
         child: Container(
           height: 58,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -127,7 +128,7 @@ class _Row extends StatelessWidget {
                 child: Row(
                   children: [
                     RoleIcon(role: role),
-                    const SizedBox(width: 9),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -240,10 +241,8 @@ class _RoleActionButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
       ),
-      icon: HugeIcon(
-        icon: canManage
-            ? HugeIcons.strokeRoundedUserSettings01
-            : HugeIcons.strokeRoundedEye,
+      icon: AppIcon(
+        canManage ? AppIcons.userSettings01 : AppIcons.eyeIcon,
         size: 16,
         color: canManage ? accent : adminMutedColor(theme),
       ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/features/orders/data/models/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
 import 'package:admin_app/features/orders/presentation/widgets/customer_previous_orders.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_actions.dart';
@@ -70,14 +70,18 @@ class OrderDetailBody extends StatelessWidget {
           )
         : null;
 
-    final main = <Widget>[items, const SizedBox(height: 12), payment];
+    final main = <Widget>[
+      items,
+      const SizedBox(height: AppSizes.px12),
+      payment,
+    ];
     final side = <Widget>[
       customer,
-      const SizedBox(height: 12),
+      const SizedBox(height: AppSizes.px12),
       previousOrders,
-      const SizedBox(height: 12),
+      const SizedBox(height: AppSizes.px12),
       fulfillment,
-      if (map != null) ...[const SizedBox(height: 12), map],
+      if (map != null) ...[const SizedBox(height: AppSizes.px12), map],
     ];
 
     return Column(
@@ -88,15 +92,15 @@ class OrderDetailBody extends StatelessWidget {
           orderId: order.id,
           onSelect: onSelectOrder,
         ),
-        const SizedBox(height: AppDimensions.md),
+        const SizedBox(height: AppSpacing.md),
         OrderDetailHeader(
           order: order,
           saving: controller.saving,
           onStatusChanged: onStatusChanged,
         ),
-        const SizedBox(height: AppDimensions.md),
+        const SizedBox(height: AppSpacing.md),
         OrderDetailStats(order: order),
-        const SizedBox(height: AppDimensions.lg),
+        const SizedBox(height: AppSpacing.lg),
         if (wide)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -108,7 +112,7 @@ class OrderDetailBody extends StatelessWidget {
                   children: main,
                 ),
               ),
-              const SizedBox(width: AppDimensions.md),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 flex: 5,
                 child: Column(
@@ -123,15 +127,15 @@ class OrderDetailBody extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               items,
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               payment,
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               customer,
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               previousOrders,
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               fulfillment,
-              if (map != null) ...[const SizedBox(height: 12), map],
+              if (map != null) ...[const SizedBox(height: AppSizes.px12), map],
             ],
           ),
       ],

@@ -1,14 +1,13 @@
-﻿import 'package:hugeicons/hugeicons.dart';
-
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destination.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 
 /// The growth domain: promotions, loyalty, subscriptions and engagement.
 List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'coupons',
     label: S.coupons,
-    icon: HugeIcons.strokeRoundedTicket01,
+    icon: AppIcons.ticket01,
     searchHint: S.searchCouponsHint,
     permission: 'settings.write',
     section: S.sectionGrowth,
@@ -22,7 +21,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'banners',
     label: S.banners,
-    icon: HugeIcons.strokeRoundedPromotion,
+    icon: AppIcons.promotion,
     searchHint: S.searchBannersHint,
     permission: 'settings.write',
     section: S.sectionGrowth,
@@ -31,7 +30,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'loyalty',
     label: S.loyalty,
-    icon: HugeIcons.strokeRoundedGift,
+    icon: AppIcons.gift,
     searchHint: S.searchLoyaltyHint,
     permission: 'loyalty.read',
     section: S.sectionGrowth,
@@ -45,7 +44,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'subscriptions',
     label: S.subscriptions,
-    icon: HugeIcons.strokeRoundedRepeat,
+    icon: AppIcons.repeat,
     searchHint: S.searchSubscriptionsHint,
     permission: 'subscriptions.manage',
     section: S.sectionGrowth,
@@ -63,7 +62,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'subscriptionPlans',
     label: S.subscriptionPlans,
-    icon: HugeIcons.strokeRoundedPackage,
+    icon: AppIcons.package,
     searchHint: S.searchSubscriptionPlansHint,
     permission: 'subscriptions.manage',
     section: S.sectionGrowth,
@@ -76,7 +75,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'reviews',
     label: S.reviews,
-    icon: HugeIcons.strokeRoundedStar,
+    icon: AppIcons.star,
     searchHint: S.searchReviewsHint,
     permission: 'reviews.moderate',
     section: S.sectionGrowth,
@@ -85,7 +84,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'notifications',
     label: S.notifications,
-    icon: HugeIcons.strokeRoundedNotification01,
+    icon: AppIcons.notification01,
     searchHint: S.searchNotificationsHint,
     permission: 'notifications.read',
     section: S.sectionGrowth,
@@ -100,7 +99,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'websites',
     label: S.customerWebsites,
-    icon: HugeIcons.strokeRoundedGlobe,
+    icon: AppIcons.globe,
     searchHint: S.searchWebsitesHint,
     permission: 'customers.read',
     section: S.sectionGrowth,
@@ -109,7 +108,7 @@ List<AdminDestination> get growthDestinations => <AdminDestination>[
   AdminDestination(
     id: 'aiKnowledge',
     label: S.aiKnowledge,
-    icon: HugeIcons.strokeRoundedSparkles,
+    icon: AppIcons.sparkles,
     searchHint: S.searchAiKnowledgeHint,
     permission: 'settings.write',
     section: S.sectionGrowth,

@@ -1,21 +1,30 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/roles/data/repositories/admin_role_repository.dart';
+import 'package:admin_app/features/roles/di/roles_dependencies.dart';
+import 'package:admin_app/features/roles/domain/repositories/role_repository.dart';
+import 'package:admin_app/features/roles/domain/usecases/load_permissions.dart';
+import 'package:admin_app/features/roles/domain/usecases/load_roles.dart';
+import 'package:admin_app/features/roles/domain/usecases/set_role_permission.dart';
 import 'package:admin_app/features/roles/presentation/manager/admin_role_state.dart';
 
 class AdminRoleCubit extends Cubit<AdminRoleState> {
-  AdminRoleCubit({AdminRoleRepository? repository})
-    : _repository = repository ?? AdminRoleRepository(),
+  AdminRoleCubit({RoleRepository? repository})
+    : this._withUseCases(repository ?? RolesDependencies.repository);
+
+  AdminRoleCubit._withUseCases(RoleRepository repository)
+    : _loadRoles = LoadRolesUseCase(repository),
+      _loadPermissions = LoadPermissionsUseCase(repository),
+      _setRolePermission = SetRolePermissionUseCase(repository),
       super(const AdminRoleState());
 
-  final AdminRoleRepository _repository;
-
-  AdminRoleRepository get repository => _repository;
+  final LoadRolesUseCase _loadRoles;
+  final LoadPermissionsUseCase _loadPermissions;
+  final SetRolePermissionUseCase _setRolePermission;
 
   Future<void> load() async {
     emit(state.copyWith(status: AdminRoleStatus.loading, clearError: true));
     try {
-      final roles = await _repository.loadRoles();
+      final roles = await _loadRoles();
       emit(
         state.copyWith(
           status: AdminRoleStatus.ready,
@@ -30,9 +39,8 @@ class AdminRoleCubit extends Cubit<AdminRoleState> {
     }
   }
 
-  Future<List<Map<String, dynamic>>> loadPermissions() =>
-      _repository.loadPermissions();
+  Future<List<Map<String, dynamic>>> loadPermissions() => _loadPermissions();
 
   Future<void> setRolePermission(String roleId, String code, bool granted) =>
-      _repository.setRolePermission(roleId, code, granted);
+      _setRolePermission(roleId, code, granted);
 }

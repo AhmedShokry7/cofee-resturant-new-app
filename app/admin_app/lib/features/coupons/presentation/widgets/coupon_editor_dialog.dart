@@ -2,18 +2,18 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon_draft.dart';
-import 'package:admin_app/features/coupons/data/repositories/admin_coupon_repository.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
 import 'package:admin_app/features/coupons/presentation/manager/admin_coupon_cubit.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_preview_card.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_scope_picker.dart';
@@ -154,11 +154,13 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
       key: const Key('coupon-editor-dialog'),
       clipBehavior: Clip.antiAlias,
       insetPadding: EdgeInsets.symmetric(
-        horizontal: screen.width < 700 ? AppDimensions.md : AppDimensions.xxl,
-        vertical: AppDimensions.lg,
+        horizontal: screen.width < AppBreakpoints.pageCanvas
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
       ),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
       ),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 1000),
@@ -180,16 +182,16 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                       return SingleChildScrollView(
                         controller: _formScroll,
                         padding: const EdgeInsetsDirectional.fromSTEB(
-                          AppDimensions.lg,
-                          AppDimensions.md,
-                          AppDimensions.lg,
-                          AppDimensions.lg,
+                          AppSpacing.lg,
+                          AppSpacing.md,
+                          AppSpacing.lg,
+                          AppSpacing.lg,
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             _form(),
-                            const SizedBox(height: 18),
+                            const SizedBox(height: AppSizes.px18),
                             _preview(),
                           ],
                         ),
@@ -203,10 +205,10 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                           child: SingleChildScrollView(
                             controller: _formScroll,
                             padding: const EdgeInsetsDirectional.fromSTEB(
-                              AppDimensions.lg,
-                              AppDimensions.md,
-                              AppDimensions.lg,
-                              AppDimensions.lg,
+                              AppSpacing.lg,
+                              AppSpacing.md,
+                              AppSpacing.lg,
+                              AppSpacing.lg,
                             ),
                             child: _form(),
                           ),
@@ -217,7 +219,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                           child: ColoredBox(
                             color: adminTintedSurfaceColor(theme),
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.all(AppDimensions.lg),
+                              padding: const EdgeInsets.all(AppSpacing.lg),
                               child: _preview(),
                             ),
                           ),
@@ -253,12 +255,12 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
         children: [
           _intro(),
           if (_error != null) ...[
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSizes.px10),
             AdminErrorBanner(message: _error!),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSizes.px16),
           _section(
-            icon: HugeIcons.strokeRoundedTicket01,
+            icon: AppIcons.ticket01,
             title: S.couponsSectionIdentity,
             children: [
               CustomTextFormField(
@@ -275,7 +277,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                 suffixIcon: IconButton(
                   tooltip: S.couponsCodeGenerate,
                   onPressed: _saving ? null : _generateCode,
-                  icon: const Icon(HugeIcons.strokeRoundedRefresh, size: 18),
+                  icon: const Icon(AppIcons.refresh, size: 18),
                 ),
                 bottomPadding: 4,
               ),
@@ -294,7 +296,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                         bottomPadding: 12,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: CustomTextFormField(
                         key: const Key('coupon-editor-title-en'),
@@ -339,7 +341,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                         bottomPadding: 8,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: CustomTextFormField(
                         key: const Key('coupon-editor-description-en'),
@@ -373,7 +375,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
             ],
           ),
           _section(
-            icon: HugeIcons.strokeRoundedPercent,
+            icon: AppIcons.percent,
             title: S.couponsSectionDiscount,
             children: [
               SegmentedButton<AdminCouponDiscountType>(
@@ -382,8 +384,8 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   ButtonSegment(
                     value: AdminCouponDiscountType.percentage,
                     label: Text(S.couponsDiscountTypePercentage),
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedPercent,
+                    icon: AppIcon(
+                      AppIcons.percent,
                       size: 14,
                       color: adminBodyColor(theme),
                     ),
@@ -391,8 +393,8 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   ButtonSegment(
                     value: AdminCouponDiscountType.fixedAmount,
                     label: Text(S.couponsDiscountTypeFixed),
-                    icon: HugeIcon(
-                      icon: HugeIcons.strokeRoundedCoins01,
+                    icon: AppIcon(
+                      AppIcons.coins01,
                       size: 14,
                       color: adminBodyColor(theme),
                     ),
@@ -406,7 +408,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                     : (values) => setState(() => _discountType = values.first),
                 style: _segmentStyle(theme),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSizes.px12),
               if (wide)
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -426,7 +428,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                     ),
                     if (_discountType ==
                         AdminCouponDiscountType.percentage) ...[
-                      const SizedBox(width: 10),
+                      const SizedBox(width: AppSizes.px10),
                       Expanded(
                         child: CustomTextFormField(
                           key: const Key('coupon-editor-max-discount'),
@@ -485,7 +487,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
             ],
           ),
           _section(
-            icon: HugeIcons.strokeRoundedTag01,
+            icon: AppIcons.tag01,
             title: S.couponsSectionScope,
             children: [
               SegmentedButton<AdminCouponScope>(
@@ -516,7 +518,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                 style: _segmentStyle(theme),
               ),
               if (_scope != AdminCouponScope.all) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSizes.px12),
                 _scopeSelection(theme),
                 if (_scopeError)
                   Padding(
@@ -534,7 +536,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
             ],
           ),
           _section(
-            icon: HugeIcons.strokeRoundedRefresh,
+            icon: AppIcons.refresh,
             title: S.couponsSectionLimits,
             children: [
               if (wide)
@@ -552,7 +554,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                         bottomPadding: 4,
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: CustomTextFormField(
                         key: const Key('coupon-editor-per-customer'),
@@ -592,7 +594,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
             ],
           ),
           _section(
-            icon: HugeIcons.strokeRoundedCalendar03,
+            icon: AppIcons.calendar03,
             title: S.couponsSectionSchedule,
             children: [
               if (wide)
@@ -600,16 +602,16 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: _dateField(theme, start: true)),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(child: _dateField(theme, start: false)),
                   ],
                 )
               else ...[
                 _dateField(theme, start: true),
-                const SizedBox(height: 10),
+                const SizedBox(height: AppSizes.px10),
                 _dateField(theme, start: false),
               ],
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSizes.px6),
               SwitchListTile(
                 key: const Key('coupon-editor-active'),
                 contentPadding: EdgeInsets.zero,
@@ -657,16 +659,18 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
       AppColor.adminAccentSurface,
     ),
     side: BorderSide(color: adminControlBorderColor(theme)),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
   );
 
   Widget _intro() {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: adminCardBorderColor(theme)),
       ),
       child: Row(
@@ -682,15 +686,15 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                 AppColor.adminAccent,
                 AppColor.adminAccentSurface,
               ),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: HugeIcon(
-              icon: HugeIcons.strokeRoundedTicket01,
+            child: AppIcon(
+              AppIcons.ticket01,
               size: 15,
               color: adminFlagForeground(theme, AppColor.adminAccent),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSizes.px10),
           Expanded(
             child: Text(
               S.couponsEditorIntro,
@@ -717,8 +721,8 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
       children: [
         Row(
           children: [
-            HugeIcon(icon: icon, size: 14, color: AppColor.adminAccent),
-            const SizedBox(width: 6),
+            AppIcon(icon, size: 14, color: AppColor.adminAccent),
+            const SizedBox(width: AppSizes.px6),
             Text(
               title,
               style: TextStyle(
@@ -730,11 +734,11 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSizes.px10),
         ...children,
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSizes.px8),
         Divider(height: 1, color: adminRowBorderColor(theme)),
-        const SizedBox(height: 14),
+        const SizedBox(height: AppSizes.px14),
       ],
     );
   }
@@ -770,7 +774,10 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
         onTap: _saving ? null : _pickScope,
         borderRadius: BorderRadius.circular(AppDimensions.fieldRadius),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
           child: Row(
             children: [
               Container(
@@ -783,17 +790,17 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                     AppColor.adminAccent,
                     AppColor.adminAccentSurface,
                   ),
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: HugeIcon(
-                  icon: _scope == AdminCouponScope.category
-                      ? HugeIcons.strokeRoundedTag01
-                      : HugeIcons.strokeRoundedPackage,
+                child: AppIcon(
+                  _scope == AdminCouponScope.category
+                      ? AppIcons.tag01
+                      : AppIcons.package,
                   size: 16,
                   color: adminFlagForeground(theme, AppColor.adminAccent),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -826,7 +833,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
               if (!empty)
                 Text(
                   S.couponsChangeSelection,
@@ -837,9 +844,9 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                     height: AppTextHeights.line1_5,
                   ),
                 ),
-              const SizedBox(width: 4),
-              HugeIcon(
-                icon: HugeIcons.strokeRoundedArrowRight01,
+              const SizedBox(width: AppSizes.px4),
+              AppIcon(
+                AppIcons.arrowRight01,
                 size: 15,
                 color: adminMutedColor(theme),
               ),
@@ -882,12 +889,12 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
               padding: const EdgeInsetsDirectional.only(start: 12, end: 4),
               child: Row(
                 children: [
-                  HugeIcon(
-                    icon: HugeIcons.strokeRoundedCalendar03,
+                  AppIcon(
+                    AppIcons.calendar03,
                     size: 16,
                     color: adminMutedColor(theme),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: AppSizes.px8),
                   Expanded(
                     child: Text(
                       value == null ? S.couponsDateUnset : localizedDate(value),
@@ -920,8 +927,8 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                         padding: EdgeInsets.zero,
                         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                      icon: HugeIcon(
-                        icon: HugeIcons.strokeRoundedCancel01,
+                      icon: AppIcon(
+                        AppIcons.cancel01,
                         size: 14,
                         color: adminMutedColor(theme),
                       ),
@@ -929,8 +936,8 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   else
                     Padding(
                       padding: const EdgeInsetsDirectional.only(end: 8),
-                      child: HugeIcon(
-                        icon: HugeIcons.strokeRoundedCalendarAdd01,
+                      child: AppIcon(
+                        AppIcons.calendarAdd01,
                         size: 16,
                         color: adminMutedColor(theme),
                       ),
@@ -966,7 +973,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
           windowLabel: _previewWindowLabel,
           perUserLimit: _parseInt(_perCustomer.text) ?? 1,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSizes.px10),
         Text(
           S.couponsPreviewHint,
           textAlign: TextAlign.center,

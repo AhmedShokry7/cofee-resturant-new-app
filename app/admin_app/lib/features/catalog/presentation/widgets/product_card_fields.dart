@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
 Color _cellBackground(bool dark) =>
@@ -221,11 +221,11 @@ class RecordSelectBox extends StatelessWidget {
                 ),
               ),
               Icon(
-                HugeIcons.strokeRoundedArrowDown01,
+                AppIcons.arrowDown01,
                 size: 13,
                 color: dark ? AppColor.darkTextSecondary : AppColor.greyColor,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: AppSizes.px8),
             ],
           ),
         ),
@@ -325,7 +325,7 @@ class RecordActionLabelBox extends StatelessWidget {
         child: Container(
           height: AppDimensions.recordFieldHeight,
           alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.sm),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border.all(color: _fieldBorder(dark)),
             borderRadius: BorderRadiusDirectional.horizontal(
@@ -338,7 +338,7 @@ class RecordActionLabelBox extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, size: 15, color: foreground),
-              const SizedBox(width: 5),
+              const SizedBox(width: AppSizes.px6),
               Text(
                 label,
                 maxLines: 1,

@@ -1,19 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/banners/data/models/admin_banner.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product_image.dart';
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/presentation/widgets/category_image_dialog.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/app_dependencies.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 
 /// Opens the dialog that writes a new banner through the cubit of the page.
 Future<void> showBannerCreateDialog({
@@ -117,7 +117,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
 
   Future<void> _loadTargets() async {
     try {
-      final snapshot = await AdminProductRepository().loadCatalog();
+      final snapshot = await AppDependencies.catalog.loadCatalog();
       if (!mounted) return;
       setState(() {
         _products = snapshot.products;
@@ -273,7 +273,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     return AlertDialog(
       title: Text(widget.initialBanner != null ? S.editBanner : S.addBanner),
       content: SizedBox(
-        width: 640,
+        width: AppDimensions.dialogBodyWidthFull,
         height: 560,
         child: SingleChildScrollView(
           child: Column(
@@ -281,7 +281,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
             children: [
               if (_error != null)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimensions.md),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: Text(
                     _error!,
                     style: Theme.of(context).textTheme.bodySmall
@@ -291,7 +291,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
                     child: SizedBox(
                       width: 240,
                       height: 120,
@@ -301,29 +301,26 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                               fit: BoxFit.fill,
                               errorWidget: (_, _, _) => const ColoredBox(
                                 color: AppColor.secondaryColor,
-                                child: Icon(HugeIcons.strokeRoundedImageAdd01),
+                                child: Icon(AppIcons.imageAdd01),
                               ),
                             )
                           : const ColoredBox(
                               color: AppColor.secondaryColor,
-                              child: Icon(HugeIcons.strokeRoundedImageAdd01),
+                              child: Icon(AppIcons.imageAdd01),
                             ),
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: OutlinedButton.icon(
                       onPressed: _changeImage,
-                      icon: const Icon(
-                        HugeIcons.strokeRoundedImageAdd01,
-                        size: 18,
-                      ),
+                      icon: const Icon(AppIcons.imageAdd01, size: 18),
                       label: Text(S.changeImage),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -335,7 +332,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                       textDirection: TextDirection.rtl,
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: TextField(
                       controller: _titleEnController,
@@ -346,7 +343,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -358,7 +355,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                       textDirection: TextDirection.rtl,
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: TextField(
                       controller: _subtitleEnController,
@@ -369,7 +366,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Expanded(
@@ -381,7 +378,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                       textDirection: TextDirection.rtl,
                     ),
                   ),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: TextField(
                       controller: _ctaEnController,
@@ -392,7 +389,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   ),
                 ],
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
                 initialValue: _targetTypeController.text.isEmpty
                     ? 'none'
@@ -415,7 +412,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                   });
                 },
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               if (_targetTypeController.text == 'product')
                 _loadingTargets
                     ? const CircularProgressIndicator()
@@ -462,22 +459,22 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                           setState(() => _targetIdController.text = value);
                         },
                       ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _targetUrlController,
                 decoration: InputDecoration(labelText: S.targetUrl),
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _sortOrderController,
                 decoration: InputDecoration(labelText: S.sortOrder),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: AppDimensions.md),
+              const SizedBox(height: AppSpacing.md),
               Row(
                 children: [
                   Text(S.published),
-                  const SizedBox(width: AppDimensions.md),
+                  const SizedBox(width: AppSpacing.md),
                   Switch(
                     value: _isPublished,
                     onChanged: (value) => setState(() => _isPublished = value),

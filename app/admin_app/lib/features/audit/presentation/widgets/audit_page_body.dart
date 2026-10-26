@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/audit/data/models/admin_audit_metrics.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_directory.dart';
 import 'package:admin_app/features/audit/presentation/widgets/audit_metrics_cards.dart';
@@ -46,12 +46,9 @@ class AuditPageBody extends StatelessWidget {
                   onPressed: onRefresh,
                   isLoading: refreshing,
                   loadingText: S.auditRefresh,
-                  leadingIcon: const Icon(
-                    HugeIcons.strokeRoundedRefresh,
-                    size: 18,
-                  ),
+                  leadingIcon: const Icon(AppIcons.refresh, size: 18),
                   height: 42,
-                  borderRadius: AppDimensions.radiusPill,
+                  borderRadius: AppRadius.pill,
                   backgroundColor: AppColor.primaryColor,
                   textColor: AppColor.whiteColor,
                 ),
@@ -59,9 +56,9 @@ class AuditPageBody extends StatelessWidget {
             ),
             if (errorMessage != null)
               AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-            const SizedBox(height: 7),
+            const SizedBox(height: AppSizes.px8),
             AuditMetricsCards(metrics: metrics),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSizes.px14),
           ];
           if (compact) {
             return SingleChildScrollView(
@@ -69,7 +66,10 @@ class AuditPageBody extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
-                  SizedBox(height: 720, child: directory),
+                  SizedBox(
+                    height: AppDimensions.directoryCanvasHeightXxxl,
+                    child: directory,
+                  ),
                 ],
               ),
             );

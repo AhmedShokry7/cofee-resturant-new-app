@@ -1,7 +1,7 @@
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/product_excel_service.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
+import 'package:admin_app/core/services/product_excel_service.dart';
 
 /// A single row that failed to import, with the reason.
 class ImportRowError {

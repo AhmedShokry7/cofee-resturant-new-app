@@ -3,7 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/catalog/data/category_excel_mapper.dart';
 import 'package:admin_app/features/catalog/data/category_excel_service.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_cubit.dart';
 
 /// The outcome of one Excel import of categories.

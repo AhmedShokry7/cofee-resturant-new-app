@@ -4,15 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
 import 'package:admin_app/features/kitchen/data/repositories/admin_kitchen_repository.dart';
 import 'package:admin_app/features/kitchen/data/services/kitchen_realtime_feed.dart';
 import 'package:admin_app/features/kitchen/presentation/manager/admin_kitchen_cubit.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
 import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_page_body.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 
 final DateTime _now = DateTime.utc(2026, 10, 24, 9, 10);
 

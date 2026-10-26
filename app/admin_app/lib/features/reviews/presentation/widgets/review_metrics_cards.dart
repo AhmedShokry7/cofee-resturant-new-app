@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review_metrics.dart';
 import 'package:admin_app/features/reviews/presentation/widgets/review_format.dart';
@@ -22,7 +23,7 @@ class ReviewMetricsCards extends StatelessWidget {
         value: metrics.total == 0
             ? '—'
             : reviewAverageValue(metrics.averageRating),
-        icon: HugeIcons.strokeRoundedStar,
+        icon: AppIcons.star,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
       ),
@@ -32,7 +33,7 @@ class ReviewMetricsCards extends StatelessWidget {
           S.reviewsMetricTotalHint(metrics.published, metrics.hidden),
         ),
         value: reviewCountValue(metrics.total),
-        icon: HugeIcons.strokeRoundedComment01,
+        icon: AppIcons.comment01,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.adminAccent,
       ),
@@ -40,7 +41,7 @@ class ReviewMetricsCards extends StatelessWidget {
         label: S.reviewsMetricLow,
         caption: S.reviewsMetricLowHint,
         value: reviewCountValue(metrics.lowRatings),
-        icon: HugeIcons.strokeRoundedAlertCircle,
+        icon: AppIcons.alert,
         iconBackground: AppColor.trendNegativeSurface,
         iconColor: AppColor.trendNegative,
       ),
@@ -48,7 +49,7 @@ class ReviewMetricsCards extends StatelessWidget {
         label: S.reviewsMetricHidden,
         caption: S.reviewsMetricHiddenHint,
         value: reviewCountValue(metrics.hidden),
-        icon: HugeIcons.strokeRoundedViewOff,
+        icon: AppIcons.eyeOff,
         iconBackground: AppColor.adminTableHeader,
         iconColor: AppColor.adminMuted,
       ),
@@ -57,7 +58,7 @@ class ReviewMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

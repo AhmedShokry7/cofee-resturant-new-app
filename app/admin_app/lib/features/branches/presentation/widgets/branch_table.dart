@@ -1,13 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_actions_menu.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_format.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
@@ -92,7 +93,7 @@ class _Header extends StatelessWidget {
     final dark = adminIsDark(theme);
     return Container(
       height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: adminTintedSurfaceColor(theme),
         border: Border.all(
@@ -172,12 +173,12 @@ class _Row extends StatelessWidget {
     final locationIssue = !branch.hasLocation;
 
     return Material(
-      color: Colors.transparent,
+      color: AppColor.transparent,
       child: InkWell(
         onTap: canManage ? onEdit : null,
         child: Container(
           height: 72,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: adminRowBorderColor(theme)),
@@ -191,9 +192,9 @@ class _Row extends StatelessWidget {
                     AdminNetworkThumb(
                       imageUrl: branch.imageUrl,
                       size: 42,
-                      icon: HugeIcons.strokeRoundedStore01,
+                      icon: AppIcons.store01,
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: AppSizes.px10),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -251,7 +252,7 @@ class _Row extends StatelessWidget {
                         color: hours == null
                             ? (dark
                                   ? AppColor.adminWarning
-                                  : const Color(0xFFA47B2F))
+                                  : AppColor.adminWarning)
                             : adminSubtleColor(theme),
                         fontSize: AppFontSizes.size8_5,
                         height: AppTextHeights.line1_4,

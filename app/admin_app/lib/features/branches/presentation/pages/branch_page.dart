@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
-import 'package:admin_app/features/branches/data/repositories/admin_branch_repository.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_cubit.dart';
 import 'package:admin_app/features/branches/presentation/manager/admin_branch_state.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_data_dialog.dart';
@@ -14,7 +14,7 @@ import 'package:admin_app/features/branches/presentation/widgets/branch_messages
 import 'package:admin_app/features/branches/presentation/widgets/branch_page_actions.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_page_body.dart';
 import 'package:admin_app/features/branches/presentation/widgets/branch_product_pricing_dialog.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class BranchPage extends StatefulWidget {

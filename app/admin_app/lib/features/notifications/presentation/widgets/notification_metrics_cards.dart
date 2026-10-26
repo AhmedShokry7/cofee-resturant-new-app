@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/notifications/data/models/admin_notification_metrics.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 
@@ -24,7 +25,7 @@ class NotificationMetricsCards extends StatelessWidget {
         label: S.notificationsMetricTotal,
         caption: localizeDigits(S.notificationsMetricTotalHint(metrics.today)),
         value: notificationCountValue(metrics.total),
-        icon: HugeIcons.strokeRoundedNotification01,
+        icon: AppIcons.notification01,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.adminAccent,
       ),
@@ -32,7 +33,7 @@ class NotificationMetricsCards extends StatelessWidget {
         label: S.notificationsMetricUnread,
         caption: S.notificationsMetricUnreadHint(unreadShare),
         value: notificationCountValue(metrics.unread),
-        icon: HugeIcons.strokeRoundedEye,
+        icon: AppIcons.eyeIcon,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
       ),
@@ -42,7 +43,7 @@ class NotificationMetricsCards extends StatelessWidget {
           S.notificationsMetricAdminSentHint(metrics.campaigns),
         ),
         value: notificationCountValue(metrics.adminSent),
-        icon: HugeIcons.strokeRoundedSent,
+        icon: AppIcons.sent,
         iconBackground: AppColor.adminInfoSurface,
         iconColor: AppColor.adminInfo,
       ),
@@ -57,7 +58,7 @@ class NotificationMetricsCards extends StatelessWidget {
                 ),
               ),
         value: notificationRateValue(rate),
-        icon: HugeIcons.strokeRoundedSmartPhone01,
+        icon: AppIcons.smartPhone01,
         iconBackground: rate != null && rate < 90
             ? AppColor.trendNegativeSurface
             : AppColor.trendPositiveSurface,
@@ -70,7 +71,7 @@ class NotificationMetricsCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width < 900 ? 2 : 4;
+        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
         const spacing = 13.0;
         final cardWidth = (width - spacing * (columns - 1)) / columns;
         return Wrap(

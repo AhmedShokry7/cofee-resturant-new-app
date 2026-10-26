@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
@@ -26,25 +27,28 @@ class OrderStatusTab extends StatelessWidget {
         ? AppColor.adminAccent
         : dark
         ? AppColor.darkTextSecondary
-        : const Color(0xFF718078);
+        : AppColor.statusTabIdleInk;
     return Semantics(
       button: true,
       selected: selected,
       label: '$label, ${orderCount(count)}',
       child: Material(
-        color: Colors.transparent,
+        color: AppColor.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(7),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
             decoration: BoxDecoration(
               color: selected
                   ? (dark
                         ? AppColor.adminAccent.withValues(alpha: .18)
                         : AppColor.adminAccentSurface)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(7),
+                  : AppColor.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -52,14 +56,14 @@ class OrderStatusTab extends StatelessWidget {
                 if (selected) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 1,
+                      horizontal: AppSpacing.xs,
+                      vertical: AppSpacing.xxs,
                     ),
                     decoration: BoxDecoration(
                       color: dark
                           ? AppColor.adminAccent.withValues(alpha: .22)
-                          : const Color(0xFFD5E8DD),
-                      borderRadius: BorderRadius.circular(5),
+                          : AppColor.statusTabIdleSurface,
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Text(
                       orderCount(count),
@@ -71,7 +75,7 @@ class OrderStatusTab extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 5),
+                  const SizedBox(width: AppSizes.px6),
                 ],
                 Text(
                   label,

@@ -2,7 +2,7 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/features/branches/data/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
 
 String branchName(AdminBranch branch) =>
     branch.nameFor(AppLocale.instance.language);

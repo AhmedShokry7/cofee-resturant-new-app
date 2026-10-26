@@ -22,10 +22,10 @@ class AdminErrorBanner extends StatelessWidget {
     final color = theme.colorScheme.error;
 
     return Container(
-      padding: const EdgeInsets.all(AppDimensions.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .08),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
           color: color.withValues(alpha: .35),
           width: AppDimensions.fieldBorderWidth,
@@ -35,7 +35,7 @@ class AdminErrorBanner extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AppIcon(icon, color: color),
-          const SizedBox(width: AppDimensions.sm),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               message,

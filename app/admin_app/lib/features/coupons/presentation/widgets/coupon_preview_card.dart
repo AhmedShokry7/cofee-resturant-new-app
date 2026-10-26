@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/coupons/data/models/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_badges.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
 
@@ -43,9 +44,9 @@ class CouponPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         gradient: const LinearGradient(
           begin: AlignmentDirectional.topStart,
           end: AlignmentDirectional.bottomEnd,
@@ -71,15 +72,15 @@ class CouponPreviewCard extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColor.whiteColor.withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedTicket01,
+                child: const AppIcon(
+                  AppIcons.ticket01,
                   size: 16,
                   color: AppColor.whiteColor,
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: AppSizes.px10),
               Expanded(
                 child: Text(
                   S.couponsPreviewTitle,
@@ -93,10 +94,13 @@ class CouponPreviewCard extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xxs,
+                ),
                 decoration: BoxDecoration(
                   color: AppColor.whiteColor.withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
                 child: Text(
                   S.couponsPreviewDiscountLabel,
@@ -111,7 +115,7 @@ class CouponPreviewCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSizes.px16),
           Text.rich(
             TextSpan(
               children: [
@@ -139,7 +143,7 @@ class CouponPreviewCard extends StatelessWidget {
             textDirection: TextDirection.ltr,
             textAlign: TextAlign.start,
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           Text(
             title,
             maxLines: 2,
@@ -152,7 +156,7 @@ class CouponPreviewCard extends StatelessWidget {
             ),
           ),
           if (description != null && description!.trim().isNotEmpty) ...[
-            const SizedBox(height: 3),
+            const SizedBox(height: AppSizes.px4),
             Text(
               description!,
               maxLines: 2,
@@ -164,38 +168,34 @@ class CouponPreviewCard extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 15),
-          const CouponDashedLine(color: Color(0x3DFFFFFF), height: 1),
-          const SizedBox(height: 13),
-          _term(
-            icon: HugeIcons.strokeRoundedTag01,
-            label: scopeLabel,
-            caption: scopeHint,
-          ),
-          const SizedBox(height: 9),
-          _term(icon: HugeIcons.strokeRoundedCalendar03, label: windowLabel),
+          const SizedBox(height: AppSizes.px16),
+          const CouponDashedLine(color: AppColor.white24, height: 1),
+          const SizedBox(height: AppSizes.px14),
+          _term(icon: AppIcons.tag01, label: scopeLabel, caption: scopeHint),
+          const SizedBox(height: AppSizes.px10),
+          _term(icon: AppIcons.calendar03, label: windowLabel),
           if (minOrderAmount > 0) ...[
-            const SizedBox(height: 9),
+            const SizedBox(height: AppSizes.px10),
             _term(
-              icon: HugeIcons.strokeRoundedShoppingBag01,
+              icon: AppIcons.shoppingBag01,
               label: S.couponsMinOrder(couponMoneyWithCurrency(minOrderAmount)),
             ),
           ],
           if (_isPercentage && maxDiscount != null && maxDiscount! > 0) ...[
-            const SizedBox(height: 9),
+            const SizedBox(height: AppSizes.px10),
             _term(
-              icon: HugeIcons.strokeRoundedPercent,
+              icon: AppIcons.percent,
               label: S.couponsMaxDiscount(
                 couponMoneyWithCurrency(maxDiscount!),
               ),
             ),
           ],
-          const SizedBox(height: 9),
+          const SizedBox(height: AppSizes.px10),
           _term(
-            icon: HugeIcons.strokeRoundedRefresh,
+            icon: AppIcons.refresh,
             label: S.couponsPerCustomer(perUserLimit),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: AppSizes.px16),
           CouponCodeChip(code: code, onDark: true, onCopy: null),
         ],
       ),
@@ -209,12 +209,8 @@ class CouponPreviewCard extends StatelessWidget {
   }) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      HugeIcon(
-        icon: icon,
-        size: 14,
-        color: AppColor.whiteColor.withValues(alpha: .8),
-      ),
-      const SizedBox(width: 8),
+      AppIcon(icon, size: 14, color: AppColor.whiteColor.withValues(alpha: .8)),
+      const SizedBox(width: AppSizes.px8),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

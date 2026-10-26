@@ -2,24 +2,48 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_filters.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_metrics.dart';
-import 'package:admin_app/features/kitchen/data/models/admin_kitchen_ticket.dart';
-import 'package:admin_app/features/kitchen/data/repositories/admin_kitchen_repository.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/di/kitchen_dependencies.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
+import 'package:admin_app/features/kitchen/domain/usecases/load_board.dart';
+import 'package:admin_app/features/kitchen/domain/usecases/load_filters.dart';
+import 'package:admin_app/features/kitchen/domain/usecases/load_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/usecases/set_item_status.dart';
+import 'package:admin_app/features/kitchen/domain/usecases/set_ticket_status.dart';
 import 'package:admin_app/features/kitchen/data/services/kitchen_realtime_feed.dart';
 import 'package:admin_app/features/kitchen/presentation/manager/admin_kitchen_state.dart';
 
 class AdminKitchenCubit extends Cubit<AdminKitchenState> {
   AdminKitchenCubit({
-    AdminKitchenRepository? repository,
+    KitchenRepository? repository,
     KitchenRealtimeFeed? realtimeFeed,
     DateTime Function()? clock,
-  }) : _repository = repository ?? AdminKitchenRepository(),
-       _realtimeFeed = realtimeFeed ?? KitchenRealtimeFeed(),
-       _clock = clock ?? DateTime.now,
-       super(AdminKitchenState(now: (clock ?? DateTime.now)()));
+  }) : this._withUseCases(
+         repository ?? KitchenDependencies.repository,
+         realtimeFeed,
+         clock,
+       );
 
-  final AdminKitchenRepository _repository;
+  AdminKitchenCubit._withUseCases(
+    KitchenRepository repository,
+    KitchenRealtimeFeed? realtimeFeed,
+    DateTime Function()? clock,
+  ) : _loadBoard = LoadBoardUseCase(repository),
+      _loadMetrics = LoadMetricsUseCase(repository),
+      _loadFilters = LoadFiltersUseCase(repository),
+      _setTicketStatus = SetTicketStatusUseCase(repository),
+      _setItemStatus = SetItemStatusUseCase(repository),
+      _realtimeFeed = realtimeFeed ?? KitchenRealtimeFeed(),
+      _clock = clock ?? DateTime.now,
+      super(AdminKitchenState(now: (clock ?? DateTime.now)()));
+
+  final LoadBoardUseCase _loadBoard;
+  final LoadMetricsUseCase _loadMetrics;
+  final LoadFiltersUseCase _loadFilters;
+  final SetTicketStatusUseCase _setTicketStatus;
+  final SetItemStatusUseCase _setItemStatus;
   final KitchenRealtimeFeed _realtimeFeed;
   final DateTime Function() _clock;
 
@@ -91,7 +115,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
       return KitchenMutationOutcome.failed;
     }
     _setTicketBusy(ticketId, true);
-    final outcome = await _repository.setTicketStatus(ticketId, status);
+    final outcome = await _setTicketStatus(ticketId, status);
     _setTicketBusy(ticketId, false);
     if (outcome == KitchenMutationOutcome.success) await refreshLive();
     return outcome;
@@ -105,7 +129,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
       return KitchenMutationOutcome.failed;
     }
     _setItemBusy(itemId, true);
-    final outcome = await _repository.setItemStatus(itemId, status);
+    final outcome = await _setItemStatus(itemId, status);
     _setItemBusy(itemId, false);
     if (outcome == KitchenMutationOutcome.success) await refreshLive();
     return outcome;
@@ -151,7 +175,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
       emit(state.copyWith(isRefreshing: true, clearError: true));
     }
 
-    final boardFuture = _repository.loadBoard(
+    final boardFuture = _loadBoard(
       search: state.search,
       branchId: state.branchId,
     );
@@ -206,7 +230,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
 
   Future<AdminKitchenMetrics?> _loadMetricsSafely() async {
     try {
-      return await _repository.loadMetrics(branchId: state.branchId);
+      return await _loadMetrics(branchId: state.branchId);
     } catch (_) {
       return null;
     }
@@ -214,7 +238,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
 
   Future<AdminKitchenFilters?> _loadFiltersSafely() async {
     try {
-      return await _repository.loadFilters();
+      return await _loadFilters();
     } catch (_) {
       return null;
     }

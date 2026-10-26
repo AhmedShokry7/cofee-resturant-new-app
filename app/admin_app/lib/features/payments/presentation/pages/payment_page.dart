@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/payments/data/models/admin_payment.dart';
 import 'package:admin_app/features/payments/data/payment_excel_exporter.dart';
 import 'package:admin_app/features/payments/data/payment_print_service.dart';
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_cubit.dart';
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_state.dart';
 import 'package:admin_app/features/payments/presentation/widgets/payment_records.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -110,7 +110,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   actions: [
                     AdminToolbarButton(
                       label: S.paymentsExport,
-                      icon: HugeIcons.strokeRoundedDownload02,
+                      icon: AppIcons.download02,
                       busy: _exporting,
                       onPressed: _exporting || payments.isEmpty
                           ? null
@@ -118,7 +118,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     ),
                     AdminToolbarButton(
                       label: S.paymentsPrint,
-                      icon: HugeIcons.strokeRoundedPrinter,
+                      icon: AppIcons.printer,
                       onPressed: payments.isEmpty
                           ? null
                           : () => _printPayments(payments),
@@ -130,7 +130,7 @@ class _PaymentPageState extends State<PaymentPage> {
                     message: state.errorMessage ?? '',
                     onRetry: _cubit.load,
                   ),
-                const SizedBox(height: AppDimensions.lg),
+                const SizedBox(height: AppSpacing.lg),
                 Expanded(
                   child: firstLoad && state.isLoading
                       ? const AdminLoadingView()

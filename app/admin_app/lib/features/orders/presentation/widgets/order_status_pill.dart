@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/presentation/models/order_status.dart';
@@ -27,7 +28,7 @@ class OrderStatusPill extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
         border: Border.all(
           color: view.color.withValues(alpha: dark ? .35 : .18),
         ),
@@ -48,13 +49,13 @@ class OrderStatusPill extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: AppSizes.px6),
           Container(
             width: 5,
             height: 5,
             decoration: BoxDecoration(
               color: foreground,
-              borderRadius: BorderRadius.circular(2.5),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
             ),
           ),
         ],

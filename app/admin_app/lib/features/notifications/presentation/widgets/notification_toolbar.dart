@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
@@ -54,7 +55,7 @@ class NotificationToolbar extends StatelessWidget {
           children: [
             _FilterMenu<NotificationTypeFilter>(
               tooltip: S.notificationsFilterType,
-              icon: HugeIcons.strokeRoundedTag01,
+              icon: AppIcons.tag01,
               selected: type,
               active: type != NotificationTypeFilter.all,
               options: NotificationTypeFilter.values,
@@ -64,7 +65,7 @@ class NotificationToolbar extends StatelessWidget {
             ),
             _FilterMenu<NotificationReadFilter>(
               tooltip: S.notificationsFilterRead,
-              icon: HugeIcons.strokeRoundedEye,
+              icon: AppIcons.eyeIcon,
               selected: readFilter,
               active: readFilter != NotificationReadFilter.all,
               options: NotificationReadFilter.values,
@@ -74,7 +75,7 @@ class NotificationToolbar extends StatelessWidget {
             ),
             _FilterMenu<NotificationPushFilter>(
               tooltip: S.notificationsFilterPush,
-              icon: HugeIcons.strokeRoundedSent,
+              icon: AppIcons.sent,
               selected: pushFilter,
               active: pushFilter != NotificationPushFilter.all,
               options: NotificationPushFilter.values,
@@ -91,8 +92,8 @@ class NotificationToolbar extends StatelessWidget {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   padding: EdgeInsets.zero,
                 ),
-                icon: const HugeIcon(
-                  icon: HugeIcons.strokeRoundedCancel01,
+                icon: const AppIcon(
+                  AppIcons.cancel01,
                   size: 18,
                   color: AppColor.adminMuted,
                 ),
@@ -104,7 +105,7 @@ class NotificationToolbar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               search,
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSizes.px8),
               Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: actions,
@@ -115,7 +116,9 @@ class NotificationToolbar extends StatelessWidget {
         return Row(
           children: [
             SizedBox(
-              width: constraints.maxWidth >= 900 ? 320 : 240,
+              width: constraints.maxWidth >= AppBreakpoints.wideLayout
+                  ? AppDimensions.searchFieldWidth
+                  : AppDimensions.searchFieldWidthCompact,
               child: search,
             ),
             const Spacer(),
@@ -181,16 +184,16 @@ class _FilterMenu<T> extends StatelessWidget {
             child: Row(
               children: [
                 SizedBox(
-                  width: 18,
+                  width: AppSizes.px18,
                   child: option == selected
-                      ? const HugeIcon(
-                          icon: HugeIcons.strokeRoundedTick01,
+                      ? const AppIcon(
+                          AppIcons.tick01,
                           size: 15,
                           color: AppColor.adminAccent,
                         )
                       : null,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSizes.px6),
                 Flexible(
                   child: Text(
                     labelBuilder(option),

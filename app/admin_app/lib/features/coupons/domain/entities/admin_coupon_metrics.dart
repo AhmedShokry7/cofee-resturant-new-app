@@ -1,4 +1,4 @@
-import 'package:admin_app/features/coupons/data/models/coupon_json.dart';
+import 'package:admin_app/features/coupons/domain/entities/coupon_json.dart';
 
 class AdminCouponMetrics {
   const AdminCouponMetrics({

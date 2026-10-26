@@ -4,9 +4,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_usage.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
 import 'package:admin_app/features/subscriptions_admin/data/repositories/admin_subscription_repository.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/repositories/subscription_repository.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/manager/admin_subscription_cubit.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_details_dialog.dart';
 

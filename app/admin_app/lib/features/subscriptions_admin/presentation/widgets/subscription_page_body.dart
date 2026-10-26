@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription.dart';
-import 'package:admin_app/features/subscriptions_admin/data/models/admin_subscription_metrics.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
+import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_metrics.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_directory.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_metrics_cards.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
@@ -41,9 +42,9 @@ class SubscriptionPageBody extends StatelessWidget {
           ),
           if (errorMessage != null)
             AdminInlineError(message: errorMessage!, onRetry: onRefresh),
-          const SizedBox(height: 7),
+          const SizedBox(height: AppSizes.px8),
           SubscriptionMetricsCards(metrics: metrics),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSizes.px16),
           Expanded(
             child: SubscriptionDirectory(
               subscriptions: subscriptions,

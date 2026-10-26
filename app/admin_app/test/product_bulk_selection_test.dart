@@ -3,9 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/catalog/data/models/admin_category.dart';
-import 'package:admin_app/features/catalog/data/models/admin_product.dart';
+import 'package:admin_app/core/models/admin_category.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
+import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_excel_controller.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_page_view.dart';
