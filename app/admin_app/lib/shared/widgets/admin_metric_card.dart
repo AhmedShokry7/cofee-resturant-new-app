@@ -3,6 +3,30 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/formatters.dart';
+
+/// نسبة التغيير بين رقم ونقطة مقارنته، كما تُطبع على شارة البطاقة.
+class AdminMetricTrend {
+  const AdminMetricTrend({required this.label, required this.positive});
+
+  final String label;
+  final bool positive;
+}
+
+/// التغيّر النسبي بين رقم وقيمته السابقة.
+///
+/// `null` حين لا نقطة مقارنة بعد: بطاقة تقول «+٠٪» مقابل صفر هي كذبة، فالشارة
+/// تُخفى أصلًا. والإشارة مطبوعة مع النسبة لا مع السهم وحده: قارئ الشاشة يلفظ
+/// النصّ وحده، فـ«١٠٠٪» بلا «−» تُسمع ارتفاعًا وهي انحدار كامل.
+AdminMetricTrend? metricPercentTrend(num current, num previous) {
+  if (previous <= 0) return null;
+  final change = (current - previous) / previous * 100;
+  final positive = change >= 0;
+  return AdminMetricTrend(
+    label: '${positive ? '+' : '−'}${formatPercent(change.abs())}',
+    positive: positive,
+  );
+}
 
 /// One statistic card of an admin page: a trend badge, an icon and a value.
 class AdminMetricCard extends StatelessWidget {

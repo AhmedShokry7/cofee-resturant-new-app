@@ -13,6 +13,14 @@ Color adminHeadingColor(ThemeData theme) =>
 Color adminBodyColor(ThemeData theme) =>
     adminIsDark(theme) ? AppColor.darkText : AppColor.adminBody;
 
+/// لون المبلغ المطبوع في جدول أو بطاقة: أثقل من النص وأخف من العنوان.
+Color adminAmountColor(ThemeData theme) =>
+    adminIsDark(theme) ? AppColor.darkText : AppColor.adminAmount;
+
+/// لون التاريخ في الأسطر: أهدأ من النص لأنه يُقارَن ولا يُقرأ وحده.
+Color adminDateColor(ThemeData theme) =>
+    adminIsDark(theme) ? AppColor.darkTextSecondary : AppColor.adminDate;
+
 Color adminMutedColor(ThemeData theme) =>
     adminIsDark(theme) ? AppColor.darkTextSecondary : AppColor.adminMuted;
 
@@ -38,20 +46,30 @@ Color adminFlagForeground(ThemeData theme, Color color) =>
 Color adminFlagBackground(ThemeData theme, Color color, Color lightSurface) =>
     adminIsDark(theme) ? color.withValues(alpha: .16) : lightSurface;
 
-/// A bordered admin surface with a heading, an optional count and trailing
-/// action, shared by the detail pages.
+/// A bordered admin surface with a heading, an optional subtitle and count and
+/// a trailing action, shared by the detail pages.
+///
+/// The subtitle is part of the card, not a line the page adds under the title:
+/// a card that explains itself in two lines does it the same way on every page.
 class AdminSectionCard extends StatelessWidget {
   const AdminSectionCard({
     super.key,
     required this.title,
     required this.child,
+    this.subtitle,
+    this.leading,
     this.count,
     this.trailing,
     this.padding = const EdgeInsets.all(AppSpacing.lg),
   });
 
   final String title;
+  final String? subtitle;
   final Widget child;
+
+  /// علامة البطاقة قبل عنوانها: أيقونة القسم أو شارة عدّها، فلا تُركّب كل صفحة
+  /// رأسًا خاصًا بها حين تختلف العلامة فقط.
+  final Widget? leading;
   final int? count;
   final Widget? trailing;
   final EdgeInsetsGeometry padding;
@@ -81,17 +99,38 @@ class AdminSectionCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              if (leading != null) ...[
+                leading!,
+                const SizedBox(width: AppSpacing.sm),
+              ],
               Expanded(
-                child: Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: adminHeadingColor(theme),
-                    fontSize: AppFontSizes.size13,
-                    fontWeight: AppFontWeights.bold,
-                    height: AppTextHeights.line1_5,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: adminHeadingColor(theme),
+                        fontSize: AppFontSizes.size13,
+                        fontWeight: AppFontWeights.bold,
+                        height: AppTextHeights.line1_5,
+                      ),
+                    ),
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size10,
+                          fontWeight: AppFontWeights.regular,
+                          height: AppTextHeights.line1_4,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               if (count != null) ...[

@@ -11,6 +11,7 @@ import 'package:admin_app/features/payments/data/payment_print_service.dart';
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_cubit.dart';
 import 'package:admin_app/features/payments/presentation/manager/admin_payment_state.dart';
 import 'package:admin_app/features/payments/presentation/widgets/payment_records.dart';
+import 'package:admin_app/shared/widgets/admin_excel_button.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -108,9 +109,9 @@ class _PaymentPageState extends State<PaymentPage> {
                   title: S.payments,
                   subtitle: S.paymentsDescription,
                   actions: [
-                    AdminToolbarButton(
+                    AdminExcelButton(
+                      action: ExcelAction.export,
                       label: S.paymentsExport,
-                      icon: AppIcons.download02,
                       busy: _exporting,
                       onPressed: _exporting || payments.isEmpty
                           ? null

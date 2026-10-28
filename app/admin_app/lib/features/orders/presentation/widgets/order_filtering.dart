@@ -1,4 +1,5 @@
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
+import 'package:admin_app/core/models/order_status_codes.dart';
 
 List<AdminOrder> filterOrders(
   List<AdminOrder> orders, {
@@ -43,12 +44,7 @@ List<AdminOrder> filterOrders(
 
 bool _matchesStatus(AdminOrder order, String filter) => switch (filter) {
   '' => true,
-  'processing' => const {
-    'pending',
-    'confirmed',
-    'preparing',
-    'ready',
-  }.contains(order.status),
-  'shipped' => order.status == 'out_for_delivery',
+  'processing' => OrderStatusCodes.processing.contains(order.status),
+  'shipped' => order.status == OrderStatusCodes.outForDelivery,
   _ => order.status == filter,
 };

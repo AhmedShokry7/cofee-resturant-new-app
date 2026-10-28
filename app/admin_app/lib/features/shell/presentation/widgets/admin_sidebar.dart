@@ -28,7 +28,7 @@ class AdminSidebar extends StatelessWidget {
   final ValueChanged<String> onSelected;
   final VoidCallback onSignOut;
 
-  /// Work waiting per destination, keyed by the destination id.
+  /// Unread work waiting per destination, keyed by the destination id.
   final Map<String, int> badges;
 
   @override

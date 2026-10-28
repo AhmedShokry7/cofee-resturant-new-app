@@ -22,12 +22,12 @@ class _FakeNavRepository extends AdminNavRepository {
 void main() {
   test('the counts are read from the json of the rpc', () {
     final counts = AdminNavCounts.fromJson(const <String, dynamic>{
-      'new_orders': 4,
-      'kitchen_queue': '7',
+      'unread_orders': 4,
+      'unread_kitchen': '7',
     });
 
-    expect(counts.newOrders, 4);
-    expect(counts.kitchenQueue, 7);
+    expect(counts.unreadOrders, 4);
+    expect(counts.unreadKitchen, 7);
     expect(counts.isEmpty, isFalse);
     expect(AdminNavCounts.fromJson(const <String, dynamic>{}).isEmpty, isTrue);
   });
@@ -46,7 +46,7 @@ void main() {
 
   test('starting the watch fetches the waiting work', () async {
     final repository = _FakeNavRepository(
-      counts: const AdminNavCounts(newOrders: 3, kitchenQueue: 2),
+      counts: const AdminNavCounts(unreadOrders: 3, unreadKitchen: 2),
     );
     final cubit = AdminNavCubit(repository: repository);
     addTearDown(cubit.close);
@@ -54,13 +54,13 @@ void main() {
     cubit.start(watchOrders: true, watchKitchen: true);
     await Future<void>.delayed(Duration.zero);
 
-    expect(cubit.state.newOrders, 3);
-    expect(cubit.state.kitchenQueue, 2);
+    expect(cubit.state.unreadOrders, 3);
+    expect(cubit.state.unreadKitchen, 2);
   });
 
   test('a failed poll keeps the last numbers', () async {
     final repository = _FakeNavRepository(
-      counts: const AdminNavCounts(newOrders: 5, kitchenQueue: 1),
+      counts: const AdminNavCounts(unreadOrders: 5, unreadKitchen: 1),
     );
     final cubit = AdminNavCubit(repository: repository);
     addTearDown(cubit.close);
@@ -71,20 +71,20 @@ void main() {
     repository.failing = true;
     await cubit.refresh();
 
-    expect(cubit.state.newOrders, 5);
-    expect(cubit.state.kitchenQueue, 1);
+    expect(cubit.state.unreadOrders, 5);
+    expect(cubit.state.unreadKitchen, 1);
   });
 
   test('stopping the watch clears the badges', () async {
     final repository = _FakeNavRepository(
-      counts: const AdminNavCounts(newOrders: 5),
+      counts: const AdminNavCounts(unreadOrders: 5),
     );
     final cubit = AdminNavCubit(repository: repository);
     addTearDown(cubit.close);
 
     cubit.start(watchOrders: true, watchKitchen: false);
     await Future<void>.delayed(Duration.zero);
-    expect(cubit.state.newOrders, 5);
+    expect(cubit.state.unreadOrders, 5);
 
     cubit.start(watchOrders: false, watchKitchen: false);
 

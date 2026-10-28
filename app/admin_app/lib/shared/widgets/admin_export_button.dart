@@ -1,11 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/theme/app_icons.dart';
-import 'package:admin_app/shared/widgets/admin_toolbar.dart';
+import 'package:admin_app/shared/widgets/admin_excel_button.dart';
 
 /// زر التصدير المشترك بين أدلة السجلات: يعطّل نفسه حين لا توجد صفوف،
 /// ويبدّل تسميته وحالته أثناء العمل حين يمرّر الدليل مؤشر انشغال.
+/// رسمه هو زرار Excel واحد، فيبقى شكله كشكل زرار صفحة المدفوعات.
 class AdminExportButton extends StatelessWidget {
   const AdminExportButton({
     super.key,
@@ -29,17 +29,17 @@ class AdminExportButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final listenable = busy;
     if (listenable == null) {
-      return AdminToolbarButton(
+      return AdminExcelButton(
+        action: ExcelAction.export,
         label: label,
-        icon: AppIcons.download02,
         onPressed: enabled ? onPressed : null,
       );
     }
     return ValueListenableBuilder<bool>(
       valueListenable: listenable,
-      builder: (context, isBusy, _) => AdminToolbarButton(
+      builder: (context, isBusy, _) => AdminExcelButton(
+        action: ExcelAction.export,
         label: isBusy ? busyLabel : label,
-        icon: AppIcons.download02,
         busy: isBusy,
         onPressed: enabled && !isBusy ? onPressed : null,
       ),

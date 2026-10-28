@@ -7,6 +7,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
+import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_shift_dialog.dart';
@@ -80,6 +81,7 @@ class _FakeShiftRepository extends AdminPosRepository {
   PosShift? shift;
   PosShift? openedShift;
   PosShift? movementShift;
+  PosShiftException? movementError;
   PosShift? closedShiftResult;
   List<PosShift> history = const <PosShift>[];
 
@@ -134,6 +136,8 @@ class _FakeShiftRepository extends AdminPosRepository {
     lastMovementKind = kind;
     lastMovementAmount = amount;
     lastMovementReason = reason;
+    final error = movementError;
+    if (error != null) throw error;
     final updated = movementShift ?? shift ?? _openShift();
     shift = updated;
     return updated;
@@ -303,6 +307,52 @@ void main() {
     expect(repository.lastMovementReason, 'فكة');
     expect(find.text('130.00 SAR'), findsOneWidget);
     expect(find.text('30.00 SAR'), findsOneWidget);
+  });
+
+  testWidgets('a rejected cash out explains itself and keeps the form', (
+    tester,
+  ) async {
+    final repository = _FakeShiftRepository(
+      shift: _openShift(openingFloat: 100, cashSales: 20),
+    );
+    repository.movementError = const PosShiftException(
+      PosShiftFailure.insufficientDrawerCash,
+      'cash out exceeds the drawer',
+    );
+
+    await _pumpShiftDialog(tester, repository);
+
+    await tester.tap(find.byKey(const Key('pos-shift-cash-out')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.byKey(const Key('pos-shift-movement-amount')),
+      '500',
+    );
+    await tester.enterText(
+      find.byKey(const Key('pos-shift-movement-reason')),
+      'تسوية مع الصراف',
+    );
+    await tester.tap(find.byKey(const Key('pos-shift-movement-submit')));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.byKey(const Key('pos-shift-movement-dialog')), findsOneWidget);
+    expect(
+      find.text(S.posShiftInsufficientDrawerCash),
+      findsOneWidget,
+      reason: 'the cashier sees the sentence, not the database text',
+    );
+    expect(find.textContaining('cash out exceeds the drawer'), findsNothing);
+    expect(find.textContaining('22023'), findsNothing);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('pos-shift-movement-amount')))
+          .controller
+          ?.text,
+      '500',
+    );
+    expect(repository.lastMovementKind, PosCashMovementKind.cashOut);
   });
 
   testWidgets('closing the drawer counts cash and opens the Z report', (

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/fulfillment_type.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
@@ -57,11 +58,11 @@ String kitchenItemStatusLabel(KitchenItemStatus status) => switch (status) {
   KitchenItemStatus.ready => S.kitchenItemReady,
 };
 
-String kitchenFulfillmentLabel(String type) => switch (type) {
-  'delivery' => S.fulfillmentDelivery,
-  'dine_in' => S.kitchenDineIn,
-  _ => S.fulfillmentPickup,
-};
+/// نوع الاستلام على بطاقة المطبخ يُقرأ من نفس تسمية الطلبات.
+///
+/// كانت البطاقة تملك تبديلًا خاصًا يعتبر أي رمز مجهول «استلامًا من الفرع»، فيخبر
+/// المطبخ طلبًا لا يعرف نوعه بأنه سيأتي صاحبه لأخذه. الرمز المجهول الآن صريح.
+String kitchenFulfillmentLabel(String type) => fulfillmentLabel(type);
 
 IconData kitchenFulfillmentIcon(String type) => switch (type) {
   'delivery' => AppIcons.deliveryTruck01,

@@ -39,6 +39,6 @@ class AdminShellLayoutData {
   final String title;
   final String searchHint;
 
-  /// Work waiting per destination, keyed by the destination id.
+  /// Unread work waiting per destination, keyed by the destination id.
   final Map<String, int> badges;
 }

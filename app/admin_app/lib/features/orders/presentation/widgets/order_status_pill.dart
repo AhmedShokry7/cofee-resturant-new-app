@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/features/orders/presentation/models/order_status.dart';
+import 'package:admin_app/core/models/order_status.dart';
 
 class OrderStatusPill extends StatelessWidget {
   const OrderStatusPill({super.key, required this.status, this.dense = false});

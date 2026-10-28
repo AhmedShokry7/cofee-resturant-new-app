@@ -271,6 +271,12 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
   /// The picture as it is now, before the changes of the admin.
   img.Image? _original;
 
+  /// A small copy of the picture, made once when it was opened.
+  ///
+  /// The canvas is painted again on every move of the frame: encoding the
+  /// whole picture on every one of those paints is what stopped the panel.
+  Uint8List? _previewBytes;
+
   /// The size of the picture as it is now.
   Size _imageSize = Size.zero;
 
@@ -333,9 +339,11 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
       if (decoded == null) {
         throw FormatException(S.imageCouldNotBeRead);
       }
+      final preview = _previewOf(decoded);
       if (!mounted) return;
       setState(() {
         _original = decoded;
+        _previewBytes = preview;
         _imageSize = Size(decoded.width.toDouble(), decoded.height.toDouble());
         _crop = Rect.fromLTWH(
           0,
@@ -361,6 +369,22 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
       throw StateError(S.imageCouldNotBeRead);
     }
     return response.bodyBytes;
+  }
+
+  /// The copy the canvas paints, at the size a preview is shown in.
+  ///
+  /// The cut and the turn are still done on the real file when the admin
+  /// saves: this copy only shows the picture while it is being framed.
+  Uint8List _previewOf(img.Image picture) {
+    final edge = AppDimensions.imagePreviewCacheWidth.round();
+    final scaled = picture.width > edge
+        ? img.copyResize(
+            picture,
+            width: edge,
+            interpolation: img.Interpolation.average,
+          )
+        : picture;
+    return Uint8List.fromList(img.encodeJpg(scaled, quality: 90));
   }
 
   /// The frame of the cut, in the coordinates of the picture.
@@ -586,10 +610,11 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
                         ),
                       ),
                     )
-                  : _original == null
+                  : _previewBytes == null
                   ? const SizedBox.shrink()
                   : _EditorCanvas(
-                      image: _original!,
+                      previewBytes: _previewBytes!,
+                      imageSize: _imageSize,
                       crop: _crop,
                       frame: _frame,
                       scale: _scale,
@@ -682,7 +707,8 @@ class _ProductImageEditorState extends State<ProductImageEditor> {
 /// The picture with the frame of the cut on it.
 class _EditorCanvas extends StatefulWidget {
   const _EditorCanvas({
-    required this.image,
+    required this.previewBytes,
+    required this.imageSize,
     required this.crop,
     required this.frame,
     required this.scale,
@@ -693,7 +719,11 @@ class _EditorCanvas extends StatefulWidget {
     required this.onOffsetChanged,
   });
 
-  final img.Image image;
+  /// A small copy of the picture, made once when it was opened.
+  final Uint8List previewBytes;
+
+  /// The size of the picture being edited, in its own pixels.
+  final Size imageSize;
   final Rect crop;
   final Rect frame;
   final double scale;
@@ -722,10 +752,7 @@ class _EditorCanvasState extends State<_EditorCanvas> {
             point: details.localFocalPoint,
             frame: widget.frame,
             canvas: canvasSize,
-            imageSize: Size(
-              widget.image.width.toDouble(),
-              widget.image.height.toDouble(),
-            ),
+            imageSize: widget.imageSize,
           ),
           onScaleUpdate: (details) {
             // Two fingers zoom the picture, one finger moves the frame.
@@ -754,8 +781,10 @@ class _EditorCanvasState extends State<_EditorCanvas> {
                     child: Transform.scale(
                       scale: widget.scale,
                       child: Image.memory(
-                        img.encodePng(widget.image),
+                        widget.previewBytes,
                         fit: BoxFit.contain,
+                        cacheWidth: AppDimensions.imagePreviewCacheWidth
+                            .round(),
                       ),
                     ),
                   ),
@@ -764,10 +793,7 @@ class _EditorCanvasState extends State<_EditorCanvas> {
                   child: CustomPaint(
                     painter: _CropPainter(
                       frame: widget.frame,
-                      imageSize: Size(
-                        widget.image.width.toDouble(),
-                        widget.image.height.toDouble(),
-                      ),
+                      imageSize: widget.imageSize,
                     ),
                   ),
                 ),

@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:math';
@@ -19,6 +19,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 // reference unambiguous.
 import 'package:supabase_flutter/supabase_flutter.dart'
     hide AuthUser, AuthException;
+
 /// The real authentication layer.
 ///
 /// Implements the same [AuthRepository] contract that AuthRepositoryImpl
@@ -70,8 +71,7 @@ class SupabaseAuthRepository implements AuthRepository {
     final lowerCode = code.toLowerCase();
     final lowerMessage = message.toLowerCase();
     if (lowerCode.isNotEmpty) {
-      if (lowerCode == 'invalid_credentials' ||
-          lowerCode == 'invalid_grant') {
+      if (lowerCode == 'invalid_credentials' || lowerCode == 'invalid_grant') {
         return 'invalid login credentials';
       }
       return lowerCode;
@@ -82,7 +82,9 @@ class SupabaseAuthRepository implements AuthRepository {
       return 'invalid login credentials';
     }
     if (lowerMessage.contains('user not found')) return 'user not found';
-    if (lowerMessage.contains('email not confirmed')) return 'email not confirmed';
+    if (lowerMessage.contains('email not confirmed')) {
+      return 'email not confirmed';
+    }
     if (lowerMessage.contains('already') &&
         (lowerMessage.contains('registered') ||
             lowerMessage.contains('exists'))) {
@@ -124,6 +126,7 @@ class SupabaseAuthRepository implements AuthRepository {
       if (user == null) {
         throw const AuthException('Sign in failed: no user returned.');
       }
+      await _requireCustomerAccount(user.id);
       final domain = _toDomain(user);
       await _cacheProfile(domain);
       return domain;
@@ -131,6 +134,29 @@ class SupabaseAuthRepository implements AuthRepository {
       if (error is AuthException) rethrow;
       throw AuthException(_mapAuthError(error));
     }
+  }
+
+  /// Closes the session and refuses it when the signed-in uid has no row in
+  /// identity.profiles.
+  ///
+  /// 188_separate_customer_and_staff_accounts.sql makes that table the customer
+  /// population and identity.staff_members the admin one, so a staff login has
+  /// no customer row to order under. Without this check the customer app would
+  /// sign the manager in and then fail on the first screen that needs a
+  /// customer, which reads like broken data rather than like the wrong app.
+  Future<void> _requireCustomerAccount(String uid) async {
+    final rows = await _client
+        .from('profiles')
+        .select('id')
+        .eq('id', uid)
+        .limit(1);
+    if (rows.isNotEmpty) return;
+    try {
+      await _client.auth.signOut();
+    } catch (_) {
+      // The session was never usable; the refusal is the answer either way.
+    }
+    throw const AuthException('staff account');
   }
 
   @override
@@ -467,11 +493,7 @@ class SupabaseAuthRepository implements AuthRepository {
   /// long output, so the one line that explains why sign-in failed could
   /// easily be dropped. [developer.log] writes straight to logcat and is not
   /// stripped in release mode.
-  static void _logGoogleFailure(
-    String kind,
-    String code,
-    String? description,
-  ) {
+  static void _logGoogleFailure(String kind, String code, String? description) {
     developer.log(
       'Google sign-in failed: kind=$kind code=$code'
       '${description == null || description.isEmpty ? '' : ' description=$description'}',
@@ -530,5 +552,3 @@ class SupabaseAuthRepository implements AuthRepository {
     _recoveryCompleter = null;
   }
 }
-
-

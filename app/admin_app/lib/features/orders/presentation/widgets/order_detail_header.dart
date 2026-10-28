@@ -18,11 +18,19 @@ class OrderDetailHeader extends StatelessWidget {
     required this.order,
     required this.saving,
     required this.onStatusChanged,
+    this.canChangeStatus = true,
+    this.allowedStatuses,
   });
 
   final AdminOrder order;
   final bool saving;
   final ValueChanged<String> onStatusChanged;
+
+  /// False for a role that may read an order but not move it forward.
+  final bool canChangeStatus;
+
+  /// الحالات التي تسمح بها `orders.status_transitions`، أو `null` قبل قراءتها.
+  final List<String>? allowedStatuses;
 
   @override
   Widget build(BuildContext context) {
@@ -67,12 +75,15 @@ class OrderDetailHeader extends StatelessWidget {
               label: S.ordersBranch,
               value: branch,
             ),
-          const SizedBox(height: AppSizes.px14),
-          OrderDetailStatusControl(
-            order: order,
-            saving: saving,
-            onChanged: onStatusChanged,
-          ),
+          if (canChangeStatus) ...[
+            const SizedBox(height: AppSizes.px14),
+            OrderDetailStatusControl(
+              order: order,
+              saving: saving,
+              allowedStatuses: allowedStatuses,
+              onChanged: onStatusChanged,
+            ),
+          ],
         ],
       ),
     );

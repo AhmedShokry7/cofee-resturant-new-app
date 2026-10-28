@@ -15,7 +15,10 @@ class OrderFilterDropdown extends StatelessWidget {
     this.enabled = true,
   });
 
-  final String label, value;
+  /// نص العنوان والقيمة المختارة. `value` قد تكون `null` حين لا قيمة مختارة،
+  /// كما في قائمة أهداف الحالة حيث الحالة الحالية ليست هدفًا.
+  final String label;
+  final String? value;
   final List<DropdownMenuItem<String>> items;
   final ValueChanged<String> onChanged;
   final bool enabled;

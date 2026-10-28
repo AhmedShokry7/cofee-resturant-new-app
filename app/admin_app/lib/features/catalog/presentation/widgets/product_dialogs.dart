@@ -1415,37 +1415,3 @@ class CategoryImportReportDialog extends StatelessWidget {
     ],
   );
 }
-
-/// Offers the import and sample workbook actions shared by products and categories.
-class ImportExcelDialog extends StatelessWidget {
-  const ImportExcelDialog({
-    super.key,
-    required this.onPickFile,
-    required this.onDownloadSample,
-  });
-
-  final VoidCallback onPickFile;
-  final VoidCallback onDownloadSample;
-
-  @override
-  Widget build(BuildContext context) => AlertDialog(
-    title: Text(S.importExcel),
-    content: Text(S.downloadSampleFileHint),
-    actions: [
-      TextButton(
-        onPressed: () => Navigator.of(context).pop(),
-        child: Text(S.cancel),
-      ),
-      OutlinedButton.icon(
-        onPressed: onDownloadSample,
-        icon: const Icon(AppIcons.download01, size: 18),
-        label: Text(S.downloadSampleFile),
-      ),
-      FilledButton.icon(
-        onPressed: onPickFile,
-        icon: const Icon(AppIcons.upload01, size: 18),
-        label: Text(S.uploadFromDevice),
-      ),
-    ],
-  );
-}

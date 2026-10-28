@@ -1,10 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/services/admin_image_picker.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/branches/domain/entities/admin_branch_exception.dart';
@@ -170,22 +171,17 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
     }
 
     try {
-      final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-      );
+      final picked = await pickAdminImage();
       if (picked == null) return;
-      final bytes = await picked.readAsBytes();
-      await _apply(
-        ProductImageSource.file(
-          bytes,
-          picked.name,
-          picked.mimeType ?? 'image/jpeg',
-        ),
-      );
+      await _apply(picked);
     } catch (error) {
       if (!mounted) return;
-      _showMessage('${S.imageCouldNotBeOpened}: $error', isError: true);
+      _showMessage(
+        error is AdminProductException
+            ? error.message
+            : '${S.imageCouldNotBeOpened}: $error',
+        isError: true,
+      );
     }
   }
 

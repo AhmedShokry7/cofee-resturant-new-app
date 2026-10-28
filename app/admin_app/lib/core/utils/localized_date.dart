@@ -31,6 +31,13 @@ const _englishMonths = <String>[
   'Dec',
 ];
 
+/// اسم الشهر وحده باللغة المعروضة، بشهر ميلادي من ١ إلى ١٢.
+///
+/// محاور الرسوم تضيق عن التاريخ الكامل وتكتفي باسم الشهر مع رقم اليوم، فتنزل
+/// التسمية إلى هذه الأدنى بدل أن تكرر كل شاشة قائمة الأشهر بنفسها.
+String localizedMonthName(int month) =>
+    (AppLocale.instance.isArabic ? _arabicMonths : _englishMonths)[month - 1];
+
 /// A calendar date such as `12 Mar 2024` or `١٢ مارس ٢٠٢٤`.
 String localizedDate(DateTime? value) {
   if (value == null) return '—';

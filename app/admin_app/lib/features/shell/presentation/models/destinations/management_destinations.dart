@@ -9,7 +9,11 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
     label: S.dashboard,
     icon: AppIcons.dashboardSquare01,
     searchHint: S.searchDashboardHint,
+    // اللوحة تقرأ orders.orders فقط، فصلاحية الطلبات هي بابها؛ لا صلاحية
+    // تحليلات في القاعدة ولا معنى لعرض لوحة تُرفض دالتها.
+    permission: 'orders.read',
     section: S.sectionManagement,
+    tables: <String>['orders.orders', 'orders.order_items'],
   ),
   AdminDestination(
     id: 'orders',

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_format.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
+import 'package:admin_app/shared/widgets/admin_metric_grid.dart';
 
 class CustomerMetricsCards extends StatelessWidget {
   const CustomerMetricsCards({super.key, required this.metrics});
@@ -22,7 +22,7 @@ class CustomerMetricsCards extends StatelessWidget {
         icon: AppIcons.wallet01,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
-        trend: _percentTrend(
+        trend: metricPercentTrend(
           metrics.averageSpendCurrent,
           metrics.averageSpendPrevious,
         ),
@@ -44,7 +44,7 @@ class CustomerMetricsCards extends StatelessWidget {
         icon: AppIcons.userAdd01,
         iconBackground: AppColor.tintClaySurface,
         iconColor: AppColor.tintClayInk,
-        trend: _percentTrend(
+        trend: metricPercentTrend(
           metrics.newCustomers,
           metrics.previousNewCustomers,
         ),
@@ -55,39 +55,26 @@ class CustomerMetricsCards extends StatelessWidget {
         icon: AppIcons.userMultiple,
         iconBackground: AppColor.tintGreenSurface,
         iconColor: AppColor.trendPositive,
-        trend: _percentTrend(
+        trend: metricPercentTrend(
           metrics.totalCustomers,
           metrics.previousTotalCustomers,
         ),
       ),
     ];
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final columns = width < AppBreakpoints.wideLayout ? 2 : 4;
-        const spacing = 13.0;
-        final cardWidth = (width - spacing * (columns - 1)) / columns;
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
-          children: [
-            for (final card in cards)
-              SizedBox(
-                width: cardWidth,
-                child: AdminMetricCard(
-                  label: card.label,
-                  value: card.value,
-                  icon: card.icon,
-                  iconBackground: card.iconBackground,
-                  iconColor: card.iconColor,
-                  changeLabel: card.trend?.label,
-                  isPositive: card.trend?.positive ?? true,
-                ),
-              ),
-          ],
-        );
-      },
+    return AdminMetricGrid(
+      children: [
+        for (final card in cards)
+          AdminMetricCard(
+            label: card.label,
+            value: card.value,
+            icon: card.icon,
+            iconBackground: card.iconBackground,
+            iconColor: card.iconColor,
+            changeLabel: card.trend?.label,
+            isPositive: card.trend?.positive ?? true,
+          ),
+      ],
     );
   }
 }
@@ -107,24 +94,15 @@ class _MetricData {
   final IconData icon;
   final Color iconBackground;
   final Color iconColor;
-  final _Trend? trend;
+  final AdminMetricTrend? trend;
 }
 
-class _Trend {
-  const _Trend({required this.label, required this.positive});
-
-  final String label;
-  final bool positive;
-}
-
-_Trend? _percentTrend(num current, num previous) {
-  if (previous <= 0) return null;
-  final change = (current - previous) / previous * 100;
-  return _Trend(label: customerPercent(change.abs()), positive: change >= 0);
-}
-
-_Trend? _pointTrend(double current, double previous) {
+/// فرق نقطتين مئويّتين، مثل نسبة التكرار بين الشهر وشهره قبله.
+AdminMetricTrend? _pointTrend(double current, double previous) {
   if (previous <= 0) return null;
   final change = (current - previous) * 100;
-  return _Trend(label: customerPercent(change.abs()), positive: change >= 0);
+  return AdminMetricTrend(
+    label: customerPercent(change.abs()),
+    positive: change >= 0,
+  );
 }

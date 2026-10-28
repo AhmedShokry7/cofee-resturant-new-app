@@ -17,13 +17,7 @@ String customerOrders(int count) =>
     localizeDigits(S.customerOrdersValue(count));
 
 /// Formats [value] percent points, for example `4.8` becomes `٤٫٨٪`.
-String customerPercent(double value) {
-  final rounded = value.roundToDouble();
-  final text = (value - rounded).abs() < 0.05
-      ? rounded.toInt().toString()
-      : value.toStringAsFixed(1);
-  return localizeDigits('$text%');
-}
+String customerPercent(double value) => formatPercent(value);
 
 String customerDate(DateTime? value) => localizedDate(value);
 

@@ -782,6 +782,9 @@ class S {
   static String get authUserNotFound => _ar
       ? 'هذا الإيميل غير مسجل، برجاء إنشاء حساب أولًا'
       : 'This email is not registered. Please sign up first.';
+  static String get authStaffAccount => _ar
+      ? 'هذا الحساب خاص بالموظفين. برجاء تسجيل الدخول من تطبيق الإدارة.'
+      : 'This is a staff account. Please sign in from the admin app.';
   static String get authUserDisabled => _ar
       ? 'هذا الحساب معطّل، برجاء التواصل مع الدعم'
       : 'This account is disabled. Please contact support.';

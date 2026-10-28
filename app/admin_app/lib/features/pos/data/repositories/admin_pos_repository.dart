@@ -463,6 +463,8 @@ class AdminPosRepository implements PosRepository {
         PosShiftFailure.branchUnavailable,
       'P0002' => PosShiftFailure.notFound,
       '23514' when message.contains('closed') => PosShiftFailure.alreadyClosed,
+      '22023' when message.contains('exceeds the drawer') =>
+        PosShiftFailure.insufficientDrawerCash,
       '22023' || '23514' => PosShiftFailure.invalid,
       _ => PosShiftFailure.failed,
     };

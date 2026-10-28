@@ -1,0 +1,4 @@
+# Points the Supabase CLI at the development project so `supabase migration list`
+# and `supabase migration repair` work without an interactive `supabase link`.
+# No credentials live in this file; the access token comes from the environment.
+project_id = "webzzasosevzymftgszn"

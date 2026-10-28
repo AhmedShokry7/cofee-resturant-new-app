@@ -41,4 +41,7 @@ abstract interface class KitchenRepository {
     String itemId,
     KitchenItemStatus status,
   );
+
+  /// يوسم التيكيتات التي عرضتها السبورة بأنها قرئت، مرة واحدة لكل تيكيت.
+  Future<void> markTicketsViewed(List<String> ticketIds);
 }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/orders/data/order_excel_exporter.dart';
+import 'package:admin_app/core/utils/database_error_text.dart';
+import 'package:admin_app/features/orders/presentation/export/order_excel_exporter.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_state.dart';
@@ -15,12 +16,21 @@ part 'order_page_export.dart';
 part 'order_page_actions.dart';
 
 class OrderPage extends StatefulWidget {
-  const OrderPage({super.key, required this.searchController, this.cubit});
+  const OrderPage({
+    super.key,
+    required this.searchController,
+    this.cubit,
+    this.canManage = true,
+  });
 
   static const String routeName = '/orders';
 
   final AdminSearchController searchController;
   final AdminOrderCubit? cubit;
+
+  /// False for a role that may read orders but not move them; the shell passes
+  /// the same `orders.status.update` the mutation RPCs demand.
+  final bool canManage;
 
   @override
   State<OrderPage> createState() => _OrderPageState();
@@ -37,7 +47,11 @@ class _OrderPageState extends State<OrderPage> {
     super.initState();
     _ownsCubit = widget.cubit == null;
     _cubit = widget.cubit ?? AdminOrderCubit();
-    if (_ownsCubit) _cubit.load();
+    if (_ownsCubit) {
+      _cubit.load();
+      _cubit.loadStatusRules();
+      _cubit.startLiveUpdates();
+    }
     widget.searchController.bind(_onSearch);
   }
 
@@ -72,10 +86,12 @@ class _OrderPageState extends State<OrderPage> {
             orders: state.orders,
             branches: state.branches,
             search: _searchQuery,
+            canManage: widget.canManage,
+            statusRules: state.statusRules,
             onSearchChanged: widget.searchController.update,
             onChangeStatus: _changeStatus,
             onOpen: _openOrder,
-            onRefresh: _cubit.load,
+            onRefresh: _cubit.refreshLive,
             onExport: _exportOrders,
             exporting: _exporting,
             errorMessage: state.errorMessage,

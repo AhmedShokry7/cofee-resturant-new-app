@@ -1,0 +1,145 @@
+-- 196_body_drift_owner_decisions.PROPOSED.sql
+--
+-- CLOSED 2026-10-27. All four decisions were made by the owner and shipped as
+-- migrations 196, 197, 198 and 199, and a full re-scan with the method below now
+-- reports zero diverging bodies. Two of the four went the OPPOSITE way to the
+-- recommendation written here, on evidence gathered after it was drafted, so read
+-- the four lines below before quoting any option above as still open:
+--
+--   D1 -> 196_coupon_eligible_line_pricing.sql, option (a) as recommended. The
+--         blast radius was measured first: zero active coupons, so no live
+--         discount changes today.
+--   D2 -> 197_admin_branch_metrics_active_zone_coverage.sql, option (a).
+--   D3 -> 198_record_live_admin_set_branch_image_audit.sql, option (a) instead of
+--         the recommended (b). The live audit payload turned out to be one key
+--         ('image_url' before and after), not the whole-row snapshot this file
+--         assumed, so live is not the worse behaviour and recording it is honest.
+--   D4 -> 199_loyalty_plan_reward_entry_point.sql, and neither option. 075 drops
+--         those four functions on purpose, so there is no drift to repair and
+--         replaying 074 would re-open the self-activating RPC 075 removed. The
+--         real defect was 167 calling one of the dropped names, which 199 fixes
+--         with a service-role-only grants helper plus a behaviour test.
+--
+-- What this is. After 190, 191 and 194 recorded the deployed order-lifecycle and
+-- admin-write functions back into the chain, a full byte-for-byte comparison of
+-- every function body in project webzzasosevzymftgszn against
+-- `supabase/migrations/*.sql` (normalized: comments stripped, whitespace
+-- collapsed, dollar-quote tags ignored) leaves exactly THREE bodies that differ
+-- and ONE migration whose objects are missing entirely. None of the four can be
+-- "recorded" the way 190/191/194 were, because in each case recording the live
+-- text would bless a behaviour change rather than document one. Each needs a
+-- decision first.
+--
+-- Method, so this is reproducible and not folklore:
+--   live text  : select n.nspname||'.'||p.proname, pg_get_functiondef(p.oid)
+--                  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+--   chain text : the LAST definition of that schema.name in migration order
+--   compared   : the text between the dollar quotes only. pg_get_functiondef
+--                  rewrites the header ("RETURNS", "SET search_path TO"), so
+--                  whole-DDL hashes always differ and prove nothing.
+--
+-- Do not paste any block below into the SQL Editor. When a decision is made, the
+-- chosen body is copied out into its own numbered migration, rehearsed inside
+-- `begin; … rollback;`, and only then repaired into the ledger.
+
+-- ---------------------------------------------------------------------------
+-- D1. marketing.validate_coupon — migration 071 is in the ledger but its money
+--     logic is not in the database.
+-- ---------------------------------------------------------------------------
+-- Live body  : byte-identical to 070_coupon_rejection_reasons.sql (verified by
+--              normalized-body comparison, not by eye).
+-- Chain body : 071_category_coupon_discounts_eligible_lines_only.sql.
+-- Ledger     : 071 shows `applied`. So either it never ran, or something later
+--              re-pasted 070 over it. The second is exactly how A and B drifted.
+--
+-- What differs, in money terms:
+--   * 071 prices a scoped coupon on the ELIGIBLE LINES ONLY (category or
+--     product), so a 20 percent category coupon discounts only that category's
+--     subtotal. Live still discounts `p_subtotal` — the whole cart.
+--   * 071 accepts `applies_to in ('category','product')`. Live only handles
+--     'category' and never checks a product-scoped coupon's linkage table, so a
+--     product coupon validates against a cart that contains none of its
+--     products.
+--   * The refusal reason codes differ ('scope_category_no_match' vs the
+--     product-aware code), which the customer app's message mapping reads.
+--
+-- Options.
+--   (a) Apply 071 forward. Replays 071's body as a new numbered migration, which
+--       is what the ledger already claims is true. This is the recommendation:
+--       the chain was reviewed and merged, the live database simply never got it.
+--   (b) Record live. Writes 070's body into a new migration and leaves 071 in the
+--       chain behind it, which is a chain that ends in the pre-071 behaviour and
+--       a product-coupon bug kept on purpose.
+--
+-- What breaks if this is wrong: (a) changes the discount amount on every scoped
+-- coupon in force, so it needs the coupon rows read first —
+--   select c.code, c.applies_to, c.discount_value, c.max_discount
+--     from marketing.coupons c where c.is_active and now() < c.valid_until;
+-- (b) keeps over-discounting on carts that mix eligible and ineligible lines.
+
+-- ---------------------------------------------------------------------------
+-- D2. public.admin_branch_metrics — live lost the active-branch filter on
+--     "zones_covered".
+-- ---------------------------------------------------------------------------
+-- Chain body : 171_admin_branches.sql, the 'zones_covered' sub-select.
+-- Live body  : the same query with two lines removed:
+--     join core.branches b on b.id = dzb.branch_id
+--     … and b.is_active
+--
+-- So the dashboard card "zones covered" today counts a delivery zone as covered
+-- even when every branch attached to it is closed. Chain counts only zones
+-- attached to an active branch.
+--
+-- Options.
+--   (a) Restore the join (apply the chain body). One number on the branches page
+--       goes down when a zone is attached only to inactive branches.
+--   (b) Record live, and change the card's label or the metric's definition so
+--       the number says what it now measures.
+-- Recommendation: (a) — the chain reads like the intended definition and the
+-- other filters in the same function (`dz.is_active`) still narrow on active.
+-- No write path depends on this function; it is a read-only dashboard metric.
+
+-- ---------------------------------------------------------------------------
+-- D3. public.admin_set_branch_image — the audit trail keeps the URL, not a
+--     boolean.
+-- ---------------------------------------------------------------------------
+-- Chain body : `select jsonb_build_object('has_image', b.image_url is not null)`
+--              and audits ('has_image', v_url is not null).
+-- Live body  : `select to_jsonb(b)` and audits the actual
+--              jsonb_build_object('image_url', …) before/after values.
+--
+-- Nothing about which row is written differs: both set `core.branches.image_url`
+-- to the same value. Only what lands in `identity.audit` differs, and the live
+-- version stores the full row snapshot of the branch in the old-value column
+-- (to_jsonb(b) is the whole branch, not just the picture) while the chain version
+-- deliberately stores one boolean.
+--
+-- Options.
+--   (a) Record live. Audit rows for branch picture changes then contain a whole
+--       branch snapshot, which is more than this action needs and is the kind of
+--       payload 171 avoided on purpose.
+--   (b) Apply the chain body. Reverts live to the minimal payload; loses nothing
+--       an admin can see today, because the panel shows the picture, not the
+--       audit row.
+-- Recommendation: (b). This is the only one of the three where the live text is
+-- the worse behaviour, so "record what is deployed" is not automatically right.
+
+-- ---------------------------------------------------------------------------
+-- D4. subscriptions 074 — four functions the ledger says exist, and that do not.
+-- ---------------------------------------------------------------------------
+-- Missing live: subscriptions.subscribe, subscriptions.renew,
+--               public.subscribe_to_plan, public.renew_subscription.
+-- Ledger      : 074_subscriptions_01.sql shows `applied`.
+-- Verified    : select … from pg_proc where proname in (…) returns zero rows.
+--
+-- Nothing in either Flutter app calls them (the admin panel manages plans, not
+-- subscriptions), which is why the gap has never surfaced. Two options:
+--   (a) Replay 074's four create-function blocks as their own migration, so the
+--       rebuilt and the live database match the ledger.
+--   (b) Leave them missing and record the gap here, accepting that
+--       `supabase db reset` produces a database with functions production does
+--       not have — the same class of divergence this whole exercise exists to
+--       end.
+-- Recommendation: (a), because a reset database that is not production is the
+-- exact failure mode this folder keeps re-documenting. No live row depends on it,
+-- so the replay is a no-op against production apart from creating the functions.

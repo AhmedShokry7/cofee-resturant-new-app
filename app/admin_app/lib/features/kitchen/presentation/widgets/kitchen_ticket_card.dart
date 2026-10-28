@@ -63,7 +63,7 @@ class KitchenTicketCard extends StatelessWidget {
         : AppColor.adminAccent;
     final tableNumber = ticket.tableNumber?.trim() ?? '';
     final fulfillment = ticket.isDineIn && tableNumber.isNotEmpty
-        ? '${S.kitchenDineIn} · ${localizeDigits(S.kitchenTable(tableNumber))}'
+        ? '${S.fulfillmentDineIn} · ${localizeDigits(S.kitchenTable(tableNumber))}'
         : kitchenFulfillmentLabel(ticket.fulfillmentType);
 
     return Container(

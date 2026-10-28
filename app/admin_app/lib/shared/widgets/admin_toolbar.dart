@@ -97,14 +97,21 @@ class AdminToolbarButton extends StatelessWidget {
   const AdminToolbarButton({
     super.key,
     required this.label,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     this.onPressed,
     this.busy = false,
     this.active = false,
-  });
+  }) : assert(icon != null || iconWidget != null);
 
   final String label;
-  final IconData icon;
+
+  /// The font icon of the action, tinted with the button text.
+  final IconData? icon;
+
+  /// A drawn mark that replaces [icon] where a font glyph cannot show,
+  /// such as the colored Excel workbook.
+  final Widget? iconWidget;
   final VoidCallback? onPressed;
   final bool busy;
   final bool active;
@@ -121,6 +128,7 @@ class AdminToolbarButton extends StatelessWidget {
         child: AdminToolbarSurface(
           label: label,
           icon: icon,
+          iconWidget: iconWidget,
           busy: busy,
           active: active,
         ),
@@ -162,13 +170,19 @@ class AdminToolbarSurface extends StatelessWidget {
   const AdminToolbarSurface({
     super.key,
     required this.label,
-    required this.icon,
+    this.icon,
+    this.iconWidget,
     this.active = false,
     this.busy = false,
-  });
+  }) : assert(icon != null || iconWidget != null);
 
   final String label;
-  final IconData icon;
+
+  /// The font icon of the action, tinted with the surface text.
+  final IconData? icon;
+
+  /// A drawn mark that replaces [icon], such as the colored Excel workbook.
+  final Widget? iconWidget;
   final bool active;
   final bool busy;
 
@@ -216,7 +230,7 @@ class AdminToolbarSurface extends StatelessWidget {
               ),
             )
           else
-            AppIcon(icon, size: 16, color: foreground),
+            iconWidget ?? AppIcon(icon!, size: 16, color: foreground),
         ],
       ),
     );

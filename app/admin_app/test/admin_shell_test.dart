@@ -16,7 +16,21 @@ import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layou
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_item.dart';
 
+/// An admin that may open the dashboard, the landing area of the shell.
 AdminSession _session() => const AdminSession(
+  staffId: 'u1',
+  email: 'admin@example.com',
+  fullName: 'Admin One',
+  status: 'active',
+  roles: [],
+  permissionScopes: [
+    AdminPermissionScope(permissions: ['orders.read']),
+  ],
+  canManageAllBranches: true,
+);
+
+/// A staff member with no permission at all, so no area is reachable.
+AdminSession _sessionWithoutAccess() => const AdminSession(
   staffId: 'u1',
   email: 'admin@example.com',
   fullName: 'Admin One',
@@ -34,7 +48,7 @@ AdminSession _sessionWithProducts() => const AdminSession(
   status: 'active',
   roles: [],
   permissionScopes: [
-    AdminPermissionScope(permissions: ['catalog.product.write']),
+    AdminPermissionScope(permissions: ['orders.read', 'catalog.product.write']),
   ],
   canManageAllBranches: true,
 );
@@ -47,7 +61,7 @@ AdminSession _sessionWithPos() => const AdminSession(
   status: 'active',
   roles: [],
   permissionScopes: [
-    AdminPermissionScope(permissions: ['pos.manage']),
+    AdminPermissionScope(permissions: ['orders.read', 'pos.manage']),
   ],
   canManageAllBranches: true,
 );
@@ -58,6 +72,12 @@ void _setViewport(WidgetTester tester, double width) {
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 }
+
+/// The sidebar entry labelled [label] in the language the panel uses now.
+Finder _sidebarItem(String label) => find.descendant(
+  of: find.byType(AdminSidebar),
+  matching: find.widgetWithText(AdminSidebarItem, label),
+);
 
 AdminShellLayoutData _data({
   required AdminSearchController searchController,
@@ -196,16 +216,13 @@ void main() {
       );
       await tester.pump();
 
-      // The admin picks the products page in the sidebar.
-      final products = find.descendant(
-        of: find.byType(AdminSidebar),
-        matching: find.byType(AdminSidebarItem),
-      );
-      await tester.tap(products.at(1));
+      // The item is picked by its label: which items the sidebar holds at all
+      // depends on the permissions of the account.
+      await tester.tap(_sidebarItem('Products'));
       await tester.pumpAndSettle();
 
       expect(
-        tester.widget<AdminSidebarItem>(products.at(1)).isSelected,
+        tester.widget<AdminSidebarItem>(_sidebarItem('Products')).isSelected,
         isTrue,
       );
 
@@ -214,7 +231,7 @@ void main() {
 
       // The same item is still the one that is selected.
       expect(
-        tester.widget<AdminSidebarItem>(products.at(1)).isSelected,
+        tester.widget<AdminSidebarItem>(_sidebarItem(S.products)).isSelected,
         isTrue,
       );
       // And the panel still shows the products page.
@@ -269,5 +286,29 @@ void main() {
     await tester.tap(find.byTooltip(S.menu));
     await tester.pumpAndSettle();
     expect(find.byType(AdminSidebar), findsOneWidget);
+  });
+
+  testWidgets('an account with no permission keeps the frame and signs out', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+    AppLocale.instance.debugSet(AppLanguage.english);
+    addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+    await tester.pumpWidget(
+      MaterialApp(home: AdminShell(session: _sessionWithoutAccess())),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+    // No destination is listed, yet the shell still paints its frame.
+    expect(find.byType(AdminSidebar), findsOneWidget);
+    expect(find.byType(AdminSidebarItem), findsNothing);
+    expect(find.text(S.noAccessTitle), findsOneWidget);
+    expect(find.text(S.noAccessMessage), findsOneWidget);
+    // A search box that filters nothing is not offered.
+    expect(find.byType(TextField), findsNothing);
+    // Sign out stays reachable, otherwise the account is locked in a dead page.
+    expect(find.text('Sign out'), findsOneWidget);
   });
 }

@@ -28,7 +28,12 @@ ProductModel _product(String id) =>
     ProductModel(id: id, name: id, price: 25, image: 'assets/images/p.png');
 
 class _FakeCoupons implements CouponRepository {
-  _FakeCoupons({this.result, this.error, this.syncError, this.breakdown = const []});
+  _FakeCoupons({
+    this.result,
+    this.error,
+    this.syncError,
+    this.breakdown = const [],
+  });
 
   final ValidatedCoupon Function(String code, double subtotal)? result;
 
@@ -45,7 +50,9 @@ class _FakeCoupons implements CouponRepository {
   @override
   Future<Map<String, CouponUsage>> usageForCustomer() async => const {};
   @override
-  Future<Map<String, CouponScope>> scopeForCoupons(List<CouponModel> coupons) async => const {};
+  Future<Map<String, CouponScope>> scopeForCoupons(
+    List<CouponModel> coupons,
+  ) async => const {};
   @override
   Future<List<CouponLineDiscount>> lineBreakdown({
     required String code,
@@ -91,7 +98,9 @@ class _DeferredCoupons implements CouponRepository {
   @override
   Future<Map<String, CouponUsage>> usageForCustomer() async => const {};
   @override
-  Future<Map<String, CouponScope>> scopeForCoupons(List<CouponModel> coupons) async => const {};
+  Future<Map<String, CouponScope>> scopeForCoupons(
+    List<CouponModel> coupons,
+  ) async => const {};
   @override
   Future<List<CouponLineDiscount>> lineBreakdown({
     required String code,
@@ -318,13 +327,13 @@ CheckoutCubit _cubit(
   _FakeAddresses? addressesRepository,
 }) {
   return CheckoutCubit(
-  coupons: coupons ?? _FakeCoupons(),
-  addresses: addressesRepository ?? _FakeAddresses(addresses),
-  paymentMethods: _FakePaymentMethods(),
-  deliveryZoneRepository: deliveryZones ?? _FakeDeliveryZones(zones),
-  orders: orders,
-  currentUserIdProvider: currentUserIdProvider ?? () => 'test-user',
-  branchId: branchId,
+    coupons: coupons ?? _FakeCoupons(),
+    addresses: addressesRepository ?? _FakeAddresses(addresses),
+    paymentMethods: _FakePaymentMethods(),
+    deliveryZoneRepository: deliveryZones ?? _FakeDeliveryZones(zones),
+    orders: orders,
+    currentUserIdProvider: currentUserIdProvider ?? () => 'test-user',
+    branchId: branchId,
   );
 }
 
@@ -423,11 +432,7 @@ void main() {
       result: (code, subtotal) =>
           _validated(code, discount: 2.4, subtotal: subtotal),
       breakdown: const [
-        CouponLineDiscount(
-          productId: 'p1',
-          lineTotal: 12,
-          discount: 2.4,
-        ),
+        CouponLineDiscount(productId: 'p1', lineTotal: 12, discount: 2.4),
       ],
     );
     final cubit = _cubit(orders, branchId: 'branch-1', coupons: coupons);
@@ -443,33 +448,30 @@ void main() {
     await cubit.close();
   });
 
-  test(
-    'a successful setDefault updates the default flag without changing the list',
-    () async {
-      final addresses = [
-        AddressModel(id: 'a1', label: 'Home', details: 'Street 1'),
-        AddressModel(id: 'a2', label: 'Work', details: 'Street 2'),
-      ];
-      final repository = _FakeAddresses(addresses);
-      final orders = _FakeOrders(result: _placed());
-      final cubit = _cubit(orders, addressesRepository: repository);
-      await cubit.load();
+  test('a successful setDefault updates the default flag without changing the list', () async {
+    final addresses = [
+      AddressModel(id: 'a1', label: 'Home', details: 'Street 1'),
+      AddressModel(id: 'a2', label: 'Work', details: 'Street 2'),
+    ];
+    final repository = _FakeAddresses(addresses);
+    final orders = _FakeOrders(result: _placed());
+    final cubit = _cubit(orders, addressesRepository: repository);
+    await cubit.load();
 
-      await cubit.setDefaultAddress('a2');
+    await cubit.setDefaultAddress('a2');
 
-      expect(repository.setDefaultCalls, 1);
-      expect(cubit.state.addresses, hasLength(2));
-      expect(
-        cubit.state.addresses.firstWhere((a) => a.id == 'a2').isDefault,
-        isTrue,
-      );
-      expect(
-        cubit.state.addresses.firstWhere((a) => a.id == 'a1').isDefault,
-        isFalse,
-      );
-      expect(cubit.state.error, isNull);
-    },
-  );
+    expect(repository.setDefaultCalls, 1);
+    expect(cubit.state.addresses, hasLength(2));
+    expect(
+      cubit.state.addresses.firstWhere((a) => a.id == 'a2').isDefault,
+      isTrue,
+    );
+    expect(
+      cubit.state.addresses.firstWhere((a) => a.id == 'a1').isDefault,
+      isFalse,
+    );
+    expect(cubit.state.error, isNull);
+  });
 
   test(
     'a failed setDefault reports the error and keeps the previous default',
@@ -944,7 +946,10 @@ void main() {
   );
 
   test('a failed cart sync leaves no coupon applied', () async {
-    final orders = _FakeOrders(result: _placed(), syncError: StateError('offline'));
+    final orders = _FakeOrders(
+      result: _placed(),
+      syncError: StateError('offline'),
+    );
     final coupons = _FakeCoupons(
       result: (code, subtotal) =>
           _validated(code, discount: 5, subtotal: subtotal),
@@ -1055,19 +1060,68 @@ void main() {
     },
   );
 
-  test('a successful new purchase gets a different key', () async {
+  test('a purchase without a settled attempt reuses its key', () async {
     final orders = _FakeOrders(result: _placed());
     final cubit = _cubit(orders, branchId: 'branch-1');
     await cubit.load();
 
     expect(await cubit.placeOrder(items: [_line('p1')]), isTrue);
     final firstKey = orders.idempotencyKeys.single;
+    // The order row exists but the attempt is not over yet - the customer has
+    // not paid. Retapping must hit the same order, not a second unpaid one.
+    expect(await cubit.placeOrder(items: [_line('p1')]), isTrue);
+
+    expect(orders.idempotencyKeys, [firstKey, firstKey]);
+    await cubit.close();
+  });
+
+  test('a settled attempt gives the next purchase a different key', () async {
+    final orders = _FakeOrders(result: _placed());
+    final cubit = _cubit(orders, branchId: 'branch-1');
+    await cubit.load();
+
+    expect(await cubit.placeOrder(items: [_line('p1')]), isTrue);
+    final firstKey = orders.idempotencyKeys.single;
+    await cubit.settleOrderAttempt();
     expect(await cubit.placeOrder(items: [_line('p1')]), isTrue);
 
     expect(orders.idempotencyKeys, hasLength(2));
     expect(orders.idempotencyKeys[1], isNot(firstKey));
     await cubit.close();
   });
+
+  test(
+    'a settled attempt clears the stored key for the next session',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      const userId = 'user-settled';
+      final firstOrders = _FakeOrders(result: _placed());
+      final firstCubit = _cubit(
+        firstOrders,
+        branchId: 'branch-1',
+        currentUserIdProvider: () => userId,
+      );
+      await firstCubit.load();
+      expect(await firstCubit.placeOrder(items: [_line('p1')]), isTrue);
+      await firstCubit.settleOrderAttempt();
+      await firstCubit.close();
+
+      final nextOrders = _FakeOrders(result: _placed());
+      final nextCubit = _cubit(
+        nextOrders,
+        branchId: 'branch-1',
+        currentUserIdProvider: () => userId,
+      );
+      await nextCubit.load();
+      expect(await nextCubit.placeOrder(items: [_line('p1')]), isTrue);
+
+      expect(
+        nextOrders.idempotencyKeys.single,
+        isNot(firstOrders.idempotencyKeys.single),
+      );
+      await nextCubit.close();
+    },
+  );
 
   test('a changed order after a failed attempt gets a new key', () async {
     final orders = _FakeOrders(
@@ -1123,7 +1177,11 @@ void main() {
                     details: 'Street 1',
                     isDefault: true,
                   ),
-                  const AddressModel(id: 'a2', label: 'Work', details: 'Street 2'),
+                  const AddressModel(
+                    id: 'a2',
+                    label: 'Work',
+                    details: 'Street 2',
+                  ),
                 ])..setDefaultError = StateError('rpc failed'),
               ),
               child: const Scaffold(body: ShippingAddressesPageBody()),

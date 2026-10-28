@@ -49,10 +49,13 @@ class CustomerPreviousOrders extends StatelessWidget {
         ),
       );
     } else {
+      // كل طلبات العميل تُطبع: الشارة فوق القسم عددُها كله، فكان سقفٌ خامس
+      // يخفي الباقي بصمتٍ ويترك العدّ فوق يقول غير ما يرى الأدمن. صفحة
+      // التمرير تتّسع لهم، والمصدر مرتّبٌ الأحدث أولًا.
       body = Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var index = 0; index < orders.take(5).length; index++) ...[
+          for (var index = 0; index < orders.length; index++) ...[
             if (index > 0) const SizedBox(height: AppSizes.px8),
             CustomerPreviousOrderItem(
               order: orders[index],

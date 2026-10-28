@@ -18,11 +18,15 @@ class OrderItemRow extends StatelessWidget {
     required this.order,
     required this.item,
     required this.onRemove,
+    this.canRemove = true,
   });
 
   final AdminOrder order;
   final AdminOrderItem item;
   final ValueChanged<String> onRemove;
+
+  /// False for a role that may read the line but not delete it.
+  final bool canRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +96,12 @@ class OrderItemRow extends StatelessWidget {
               formatter: orderMoney,
             ),
             const SizedBox(height: AppSizes.px2),
-            OrderItemRemoveButton(order: order, item: item, onRemove: onRemove),
+            OrderItemRemoveButton(
+              order: order,
+              item: item,
+              canRemove: canRemove,
+              onRemove: onRemove,
+            ),
           ],
         ),
       ],

@@ -116,11 +116,13 @@ void main() {
     });
 
     test('fulfillment types pick the right label and icon', () {
+      // التسمية تأتي من مصدر واحد مع الطلبات؛ الرمز المجهول صار صريحًا بدل
+      // أن يُقرأ على أنه «استلام من الفرع».
       expect(kitchenFulfillmentLabel('delivery'), S.fulfillmentDelivery);
-      expect(kitchenFulfillmentLabel('dine_in'), S.kitchenDineIn);
+      expect(kitchenFulfillmentLabel('dine_in'), S.fulfillmentDineIn);
       expect(kitchenFulfillmentLabel('pickup'), S.fulfillmentPickup);
-      expect(kitchenFulfillmentLabel('anything'), S.fulfillmentPickup);
-      expect(kitchenFulfillmentLabel(''), S.fulfillmentPickup);
+      expect(kitchenFulfillmentLabel('anything'), S.unknownFulfillment);
+      expect(kitchenFulfillmentLabel(''), S.unknownFulfillment);
 
       expect(
         kitchenFulfillmentIcon('delivery'),

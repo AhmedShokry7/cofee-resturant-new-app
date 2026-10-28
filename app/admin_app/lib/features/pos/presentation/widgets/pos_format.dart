@@ -129,6 +129,7 @@ String posShiftFailureMessage(PosShiftFailure? failure) => switch (failure) {
   PosShiftFailure.branchUnavailable => S.posBranchUnavailable,
   PosShiftFailure.notFound => S.posShiftNotFound,
   PosShiftFailure.alreadyClosed => S.posShiftAlreadyClosed,
+  PosShiftFailure.insufficientDrawerCash => S.posShiftInsufficientDrawerCash,
   PosShiftFailure.invalid => S.posShiftInvalid,
   PosShiftFailure.failed || null => S.posShiftFailed,
 };

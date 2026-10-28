@@ -169,6 +169,14 @@ abstract final class AppDimensions {
 
   // بطاقة السجل
   static const double recordCardRadius = AppRadius.md;
+
+  /// العرض الذي تُقاس عنده أعمدة شبكة البطاقات: مساحة الشاشة تُقسم عليه،
+  /// فيأتي عدد الأعمدة من حجم النافذة لا من عتبات مكتوبة في كل صفحة.
+  static const double recordCardIdealWidth = 280.0;
+
+  /// أقصى أعمدة الشبكة: بعد هذا العرض تكبر البطاقة مع الشاشة بدل أن تصغر،
+  /// لأن الاسم تحتها يصبح غير مقروء.
+  static const int recordCardMaxColumns = 5;
   static const double recordFieldRadius = AppRadius.sm;
   static const double recordFieldHeight = AppSizes.px36;
   static const double recordFieldLabelWidth = 94.0;
@@ -216,6 +224,10 @@ abstract final class AppDimensions {
 
   /// ضلع مصغّر صورة المنتج في شريط المعاينة، عرضًا كان أو ارتفاعًا.
   static const double imageThumbnailTileSize = 84.0;
+
+  /// أقصى عرض بكسلي يُفكّ تشفير الصورة إلى مثله؛ ما يزيد عليه يُصغَّر قبل
+  /// الرسم حتى لا تُجمَّد واجهة الأدمن بفكّ صورة بكاميرا الهاتف كاملة.
+  static const double imagePreviewCacheWidth = 768;
   static const double indicatorSize = AppSizes.px24;
   static const double iconSizeSm = AppSizes.px20;
   static const double spinnerSize = AppSizes.px22;
@@ -225,6 +237,29 @@ abstract final class AppDimensions {
 
   /// ارتفاع السطر المضغوط داخل الجداول.
   static const double textHeightTight = 1.4;
+
+  // رسوم لوحة التحكم
+  /// قطر رسم الدونات وسماكة حلقته: مقاسان بصريان للرسم لا خطوة من الشبكة.
+  static const double donutSize = 150.0;
+  static const double donutThickness = 18.0;
+
+  /// ارتفاع لوحة المنحنى دون صف تسميات المحور.
+  static const double trendChartHeight = 210.0;
+
+  /// أقصى عدد تسميات تُطبع تحت المنحنى؛ المحور ينقصها حين يضيق العرض.
+  static const int trendChartLabelCount = 7;
+
+  /// مدة ظهور الرسوم والشريط عند أول رسم، موحّدة كي لا تتباين البطاقات.
+  static const Duration chartRevealDuration = Duration(milliseconds: 600);
+
+  /// الفارق بين بطاقة والتي تليها في الظهور المتدرّج، بالترتيب على الصفحة.
+  static const Duration revealStepDelay = Duration(milliseconds: 60);
+
+  /// تدرّج المنطقة المسحوبة تحت خط المنحنى، من لون الخط إلى الشفافية.
+  static const double trendAreaTopAlpha = .18;
+
+  /// الفجوة بين قطعتي دونات، بالدرجات.
+  static const double donutGapDegrees = 2.5;
 
   // إطار صفحات السجلات (AdminPageFrame)
   /// الفراغ الجانبي خارج عمود الصفحة، وعلى النافذة الضيقة.

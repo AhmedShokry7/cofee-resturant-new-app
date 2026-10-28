@@ -10,6 +10,7 @@ import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repositor
 import 'package:admin_app/features/kitchen/domain/usecases/load_board.dart';
 import 'package:admin_app/features/kitchen/domain/usecases/load_filters.dart';
 import 'package:admin_app/features/kitchen/domain/usecases/load_metrics.dart';
+import 'package:admin_app/features/kitchen/domain/usecases/mark_tickets_viewed.dart';
 import 'package:admin_app/features/kitchen/domain/usecases/set_item_status.dart';
 import 'package:admin_app/features/kitchen/domain/usecases/set_ticket_status.dart';
 import 'package:admin_app/features/kitchen/data/services/kitchen_realtime_feed.dart';
@@ -35,6 +36,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
       _loadFilters = LoadFiltersUseCase(repository),
       _setTicketStatus = SetTicketStatusUseCase(repository),
       _setItemStatus = SetItemStatusUseCase(repository),
+      _markTicketsViewed = MarkTicketsViewedUseCase(repository),
       _realtimeFeed = realtimeFeed ?? KitchenRealtimeFeed(),
       _clock = clock ?? DateTime.now,
       super(AdminKitchenState(now: (clock ?? DateTime.now)()));
@@ -44,6 +46,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
   final LoadFiltersUseCase _loadFilters;
   final SetTicketStatusUseCase _setTicketStatus;
   final SetItemStatusUseCase _setItemStatus;
+  final MarkTicketsViewedUseCase _markTicketsViewed;
   final KitchenRealtimeFeed _realtimeFeed;
   final DateTime Function() _clock;
 
@@ -226,6 +229,20 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
         clearError: true,
       ),
     );
+    _stampShownTickets(board.tickets);
+  }
+
+  /// The board is the kitchen display: a ticket it renders has been shown, so
+  /// it stops waiting in the sidebar counter. Changing a ticket status never
+  /// calls this, and the database stamps a ticket only once, so showing the
+  /// same ticket again cannot lower the counter a second time.
+  void _stampShownTickets(List<AdminKitchenTicket> tickets) {
+    final shown = tickets
+        .where((ticket) => ticket.status.isActive)
+        .map((ticket) => ticket.id)
+        .toList(growable: false);
+    if (shown.isEmpty) return;
+    unawaited(_markTicketsViewed(shown));
   }
 
   Future<AdminKitchenMetrics?> _loadMetricsSafely() async {

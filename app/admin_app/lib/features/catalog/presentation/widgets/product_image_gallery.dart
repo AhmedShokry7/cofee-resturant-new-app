@@ -3,12 +3,12 @@ import 'dart:typed_data';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/services/admin_image_picker.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -410,34 +410,12 @@ class _ProductImageGalleryState extends State<ProductImageGallery> {
     if (onPick != null) return onPick();
 
     try {
-      final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-      );
-      if (picked == null) return null;
-      final bytes = await picked.readAsBytes();
-      if (bytes.isEmpty) {
-        throw AdminProductException(S.imageIsEmpty);
-      }
-      return ProductImageSource.file(
-        bytes,
-        picked.name,
-        _contentTypeOf(picked.name, picked.mimeType),
-      );
+      return await pickAdminImage();
     } catch (error) {
       if (!mounted) return null;
       setState(() => _error = _messageFor(error));
       return null;
     }
-  }
-
-  /// The type of the picked file, from its name.
-  String _contentTypeOf(String fileName, String? mimeType) {
-    final name = fileName.trim().toLowerCase();
-    if (name.endsWith('.png')) return 'image/png';
-    if (name.endsWith('.webp')) return 'image/webp';
-    if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
-    return mimeType ?? 'image/jpeg';
   }
 
   Future<String?> _askForUrl(String initialValue) {
@@ -820,6 +798,7 @@ class _PendingTile extends StatelessWidget {
               Image.memory(
                 bytes,
                 fit: BoxFit.fill,
+                cacheWidth: AppDimensions.imagePreviewCacheWidth.round(),
                 errorBuilder: (context, error, stackTrace) =>
                     const ColoredBox(color: AppColor.recordCellBackground),
               )

@@ -29,16 +29,21 @@ Future<void> runCategoryImport(
   );
 }
 
-/// Writes the given categories to a workbook, and reports the success.
+/// Writes the given categories to a workbook, and reports the result.
 Future<void> runCategoryExport(
   BuildContext context,
   CategoryExcelController excel,
   Iterable<AdminCategory> categories,
 ) async {
   final saved = await excel.exportFile(categories);
-  if (!saved || !context.mounted) return;
-  ScaffoldMessenger.of(context)
-      .showSnackBar(SnackBar(content: Text(S.exportSuccess)));
+  if (!context.mounted) return;
+  if (saved) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(S.exportSuccess)));
+    return;
+  }
+  final error = excel.lastError;
+  if (error != null) showErrorSnackBar(context, error);
 }
 
 /// Asks where to save the empty workbook of the categories.

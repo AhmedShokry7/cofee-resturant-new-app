@@ -2,30 +2,48 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/services/postgres_changes_feed.dart';
 import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
 import 'package:admin_app/features/shell/di/shell_dependencies.dart';
 import 'package:admin_app/features/shell/domain/repositories/nav_repository.dart';
 import 'package:admin_app/features/shell/domain/usecases/load_counts.dart';
 
+/// Builds the live feed of the counters, or null when there is nothing to
+/// watch. The tables depend on the pages the staff may open, so the caller of
+/// [AdminNavCubit.start] decides what the feed subscribes to.
+typedef NavLiveFeedFactory = PostgresChangesFeed? Function({
+  required bool watchOrders,
+  required bool watchKitchen,
+});
+
 /// Keeps the sidebar counters in step with the server.
 ///
-/// The counters are polled on a slow timer instead of being part of every page
-/// request, so the badge stays current while the staff work in another page.
-/// A failed poll keeps the last numbers: a busy dashboard must never show a
-/// zero because one request failed.
+/// The counters are read from the database, never added up on the device, so a
+/// duplicated event or two staff members on the same screen cannot make a
+/// badge count the same work twice.
+///
+/// Realtime is the fast path: a new order or ticket moves the badge the moment
+/// it is written, and so does opening one. A slow timer is the safety net for a
+/// blocked websocket or a project with realtime disabled. A failed read keeps
+/// the last numbers: a busy dashboard must never show a zero because one
+/// request failed.
 class AdminNavCubit extends Cubit<AdminNavCounts> {
   AdminNavCubit({
     NavRepository? repository,
+    NavLiveFeedFactory? liveFeed,
     this.refreshInterval = const Duration(seconds: 45),
   }) : _loadCounts = LoadCountsUseCase(
          repository ?? ShellDependencies.repository,
        ),
+       _newLiveFeed = liveFeed ?? ShellDependencies.newLiveFeed,
        super(AdminNavCounts.empty);
 
   final LoadCountsUseCase _loadCounts;
+  final NavLiveFeedFactory _newLiveFeed;
   final Duration refreshInterval;
 
   Timer? _timer;
+  PostgresChangesFeed? _feed;
   bool _isWatching = false;
   bool _isRefreshing = false;
 
@@ -34,11 +52,29 @@ class AdminNavCubit extends Cubit<AdminNavCounts> {
     _timer?.cancel();
     _isWatching = watchOrders || watchKitchen;
     if (!_isWatching) {
+      unawaited(_closeFeed());
       if (state != AdminNavCounts.empty) emit(AdminNavCounts.empty);
       return;
     }
+    _watchLive(watchOrders: watchOrders, watchKitchen: watchKitchen);
     unawaited(refresh());
     _timer = Timer.periodic(refreshInterval, (_) => refresh());
+  }
+
+  void _watchLive({required bool watchOrders, required bool watchKitchen}) {
+    if (_feed != null) return;
+    final feed = _newLiveFeed(
+      watchOrders: watchOrders,
+      watchKitchen: watchKitchen,
+    );
+    if (feed == null) return;
+    _feed = feed;
+    feed.start(_onLiveChange);
+  }
+
+  void _onLiveChange() {
+    if (isClosed) return;
+    unawaited(refresh());
   }
 
   Future<void> refresh() async {
@@ -54,10 +90,17 @@ class AdminNavCubit extends Cubit<AdminNavCounts> {
     }
   }
 
+  Future<void> _closeFeed() async {
+    final feed = _feed;
+    _feed = null;
+    if (feed != null) await feed.dispose();
+  }
+
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _timer?.cancel();
     _timer = null;
+    await _closeFeed();
     return super.close();
   }
 }

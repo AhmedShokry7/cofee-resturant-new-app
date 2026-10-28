@@ -19,6 +19,17 @@ String formatMoneyWithCurrency(num value) =>
 
 String formatCount(int value) => _groupDigits('$value');
 
+/// Percentage points written with the numerals of the active language, so
+/// `4.8` reads `٤٫٨٪` in Arabic. A value within a hair of a whole number
+/// drops its fraction, because the metric badge is too narrow for five digits.
+String formatPercent(double value) {
+  final rounded = value.roundToDouble();
+  final text = (value - rounded).abs() < 0.05
+      ? rounded.toInt().toString()
+      : value.toStringAsFixed(1);
+  return localizeDigits('$text%');
+}
+
 String formatDateTime(DateTime? value) {
   if (value == null) return '-';
   final local = value.toLocal();

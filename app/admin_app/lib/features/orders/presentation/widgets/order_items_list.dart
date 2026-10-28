@@ -13,11 +13,15 @@ class OrderItemsList extends StatelessWidget {
     required this.order,
     required this.onRemoveItem,
     this.onAddProduct,
+    this.canEdit = true,
   });
 
   final AdminOrder order;
   final ValueChanged<String> onRemoveItem;
   final VoidCallback? onAddProduct;
+
+  /// False for a role that may read the lines but not move them.
+  final bool canEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +29,7 @@ class OrderItemsList extends StatelessWidget {
     return AdminSectionCard(
       title: S.orderItemsLabel,
       count: order.items.length,
-      trailing: onAddProduct == null
+      trailing: !canEdit || onAddProduct == null
           ? null
           : OrderAddProductButton(order: order, onPressed: onAddProduct!),
       child: order.items.isEmpty
@@ -46,6 +50,7 @@ class OrderItemsList extends StatelessWidget {
                   OrderItemRow(
                     order: order,
                     item: order.items[index],
+                    canRemove: canEdit,
                     onRemove: onRemoveItem,
                   ),
                 ],

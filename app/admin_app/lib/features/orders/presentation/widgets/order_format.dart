@@ -23,3 +23,12 @@ String orderPlacedLabel(DateTime? value) => localizedRelativeDay(
   todayLabel: S.ordersToday,
   yesterdayLabel: S.ordersYesterday,
 );
+
+/// The one contact line the directory shows under a customer: the email when
+/// the order carries one, otherwise the phone, otherwise nothing.
+String? orderContactLine(AdminOrder order) {
+  final email = order.customerEmail?.trim() ?? '';
+  if (email.isNotEmpty) return email;
+  final phone = order.customerPhone?.trim() ?? '';
+  return phone.isEmpty ? null : phone;
+}

@@ -7,7 +7,8 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
-import 'package:admin_app/features/orders/presentation/models/order_status.dart';
+import 'package:admin_app/features/orders/domain/entities/order_status_rules.dart';
+import 'package:admin_app/core/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_status_pill.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
@@ -19,11 +20,19 @@ class OrderCards extends StatelessWidget {
     required this.orders,
     required this.onChangeStatus,
     required this.onOpen,
+    this.canManage = true,
+    this.statusRules,
   });
 
   final List<AdminOrder> orders;
   final void Function(AdminOrder order, String status) onChangeStatus;
   final ValueChanged<AdminOrder> onOpen;
+
+  /// False for a role that may read orders but not move them.
+  final bool canManage;
+
+  /// الانتقالات المسموحة كما قرأتها القاعدة؛ `null` قبل القراءة.
+  final OrderStatusRules? statusRules;
 
   @override
   Widget build(BuildContext context) => ListView.separated(
@@ -34,7 +43,10 @@ class OrderCards extends StatelessWidget {
       final order = orders[index];
       return OrderCard(
         order: order,
-        onChangeStatus: (status) => onChangeStatus(order, status),
+        onChangeStatus: canManage
+            ? (status) => onChangeStatus(order, status)
+            : null,
+        allowedStatuses: statusRules?.allowedFor(order.status),
         onTap: () => onOpen(order),
       );
     },
@@ -46,11 +58,16 @@ class OrderCard extends StatelessWidget {
     super.key,
     required this.order,
     this.onChangeStatus,
+    this.allowedStatuses,
     this.onTap,
   });
 
   final AdminOrder order;
   final ValueChanged<String>? onChangeStatus;
+
+  /// الحالات التي يقبلها الخادم من حالة هذا الطلب. `null` يعني أن المصفوفة لم
+  /// تُقرأ بعد، فتعود القائمة إلى عرض كل الحالات.
+  final List<String>? allowedStatuses;
   final VoidCallback? onTap;
 
   @override
@@ -62,13 +79,14 @@ class OrderCard extends StatelessWidget {
     final subtle = dark ? AppColor.darkTextSecondary : AppColor.adminSubtle;
     final date = dark ? AppColor.darkTextSecondary : AppColor.adminDate;
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final contact = _contactLine(order);
+    final contact = orderContactLine(order);
     final fulfillment = OrderFulfillmentView.of(order.fulfillmentType);
     final branch = order.branchNameFor(AppLocale.instance.language);
     final method = fulfillment.isDelivery || branch.isEmpty
         ? fulfillment.label
         : '${fulfillment.label} • $branch';
     final payment = OrderPaymentStatusView.of(order.paymentStatus);
+    final menuStatuses = allowedStatuses ?? OrderStatusView.allCodes;
 
     return Material(
       color: theme.colorScheme.surface,
@@ -107,12 +125,12 @@ class OrderCard extends StatelessWidget {
                       child: OrderStatusPill(status: order.status),
                     ),
                   ),
-                  if (onChangeStatus != null)
+                  if (onChangeStatus != null && menuStatuses.isNotEmpty)
                     PopupMenuButton<String>(
                       tooltip: S.changeStatus,
                       onSelected: onChangeStatus,
                       itemBuilder: (_) => [
-                        for (final code in OrderStatusView.allCodes)
+                        for (final code in menuStatuses)
                           PopupMenuItem(
                             value: code,
                             child: Text(OrderStatusView.of(code).label),
@@ -263,13 +281,6 @@ class OrderCard extends StatelessWidget {
       ),
     );
   }
-}
-
-String? _contactLine(AdminOrder order) {
-  final email = order.customerEmail?.trim() ?? '';
-  if (email.isNotEmpty) return email;
-  final phone = order.customerPhone?.trim() ?? '';
-  return phone.isEmpty ? null : phone;
 }
 
 class _Info extends StatelessWidget {

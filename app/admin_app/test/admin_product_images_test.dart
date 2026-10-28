@@ -5,8 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
 import 'package:admin_app/core/catalog/admin_product_exception.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
 
 /// A small stand-in for the Supabase HTTP layer.
 ///
@@ -251,7 +252,7 @@ void main() {
       await expectLater(
         repository.uploadProductImage(
           productId: 'p1',
-          bytes: Uint8List(AdminProductRepository.maxProductImageBytes + 1),
+          bytes: Uint8List(adminImageMaxBytes + 1),
           fileName: 'big.png',
           contentType: 'image/png',
         ),

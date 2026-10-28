@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_add_product_button.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_items_list.dart';
 
 AdminOrderItem _item({String? id}) {
@@ -124,5 +125,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(removed, isTrue);
+  });
+
+  testWidgets('a reader gets neither the add button nor a removal', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _wrap(
+        OrderItemsList(
+          order: _order(items: [_item(id: 'i1')]),
+          onAddProduct: () {},
+          onRemoveItem: (_) {},
+          canEdit: false,
+        ),
+      ),
+    );
+
+    expect(
+      find.descendant(
+        of: find.byType(OrderItemsList),
+        matching: find.byType(OrderAddProductButton),
+      ),
+      findsNothing,
+    );
+    final button = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byType(OrderItemsList),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(button.onPressed, isNull);
+  });
+
+  testWidgets('a manager still gets both on the same order', (tester) async {
+    await tester.pumpWidget(
+      _wrap(
+        OrderItemsList(
+          order: _order(items: [_item(id: 'i1')]),
+          onAddProduct: () {},
+          onRemoveItem: (_) {},
+        ),
+      ),
+    );
+
+    expect(
+      find.descendant(
+        of: find.byType(OrderItemsList),
+        matching: find.byType(OrderAddProductButton),
+      ),
+      findsOneWidget,
+    );
+    final button = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byType(OrderItemsList),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(button.onPressed, isNotNull);
   });
 }

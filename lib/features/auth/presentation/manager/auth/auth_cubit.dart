@@ -100,6 +100,9 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('no user')) {
       return S.authUserNotFound;
     }
+    if (lower.contains('staff_account') || lower.contains('staff account')) {
+      return S.authStaffAccount;
+    }
     if (lower.contains('user_banned') ||
         lower.contains('user disabled') ||
         lower.contains('disabled')) {
@@ -113,8 +116,7 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('email already')) {
       return S.authEmailInUse;
     }
-    if (lower.contains('weak_password') ||
-        lower.contains('weak password')) {
+    if (lower.contains('weak_password') || lower.contains('weak password')) {
       return S.authWeakPassword;
     }
     if (lower.contains('invalid_email') ||

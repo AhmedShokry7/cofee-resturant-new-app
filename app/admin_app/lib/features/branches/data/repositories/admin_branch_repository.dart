@@ -104,7 +104,7 @@ class AdminBranchRepository implements BranchRepository {
     void Function(AdminImageUploadPhase phase)? onPhase,
   }) async {
     if (bytes.isEmpty) throw AdminBranchException(S.imageIsEmpty);
-    if (bytes.length > 5 * 1024 * 1024) {
+    if (bytes.length > adminImageMaxBytes) {
       throw AdminBranchException(S.imageTooLarge);
     }
 

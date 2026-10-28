@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/navigation/admin_navigator.dart';
 import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
 import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
@@ -9,6 +11,7 @@ import 'package:admin_app/features/carts/presentation/pages/cart_page.dart';
 import 'package:admin_app/features/coupons/presentation/pages/coupons_page.dart';
 import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
 import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
+import 'package:admin_app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/stock_movements_page.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
@@ -32,13 +35,16 @@ import 'package:admin_app/features/catalog/presentation/pages/product_page.dart'
 import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
 import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
 import 'package:admin_app/features/shell/presentation/manager/admin_nav_cubit.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_desktop_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sign_out_dialog.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_feature_placeholder.dart';
+import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 
 /// The frame around every admin page.
 ///
@@ -98,11 +104,13 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       )
       .toList();
 
-  AdminDestination get _selected {
+  /// القسم المعروض، ولا شيء حين لا يملك الحساب قسمًا واحدًا.
+  ///
+  /// الإطار يرسم نفسه بلا وجهات حتى يبقى زر تسجيل الخروج متاحًا؛ فلو تعطل
+  /// البناء هنا يتجمد شاشة الموظف بلا مخرج.
+  AdminDestination? get _selected {
     final destinations = _destinations;
-    if (destinations.isEmpty) {
-      throw StateError('No accessible destinations for this staff member.');
-    }
+    if (destinations.isEmpty) return null;
     for (final destination in destinations) {
       if (destination.id == _selectedId) return destination;
     }
@@ -131,6 +139,7 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     // Every feature is listed from the database. The ones that are built show
     // their page, the rest show the shared placeholder with their tables.
     final destination = _selected;
+    if (destination == null) return const _NoAccessPage();
     final page = _pageFor(destination);
 
     return KeyedSubtree(key: ValueKey(destination.id), child: page);
@@ -142,6 +151,14 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
   /// page keeps showing the placeholder.
   Widget _pageFor(AdminDestination destination) {
     switch (destination.id) {
+      case 'dashboard':
+        return DashboardPage(
+          searchController: _searchController,
+          staffName: widget.session.fullName,
+          canManageTarget:
+              widget.session.canManageAllBranches &&
+              widget.session.hasPermission('settings.write'),
+        );
       case 'products':
         return ProductPage(searchController: _searchController);
       case 'categories':
@@ -165,7 +182,12 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       case 'pos':
         return PosPage(searchController: _searchController);
       case 'orders':
-        return OrderPage(searchController: _searchController);
+        return OrderPage(
+          searchController: _searchController,
+          // كل كتابة على الطلب تطلبها القاعدة بصلاحية orders.status.update،
+          // فتُعرض أدوات التغيير لمن يملكها فقط بدل أزرار تُرفض دائمًا.
+          canManage: widget.session.hasPermission('orders.status.update'),
+        );
       case 'banners':
         return BannerPage(searchController: _searchController);
       case 'carts':
@@ -255,19 +277,21 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
   }
 
   AdminShellLayoutData _buildLayoutData(AdminNavCounts counts) {
+    final destination = _selected;
     return AdminShellLayoutData(
       session: widget.session,
       destinations: _destinations,
-      selectedId: _selected.id,
+      selectedId: destination?.id ?? '',
       onSelected: _select,
       onSignOut: _confirmSignOut,
       searchController: _searchController,
       searchTextController: _searchTextController,
-      title: _selected.label,
-      searchHint: _selected.searchHint,
+      title: destination?.label ?? S.noAccessTitle,
+      // بلا قسم لا شيء يُبحث، فيتراجع شريط الأدوات عن حقل البحث.
+      searchHint: destination?.searchHint ?? '',
       badges: <String, int>{
-        if (counts.newOrders > 0) 'orders': counts.newOrders,
-        if (counts.kitchenQueue > 0) 'kitchen': counts.kitchenQueue,
+        if (counts.unreadOrders > 0) 'orders': counts.unreadOrders,
+        if (counts.unreadKitchen > 0) 'kitchen': counts.unreadKitchen,
       },
     );
   }
@@ -292,16 +316,34 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     final width = MediaQuery.sizeOf(context).width;
     final isWide = width >= 900;
     final data = _buildLayoutData(counts);
-    final content = _buildContent();
+    // الصفحات تُبنى تحت اليد نفسها: رابط «كل الطلبات» داخل بطاقة ينادي
+    // `_select` هنا، فلا صفحة تملك قرارًا هو للقشرة.
+    final content = AdminNavigator(onSelect: _select, child: _buildContent());
 
     if (isWide) {
       return AdminDesktopLayout(
         data: data,
         content: content,
-        collapseSidebar: _selected.immersive && width < _immersiveMinWidth,
+        collapseSidebar:
+            _selected?.immersive == true && width < _immersiveMinWidth,
       );
     }
 
     return AdminMobileLayout(data: data, content: content);
+  }
+}
+
+/// ما يراه حساب لا يملك أي صلاحية: رسالة صريحة بدل قسم مسروق أو شاشة متعطلة.
+class _NoAccessPage extends StatelessWidget {
+  const _NoAccessPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return AdminPageFrame(
+      child: AdminEmptyState(
+        icon: AppIcons.blocked,
+        message: S.noAccessMessage,
+      ),
+    );
   }
 }

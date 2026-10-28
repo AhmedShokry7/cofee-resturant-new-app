@@ -39,14 +39,16 @@ class OrderDetailBody extends StatelessWidget {
 
     final items = OrderItemsList(
       order: order,
+      canEdit: controller.canManage,
       onRemoveItem: onRemoveItem,
       onAddProduct: onAddProduct,
     );
     final payment = OrderPaymentSection(
       order: order,
       saving: controller.saving,
-      onPaymentStatusChanged: (value) =>
-          changePaymentStatus(context, controller, value),
+      onPaymentStatusChanged: controller.canManage
+          ? (value) => changePaymentStatus(context, controller, value)
+          : null,
     );
     final customer = OrderCustomerSection(
       order: order,
@@ -96,6 +98,8 @@ class OrderDetailBody extends StatelessWidget {
         OrderDetailHeader(
           order: order,
           saving: controller.saving,
+          canChangeStatus: controller.canManage,
+          allowedStatuses: controller.statusRules?.allowedFor(order.status),
           onStatusChanged: onStatusChanged,
         ),
         const SizedBox(height: AppSpacing.md),

@@ -19,7 +19,6 @@ extension OrderDetailValues on OrderDetailController {
   Future<bool> openOrder(String id) async {
     final revision = ++_selectionRevision;
     orderSelectionLoading = true;
-    saving = false;
     _notify();
     try {
       final selected = await cubit.findOrder(id);

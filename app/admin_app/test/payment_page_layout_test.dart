@@ -146,6 +146,31 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('a tender with no order is kept and labelled by its own id', (
+    tester,
+  ) async {
+    // admin_payments() keeps a tender with no order for the staff who manage
+    // every branch (a subscription purchase has no order and therefore no
+    // branch), so the page must render such a row instead of losing it.
+    _setViewport(tester, 1280);
+    final cubit = _FakePaymentCubit(const <AdminPayment>[
+      AdminPayment(
+        id: 'payment-sub',
+        provider: 'stripe',
+        amount: 99,
+        currencyCode: 'EGP',
+        status: 'captured',
+      ),
+    ]);
+    await cubit.load();
+
+    await _pumpPage(tester, cubit: cubit, search: AdminSearchController());
+
+    expect(find.text('payment-sub'), findsOneWidget);
+    expect(find.text(S.noPaymentsYet), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('empty payments page disables export and print', (tester) async {
     _setViewport(tester, 1280);
     final cubit = _FakePaymentCubit(const []);

@@ -7,19 +7,23 @@ import 'package:admin_app/core/theme/theme_class.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_detail_dialog.dart';
 
-Map<String, dynamic> _order(int index) => <String, dynamic>{
-  'status': 'completed',
-  'fulfillment_type': 'delivery',
-  'grand_total': 40,
-  'placed_at': '2026-09-01T10:00:00Z',
-  'branch_name_ar': 'الفرع الرئيسي',
-  'branch_name_en': 'Main branch',
-  'items': <Map<String, dynamic>>[
-    {'product_name_ar': 'قهوة', 'product_name_en': 'Coffee', 'quantity': 2},
-  ],
-};
+Map<String, dynamic> _order(int index, {String fulfillment = 'delivery'}) =>
+    <String, dynamic>{
+      'status': 'completed',
+      'fulfillment_type': fulfillment,
+      'grand_total': 40,
+      'placed_at': '2026-09-01T10:00:00Z',
+      'branch_name_ar': 'الفرع الرئيسي',
+      'branch_name_en': 'Main branch',
+      'items': <Map<String, dynamic>>[
+        {'product_name_ar': 'قهوة', 'product_name_en': 'Coffee', 'quantity': 2},
+      ],
+    };
 
-Map<String, dynamic> _details({int orderCount = 6}) => <String, dynamic>{
+Map<String, dynamic> _details({
+  int orderCount = 6,
+  String fulfillment = 'delivery',
+}) => <String, dynamic>{
   'profile': <String, dynamic>{
     'email': 'sara@example.com',
     'phone': '+966500000000',
@@ -32,7 +36,8 @@ Map<String, dynamic> _details({int orderCount = 6}) => <String, dynamic>{
     {'label': 'Home', 'details': 'Riyadh, Olaya district', 'is_default': true},
   ],
   'orders': <dynamic>[
-    for (var index = 0; index < orderCount; index++) _order(index),
+    for (var index = 0; index < orderCount; index++)
+      _order(index, fulfillment: fulfillment),
   ],
   'subscriptions': <dynamic>[],
 };
@@ -222,6 +227,27 @@ void main() {
     expect(savedBlacklist, isFalse);
     expect(savedNotes, 'Call before delivery');
     expect(find.byType(CustomerDetailDialog), findsNothing);
+  });
+
+  testWidgets('an order history card names the fulfillment, never its code', (
+    tester,
+  ) async {
+    // كل طلبات نقطة البيع `dine_in`، وكانت البطاقة تطبع الرمز الخام لأنها
+    // كانت تملك تبديلها الخاص الذي لا يعرف نوع الفرع.
+    await _openDialog(
+      tester,
+      dialog: CustomerDetailDialog(
+        customer: _customer,
+        details: _details(orderCount: 1, fulfillment: 'dine_in'),
+        onSave: _noopSave,
+      ),
+      size: const Size(900, 900),
+      dark: false,
+      isArabic: true,
+    );
+
+    expect(find.textContaining(S.fulfillmentDineIn), findsOneWidget);
+    expect(find.textContaining('dine_in'), findsNothing);
   });
 }
 

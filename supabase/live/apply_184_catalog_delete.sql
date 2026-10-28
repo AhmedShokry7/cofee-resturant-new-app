@@ -23,6 +23,13 @@ begin;
 -- their history survives the category. A bundle targeted by a loyalty reward
 -- is refused with 'bundle_in_use'; cart lines are removed with the bundle.
 
+-- admin_delete_category changes the return type the chain currently builds
+-- (void in 117..157 to boolean), and Postgres refuses that in place with 42P13,
+-- so the old signature has to be dropped first. Both callers ignore the RPC
+-- result, and the revoke/grant pair at the bottom re-applies the privileges.
+drop function if exists public.admin_delete_category(uuid);
+drop function if exists public.admin_delete_bundle(uuid);
+
 create or replace function public.admin_delete_category(p_category_id uuid)
 returns boolean
 language plpgsql

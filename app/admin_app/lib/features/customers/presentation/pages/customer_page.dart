@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/features/customers/data/customer_excel_exporter.dart';
+import 'package:admin_app/features/customers/presentation/export/customer_excel_exporter.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_cubit.dart';
 import 'package:admin_app/features/customers/presentation/manager/admin_customer_state.dart';

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/domain/repositories/banner_repository.dart';
@@ -68,7 +69,7 @@ class AdminBannerRepository implements BannerRepository {
     required String contentType,
   }) async {
     if (bytes.isEmpty) throw Exception(S.imageIsEmpty);
-    if (bytes.length > 5 * 1024 * 1024) {
+    if (bytes.length > adminImageMaxBytes) {
       throw Exception(S.imageTooLarge);
     }
     final extension = _extensionOf(fileName);

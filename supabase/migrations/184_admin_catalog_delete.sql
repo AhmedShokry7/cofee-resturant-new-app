@@ -24,6 +24,20 @@
 -- reward would break the moment the bundle is gone. Cart lines are not
 -- orders, so they are removed with the bundle.
 
+-- ---------------------------------------------------------------------------
+-- 0. Both functions below change the return type of the version the chain
+--    builds: admin_delete_category was `returns void` since 117 and is
+--    `returns boolean` here, so `create or replace` aborts with 42P13
+--    'cannot change return type of existing function' on any database that
+--    already ran 117..157. Postgres refuses to change a return type in place,
+--    so the old signature has to go first. Nothing depends on the void return:
+--    both callers in the admin app ignore the RPC result and only read whether
+--    the call raised. The revoke/grant pair at the bottom re-applies the
+--    privileges that the drop removes.
+-- ---------------------------------------------------------------------------
+drop function if exists public.admin_delete_category(uuid);
+drop function if exists public.admin_delete_bundle(uuid);
+
 create or replace function public.admin_delete_category(p_category_id uuid)
 returns boolean
 language plpgsql

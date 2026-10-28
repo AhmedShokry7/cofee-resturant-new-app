@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
-import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/shared/widgets/admin_bulk_selection_bar.dart';
-import 'package:admin_app/shared/widgets/admin_page_header.dart';
-import 'package:admin_app/shared/widgets/custom_btn.dart';
+import 'package:admin_app/shared/widgets/admin_excel_page_header.dart';
 
+/// The products heading: the shared Excel header with the products labels.
 class ProductPageHeader extends StatelessWidget {
   const ProductPageHeader({
     super.key,
@@ -43,39 +39,16 @@ class ProductPageHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = importProgress ?? exportProgress;
-    final busy = progress != null;
-
-    return AdminPageHeader(
+    return AdminExcelPageHeader(
       title: S.products,
       subtitle: S.productsCount(count),
-      progress: progress,
-      progressLabel: importProgress != null ? S.importing : S.exporting,
-      actions: [
-        if (onPickFile != null || onDownloadSample != null)
-          _circleIcon(
-            context,
-            icon: AppIcons.upload02,
-            tooltip: S.importExcel,
-            onTap: busy ? null : () => _showImportDialog(context),
-          ),
-        if (onExport != null)
-          _circleIcon(
-            context,
-            icon: AppIcons.download02,
-            tooltip: S.exportExcel,
-            onTap: busy ? null : onExport,
-          ),
-        CustomBtn(
-          text: S.addProduct,
-          onPressed: busy ? null : onAdd,
-          leadingIcon: const Icon(AppIcons.add01, size: 18),
-          height: 42,
-          borderRadius: AppRadius.pill,
-          backgroundColor: AppColor.primaryColor,
-          textColor: AppColor.whiteColor,
-        ),
-      ],
+      addActionLabel: S.addProduct,
+      onAdd: onAdd,
+      onPickFile: onPickFile,
+      onDownloadSample: onDownloadSample,
+      onExport: onExport,
+      importProgress: importProgress,
+      exportProgress: exportProgress,
       footer: selectedCount > 0
           ? AdminBulkSelectionBar(
               selectedCount: selectedCount,
@@ -90,55 +63,6 @@ class ProductPageHeader extends StatelessWidget {
               isDeletingSelected: isDeletingSelected,
             )
           : null,
-    );
-  }
-
-  Widget _circleIcon(
-    BuildContext context, {
-    required IconData icon,
-    required String tooltip,
-    required VoidCallback? onTap,
-  }) {
-    final theme = Theme.of(context);
-    final dark = theme.brightness == Brightness.dark;
-    final isDisabled = onTap == null;
-    final background = isDisabled
-        ? (dark ? AppColor.darkCard : AppColor.borderColor)
-        : (dark ? AppColor.darkSurfaceContainer : AppColor.lightGreyColor);
-    final foreground = isDisabled
-        ? (dark ? AppColor.darkTextSecondary : AppColor.greyColor)
-        : (dark ? AppColor.secondaryColor : AppColor.primaryColor);
-
-    return Material(
-      color: background,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: Tooltip(
-          message: tooltip,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Icon(icon, size: 20, color: foreground),
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showImportDialog(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      builder: (context) => ImportExcelDialog(
-        onPickFile: () {
-          Navigator.of(context).pop();
-          onPickFile?.call();
-        },
-        onDownloadSample: () {
-          Navigator.of(context).pop();
-          onDownloadSample?.call();
-        },
-      ),
     );
   }
 }

@@ -6,8 +6,10 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_cubit.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_add_product_button.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_customer_section.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_detail_body.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_detail_status_control.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_items_list.dart';
 
 AdminOrder _order() => AdminOrder(
@@ -65,9 +67,13 @@ Widget _body(OrderDetailController controller) => MaterialApp(
   ),
 );
 
-OrderDetailController _controller() {
+OrderDetailController _controller({bool canManage = true}) {
   final cubit = AdminOrderCubit();
-  final controller = OrderDetailController(cubit: cubit, order: _order());
+  final controller = OrderDetailController(
+    cubit: cubit,
+    order: _order(),
+    canManage: canManage,
+  );
   addTearDown(() {
     controller.dispose();
     cubit.close();
@@ -122,6 +128,35 @@ void main() {
     expect(find.text('الإجمالي النهائي'), findsNWidgets(2));
     expect(find.text('Customer'), findsNothing);
     expect(find.text('Grand total'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a manager gets the controls that write', (tester) async {
+    _setViewport(tester, const Size(390, 1400));
+    await tester.pumpWidget(_body(_controller()));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(OrderDetailStatusControl), findsOneWidget);
+    expect(find.byType(OrderAddProductButton), findsOneWidget);
+  });
+
+  testWidgets('a reader without the write permission gets none of them', (
+    tester,
+  ) async {
+    _setViewport(tester, const Size(390, 1400));
+    await tester.pumpWidget(_body(_controller(canManage: false)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('#1001'), findsOneWidget);
+    expect(find.byType(OrderDetailStatusControl), findsNothing);
+    expect(find.byType(OrderAddProductButton), findsNothing);
+    final remove = tester.widget<IconButton>(
+      find.descendant(
+        of: find.byType(OrderItemsList),
+        matching: find.byType(IconButton),
+      ),
+    );
+    expect(remove.onPressed, isNull);
     expect(tester.takeException(), isNull);
   });
 }

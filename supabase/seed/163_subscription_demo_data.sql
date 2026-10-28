@@ -1,5 +1,12 @@
--- 163_subscription_demo_data.sql
+-- 163_subscription_demo_data.sql — SEED, not a migration.
 -- Development demo data for the subscriptions screens.
+--
+-- This file used to live in supabase/migrations as 163 and was never applied to
+-- any project. It moved out of the chain because `supabase db push` replays
+-- every unrecorded migration: a database with no demo subscriptions would
+-- suddenly gain eight fake customers and four fake plans, and the admin app is
+-- not allowed to show invented content. Run it by hand only when a developer
+-- asks for it.
 --
 -- The database is still under development, so the subscriptions page needs
 -- representative rows to review: four plans, eight customers and their
@@ -7,9 +14,15 @@
 -- subscription consumed.
 --
 -- Every statement is idempotent and keyed on a fixed id, code or idempotency
--- key, so applying the migration twice changes nothing. Usage rows point at
+-- key, so applying the seed twice changes nothing. Usage rows point at
 -- the first branch of the database and the first product when one exists, so
 -- the seed never creates catalogue content.
+--
+-- NOTE: this seed writes into `auth.users` directly, which the 2026-10-27
+-- account separation (188) now governs: a row inserted here fires
+-- `identity.handle_new_user` and becomes a customer profile. That is intended,
+-- but it means this file must never run against a project that has real
+-- accounts, and a staff uid must never be pasted into it.
 
 -- ---------------------------------------------------------------------------
 -- Plans.

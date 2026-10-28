@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/order_status_rules.dart';
 import 'package:admin_app/features/orders/domain/repositories/order_repository.dart';
 
 class AdminOrderRepository implements OrderRepository {
@@ -29,6 +30,13 @@ class AdminOrderRepository implements OrderRepository {
       'admin_update_order_status',
       params: {'p_order_id': orderId, 'p_status': status},
     );
+  }
+
+  @override
+  Future<OrderStatusRules?> loadStatusRules() async {
+    final response = await _supabase.rpc('admin_order_status_matrix');
+    if (response is! Map) return null;
+    return OrderStatusRules.fromJson(response);
   }
 
   @override
@@ -60,6 +68,14 @@ class AdminOrderRepository implements OrderRepository {
     await _supabase.rpc(
       'admin_remove_order_item',
       params: {'p_order_item_id': orderItemId},
+    );
+  }
+
+  @override
+  Future<void> markOrderViewed(String orderId) async {
+    await _supabase.rpc(
+      'admin_mark_order_viewed',
+      params: {'p_order_id': orderId},
     );
   }
 }

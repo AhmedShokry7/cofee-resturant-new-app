@@ -17,11 +17,15 @@ class OrderDetailsPage extends StatefulWidget {
     required this.order,
     this.cubit,
     this.navigationOrders = const [],
+    this.canManage = true,
   });
 
   final AdminOrder order;
   final AdminOrderCubit? cubit;
   final List<AdminOrder> navigationOrders;
+
+  /// False for a role that may read orders but not change them.
+  final bool canManage;
 
   @override
   State<OrderDetailsPage> createState() => _OrderDetailsPageState();
@@ -37,8 +41,17 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
     super.initState();
     _ownsCubit = widget.cubit == null;
     _cubit = widget.cubit ?? AdminOrderCubit();
-    _controller = OrderDetailController(cubit: _cubit, order: widget.order)
-      ..loadProducts();
+    _controller = OrderDetailController(
+      cubit: _cubit,
+      order: widget.order,
+      canManage: widget.canManage,
+    )..loadProducts();
+    // القائمة تُرسم من مصفوفة الانتقالات في القاعدة، فتُقرأ قبل أن يفتح الموظف
+    // قائمة الحالات.
+    _cubit.loadStatusRules();
+    // Opening the order is what takes it out of the unread counter. Changing
+    // its status does not, and neither does merely listing it.
+    _cubit.markOrderViewed(widget.order.id);
   }
 
   @override
@@ -51,7 +64,11 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
   Future<void> _selectOrder(String orderId) async {
     try {
       final found = await _controller.openOrder(orderId);
-      if (!found && mounted) _showMessage(S.orderNotFound);
+      if (!found) {
+        if (mounted) _showMessage(S.orderNotFound);
+        return;
+      }
+      _cubit.markOrderViewed(orderId);
     } catch (_) {
       if (mounted) _showMessage(S.orderActionFailed);
     }

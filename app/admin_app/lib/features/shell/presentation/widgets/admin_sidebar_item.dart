@@ -20,7 +20,7 @@ class AdminSidebarItem extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  /// Live work waiting in this destination, shown as a number.
+  /// Unread work waiting in this destination, shown as a number.
   final int? badgeCount;
 
   @override
@@ -89,13 +89,13 @@ class _SidebarBadge extends StatelessWidget {
         vertical: AppSpacing.xxs,
       ),
       decoration: BoxDecoration(
-        color: AppColor.secondaryColor,
+        color: AppColor.errorColor,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppColor.primaryColor,
+          color: AppColor.whiteColor,
           fontWeight: AppFontWeights.medium,
         ),
       ),

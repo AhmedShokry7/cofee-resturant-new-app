@@ -8,14 +8,13 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_cards.dart';
+import 'package:admin_app/features/orders/domain/entities/order_status_rules.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_directory_list.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_directory_toolbar.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_controls.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_values.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filtering.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_status_tabs.dart';
-import 'package:admin_app/features/orders/presentation/widgets/order_table.dart';
-import 'package:admin_app/shared/widgets/admin_pagination.dart';
 
 class OrderDirectory extends StatefulWidget {
   const OrderDirectory({
@@ -30,6 +29,8 @@ class OrderDirectory extends StatefulWidget {
     required this.onOpen,
     this.onExport,
     this.exporting,
+    this.canManage = true,
+    this.statusRules,
   });
 
   final List<AdminOrder> orders;
@@ -43,13 +44,17 @@ class OrderDirectory extends StatefulWidget {
   final ValueChanged<List<AdminOrder>>? onExport;
   final ValueListenable<bool>? exporting;
 
+  /// False for a role that may read orders but not move them.
+  final bool canManage;
+
+  /// الانتقالات المسموحة كما قرأتها القاعدة؛ `null` قبل القراءة.
+  final OrderStatusRules? statusRules;
+
   @override
   State<OrderDirectory> createState() => _OrderDirectoryState();
 }
 
 class _OrderDirectoryState extends State<OrderDirectory> {
-  static const _pageSize = 5;
-
   late final TextEditingController _searchController;
   int _page = 0;
   bool _filtersExpanded = false;
@@ -117,12 +122,6 @@ class _OrderDirectoryState extends State<OrderDirectory> {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
     final filtered = _filtered;
-    final pages = filtered.isEmpty ? 0 : (filtered.length / _pageSize).ceil();
-    final page = pages == 0 ? 0 : _page.clamp(0, pages - 1);
-    final visible = filtered
-        .skip(page * _pageSize)
-        .take(_pageSize)
-        .toList(growable: false);
     final canClear = widget.filters.isActive || widget.search.trim().isNotEmpty;
 
     return Container(
@@ -187,27 +186,16 @@ class _OrderDirectoryState extends State<OrderDirectory> {
                     canClear: canClear,
                     onClear: _clearFilters,
                   )
-                : LayoutBuilder(
-                    builder: (context, constraints) =>
-                        constraints.maxWidth < 840
-                        ? OrderCards(
-                            orders: visible,
-                            onChangeStatus: widget.onChangeStatus,
-                            onOpen: widget.onOpen,
-                          )
-                        : OrderTable(orders: visible, onOpen: widget.onOpen),
+                : OrderDirectoryList(
+                    orders: filtered,
+                    page: _page,
+                    onPageChanged: (value) => setState(() => _page = value),
+                    canManage: widget.canManage,
+                    onChangeStatus: widget.onChangeStatus,
+                    statusRules: widget.statusRules,
+                    onOpen: widget.onOpen,
                   ),
           ),
-          if (filtered.isNotEmpty)
-            AdminPagination(
-              page: page,
-              pages: pages,
-              count: filtered.length,
-              pageSize: _pageSize,
-              labelBuilder: (first, last, count) =>
-                  S.ordersRowsLabel(first, last, count),
-              onChanged: (value) => setState(() => _page = value),
-            ),
         ],
       ),
     );

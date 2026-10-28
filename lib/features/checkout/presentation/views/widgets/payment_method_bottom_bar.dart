@@ -17,6 +17,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
   Future<void> _confirm(BuildContext context) async {
     final cart = context.read<CartCubit>();
     final checkout = context.read<CheckoutCubit>();
+    final loyalty = context.read<LoyaltyCubit>();
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
 
@@ -101,7 +102,12 @@ class PaymentMethodBottomBar extends StatelessWidget {
       }
     }
 
-    context.read<LoyaltyCubit>().earnForOrder(total);
+    // The attempt is over: the money was taken, or the order is a cash one the
+    // kitchen already received. Only now may the idempotency key be retired, so
+    // a payment that failed left the retap on the same unpaid order instead of
+    // creating a second one.
+    await checkout.settleOrderAttempt();
+    loyalty.earnForOrder(total);
     cart.clear();
     await cart.flushServerSync();
     navigator.pushNamedAndRemoveUntil(

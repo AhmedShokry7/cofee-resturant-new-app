@@ -885,15 +885,6 @@ class CheckoutCubit extends Cubit<CheckoutState> {
               couponCode: orderArgs.couponCode,
             );
       if (isClosed) return false;
-      final userId = _currentOrderUserId;
-      if (userId != null) {
-        await SharedPref.setValue(
-          key: _orderAttemptStorageKey(userId),
-          value: '',
-        );
-      }
-      _pendingOrderSignature = null;
-      _pendingOrderIdempotencyKey = null;
       final address = state.selectedAddress;
       final approvedCoupon = state.appliedCoupon;
       emit(
@@ -971,6 +962,26 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       (SupabaseService.isReady
           ? SupabaseService.client.auth.currentUser?.id
           : null);
+
+  /// Ends the current checkout attempt so the next purchase is keyed anew.
+  ///
+  /// The key cannot be retired when [placeOrder] returns true: that only means
+  /// the order row exists, while payment still has to succeed. A customer who
+  /// abandons the card form retaps the same button with the same cart, and a
+  /// fresh key there would make the server accept a second unpaid order. Call
+  /// this once the attempt is genuinely over, after the payment or the cash
+  /// confirmation.
+  Future<void> settleOrderAttempt() async {
+    _pendingOrderSignature = null;
+    _pendingOrderIdempotencyKey = null;
+    final userId = _currentOrderUserId;
+    if (userId != null) {
+      await SharedPref.setValue(
+        key: _orderAttemptStorageKey(userId),
+        value: '',
+      );
+    }
+  }
 
   String _orderAttemptStorageKey(String userId) =>
       'pending_order_attempt_$userId';

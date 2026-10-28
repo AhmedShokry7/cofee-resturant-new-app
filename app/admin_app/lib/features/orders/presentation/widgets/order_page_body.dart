@@ -5,6 +5,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
+import 'package:admin_app/features/orders/domain/entities/order_status_rules.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_directory.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_values.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_page_header.dart';
@@ -25,6 +26,8 @@ class OrderPageBody extends StatefulWidget {
     this.onExport,
     this.exporting,
     this.errorMessage,
+    this.canManage = true,
+    this.statusRules,
   });
 
   final List<AdminOrder> orders;
@@ -33,10 +36,16 @@ class OrderPageBody extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
   final void Function(AdminOrder order, String status) onChangeStatus;
   final ValueChanged<AdminOrder> onOpen;
-  final VoidCallback onRefresh;
+  final Future<void> Function() onRefresh;
   final ValueChanged<List<AdminOrder>>? onExport;
   final ValueListenable<bool>? exporting;
   final String? errorMessage;
+
+  /// False for a role that may read orders but not move them.
+  final bool canManage;
+
+  /// الانتقالات المسموحة كما قرأتها القاعدة؛ `null` قبل القراءة.
+  final OrderStatusRules? statusRules;
 
   @override
   State<OrderPageBody> createState() => _OrderPageBodyState();
@@ -62,17 +71,22 @@ class _OrderPageBodyState extends State<OrderPageBody> {
           OrderSummaryCards(orders: widget.orders, branchId: _filters.branchId),
           const SizedBox(height: AppSizes.px16),
           Expanded(
-            child: OrderDirectory(
-              orders: widget.orders,
-              branches: widget.branches,
-              search: widget.search,
-              onSearchChanged: widget.onSearchChanged,
-              filters: _filters,
-              onFiltersChanged: (value) => setState(() => _filters = value),
-              onChangeStatus: widget.onChangeStatus,
-              onOpen: widget.onOpen,
-              onExport: widget.onExport,
-              exporting: widget.exporting,
+            child: RefreshIndicator(
+              onRefresh: widget.onRefresh,
+              child: OrderDirectory(
+                orders: widget.orders,
+                branches: widget.branches,
+                search: widget.search,
+                canManage: widget.canManage,
+                onSearchChanged: widget.onSearchChanged,
+                filters: _filters,
+                onFiltersChanged: (value) => setState(() => _filters = value),
+                onChangeStatus: widget.onChangeStatus,
+                statusRules: widget.statusRules,
+                onOpen: widget.onOpen,
+                onExport: widget.onExport,
+                exporting: widget.exporting,
+              ),
             ),
           ),
         ],

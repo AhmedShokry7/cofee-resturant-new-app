@@ -3,7 +3,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
-import 'package:admin_app/features/orders/presentation/models/order_status.dart';
+import 'package:admin_app/core/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_dropdown.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_filter_values.dart';
 

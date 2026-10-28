@@ -39,6 +39,22 @@ class CategoryCard extends StatelessWidget {
 
   final VoidCallback? onSelect;
 
+  /// كتلة الأسطر تحت الصورة: سطر الاسم وسطر العدد على قياس العنوان الصغير
+  /// والنصّ الصغير في الثيم، وهما سطران لا يلفّ أحدهما لأن كليهما `maxLines:
+  /// 1`؛ لذلك يُضرب هذا القياس في مقياس النصّ بدل أن يبقى على حجمه الافتراضي
+  /// حين يكبّر الأدمن الخط.
+  static const double textBlockExtent = 36.0;
+
+  /// ما لا يكبر مع النصّ: حشو كتلة النصّ العمودي والفاصل بين سطريها وشريط
+  /// الأزرار وحدود البطاقة.
+  static const double chromeExtent =
+      AppSpacing.sm * 2 + AppSizes.px4 + AppDimensions.recordFooterHeight + 3.0;
+
+  /// ارتفاع بطاقة بعرض [cardWidth]: صورتها مربّعة، فطولها هو عرضها زائد
+  /// جسمها. تُسأل الشبكة هذا الرقم بدل أن تُخمِن نسبة طول إلى عرض.
+  static double extent(double cardWidth, TextScaler scaler) =>
+      cardWidth + chromeExtent + scaler.scale(textBlockExtent);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -111,6 +127,8 @@ class CategoryCard extends StatelessWidget {
                 const SizedBox(height: AppSizes.px4),
                 Text(
                   countLabel ?? S.productsCount(category.productCount),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(color: muted),
                 ),
               ],
@@ -267,7 +285,6 @@ class _CategoryCardFooter extends StatelessWidget {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
     final border = dark ? AppColor.darkBorder : AppColor.recordBorder;
-    final textColor = dark ? AppColor.darkTextSecondary : AppColor.recordText;
     final muted = dark ? AppColor.darkTextSecondary : AppColor.greyColor;
     final activeColor = dark ? AppColor.secondaryColor : AppColor.primaryColor;
 
@@ -278,95 +295,95 @@ class _CategoryCardFooter extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: InkWell(
+            child: _FooterAction(
+              icon: AppIcons.edit01,
+              label: S.edit,
+              color: dark ? AppColor.darkTextSecondary : AppColor.recordText,
               onTap: onEdit,
-              child: SizedBox(
-                height: AppDimensions.recordFooterHeight,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(AppIcons.edit01, size: 14, color: textColor),
-                    const SizedBox(width: AppSizes.px6),
-                    Text(
-                      S.edit,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: textColor,
-                        fontSize: AppFontSizes.size12,
-                        fontWeight: AppFontWeights.medium,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                border: BorderDirectional(start: BorderSide(color: border)),
-              ),
-              child: InkWell(
-                onTap: onToggleActive,
-                child: SizedBox(
-                  height: AppDimensions.recordFooterHeight,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        isActive
-                            ? AppIcons.checkmarkCircle01
-                            : AppIcons.cancelCircle,
-                        size: 14,
-                        color: onToggleActive == null ? muted : activeColor,
-                      ),
-                      const SizedBox(width: AppSizes.px6),
-                      Text(
-                        isActive ? S.active : S.inactive,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: onToggleActive == null ? muted : activeColor,
-                          fontSize: AppFontSizes.size12,
-                          fontWeight: AppFontWeights.medium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: _FooterAction(
+              divider: border,
+              icon: isActive
+                  ? AppIcons.checkmarkCircle01
+                  : AppIcons.cancelCircle,
+              label: isActive ? S.active : S.inactive,
+              color: onToggleActive == null ? muted : activeColor,
+              onTap: onToggleActive,
             ),
           ),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                border: BorderDirectional(start: BorderSide(color: border)),
-              ),
-              child: InkWell(
-                onTap: onDelete,
-                child: SizedBox(
-                  height: AppDimensions.recordFooterHeight,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        AppIcons.delete01,
-                        size: 14,
-                        color: AppColor.errorColor,
-                      ),
-                      const SizedBox(width: AppSizes.px6),
-                      Text(
-                        S.delete,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColor.errorColor,
-                          fontSize: AppFontSizes.size12,
-                          fontWeight: AppFontWeights.medium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+            child: _FooterAction(
+              divider: border,
+              icon: AppIcons.delete01,
+              label: S.delete,
+              color: AppColor.errorColor,
+              onTap: onDelete,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// خلية فعل في ذيل البطاقة: أيقونة وسطر واحد.
+///
+/// البطاقة تتقلّص مع الشبكة إلى عرضٍ لا يسع ثلاثة أفعال، وحين يكبّر الأدمن
+/// الخط تطول التسمية أكثر من خليتها، فتنكسر البطاقة بفيضانٍ أفقي. التصغير
+/// عند الضرورة وحدها يبقي الأزرار الثلاثة مرئية على أي عرض بدل أن يقطع
+/// «غير نشط» أو يدفع الزرّ خلف حافة البطاقة.
+class _FooterAction extends StatelessWidget {
+  const _FooterAction({
+    required this.icon,
+    required this.label,
+    required this.color,
+    this.onTap,
+    this.divider,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback? onTap;
+
+  /// حدّ الخلية الذي يفصلها عن يساريها في اللاتجاهين.
+  final Color? divider;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        border: divider == null
+            ? null
+            : BorderDirectional(start: BorderSide(color: divider!)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        child: SizedBox(
+          height: AppDimensions.recordFooterHeight,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 14, color: color),
+                const SizedBox(width: AppSizes.px6),
+                Text(
+                  label,
+                  maxLines: 1,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: color,
+                    fontSize: AppFontSizes.size12,
+                    fontWeight: AppFontWeights.medium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

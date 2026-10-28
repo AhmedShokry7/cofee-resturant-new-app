@@ -142,6 +142,7 @@ class CategoryExcelController {
   Future<bool> exportFile(Iterable<AdminCategory> categories) async {
     if (exporting) return false;
     exporting = true;
+    lastError = null;
     onProgress(0.0);
     try {
       onProgress(0.3);
@@ -166,6 +167,9 @@ class CategoryExcelController {
       onProgress(1.0);
       await Future.delayed(const Duration(milliseconds: 300));
       return true;
+    } catch (error) {
+      lastError = '${S.exportExcel}: $error';
+      return false;
     } finally {
       exporting = false;
       onProgress(null);

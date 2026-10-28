@@ -16,6 +16,10 @@ import 'package:admin_app/shared/widgets/currency_icon.dart';
 class OrderTableRow extends StatelessWidget {
   const OrderTableRow({super.key, required this.order, this.onTap});
 
+  /// ارتفاع الصف: ثابت لا يحكمه المحتوى، فبه تُقاس المساحة التي يعبّيها
+  /// الجدول قبل أن يُقرر كم طلبًا يُطبع في الصفحة.
+  static const double extent = 56;
+
   final AdminOrder order;
   final VoidCallback? onTap;
 
@@ -26,14 +30,14 @@ class OrderTableRow extends StatelessWidget {
     final subtle = dark ? AppColor.darkTextSecondary : AppColor.adminSubtle;
     final date = dark ? AppColor.darkTextSecondary : AppColor.adminDate;
     final rtl = Directionality.of(context) == TextDirection.rtl;
-    final contact = _contactLine(order);
+    final contact = orderContactLine(order);
 
     return Material(
       color: AppColor.transparent,
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 56,
+          height: extent,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           decoration: BoxDecoration(
             border: Border(
@@ -180,11 +184,4 @@ class OrderTableRow extends StatelessWidget {
     final name = item.productNameFor(AppLocale.instance.language);
     return item.quantity > 1 ? '$name × ${orderCount(item.quantity)}' : name;
   }
-}
-
-String? _contactLine(AdminOrder order) {
-  final email = order.customerEmail?.trim() ?? '';
-  if (email.isNotEmpty) return email;
-  final phone = order.customerPhone?.trim() ?? '';
-  return phone.isEmpty ? null : phone;
 }

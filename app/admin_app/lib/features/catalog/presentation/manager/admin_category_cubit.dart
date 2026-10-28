@@ -203,6 +203,12 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
     String? imageUrl,
   ) async {
     await _updateCategoryImage(categoryId, imageUrl);
+    _showImage(categoryId, imageUrl);
+    return imageUrl;
+  }
+
+  /// Puts the picture of a category into the list the admin sees.
+  void _showImage(String categoryId, String? imageUrl) {
     emit(
       state.copyWith(
         categories: state.categories
@@ -218,7 +224,6 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
         clearError: true,
       ),
     );
-    return imageUrl;
   }
 
   Future<String> uploadCategoryImage({
@@ -233,7 +238,9 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
       fileName: fileName,
       contentType: contentType,
     );
-    await updateCategoryImage(categoryId, url);
+    // The write of the row happened with the file: writing it a second time
+    // would send the same change to the database twice.
+    _showImage(categoryId, url);
     return url;
   }
 

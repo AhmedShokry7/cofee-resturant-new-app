@@ -9,11 +9,15 @@ import 'package:admin_app/features/orders/presentation/widgets/order_table.dart'
 class OrderTableHeader extends StatelessWidget {
   const OrderTableHeader({super.key});
 
+  /// ارتفاع الرأس: يُخصم من مساحة الجدول كصفٍ لا يتكرر، فبقيّة المساحة هي
+  /// ما يُقسم على ارتفاع الصف الواحد.
+  static const double extent = 38;
+
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      height: 38,
+      height: extent,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       decoration: BoxDecoration(
         color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,

@@ -1,10 +1,11 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/services/admin_image_picker.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 
@@ -141,23 +142,20 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
     }
 
     try {
-      final picked = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 90,
-      );
+      final picked = await pickAdminImage();
       if (picked == null) return;
-      final bytes = await picked.readAsBytes();
-      await _apply(
-        ProductImageSource.file(
-          bytes,
-          picked.name,
-          picked.mimeType ?? 'image/jpeg',
-        ),
-      );
+      await _apply(picked);
     } catch (error) {
       if (!mounted) return;
-      _showMessage('${S.imageCouldNotBeOpened}: $error', isError: true);
+      _showMessage(_messageFor(error), isError: true);
     }
+  }
+
+  /// Why the picture did not reach the panel: the reason of the picture
+  /// itself is shown alone, anything else is named as a failure to open it.
+  String _messageFor(Object error) {
+    if (error is AdminProductException) return error.message;
+    return '${S.imageCouldNotBeOpened}: $error';
   }
 
   Future<void> _askForLink() async {
@@ -205,7 +203,12 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
         _busy = false;
         _phaseText = null;
       });
-      _showMessage('${S.imageActionFailed}: $error', isError: true);
+      _showMessage(
+        error is AdminProductException
+            ? error.message
+            : '${S.imageActionFailed}: $error',
+        isError: true,
+      );
     }
   }
 

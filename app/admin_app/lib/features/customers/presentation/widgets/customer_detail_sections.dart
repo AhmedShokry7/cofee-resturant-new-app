@@ -776,7 +776,7 @@ class _CustomerOrderCard extends StatelessWidget {
       arabicKey: 'branch_name_ar',
       englishKey: 'branch_name_en',
     );
-    final fulfillment = _fulfillmentLabel(
+    final fulfillment = fulfillmentLabel(
       '${order['fulfillment_type'] ?? ''}'.trim(),
     );
     final placedAt = _parseDate(order['placed_at']);
@@ -1122,9 +1122,3 @@ String _localizedValue(
   }
   return english.isNotEmpty ? english : arabic;
 }
-
-String _fulfillmentLabel(String value) => switch (value) {
-  'delivery' => S.delivery,
-  'pickup' => S.pickup,
-  _ => value,
-};

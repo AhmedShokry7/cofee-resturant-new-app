@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_filtering.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_status_tab.dart';
 
 class OrderStatusTabs extends StatelessWidget {
@@ -38,7 +39,7 @@ class OrderStatusTabs extends StatelessWidget {
           final (code, label) = tabs[index];
           final isSelected = value == code;
 
-          final count = _count(code);
+          final count = filterOrders(orders, status: code).length;
           return OrderStatusTab(
             code: code,
             label: label,
@@ -50,22 +51,4 @@ class OrderStatusTabs extends StatelessWidget {
       ),
     );
   }
-
-  int _count(String code) => switch (code) {
-    '' => orders.length,
-    'processing' =>
-      orders
-          .where(
-            (order) => const {
-              'pending',
-              'confirmed',
-              'preparing',
-              'ready',
-            }.contains(order.status),
-          )
-          .length,
-    'shipped' =>
-      orders.where((order) => order.status == 'out_for_delivery').length,
-    _ => orders.where((order) => order.status == code).length,
-  };
 }

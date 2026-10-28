@@ -14,20 +14,23 @@ class OrderItemRemoveButton extends StatelessWidget {
     required this.order,
     required this.item,
     required this.onRemove,
+    this.canRemove = true,
   });
 
   final AdminOrder order;
   final AdminOrderItem item;
   final ValueChanged<String> onRemove;
 
+  /// False for a role that may read the line but not delete it.
+  final bool canRemove;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final editable = OrderEditRules.canEditItems(order);
-    final allowed = OrderEditRules.canRemoveItem(
-      order,
-      hasItemId: item.id != null,
-    );
+    final editable = canRemove && OrderEditRules.canEditItems(order);
+    final allowed =
+        canRemove &&
+        OrderEditRules.canRemoveItem(order, hasItemId: item.id != null);
     final label = !editable
         ? S.orderCannotBeEdited
         : item.id == null

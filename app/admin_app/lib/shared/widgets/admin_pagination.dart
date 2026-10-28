@@ -19,7 +19,7 @@ class AdminPagination extends StatelessWidget {
     required this.count,
     required this.labelBuilder,
     required this.onChanged,
-    this.pageSize = 5,
+    required this.pageSize,
   });
 
   final int page;
@@ -28,6 +28,12 @@ class AdminPagination extends StatelessWidget {
   final int pageSize;
   final String Function(int from, int to, int count) labelBuilder;
   final ValueChanged<int> onChanged;
+
+  /// ارتفاع التذييل كاملًا: حشوه العلوي زائد مربّع الأزرار الذي يطول سطره.
+  ///
+  /// من يعبّ جدولًا بمساحة شاشته يخصم هذا الرقم قبل أن يحكم كم صفًا يدخل،
+  /// وإلا نزلت الصفوف خلف التذييل بدل أن تنتهي قبله.
+  static const double extent = AppSpacing.lg + AppSizes.px28;
 
   @override
   Widget build(BuildContext context) {

@@ -77,6 +77,19 @@ class AdminKitchenRepository implements KitchenRepository {
     );
   }
 
+  @override
+  Future<void> markTicketsViewed(List<String> ticketIds) async {
+    if (ticketIds.isEmpty) return;
+    try {
+      await _supabase.rpc(
+        'admin_mark_kitchen_tickets_viewed',
+        params: {'p_ticket_ids': ticketIds},
+      );
+    } catch (_) {
+      // السبورة لا تتعطل بسبب وسم القراءة؛ العداد يُصحَّح عند أول قراءة تالية.
+    }
+  }
+
   Future<KitchenMutationOutcome> _mutate(
     String rpc, {
     required Map<String, Object?> params,

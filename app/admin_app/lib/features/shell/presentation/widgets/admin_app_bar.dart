@@ -37,12 +37,16 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => Size.fromHeight(
-    isCompact ? _toolbarHeight + _compactSearchHeight : _toolbarHeight,
+    isCompact && searchHint.isNotEmpty
+        ? _toolbarHeight + _compactSearchHeight
+        : _toolbarHeight,
   );
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    // حساب لا يملك قسمًا لا يصلح معه مربع بحث لا يصفّي شيئًا.
+    final hasSearch = searchHint.isNotEmpty;
     final background =
         theme.appBarTheme.backgroundColor ?? theme.colorScheme.surface;
 
@@ -74,7 +78,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ),
                     ),
                   ),
-                  if (!isCompact) ...[
+                  if (!isCompact && hasSearch) ...[
                     const SizedBox(width: AppSpacing.lg),
                     SizedBox(
                       width: AppDimensions.searchFieldWidth,
@@ -93,7 +97,7 @@ class AdminAppBar extends StatelessWidget implements PreferredSizeWidget {
                 ],
               ),
             ),
-            if (isCompact)
+            if (isCompact && hasSearch)
               PreferredSize(
                 preferredSize: const Size.fromHeight(_compactSearchHeight),
                 child: Padding(

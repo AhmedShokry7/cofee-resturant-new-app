@@ -4,6 +4,12 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 
+/// The biggest picture file the bucket of the catalogue accepts.
+///
+/// The bucket itself refuses a bigger file, so the dashboard says so before it
+/// sends one: the admin gets the reason instead of a failure of the upload.
+const int adminImageMaxBytes = 5 * 1024 * 1024;
+
 /// The steps of writing a picture.
 ///
 /// The file is sent to the bucket first and the row of the picture is written

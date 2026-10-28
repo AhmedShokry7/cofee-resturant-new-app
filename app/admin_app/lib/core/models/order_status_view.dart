@@ -1,42 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/models/order_status_codes.dart';
 
 class OrderStatusView {
   const OrderStatusView(this.code, this.label, this.color);
   final String code;
   final String label;
   final Color color;
-  bool get isTerminal => code == 'completed' || code == 'cancelled';
+  bool get isTerminal => OrderStatusCodes.closed.contains(code);
 
-  static const allCodes = <String>[
-    'pending',
-    'confirmed',
-    'preparing',
-    'ready',
-    'out_for_delivery',
-    'completed',
-    'cancelled',
-  ];
+  static List<String> get allCodes => OrderStatusCodes.all;
 
   static OrderStatusView of(String code) {
     final labels = <String, String>{
-      'pending': S.statusPending,
-      'confirmed': S.statusConfirmed,
-      'preparing': S.statusPreparing,
-      'ready': S.statusReady,
-      'out_for_delivery': S.statusOutForDelivery,
-      'completed': S.statusCompleted,
-      'cancelled': S.statusCancelled,
+      OrderStatusCodes.pending: S.statusPending,
+      OrderStatusCodes.confirmed: S.statusConfirmed,
+      OrderStatusCodes.preparing: S.statusPreparing,
+      OrderStatusCodes.ready: S.statusReady,
+      OrderStatusCodes.outForDelivery: S.statusOutForDelivery,
+      OrderStatusCodes.completed: S.statusCompleted,
+      OrderStatusCodes.cancelled: S.statusCancelled,
     };
     final colors = <String, Color>{
-      'pending': AppColor.statusAmber,
-      'confirmed': AppColor.statusBlue,
-      'preparing': AppColor.statusOrange,
-      'ready': AppColor.statusViolet,
-      'out_for_delivery': AppColor.statusIndigo,
-      'completed': AppColor.primaryColor,
-      'cancelled': AppColor.errorColor,
+      OrderStatusCodes.pending: AppColor.statusAmber,
+      OrderStatusCodes.confirmed: AppColor.statusBlue,
+      OrderStatusCodes.preparing: AppColor.statusOrange,
+      OrderStatusCodes.ready: AppColor.statusViolet,
+      OrderStatusCodes.outForDelivery: AppColor.statusIndigo,
+      OrderStatusCodes.completed: AppColor.primaryColor,
+      OrderStatusCodes.cancelled: AppColor.errorColor,
     };
     return OrderStatusView(
       code,

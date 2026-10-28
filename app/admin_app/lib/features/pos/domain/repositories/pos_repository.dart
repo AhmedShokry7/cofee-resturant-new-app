@@ -80,6 +80,7 @@ enum PosShiftFailure {
   branchUnavailable,
   notFound,
   alreadyClosed,
+  insufficientDrawerCash,
   invalid,
   failed,
 }

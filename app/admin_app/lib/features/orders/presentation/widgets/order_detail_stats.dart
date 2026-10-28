@@ -5,7 +5,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
-import 'package:admin_app/features/orders/presentation/models/order_status.dart';
+import 'package:admin_app/core/models/order_status.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
 

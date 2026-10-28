@@ -113,4 +113,3 @@ class _Footer extends StatelessWidget {
     );
   }
 }
-

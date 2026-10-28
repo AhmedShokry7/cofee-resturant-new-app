@@ -56,9 +56,6 @@ class AdminProductRepository
     'image/webp',
   ];
 
-  /// The biggest picture the bucket accepts.
-  static const int maxProductImageBytes = 5 * 1024 * 1024;
-
   /// Reads one page of the catalogue.
   ///
   /// The page is cut out of the database, so the dashboard never asks for
@@ -695,7 +692,7 @@ class AdminProductRepository
     if (bytes.isEmpty) {
       throw AdminProductException(S.imageIsEmpty);
     }
-    if (bytes.length > maxProductImageBytes) {
+    if (bytes.length > adminImageMaxBytes) {
       throw AdminProductException(S.imageTooLarge);
     }
   }

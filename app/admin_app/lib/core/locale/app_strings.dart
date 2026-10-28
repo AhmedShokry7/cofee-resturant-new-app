@@ -74,6 +74,9 @@ class S {
   static String get orderActionFailed => _ar
       ? 'تعذر تحديث الطلب. حاول مرة أخرى.'
       : 'The order could not be updated. Please try again.';
+  static String get orderStatusClosed => _ar
+      ? 'لا توجد حالة تالية مسموحة لهذا الطلب.'
+      : 'No further status is allowed for this order.';
   static String get orderExportFailed => _ar
       ? 'تعذر تصدير الطلبات. حاول مرة أخرى.'
       : 'Orders could not be exported. Please try again.';
@@ -145,16 +148,137 @@ class S {
   static String get noOrdersYet =>
       _ar ? 'لا توجد طلبات بعد.' : 'No orders yet.';
   static String get refresh => _ar ? 'تحديث' : 'Refresh';
-  static String get totalOrdersToDate =>
-      _ar ? 'إجمالي الطلبات حتى الآن' : 'Total orders to date';
+  static String get dashboardAverageOrderValue =>
+      _ar ? 'متوسط قيمة الطلب' : 'Average order value';
+  static String dashboardYesterday(String value) =>
+      _ar ? 'أمس: $value' : 'yesterday: $value';
+
+  /// أساس النسبة الشهري مطبوعًا تحتها: شارة تقول «+١٨٪» بلا رقم تُقارَن به
+  /// تترك الأدمن يخمّن من أي نقطة قُيست.
+  static String dashboardLastMonth(String value) =>
+      _ar ? 'الشهر الماضي: $value' : 'last month: $value';
+
+  /// أساسٌ غير شهرين: عدّاد العملاء كله يُقارَن بما كان قبل الشهر الحالي، لا
+  /// بما كان فيه — واللفظ يقول ذلك بدل أن يوهم بمقارنة شهر بشهر.
+  static String dashboardBeforeThisMonth(String value) =>
+      _ar ? 'قبل هذا الشهر: $value' : 'before this month: $value';
+  static String get dashboardNewOrders =>
+      _ar ? 'الطلبات الجديدة' : 'New orders';
+  static String get dashboardTotalSales =>
+      _ar ? 'إجمالي المبيعات' : 'Total sales';
+
+  /// البلاطة التي لا أساس لها تُشرح بمن تُعَدّ منه، لا بنسبة لا وجود لها.
+  static String get dashboardAllCustomersCaption =>
+      _ar ? 'كل من سجّل في المتجر' : 'Everyone registered in the store';
+  static String get dashboardOpenWorkCaption =>
+      _ar ? 'لم تكتمل ولم تُلغَ' : 'Neither completed nor cancelled';
+  static String get dashboardNothingMatches => _ar
+      ? 'لا شيء في اللوحة يطابق البحث.'
+      : 'Nothing on the dashboard matches the search.';
+  static String get dashboardGreeting => _ar ? 'أهلًا بك' : 'Welcome back';
+  static String get dashboardWeeklyGrowth =>
+      _ar ? 'عن الأسبوع الماضي' : 'vs last week';
+  static String get dashboardTargetTitle =>
+      _ar ? 'هدف الشهر' : 'Monthly target';
+  static String get dashboardTargetEmpty =>
+      _ar ? 'لم يُحدَّد هدف لهذا الشهر بعد.' : 'No target for this month yet.';
+  static String get dashboardTargetEmptyHint => _ar
+      ? 'حدّد هدفًا ليظهر تقدّمك أمامك كل يوم.'
+      : 'Set one to follow your progress every day.';
+  static String get dashboardTargetSet => _ar ? 'تحديد الهدف' : 'Set target';
+  static String get dashboardTargetEdit => _ar ? 'تعديل الهدف' : 'Edit target';
+  static String get dashboardTargetReached =>
+      _ar ? 'تم بلوغ الهدف هذا الشهر.' : 'Target reached this month.';
+  static String get dashboardTargetField =>
+      _ar ? 'المبلغ المستهدف' : 'Target amount';
+  static String get dashboardTargetHint => '0';
+  static String get dashboardTargetInvalid =>
+      _ar ? 'أدخل مبلغًا أكبر من صفر.' : 'Enter an amount greater than zero.';
+  static String get dashboardTargetSaved =>
+      _ar ? 'حُفظ هدف الشهر.' : 'Monthly target saved.';
+  static String get dashboardRangeWeek => _ar ? '7 أيام' : '7 days';
+  static String get dashboardRangeMonth => _ar ? '30 يومًا' : '30 days';
+  static String get dashboardSalesEmpty =>
+      _ar ? 'لا مبيعات في هذه الفترة.' : 'No sales in this period.';
+  static String get dashboardChannelsEmpty =>
+      _ar ? 'لا طلبات في آخر 30 يومًا.' : 'No orders in the last 30 days.';
+  static String get dashboardVsLastMonth =>
+      _ar ? 'عن الشهر الماضي' : 'vs last month';
+  static String get dashboardAnonymousCustomer =>
+      _ar ? 'عميل غير مسجَّل' : 'Unregistered customer';
   static String get noDashboardMetrics => _ar
       ? 'دورك لا يتضمن مقاييس لوحة التحكم.'
       : 'Your role does not include dashboard metrics.';
   static String get couldNotLoadDashboard =>
       _ar ? 'تعذر تحميل لوحة التحكم' : 'Could not load dashboard';
   static String get tryAgain => _ar ? 'حاول مرة أخرى' : 'Try again';
-  static String get delivery => _ar ? 'توصيل' : 'Delivery';
-  static String get pickup => _ar ? 'استلام' : 'Pickup';
+
+  // ---------- Dashboard board ----------
+  /// الترحيب بوقت يومه: «صباح» و«مساء» كلمتان مختلفتان في اللغتين، فالاختيار
+  /// مكانه العرض حسب الساعة لا نصّ واحد يُطبع مساءً فيقول صباحًا.
+  static String dashboardMorningGreeting(String name) =>
+      _ar ? 'صباح الخير، $name' : 'Good morning, $name';
+  static String dashboardEveningGreeting(String name) =>
+      _ar ? 'مساء الخير، $name' : 'Good evening, $name';
+  static String dashboardGreetingCaption(String date) => _ar
+      ? 'إليك ملخص أداء متجرك اليوم، $date.'
+      : "Here is your store's performance today, $date.";
+  static String get dashboardGrowthHeadline =>
+      _ar ? 'متجرك ينمو بشكل جميل!' : 'Your store is growing nicely!';
+
+  /// الجملة تُبنى من قطعتين حول النسبة، لا من نصّ واحد: الرقم وحده يُلَوَّن،
+  /// فلو كانت الجملة سلسلة واحدة لكان لون النسبة كسرًا للنصّ أو حشوًا فيه.
+  static String get dashboardGrowthUp =>
+      _ar ? 'مبيعاتك ارتفعت' : 'Sales are up';
+  static String get dashboardGrowthKeepGoing => _ar
+      ? 'استمر، أنت على الطريق الصحيح.'
+      : 'Keep going — you are on the right track.';
+  static String get dashboardTargetCardTitle =>
+      _ar ? 'هدف هذا الشهر' : 'This month\u2019s target';
+  static String get dashboardTargetCardSubtitle =>
+      _ar ? 'خطوة بخطوة نحو هدفك' : 'One step at a time toward your goal';
+  static String get dashboardOfTarget => _ar ? 'من الهدف' : 'of target';
+  static String get dashboardCurrentSales =>
+      _ar ? 'المبيعات الحالية' : 'Current sales';
+  static String dashboardTargetGap(String amount) =>
+      _ar ? 'تبقّى $amount لبلوغ هدفك!' : '$amount left to reach your target!';
+  static String get dashboardSalesOverviewTitle =>
+      _ar ? 'نظرة على المبيعات' : 'Sales overview';
+  static String get dashboardSalesOverviewSubtitle => _ar
+      ? 'تابع أداء متجرك خلال الفترة المحددة'
+      : 'Follow your store across the selected period';
+  static String get dashboardVsPreviousPeriod =>
+      _ar ? 'مقارنة بالفترة السابقة' : 'vs the previous period';
+  static String get dashboardSalesLegend => _ar ? 'المبيعات' : 'Sales';
+  static String get dashboardSetupTitle =>
+      _ar ? 'خطوات البداية' : 'Getting started';
+  static String get dashboardSetupSubtitle =>
+      _ar ? 'جهّز متجرك بخطوات بسيطة' : 'Prepare your store in simple steps';
+  static String get dashboardSetupDone => _ar ? 'اكتمل' : 'Done';
+  static String get dashboardSetupFirstProduct =>
+      _ar ? 'أضف أول منتج' : 'Add your first product';
+  static String get dashboardSetupBranchImage =>
+      _ar ? 'أضف صورة للفرع' : 'Add a branch photo';
+  static String get dashboardSetupRevenueTarget =>
+      _ar ? 'حدّد هدف الشهر' : 'Set the monthly target';
+  static String get dashboardSetupFirstOrder =>
+      _ar ? 'استقبل أول طلب' : 'Receive your first order';
+  static String get dashboardRecentOrdersSubtitle =>
+      _ar ? 'تابع حالة الطلبات الأخيرة' : 'Follow the latest order states';
+  static String get dashboardViewAllOrders =>
+      _ar ? 'عرض كل الطلبات' : 'View all orders';
+  static String get dashboardViewAllProducts =>
+      _ar ? 'كل المنتجات' : 'All products';
+  static String get dashboardChannelsTitle =>
+      _ar ? 'قنوات البيع' : 'Sales channels';
+  static String get dashboardChannelsSubtitle =>
+      _ar ? 'مبيعاتك حسب القناة' : 'Your sales by channel';
+  static String get dashboardBestSellersTitle =>
+      _ar ? 'المنتجات الأكثر مبيعًا' : 'Best selling products';
+  static String get dashboardBestSellersSubtitle =>
+      _ar ? 'أفضل المنتجات أداءً هذا الأسبوع' : 'Top performers this week';
+  static String dashboardPiecesSold(int count) =>
+      _ar ? '$count قطعة مباعة' : '$count sold';
 
   // ---------- Coming soon ----------
   static String get comingSoon => _ar ? 'قريبًا' : 'Coming soon';
@@ -195,6 +319,13 @@ class S {
   static String get manageBrandSubtitle => _ar
       ? 'أدر الطلبات والقائمة والفروع والموظفين في مكان واحد.'
       : 'Manage orders, catalog, branches and staff in one place.';
+
+  // ---------- Account with no accessible area ----------
+  static String get noAccessTitle =>
+      _ar ? 'حساب بلا صلاحيات' : 'Account with no permissions';
+  static String get noAccessMessage => _ar
+      ? 'لا يوجد قسم مسموح لهذا الحساب. اطلب من المالك إسناد صلاحية إلى دورك.'
+      : 'This account may not open any area. Ask the owner to give your role a permission.';
 
   // ---------- Sign out dialog ----------
   static String get signOutTitle => _ar ? 'تسجيل الخروج' : 'Sign out';
@@ -2884,7 +3015,6 @@ class S {
       _ar ? 'متوسط التحضير $minutes د' : 'Average prep ${minutes}m';
   static String get kitchenSourceOnline => _ar ? 'أونلاين' : 'Online';
   static String get kitchenSourcePos => _ar ? 'نقطة البيع' : 'POS';
-  static String get kitchenDineIn => _ar ? 'داخل الفرع' : 'Dine in';
   static String kitchenTable(String number) =>
       _ar ? 'طاولة $number' : 'Table $number';
   static String get kitchenWalkIn => _ar ? 'عميل مباشر' : 'Walk-in';
@@ -3648,6 +3778,9 @@ class S {
       _ar ? 'وردية الكاشير غير موجودة.' : 'The cashier shift was not found.';
   static String get posShiftAlreadyClosed =>
       _ar ? 'الوردية مقفلة بالفعل.' : 'The shift is already closed.';
+  static String get posShiftInsufficientDrawerCash => _ar
+      ? 'لا يمكن سحب نقد أكثر من المتاح في الدرج.'
+      : 'You cannot withdraw more cash than the drawer holds.';
   static String get posShiftInvalid => _ar
       ? 'تحقق من بيانات الوردية وحاول مرة أخرى.'
       : 'Check the shift details and try again.';
@@ -3995,6 +4128,7 @@ class S {
   static String get freeDeliveryMinimum =>
       _ar ? 'الحد الأدنى للتوصيل المجاني' : 'Minimum for free delivery';
   static String get fulfillmentDelivery => _ar ? 'توصيل' : 'Delivery';
+  static String get fulfillmentDineIn => _ar ? 'داخل الفرع' : 'Dine in';
   static String get fulfillmentFilter => _ar ? 'نوع الطلب' : 'Order type';
   static String get fulfillmentInfoTitle =>
       _ar ? 'طريقة الاستلام' : 'Fulfillment';
@@ -4244,6 +4378,9 @@ class S {
       _ar ? 'الاسم بالعربية مطلوب.' : 'Name (Arabic) is required.';
   static String get excelEnglishNameRequired =>
       _ar ? 'الاسم بالإنجليزية مطلوب.' : 'Name (English) is required.';
+  static String get excelFile => _ar ? 'ملف Excel' : 'Excel file';
+  static String get excelImport => _ar ? 'استيراد' : 'Import';
+  static String get excelExport => _ar ? 'تصدير' : 'Export';
   static String get excelBasePriceRequired =>
       _ar ? 'السعر الأساسي مطلوب.' : 'Base Price is required.';
   static String get excelBasePriceNegative => _ar

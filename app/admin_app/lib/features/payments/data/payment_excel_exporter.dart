@@ -1,8 +1,6 @@
-import 'package:file_picker/file_picker.dart';
-
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/services/excel_report_saver.dart';
 import 'package:admin_app/core/utils/formatters.dart';
-import 'package:admin_app/core/services/product_excel_service.dart';
 import 'package:admin_app/features/payments/data/models/admin_payment.dart';
 
 class PaymentExcelExporter {
@@ -40,14 +38,11 @@ class PaymentExcelExporter {
           payment.verifiedByServer ? S.yes : S.no,
         ],
     ];
-    final bytes = ProductExcelService.buildWorkbook(rows);
-    final date = DateTime.now().toIso8601String().split('T').first;
-    final path = await FilePicker.saveFile(
+    return ExcelReportSaver.save(
       dialogTitle: S.paymentsExport,
-      fileName: 'payments-$date.xlsx',
-      bytes: bytes,
+      baseName: 'payments',
+      rows: rows,
     );
-    return path != null;
   }
 
   static String _card(AdminPayment payment) {

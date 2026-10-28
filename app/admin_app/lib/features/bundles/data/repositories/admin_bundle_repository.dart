@@ -147,7 +147,7 @@ class AdminBundleRepository implements BundleRepository {
     void Function(AdminImageUploadPhase phase)? onPhase,
   }) async {
     if (bytes.isEmpty) throw Exception(S.imageIsEmpty);
-    if (bytes.length > 5 * 1024 * 1024) {
+    if (bytes.length > adminImageMaxBytes) {
       throw Exception(S.imageTooLarge);
     }
 
