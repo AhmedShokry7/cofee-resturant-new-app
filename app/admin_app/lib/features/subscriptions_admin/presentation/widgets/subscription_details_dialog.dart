@@ -16,6 +16,7 @@ import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 Future<void> showSubscriptionDetailsDialog({
   required BuildContext context,
@@ -609,6 +610,7 @@ class _PlanSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final code = subscription.planCode?.trim() ?? '';
+    final price = subscriptionPrice(subscription);
     return AdminSectionCard(
       title: S.subscriptionsPlanSection,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -625,7 +627,8 @@ class _PlanSection extends StatelessWidget {
           ),
           _InfoRow(
             label: S.subscriptionsPlanPrice,
-            value: subscriptionPrice(subscription),
+            value: price ?? '—',
+            isMoney: price != null,
           ),
           _InfoRow(
             label: S.subscriptionsPlanDurationLabel,
@@ -638,6 +641,7 @@ class _PlanSection extends StatelessWidget {
           _InfoRow(
             label: S.subscriptionsBonusBalance,
             value: subscriptionBonusBalance(subscription),
+            isMoney: true,
           ),
           _InfoRow(
             label: S.subscriptionsBonusUntil,
@@ -694,10 +698,17 @@ class _PeriodSection extends StatelessWidget {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.isMoney = false,
+  });
 
   final String label;
   final String value;
+
+  /// True when [value] is an amount, so the currency mark sits beside it.
+  final bool isMoney;
 
   @override
   Widget build(BuildContext context) {
@@ -723,17 +734,28 @@ class _InfoRow extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             flex: 6,
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: adminBodyColor(theme),
-                fontSize: AppFontSizes.size11,
-                fontWeight: AppFontWeights.semiBold,
-                height: AppTextHeights.line1_5,
-              ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: Text(
+                    value,
+                    textAlign: TextAlign.end,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: adminBodyColor(theme),
+                      fontSize: AppFontSizes.size11,
+                      fontWeight: AppFontWeights.semiBold,
+                      height: AppTextHeights.line1_5,
+                    ),
+                  ),
+                ),
+                if (isMoney) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  const CurrencyIcon(size: 12),
+                ],
+              ],
             ),
           ),
         ],

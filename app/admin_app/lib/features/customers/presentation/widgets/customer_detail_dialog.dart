@@ -22,6 +22,7 @@ Future<void> showCustomerDetailDialog({
   required BuildContext context,
   required AdminCustomerCubit cubit,
   required AdminCustomer customer,
+  required bool canManage,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
   Map<String, dynamic> details;
@@ -40,6 +41,7 @@ Future<void> showCustomerDetailDialog({
     builder: (context) => CustomerDetailDialog(
       customer: customer,
       details: details,
+      canManage: canManage,
       onSave:
           ({
             required bool isVip,
@@ -58,17 +60,22 @@ Future<void> showCustomerDetailDialog({
   );
 }
 
-/// The detail view of a customer: profile, flags, notes and its history.
+/// The detail view of the customer: profile, flags, notes and its history.
+///
+/// `canManage` يعكس customers.write لا customers.read: 211 صار يرفض الكتابة
+/// بلا الصلاحية، فالزر الذي لا يملك صاحية الكتابة لا يعرض له أصلًا.
 class CustomerDetailDialog extends StatefulWidget {
   const CustomerDetailDialog({
     super.key,
     required this.customer,
     required this.details,
+    required this.canManage,
     required this.onSave,
   });
 
   final AdminCustomer customer;
   final Map<String, dynamic> details;
+  final bool canManage;
   final Future<void> Function({
     required bool isVip,
     required bool isBlacklisted,
@@ -188,7 +195,7 @@ class _CustomerDetailDialogState extends State<CustomerDetailDialog> {
                       isVip: _isVip,
                       isBlacklisted: _isBlacklisted,
                       notesController: _notesController,
-                      enabled: !_saving,
+                      enabled: !_saving && widget.canManage,
                       onVipChanged: (value) => setState(() => _isVip = value),
                       onBlacklistChanged: (value) =>
                           setState(() => _isBlacklisted = value),
@@ -226,7 +233,11 @@ class _CustomerDetailDialogState extends State<CustomerDetailDialog> {
                 ),
               ),
             ),
-            _DialogFooter(saving: _saving, onClose: _close, onSave: _save),
+            _DialogFooter(
+              saving: _saving,
+              onClose: _close,
+              onSave: widget.canManage ? _save : null,
+            ),
           ],
         ),
       ),

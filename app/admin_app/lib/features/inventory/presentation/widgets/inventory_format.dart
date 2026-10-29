@@ -134,7 +134,9 @@ String inventoryDelta(num value, String unit) {
       '${inventoryUnitLabel(unit)}';
 }
 
-String inventoryMoney(num value) => formatMoneyWithCurrency(value);
+/// A grouped amount without the currency word, e.g. `1,234.50`. The riyal
+/// mark rides next to it as a `CurrencyIcon`, like every other price.
+String inventoryMoney(num value) => localizeDigits(formatAmount(value));
 
 String inventoryDateLabel(DateTime? value) =>
     value == null ? '—' : localizedDate(value);
@@ -207,8 +209,8 @@ String movementErrorMessage(InventoryMovementOutcome outcome) =>
       InventoryMovementOutcome.success => '',
       InventoryMovementOutcome.materialNotFound => S.movementMaterialNotFound,
       InventoryMovementOutcome.invalidBranch => S.movementInvalidBranch,
-      InventoryMovementOutcome.invalidType => S.materialSaveInvalidUnit,
-      InventoryMovementOutcome.invalidQuantity => S.movementNeedsQuantity,
+      InventoryMovementOutcome.invalidType => S.movementInvalidType,
+      InventoryMovementOutcome.invalidQuantity => S.needsPositiveQuantity,
       InventoryMovementOutcome.invalidCost => S.movementInvalidCost,
       InventoryMovementOutcome.insufficientStock => S.movementInsufficientStock,
       InventoryMovementOutcome.noChange => S.movementNoChange,

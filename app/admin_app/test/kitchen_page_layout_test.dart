@@ -449,6 +449,38 @@ void main() {
       );
     });
 
+    testWidgets('a handed-off ticket keeps its lines read-only', (
+      tester,
+    ) async {
+      // 174 يرفض تبديل سطر في تذكرة completed أو cancelled بـ invalid_status،
+      // فالسطر هناك يُعرض ولا يُنقر، مع بقاء زر الاستدعاء في التذييل.
+      _setViewport(tester, 1500, 1000);
+
+      await _pump(
+        tester,
+        _KitchenHarness(
+          tickets: <AdminKitchenTicket>[
+            _ticket(
+              't4',
+              KitchenTicketStatus.completed,
+              readyCount: 1,
+              completedAt: DateTime.utc(2026, 10, 24, 9, 5),
+            ),
+          ],
+          metrics: _metrics,
+          now: _now,
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Flat white'), findsOneWidget);
+      expect(find.byKey(const Key('kitchen-recall-t4')), findsOneWidget);
+      expect(
+        find.byKey(const Key('kitchen-item-toggle-item-t4')),
+        findsNothing,
+      );
+    });
+
     testWidgets('the board renders Arabic RTL in dark mode', (tester) async {
       AppLocale.instance.debugSet(AppLanguage.arabic);
       _setViewport(tester, 1500, 1150);
@@ -577,7 +609,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('board failed'), findsOneWidget);
+      expect(find.text(S.kitchenLoadFailed), findsOneWidget);
+      expect(find.textContaining('board failed'), findsNothing);
       expect(find.text(S.retry), findsOneWidget);
       expect(find.text(S.kitchenColumnQueued), findsNothing);
 
@@ -591,7 +624,7 @@ void main() {
 
       expect(find.text(S.kitchen), findsOneWidget);
       expect(find.text('#1001'), findsOneWidget);
-      expect(find.textContaining('board failed'), findsNothing);
+      expect(find.text(S.kitchenLoadFailed), findsNothing);
     });
   });
 }

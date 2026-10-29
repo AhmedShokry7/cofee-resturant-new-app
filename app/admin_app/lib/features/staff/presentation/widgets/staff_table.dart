@@ -19,13 +19,15 @@ class StaffTable extends StatelessWidget {
     required this.staff,
     required this.canManagePermissions,
     required this.onManage,
+    required this.onEdit,
   });
 
   final List<AdminStaffMember> staff;
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
+  final ValueChanged<AdminStaffMember> onEdit;
 
-  static const _actionWidth = 44.0;
+  static const _actionWidth = 76.0;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -46,6 +48,7 @@ class StaffTable extends StatelessWidget {
                     member: member,
                     canManagePermissions: canManagePermissions,
                     onManage: () => onManage(member),
+                    onEdit: () => onEdit(member),
                   ),
               ],
             ),
@@ -101,11 +104,13 @@ class _Row extends StatelessWidget {
     required this.member,
     required this.canManagePermissions,
     required this.onManage,
+    required this.onEdit,
   });
 
   final AdminStaffMember member;
   final bool canManagePermissions;
   final VoidCallback onManage;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -222,12 +227,16 @@ class _Row extends StatelessWidget {
               ),
               SizedBox(
                 width: StaffTable._actionWidth,
-                child: Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: StaffPermissionAction(
-                    canManage: canManagePermissions,
-                    onPressed: onManage,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (canManagePermissions)
+                      StaffEditAction(onPressed: onEdit),
+                    StaffPermissionAction(
+                      canManage: canManagePermissions,
+                      onPressed: onManage,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -268,6 +277,32 @@ class StaffPermissionAction extends StatelessWidget {
         size: 16,
         color: canManage ? accent : adminMutedColor(theme),
       ),
+    );
+  }
+}
+
+/// يفتح بطاقة الموظف لتعديل الاسم والبريد والحالة والصورة.
+class StaffEditAction extends StatelessWidget {
+  const StaffEditAction({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = adminIsDark(theme)
+        ? AppColor.secondaryColor
+        : AppColor.adminAccent;
+    return IconButton(
+      tooltip: S.editStaffTitle,
+      onPressed: onPressed,
+      style: IconButton.styleFrom(
+        fixedSize: const Size(30, 30),
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+      ),
+      icon: AppIcon(AppIcons.edit01, size: 16, color: accent),
     );
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/error/failure.dart';
 import 'package:admin_app/core/result/result.dart';
 import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/invitation_accept_outcome.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:admin_app/features/auth/domain/usecases/check_session.dart';
 import 'package:admin_app/features/auth/domain/usecases/sign_in.dart';
@@ -56,6 +57,18 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> signOut() async {
     signOutCalls++;
   }
+
+  // البلوك لا يقرأ الدعوات ولا يقبلها، فالعقد هنا مكتفٍ بأن يترك الاختبارات تُكتب.
+  @override
+  Future<InvitationLookup> lookupInvitation(String token) async =>
+      InvitationLookup.refused(InvitationAcceptOutcome.unknown);
+
+  @override
+  Future<InvitationAcceptOutcome> acceptInvitation({
+    required String token,
+    required String email,
+    required String password,
+  }) async => InvitationAcceptOutcome.unknown;
 }
 
 AuthBloc _bloc(_FakeAuthRepository repository) => AuthBloc(

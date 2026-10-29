@@ -18,6 +18,7 @@ import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The point-of-sale workspace: the menu on one side and the live basket on
 /// the other, or a floating basket that opens in a sheet on narrow screens.
@@ -48,6 +49,10 @@ class PosPageBody extends StatelessWidget {
     required this.onCheckout,
     required this.onOpenCart,
     required this.onShiftPressed,
+    this.onCashReceivedChanged,
+    this.onHoldOrder,
+    this.onResumeHeldOrder,
+    this.onDiscardHeldOrder,
     this.inlineError,
     this.checkoutError,
   });
@@ -76,6 +81,10 @@ class PosPageBody extends StatelessWidget {
   final VoidCallback onCheckout;
   final VoidCallback onOpenCart;
   final VoidCallback onShiftPressed;
+  final ValueChanged<double>? onCashReceivedChanged;
+  final VoidCallback? onHoldOrder;
+  final ValueChanged<String>? onResumeHeldOrder;
+  final ValueChanged<String>? onDiscardHeldOrder;
   final String? inlineError;
 
   /// The reason the last checkout attempt was rejected.
@@ -89,7 +98,7 @@ class PosPageBody extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= _wideBreakpoint;
-          final showBar = !wide && !state.isCartEmpty;
+          final showBar = !wide && (!state.isCartEmpty || state.hasHeldOrders);
           final bottomInset = showBar ? 70.0 : 0.0;
           final cartWidth = (constraints.maxWidth * .3)
               .clamp(400.0, 480.0)
@@ -198,7 +207,6 @@ class PosPageBody extends StatelessWidget {
                     final product = visible[index];
                     return PosProductCard(
                       product: product,
-                      currencyCode: state.currencyCode,
                       inCart: state.quantityOf(product.id),
                       remaining: state.remainingFor(product),
                       onTap: () => onAddProduct(product),
@@ -226,6 +234,10 @@ class PosPageBody extends StatelessWidget {
       onPaymentModeChanged: onPaymentModeChanged,
       onSplitCashChanged: onSplitCashChanged,
       onSplitCardChanged: onSplitCardChanged,
+      onCashReceivedChanged: onCashReceivedChanged,
+      onHoldOrder: onHoldOrder,
+      onResumeHeldOrder: onResumeHeldOrder,
+      onDiscardHeldOrder: onDiscardHeldOrder,
       onCheckout: onCheckout,
       checkoutError: checkoutError,
     );
@@ -308,10 +320,13 @@ class _ShiftButton extends StatelessWidget {
     }
 
     final accent = adminFlagForeground(theme, AppColor.adminAccent);
-    final meta = <String>[
-      posMoney(shift.expectedCash, shift.currencyCode),
-      S.posShiftSince(posClock(shift.openedAt)),
-    ].join(' • ');
+    final muted = adminMutedColor(theme);
+    final metaStyle = TextStyle(
+      color: muted,
+      fontSize: AppFontSizes.size8_5,
+      fontWeight: AppFontWeights.semiBold,
+      height: AppTextHeights.line1_4,
+    );
 
     return Material(
       key: const Key('pos-shift-button'),
@@ -358,16 +373,28 @@ class _ShiftButton extends StatelessWidget {
                         height: AppTextHeights.line1_4,
                       ),
                     ),
-                    Text(
-                      meta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: adminMutedColor(theme),
-                        fontSize: AppFontSizes.size8_5,
-                        fontWeight: AppFontWeights.semiBold,
-                        height: AppTextHeights.line1_4,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            posAmount(shift.expectedCash),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: metaStyle,
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.px4),
+                        CurrencyIcon(size: 10, color: muted),
+                        Flexible(
+                          child: Text(
+                            ' • ${S.posShiftSince(posClock(shift.openedAt))}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: metaStyle,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -443,14 +470,24 @@ class _CartBar extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                Text(
-                  posMoney(summary.total, state.currencyCode),
-                  style: TextStyle(
-                    color: adminMutedColor(theme),
-                    fontSize: AppFontSizes.size10,
-                    fontWeight: AppFontWeights.semiBold,
-                    height: AppTextHeights.line1_4,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        posAmount(summary.total),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size10,
+                          fontWeight: AppFontWeights.semiBold,
+                          height: AppTextHeights.line1_4,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.px4),
+                    const CurrencyIcon(size: 12),
+                  ],
                 ),
               ],
             ),

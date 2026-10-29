@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
@@ -40,7 +41,10 @@ class AdminLoyaltyRepository implements LoyaltyRepository {
 
   @override
   Future<List<AdminLoyaltyMember>> loadMembers() async {
-    final response = await _supabase.rpc('admin_loyalty_members');
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc('admin_loyalty_members'),
+      client: _supabase,
+    );
     return _mapList(response, AdminLoyaltyMember.fromJson);
   }
 

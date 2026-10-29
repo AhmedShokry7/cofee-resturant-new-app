@@ -84,7 +84,7 @@ class ProductCardPriceRow extends StatelessWidget {
             hint: S.price,
             textInputType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩.]')),
             ],
           ),
         ),

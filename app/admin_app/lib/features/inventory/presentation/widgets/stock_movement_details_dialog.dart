@@ -12,6 +12,7 @@ import 'package:admin_app/features/inventory/presentation/widgets/inventory_form
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 Future<void> showStockMovementDetailsDialog({
   required BuildContext context,
@@ -221,11 +222,13 @@ class _StatsGrid extends StatelessWidget {
         icon: AppIcons.invoice01,
         label: S.stockMovementUnitCost,
         value: inventoryMoney(movement.unitCost),
+        isMoney: true,
       ),
       _DetailTile(
         icon: AppIcons.coins01,
         label: S.stockMovementValue,
         value: inventoryMoney(movement.movementValue),
+        isMoney: true,
       ),
     ];
     return LayoutBuilder(
@@ -249,16 +252,19 @@ class _DetailTile extends StatelessWidget {
     required this.label,
     required this.value,
     this.valueColor,
+    this.isMoney = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final Color? valueColor;
+  final bool isMoney;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final valueColor = this.valueColor ?? adminBodyColor(theme);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -283,16 +289,26 @@ class _DetailTile extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: valueColor ?? adminBodyColor(theme),
-                    fontSize: AppFontSizes.size11_5,
-                    fontWeight: AppFontWeights.bold,
-                    height: AppTextHeights.line1_5,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: valueColor,
+                          fontSize: AppFontSizes.size11_5,
+                          fontWeight: AppFontWeights.bold,
+                          height: AppTextHeights.line1_5,
+                        ),
+                      ),
+                    ),
+                    if (isMoney) ...[
+                      const SizedBox(width: AppSizes.px4),
+                      CurrencyIcon(size: 14, color: valueColor),
+                    ],
+                  ],
                 ),
               ],
             ),

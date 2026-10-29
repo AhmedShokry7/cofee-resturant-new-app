@@ -44,6 +44,10 @@ class OrderDetailController extends ChangeNotifier {
   /// الانتقالات المسموحة، أو `null` قبل قراءتها. انظر `AdminOrderCubit.loadStatusRules`.
   OrderStatusRules? get statusRules => cubit.state.statusRules;
   List<AdminProduct> products = const [];
+
+  /// فشل قراءة الكتالوج، لا غياب منتجات. بدونه يفتح منتقي المنتج ويقول «لا
+  /// توجد منتجات» بينما السبب عطل في القراءة.
+  bool productsFailed = false;
   double? branchLatitude, branchLongitude;
   int _selectionRevision = 0;
   bool _disposed = false;

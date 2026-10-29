@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 /// حقل مبلغ الهدف وسطر رفضه، في حشوة واحدة.
@@ -40,6 +41,7 @@ class DashboardTargetFields extends StatelessWidget {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textInputAction: TextInputAction.done,
             onFieldSubmitted: onSubmitted,
+            suffixIcon: const CurrencyIcon(size: 15),
             bottomPadding: AppSpacing.xs,
           ),
           if (error != null) AdminInlineError(message: error!),

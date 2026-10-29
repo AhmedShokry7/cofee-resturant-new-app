@@ -304,9 +304,10 @@ void main() {
       expect(repository.loadCalls, 1);
     });
 
-    test('a metrics failure keeps the branches with empty counters', () async {
+    test('a metrics failure keeps the last good numbers and says so', () async {
       final repository = _FakeBranchRepository(
         branches: [_branch(1)],
+        metrics: const AdminBranchMetrics(total: 3, orders30d: 128),
         failMetrics: true,
       );
       final cubit = AdminBranchCubit(repository: repository);
@@ -317,6 +318,17 @@ void main() {
       expect(cubit.state.status, AdminBranchStatus.ready);
       expect(cubit.state.branches, hasLength(1));
       expect(cubit.state.metrics.total, 0);
+      expect(cubit.state.errorMessage, S.branchesMetricsFailed);
+
+      repository.failMetrics = false;
+      await cubit.load();
+      expect(cubit.state.metrics.orders30d, 128);
+      expect(cubit.state.errorMessage, isNull);
+
+      repository.failMetrics = true;
+      await cubit.refresh();
+      expect(cubit.state.metrics.orders30d, 128);
+      expect(cubit.state.errorMessage, S.branchesMetricsFailed);
     });
 
     test(
@@ -644,7 +656,7 @@ class _FakeBranchRepository extends AdminBranchRepository {
 
   final List<AdminBranch> branches;
   final AdminBranchMetrics metrics;
-  final bool failMetrics;
+  bool failMetrics;
   BranchSaveOutcome saveOutcome = BranchSaveOutcome.saved;
   int loadCalls = 0;
 

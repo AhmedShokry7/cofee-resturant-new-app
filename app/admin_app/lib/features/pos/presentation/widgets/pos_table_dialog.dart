@@ -22,6 +22,7 @@ import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The table the cashier picked, and whether it came from seating a guest.
 class PosTableChoice {
@@ -283,7 +284,6 @@ class _PosTableDialogState extends State<_PosTableDialog> {
         children.add(
           _TableTile(
             table: table,
-            currencyCode: state.currencyCode,
             selected: table.id == state.selectedTableId,
             busy: state.isSeating,
             seating: _seatingId == table.id,
@@ -363,7 +363,6 @@ class _AreaHeader extends StatelessWidget {
 class _TableTile extends StatelessWidget {
   const _TableTile({
     required this.table,
-    required this.currencyCode,
     required this.selected,
     required this.busy,
     required this.seating,
@@ -372,7 +371,6 @@ class _TableTile extends StatelessWidget {
   });
 
   final DiningTable table;
-  final String currencyCode;
   final bool selected;
   final bool busy;
   final bool seating;
@@ -473,15 +471,41 @@ class _TableTile extends StatelessWidget {
                     ),
                     if (_contextLine(table) case final line?) ...[
                       const SizedBox(height: AppSizes.px2),
-                      Text(
-                        line,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: adminSubtleColor(theme),
-                          fontSize: AppFontSizes.size9,
-                          height: AppTextHeights.line1_45,
-                        ),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              line,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: adminSubtleColor(theme),
+                                fontSize: AppFontSizes.size9,
+                                height: AppTextHeights.line1_45,
+                              ),
+                            ),
+                          ),
+                          if (_contextAmount(table) case final amount?) ...[
+                            const SizedBox(width: AppSizes.px6),
+                            Flexible(
+                              child: Text(
+                                amount,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: adminSubtleColor(theme),
+                                  fontSize: AppFontSizes.size9,
+                                  height: AppTextHeights.line1_45,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.px4),
+                            CurrencyIcon(
+                              size: 10,
+                              color: adminSubtleColor(theme),
+                            ),
+                          ],
+                        ],
                       ),
                     ],
                   ],
@@ -545,10 +569,7 @@ class _TableTile extends StatelessWidget {
   String? _contextLine(DiningTable table) {
     final order = table.activeOrder;
     if (order != null) {
-      final total = order.grandTotal > 0
-          ? ' • ${posMoney(order.grandTotal, currencyCode)}'
-          : '';
-      return '${S.posTableOrderOpen(order.orderNumber)}$total';
+      return S.posTableOrderOpen(order.orderNumber);
     }
     final reservation = table.reservation;
     if (reservation != null) {
@@ -561,5 +582,12 @@ class _TableTile extends StatelessWidget {
       return S.tablesMetricAvailableHint;
     }
     return null;
+  }
+
+  /// The running total of the order on the table, shown against the mark.
+  String? _contextAmount(DiningTable table) {
+    final order = table.activeOrder;
+    if (order == null || order.grandTotal <= 0) return null;
+    return posAmount(order.grandTotal);
   }
 }

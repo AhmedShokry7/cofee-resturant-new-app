@@ -389,6 +389,10 @@ void main() {
       expect(find.text(S.posCustomerChoose), findsOneWidget);
       expect(find.text(S.posChooseTable), findsOneWidget);
       expect(find.text(S.posTableOptionalHint), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text(S.posCustomerChoose)).dy,
+        tester.getTopLeft(find.text(S.posChooseTable)).dy,
+      );
 
       expect(find.text(S.posOptionalBadge), findsOneWidget);
       expect(
@@ -537,5 +541,61 @@ void main() {
     expect(imageSize.width, cardSize.width);
     expect(imageSize.height, greaterThan(cardSize.height * .5));
     _expectNoException(tester);
+  });
+
+  testWidgets(
+    'the basket shows hold order next to confirm order and calculates cash change',
+    (tester) async {
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+      _setViewport(tester, 1500, 1100);
+
+      final state = _state(withCart: true).copyWith(cashReceived: 100);
+
+      await _pump(tester, state, direction: TextDirection.rtl);
+
+      _expectNoException(tester);
+      final holdButton = find.byKey(const Key('pos-hold-order'));
+      final checkoutButton = find.byKey(const Key('pos-checkout'));
+      expect(holdButton, findsOneWidget);
+      expect(checkoutButton, findsOneWidget);
+      expect(
+        tester.getTopLeft(holdButton).dy,
+        tester.getTopLeft(checkoutButton).dy,
+      );
+
+      expect(find.byKey(const Key('pos-cash-received')), findsOneWidget);
+      expect(find.text(S.posCashChangeLabel), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('pos-cash-change-value')))
+            .data,
+        contains(localizeDigits('30.00')),
+      );
+    },
+  );
+
+  testWidgets('held orders appear in the empty cart and can be resumed', (
+    tester,
+  ) async {
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    _setViewport(tester, 1500, 1100);
+
+    final held = PosHeldOrder(
+      id: 'hold-1',
+      number: 1,
+      heldAt: DateTime(2026, 10, 28, 12, 30),
+      cart: <PosCartLine>[PosCartLine(product: _products.first, quantity: 2)],
+      customer: _customer,
+      tableId: 't-1',
+      tableName: 'طاولة 7',
+    );
+    final state = _state().copyWith(heldOrders: <PosHeldOrder>[held]);
+
+    await _pump(tester, state, direction: TextDirection.rtl);
+
+    _expectNoException(tester);
+    expect(find.byKey(const Key('pos-held-orders-button')), findsOneWidget);
+    expect(find.byKey(const Key('pos-held-order-1')), findsOneWidget);
+    expect(find.byKey(const Key('pos-resume-held-1')), findsOneWidget);
   });
 }

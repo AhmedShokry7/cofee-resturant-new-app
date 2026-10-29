@@ -18,6 +18,7 @@ import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -39,6 +40,10 @@ class PosCartPanel extends StatefulWidget {
     required this.onSplitCashChanged,
     required this.onSplitCardChanged,
     required this.onCheckout,
+    this.onCashReceivedChanged,
+    this.onHoldOrder,
+    this.onResumeHeldOrder,
+    this.onDiscardHeldOrder,
     this.checkoutError,
   });
 
@@ -57,6 +62,10 @@ class PosCartPanel extends StatefulWidget {
   final ValueChanged<double> onSplitCashChanged;
   final ValueChanged<double> onSplitCardChanged;
   final VoidCallback onCheckout;
+  final ValueChanged<double>? onCashReceivedChanged;
+  final VoidCallback? onHoldOrder;
+  final ValueChanged<String>? onResumeHeldOrder;
+  final ValueChanged<String>? onDiscardHeldOrder;
 
   /// The reason the last checkout attempt was rejected, shown above the button.
   final String? checkoutError;
@@ -69,8 +78,10 @@ class _PosCartPanelState extends State<PosCartPanel> {
   late final TextEditingController _note;
   late final TextEditingController _splitCash;
   late final TextEditingController _splitCard;
+  late final TextEditingController _cashReceived;
   late final FocusNode _splitCashFocus;
   late final FocusNode _splitCardFocus;
+  late final FocusNode _cashReceivedFocus;
 
   PosState get _state => widget.state;
 
@@ -84,8 +95,12 @@ class _PosCartPanelState extends State<PosCartPanel> {
     _splitCard = TextEditingController(
       text: posMoneyInput(_state.splitCardAmount),
     );
+    _cashReceived = TextEditingController(
+      text: posMoneyInput(_state.cashReceivedAmount),
+    );
     _splitCashFocus = FocusNode()..addListener(_onSplitFocusChanged);
     _splitCardFocus = FocusNode()..addListener(_onSplitFocusChanged);
+    _cashReceivedFocus = FocusNode()..addListener(_onSplitFocusChanged);
   }
 
   @override
@@ -100,8 +115,10 @@ class _PosCartPanelState extends State<PosCartPanel> {
     _note.dispose();
     _splitCash.dispose();
     _splitCard.dispose();
+    _cashReceived.dispose();
     _splitCashFocus.dispose();
     _splitCardFocus.dispose();
+    _cashReceivedFocus.dispose();
     super.dispose();
   }
 
@@ -118,6 +135,11 @@ class _PosCartPanelState extends State<PosCartPanel> {
   void _syncSplitFields() {
     _syncSplitAmount(_splitCash, _splitCashFocus, _state.splitCashAmount);
     _syncSplitAmount(_splitCard, _splitCardFocus, _state.splitCardAmount);
+    _syncSplitAmount(
+      _cashReceived,
+      _cashReceivedFocus,
+      _state.cashReceivedAmount,
+    );
   }
 
   void _syncSplitAmount(
@@ -147,6 +169,38 @@ class _PosCartPanelState extends State<PosCartPanel> {
 
   void _onSplitCardChanged(String raw) {
     widget.onSplitCardChanged(posParseAmount(raw) ?? 0);
+  }
+
+  void _onCashReceivedChanged(String raw) {
+    widget.onCashReceivedChanged?.call(posParseAmount(raw) ?? 0);
+  }
+
+  void _onQuickCashSelected(double amount) {
+    _cashReceivedFocus.unfocus();
+    final text = posMoneyInput(amount);
+    _cashReceived.value = TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
+    );
+    widget.onCashReceivedChanged?.call(amount);
+  }
+
+  Future<void> _openHeldOrdersDialog() async {
+    if (!_state.hasHeldOrders || _state.isPlacingOrder) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => _HeldOrdersDialog(
+        state: _state,
+        onResume: (id) {
+          Navigator.of(dialogContext).pop();
+          widget.onResumeHeldOrder?.call(id);
+        },
+        onDiscard: (id) {
+          widget.onDiscardHeldOrder?.call(id);
+          Navigator.of(dialogContext).pop();
+        },
+      ),
+    );
   }
 
   Future<void> _confirmClear() async {
@@ -207,17 +261,29 @@ class _PosCartPanelState extends State<PosCartPanel> {
             children: [
               _CartHeader(
                 quantity: summary.quantity,
+                heldCount: _state.heldOrdersCount,
                 canClear: _state.cart.isNotEmpty && !_state.isPlacingOrder,
                 onClear: _confirmClear,
+                onOpenHeldOrders: _state.hasHeldOrders
+                    ? _openHeldOrdersDialog
+                    : null,
               ),
               Divider(height: 1, color: adminRowBorderColor(theme)),
               Expanded(
                 child: _state.cart.isEmpty
-                    ? AdminEmptyState(
-                        icon: AppIcons.shoppingBag01,
-                        message: S.posCartEmptyTitle,
-                        hint: S.posCartEmptyHint,
-                      )
+                    ? (_state.hasHeldOrders
+                          ? _HeldOrdersInlineList(
+                              state: _state,
+                              onResume: (id) =>
+                                  widget.onResumeHeldOrder?.call(id),
+                              onDiscard: (id) =>
+                                  widget.onDiscardHeldOrder?.call(id),
+                            )
+                          : AdminEmptyState(
+                              icon: AppIcons.shoppingBag01,
+                              message: S.posCartEmptyTitle,
+                              hint: S.posCartEmptyHint,
+                            ))
                     : ListView.separated(
                         key: const PageStorageKey<String>('pos-cart-lines'),
                         padding: const EdgeInsets.symmetric(
@@ -234,7 +300,6 @@ class _PosCartPanelState extends State<PosCartPanel> {
                           final remaining = _state.remainingFor(line.product);
                           return _CartLineTile(
                             line: line,
-                            currencyCode: _state.currencyCode,
                             busy: _state.isPlacingOrder,
                             canIncrease: remaining == null || remaining > 0,
                             onIncrease: () => widget.onIncrement(line.key),
@@ -262,23 +327,56 @@ class _PosCartPanelState extends State<PosCartPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _CartLabel(text: S.posCustomer),
-                        const SizedBox(height: AppSizes.px6),
-                        _CustomerCard(
-                          customer: _state.customer,
-                          enabled: !_state.isPlacingOrder,
-                          onChoose: widget.onChooseCustomer,
-                          onClear: widget.onClearCustomer,
-                        ),
-                        const SizedBox(height: AppSizes.px12),
-                        const _DineInHeader(),
-                        const SizedBox(height: AppSizes.px6),
-                        _TableCard(
-                          state: _state,
-                          enabled: !_state.isPlacingOrder,
-                          onChoose: widget.onChooseTable,
-                          onClear: widget.onClearTable,
-                          onRefresh: widget.onRefreshTables,
+                        SizedBox(
+                          width: 420,
+                          child: Wrap(
+                            spacing: AppSizes.px8,
+                            runSpacing: AppSizes.px8,
+                            children: [
+                              SizedBox(
+                                width: 180,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    SizedBox(
+                                      height: 24,
+                                      child: Align(
+                                        alignment:
+                                            AlignmentDirectional.centerStart,
+                                        child: _CartLabel(text: S.posCustomer),
+                                      ),
+                                    ),
+                                    const SizedBox(height: AppSizes.px6),
+                                    _CustomerCard(
+                                      customer: _state.customer,
+                                      enabled: !_state.isPlacingOrder,
+                                      onChoose: widget.onChooseCustomer,
+                                      onClear: widget.onClearCustomer,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(
+                                width: 180,
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    const _DineInHeader(),
+                                    const SizedBox(height: AppSizes.px6),
+                                    _TableCard(
+                                      state: _state,
+                                      enabled: !_state.isPlacingOrder,
+                                      onChoose: widget.onChooseTable,
+                                      onClear: widget.onClearTable,
+                                      onRefresh: widget.onRefreshTables,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         const SizedBox(height: AppSizes.px10),
                         TextField(
@@ -306,12 +404,16 @@ class _PosCartPanelState extends State<PosCartPanel> {
                           state: _state,
                           cashController: _splitCash,
                           cardController: _splitCard,
+                          cashReceivedController: _cashReceived,
                           cashFocus: _splitCashFocus,
                           cardFocus: _splitCardFocus,
+                          cashReceivedFocus: _cashReceivedFocus,
                           enabled: !_state.isPlacingOrder,
                           onModeChanged: widget.onPaymentModeChanged,
                           onSplitCashChanged: _onSplitCashChanged,
                           onSplitCardChanged: _onSplitCardChanged,
+                          onCashReceivedChanged: _onCashReceivedChanged,
+                          onQuickCashSelected: _onQuickCashSelected,
                         ),
                         const SizedBox(height: AppSizes.px12),
                         _Totals(state: _state, summary: summary),
@@ -328,10 +430,25 @@ class _PosCartPanelState extends State<PosCartPanel> {
                           ),
                         ],
                         const SizedBox(height: AppSizes.px10),
-                        _CheckoutButton(
-                          state: _state,
-                          summary: summary,
-                          onCheckout: widget.onCheckout,
+                        Row(
+                          children: [
+                            Expanded(
+                              flex: 2,
+                              child: _HoldOrderButton(
+                                canHold: _state.canHoldOrder,
+                                onHold: widget.onHoldOrder,
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.px8),
+                            Expanded(
+                              flex: 3,
+                              child: _CheckoutButton(
+                                state: _state,
+                                summary: summary,
+                                onCheckout: widget.onCheckout,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -350,7 +467,7 @@ InputDecoration _posFieldDecoration(
   BuildContext context, {
   required String label,
   required String hint,
-  String? suffixText,
+  Widget? suffixIcon,
 }) {
   final theme = Theme.of(context);
   final border = adminControlBorderColor(theme);
@@ -358,7 +475,7 @@ InputDecoration _posFieldDecoration(
   return InputDecoration(
     labelText: label,
     hintText: hint,
-    suffixText: suffixText,
+    suffixIcon: suffixIcon,
     counterText: '',
     isDense: true,
     labelStyle: TextStyle(
@@ -404,13 +521,17 @@ InputDecoration _posFieldDecoration(
 class _CartHeader extends StatelessWidget {
   const _CartHeader({
     required this.quantity,
+    required this.heldCount,
     required this.canClear,
     required this.onClear,
+    this.onOpenHeldOrders,
   });
 
   final int quantity;
+  final int heldCount;
   final bool canClear;
   final VoidCallback onClear;
+  final VoidCallback? onOpenHeldOrders;
 
   @override
   Widget build(BuildContext context) {
@@ -457,6 +578,53 @@ class _CartHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
+          if (heldCount > 0) ...[
+            Material(
+              key: const Key('pos-held-orders-button'),
+              color: adminFlagBackground(
+                theme,
+                AppColor.adminWarning,
+                AppColor.adminWarningSurface,
+              ),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: InkWell(
+                onTap: onOpenHeldOrders,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AppIcon(
+                        AppIcons.clock01,
+                        size: 13,
+                        color: adminFlagForeground(
+                          theme,
+                          AppColor.adminWarning,
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.px4),
+                      Text(
+                        localizeDigits(S.posHeldOrdersCount(heldCount)),
+                        style: TextStyle(
+                          color: adminFlagForeground(
+                            theme,
+                            AppColor.adminWarning,
+                          ),
+                          fontSize: AppFontSizes.size9,
+                          fontWeight: AppFontWeights.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.px4),
+          ],
           IconButton(
             tooltip: S.posClearCart,
             onPressed: canClear ? onClear : null,
@@ -482,7 +650,6 @@ class _CartHeader extends StatelessWidget {
 class _CartLineTile extends StatelessWidget {
   const _CartLineTile({
     required this.line,
-    required this.currencyCode,
     required this.busy,
     required this.canIncrease,
     required this.onIncrease,
@@ -491,7 +658,6 @@ class _CartLineTile extends StatelessWidget {
   });
 
   final PosCartLine line;
-  final String currencyCode;
   final bool busy;
   final bool canIncrease;
   final VoidCallback onIncrease;
@@ -529,8 +695,8 @@ class _CartLineTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSizes.px8),
-                  Text(
-                    posMoney(line.lineTotal, currencyCode),
+                  _MoneyValue(
+                    amount: line.lineTotal,
                     style: TextStyle(
                       color: adminHeadingColor(theme),
                       fontSize: AppFontSizes.size11_5,
@@ -577,12 +743,25 @@ class _CartLineTile extends StatelessWidget {
                     onIncrease: onIncrease,
                   ),
                   const SizedBox(width: AppSizes.px8),
-                  Text(
-                    '× ${posMoney(line.unitPrice, currencyCode)}',
-                    style: TextStyle(
-                      color: adminMutedColor(theme),
-                      fontSize: AppFontSizes.size9_5,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '×',
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size9_5,
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.px4),
+                      _MoneyValue(
+                        amount: line.unitPrice,
+                        style: TextStyle(
+                          color: adminMutedColor(theme),
+                          fontSize: AppFontSizes.size9_5,
+                        ),
+                      ),
+                    ],
                   ),
                   const Spacer(),
                   Tooltip(
@@ -761,11 +940,11 @@ class _CustomerCard extends StatelessWidget {
         children: [
           AdminAvatarImage(
             url: selected.avatarUrl,
-            size: 36,
+            size: 32,
             borderRadius: BorderRadius.circular(AppRadius.md),
             fallbackText: _initialsFor(selected.fullName),
           ),
-          const SizedBox(width: AppSizes.px10),
+          const SizedBox(width: AppSizes.px8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -882,7 +1061,7 @@ class _EmptyCustomerCard extends StatelessWidget {
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
+          padding: const EdgeInsets.all(AppSpacing.xs),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
@@ -892,8 +1071,8 @@ class _EmptyCustomerCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
@@ -901,20 +1080,22 @@ class _EmptyCustomerCard extends StatelessWidget {
                 ),
                 child: AppIcon(
                   AppIcons.userAdd01,
-                  size: 16,
+                  size: 14,
                   color: adminFlagForeground(theme, AppColor.adminAccent),
                 ),
               ),
-              const SizedBox(width: AppSizes.px10),
+              const SizedBox(width: AppSizes.px8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       S.posCustomerChoose,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: adminHeadingColor(theme),
-                        fontSize: AppFontSizes.size10_5,
+                        fontSize: AppFontSizes.size10,
                         fontWeight: AppFontWeights.bold,
                         height: AppTextHeights.line1_4,
                       ),
@@ -922,11 +1103,11 @@ class _EmptyCustomerCard extends StatelessWidget {
                     const SizedBox(height: AppSizes.px1),
                     Text(
                       S.posCustomerNoneHint,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: adminMutedColor(theme),
-                        fontSize: AppFontSizes.size8_5,
+                        fontSize: AppFontSizes.size8,
                         height: AppTextHeights.line1_4,
                       ),
                     ),
@@ -1010,21 +1191,27 @@ class _DineInHeader extends StatelessWidget {
             color: adminFlagForeground(theme, AppColor.adminAccent),
           ),
         ),
-        const SizedBox(width: AppSizes.px8),
-        Text(
-          S.posDineIn,
-          style: TextStyle(
-            color: adminHeadingColor(theme),
-            fontSize: AppFontSizes.size10,
-            fontWeight: AppFontWeights.bold,
+        const SizedBox(width: AppSizes.px6),
+        Expanded(
+          child: Text(
+            S.posDineIn,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: adminHeadingColor(theme),
+              fontSize: AppFontSizes.size10,
+              fontWeight: AppFontWeights.bold,
+            ),
           ),
         ),
-        const Spacer(),
+        const SizedBox(width: AppSizes.px4),
         Text(
           S.posOptionalBadge,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: adminMutedColor(theme),
-            fontSize: AppFontSizes.size8,
+            fontSize: AppFontSizes.size7_5,
             fontWeight: AppFontWeights.semiBold,
           ),
         ),
@@ -1054,7 +1241,6 @@ class _TableCard extends StatelessWidget {
     if (selected != null) {
       return _SelectedTableCard(
         table: selected,
-        currencyCode: state.currencyCode,
         enabled: enabled,
         onChange: onChoose,
         onClear: onClear,
@@ -1093,14 +1279,12 @@ class _TableCard extends StatelessWidget {
 class _SelectedTableCard extends StatelessWidget {
   const _SelectedTableCard({
     required this.table,
-    required this.currencyCode,
     required this.enabled,
     required this.onChange,
     required this.onClear,
   });
 
   final DiningTable table;
-  final String currencyCode;
   final bool enabled;
   final VoidCallback onChange;
   final VoidCallback onClear;
@@ -1125,8 +1309,8 @@ class _SelectedTableCard extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 30,
+            height: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: adminFlagBackground(
@@ -1138,11 +1322,11 @@ class _SelectedTableCard extends StatelessWidget {
             ),
             child: AppIcon(
               diningTableStatusIcon(table.status),
-              size: 17,
+              size: 15,
               color: adminFlagForeground(theme, statusColor),
             ),
           ),
-          const SizedBox(width: AppSizes.px10),
+          const SizedBox(width: AppSizes.px4),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1156,16 +1340,18 @@ class _SelectedTableCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: adminHeadingColor(theme),
-                          fontSize: AppFontSizes.size11,
+                          fontSize: AppFontSizes.size10,
                           fontWeight: AppFontWeights.bold,
                           height: AppTextHeights.line1_4,
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppSizes.px6),
-                    AdminStatusBadge(
-                      label: diningTableStatusLabel(table.status),
-                      color: statusColor,
+                    const SizedBox(width: AppSizes.px2),
+                    Flexible(
+                      child: AdminStatusBadge(
+                        label: diningTableStatusLabel(table.status),
+                        color: statusColor,
+                      ),
                     ),
                   ],
                 ),
@@ -1183,16 +1369,25 @@ class _SelectedTableCard extends StatelessWidget {
                 ),
                 if (order != null) ...[
                   const SizedBox(height: AppSizes.px2),
-                  Text(
-                    '${S.posTableOrderOpen(order.orderNumber)} • '
-                    '${posMoney(order.grandTotal, currencyCode)}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: adminSubtleColor(theme),
-                      fontSize: AppFontSizes.size8_5,
-                      height: AppTextHeights.line1_4,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${S.posTableOrderOpen(order.orderNumber)} • '
+                          '${posAmount(order.grandTotal)}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: adminSubtleColor(theme),
+                            fontSize: AppFontSizes.size8_5,
+                            height: AppTextHeights.line1_4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.px4),
+                      CurrencyIcon(size: 10, color: adminSubtleColor(theme)),
+                    ],
                   ),
                 ] else ...[
                   const SizedBox(height: AppSizes.px1),
@@ -1210,12 +1405,11 @@ class _SelectedTableCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSizes.px2),
           TextButton(
             onPressed: enabled ? onChange : null,
             style: TextButton.styleFrom(
-              minimumSize: const Size(0, 28),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+              minimumSize: const Size(0, 24),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               foregroundColor: adminFlagForeground(theme, AppColor.adminAccent),
             ),
@@ -1231,7 +1425,7 @@ class _SelectedTableCard extends StatelessWidget {
             tooltip: S.posClearTable,
             onPressed: enabled ? onClear : null,
             style: IconButton.styleFrom(
-              fixedSize: const Size(28, 28),
+              fixedSize: const Size(24, 24),
               padding: EdgeInsets.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
@@ -1271,7 +1465,7 @@ class _EmptyTableCard extends StatelessWidget {
         onTap: enabled ? onTap : null,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: Container(
-          padding: const EdgeInsets.all(AppSpacing.sm),
+          padding: const EdgeInsets.all(AppSpacing.xs),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(
@@ -1281,8 +1475,8 @@ class _EmptyTableCard extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
@@ -1290,20 +1484,22 @@ class _EmptyTableCard extends StatelessWidget {
                 ),
                 child: AppIcon(
                   AppIcons.table01,
-                  size: 16,
+                  size: 14,
                   color: adminFlagForeground(theme, AppColor.adminAccent),
                 ),
               ),
-              const SizedBox(width: AppSizes.px10),
+              const SizedBox(width: AppSizes.px8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       S.posChooseTable,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: adminHeadingColor(theme),
-                        fontSize: AppFontSizes.size10_5,
+                        fontSize: AppFontSizes.size10,
                         fontWeight: AppFontWeights.bold,
                         height: AppTextHeights.line1_4,
                       ),
@@ -1311,11 +1507,11 @@ class _EmptyTableCard extends StatelessWidget {
                     const SizedBox(height: AppSizes.px1),
                     Text(
                       S.posTableOptionalHint,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         color: adminMutedColor(theme),
-                        fontSize: AppFontSizes.size8_5,
+                        fontSize: AppFontSizes.size8,
                         height: AppTextHeights.line1_4,
                       ),
                     ),
@@ -1433,23 +1629,33 @@ class _PaymentSelector extends StatelessWidget {
     required this.state,
     required this.cashController,
     required this.cardController,
+    required this.cashReceivedController,
     required this.cashFocus,
     required this.cardFocus,
+    required this.cashReceivedFocus,
     required this.enabled,
     required this.onModeChanged,
     required this.onSplitCashChanged,
     required this.onSplitCardChanged,
+    required this.onCashReceivedChanged,
+    required this.onQuickCashSelected,
   });
 
   final PosState state;
   final TextEditingController cashController;
   final TextEditingController cardController;
+  final TextEditingController cashReceivedController;
   final FocusNode cashFocus;
   final FocusNode cardFocus;
+  final FocusNode cashReceivedFocus;
   final bool enabled;
   final ValueChanged<PosPaymentMode> onModeChanged;
   final ValueChanged<String> onSplitCashChanged;
   final ValueChanged<String> onSplitCardChanged;
+  final ValueChanged<String> onCashReceivedChanged;
+  final ValueChanged<double> onQuickCashSelected;
+
+  static const _quickDenominations = <double>[50, 100, 200, 500];
 
   @override
   Widget build(BuildContext context) {
@@ -1465,6 +1671,9 @@ class _PaymentSelector extends StatelessWidget {
     }
 
     final error = _splitError();
+    final usesCash =
+        state.paymentMode == PosPaymentMode.cash ||
+        state.paymentMode == PosPaymentMode.split;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1524,7 +1733,10 @@ class _PaymentSelector extends StatelessWidget {
                     context,
                     label: S.posSplitCashLabel,
                     hint: '0',
-                    suffixText: state.currencyCode,
+                    suffixIcon: CurrencyIcon(
+                      size: 14,
+                      color: adminMutedColor(theme),
+                    ),
                   ),
                 ),
               ),
@@ -1547,7 +1759,10 @@ class _PaymentSelector extends StatelessWidget {
                     context,
                     label: S.posSplitCardLabel,
                     hint: '0',
-                    suffixText: state.currencyCode,
+                    suffixIcon: CurrencyIcon(
+                      size: 14,
+                      color: adminMutedColor(theme),
+                    ),
                   ),
                 ),
               ),
@@ -1563,6 +1778,55 @@ class _PaymentSelector extends StatelessWidget {
               fontSize: AppFontSizes.size8_5,
               height: AppTextHeights.line1_45,
             ),
+          ),
+        ],
+        if (usesCash) ...[
+          const SizedBox(height: AppSizes.px10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  key: const Key('pos-cash-received'),
+                  controller: cashReceivedController,
+                  focusNode: cashReceivedFocus,
+                  enabled: enabled,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  onChanged: onCashReceivedChanged,
+                  style: TextStyle(
+                    color: adminBodyColor(theme),
+                    fontSize: AppFontSizes.size11,
+                  ),
+                  decoration: _posFieldDecoration(
+                    context,
+                    label: S.posCashReceivedLabel,
+                    hint: '0',
+                    suffixIcon: CurrencyIcon(
+                      size: 14,
+                      color: adminMutedColor(theme),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.px8),
+              Expanded(child: _CashChangeBox(state: state)),
+            ],
+          ),
+          const SizedBox(height: AppSizes.px6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              for (final amount in _quickDenominations)
+                _QuickCashChip(
+                  amount: amount,
+                  selected: state.cashReceivedAmount == amount,
+                  enabled: enabled,
+                  onTap: () => onQuickCashSelected(amount),
+                ),
+            ],
           ),
         ],
       ],
@@ -1708,38 +1972,24 @@ class _Totals extends StatelessWidget {
     return Column(
       children: [
         if (summary.hasDiscount) ...[
-          _TotalRow(
-            label: S.posBeforeDiscount,
-            value: posMoney(summary.beforeDiscount, state.currencyCode),
-          ),
+          _TotalRow(label: S.posBeforeDiscount, money: summary.beforeDiscount),
           const SizedBox(height: AppSizes.px4),
           _TotalRow(
             label: S.posDiscount,
-            value: '- ${posMoney(summary.discount, state.currencyCode)}',
+            money: summary.discount,
+            negative: true,
             valueColor: AppColor.trendPositive,
           ),
           const SizedBox(height: AppSizes.px4),
-          _TotalRow(
-            label: S.posAfterDiscount,
-            value: posMoney(summary.subtotal, state.currencyCode),
-          ),
+          _TotalRow(label: S.posAfterDiscount, money: summary.subtotal),
         ] else
-          _TotalRow(
-            label: S.posSubtotal,
-            value: posMoney(summary.subtotal, state.currencyCode),
-          ),
+          _TotalRow(label: S.posSubtotal, money: summary.subtotal),
         if (summary.tax > 0) ...[
           const SizedBox(height: AppSizes.px4),
-          _TotalRow(
-            label: S.posTax,
-            value: posMoney(summary.tax, state.currencyCode),
-          ),
+          _TotalRow(label: S.posTax, money: summary.tax),
         ] else if (summary.vat > 0) ...[
           const SizedBox(height: AppSizes.px4),
-          _TotalRow(
-            label: S.posVatIncluded,
-            value: posMoney(summary.vat, state.currencyCode),
-          ),
+          _TotalRow(label: S.posVatIncluded, money: summary.vat),
         ],
         if (state.taxIncluded && state.taxRate > 0) ...[
           const SizedBox(height: AppSizes.px4),
@@ -1768,8 +2018,8 @@ class _Totals extends StatelessWidget {
               ),
             ),
             const Spacer(),
-            Text(
-              posMoney(summary.total, state.currencyCode),
+            _MoneyValue(
+              amount: summary.total,
               style: TextStyle(
                 color: adminFlagForeground(theme, AppColor.adminAccent),
                 fontSize: AppFontSizes.size17,
@@ -1784,10 +2034,18 @@ class _Totals extends StatelessWidget {
 }
 
 class _TotalRow extends StatelessWidget {
-  const _TotalRow({required this.label, required this.value, this.valueColor});
+  const _TotalRow({
+    required this.label,
+    required this.money,
+    this.negative = false,
+    this.valueColor,
+  });
 
   final String label;
-  final String value;
+  final double money;
+
+  /// سطر الخصم: إشارة الطرح تسبق الرقم، والعلامة تبقى الملاصقة له.
+  final bool negative;
   final Color? valueColor;
 
   @override
@@ -1795,21 +2053,65 @@ class _TotalRow extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: adminMutedColor(theme),
-            fontSize: AppFontSizes.size10,
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: adminMutedColor(theme),
+              fontSize: AppFontSizes.size10,
+            ),
           ),
         ),
-        const Spacer(),
-        Text(
-          value,
+        const SizedBox(width: AppSizes.px8),
+        _MoneyValue(
+          amount: money,
+          negative: negative,
           style: TextStyle(
             color: valueColor ?? adminBodyColor(theme),
             fontSize: AppFontSizes.size10,
             fontWeight: AppFontWeights.semiBold,
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// رقم مبلغ بلا كلمة عملة، وعلامة الريال ملاصقة له من جهة القراءة.
+class _MoneyValue extends StatelessWidget {
+  const _MoneyValue({
+    required this.amount,
+    required this.style,
+    this.negative = false,
+  });
+
+  final double amount;
+  final TextStyle style;
+  final bool negative;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = style.fontSize ?? AppFontSizes.size12;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            '${negative ? '- ' : ''}${posAmount(amount)}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
+          ),
+        ),
+        const SizedBox(width: AppSizes.px4),
+        CurrencyIcon(
+          size: (fontSize + 1).clamp(10.0, 20.0),
+          color:
+              style.color ??
+              DefaultTextStyle.of(context).style.color ??
+              AppColor.greyColor,
         ),
       ],
     );
@@ -1915,9 +2217,8 @@ class _CheckoutButton extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSizes.px8),
-                  Text(
-                    posMoney(summary.total, state.currencyCode),
-                    maxLines: 1,
+                  _MoneyValue(
+                    amount: summary.total,
                     style: const TextStyle(
                       fontSize: AppFontSizes.size11_5,
                       fontWeight: AppFontWeights.bold,
@@ -1925,6 +2226,521 @@ class _CheckoutButton extends StatelessWidget {
                   ),
                 ],
               ),
+      ),
+    );
+  }
+}
+
+class _CashChangeBox extends StatelessWidget {
+  const _CashChangeBox({required this.state});
+
+  final PosState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasChange = state.cashChangeDue > 0;
+    final hasRemaining = state.cashRemainingDue > 0;
+    final label = hasRemaining ? S.posCashRemainingLabel : S.posCashChangeLabel;
+    final amount = hasRemaining ? state.cashRemainingDue : state.cashChangeDue;
+
+    final Color accent;
+    final Color surface;
+    if (hasChange) {
+      accent = AppColor.trendPositive;
+      surface = AppColor.trendPositiveSurface;
+    } else if (hasRemaining) {
+      accent = AppColor.adminWarning;
+      surface = AppColor.adminWarningSurface;
+    } else {
+      accent = AppColor.adminAccent;
+      surface = AppColor.adminAccentSurface;
+    }
+
+    return Container(
+      key: const Key('pos-cash-change-box'),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: hasChange || hasRemaining
+            ? adminFlagBackground(theme, accent, surface)
+            : adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: hasChange || hasRemaining
+              ? accent.withValues(alpha: .35)
+              : adminControlBorderColor(theme),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: adminMutedColor(theme),
+              fontSize: AppFontSizes.size8_5,
+              fontWeight: AppFontWeights.semiBold,
+              height: AppTextHeights.line1_3,
+            ),
+          ),
+          const SizedBox(height: AppSizes.px2),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                posAmount(amount),
+                key: const Key('pos-cash-change-value'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: hasChange || hasRemaining
+                      ? adminFlagForeground(theme, accent)
+                      : adminHeadingColor(theme),
+                  fontSize: AppFontSizes.size11,
+                  fontWeight: AppFontWeights.bold,
+                  height: AppTextHeights.line1_35,
+                ),
+              ),
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(
+                size: 10,
+                color: hasChange || hasRemaining
+                    ? adminFlagForeground(theme, accent)
+                    : adminHeadingColor(theme),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickCashChip extends StatelessWidget {
+  const _QuickCashChip({
+    required this.amount,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
+  });
+
+  final double amount;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final label = posMoneyInput(amount);
+    final foreground = selected
+        ? adminFlagForeground(theme, AppColor.adminAccent)
+        : adminBodyColor(theme);
+    return Material(
+      key: Key('pos-quick-cash-${amount.toInt()}'),
+      color: selected
+          ? adminFlagBackground(
+              theme,
+              AppColor.adminAccent,
+              AppColor.adminAccentSurface,
+            )
+          : theme.colorScheme.surface,
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      child: InkWell(
+        onTap: enabled ? onTap : null,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xxs,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            border: Border.all(
+              color: selected
+                  ? AppColor.adminAccent.withValues(alpha: .45)
+                  : adminControlBorderColor(theme),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: foreground,
+              fontSize: AppFontSizes.size8_5,
+              fontWeight: selected
+                  ? AppFontWeights.bold
+                  : AppFontWeights.semiBold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HoldOrderButton extends StatelessWidget {
+  const _HoldOrderButton({required this.canHold, required this.onHold});
+
+  final bool canHold;
+  final VoidCallback? onHold;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final enabled = canHold && onHold != null;
+    final foreground = enabled
+        ? adminHeadingColor(theme)
+        : adminMutedColor(theme).withValues(alpha: .5);
+
+    return SizedBox(
+      width: double.infinity,
+      height: AppSizes.px44,
+      child: OutlinedButton(
+        key: const Key('pos-hold-order'),
+        onPressed: enabled ? onHold : null,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: foreground,
+          side: BorderSide(
+            color: enabled
+                ? adminControlBorderColor(theme)
+                : adminControlBorderColor(theme).withValues(alpha: .45),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            AppIcon(AppIcons.pause, size: 15, color: foreground),
+            const SizedBox(width: AppSizes.px6),
+            Flexible(
+              child: Text(
+                S.posHoldOrder,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: foreground,
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeldOrdersInlineList extends StatelessWidget {
+  const _HeldOrdersInlineList({
+    required this.state,
+    required this.onResume,
+    required this.onDiscard,
+  });
+
+  final PosState state;
+  final ValueChanged<String> onResume;
+  final ValueChanged<String> onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 4),
+          child: Row(
+            children: [
+              AppIcon(
+                AppIcons.clock01,
+                size: 14,
+                color: adminFlagForeground(theme, AppColor.adminWarning),
+              ),
+              const SizedBox(width: AppSizes.px6),
+              Expanded(
+                child: Text(
+                  S.posHeldOrders,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: adminHeadingColor(theme),
+                    fontSize: AppFontSizes.size10_5,
+                    fontWeight: AppFontWeights.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
+            ),
+            itemCount: state.heldOrders.length,
+            separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px8),
+            itemBuilder: (context, index) {
+              final held = state.heldOrders[index];
+              return _HeldOrderTile(
+                held: held,
+                state: state,
+                onResume: () => onResume(held.id),
+                onDiscard: () => onDiscard(held.id),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeldOrdersDialog extends StatelessWidget {
+  const _HeldOrdersDialog({
+    required this.state,
+    required this.onResume,
+    required this.onDiscard,
+  });
+
+  final PosState state;
+  final ValueChanged<String> onResume;
+  final ValueChanged<String> onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      titlePadding: const EdgeInsetsDirectional.fromSTEB(18, 16, 12, 8),
+      contentPadding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
+      title: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  S.posHeldOrders,
+                  style: TextStyle(
+                    color: adminHeadingColor(theme),
+                    fontSize: AppFontSizes.size14,
+                    fontWeight: AppFontWeights.bold,
+                  ),
+                ),
+                const SizedBox(height: AppSizes.px2),
+                Text(
+                  S.posHeldOrdersSubtitle,
+                  style: TextStyle(
+                    color: adminMutedColor(theme),
+                    fontSize: AppFontSizes.size9_5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: S.close,
+            onPressed: () => Navigator.of(context).pop(),
+            icon: AppIcon(
+              AppIcons.cancel01,
+              size: 16,
+              color: adminMutedColor(theme),
+            ),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 420,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 380),
+          child: state.heldOrders.isEmpty
+              ? Center(child: Text(S.posNoHeldOrders))
+              : ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: state.heldOrders.length,
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(height: AppSizes.px8),
+                  itemBuilder: (context, index) {
+                    final held = state.heldOrders[index];
+                    return _HeldOrderTile(
+                      held: held,
+                      state: state,
+                      onResume: () => onResume(held.id),
+                      onDiscard: () => onDiscard(held.id),
+                    );
+                  },
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeldOrderTile extends StatelessWidget {
+  const _HeldOrderTile({
+    required this.held,
+    required this.state,
+    required this.onResume,
+    required this.onDiscard,
+  });
+
+  final PosHeldOrder held;
+  final PosState state;
+  final VoidCallback onResume;
+  final VoidCallback onDiscard;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final language = AppLocale.instance.language;
+    final summary = held.summary(
+      taxRate: state.taxRate,
+      taxIncluded: state.taxIncluded,
+    );
+    final itemsPreview = held.cart
+        .map(
+          (line) =>
+              '${localizeDigits('${line.quantity}')}× ${line.product.nameFor(language)}',
+        )
+        .join(' ، ');
+    final meta = <String>[
+      posClock(held.heldAt),
+      if (held.customer != null) held.customer!.displayName(language),
+      if (held.tableName != null && held.tableName!.trim().isNotEmpty)
+        held.tableName!,
+    ].join(' • ');
+
+    return Container(
+      key: Key('pos-held-order-${held.number}'),
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: adminCardBorderColor(theme)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  localizeDigits(S.posHeldOrderLabel(held.number)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: adminHeadingColor(theme),
+                    fontSize: AppFontSizes.size10_5,
+                    fontWeight: AppFontWeights.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.px8),
+              Text(
+                posAmount(summary.total),
+                style: TextStyle(
+                  color: adminFlagForeground(theme, AppColor.adminAccent),
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.bold,
+                ),
+              ),
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(
+                size: 9,
+                color: adminFlagForeground(theme, AppColor.adminAccent),
+              ),
+            ],
+          ),
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: AppSizes.px2),
+            Text(
+              meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size8_5,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSizes.px4),
+          Text(
+            itemsPreview,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: adminBodyColor(theme),
+              fontSize: AppFontSizes.size9_5,
+              height: AppTextHeights.line1_35,
+            ),
+          ),
+          const SizedBox(height: AppSizes.px8),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonal(
+                  key: Key('pos-resume-held-${held.number}'),
+                  onPressed: onResume,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 30),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                    ),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const AppIcon(AppIcons.play, size: 13),
+                      const SizedBox(width: AppSizes.px4),
+                      Flexible(
+                        child: Text(
+                          S.posResumeOrder,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: AppFontSizes.size9_5,
+                            fontWeight: AppFontWeights.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.px6),
+              IconButton(
+                key: Key('pos-discard-held-${held.number}'),
+                tooltip: S.posDiscardHeldOrder,
+                onPressed: onDiscard,
+                style: IconButton.styleFrom(
+                  fixedSize: const Size(30, 30),
+                  padding: EdgeInsets.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                icon: AppIcon(
+                  AppIcons.delete01,
+                  size: 14,
+                  color: adminMutedColor(theme),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

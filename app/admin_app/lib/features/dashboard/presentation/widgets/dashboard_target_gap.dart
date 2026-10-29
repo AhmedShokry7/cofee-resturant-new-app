@@ -5,8 +5,10 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// الفرجة تحت شريط الهدف: ما بقي لبلوغه، أو الخبر أنه بُلِغ.
 ///
@@ -45,17 +47,39 @@ class DashboardTargetGap extends StatelessWidget {
           ),
           const SizedBox(width: AppSizes.px6),
           Expanded(
-            child: Text(
-              reached
-                  ? S.dashboardTargetReached
-                  : S.dashboardTargetGap(formatMoneyWithCurrency(remaining)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: adminMutedColor(theme),
-                fontSize: AppFontSizes.size9_5,
-                height: AppTextHeights.line1_4,
-              ),
+            child: Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    reached
+                        ? S.dashboardTargetReached
+                        : S.dashboardRemainingToTarget,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: adminMutedColor(theme),
+                      fontSize: AppFontSizes.size9_5,
+                      height: AppTextHeights.line1_4,
+                    ),
+                  ),
+                ),
+                if (!reached) ...[
+                  const Spacer(),
+                  const SizedBox(width: AppSizes.px6),
+                  Text(
+                    localizeDigits(formatAmount(remaining)),
+                    maxLines: 1,
+                    style: TextStyle(
+                      color: adminHeadingColor(theme),
+                      fontSize: AppFontSizes.size9_5,
+                      fontWeight: AppFontWeights.semiBold,
+                      height: AppTextHeights.line1_4,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.px4),
+                  const CurrencyIcon(size: 12),
+                ],
+              ],
             ),
           ),
         ],

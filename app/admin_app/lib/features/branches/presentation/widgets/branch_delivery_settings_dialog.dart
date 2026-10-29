@@ -7,10 +7,12 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/models/admin_delivery_zone.dart';
 import 'package:admin_app/core/delivery_zones/delivery_zone_repository.dart';
 import 'package:admin_app/shared/widgets/delivery_zone_form_dialog.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 Future<void> showBranchDeliverySettingsDialog({
   required BuildContext context,
@@ -420,11 +422,18 @@ class _ZoneCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onToggle;
 
-  String _feeLabel() => switch (zone.feeMethod) {
-    'per_km' =>
-      '${S.deliveryFeePerKm}: ${S.perKilometer(formatMoneyWithCurrency(zone.feePerKm ?? 0))}',
-    'free' => S.freeDelivery,
-    _ => '${S.fixedDeliveryFee}: ${formatMoneyWithCurrency(zone.deliveryFee)}',
+  Widget _feeDetail() => switch (zone.feeMethod) {
+    'per_km' => _Detail(
+      icon: Icons.payments_outlined,
+      text: S.deliveryFeePerKm,
+      money: zone.feePerKm ?? 0,
+    ),
+    'free' => _Detail(icon: Icons.payments_outlined, text: S.freeDelivery),
+    _ => _Detail(
+      icon: Icons.payments_outlined,
+      text: S.fixedDeliveryFee,
+      money: zone.deliveryFee,
+    ),
   };
 
   @override
@@ -475,12 +484,12 @@ class _ZoneCard extends StatelessWidget {
                       icon: Icons.radar,
                       text: S.kilometers('${zone.radiusKm ?? '—'}'),
                     ),
-                    _Detail(icon: Icons.payments_outlined, text: _feeLabel()),
+                    _feeDetail(),
                     if (zone.minOrderAmount > 0)
                       _Detail(
                         icon: Icons.shopping_bag_outlined,
-                        text:
-                            '${S.minimumOrder}: ${formatMoneyWithCurrency(zone.minOrderAmount)}',
+                        text: S.minimumOrder,
+                        money: zone.minOrderAmount,
                       ),
                   ],
                 ),
@@ -513,10 +522,15 @@ class _ZoneCard extends StatelessWidget {
 }
 
 class _Detail extends StatelessWidget {
-  const _Detail({required this.icon, required this.text});
+  const _Detail({required this.icon, required this.text, this.money});
 
   final IconData icon;
+
+  /// كلمة الوصف؛ تُترك لها نقطة رأسية حين يأتي بعدها مبلغ.
   final String text;
+
+  /// مبلغ اختياري: يُطبع رقمه بلا كلمة عملة وعلامة الريال بجانبه.
+  final double? money;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -524,7 +538,20 @@ class _Detail extends StatelessWidget {
     children: [
       Icon(icon, size: 15, color: AppColor.greyColor),
       const SizedBox(width: AppSizes.px4),
-      Text(text, style: Theme.of(context).textTheme.bodySmall),
+      Text(
+        money == null ? text : '$text:',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      if (money != null) ...[
+        const SizedBox(width: AppSizes.px6),
+        Text(
+          localizeDigits(formatAmount(money!)),
+          style: Theme.of(context).textTheme.bodySmall
+              ?.copyWith(fontWeight: AppFontWeights.semiBold),
+        ),
+        const SizedBox(width: AppSizes.px4),
+        const CurrencyIcon(size: 12),
+      ],
     ],
   );
 }

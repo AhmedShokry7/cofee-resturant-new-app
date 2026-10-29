@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class StockMovementsCards extends StatelessWidget {
   const StockMovementsCards({
@@ -195,6 +196,7 @@ class _MovementCard extends StatelessWidget {
                           icon: AppIcons.coins01,
                           label: S.stockMovementValue,
                           value: inventoryMoney(movement.movementValue),
+                          isMoney: true,
                         ),
                       ),
                       SizedBox(
@@ -203,6 +205,7 @@ class _MovementCard extends StatelessWidget {
                           icon: AppIcons.invoice01,
                           label: S.stockMovementUnitCost,
                           value: inventoryMoney(movement.unitCost),
+                          isMoney: true,
                         ),
                       ),
                     ],
@@ -288,15 +291,18 @@ class _StatBox extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.isMoney = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final bool isMoney;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final valueColor = adminBodyColor(theme);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.sm),
       decoration: BoxDecoration(
@@ -321,16 +327,26 @@ class _StatBox extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: adminBodyColor(theme),
-                    fontSize: AppFontSizes.size10_5,
-                    fontWeight: AppFontWeights.bold,
-                    height: AppTextHeights.line1_5,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: valueColor,
+                          fontSize: AppFontSizes.size10_5,
+                          fontWeight: AppFontWeights.bold,
+                          height: AppTextHeights.line1_5,
+                        ),
+                      ),
+                    ),
+                    if (isMoney) ...[
+                      const SizedBox(width: AppSizes.px4),
+                      CurrencyIcon(size: 13, color: valueColor),
+                    ],
+                  ],
                 ),
               ],
             ),

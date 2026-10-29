@@ -9,6 +9,7 @@ import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule_dr
 import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_rule_dialog.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class _FakeRuleCubit extends AdminLoyaltyCubit {
   _FakeRuleCubit({this.outcome = LoyaltyRuleSaveOutcome.saved});
@@ -105,14 +106,13 @@ void main() {
     await tester.enterText(find.byKey(const Key('loyalty-rule-value')), '0.1');
     await tester.pump();
 
-    expect(
-      find.text(S.loyaltyProgramPreviewEarn('100 SAR', '250')),
-      findsOneWidget,
-    );
-    expect(
-      find.text(S.loyaltyProgramPreviewWorth('100', '10 SAR')),
-      findsOneWidget,
-    );
+    // المعاينة تفصل الرقم عن كلماته لتحصل كل كمية على علامة الريال.
+    expect(find.text('An order of'), findsOneWidget);
+    expect(find.text('100'), findsOneWidget);
+    expect(find.text('earns 250 points'), findsOneWidget);
+    expect(find.text('100 points are worth'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
+    expect(find.byType(CurrencyIcon), findsNWidgets(3));
 
     await _tapSave(tester);
 

@@ -6,6 +6,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
+import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon_targets.dart';
 import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
@@ -32,6 +33,33 @@ class _FakeCouponCubit extends AdminCouponCubit {
     final catalogue = targets;
     if (catalogue != null) emit(state.copyWith(targets: catalogue));
   }
+}
+
+class _ThrowingCouponRepository implements CouponRepository {
+  static const _refused = 'missing permission: settings.write';
+
+  @override
+  Future<List<AdminCoupon>> loadCoupons() async => throw Exception(_refused);
+
+  @override
+  Future<AdminCouponMetrics> loadMetrics() async => throw Exception(_refused);
+
+  @override
+  Future<AdminCouponTargets> loadTargets() async => throw Exception(_refused);
+
+  @override
+  Future<CouponSaveOutcome> saveCoupon(AdminCouponDraft draft) async =>
+      throw Exception(_refused);
+
+  @override
+  Future<CouponMutationOutcome> setCouponActive(
+    String couponId,
+    bool active,
+  ) async => throw Exception(_refused);
+
+  @override
+  Future<CouponMutationOutcome> deleteCoupon(String couponId) async =>
+      throw Exception(_refused);
 }
 
 const _targets = AdminCouponTargets(
@@ -98,7 +126,7 @@ void _setViewport(
 
 Future<void> _openDialog(
   WidgetTester tester,
-  _FakeCouponCubit cubit, {
+  AdminCouponCubit cubit, {
   AdminCoupon? coupon,
 }) async {
   await tester.pumpWidget(
@@ -407,4 +435,63 @@ void main() {
     expect(find.byKey(const Key('coupon-editor-save')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('a refused write maps to failed instead of escaping the cubit', (
+    tester,
+  ) async {
+    // 168 ترفض بـ42501 حين تنقص settings.write على الأهداف، والاستثناء يخرج من
+    // طبقة المستودع لا من نتيجة مكتوبة. المجمّد هو الطبقة العليا المسؤولة عن
+    // تحويله إلى failed، وإلا سقط في المنادي ولا وصلت النافذة إلى حالة الفشل.
+    final cubit = AdminCouponCubit(repository: _ThrowingCouponRepository());
+    addTearDown(cubit.close);
+
+    expect(await cubit.saveCoupon(_draft()), CouponSaveOutcome.failed);
+    expect(
+      await cubit.setCouponActive('c1', false),
+      CouponMutationOutcome.failed,
+    );
+    expect(await cubit.deleteCoupon('c1'), CouponMutationOutcome.failed);
+  });
+
+  testWidgets('a thrown save leaves the editor open and closable', (
+    tester,
+  ) async {
+    _setViewport(tester);
+    final cubit = AdminCouponCubit(repository: _ThrowingCouponRepository());
+    addTearDown(cubit.close);
+    await _openDialog(tester, cubit);
+
+    await _enter(tester, 'coupon-editor-code', 'SAVE9');
+    await _enter(tester, 'coupon-editor-title-ar', 'عرض');
+    await _enter(tester, 'coupon-editor-title-en', 'Offer');
+    await _tapSave(tester);
+
+    expect(find.text(S.couponsSaveFailed), findsOneWidget);
+    expect(find.byKey(const Key('coupon-editor-dialog')), findsOneWidget);
+    expect(find.byKey(const Key('coupon-editor-save')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+
+    // الإغلاق مقبول الآن: onClose لم يعد null بعد الاستثناء.
+    await tester.tap(
+      find
+          .descendant(
+            of: find.byKey(const Key('coupon-editor-dialog')),
+            matching: find.byType(IconButton),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('coupon-editor-dialog')), findsNothing);
+  });
 }
+
+AdminCouponDraft _draft() => const AdminCouponDraft(
+  code: 'SAVE9',
+  titleAr: 'عرض',
+  titleEn: 'Offer',
+  discountType: AdminCouponDiscountType.percentage,
+  discountValue: 10,
+  scope: AdminCouponScope.all,
+  startsAt: null,
+  endsAt: null,
+);

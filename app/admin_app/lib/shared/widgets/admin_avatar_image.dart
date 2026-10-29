@@ -5,14 +5,16 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 
-/// A customer photo with a neutral placeholder behind it.
+/// A person's photo with a neutral placeholder behind it.
 ///
 /// The dashboard only fetches a picture when the value is a real `http(s)`
-/// URL. `identity.profiles.avatar_url` holds a PATH inside the PRIVATE
-/// `avatars` bucket (migration `084_customer_profile_avatars.sql`), and a
-/// staff session may not read that bucket, so a path is never turned into a
-/// request that is certain to fail: the placeholder is shown instead until
-/// the backend hands out a displayable URL.
+/// URL. `identity.profiles.avatar_url` and `identity.staff_members.avatar_url`
+/// both hold a PATH inside the PRIVATE `avatars` bucket (migrations
+/// `084_customer_profile_avatars.sql` and `209_staff_profile_edit_and_avatar.sql`),
+/// and a path is never turned into a request that is certain to fail: the
+/// repositories run those paths through `AdminAvatarLinks`, which exchanges
+/// them for short-lived signed urls, so a screen either receives a displayable
+/// URL or shows the placeholder.
 class AdminAvatarImage extends StatelessWidget {
   const AdminAvatarImage({
     super.key,

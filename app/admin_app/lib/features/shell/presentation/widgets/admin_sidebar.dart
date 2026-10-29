@@ -7,6 +7,7 @@ import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/role_name.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_brand.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_item.dart';
 
@@ -148,20 +149,10 @@ class _SidebarFooter extends StatelessWidget {
   }
 
   String _roleLabel(AdminSession session) {
-    if (session.roles.isEmpty) return S.staff;
     if (session.isOwner) return S.owner;
-    return session.roles
-        .map((role) => _titleCase(role.roleCode))
-        .toSet()
-        .join(', ');
-  }
-
-  String _titleCase(String value) {
-    return value
-        .split('_')
-        .where((part) => part.isNotEmpty)
-        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-        .join(' ');
+    // دور بلا اسم معروف يبقى عرضه أفضل من سطر فارغ تحت الاسم.
+    final names = roleNames(session.roles.map((role) => role.roleCode));
+    return names.isEmpty ? S.staff : names;
   }
 }
 

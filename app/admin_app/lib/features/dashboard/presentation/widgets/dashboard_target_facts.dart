@@ -5,12 +5,14 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_metrics.dart';
 import 'package:admin_app/features/dashboard/domain/entities/dashboard_insights.dart';
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_target_gap.dart';
 import 'package:admin_app/shared/widgets/admin_labeled_value.dart';
 import 'package:admin_app/shared/widgets/admin_progress_bar.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// رقما الهدف والمُحقَّق أمام بعضهما، وشريطٌ يقيس أحدهما بالآخر.
 ///
@@ -62,15 +64,27 @@ class DashboardTargetFacts extends StatelessWidget {
     );
   }
 
-  Widget _amount(ThemeData theme, double value) => Text(
-    formatMoneyWithCurrency(value),
-    maxLines: 1,
-    overflow: TextOverflow.ellipsis,
-    style: TextStyle(
-      color: adminAmountColor(theme),
-      fontSize: AppFontSizes.size10,
-      fontWeight: AppFontWeights.semiBold,
-      height: AppTextHeights.line1_4,
-    ),
-  );
+  Widget _amount(ThemeData theme, double value) {
+    final color = adminAmountColor(theme);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            localizeDigits(formatAmount(value)),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: AppFontSizes.size10,
+              fontWeight: AppFontWeights.semiBold,
+              height: AppTextHeights.line1_4,
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSizes.px4),
+        CurrencyIcon(size: 13, color: color),
+      ],
+    );
+  }
 }

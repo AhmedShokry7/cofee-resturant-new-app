@@ -17,7 +17,6 @@ class AdminInventoryItem {
     this.status = 'out',
     this.notes,
     this.lastMovementAt,
-    this.stockUpdatedAt,
     this.createdAt,
     this.updatedAt,
   });
@@ -39,7 +38,6 @@ class AdminInventoryItem {
   final String status;
   final String? notes;
   final DateTime? lastMovementAt;
-  final DateTime? stockUpdatedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -70,7 +68,6 @@ class AdminInventoryItem {
       status: '${json['status'] ?? 'out'}',
       notes: _toNullableText(json['notes']),
       lastMovementAt: _toDate(json['last_movement_at']),
-      stockUpdatedAt: _toDate(json['stock_updated_at']),
       createdAt: _toDate(json['created_at']),
       updatedAt: _toDate(json['updated_at']),
     );

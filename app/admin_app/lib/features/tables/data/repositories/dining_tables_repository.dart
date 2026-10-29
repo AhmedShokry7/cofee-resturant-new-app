@@ -22,7 +22,15 @@ class DiningTablesRepository implements DiningTableRepository {
         params: {'p_branch_id': _blankToNull(branchId)},
       );
       if (response is Map) {
-        return DiningOverview.fromJson(Map<String, dynamic>.from(response));
+        final overview = DiningOverview.fromJson(
+          Map<String, dynamic>.from(response),
+        );
+        // The RPC answers an empty floor rather than raising when no branch is
+        // in scope, so the null branch id is the only no-branch signal there is.
+        if (overview.branchId == null) {
+          throw const DiningLoadException(DiningLoadFailure.noBranch);
+        }
+        return overview;
       }
       throw const DiningLoadException(DiningLoadFailure.failed);
     } on DiningLoadException {
@@ -158,6 +166,7 @@ class DiningTablesRepository implements DiningTableRepository {
         'invalid_status' => DiningReservationStatusOutcome.invalidStatus,
         'invalid_table' => DiningReservationStatusOutcome.invalidTable,
         'table_busy' => DiningReservationStatusOutcome.tableBusy,
+        'too_early' => DiningReservationStatusOutcome.tooEarly,
         'not_found' => DiningReservationStatusOutcome.notFound,
         _ => DiningReservationStatusOutcome.failed,
       };
@@ -173,7 +182,6 @@ class DiningTablesRepository implements DiningTableRepository {
   static DiningLoadFailure _loadFailure(PostgrestException error) {
     return switch (error.code) {
       '42501' => DiningLoadFailure.permissionDenied,
-      'P0002' => DiningLoadFailure.noBranch,
       _ => DiningLoadFailure.failed,
     };
   }

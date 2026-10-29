@@ -7,12 +7,14 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/carts/data/models/admin_cart.dart';
 import 'package:admin_app/features/carts/presentation/models/cart_status.dart';
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The list of the carts, empty when nothing matches.
 class CartRecords extends StatelessWidget {
@@ -33,12 +35,9 @@ class CartRecords extends StatelessWidget {
 
   List<AdminCart> get _filtered {
     final q = search.trim().toLowerCase();
-    final visible = carts
-        .where((cart) => cart.total > 0)
-        .toList(growable: false);
-    if (q.isEmpty) return visible;
+    if (q.isEmpty) return carts;
     final language = AppLocale.instance.language;
-    return visible
+    return carts
         .where(
           (cart) =>
               (cart.customerName ?? '').toLowerCase().contains(q) ||
@@ -159,15 +158,30 @@ class CartCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    formatMoneyWithCurrency(cart.total),
-                    maxLines: 1,
-                    style: TextStyle(
-                      color: dark ? AppColor.darkText : AppColor.adminAmount,
-                      fontSize: AppFontSizes.size12,
-                      fontWeight: AppFontWeights.bold,
-                      height: AppTextHeights.line1_5,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          localizeDigits(formatAmount(cart.total)),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: dark
+                                ? AppColor.darkText
+                                : AppColor.adminAmount,
+                            fontSize: AppFontSizes.size12,
+                            fontWeight: AppFontWeights.bold,
+                            height: AppTextHeights.line1_5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.px4),
+                      CurrencyIcon(
+                        size: 14,
+                        color: dark ? AppColor.darkText : AppColor.adminAmount,
+                      ),
+                    ],
                   ),
                 ],
               ),

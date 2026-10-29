@@ -12,6 +12,7 @@ import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subs
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class SubscriptionTable extends StatelessWidget {
   const SubscriptionTable({
@@ -112,6 +113,7 @@ class _Row extends StatelessWidget {
     final date = dark ? AppColor.darkTextSecondary : AppColor.adminDate;
     final status = SubscriptionStatusView.of(subscription);
     final contact = subscriptionContactLine(subscription);
+    final price = subscriptionPrice(subscription);
     final rtl = Directionality.of(context) == TextDirection.rtl;
 
     return Material(
@@ -186,17 +188,27 @@ class _Row extends StatelessWidget {
                         height: AppTextHeights.line1_5,
                       ),
                     ),
-                    Text(
-                      subscriptionPrice(subscription),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: dark
-                            ? AppColor.darkTextSecondary
-                            : AppColor.adminMuted,
-                        fontSize: AppFontSizes.size9,
-                        height: AppTextHeights.line1_5,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            price ?? '—',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: dark
+                                  ? AppColor.darkTextSecondary
+                                  : AppColor.adminMuted,
+                              fontSize: AppFontSizes.size9,
+                              height: AppTextHeights.line1_5,
+                            ),
+                          ),
+                        ),
+                        if (price != null) ...[
+                          const SizedBox(width: AppSizes.px4),
+                          const CurrencyIcon(size: 10),
+                        ],
+                      ],
                     ),
                   ],
                 ),

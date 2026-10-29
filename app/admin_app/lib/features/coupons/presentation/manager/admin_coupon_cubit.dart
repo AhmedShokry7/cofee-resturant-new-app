@@ -79,7 +79,15 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
   }
 
   Future<CouponSaveOutcome> saveCoupon(AdminCouponDraft draft) async {
-    final outcome = await _saveCoupon(draft);
+    final CouponSaveOutcome outcome;
+    try {
+      outcome = await _saveCoupon(draft);
+    } catch (_) {
+      // قواعد الكوبون ترفض بـ42501 (168 تطلب settings.write على الأهداف). بلا
+      // هذا التحويل يسقط الاستثناء في المنادي فلا تصل النافذة أبدًا إلى حالة
+      // الفشل، وتبقى معلّقة على زر الحفظ بلا إغلاق.
+      return CouponSaveOutcome.failed;
+    }
     if (outcome == CouponSaveOutcome.saved) {
       await load();
       await _refreshTargets();
@@ -91,13 +99,23 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
     String couponId,
     bool active,
   ) async {
-    final outcome = await _setCouponActive(couponId, active);
+    final CouponMutationOutcome outcome;
+    try {
+      outcome = await _setCouponActive(couponId, active);
+    } catch (_) {
+      return CouponMutationOutcome.failed;
+    }
     if (outcome == CouponMutationOutcome.success) await load();
     return outcome;
   }
 
   Future<CouponMutationOutcome> deleteCoupon(String couponId) async {
-    final outcome = await _deleteCoupon(couponId);
+    final CouponMutationOutcome outcome;
+    try {
+      outcome = await _deleteCoupon(couponId);
+    } catch (_) {
+      return CouponMutationOutcome.failed;
+    }
     if (outcome == CouponMutationOutcome.success) await load();
     return outcome;
   }

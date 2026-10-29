@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/utils/initials.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/core/utils/role_name.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 
 /// How one staff status is shown: its localized name and colour.
@@ -45,6 +45,53 @@ class StaffStatusView {
   }
 }
 
+/// كيف تُعرض حالة دعوة: اسمها ولونها.
+///
+/// `pending` و`accepted` و`cancelled` ما خزّنته القاعدة، و`expired` يضيفه
+/// `admin_staff_invitations()` حين يتجاوز الأجل، فلا تحسب الشاشة ساعة المقارنة.
+class StaffInvitationStatusView {
+  const StaffInvitationStatusView(this.code, this.label, this.color);
+
+  final String code;
+  final String label;
+  final Color color;
+
+  static StaffInvitationStatusView of(String code) {
+    switch (code) {
+      case 'pending':
+        return StaffInvitationStatusView(
+          code,
+          S.staffInvitationPending,
+          AppColor.statusAmber,
+        );
+      case 'accepted':
+        return StaffInvitationStatusView(
+          code,
+          S.staffInvitationAccepted,
+          AppColor.primaryColor,
+        );
+      case 'cancelled':
+        return StaffInvitationStatusView(
+          code,
+          S.staffInvitationCancelled,
+          AppColor.greyColor,
+        );
+      case 'expired':
+        return StaffInvitationStatusView(
+          code,
+          S.staffInvitationExpired,
+          AppColor.errorColor,
+        );
+      default:
+        return StaffInvitationStatusView(
+          code,
+          code.trim().isEmpty ? '—' : code,
+          AppColor.greyColor,
+        );
+    }
+  }
+}
+
 String staffDisplayName(AdminStaffMember member) => member.displayName();
 
 String? staffContactLine(AdminStaffMember member) {
@@ -67,30 +114,6 @@ String staffPermissionsCount(AdminStaffMember member) =>
 
 /// The names of the roles the member holds, in their display language.
 String staffRolesText(AdminStaffMember member) {
-  final names = member.roles
-      .map((role) => staffRoleName(role.roleCode))
-      .where((name) => name.isNotEmpty)
-      .toList(growable: false);
-  if (names.isEmpty) return S.staffNoRoles;
-  return names.join(AppLocale.instance.isArabic ? '، ' : ', ');
-}
-
-String staffRoleName(String code) {
-  final normalized = code.trim();
-  switch (normalized) {
-    case 'owner':
-      return S.owner;
-    case 'manager':
-      return S.roleManager;
-    case 'branch_manager':
-      return S.roleBranchManager;
-    case 'cashier':
-      return S.roleCashier;
-  }
-  if (normalized.isEmpty) return '';
-  return normalized
-      .split(RegExp(r'[_\-\s]+'))
-      .where((word) => word.isNotEmpty)
-      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
-      .join(' ');
+  final names = roleNames(member.roles.map((role) => role.roleCode));
+  return names.isEmpty ? S.staffNoRoles : names;
 }

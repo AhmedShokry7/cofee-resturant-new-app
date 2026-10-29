@@ -9,6 +9,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
 import 'package:admin_app/core/models/admin_product.dart';
@@ -201,8 +202,18 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                                       AppLocale.instance.language,
                                     ),
                                   ),
-                                  subtitle: Text(
-                                    '${product.categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(product.basePrice))} ${S.currency}',
+                                  subtitle: Row(
+                                    children: [
+                                      Flexible(
+                                        child: Text(
+                                          '${product.categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(product.basePrice))}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      const SizedBox(width: AppSizes.px4),
+                                      const CurrencyIcon(size: 12),
+                                    ],
                                   ),
                                   selected: product.id == currentId,
                                   onTap: () =>
@@ -430,6 +441,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                       decoration: InputDecoration(
                         labelText: S.bundlePrice,
                         hintText: S.bundlePriceHint,
+                        suffixIcon: const CurrencyIcon(size: 15),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
@@ -454,13 +466,15 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
-                  Text(
-                    S.componentsTotal(
-                      '${localizeDigits(formatAmount(total))} ${S.currency}',
+                  Flexible(
+                    child: Text(
+                      S.componentsTotal(localizeDigits(formatAmount(total))),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(fontWeight: AppFontWeights.semiBold),
                     ),
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(fontWeight: AppFontWeights.semiBold),
                   ),
+                  const SizedBox(width: AppSizes.px4),
+                  const CurrencyIcon(size: 12),
                   const Spacer(),
                   TextButton(
                     onPressed: total > 0 ? _useTotalAsPrice : null,
@@ -534,11 +548,20 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                               ),
                             ),
                             const SizedBox(height: AppSizes.px2),
-                            Text(
-                              '${_components[i].categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(_components[i].basePrice))} ${S.currency}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(color: AppColor.greyColor),
-                              overflow: TextOverflow.ellipsis,
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    '${_components[i].categoryNameFor(AppLocale.instance.language)}  •  ${localizeDigits(formatAmount(_components[i].basePrice))}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(color: AppColor.greyColor),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSizes.px4),
+                                const CurrencyIcon(size: 12),
+                              ],
                             ),
                           ],
                         ),
@@ -570,10 +593,21 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.sm),
-                      Text(
-                        (_components[i].basePrice * _components[i].quantity)
-                            .toStringAsFixed(2),
-                        style: Theme.of(context).textTheme.bodySmall,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            localizeDigits(
+                              formatAmount(
+                                _components[i].basePrice *
+                                    _components[i].quantity,
+                              ),
+                            ),
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(width: AppSizes.px4),
+                          const CurrencyIcon(size: 12),
+                        ],
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       IconButton(

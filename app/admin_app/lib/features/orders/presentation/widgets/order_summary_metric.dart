@@ -9,6 +9,7 @@ class OrderSummaryMetric {
     required this.iconColor,
     required this.isPositive,
     this.changeLabel,
+    this.isMoney = false,
   });
 
   final String label, value;
@@ -16,4 +17,5 @@ class OrderSummaryMetric {
   final Color iconBackground, iconColor;
   final String? changeLabel;
   final bool isPositive;
+  final bool isMoney;
 }

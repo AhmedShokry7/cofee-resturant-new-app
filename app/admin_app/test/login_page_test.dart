@@ -7,6 +7,7 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/result/result.dart';
 import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/invitation_accept_outcome.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
 import 'package:admin_app/features/auth/domain/usecases/check_session.dart';
 import 'package:admin_app/features/auth/domain/usecases/sign_in.dart';
@@ -56,6 +57,18 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<void> signOut() async {}
+
+  // شاشة الدخول لا تمرّ بالدعوة في هذه الاختبارات، فيكفي عقد يرفض رمزًا غير معروف.
+  @override
+  Future<InvitationLookup> lookupInvitation(String token) async =>
+      InvitationLookup.refused(InvitationAcceptOutcome.unknown);
+
+  @override
+  Future<InvitationAcceptOutcome> acceptInvitation({
+    required String token,
+    required String email,
+    required String password,
+  }) async => InvitationAcceptOutcome.unknown;
 }
 
 AuthBloc _bloc(_FakeAuthRepository repository) => AuthBloc(
@@ -163,4 +176,21 @@ void main() {
 
     expect(find.text(S.invalidCredentials), findsOneWidget);
   });
+
+  testWidgets(
+    'the invitation entry opens the code dialog on the sign-in screen',
+    (tester) async {
+      final repository = _FakeAuthRepository();
+      await _pumpLogin(tester, repository);
+
+      await tester.tap(find.text(S.invitationEntry));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LoginPage), findsOneWidget);
+      expect(find.text(S.invitationAcceptTitle), findsOneWidget);
+      expect(find.text(S.invitationCodeLabel), findsOneWidget);
+      // لا محاولة دخول جرت: الحوار يقرأ الرمز أولًا ولا يفترض شيئًا.
+      expect(repository.signInCalls, 0);
+    },
+  );
 }

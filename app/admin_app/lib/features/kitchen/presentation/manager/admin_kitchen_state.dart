@@ -1,6 +1,7 @@
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
+import 'package:admin_app/features/kitchen/domain/repositories/kitchen_repository.dart';
 
 enum AdminKitchenStatus { initial, loading, ready, failure }
 
@@ -18,7 +19,7 @@ class AdminKitchenState {
     this.busyItemIds = const <String>{},
     this.lastUpdatedAt,
     this.now,
-    this.errorMessage,
+    this.loadFailure,
   });
 
   final AdminKitchenStatus status;
@@ -37,7 +38,9 @@ class AdminKitchenState {
 
   /// The clock the cards use for the live elapsed timer.
   final DateTime? now;
-  final String? errorMessage;
+
+  /// Why the last board read failed; the page turns it into localized copy.
+  final KitchenLoadFailure? loadFailure;
 
   bool get isLoading => status == AdminKitchenStatus.loading;
   bool get isFailure => status == AdminKitchenStatus.failure;
@@ -50,6 +53,8 @@ class AdminKitchenState {
       filters.hasBranches;
 
   bool get hasActiveFilters => search.trim().isNotEmpty || branchId != null;
+
+  bool get hasLoadFailure => loadFailure != null;
 
   bool isTicketBusy(String id) => busyTicketIds.contains(id);
 
@@ -73,8 +78,8 @@ class AdminKitchenState {
     Set<String>? busyItemIds,
     DateTime? lastUpdatedAt,
     DateTime? now,
-    String? errorMessage,
-    bool clearError = false,
+    KitchenLoadFailure? loadFailure,
+    bool clearLoadFailure = false,
   }) {
     return AdminKitchenState(
       status: status ?? this.status,
@@ -89,7 +94,7 @@ class AdminKitchenState {
       busyItemIds: busyItemIds ?? this.busyItemIds,
       lastUpdatedAt: lastUpdatedAt ?? this.lastUpdatedAt,
       now: now ?? this.now,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      loadFailure: clearLoadFailure ? null : (loadFailure ?? this.loadFailure),
     );
   }
 }

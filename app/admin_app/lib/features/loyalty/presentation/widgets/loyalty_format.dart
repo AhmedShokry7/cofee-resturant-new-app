@@ -11,12 +11,28 @@ import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.da
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
 
+/// A short line whose money sits between its words, so the UI can put the
+/// riyal mark directly against [amount].
+class LoyaltyMoneySentence {
+  const LoyaltyMoneySentence({
+    this.before = '',
+    this.amount = '',
+    this.after = '',
+  });
+
+  /// A line without any money.
+  const LoyaltyMoneySentence.plain(String text) : this(before: text);
+
+  final String before;
+  final String amount;
+  final String after;
+
+  bool get hasMoney => amount.isNotEmpty;
+}
+
 String loyaltyCount(int value) => localizeDigits(formatCount(value));
 
 String loyaltyMoney(double value) => localizeDigits(formatAmount(value));
-
-String loyaltyMoneyWithCurrency(double value) =>
-    '${loyaltyMoney(value)} ${S.currency}';
 
 String loyaltyPointsText(int points) => localizeDigits(S.loyaltyPoints(points));
 
@@ -44,6 +60,33 @@ String loyaltyProgramEarnRate(AdminLoyaltyRule rule) => localizeDigits(
 String loyaltyProgramPointValue(AdminLoyaltyRule rule) => localizeDigits(
   S.loyaltyProgramPointValue(loyaltyCompactNumber(rule.pointValue)),
 );
+
+/// The money phrase a sentence was built with, e.g. `٥٠ ر.س`.
+String loyaltyMoneySlot(String amount) => '$amount ${S.currency}';
+
+/// Splits [sentence] at the money written as `loyaltyMoneySlot(amount)` so the
+/// amount keeps its own currency mark instead of the spelled-out one.
+LoyaltyMoneySentence loyaltyMoneySentence(String amount, String sentence) {
+  final slot = loyaltyMoneySlot(amount);
+  final index = sentence.indexOf(slot);
+  if (index < 0) return LoyaltyMoneySentence.plain(sentence);
+  return LoyaltyMoneySentence(
+    before: sentence.substring(0, index).trimRight(),
+    amount: amount,
+    after: sentence.substring(index + slot.length).trimLeft(),
+  );
+}
+
+/// The earning rule as `X نقطة لكل` + the currency unit it is quoted per.
+LoyaltyMoneySentence loyaltyProgramEarnRateParts(AdminLoyaltyRule rule) =>
+    loyaltyMoneySentence(loyaltyCompactNumber(1), loyaltyProgramEarnRate(rule));
+
+/// What one point is worth, with the amount kept apart from its words.
+LoyaltyMoneySentence loyaltyProgramPointValueParts(AdminLoyaltyRule rule) =>
+    loyaltyMoneySentence(
+      loyaltyCompactNumber(rule.pointValue),
+      loyaltyProgramPointValue(rule),
+    );
 
 String loyaltyProgramValidity(AdminLoyaltyRule rule) {
   final end = rule.validTo;
@@ -81,46 +124,56 @@ String loyaltyPlanCycleSummary(int? cups, int? days) => [
   if (days != null) S.subscriptionsPlanDuration(days),
 ].join('  •  ');
 
-/// One-line description under a reward target name.
-String loyaltyRewardTargetCaption(AdminLoyaltyReward reward) {
-  final price = loyaltyMoneyWithCurrency(reward.targetPrice);
+/// One-line description under a reward target name, with its price apart.
+LoyaltyMoneySentence loyaltyRewardTargetCaption(AdminLoyaltyReward reward) {
   final language = AppLocale.instance.language;
   return switch (reward.type) {
-    AdminLoyaltyRewardType.product => [
-      ?reward.categoryNameFor(language),
-      price,
-    ].join('  •  '),
-    AdminLoyaltyRewardType.bundle => [
+    AdminLoyaltyRewardType.product => _loyaltyCaption([
+      reward.categoryNameFor(language),
+    ], reward.targetPrice),
+    AdminLoyaltyRewardType.bundle => _loyaltyCaption([
       S.loyaltyRewardTypeBundle,
       S.productsCount(reward.bundleItemsCount),
-      price,
-    ].join('  •  '),
-    AdminLoyaltyRewardType.plan => [
-      S.loyaltyRewardTypePlan,
-      loyaltyPlanCycleSummary(reward.planCupsPerCycle, reward.planDurationDays),
-    ].join('  •  '),
+    ], reward.targetPrice),
+    AdminLoyaltyRewardType.plan => LoyaltyMoneySentence.plain(
+      [
+        S.loyaltyRewardTypePlan,
+        loyaltyPlanCycleSummary(
+          reward.planCupsPerCycle,
+          reward.planDurationDays,
+        ),
+      ].where((part) => part.isNotEmpty).join('  •  '),
+    ),
   };
 }
 
-String loyaltyTargetOptionCaption(AdminLoyaltyTargetOption option) {
-  final price = loyaltyMoneyWithCurrency(option.price);
+LoyaltyMoneySentence loyaltyTargetOptionCaption(
+  AdminLoyaltyTargetOption option,
+) {
   final language = AppLocale.instance.language;
   return switch (option.type) {
-    AdminLoyaltyRewardType.product => [
-      ?option.categoryNameFor(language),
-      price,
-    ].join('  •  '),
-    AdminLoyaltyRewardType.bundle => [
+    AdminLoyaltyRewardType.product => _loyaltyCaption([
+      option.categoryNameFor(language),
+    ], option.price),
+    AdminLoyaltyRewardType.bundle => _loyaltyCaption([
       S.loyaltyRewardTypeBundle,
       S.productsCount(option.bundleItemsCount ?? 0),
-      price,
-    ].join('  •  '),
-    AdminLoyaltyRewardType.plan => [
+    ], option.price),
+    AdminLoyaltyRewardType.plan => _loyaltyCaption([
       S.loyaltyRewardTypePlan,
       loyaltyPlanCycleSummary(option.planCupsPerCycle, option.planDurationDays),
-      price,
-    ].join('  •  '),
+    ], option.price),
   };
+}
+
+LoyaltyMoneySentence _loyaltyCaption(List<String?> parts, double price) {
+  final label = parts
+      .map((part) => part?.trim() ?? '')
+      .where((part) => part.isNotEmpty)
+      .join('  •  ');
+  final amount = loyaltyMoney(price);
+  if (label.isEmpty) return LoyaltyMoneySentence(amount: amount);
+  return LoyaltyMoneySentence(before: '$label  •', amount: amount);
 }
 
 String loyaltyRewardStockText(AdminLoyaltyReward reward) {

@@ -39,6 +39,7 @@ class InventoryMetricsCards extends StatelessWidget {
         icon: AppIcons.coins01,
         iconBackground: AppColor.trendPositiveSurface,
         iconColor: AppColor.trendPositive,
+        isMoney: true,
       ),
       _MetricData(
         label: S.inventoryMetricLow,
@@ -78,6 +79,7 @@ class InventoryMetricsCards extends StatelessWidget {
                   icon: card.icon,
                   iconBackground: card.iconBackground,
                   iconColor: card.iconColor,
+                  isMoney: card.isMoney,
                 ),
               ),
           ],
@@ -95,6 +97,7 @@ class _MetricData {
     required this.icon,
     required this.iconBackground,
     required this.iconColor,
+    this.isMoney = false,
   });
 
   final String label;
@@ -103,4 +106,5 @@ class _MetricData {
   final IconData icon;
   final Color iconBackground;
   final Color iconColor;
+  final bool isMoney;
 }

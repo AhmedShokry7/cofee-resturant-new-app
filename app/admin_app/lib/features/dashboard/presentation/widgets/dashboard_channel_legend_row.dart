@@ -6,6 +6,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_channel_slice.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// سطر مفتاح واحدة: لونها واسمها وعدد طلباتها ومالها.
 ///
@@ -75,14 +76,25 @@ class DashboardChannelLegendRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSizes.px8),
-          Text(
-            formatMoneyWithCurrency(slice.revenue),
-            style: TextStyle(
-              color: adminHeadingColor(theme),
-              fontSize: AppFontSizes.size10_5,
-              fontWeight: AppFontWeights.semiBold,
-              height: AppTextHeights.line1_5,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  localizeDigits(formatAmount(slice.revenue)),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: adminHeadingColor(theme),
+                    fontSize: AppFontSizes.size10_5,
+                    fontWeight: AppFontWeights.semiBold,
+                    height: AppTextHeights.line1_5,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.px4),
+              const CurrencyIcon(size: 12),
+            ],
           ),
         ],
       ),

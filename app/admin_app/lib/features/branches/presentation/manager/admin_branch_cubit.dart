@@ -2,10 +2,10 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/features/branches/di/branches_dependencies.dart';
 import 'package:admin_app/features/branches/domain/entities/admin_branch_draft.dart';
-import 'package:admin_app/features/branches/domain/entities/admin_branch_metrics.dart';
 import 'package:admin_app/features/branches/domain/entities/branch_mutation_outcome.dart';
 import 'package:admin_app/features/branches/domain/entities/branch_save_outcome.dart';
 import 'package:admin_app/features/branches/domain/repositories/branch_repository.dart';
@@ -57,10 +57,13 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
     try {
       final branches = await _loadBranches();
       var metrics = state.metrics;
+      String? metricsError;
       try {
         metrics = await _loadBranchMetrics();
       } catch (_) {
-        metrics = AdminBranchMetrics.empty;
+        // صفر مؤشرات يعني «لا توجد بيانات» بينما الحقيقة «لم تصل البيانات»،
+        // فالأرقام السابقة تبقى معروضة مع سبب الفشل فوقها.
+        metricsError = S.branchesMetricsFailed;
       }
       if (isClosed || request != _requestId) return;
       emit(
@@ -68,7 +71,8 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
           status: AdminBranchStatus.ready,
           branches: branches,
           metrics: metrics,
-          clearError: true,
+          errorMessage: metricsError,
+          clearError: metricsError == null,
         ),
       );
     } catch (error) {

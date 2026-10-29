@@ -7,10 +7,12 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_recent_order.dart';
 import 'package:admin_app/features/dashboard/presentation/utils/dashboard_display.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// سطر طلب واحد في جدول اللوحة: من طلب، وكم دفع، وأين صار.
 ///
@@ -43,11 +45,7 @@ class DashboardOrderRow extends StatelessWidget {
         adminDateColor(theme),
         AppFontWeights.regular,
       ),
-      _cellText(
-        formatMoneyWithCurrency(order.grandTotal),
-        adminAmountColor(theme),
-        AppFontWeights.semiBold,
-      ),
+      _cellMoney(order.grandTotal, adminAmountColor(theme)),
       AdminStatusBadge(label: status.label, color: status.color),
     ];
     return Container(
@@ -79,5 +77,26 @@ class DashboardOrderRow extends StatelessWidget {
       fontWeight: weight,
       height: AppTextHeights.line1_4,
     ),
+  );
+
+  /// خانة المال: رقم بلا كلمة عملة وعلامة الريال بجانبه، ولونهما واحد.
+  Widget _cellMoney(double value, Color color) => Row(
+    children: [
+      Flexible(
+        child: Text(
+          localizeDigits(formatAmount(value)),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: color,
+            fontSize: AppFontSizes.size10,
+            fontWeight: AppFontWeights.semiBold,
+            height: AppTextHeights.line1_4,
+          ),
+        ),
+      ),
+      const SizedBox(width: AppSizes.px4),
+      CurrencyIcon(size: 13, color: color),
+    ],
   );
 }

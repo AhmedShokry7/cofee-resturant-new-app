@@ -24,15 +24,17 @@ class DashboardMetricsCards extends StatelessWidget {
     children: [
       DashboardMetricTile(
         label: S.dashboardAverageOrderValue,
-        value: formatMoneyWithCurrency(metrics.averageOrderValue),
+        value: localizeDigits(formatAmount(metrics.averageOrderValue)),
         icon: AppIcons.coins01,
         surface: AppColor.adminWarningSurface,
         ink: AppColor.adminWarning,
         current: metrics.averageOrderValue,
         previous: metrics.yesterdayAverageOrderValue,
         caption: S.dashboardYesterday(
-          formatMoneyWithCurrency(metrics.yesterdayAverageOrderValue),
+          localizeDigits(formatAmount(metrics.yesterdayAverageOrderValue)),
         ),
+        isMoney: true,
+        captionIsMoney: true,
       ),
       DashboardCustomersTile(metrics: metrics),
       DashboardMetricTile(
@@ -49,15 +51,17 @@ class DashboardMetricsCards extends StatelessWidget {
       ),
       DashboardMetricTile(
         label: S.dashboardTotalSales,
-        value: formatMoneyWithCurrency(metrics.monthRevenue),
+        value: localizeDigits(formatAmount(metrics.monthRevenue)),
         icon: AppIcons.wallet01,
         surface: AppColor.tintGreenSurface,
         ink: AppColor.tintGreenInk,
         current: metrics.monthRevenue,
         previous: metrics.prevMonthRevenue,
         caption: S.dashboardLastMonth(
-          formatMoneyWithCurrency(metrics.prevMonthRevenue),
+          localizeDigits(formatAmount(metrics.prevMonthRevenue)),
         ),
+        isMoney: true,
+        captionIsMoney: true,
       ),
     ],
   );

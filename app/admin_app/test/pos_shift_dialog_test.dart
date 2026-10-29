@@ -6,11 +6,13 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
 import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/data/repositories/admin_pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_shift_dialog.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/core/models/dining_table.dart';
 
 PosShift _openShift({
@@ -87,6 +89,10 @@ class _FakeShiftRepository extends AdminPosRepository {
 
   double? lastOpeningFloat;
   String? lastOpenNote;
+  String? lastOpenCashierId;
+  List<PosCashier> cashiers = const <PosCashier>[];
+  int cashierCalls = 0;
+  String? lastCashierBranchId;
   PosCashMovementKind? lastMovementKind;
   double? lastMovementAmount;
   String? lastMovementReason;
@@ -116,14 +122,23 @@ class _FakeShiftRepository extends AdminPosRepository {
     required String branchId,
     required double openingFloat,
     String? note,
+    String? cashierId,
   }) async {
     lastOpeningFloat = openingFloat;
     lastOpenNote = note;
+    lastOpenCashierId = cashierId;
     final opened =
         openedShift ??
         _openShift(branchId: branchId, openingFloat: openingFloat);
     shift = opened;
     return opened;
+  }
+
+  @override
+  Future<List<PosCashier>> loadCashiers(String branchId) async {
+    cashierCalls += 1;
+    lastCashierBranchId = branchId;
+    return cashiers;
   }
 
   @override
@@ -230,8 +245,9 @@ void main() {
     expect(find.byKey(const Key('pos-shift-dialog')), findsOneWidget);
     expect(find.text(S.posShiftActive), findsOneWidget);
     expect(find.text(S.posShiftExpectedCash), findsOneWidget);
-    expect(find.text('165.00 SAR'), findsOneWidget);
-    expect(find.text('120.00 SAR'), findsOneWidget);
+    expect(find.text('165.00'), findsOneWidget);
+    expect(find.text('120.00'), findsOneWidget);
+    expect(find.byType(CurrencyIcon), findsWidgets);
     expect(find.text(S.posShiftCashSales), findsOneWidget);
     expect(find.text(S.posShiftCardSales), findsOneWidget);
     expect(find.text(S.posShiftSalesTotal), findsOneWidget);
@@ -272,8 +288,76 @@ void main() {
     expect(cubit.state.shift?.openingFloat, 150);
     expect(find.byKey(const Key('pos-shift-open-float')), findsNothing);
     expect(find.text(S.posShiftExpectedCash), findsOneWidget);
-    expect(find.text('150.00 SAR'), findsWidgets);
+    expect(find.text('150.00'), findsWidgets);
     expect(find.byKey(const Key('pos-shift-cash-in')), findsOneWidget);
+  });
+
+  testWidgets('the drawer form loads the branch staff it can assign', (
+    tester,
+  ) async {
+    final repository = _FakeShiftRepository()
+      ..cashiers = const <PosCashier>[
+        PosCashier(id: 'st-1', fullName: 'منى علي', isSelf: true),
+        PosCashier(id: 'st-2', fullName: 'سامي حسن'),
+      ];
+
+    await _pumpShiftDialog(tester, repository);
+
+    expect(repository.cashierCalls, 1);
+    expect(repository.lastCashierBranchId, 'b1');
+    expect(find.byKey(const Key('pos-shift-open-cashier')), findsOneWidget);
+    expect(find.text(S.posShiftCashierSelf), findsOneWidget);
+    expect(find.text('سامي حسن'), findsNothing);
+  });
+
+  testWidgets('assigning the drawer to a cashier sends their id', (
+    tester,
+  ) async {
+    final repository = _FakeShiftRepository()
+      ..cashiers = const <PosCashier>[
+        PosCashier(id: 'st-1', fullName: 'منى علي', isSelf: true),
+        PosCashier(id: 'st-2', fullName: 'سامي حسن'),
+      ];
+
+    await _pumpShiftDialog(tester, repository);
+
+    await tester.tap(find.text(S.posShiftCashierSelf));
+    await tester.pumpAndSettle();
+
+    expect(find.text('منى علي'), findsNothing);
+    expect(find.text('سامي حسن'), findsOneWidget);
+
+    await tester.tap(find.text('سامي حسن'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('سامي حسن'), findsOneWidget);
+
+    await tester.enterText(
+      find.byKey(const Key('pos-shift-open-float')),
+      '150',
+    );
+    await tester.tap(find.byKey(const Key('pos-shift-open-submit')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastOpenCashierId, 'st-2');
+    expect(repository.lastOpeningFloat, 150);
+  });
+
+  testWidgets('leaving the picker on yourself opens the caller drawer', (
+    tester,
+  ) async {
+    final repository = _FakeShiftRepository()
+      ..cashiers = const <PosCashier>[
+        PosCashier(id: 'st-2', fullName: 'سامي حسن'),
+      ];
+
+    await _pumpShiftDialog(tester, repository);
+
+    await tester.enterText(find.byKey(const Key('pos-shift-open-float')), '80');
+    await tester.tap(find.byKey(const Key('pos-shift-open-submit')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastOpenCashierId, isNull);
   });
 
   testWidgets('a cash movement updates the drawer and closes its dialog', (
@@ -305,8 +389,8 @@ void main() {
     expect(repository.lastMovementKind, PosCashMovementKind.cashIn);
     expect(repository.lastMovementAmount, 30);
     expect(repository.lastMovementReason, 'فكة');
-    expect(find.text('130.00 SAR'), findsOneWidget);
-    expect(find.text('30.00 SAR'), findsOneWidget);
+    expect(find.text('130.00'), findsOneWidget);
+    expect(find.text('30.00'), findsOneWidget);
   });
 
   testWidgets('a rejected cash out explains itself and keeps the form', (
@@ -373,7 +457,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('pos-shift-close-dialog')), findsOneWidget);
-    expect(find.text('145.00 SAR'), findsWidgets);
+    expect(find.text('145.00'), findsWidgets);
     expect(find.text(S.posShiftVarianceHint), findsOneWidget);
 
     repository.closedShiftResult = _closedShift(countedCash: 140);
@@ -381,7 +465,7 @@ void main() {
     await tester.pump();
 
     expect(find.text(S.posShiftVarianceShort), findsOneWidget);
-    expect(find.text('-5.00 SAR'), findsOneWidget);
+    expect(find.text('-5.00'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('pos-shift-close-submit')));
     await tester.pumpAndSettle();
@@ -392,8 +476,8 @@ void main() {
     expect(find.byKey(const Key('pos-shift-close-dialog')), findsNothing);
     expect(find.byKey(const Key('pos-shift-report-dialog')), findsOneWidget);
     expect(find.text(S.posShiftReportZ), findsWidgets);
-    expect(find.text('140.00 SAR'), findsWidgets);
-    expect(find.text('-5.00 SAR'), findsOneWidget);
+    expect(find.text('140.00'), findsWidgets);
+    expect(find.text('-5.00'), findsOneWidget);
     // The cashier is ready for the next drawer under the report.
     expect(find.byKey(const Key('pos-shift-open-float')), findsOneWidget);
   });

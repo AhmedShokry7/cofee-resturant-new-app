@@ -233,6 +233,11 @@ void main() {
         movementErrorMessage(InventoryMovementOutcome.permissionDenied),
         S.movementPermissionDenied,
       );
+      // ١٧٣ يرفض نوعًا خارج receipt/issue/waste/count، والرفض نوعٌ لا وحدة.
+      expect(
+        movementErrorMessage(InventoryMovementOutcome.invalidType),
+        S.movementInvalidType,
+      );
       expect(movementErrorMessage(InventoryMovementOutcome.success), isEmpty);
     });
   });

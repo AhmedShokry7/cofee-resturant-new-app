@@ -118,11 +118,11 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
         state.copyWith(
           status: DiningStatus.loading,
           isRefreshing: false,
-          clearError: true,
+          clearLoadFailure: true,
         ),
       );
     } else {
-      emit(state.copyWith(isRefreshing: true, clearError: true));
+      emit(state.copyWith(isRefreshing: true, clearLoadFailure: true));
     }
 
     try {
@@ -137,25 +137,24 @@ class DiningTablesCubit extends Cubit<DiningTablesState> {
           branches: overview.branches,
           metrics: overview.metrics,
           branchId: overview.branchId,
-          clearBranch: overview.branchId == null,
           isRefreshing: false,
-          clearError: true,
+          clearLoadFailure: true,
         ),
       );
     } on DiningLoadException catch (error) {
-      _failFetch(request, error.message ?? error.failure.name);
-    } catch (error) {
-      _failFetch(request, '$error');
+      _failFetch(request, error.failure);
+    } catch (_) {
+      _failFetch(request, DiningLoadFailure.failed);
     }
   }
 
-  void _failFetch(int request, String message) {
+  void _failFetch(int request, DiningLoadFailure failure) {
     if (isClosed || request != _requestId) return;
     emit(
       state.copyWith(
         status: state.hasData ? DiningStatus.ready : DiningStatus.failure,
         isRefreshing: false,
-        errorMessage: message,
+        loadFailure: failure,
       ),
     );
   }

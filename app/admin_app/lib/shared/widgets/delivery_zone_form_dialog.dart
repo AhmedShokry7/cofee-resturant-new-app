@@ -6,6 +6,8 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_delivery_zone.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The form of a delivery zone: its names, its fees and its centre.
 class DeliveryZoneFormDialog extends StatefulWidget {
@@ -106,17 +108,40 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
     super.dispose();
   }
 
+  /// A money field: blank stays zero as the zone table stores it, but text
+  /// that is not a number is refused instead of being written as a free
+  /// delivery. The digits of either language are read.
+  double? _amount(TextEditingController controller) {
+    final text = normalizeDigits(controller.text.trim());
+    if (text.isEmpty) return 0;
+    return double.tryParse(text);
+  }
+
+  /// A number field, read in the digits of either language; blank is `null`.
+  double? _number(TextEditingController controller) {
+    final text = normalizeDigits(controller.text.trim());
+    if (text.isEmpty) return null;
+    return double.tryParse(text);
+  }
+
+  /// A whole-number field: a value the zone table stores as an integer count.
+  int? _integer(TextEditingController controller) {
+    final text = normalizeDigits(controller.text.trim());
+    if (text.isEmpty) return null;
+    return int.tryParse(text);
+  }
+
   void _accept() {
     final nameAr = _nameAr.text.trim();
     final nameEn = _nameEn.text.trim();
-    final radius = double.tryParse(_radius.text.trim());
-    final latitude = double.tryParse(_lat.text.trim());
-    final longitude = double.tryParse(_lng.text.trim());
-    final deliveryFee = double.tryParse(_fee.text.trim()) ?? 0;
-    final minimumOrder = double.tryParse(_minOrder.text.trim()) ?? 0;
-    final estimatedMinutes = int.tryParse(_minutes.text.trim());
-    final maxFee = double.tryParse(_maxFee.text.trim());
-    final freeOver = double.tryParse(_freeOver.text.trim());
+    final radius = _number(_radius);
+    final latitude = _number(_lat);
+    final longitude = _number(_lng);
+    final deliveryFee = _amount(_fee);
+    final minimumOrder = _amount(_minOrder);
+    final estimatedMinutes = _integer(_minutes);
+    final maxFee = _number(_maxFee);
+    final freeOver = _number(_freeOver);
     if (nameAr.isEmpty ||
         !_centerChosen ||
         radius == null ||
@@ -127,7 +152,9 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
         longitude == null ||
         longitude < -180 ||
         longitude > 180 ||
+        deliveryFee == null ||
         deliveryFee < 0 ||
+        minimumOrder == null ||
         minimumOrder < 0 ||
         (estimatedMinutes != null && estimatedMinutes <= 0) ||
         (maxFee != null && maxFee < 0) ||
@@ -135,8 +162,8 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
       setState(() => _validationError = S.invalidDeliveryZoneFields);
       return;
     }
-    if (_feeMethod == 'per_km' &&
-        (double.tryParse(_feePerKm.text.trim()) ?? 0) <= 0) {
+    final feePerKm = _number(_feePerKm);
+    if (_feeMethod == 'per_km' && (feePerKm ?? 0) <= 0) {
       setState(() => _validationError = S.invalidPerKmFee);
       return;
     }
@@ -153,7 +180,7 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
         centerLatitude: latitude,
         centerLongitude: longitude,
         feeMethod: _feeMethod,
-        feePerKm: double.tryParse(_feePerKm.text.trim()),
+        feePerKm: feePerKm,
         maxDeliveryFee: maxFee,
         freeDeliveryOver: freeOver,
         isActive: _isActive,
@@ -161,10 +188,8 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
     );
   }
 
-  LatLng get _center => LatLng(
-    double.tryParse(_lat.text.trim()) ?? 24.7136,
-    double.tryParse(_lng.text.trim()) ?? 46.6753,
-  );
+  LatLng get _center =>
+      LatLng(_number(_lat) ?? 24.7136, _number(_lng) ?? 46.6753);
 
   LatLng? get _branchCenter =>
       widget.defaultLatitude != null && widget.defaultLongitude != null
@@ -215,12 +240,16 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
     TextEditingController controller,
     String label, {
     bool decimal = true,
+    bool money = false,
     ValueChanged<String>? onChanged,
   }) {
     return Expanded(
       child: TextField(
         controller: controller,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          suffixIcon: money ? const CurrencyIcon(size: 15) : null,
+        ),
         keyboardType: TextInputType.numberWithOptions(decimal: decimal),
         onChanged: onChanged,
       ),
@@ -291,9 +320,9 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
                 ),
               ]),
               _row([
-                _field(_fee, S.deliveryFeeAmount),
+                _field(_fee, S.deliveryFeeAmount, money: true),
                 const SizedBox(width: AppSpacing.md),
-                _field(_minOrder, S.minimumOrder),
+                _field(_minOrder, S.minimumOrder, money: true),
               ]),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -416,9 +445,9 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
                 ),
               ),
               _row([
-                _field(_feePerKm, S.feePerKilometer),
+                _field(_feePerKm, S.feePerKilometer, money: true),
                 const SizedBox(width: AppSpacing.md),
-                _field(_maxFee, S.maxDeliveryFee),
+                _field(_maxFee, S.maxDeliveryFee, money: true),
               ]),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),

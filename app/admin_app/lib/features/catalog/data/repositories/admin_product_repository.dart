@@ -225,12 +225,23 @@ class AdminProductRepository
     );
   }
 
+  /// Saves the url a category shows.
+  ///
+  /// This goes through a function rather than the table on purpose: a direct
+  /// update passes row level security and then dies inside `tr_categories_search`,
+  /// whose invoker trigger calls `catalog.rebuild_category_search` — a function
+  /// `081_harden_function_and_view_grants.sql:31` took from `authenticated` and
+  /// which must stay taken, because customers hold that same role. The definer
+  /// runs the trigger as its owner instead.
   @override
   Future<void> updateCategoryImage(String categoryId, String? imageUrl) async {
-    await _supabase
-        .from('categories')
-        .update({'image_url': imageUrl})
-        .eq('id', categoryId);
+    final response = await _supabase.rpc(
+      'admin_set_category_image',
+      params: {'p_category_id': categoryId, 'p_image_url': imageUrl},
+    );
+    if (_asMap(response)['ok'] != true) {
+      throw AdminProductException(S.categoryImageNotSaved);
+    }
   }
 
   /// Uploads a picture of a category to the bucket and saves its url.
@@ -244,6 +255,7 @@ class AdminProductRepository
   }) async {
     _checkImage(bytes, contentType);
     final path = _categoryImagePath(categoryId, fileName);
+    final previousUrl = await _categoryImageUrl(categoryId);
 
     onPhase?.call(AdminImageUploadPhase.uploading);
     await _supabase.storage
@@ -263,7 +275,28 @@ class AdminProductRepository
       await _removeFile(path);
       rethrow;
     }
+    // The picture the category showed before belongs to no row now, so it
+    // leaves the bucket with it; every replaced picture would otherwise pile
+    // up in the bucket forever.
+    final oldPath = previousUrl == null ? null : _pathOf(previousUrl);
+    if (oldPath != null && oldPath != path) {
+      await _removeFile(oldPath);
+    }
     return url;
+  }
+
+  /// The picture a category shows right now, when the row has one.
+  Future<String?> _categoryImageUrl(String categoryId) async {
+    final rows = await _supabase
+        .from('categories')
+        .select('image_url')
+        .eq('id', categoryId)
+        .limit(1);
+    for (final row in rows) {
+      final url = row['image_url'] as String?;
+      if (url != null && url.trim().isNotEmpty) return url;
+    }
+    return null;
   }
 
   /// Removes the picture of a category from the bucket.

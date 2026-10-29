@@ -20,18 +20,27 @@ class AdminKitchenRepository implements KitchenRepository {
     String? branchId,
     int limit = 150,
   }) async {
-    final response = await _supabase.rpc(
-      'admin_kitchen_board',
-      params: {
-        'p_search': _blankToNull(search),
-        'p_branch_id': _blankToNull(branchId),
-        'p_limit': limit,
-      },
-    );
-    if (response is Map) {
-      return AdminKitchenBoard.fromJson(Map<String, dynamic>.from(response));
+    try {
+      final response = await _supabase.rpc(
+        'admin_kitchen_board',
+        params: {
+          'p_search': _blankToNull(search),
+          'p_branch_id': _blankToNull(branchId),
+          'p_limit': limit,
+        },
+      );
+      if (response is Map) {
+        return AdminKitchenBoard.fromJson(Map<String, dynamic>.from(response));
+      }
+      return const AdminKitchenBoard();
+    } on PostgrestException catch (error) {
+      throw KitchenLoadException(
+        error.code == '42501'
+            ? KitchenLoadFailure.permissionDenied
+            : KitchenLoadFailure.failed,
+        error.message,
+      );
     }
-    return const AdminKitchenBoard();
   }
 
   @override

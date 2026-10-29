@@ -1,4 +1,5 @@
 import 'package:admin_app/core/models/dining_table.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
@@ -136,11 +137,15 @@ abstract interface class PosRepository {
   /// يقرأ الوردية المفتوحة للفرع، أو null إن لم يكن هناك وردية.
   Future<PosShift?> loadOpenShift(String branchId);
 
-  /// يفتح وردية الفرع برصيد افتتاحي ويعيد الوردية المفتوحة.
+  /// يقرأ موظفي الفرع الذين تصلح لهم وردية الصندوق.
+  Future<List<PosCashier>> loadCashiers(String branchId);
+
+  /// يفتح وردية الفرع برصيد افتتاحي باسم كاشير محدد أو باسم المستخدم الحالي.
   Future<PosShift> openShift({
     required String branchId,
     required double openingFloat,
     String? note,
+    String? cashierId,
   });
 
   /// يحرّك نقدًا داخل الوردية (إيداع أو سحب) بعد سبب.

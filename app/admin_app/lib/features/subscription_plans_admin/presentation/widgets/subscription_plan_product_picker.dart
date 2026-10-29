@@ -13,6 +13,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/subscription_plans_admin/domain/entities/admin_subscription_plan_product.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 /// Opens the multi-select list of products a plan can be limited to.
@@ -333,18 +334,23 @@ class _ProductTile extends StatelessWidget {
                         height: AppTextHeights.line1_5,
                       ),
                     ),
-                    Text(
-                      [
-                        if (category.isNotEmpty) category,
-                        '$price ${S.currency}',
-                      ].join('  •  '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: adminMutedColor(theme),
-                        fontSize: AppFontSizes.size9_5,
-                        height: AppTextHeights.line1_5,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            category.isEmpty ? price : '$category  •  $price',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: adminMutedColor(theme),
+                              fontSize: AppFontSizes.size9_5,
+                              height: AppTextHeights.line1_5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.px4),
+                        const CurrencyIcon(size: 11),
+                      ],
                     ),
                   ],
                 ),

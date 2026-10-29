@@ -11,19 +11,18 @@ import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class PosProductCard extends StatelessWidget {
   const PosProductCard({
     super.key,
     required this.product,
-    required this.currencyCode,
     required this.inCart,
     required this.remaining,
     required this.onTap,
   });
 
   final PosProduct product;
-  final String currencyCode;
   final int inCart;
 
   /// Null means the branch does not cap this product's quantity.
@@ -142,16 +141,11 @@ class PosProductCard extends StatelessWidget {
                                           ),
                                         ),
                                         const SizedBox(width: AppSizes.px4),
-                                        Flexible(
-                                          child: Text(
-                                            currencyCode,
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: TextStyle(
-                                              color: adminMutedColor(theme),
-                                              fontSize: AppFontSizes.size9,
-                                              height: AppTextHeights.line1_2,
-                                            ),
+                                        CurrencyIcon(
+                                          size: 13,
+                                          color: adminFlagForeground(
+                                            theme,
+                                            AppColor.adminAccent,
                                           ),
                                         ),
                                       ],
@@ -211,6 +205,11 @@ class PosProductCard extends StatelessWidget {
                                                 height: AppTextHeights.line1_2,
                                               ),
                                             ),
+                                          ),
+                                          const SizedBox(width: AppSizes.px4),
+                                          CurrencyIcon(
+                                            size: 11,
+                                            color: adminMutedColor(theme),
                                           ),
                                         ],
                                       ),

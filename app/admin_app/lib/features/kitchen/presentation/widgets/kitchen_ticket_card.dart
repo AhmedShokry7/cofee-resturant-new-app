@@ -41,6 +41,15 @@ class KitchenTicketCard extends StatelessWidget {
   final VoidCallback onRecall;
   final ValueChanged<AdminKitchenTicketItem> onToggleItem;
 
+  /// `admin_kitchen_set_item_status` refuses a line of a completed or cancelled
+  /// ticket with `invalid_status`, so those lines are read-only even for a
+  /// manager; the ticket itself stays recallable from the footer.
+  bool get _linesAreEditable =>
+      canManage &&
+      !isBusy &&
+      ticket.status != KitchenTicketStatus.completed &&
+      ticket.status != KitchenTicketStatus.cancelled;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -231,7 +240,7 @@ class KitchenTicketCard extends StatelessWidget {
                       ),
                     _KitchenItemRow(
                       item: ticket.items[index],
-                      canManage: canManage && !isBusy,
+                      canManage: _linesAreEditable,
                       busy: isItemBusy(ticket.items[index].id),
                       onTap: () => onToggleItem(ticket.items[index]),
                     ),

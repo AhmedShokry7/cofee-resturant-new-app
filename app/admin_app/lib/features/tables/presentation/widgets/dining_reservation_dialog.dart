@@ -57,7 +57,23 @@ class _DiningReservationDialog extends StatefulWidget {
 }
 
 class _DiningReservationDialogState extends State<_DiningReservationDialog> {
-  static const _durations = <int>[30, 60, 90, 120, 180];
+  /// The durations offered by default; the database accepts anything from
+  /// 30 to 480 minutes, so a stored booking outside this list is added to it
+  /// rather than silently rewritten.
+  static const _durationSteps = <int>[
+    30,
+    45,
+    60,
+    90,
+    120,
+    150,
+    180,
+    240,
+    300,
+    360,
+    420,
+    480,
+  ];
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name;
@@ -71,6 +87,14 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
   String? _error;
 
   bool get _editing => widget.reservation != null;
+
+  List<int> get _durationOptions {
+    final stored = widget.reservation?.durationMinutes;
+    if (stored == null || _durationSteps.contains(stored)) {
+      return _durationSteps;
+    }
+    return <int>[..._durationSteps, stored]..sort();
+  }
 
   bool get _tableLocked =>
       widget.reservation?.status == DiningReservationStatus.seated;
@@ -110,16 +134,13 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
     _party = TextEditingController(text: '${reservation?.partySize ?? 2}');
     _note = TextEditingController(text: reservation?.note ?? '');
     _duration = reservation?.durationMinutes ?? 90;
-    if (!_durations.contains(_duration)) {
-      _duration = _durations.reduce(
-        (a, b) => (a - _duration).abs() <= (b - _duration).abs() ? a : b,
-      );
-    }
 
-    final now = DateTime.now();
-    final fallback = now.add(const Duration(hours: 1));
-    _startsAt = reservation?.reservedFor?.toLocal() ?? fallback;
-    if (_startsAt.isBefore(now)) _startsAt = fallback;
+    // A stored booking keeps its own time, even when that time has already
+    // passed: the database rejects the past only for a new booking, and an
+    // editor that moved the clock forward would silently change the guest's
+    // reservation just by being opened.
+    final stored = reservation?.reservedFor?.toLocal();
+    _startsAt = stored ?? DateTime.now().add(const Duration(hours: 1));
 
     final preferred =
         reservation?.tableId ??
@@ -150,12 +171,19 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
   Future<void> _pickDate() async {
     final today = DateTime.now();
     final firstDate = DateTime(today.year, today.month, today.day);
+    // `admin_dining_overview` lists bookings only inside [today, today + 30d),
+    // so anything past day 29 is saved and then never shown again.
+    final lastDate = DateTime(
+      firstDate.year,
+      firstDate.month,
+      firstDate.day + 29,
+    );
     final initial = _startsAt.isBefore(firstDate) ? firstDate : _startsAt;
     final picked = await showDatePicker(
       context: context,
-      initialDate: initial,
+      initialDate: initial.isAfter(lastDate) ? lastDate : initial,
       firstDate: firstDate,
-      lastDate: today.add(const Duration(days: 90)),
+      lastDate: lastDate,
     );
     if (picked == null || !mounted) return;
     setState(() {
@@ -194,9 +222,10 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
       setState(() => _error = S.reservationTableRequired);
       return;
     }
-    if (_startsAt.isBefore(
-      DateTime.now().subtract(const Duration(minutes: 5)),
-    )) {
+    if (!_editing &&
+        _startsAt.isBefore(
+          DateTime.now().subtract(const Duration(minutes: 5)),
+        )) {
       setState(() => _error = S.reservationDatePast);
       return;
     }
@@ -441,7 +470,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                           ),
                           dropdownColor: theme.colorScheme.surface,
                           items: [
-                            for (final minutes in _durations)
+                            for (final minutes in _durationOptions)
                               DropdownMenuItem(
                                 value: minutes,
                                 child: Text(
@@ -494,7 +523,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
               AdminDialogFooter(
                 saving: _saving,
                 onCancel: () => Navigator.of(context).maybePop(),
-                onSave: _selectableTables.isEmpty ? () {} : _save,
+                onSave: _selectableTables.isEmpty ? null : _save,
                 saveKey: const Key('dining-reservation-save'),
                 saveLabel: S.save,
                 savingLabel: S.saving,
@@ -509,9 +538,10 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
   String _durationLabelFor(int minutes) => switch (minutes) {
     30 => S.reservationDuration30,
     60 => S.reservationDuration60,
+    90 => S.reservationDuration90,
     120 => S.reservationDuration120,
     180 => S.reservationDuration180,
-    _ => S.reservationDuration90,
+    _ => S.reservationDurationMinutes(minutes),
   };
 }
 

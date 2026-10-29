@@ -1,5 +1,6 @@
 import 'package:admin_app/core/models/dining_enums.dart';
 import 'package:admin_app/features/tables/domain/entities/dining_overview.dart';
+import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 import 'package:admin_app/core/models/dining_reservation.dart';
 import 'package:admin_app/core/models/dining_table.dart';
 
@@ -19,7 +20,7 @@ class DiningTablesState {
     this.area,
     this.view = DiningView.tables,
     this.isRefreshing = false,
-    this.errorMessage,
+    this.loadFailure,
   });
 
   final DiningStatus status;
@@ -34,7 +35,9 @@ class DiningTablesState {
   final DiningArea? area;
   final DiningView view;
   final bool isRefreshing;
-  final String? errorMessage;
+
+  /// Why the last load failed; the page turns it into localized copy.
+  final DiningLoadFailure? loadFailure;
 
   bool get isLoading => status == DiningStatus.loading;
   bool get isFailure => status == DiningStatus.failure;
@@ -142,14 +145,13 @@ class DiningTablesState {
     List<DiningBranch>? branches,
     DiningMetrics? metrics,
     String? branchId,
-    bool clearBranch = false,
     String? search,
     DiningArea? area,
     bool clearArea = false,
     DiningView? view,
     bool? isRefreshing,
-    String? errorMessage,
-    bool clearError = false,
+    DiningLoadFailure? loadFailure,
+    bool clearLoadFailure = false,
   }) {
     return DiningTablesState(
       status: status ?? this.status,
@@ -157,12 +159,12 @@ class DiningTablesState {
       reservations: reservations ?? this.reservations,
       branches: branches ?? this.branches,
       metrics: metrics ?? this.metrics,
-      branchId: clearBranch ? null : (branchId ?? this.branchId),
+      branchId: branchId ?? this.branchId,
       search: search ?? this.search,
       area: clearArea ? null : (area ?? this.area),
       view: view ?? this.view,
       isRefreshing: isRefreshing ?? this.isRefreshing,
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      loadFailure: clearLoadFailure ? null : (loadFailure ?? this.loadFailure),
     );
   }
 }

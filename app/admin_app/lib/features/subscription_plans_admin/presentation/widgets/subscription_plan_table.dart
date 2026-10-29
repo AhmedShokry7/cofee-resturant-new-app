@@ -11,6 +11,7 @@ import 'package:admin_app/features/subscription_plans_admin/domain/entities/admi
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class SubscriptionPlanTable extends StatelessWidget {
   const SubscriptionPlanTable({
@@ -209,6 +210,7 @@ class _Row extends StatelessWidget {
                   value: subscriptionPlanPrice(plan),
                   color: body,
                   weight: AppFontWeights.semiBold,
+                  isMoney: true,
                 ),
               ),
               Expanded(
@@ -239,6 +241,7 @@ class _Row extends StatelessWidget {
                   secondary: subscriptionPlanBonusTypeLabel(plan.bonusType),
                   primaryColor: body,
                   secondaryColor: muted,
+                  primaryIsMoney: subscriptionPlanBonusIsMoney(plan),
                 ),
               ),
               Expanded(
@@ -280,24 +283,42 @@ class _Row extends StatelessWidget {
 }
 
 class _TextCell extends StatelessWidget {
-  const _TextCell({required this.value, required this.color, this.weight});
+  const _TextCell({
+    required this.value,
+    required this.color,
+    this.weight,
+    this.isMoney = false,
+  });
 
   final String value;
   final Color color;
   final FontWeight? weight;
 
+  /// True when [value] is an amount, so the currency mark sits beside it.
+  final bool isMoney;
+
   @override
-  Widget build(BuildContext context) => Text(
-    value,
-    maxLines: 1,
-    overflow: TextOverflow.ellipsis,
-    style: TextStyle(
-      color: color,
-      fontSize: AppFontSizes.size10_5,
-      fontWeight: weight ?? AppFontWeights.regular,
-      height: AppTextHeights.line1_5,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final text = Text(
+      value,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: color,
+        fontSize: AppFontSizes.size10_5,
+        fontWeight: weight ?? AppFontWeights.regular,
+        height: AppTextHeights.line1_5,
+      ),
+    );
+    if (!isMoney) return text;
+    return Row(
+      children: [
+        Flexible(child: text),
+        const SizedBox(width: AppSizes.px4),
+        const CurrencyIcon(size: 12),
+      ],
+    );
+  }
 }
 
 class _TwoLineCell extends StatelessWidget {
@@ -306,6 +327,7 @@ class _TwoLineCell extends StatelessWidget {
     required this.secondary,
     required this.primaryColor,
     required this.secondaryColor,
+    this.primaryIsMoney = false,
   });
 
   final String primary;
@@ -313,32 +335,47 @@ class _TwoLineCell extends StatelessWidget {
   final Color primaryColor;
   final Color secondaryColor;
 
+  /// True when [primary] is an amount, so the currency mark sits beside it.
+  final bool primaryIsMoney;
+
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisAlignment: MainAxisAlignment.center,
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        primary,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: primaryColor,
-          fontSize: AppFontSizes.size10_5,
-          fontWeight: AppFontWeights.semiBold,
-          height: AppTextHeights.line1_5,
-        ),
+  Widget build(BuildContext context) {
+    final primaryText = Text(
+      primary,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: primaryColor,
+        fontSize: AppFontSizes.size10_5,
+        fontWeight: AppFontWeights.semiBold,
+        height: AppTextHeights.line1_5,
       ),
-      Text(
-        secondary,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: secondaryColor,
-          fontSize: AppFontSizes.size9,
-          height: AppTextHeights.line1_5,
+    );
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (primaryIsMoney)
+          Row(
+            children: [
+              Flexible(child: primaryText),
+              const SizedBox(width: AppSizes.px4),
+              const CurrencyIcon(size: 12),
+            ],
+          )
+        else
+          primaryText,
+        Text(
+          secondary,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: secondaryColor,
+            fontSize: AppFontSizes.size9,
+            height: AppTextHeights.line1_5,
+          ),
         ),
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }

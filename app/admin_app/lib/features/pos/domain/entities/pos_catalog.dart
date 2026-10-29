@@ -263,7 +263,6 @@ class PosProduct {
     required this.id,
     this.categoryId = '',
     this.sku = '',
-    this.slug = '',
     this.nameAr = '',
     this.nameEn = '',
     this.descriptionAr = '',
@@ -289,7 +288,6 @@ class PosProduct {
   final String id;
   final String categoryId;
   final String sku;
-  final String slug;
   final String nameAr;
   final String nameEn;
   final String descriptionAr;
@@ -359,7 +357,6 @@ class PosProduct {
       id: posText(json['id']),
       categoryId: posText(json['category_id']),
       sku: posText(json['sku']),
-      slug: posText(json['slug']),
       nameAr: posText(json['name_ar']),
       nameEn: posText(json['name_en']),
       descriptionAr: posText(json['description_ar']),

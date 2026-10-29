@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review_metrics.dart';
@@ -14,7 +15,10 @@ class AdminReviewsRepository implements ReviewRepository {
 
   @override
   Future<List<AdminReview>> loadReviews() async {
-    final response = await _supabase.rpc('admin_reviews');
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc('admin_reviews'),
+      client: _supabase,
+    );
     if (response is! List) return const <AdminReview>[];
     return response
         .whereType<Map>()

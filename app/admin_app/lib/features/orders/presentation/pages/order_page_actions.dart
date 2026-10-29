@@ -3,7 +3,10 @@ part of 'order_page.dart';
 extension _OrderPageActions on _OrderPageState {
   Future<void> _changeStatus(AdminOrder order, String status) async {
     try {
-      await _cubit.updateOrderStatus(order.id, status);
+      final applied = await _cubit.updateOrderStatus(order.id, status);
+      if (applied || !mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.orderActionFailed)));
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

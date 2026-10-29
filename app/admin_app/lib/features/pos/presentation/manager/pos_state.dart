@@ -1,5 +1,6 @@
 import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
@@ -22,6 +23,47 @@ enum PosCheckoutBlocker {
   tableUnavailable,
 }
 
+/// A counter basket temporarily parked so the cashier can serve another guest
+/// and return to this order later.
+class PosHeldOrder {
+  PosHeldOrder({
+    required this.id,
+    required this.number,
+    required this.heldAt,
+    required List<PosCartLine> cart,
+    this.customer,
+    this.tableId,
+    this.tableName,
+    this.orderNote = '',
+    this.paymentMode = PosPaymentMode.cash,
+    this.splitCash = 0,
+    this.cashReceived = 0,
+  }) : cart = List<PosCartLine>.unmodifiable(cart);
+
+  final String id;
+  final int number;
+  final DateTime heldAt;
+  final List<PosCartLine> cart;
+  final PosCustomer? customer;
+  final String? tableId;
+  final String? tableName;
+  final String orderNote;
+  final PosPaymentMode paymentMode;
+  final double splitCash;
+  final double cashReceived;
+
+  int get quantity => cart.fold(0, (sum, line) => sum + line.quantity);
+
+  PosCartSummary summary({
+    required double taxRate,
+    required bool taxIncluded,
+  }) => PosCartSummary.fromLines(
+    cart,
+    taxRate: taxRate,
+    taxIncluded: taxIncluded,
+  );
+}
+
 class PosState {
   const PosState({
     this.status = PosStatus.initial,
@@ -41,6 +83,7 @@ class PosState {
     this.search = '',
     this.categoryId,
     this.cart = const <PosCartLine>[],
+    this.heldOrders = const <PosHeldOrder>[],
     this.customer,
     this.customerResults = const <PosCustomer>[],
     this.customerQuery = '',
@@ -50,6 +93,7 @@ class PosState {
     this.orderNote = '',
     this.paymentMode = PosPaymentMode.cash,
     this.splitCash = 0,
+    this.cashReceived = 0,
     this.isRefreshing = false,
     this.isPlacingOrder = false,
     this.failure,
@@ -67,6 +111,9 @@ class PosState {
     this.shiftHistoryFailure,
     this.shiftDetail,
     this.isLoadingShiftDetail = false,
+    this.cashiers = const <PosCashier>[],
+    this.isLoadingCashiers = false,
+    this.cashiersFailure,
   });
 
   final PosStatus status;
@@ -86,6 +133,7 @@ class PosState {
   final String search;
   final String? categoryId;
   final List<PosCartLine> cart;
+  final List<PosHeldOrder> heldOrders;
   final PosCustomer? customer;
   final List<PosCustomer> customerResults;
   final String customerQuery;
@@ -97,6 +145,9 @@ class PosState {
 
   /// The cash portion the cashier typed for a split payment.
   final double splitCash;
+
+  /// The cash amount handed over by the customer, used to calculate change due.
+  final double cashReceived;
   final bool isRefreshing;
   final bool isPlacingOrder;
   final PosCatalogFailure? failure;
@@ -119,6 +170,11 @@ class PosState {
   final PosShiftFailure? shiftHistoryFailure;
   final PosShift? shiftDetail;
   final bool isLoadingShiftDetail;
+
+  /// The staff members who may hold the drawer of the selected branch.
+  final List<PosCashier> cashiers;
+  final bool isLoadingCashiers;
+  final PosShiftFailure? cashiersFailure;
 
   bool get isLoading => status == PosStatus.loading;
   bool get isFailure => status == PosStatus.failure;
@@ -192,6 +248,38 @@ class PosState {
 
   bool get isSplitAmountValid =>
       canSplitPayment && splitCashAmount > 0 && splitCardAmount > 0;
+
+  double get cashReceivedAmount =>
+      cashReceived <= 0 ? 0 : posRound2(cashReceived);
+
+  /// The cash portion that needs to be covered by physical cash.
+  double get cashDueAmount => switch (paymentMode) {
+    PosPaymentMode.cash => cartTotal,
+    PosPaymentMode.split => splitCashAmount,
+    PosPaymentMode.card => 0,
+  };
+
+  /// The change to return to the customer when they hand over more cash than due.
+  double get cashChangeDue {
+    final due = cashDueAmount;
+    if (due <= 0 || cashReceivedAmount <= due) return 0;
+    return posRound2(cashReceivedAmount - due);
+  }
+
+  /// How much cash is still unpaid when the customer handed less than due.
+  double get cashRemainingDue {
+    final due = cashDueAmount;
+    if (due <= 0 || cashReceivedAmount <= 0 || cashReceivedAmount >= due) {
+      return 0;
+    }
+    return posRound2(due - cashReceivedAmount);
+  }
+
+  bool get hasHeldOrders => heldOrders.isNotEmpty;
+
+  int get heldOrdersCount => heldOrders.length;
+
+  bool get canHoldOrder => !isPlacingOrder && cart.isNotEmpty;
 
   /// Both the method and, for a split sale, both portions must be payable.
   bool get paymentReady => switch (paymentMode) {
@@ -317,6 +405,7 @@ class PosState {
     String? categoryId,
     bool clearCategory = false,
     List<PosCartLine>? cart,
+    List<PosHeldOrder>? heldOrders,
     PosCustomer? customer,
     bool clearCustomer = false,
     List<PosCustomer>? customerResults,
@@ -328,6 +417,7 @@ class PosState {
     String? orderNote,
     PosPaymentMode? paymentMode,
     double? splitCash,
+    double? cashReceived,
     bool? isRefreshing,
     bool? isPlacingOrder,
     PosCatalogFailure? failure,
@@ -352,6 +442,10 @@ class PosState {
     PosShift? shiftDetail,
     bool clearShiftDetail = false,
     bool? isLoadingShiftDetail,
+    List<PosCashier>? cashiers,
+    bool? isLoadingCashiers,
+    PosShiftFailure? cashiersFailure,
+    bool clearCashiersFailure = false,
   }) {
     return PosState(
       status: status ?? this.status,
@@ -375,6 +469,7 @@ class PosState {
       search: search ?? this.search,
       categoryId: clearCategory ? null : (categoryId ?? this.categoryId),
       cart: cart ?? this.cart,
+      heldOrders: heldOrders ?? this.heldOrders,
       customer: clearCustomer ? null : (customer ?? this.customer),
       customerResults: customerResults ?? this.customerResults,
       customerQuery: customerQuery ?? this.customerQuery,
@@ -386,6 +481,7 @@ class PosState {
       orderNote: orderNote ?? this.orderNote,
       paymentMode: paymentMode ?? this.paymentMode,
       splitCash: splitCash ?? this.splitCash,
+      cashReceived: cashReceived ?? this.cashReceived,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       isPlacingOrder: isPlacingOrder ?? this.isPlacingOrder,
       failure: clearFailure ? null : (failure ?? this.failure),
@@ -408,6 +504,11 @@ class PosState {
           : (shiftHistoryFailure ?? this.shiftHistoryFailure),
       shiftDetail: clearShiftDetail ? null : (shiftDetail ?? this.shiftDetail),
       isLoadingShiftDetail: isLoadingShiftDetail ?? this.isLoadingShiftDetail,
+      cashiers: cashiers ?? this.cashiers,
+      isLoadingCashiers: isLoadingCashiers ?? this.isLoadingCashiers,
+      cashiersFailure: clearCashiersFailure
+          ? null
+          : (cashiersFailure ?? this.cashiersFailure),
     );
   }
 }

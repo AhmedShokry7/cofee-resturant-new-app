@@ -4,6 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// نسبة التغيير بين رقم ونقطة مقارنته، كما تُطبع على شارة البطاقة.
 class AdminMetricTrend {
@@ -40,6 +41,8 @@ class AdminMetricCard extends StatelessWidget {
     this.changeLabel,
     this.isPositive = true,
     this.caption,
+    this.isMoney = false,
+    this.captionIsMoney = false,
   });
 
   final String label;
@@ -53,10 +56,18 @@ class AdminMetricCard extends StatelessWidget {
   /// A quiet second line that explains what the number counts.
   final String? caption;
 
+  /// Put the riyal mark next to [value]: a money card prints its number alone
+  /// and the currency rides as an icon, like every other price in the app.
+  final bool isMoney;
+
+  /// Same mark for [caption], whose amount is the last thing on the line.
+  final bool captionIsMoney;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
+    final grey = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     return ConstrainedBox(
       constraints: const BoxConstraints(minHeight: 105),
       child: Container(
@@ -94,17 +105,31 @@ class AdminMetricCard extends StatelessWidget {
               iconBackground: iconBackground,
             ),
             const SizedBox(height: AppSizes.px8),
-            Text(
-              value,
-              textAlign: TextAlign.start,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                color: dark ? AppColor.darkText : AppColor.adminHeading,
-                fontSize: AppFontSizes.size21,
-                fontWeight: AppFontWeights.bold,
-                height: 1.5,
-              ),
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: dark ? AppColor.darkText : AppColor.adminHeading,
+                      fontSize: AppFontSizes.size21,
+                      fontWeight: AppFontWeights.bold,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+                if (isMoney) ...[
+                  const SizedBox(width: AppSizes.px4),
+                  CurrencyIcon(
+                    size: AppFontSizes.size21 - 1,
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.adminMuted,
+                  ),
+                ],
+              ],
             ),
             const SizedBox(height: AppSizes.px1),
             Text(
@@ -120,18 +145,25 @@ class AdminMetricCard extends StatelessWidget {
               ),
             ),
             if (caption != null)
-              Text(
-                caption!,
-                textAlign: TextAlign.start,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color:
-                      (dark ? AppColor.darkTextSecondary : AppColor.adminMuted)
-                          .withValues(alpha: .8),
-                  fontSize: AppFontSizes.size8_5,
-                  height: 1.4,
-                ),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      caption!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: grey,
+                        fontSize: AppFontSizes.size8_5,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  if (captionIsMoney) ...[
+                    const SizedBox(width: AppSizes.px4),
+                    CurrencyIcon(size: 10, color: grey),
+                  ],
+                ],
               ),
           ],
         ),

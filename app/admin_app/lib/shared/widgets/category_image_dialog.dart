@@ -20,6 +20,7 @@ class CategoryImageDialog extends StatefulWidget {
     required this.onApply,
     this.onRemove,
     this.onPickPicture,
+    this.allowLink = true,
   });
 
   /// The picture the category has right now, if any.
@@ -29,10 +30,19 @@ class CategoryImageDialog extends StatefulWidget {
   final Future<void> Function(ProductImageSource source) onApply;
 
   /// Called when the admin wants to remove the picture.
-  final VoidCallback? onRemove;
+  ///
+  /// It has to finish before the dialog closes: a picture that is gone from
+  /// the bucket while its category still points at it shows as a broken image
+  /// with no way for the admin to know what went wrong.
+  final Future<void> Function()? onRemove;
 
   /// Picks a picture from the device; tests can give their own.
   final Future<ProductImageSource?> Function()? onPickPicture;
+
+  /// Whether a hosted link is an answer. Buckets that store a path the row has
+  /// to repeat — a staff picture lives in `staff/<id>/` — refuse one, and the
+  /// option is then not shown rather than shown and rejected.
+  final bool allowLink;
 
   @override
   State<CategoryImageDialog> createState() => _CategoryImageDialogState();
@@ -48,81 +58,88 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
 
     return AlertDialog(
       title: Text(S.imageSource),
-      content: SizedBox(
-        width: AppDimensions.dialogBodyWidthWide,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (widget.currentImageUrl != null &&
-                widget.currentImageUrl!.trim().isNotEmpty) ...[
-              ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 260,
-                  child: CachedNetworkImage(
-                    imageUrl: widget.currentImageUrl!,
-                    fit: BoxFit.fill,
-                    errorWidget: (_, _, _) => const ColoredBox(
-                      color: AppColor.secondaryColor,
-                      child: Center(child: Icon(AppIcons.imageAdd01)),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(
+          maxWidth: AppDimensions.dialogBodyWidthWide,
+          maxHeight: AppDimensions.imageDialogMaxBodyHeight,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (widget.currentImageUrl != null &&
+                  widget.currentImageUrl!.trim().isNotEmpty) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: AppDimensions.imageDialogPreviewHeight,
+                    child: CachedNetworkImage(
+                      imageUrl: widget.currentImageUrl!,
+                      fit: BoxFit.fill,
+                      errorWidget: (_, _, _) => const ColoredBox(
+                        color: AppColor.secondaryColor,
+                        child: Center(child: Icon(AppIcons.imageAdd01)),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-            ],
-            if (_busy) ...[
-              Center(child: CircularProgressIndicator()),
-              if (_phaseText != null) ...[
                 const SizedBox(height: AppSpacing.md),
-                Text(
-                  _phaseText!,
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColor.greyColor,
-                  ),
-                ),
               ],
-            ] else ...[
-              ListTile(
-                leading: const Icon(AppIcons.imageAdd01, size: 20),
-                title: Text(S.uploadFromDevice),
-                subtitle: Text(
-                  S.imageFormats,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColor.greyColor,
+              if (_busy) ...[
+                Center(child: CircularProgressIndicator()),
+                if (_phaseText != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    _phaseText!,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColor.greyColor,
+                    ),
                   ),
-                ),
-                onTap: _busy ? null : _pickFromDevice,
-              ),
-              ListTile(
-                leading: const Icon(AppIcons.link01, size: 20),
-                title: Text(S.useImageLink),
-                onTap: _busy ? null : _askForLink,
-              ),
-              if (widget.currentImageUrl != null &&
-                  widget.currentImageUrl!.isNotEmpty &&
-                  widget.onRemove != null) ...[
-                const Divider(),
+                ],
+              ] else ...[
                 ListTile(
-                  leading: const Icon(
-                    AppIcons.delete01,
-                    size: 20,
-                    color: AppColor.errorColor,
+                  leading: const Icon(AppIcons.imageAdd01, size: 20),
+                  title: Text(S.uploadFromDevice),
+                  subtitle: Text(
+                    S.imageFormats,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColor.greyColor,
+                    ),
                   ),
-                  title: Text(
-                    S.deleteImage,
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                  onTap: _busy ? null : _pickFromDevice,
+                ),
+                if (widget.allowLink) ...[
+                  ListTile(
+                    leading: const Icon(AppIcons.link01, size: 20),
+                    title: Text(S.useImageLink),
+                    onTap: _busy ? null : _askForLink,
+                  ),
+                ],
+                if (widget.currentImageUrl != null &&
+                    widget.currentImageUrl!.isNotEmpty &&
+                    widget.onRemove != null) ...[
+                  const Divider(),
+                  ListTile(
+                    leading: const Icon(
+                      AppIcons.delete01,
+                      size: 20,
                       color: AppColor.errorColor,
                     ),
+                    title: Text(
+                      S.deleteImage,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColor.errorColor,
+                      ),
+                    ),
+                    onTap: _busy ? null : _removeImage,
                   ),
-                  onTap: _busy ? null : _removeImage,
-                ),
+                ],
               ],
             ],
-          ],
+          ),
         ),
       ),
       actions: [
@@ -212,9 +229,31 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
     }
   }
 
-  void _removeImage() {
-    widget.onRemove?.call();
-    Navigator.of(context).pop();
+  Future<void> _removeImage() async {
+    final remove = widget.onRemove;
+    if (remove == null) return;
+
+    setState(() {
+      _busy = true;
+      _phaseText = S.savingImage;
+    });
+    try {
+      await remove();
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busy = false;
+        _phaseText = null;
+      });
+      _showMessage(
+        error is AdminProductException
+            ? error.message
+            : '${S.imageActionFailed}: $error',
+        isError: true,
+      );
+    }
   }
 
   void _showMessage(String message, {bool isError = false}) {

@@ -18,10 +18,11 @@ class CustomerMetricsCards extends StatelessWidget {
     final cards = <_MetricData>[
       _MetricData(
         label: S.customersAverageSpend,
-        value: customerMoneyWithCurrency(metrics.averageSpendCurrent),
+        value: customerMoney(metrics.averageSpendCurrent),
         icon: AppIcons.wallet01,
         iconBackground: AppColor.adminWarningSurface,
         iconColor: AppColor.adminWarning,
+        isMoney: true,
         trend: metricPercentTrend(
           metrics.averageSpendCurrent,
           metrics.averageSpendPrevious,
@@ -73,6 +74,7 @@ class CustomerMetricsCards extends StatelessWidget {
             iconColor: card.iconColor,
             changeLabel: card.trend?.label,
             isPositive: card.trend?.positive ?? true,
+            isMoney: card.isMoney,
           ),
       ],
     );
@@ -87,6 +89,7 @@ class _MetricData {
     required this.iconBackground,
     required this.iconColor,
     this.trend,
+    this.isMoney = false,
   });
 
   final String label;
@@ -95,6 +98,7 @@ class _MetricData {
   final Color iconBackground;
   final Color iconColor;
   final AdminMetricTrend? trend;
+  final bool isMoney;
 }
 
 /// فرق نقطتين مئويّتين، مثل نسبة التكرار بين الشهر وشهره قبله.

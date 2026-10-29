@@ -1,4 +1,3 @@
-import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 
 /// A price without the currency prefix.
@@ -12,10 +11,6 @@ String formatAmount(num value) {
   final fraction = parts.length > 1 ? parts[1] : '00';
   return '$whole.$fraction';
 }
-
-/// A price followed by the currency of the active language.
-String formatMoneyWithCurrency(num value) =>
-    '${localizeDigits(formatAmount(value))} ${S.currency}';
 
 String formatCount(int value) => _groupDigits('$value');
 

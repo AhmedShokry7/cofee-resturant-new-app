@@ -6,8 +6,6 @@ import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 
 String orderMoney(double value) => localizeDigits(formatAmount(value));
 
-String orderMoneyWithCurrency(double value) => formatMoneyWithCurrency(value);
-
 String orderCount(int value) => localizeDigits(formatCount(value));
 
 String orderUnits(AdminOrder order) => orderCount(

@@ -12,6 +12,7 @@ import 'package:admin_app/features/carts/data/models/admin_cart.dart';
 import 'package:admin_app/features/carts/presentation/models/cart_status.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// Opens the dialog that shows the whole content of one cart.
 Future<void> showCartDetailsDialog({
@@ -123,14 +124,25 @@ class CartDetailsDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      Text(
-                        formatMoneyWithCurrency(cart.total),
-                        style: TextStyle(
-                          color: heading,
-                          fontSize: AppFontSizes.size14,
-                          fontWeight: AppFontWeights.bold,
-                          height: AppTextHeights.line1_5,
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              localizeDigits(formatAmount(cart.total)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: heading,
+                                fontSize: AppFontSizes.size14,
+                                fontWeight: AppFontWeights.bold,
+                                height: AppTextHeights.line1_5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.px4),
+                          const CurrencyIcon(size: 16),
+                        ],
                       ),
                     ],
                   ),
@@ -262,30 +274,56 @@ class _CartItemRow extends StatelessWidget {
                   height: AppTextHeights.line1_5,
                 ),
               ),
-              Text(
-                '${localizeDigits('${item.quantity}')} × '
-                '${formatMoneyWithCurrency(item.unitPrice)}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: muted,
-                  fontSize: AppFontSizes.size10_5,
-                  height: AppTextHeights.line1_5,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${localizeDigits('${item.quantity}')} × ',
+                    style: TextStyle(
+                      color: muted,
+                      fontSize: AppFontSizes.size10_5,
+                      height: AppTextHeights.line1_5,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      localizeDigits(formatAmount(item.unitPrice)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: muted,
+                        fontSize: AppFontSizes.size10_5,
+                        height: AppTextHeights.line1_5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.px4),
+                  const CurrencyIcon(size: 13),
+                ],
               ),
             ],
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
-        Text(
-          formatMoneyWithCurrency(item.lineTotal),
-          maxLines: 1,
-          style: TextStyle(
-            color: body,
-            fontSize: AppFontSizes.size11_5,
-            fontWeight: AppFontWeights.semiBold,
-            height: AppTextHeights.line1_5,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                localizeDigits(formatAmount(item.lineTotal)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: body,
+                  fontSize: AppFontSizes.size11_5,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_5,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.px4),
+            const CurrencyIcon(size: 13),
+          ],
         ),
       ],
     );

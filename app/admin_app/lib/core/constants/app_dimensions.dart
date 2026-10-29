@@ -228,6 +228,13 @@ abstract final class AppDimensions {
   /// أقصى عرض بكسلي يُفكّ تشفير الصورة إلى مثله؛ ما يزيد عليه يُصغَّر قبل
   /// الرسم حتى لا تُجمَّد واجهة الأدمن بفكّ صورة بكاميرا الهاتف كاملة.
   static const double imagePreviewCacheWidth = 768;
+
+  /// ارتفاع معاينة الصورة داخل نافذة اختيار المصدر.
+  static const double imageDialogPreviewHeight = 260;
+
+  /// أعلى ما تبلغه نافذة الصورة: ما زاد عليها يُمرَّر، حتى لا تخرج المصادر
+  /// نفسها خارج الشاشة على الهاتف الصغير.
+  static const double imageDialogMaxBodyHeight = 420;
   static const double indicatorSize = AppSizes.px24;
   static const double iconSizeSm = AppSizes.px20;
   static const double spinnerSize = AppSizes.px22;

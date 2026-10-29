@@ -13,6 +13,7 @@ import 'package:admin_app/features/inventory/domain/entities/inventory_material_
 import 'package:admin_app/features/inventory/presentation/manager/admin_inventory_cubit.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 Future<bool?> showInventoryMaterialCreateDialog({
   required BuildContext context,
@@ -322,7 +323,7 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                             decimal: true,
                           ),
                           inputFormatters: [_decimalFormatter],
-                          suffixText: S.currency,
+                          suffixIcon: const CurrencyIcon(size: 15),
                         );
                         final reorder = _MaterialField(
                           controller: _reorderController,
@@ -392,6 +393,7 @@ class _MaterialField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.maxLines = 1,
     this.suffixText,
+    this.suffixIcon,
   });
 
   final TextEditingController controller;
@@ -403,6 +405,7 @@ class _MaterialField extends StatelessWidget {
   final TextCapitalization textCapitalization;
   final int maxLines;
   final String? suffixText;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) => TextField(
@@ -416,6 +419,7 @@ class _MaterialField extends StatelessWidget {
       labelText: label,
       hintText: hint,
       suffixText: suffixText,
+      suffixIcon: suffixIcon,
       alignLabelWithHint: maxLines > 1,
     ),
   );

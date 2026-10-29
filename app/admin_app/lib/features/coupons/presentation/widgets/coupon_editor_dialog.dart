@@ -20,6 +20,7 @@ import 'package:admin_app/features/coupons/presentation/widgets/coupon_scope_pic
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// Creates or edits a coupon. Returns `true` when the coupon was saved.
 Future<bool?> showCouponEditorDialog({
@@ -144,6 +145,10 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
   void _onFieldChanged() {
     if (mounted) setState(() {});
   }
+
+  /// The discount is a money amount rather than a percentage, so its field
+  /// wears the riyal mark.
+  bool get _valueIsMoney => _discountType != AdminCouponDiscountType.percentage;
 
   @override
   Widget build(BuildContext context) {
@@ -423,6 +428,9 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                           decimal: true,
                         ),
                         validator: _validateDiscountValue,
+                        suffixIcon: _valueIsMoney
+                            ? const CurrencyIcon(size: 15)
+                            : null,
                         bottomPadding: 4,
                       ),
                     ),
@@ -439,6 +447,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                             decimal: true,
                           ),
                           validator: _validateMaxDiscount,
+                          suffixIcon: const CurrencyIcon(size: 15),
                           bottomPadding: 4,
                         ),
                       ),
@@ -455,6 +464,9 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                     decimal: true,
                   ),
                   validator: _validateDiscountValue,
+                  suffixIcon: _valueIsMoney
+                      ? const CurrencyIcon(size: 15)
+                      : null,
                   bottomPadding: 4,
                 ),
                 if (_discountType == AdminCouponDiscountType.percentage)
@@ -467,6 +479,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                       decimal: true,
                     ),
                     validator: _validateMaxDiscount,
+                    suffixIcon: const CurrencyIcon(size: 15),
                     bottomPadding: 4,
                   ),
               ],
@@ -481,6 +494,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   decimal: true,
                 ),
                 validator: _validateMinOrder,
+                suffixIcon: const CurrencyIcon(size: 15),
                 bottomPadding: 4,
               ),
               _helper(S.couponsMinOrderHelp),

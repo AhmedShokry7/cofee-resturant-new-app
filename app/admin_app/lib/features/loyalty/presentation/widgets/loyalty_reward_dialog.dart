@@ -16,6 +16,7 @@ import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repositor
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_state.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
+import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_reward_target_picker.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
@@ -305,10 +306,8 @@ class _LoyaltyRewardDialogState extends State<LoyaltyRewardDialog> {
                           height: AppTextHeights.line1_5,
                         ),
                       ),
-                      Text(
-                        loyaltyTargetOptionCaption(target),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      LoyaltyMoneyText(
+                        sentence: loyaltyTargetOptionCaption(target),
                         style: TextStyle(
                           color: adminMutedColor(theme),
                           fontSize: AppFontSizes.size9_5,

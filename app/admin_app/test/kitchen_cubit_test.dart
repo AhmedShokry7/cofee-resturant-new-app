@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_filters.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_metrics.dart';
 import 'package:admin_app/features/kitchen/domain/entities/admin_kitchen_ticket.dart';
@@ -11,6 +13,9 @@ import 'package:admin_app/features/kitchen/data/repositories/admin_kitchen_repos
 import 'package:admin_app/features/kitchen/data/services/kitchen_realtime_feed.dart';
 import 'package:admin_app/features/kitchen/presentation/manager/admin_kitchen_cubit.dart';
 import 'package:admin_app/features/kitchen/presentation/manager/admin_kitchen_state.dart';
+import 'package:admin_app/features/kitchen/presentation/widgets/kitchen_format.dart';
+
+import 'helpers/stub_supabase_client.dart';
 
 final DateTime _now = DateTime.utc(2026, 10, 24, 10);
 
@@ -47,6 +52,7 @@ class _FakeKitchenRepository extends AdminKitchenRepository {
   AdminKitchenFilters filters = _filters;
 
   bool failBoard = false;
+  bool denyBoard = false;
   bool failMetrics = false;
   bool failFilters = false;
 
@@ -79,6 +85,12 @@ class _FakeKitchenRepository extends AdminKitchenRepository {
     lastBranchId = branchId;
     await boardGate?.future;
     if (failBoard) throw StateError('board failed');
+    if (denyBoard) {
+      throw const KitchenLoadException(
+        KitchenLoadFailure.permissionDenied,
+        'missing permission: kitchen.read',
+      );
+    }
     return AdminKitchenBoard(tickets: tickets, total: total);
   }
 
@@ -270,7 +282,7 @@ void main() {
       expect(cubit.state.tickets, hasLength(1));
       expect(cubit.state.metrics, AdminKitchenMetrics.empty);
       expect(cubit.state.filters.hasBranches, isFalse);
-      expect(cubit.state.errorMessage, isNull);
+      expect(cubit.state.loadFailure, isNull);
     });
 
     test('a board failure is retryable', () async {
@@ -284,7 +296,7 @@ void main() {
       await cubit.load();
 
       expect(cubit.state.status, AdminKitchenStatus.failure);
-      expect(cubit.state.errorMessage, contains('board failed'));
+      expect(cubit.state.loadFailure, KitchenLoadFailure.failed);
       expect(cubit.state.isRefreshing, isFalse);
 
       repository
@@ -295,8 +307,51 @@ void main() {
 
       expect(cubit.state.status, AdminKitchenStatus.ready);
       expect(cubit.state.tickets, hasLength(1));
-      expect(cubit.state.errorMessage, isNull);
+      expect(cubit.state.loadFailure, isNull);
     });
+
+    test('a refused board keeps the refusal, not the server text', () async {
+      final repository = _FakeKitchenRepository()..denyBoard = true;
+      final cubit = AdminKitchenCubit(
+        repository: repository,
+        realtimeFeed: _FakeKitchenFeed(),
+      );
+      addTearDown(cubit.close);
+
+      await cubit.load();
+
+      expect(cubit.state.status, AdminKitchenStatus.failure);
+      expect(cubit.state.loadFailure, KitchenLoadFailure.permissionDenied);
+      expect(
+        kitchenLoadErrorMessage(cubit.state.loadFailure),
+        S.kitchenBoardDenied,
+      );
+    });
+
+    test(
+      'the repository turns a 42501 into a permission load failure',
+      () async {
+        final repository = AdminKitchenRepository(
+          StubSupabaseClient(
+            error: PostgrestException(
+              message: 'missing permission: kitchen.read',
+              code: '42501',
+            ),
+          ),
+        );
+
+        expect(
+          () => repository.loadBoard(),
+          throwsA(
+            isA<KitchenLoadException>().having(
+              (error) => error.failure,
+              'failure',
+              KitchenLoadFailure.permissionDenied,
+            ),
+          ),
+        );
+      },
+    );
 
     test(
       'a failed refresh keeps the shown tickets and reports inline',
@@ -316,12 +371,12 @@ void main() {
 
         expect(cubit.state.status, AdminKitchenStatus.ready);
         expect(cubit.state.tickets, hasLength(1));
-        expect(cubit.state.errorMessage, contains('board failed'));
+        expect(cubit.state.loadFailure, KitchenLoadFailure.failed);
         expect(cubit.state.isRefreshing, isFalse);
 
         repository.failBoard = false;
         await cubit.refresh();
-        expect(cubit.state.errorMessage, isNull);
+        expect(cubit.state.loadFailure, isNull);
       },
     );
 

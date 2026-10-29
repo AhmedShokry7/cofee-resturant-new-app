@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/customers/customer_details_reader.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
@@ -16,7 +18,10 @@ class AdminCustomerRepository
 
   @override
   Future<List<AdminCustomer>> loadCustomers() async {
-    final response = await _supabase.rpc('admin_customers');
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc('admin_customers'),
+      client: _supabase,
+    );
     if (response is List) {
       return response
           .whereType<Map>()
@@ -37,17 +42,20 @@ class AdminCustomerRepository
 
   @override
   Future<Map<String, dynamic>> loadCustomerDetails(String customerId) async {
-    final response = await _supabase.rpc(
-      'admin_customer_details',
-      params: {'p_customer_id': customerId},
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc(
+        'admin_customer_details',
+        params: {'p_customer_id': customerId},
+      ),
+      client: _supabase,
     );
     if (response is Map) {
       return Map<String, dynamic>.from(response);
     }
-    if (response is String && response.isNotEmpty) {
-      return <String, dynamic>{};
-    }
-    return <String, dynamic>{};
+    // الدالة ترجع NULL على معرّف لا صفّ عميل له، فصف هنا كان يعرض بطاقة فارغة
+    // كأنها حالة فراغ حقيقية. الرفض يستدعي مسار الفشل عند المنادِيَيْن: حوار
+    // السجل وورقة الطلب.
+    throw Exception(S.customerHistoryLoadFailed);
   }
 
   @override

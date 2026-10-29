@@ -1,6 +1,7 @@
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/locale/permission_catalog.dart';
+import 'package:admin_app/core/utils/role_name.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_format.dart';
 
@@ -39,7 +40,7 @@ List<AdminStaffMember> filterStaff(
           member.fullName ?? '',
           member.email ?? '',
           ...member.roles.map((role) => role.roleCode),
-          ...member.roles.map((role) => staffRoleName(role.roleCode)),
+          ...member.roles.map((role) => roleName(role.roleCode)),
           ...member.permissions,
           ...member.permissions.map(
             (code) => permissionName(code, isArabic: isArabic),

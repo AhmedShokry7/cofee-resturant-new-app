@@ -27,8 +27,8 @@ Future<void> showBundleImageDialog({
         }
       },
       onRemove: () async {
-        await cubit.deleteBundleImageFile(bundle.imageUrl);
         await cubit.updateBundleImage(bundle.id, null);
+        await cubit.deleteBundleImageFile(bundle.imageUrl);
       },
     ),
   );

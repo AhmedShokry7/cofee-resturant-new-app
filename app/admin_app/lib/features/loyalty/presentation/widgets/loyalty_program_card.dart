@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
+import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -91,15 +92,15 @@ class LoyaltyProgramCard extends StatelessWidget {
   static List<Widget> _stats(AdminLoyaltyRule rule) => <Widget>[
     _ProgramStat(
       label: S.loyaltyProgramEarnRateLabel,
-      value: loyaltyProgramEarnRate(rule),
+      value: loyaltyProgramEarnRateParts(rule),
     ),
     _ProgramStat(
       label: S.loyaltyProgramPointValueLabel,
-      value: loyaltyProgramPointValue(rule),
+      value: loyaltyProgramPointValueParts(rule),
     ),
     _ProgramStat(
       label: S.loyaltyProgramValidityLabel,
-      value: loyaltyProgramValidity(rule),
+      value: LoyaltyMoneySentence.plain(loyaltyProgramValidity(rule)),
     ),
   ];
 }
@@ -249,7 +250,7 @@ class _ProgramStat extends StatelessWidget {
   const _ProgramStat({required this.label, required this.value});
 
   final String label;
-  final String value;
+  final LoyaltyMoneySentence value;
 
   @override
   Widget build(BuildContext context) {
@@ -268,10 +269,8 @@ class _ProgramStat extends StatelessWidget {
             height: AppTextHeights.line1_5,
           ),
         ),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        LoyaltyMoneyText(
+          sentence: value,
           style: TextStyle(
             color: adminBodyColor(theme),
             fontSize: AppFontSizes.size10_5,

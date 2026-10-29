@@ -6,7 +6,8 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
-import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/features/orders/presentation/widgets/order_format.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class OrderProductPickerTile extends StatelessWidget {
   const OrderProductPickerTile({
@@ -38,7 +39,20 @@ class OrderProductPickerTile extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
     ),
-    subtitle: Text(formatMoneyWithCurrency(product.basePrice)),
+    subtitle: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            orderMoney(product.basePrice),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        const SizedBox(width: AppSizes.px4),
+        const CurrencyIcon(size: 13),
+      ],
+    ),
     onTap: onTap,
   );
 

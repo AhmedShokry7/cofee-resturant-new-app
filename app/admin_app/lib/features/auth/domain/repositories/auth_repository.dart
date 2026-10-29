@@ -1,5 +1,6 @@
 import 'package:admin_app/core/result/result.dart';
 import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/features/auth/domain/entities/invitation_accept_outcome.dart';
 
 /// العقد الذي تعتمد عليه طبقة المجال للتحدث مع المصادقة.
 ///
@@ -16,4 +17,14 @@ abstract interface class AuthRepository {
 
   /// ينهي الجلسة الحالية.
   Future<void> signOut();
+
+  /// يقرأ ما يعد به رمز الدعوة قبل أن يكون لصاحبها حساب: لا يكتب شيئًا.
+  Future<InvitationLookup> lookupInvitation(String token);
+
+  /// يفتح حساب المدعو ثم يسلم الرمز للقاعدة لتقرر وحدها تحويله إلى موظف.
+  Future<InvitationAcceptOutcome> acceptInvitation({
+    required String token,
+    required String email,
+    required String password,
+  });
 }

@@ -15,11 +15,13 @@ class DashboardHeader extends StatelessWidget {
     super.key,
     required this.staffName,
     required this.refreshing,
+    required this.canAddProduct,
     required this.onRefresh,
   });
 
   final String staffName;
   final bool refreshing;
+  final bool canAddProduct;
   final VoidCallback onRefresh;
 
   /// التحية باسم أول الكلمة: الاسم يصل كاملًا من الحساب، والمطلع يكتفي بما
@@ -38,7 +40,7 @@ class DashboardHeader extends StatelessWidget {
       title: _greeting,
       subtitle: S.dashboardGreetingCaption(localizedDate(DateTime.now())),
       actions: [
-        const DashboardAddProductButton(),
+        DashboardAddProductButton(canAdd: canAddProduct),
         DashboardRefreshButton(refreshing: refreshing, onRefresh: onRefresh),
       ],
     );

@@ -15,12 +15,16 @@ import 'package:admin_app/shared/widgets/app_icon.dart';
 /// تخترع مسارًا. وخارج القشرة لا يد تُستعار، فيختفي الزر — زرٌّ لا يفتح
 /// شيئًا أسوأ من غيابه.
 class DashboardAddProductButton extends StatelessWidget {
-  const DashboardAddProductButton({super.key});
+  const DashboardAddProductButton({super.key, required this.canAdd});
+
+  /// `admin_save_product` يطلب `catalog.product.write`؛ من لا يملكها يرى لوحات
+  /// اللوحة لا يدًا تُخدعه بمسار لا كتابة فيه.
+  final bool canAdd;
 
   @override
   Widget build(BuildContext context) {
     final select = AdminNavigator.maybeOf(context);
-    if (select == null) return const SizedBox.shrink();
+    if (!canAdd || select == null) return const SizedBox.shrink();
     return FilledButton.icon(
       key: const Key('dashboard-add-product'),
       onPressed: () => select('products'),

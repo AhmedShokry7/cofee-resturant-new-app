@@ -182,11 +182,11 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     }
   }
 
-  void _removeImage() {
+  Future<void> _removeImage() async {
     final current = _imageUrl;
     if (widget.initialBanner != null && current != null) {
-      _cubit.deleteBannerImageFile(current);
-      _cubit.updateBannerImage(widget.initialBanner!.id, null);
+      await _cubit.updateBannerImage(widget.initialBanner!.id, null);
+      await _cubit.deleteBannerImageFile(current);
     }
     setState(() => _imageUrl = null);
   }

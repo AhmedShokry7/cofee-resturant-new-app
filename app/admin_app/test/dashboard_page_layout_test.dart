@@ -7,7 +7,6 @@ import 'package:admin_app/core/models/order_status.dart';
 import 'package:admin_app/core/navigation/admin_navigator.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/core/theme/theme_class.dart';
-import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_channel_slice.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_metrics.dart';
@@ -27,6 +26,7 @@ import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_rece
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_sales_overview_card.dart';
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_setup_card.dart';
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_target_card.dart';
+import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_target_dialog.dart';
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_top_products_panel.dart';
 import 'package:admin_app/shared/widgets/admin_donut_chart.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
@@ -152,6 +152,7 @@ Future<void> _pumpBody(
   String search = '',
   int rangeDays = 30,
   bool canManageTarget = true,
+  bool canAddProduct = true,
   String? errorMessage,
   bool dark = false,
   TextDirection direction = TextDirection.ltr,
@@ -171,6 +172,7 @@ Future<void> _pumpBody(
     ),
     staffName: 'Ahmed',
     canManageTarget: canManageTarget,
+    canAddProduct: canAddProduct,
     onRefresh: onRefresh ?? () {},
     onRangeChanged: onRangeChanged ?? (_) {},
     onEditTarget: onEditTarget ?? () {},
@@ -238,17 +240,14 @@ void main() {
         findsOneWidget,
       );
       expect(
-        _inside(
-          DashboardMetricsCards,
-          find.text(formatMoneyWithCurrency(26.46)),
-        ),
+        _inside(DashboardMetricsCards, find.text('26.46')),
         findsOneWidget,
       );
       // أساس النسبة مطبوع تحتها: شارةٌ وحدها تترك للأدمن أن يخمّن أمس.
       expect(
         _inside(
           DashboardMetricsCards,
-          find.text(S.dashboardYesterday(formatMoneyWithCurrency(28))),
+          find.text(S.dashboardYesterday('28.00')),
         ),
         findsOneWidget,
       );
@@ -290,7 +289,7 @@ void main() {
       expect(
         _inside(
           DashboardMetricsCards,
-          find.text(S.dashboardLastMonth(formatMoneyWithCurrency(500))),
+          find.text(S.dashboardLastMonth('500.00')),
         ),
         findsOneWidget,
       );
@@ -389,25 +388,20 @@ void main() {
       // ٩٠٠ من ١٢٠٠: النسبة في الحلقة، ومقامها مطبوع تحتها في البطاقة نفسها.
       expect(_inside(DashboardTargetCard, find.text('75%')), findsOneWidget);
       expect(
-        _inside(DashboardTargetCard, find.text(formatMoneyWithCurrency(1200))),
+        _inside(DashboardTargetCard, find.text('1,200.00')),
         findsOneWidget,
       );
-      expect(
-        _inside(DashboardTargetCard, find.text(formatMoneyWithCurrency(900))),
-        findsOneWidget,
-      );
+      expect(_inside(DashboardTargetCard, find.text('900.00')), findsOneWidget);
       expect(
         _inside(DashboardTargetCard, find.text(S.dashboardCurrentSales)),
         findsOneWidget,
       );
       // ما بقي هو الذي يحرّك الأدمن، لا النسبة وحدها.
       expect(
-        _inside(
-          DashboardTargetCard,
-          find.text(S.dashboardTargetGap(formatMoneyWithCurrency(300))),
-        ),
+        _inside(DashboardTargetCard, find.text(S.dashboardRemainingToTarget)),
         findsOneWidget,
       );
+      expect(_inside(DashboardTargetCard, find.text('300.00')), findsOneWidget);
       expect(find.byKey(const Key('dashboard-target-edit')), findsOneWidget);
 
       await _pumpBody(
@@ -426,10 +420,8 @@ void main() {
         findsOneWidget,
       );
       // الفرجة تُستبدل بالخبر: لا «تبقّى −١٠٠» يُطبع أمام عين الأدمن.
-      expect(
-        find.text(S.dashboardTargetGap(formatMoneyWithCurrency(-100))),
-        findsNothing,
-      );
+      expect(find.text('-100.00'), findsNothing);
+      expect(find.textContaining(S.dashboardRemainingToTarget), findsNothing);
     });
 
     testWidgets('a month without a target says so instead of drawing a ring', (
@@ -607,10 +599,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        _inside(
-          DashboardRecentOrdersCard,
-          find.text(formatMoneyWithCurrency(55)),
-        ),
+        _inside(DashboardRecentOrdersCard, find.text('55.00')),
         findsOneWidget,
       );
       // شارة العدد عدد الأسطر المعروضة، فالبحث ينقصها والنصّ يبقى.
@@ -632,7 +621,7 @@ void main() {
       expect(_inside(DashboardChannelsCard, find.text('75%')), findsOneWidget);
       expect(_inside(DashboardChannelsCard, find.text('25%')), findsOneWidget);
       expect(
-        _inside(DashboardChannelsCard, find.text(formatMoneyWithCurrency(150))),
+        _inside(DashboardChannelsCard, find.text('150.00')),
         findsOneWidget,
       );
       // عدد الطلبات يبقى مكتوبًا: النسبة وحدها تُخفي قناةً طلباتها كثيرة.
@@ -667,10 +656,7 @@ void main() {
         findsOneWidget,
       );
       expect(
-        _inside(
-          DashboardTopProductsPanel,
-          find.text(formatMoneyWithCurrency(27)),
-        ),
+        _inside(DashboardTopProductsPanel, find.text('27.00')),
         findsOneWidget,
       );
       expect(
@@ -701,6 +687,14 @@ void main() {
       // خارج القشرة لا يد تُستعار، فلا زرّ يعدو إلى قسم لا يفتحه.
       expect(find.text(S.dashboardViewAllOrders), findsNothing);
       expect(find.text(S.dashboardViewAllProducts), findsNothing);
+
+      await _pumpBody(tester);
+      expect(find.byKey(const Key('dashboard-add-product')), findsOneWidget);
+
+      // `admin_save_product` يطلب catalog.product.write، فمن لا يملكها لا يرى
+      // يدًا تُوهمه أنه يضيف منتجًا.
+      await _pumpBody(tester, canAddProduct: false);
+      expect(find.byKey(const Key('dashboard-add-product')), findsNothing);
     });
 
     testWidgets('the Arabic page names the panels and the rows in Arabic', (
@@ -826,6 +820,7 @@ void main() {
               searchController: AdminSearchController(),
               staffName: 'Ahmed',
               canManageTarget: true,
+              canAddProduct: true,
               cubit: cubit,
             ),
           ),
@@ -857,6 +852,7 @@ void main() {
               searchController: search,
               staffName: 'Ahmed',
               canManageTarget: true,
+              canAddProduct: true,
               cubit: cubit,
             ),
           ),
@@ -870,6 +866,59 @@ void main() {
       expect(find.text('Espresso'), findsOneWidget);
       expect(find.text('Iced Fruit Tea'), findsNothing);
       await cubit.close();
+    });
+  });
+
+  group('the target editor', () {
+    // سقف ٢٠٣ رقمٌ ترفضه القاعدة لا صفرٌ تكتبه الواجهة، والأرقام العربية تُقرأ
+    // لأنها الطريقة التي تطبع بها اللوحة كل مبلغ.
+    testWidgets('reads an amount typed in Arabic numerals', (tester) async {
+      double? written;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeClass.light(),
+          home: Scaffold(
+            body: DashboardTargetDialog(
+              current: null,
+              onSubmit: (value) async {
+                written = value;
+                return null;
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), '١٬٥٠٠٫٢٥');
+      await tester.tap(find.byKey(const Key('dashboard-target-save')));
+      await tester.pumpAndSettle();
+
+      expect(written, 1500.25);
+    });
+
+    testWidgets('refuses an amount over the database ceiling', (tester) async {
+      double? written;
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeClass.light(),
+          home: Scaffold(
+            body: DashboardTargetDialog(
+              current: null,
+              onSubmit: (value) async {
+                written = value;
+                return null;
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.enterText(find.byType(TextField), '100000001');
+      await tester.tap(find.byKey(const Key('dashboard-target-save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(S.dashboardTargetTooLarge), findsOneWidget);
+      expect(written, isNull);
     });
   });
 }

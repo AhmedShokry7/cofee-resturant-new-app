@@ -71,8 +71,11 @@ Future<void> showCategoryImageDialog({
         }
       },
       onRemove: () async {
-        await cubit.deleteCategoryImageFile(category.imageUrl);
+        // The row goes empty first: a file that no row points at is only
+        // wasted space, while a row that points at a deleted file is a broken
+        // picture the admin cannot fix from here.
         await cubit.updateCategoryImage(category.id, null);
+        await cubit.deleteCategoryImageFile(category.imageUrl);
       },
     ),
   );

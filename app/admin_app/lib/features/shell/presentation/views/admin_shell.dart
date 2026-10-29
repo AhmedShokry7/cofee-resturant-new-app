@@ -158,6 +158,9 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
           canManageTarget:
               widget.session.canManageAllBranches &&
               widget.session.hasPermission('settings.write'),
+          canAddProduct:
+              widget.session.hasPermission('catalog.product.write') ||
+              widget.session.isOwner,
         );
       case 'products':
         return ProductPage(searchController: _searchController);
@@ -195,7 +198,12 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       case 'customerPreview':
         return const CustomerPreviewPage();
       case 'customers':
-        return CustomerPage(searchController: _searchController);
+        return CustomerPage(
+          searchController: _searchController,
+          canManage:
+              widget.session.hasPermission('customers.write') ||
+              widget.session.isOwner,
+        );
       case 'kitchen':
         return KitchenPage(
           searchController: _searchController,

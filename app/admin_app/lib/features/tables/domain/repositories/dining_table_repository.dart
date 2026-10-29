@@ -59,6 +59,7 @@ enum DiningReservationStatusOutcome {
   invalidStatus,
   invalidTable,
   tableBusy,
+  tooEarly,
   notFound,
   permissionDenied,
   failed,

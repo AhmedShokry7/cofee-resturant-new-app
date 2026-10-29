@@ -8,9 +8,9 @@ String paymentOrderLabel(AdminPayment payment) {
   return number == null || number.isEmpty ? payment.id : number;
 }
 
-/// The amount followed by the currency of the transaction.
+/// The amount of the payment as a number; the currency mark sits beside it.
 String paymentMoney(AdminPayment payment) =>
-    '${localizeDigits(formatAmount(payment.amount))} ${payment.currencyCode}';
+    localizeDigits(formatAmount(payment.amount));
 
 /// The masked card of the payment, such as `Visa •••• 4242`.
 String? paymentCardLabel(AdminPayment payment) {

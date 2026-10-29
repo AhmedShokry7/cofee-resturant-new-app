@@ -9,6 +9,7 @@ import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_highlight_line.dart';
 import 'package:admin_app/shared/widgets/admin_metric_card.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// مال المدى المختار بحجمه، وتحته نسبته إلى الفترة التي قبله.
 ///
@@ -34,29 +35,23 @@ class DashboardSalesAmount extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Text(
-              localizeDigits(formatAmount(amount)),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: adminHeadingColor(theme),
-                fontSize: AppFontSizes.size22,
-                fontWeight: AppFontWeights.bold,
-                height: AppTextHeights.line1_3,
+            Flexible(
+              child: Text(
+                localizeDigits(formatAmount(amount)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: adminHeadingColor(theme),
+                  fontSize: AppFontSizes.size22,
+                  fontWeight: AppFontWeights.bold,
+                  height: AppTextHeights.line1_3,
+                ),
               ),
             ),
             const SizedBox(width: AppSizes.px4),
-            Text(
-              S.currency,
-              style: TextStyle(
-                color: adminMutedColor(theme),
-                fontSize: AppFontSizes.size10,
-                height: AppTextHeights.line1_4,
-              ),
-            ),
+            CurrencyIcon(size: 20, color: adminMutedColor(theme)),
           ],
         ),
         if (delta != null) ...[

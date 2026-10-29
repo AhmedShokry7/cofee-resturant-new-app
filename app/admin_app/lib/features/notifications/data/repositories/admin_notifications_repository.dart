@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
@@ -27,16 +28,19 @@ class AdminNotificationsRepository implements NotificationsRepository {
     int page = 0,
     int pageSize = 10,
   }) async {
-    final response = await _supabase.rpc(
-      'admin_notifications',
-      params: {
-        'p_search': _blankToNull(search),
-        'p_type': type?.value,
-        'p_read': isRead,
-        'p_push': pushState,
-        'p_limit': pageSize,
-        'p_offset': page * pageSize,
-      },
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc(
+        'admin_notifications',
+        params: {
+          'p_search': _blankToNull(search),
+          'p_type': type?.value,
+          'p_read': isRead,
+          'p_push': pushState,
+          'p_limit': pageSize,
+          'p_offset': page * pageSize,
+        },
+      ),
+      client: _supabase,
     );
     if (response is Map) {
       return AdminNotificationPage.fromJson(
@@ -71,9 +75,12 @@ class AdminNotificationsRepository implements NotificationsRepository {
     String? search,
     int limit = 20,
   }) async {
-    final response = await _supabase.rpc(
-      'admin_notification_customers',
-      params: {'p_search': _blankToNull(search), 'p_limit': limit},
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc(
+        'admin_notification_customers',
+        params: {'p_search': _blankToNull(search), 'p_limit': limit},
+      ),
+      client: _supabase,
     );
     if (response is! List) return const <AdminNotificationComposerCustomer>[];
     return response

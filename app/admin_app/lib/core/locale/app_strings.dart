@@ -71,6 +71,10 @@ class S {
   static String get ordersLoadFailed => _ar
       ? 'تعذر تحميل الطلبات. حاول مرة أخرى.'
       : 'Orders could not be loaded. Please try again.';
+  /// فشل قراءة الكتالوج داخل شاشة الطلب، وهي غير قائمة الطلبات نفسها.
+  static String get ordersCatalogLoadFailed => _ar
+      ? 'تعذر تحميل المنتجات. حاول مرة أخرى.'
+      : 'Products could not be loaded. Please try again.';
   static String get orderActionFailed => _ar
       ? 'تعذر تحديث الطلب. حاول مرة أخرى.'
       : 'The order could not be updated. Please try again.';
@@ -194,6 +198,12 @@ class S {
   static String get dashboardTargetHint => '0';
   static String get dashboardTargetInvalid =>
       _ar ? 'أدخل مبلغًا أكبر من صفر.' : 'Enter an amount greater than zero.';
+
+  /// الحد الذي ترفض به `admin_set_revenue_target` الرقم (`22003`)؛ يُقال هنا
+  /// بصيغة مفهومة بدل استثناء القاعدة الخام.
+  static String get dashboardTargetTooLarge => _ar
+      ? 'الهدف يجب ألا يتجاوز ١٠٠٬٠٠٠٬٠٠٠.'
+      : 'The target must not exceed 100,000,000.';
   static String get dashboardTargetSaved =>
       _ar ? 'حُفظ هدف الشهر.' : 'Monthly target saved.';
   static String get dashboardRangeWeek => _ar ? '7 أيام' : '7 days';
@@ -240,8 +250,8 @@ class S {
   static String get dashboardOfTarget => _ar ? 'من الهدف' : 'of target';
   static String get dashboardCurrentSales =>
       _ar ? 'المبيعات الحالية' : 'Current sales';
-  static String dashboardTargetGap(String amount) =>
-      _ar ? 'تبقّى $amount لبلوغ هدفك!' : '$amount left to reach your target!';
+  static String get dashboardRemainingToTarget =>
+      _ar ? 'يتبقّى لبلوغ الهدف' : 'Left to reach the target';
   static String get dashboardSalesOverviewTitle =>
       _ar ? 'نظرة على المبيعات' : 'Sales overview';
   static String get dashboardSalesOverviewSubtitle => _ar
@@ -319,6 +329,59 @@ class S {
   static String get manageBrandSubtitle => _ar
       ? 'أدر الطلبات والقائمة والفروع والموظفين في مكان واحد.'
       : 'Manage orders, catalog, branches and staff in one place.';
+
+  // ---------- Accepting a staff invitation (migration 210) ----------
+  static String get invitationEntry => _ar
+      ? 'لديك رمز دعوة لموظف؟ اقبلها'
+      : 'Have a staff invitation code? Accept it';
+  static String get invitationAcceptTitle =>
+      _ar ? 'قبول دعوة موظف' : 'Accept a staff invitation';
+  static String get invitationCodeLabel => _ar ? 'رمز الدعوة' : 'Invite code';
+  static String get invitationCodeHint =>
+      _ar ? 'الرمز الذي أرسله لك المدير.' : 'The code your manager sent you.';
+  static String get invitationCheck => _ar ? 'تحقّق' : 'Check';
+  static String get invitationChecking =>
+      _ar ? 'جارٍ التحقق من الرمز…' : 'Checking the code…';
+  static String get invitationSubmitting =>
+      _ar ? 'جارٍ إنشاء الحساب…' : 'Creating the account…';
+  static String get invitationAcceptedIntro => _ar
+      ? 'هذه الدعوة على وشك أن تعمل موظفًا بالحساب التالي:'
+      : 'This invitation is about to make the following account a staff member:';
+  static String get invitationRoleLabel => _ar ? 'الدور' : 'Role';
+  static String get invitationBranchLabel => _ar ? 'الفرع' : 'Branch';
+  static String get invitationAllBranches => _ar ? 'كل الفروع' : 'All branches';
+  static String get invitationChoosePassword =>
+      _ar ? 'اختر كلمة مرور لحسابك' : 'Choose a password for your account';
+  static String get invitationAcceptSubmit =>
+      _ar ? 'قبول الدعوة' : 'Accept invitation';
+  static String get invitationUnknown =>
+      _ar ? 'هذا الرمز غير معروف.' : 'That code is not known.';
+  static String get invitationAlreadyAccepted =>
+      _ar ? 'استُخدم هذا الرمز من قبل.' : 'This code has already been used.';
+  static String get invitationCancelled =>
+      _ar ? 'سحب المدير هذه الدعوة.' : 'Your manager withdrew this invitation.';
+  static String get invitationExpired =>
+      _ar ? 'انتهت صلاحية هذه الدعوة.' : 'This invitation has expired.';
+  static String get invitationEmailMismatch => _ar
+      ? 'البريد الذي تدخل به لا يطابق البريد المدعو.'
+      : 'The account you are using is not the invited email.';
+  static String get invitationAlreadyStaff => _ar
+      ? 'هذا البريد موظف بالفعل في الدليل.'
+      : 'This email is already a staff account.';
+  static String get invitationCustomerHistory => _ar
+      ? 'هذا الحساب عليه طلبات عميل، فلا يقلبه النظام إلى موظف.'
+      : 'This account has customer orders, so it cannot become staff.';
+  static String get invitationConfirmationNeeded => _ar
+      ? 'لا يقبل النظام دعوة قبل تأكيد البريد أولًا.'
+      : 'The system will not accept an invitation before the email is confirmed.';
+  static String get invitationWeakPassword => _ar
+      ? 'كلمة المرور أضعف مما يطلبه النظام.'
+      : 'That password is weaker than the system requires.';
+  static String get invitationFailed => _ar
+      ? 'تعذّر التحقق من الدعوة الآن.'
+      : 'The invitation could not be checked right now.';
+  static String get invitationCodeRequired =>
+      _ar ? 'اكتب رمز الدعوة أولًا.' : 'Enter the invitation code first.';
 
   // ---------- Account with no accessible area ----------
   static String get noAccessTitle =>
@@ -614,6 +677,111 @@ class S {
   static String get roleHint =>
       _ar ? 'الدور (owner/staff/manager)' : 'Role (owner/staff/manager)';
 
+  // ---------- Staff profile editing (migration 209) ----------
+  static String get staffPicture => _ar ? 'صورة الموظف' : 'Staff picture';
+  static String get staffChangePicture =>
+      _ar ? 'تغيير الصورة' : 'Change picture';
+  static String get staffEdited =>
+      _ar ? 'تم حفظ بيانات الموظف' : 'Staff details saved';
+  static String get staffEditSelfStatus => _ar
+      ? 'لا يمكنك تغيير حالة حسابك الذي تدخل به اللوحة.'
+      : 'You cannot change the status of the account you are signed in with.';
+  static String get staffEditInvalidName => _ar
+      ? 'اكتب اسمًا لا يقل عن حرفين.'
+      : 'Enter a name of at least two letters.';
+  static String get staffEditInvalidEmail => _ar
+      ? 'صيغة البريد الإلكتروني غير صحيحة.'
+      : 'That email address is not valid.';
+  static String get staffEditDuplicateEmail => _ar
+      ? 'هذا البريد مستخدم مع موظف آخر.'
+      : 'Another staff account already uses this email.';
+  static String get staffEditInvalidStatus => _ar
+      ? 'حالة غير معروفة لهذا الموظف.'
+      : 'That status is not known for a staff account.';
+  static String get staffEditInvalidPath => _ar
+      ? 'مسار الصورة لا يطابق مجلد هذا الموظف.'
+      : 'That picture path is not inside this staff account folder.';
+  static String get staffEditPermissionDenied => _ar
+      ? 'لا تملك صلاحية تعديل هذا الموظف.'
+      : 'You are not allowed to edit this staff account.';
+  static String get staffEditFailed => _ar
+      ? 'تعذّر حفظ بيانات الموظف.'
+      : 'The staff details could not be saved.';
+  static String get staffPictureLoadFailed => _ar
+      ? 'تعذّر رفع صورة الموظف.'
+      : 'The staff picture could not be uploaded.';
+
+  // ---------- Staff invitations (migration 210) ----------
+  static String get inviteStaff => _ar ? 'دعوة موظف' : 'Invite staff';
+  static String get staffInvitations =>
+      _ar ? 'الدعوات المرسلة' : 'Sent invitations';
+  static String get staffInviteTitle =>
+      _ar ? 'دعوة موظف جديد' : 'Invite a new staff member';
+  static String get staffInviteDescription => _ar
+      ? 'تُنشأ الدعوة باسم وبريد ودور، ويحصل الموظف على رمز يقبله بنفسه من شاشة الدخول.'
+      : 'The invitation holds a name, an email and a role. The invitee uses its code themselves on the sign-in screen.';
+  static String get staffInviteName => _ar ? 'اسم الموظف' : 'Staff name';
+  static String get staffInviteEmail => _ar ? 'بريد الموظف' : 'Staff email';
+  static String get staffInviteRole => _ar ? 'الدور' : 'Role';
+  static String get staffInviteBranch => _ar ? 'الفرع' : 'Branch';
+  static String get staffInviteAllBranches =>
+      _ar ? 'كل الفروع' : 'All branches';
+  static String get staffInviteSend => _ar ? 'إرسال الدعوة' : 'Send invite';
+  static String get staffInvited =>
+      _ar ? 'تم إنشاء الدعوة' : 'The invitation was created';
+  static String get staffInviteCodeTitle =>
+      _ar ? 'رمز القبول' : 'Acceptance code';
+  static String get staffInviteCodeHint => _ar
+      ? 'أرسل هذا الرمز إلى الموظف؛ يُستخدم مرة واحدة ويبقى ساريًا سبعة أيام.'
+      : 'Send this code to the employee. It works once and stays valid for seven days.';
+  static String get staffInviteCodeCopy => _ar ? 'نسخ الرمز' : 'Copy code';
+  static String get staffInviteCodeCopied =>
+      _ar ? 'تم نسخ الرمز' : 'The code was copied';
+  static String get staffNoInvitations =>
+      _ar ? 'لا دعوات مُرسلة بعد.' : 'No invitations have been sent yet.';
+  static String get staffInvitationPending =>
+      _ar ? 'بانتظار القبول' : 'Awaiting';
+  static String get staffInvitationAccepted => _ar ? 'قُبلت' : 'Accepted';
+  static String get staffInvitationCancelled => _ar ? 'مُلغاة' : 'Cancelled';
+  static String get staffInvitationExpired => _ar ? 'منتهية' : 'Expired';
+  static String get staffInvitationCancel =>
+      _ar ? 'سحب الدعوة' : 'Withdraw invite';
+  static String get staffInvitationCancelledDone =>
+      _ar ? 'تم سحب الدعوة' : 'The invitation was withdrawn';
+  static String get staffInvitationExpiresOn => _ar ? 'تنتهي في' : 'Expires';
+  static String get staffInviteLoadingOptions =>
+      _ar ? 'جارٍ تحميل الأدوار والفروع…' : 'Loading roles and branches…';
+  static String get staffInviteNoOptions => _ar
+      ? 'لا توجد أدوار أو فروع يمكن لهذه الحساب أن يعرضها.'
+      : 'This account has no roles or branches it may offer.';
+
+  static String get staffInvitePermissionDenied => _ar
+      ? 'لا تملك صلاحية إرسال دعوات الموظفين.'
+      : 'You are not allowed to send staff invitations.';
+  static String get staffInviteUnknownRole =>
+      _ar ? 'هذا الدور غير موجود.' : 'That role does not exist.';
+  static String get staffInviteOwnerOnly => _ar
+      ? 'دور المالك لا يمنحه إلا المالك.'
+      : 'Only an owner may hand out the owner role.';
+  static String get staffInviteNotYourBranch => _ar
+      ? 'هذا الفرع خارج نطاق صلاحياتك.'
+      : 'That branch is outside your scope.';
+  static String get staffInviteUnknownBranch =>
+      _ar ? 'هذا الفرع غير موجود.' : 'That branch does not exist.';
+  static String get staffInviteAlreadyInvited => _ar
+      ? 'هناك دعوة حيّة لهذا البريد بالفعل.'
+      : 'This email already has a live invitation.';
+  static String get staffInviteAlreadyStaff => _ar
+      ? 'هذا البريد موظف بالفعل في الدليل.'
+      : 'This email is already a staff account.';
+  static String get staffInviteNotFound =>
+      _ar ? 'هذه الدعوة لم تعد موجودة.' : 'This invitation no longer exists.';
+  static String get staffInviteNotPending => _ar
+      ? 'لا يمكن سحب دعوة استُخدمت أو انتهت.'
+      : 'An invitation that was used or has expired cannot be withdrawn.';
+  static String get staffInviteFailed =>
+      _ar ? 'تعذّر إرسال الدعوة.' : 'The invitation could not be sent.';
+
   static String staffCount(int count) => count == 1
       ? _ar
             ? 'موظف واحد'
@@ -705,6 +873,13 @@ class S {
   static String get paymentsPrintFailed => _ar
       ? 'تعذر فتح نافذة الطباعة. حاول مرة أخرى.'
       : 'The print dialog could not be opened. Please try again.';
+
+  /// Shown instead of [paymentsPrintFailed] when the running build has no
+  /// browser to print from, so the message never blames the printer for a
+  /// missing channel.
+  static String get printNeedsBrowser => _ar
+      ? 'الطباعة متاحة عند تشغيل لوحة الإدارة في المتصفح.'
+      : 'Printing is available when the admin panel runs in the browser.';
   static String get paymentsPrintTitle =>
       _ar ? 'كشف المدفوعات' : 'Payments statement';
   static String get paymentsPrintGeneratedAt =>
@@ -2829,10 +3004,15 @@ class S {
       _ar ? 'اختر الفرع' : 'Choose a branch';
   static String get movementNeedsMaterial =>
       _ar ? 'اختر المادة الخام' : 'Choose a raw material';
-  static String get movementNeedsQuantity =>
+  /// أي حقل كمية يطلب رقمًا أكبر من صفر: حركة مخزون أو إضافة منتج لطلب.
+  static String get needsPositiveQuantity =>
       _ar ? 'أدخل كمية أكبر من صفر' : 'Enter a quantity greater than zero';
   static String get movementInvalidCost =>
       _ar ? 'تكلفة الوحدة غير صحيحة' : 'The unit cost is invalid';
+
+  /// `invalid_type` في ١٧٣: نوعٌ خارج receipt/issue/waste/count، لا وحدة قياس.
+  static String get movementInvalidType =>
+      _ar ? 'نوع الحركة غير صحيح' : 'The movement type is not valid';
   static String get movementInsufficientStock => _ar
       ? 'الكمية أكبر من المخزون المتاح'
       : 'The quantity is larger than the stock on hand';
@@ -3065,6 +3245,12 @@ class S {
   static String get kitchenInvalidTransitionMessage => _ar
       ? 'تغيّرت حالة الطلب. حدّث اللوحة وحاول مرة أخرى.'
       : 'The ticket changed. Refresh the board and try again.';
+  static String get kitchenLoadFailed => _ar
+      ? 'تعذر تحميل شاشة المطبخ. حاول مرة أخرى.'
+      : 'The kitchen board could not be loaded. Try again.';
+  static String get kitchenBoardDenied => _ar
+      ? 'ليست لديك صلاحية عرض شاشة المطبخ.'
+      : 'You do not have permission to view the kitchen board.';
 
   // ---------- Dining floor: tables, rooms and reservations ----------
   static String get tables => _ar ? 'الصالة والطاولات' : 'Tables & rooms';
@@ -3268,6 +3454,9 @@ class S {
       : 'A seated booking cannot move to another table.';
   static String get reservationInvalidTime =>
       _ar ? 'اختر وقتًا صالحًا للحجز.' : 'Choose a valid booking time.';
+  static String get reservationInvalidParty => _ar
+      ? 'عدد الضيوف غير صالح: من 1 إلى 40 ضيفًا.'
+      : 'Invalid party size: between 1 and 40 guests.';
   static String get reservationTableUnavailable => _ar
       ? 'هذه الطاولة غير متاحة للحجز.'
       : 'That table is not available for booking.';
@@ -3341,6 +3530,8 @@ class S {
   static String get reservationDuration90 => _ar ? 'ساعة ونصف' : '1.5 hours';
   static String get reservationDuration120 => _ar ? 'ساعتان' : '2 hours';
   static String get reservationDuration180 => _ar ? '3 ساعات' : '3 hours';
+  static String reservationDurationMinutes(int minutes) =>
+      _ar ? '$minutes دقيقة' : '$minutes minutes';
   static String get tablesLoadFailed =>
       _ar ? 'تعذر تحميل الصالة.' : 'The floor could not be loaded.';
   static String get tablesPermissionDenied => _ar
@@ -3494,6 +3685,29 @@ class S {
       _ar ? 'الأسعار شاملة ضريبة القيمة المضافة.' : 'Prices include VAT.';
   static String get posTotal => _ar ? 'الإجمالي' : 'Total';
   static String get posPlaceOrder => _ar ? 'تأكيد الطلب' : 'Confirm order';
+  static String get posHoldOrder => _ar ? 'تعليق الطلب' : 'Hold order';
+  static String get posHeldOrders => _ar ? 'الطلبات المعلقة' : 'Held orders';
+  static String posHeldOrdersCount(int count) =>
+      _ar ? 'معلقة ($count)' : 'Held ($count)';
+  static String get posHeldOrdersSubtitle => _ar
+      ? 'استرجع أي طلب معلق لإكماله أو احذفه.'
+      : 'Resume a held order to complete it or discard it.';
+  static String posHeldOrderLabel(int number) =>
+      _ar ? 'طلب معلق #$number' : 'Held order #$number';
+  static String get posResumeOrder => _ar ? 'استرجاع الطلب' : 'Resume';
+  static String get posDiscardHeldOrder =>
+      _ar ? 'حذف الطلب المعلق' : 'Discard held order';
+  static String get posOrderHeldToast =>
+      _ar ? 'تم تعليق الطلب.' : 'Order held.';
+  static String get posOrderResumedToast =>
+      _ar ? 'تم استرجاع الطلب المعلق.' : 'Held order resumed.';
+  static String get posNoHeldOrders =>
+      _ar ? 'لا توجد طلبات معلقة' : 'No held orders';
+  static String get posCashReceivedLabel =>
+      _ar ? 'المبلغ المدفوع' : 'Cash received';
+  static String get posCashChangeLabel => _ar ? 'الباقي للعميل' : 'Change due';
+  static String get posCashRemainingLabel =>
+      _ar ? 'المتبقي على العميل' : 'Remaining due';
   static String get posKitchenReceiptNote => _ar
       ? 'الطلب ظهر الآن في شاشة المطبخ.'
       : 'The order is now on the kitchen screen.';
@@ -3800,6 +4014,14 @@ class S {
   static String get posShiftOpenNoteHint => _ar
       ? 'اختياري: رقم الدرج أو ملاحظة بداية اليوم.'
       : 'Optional: drawer number or start-of-day note.';
+  static String get posShiftCashier => _ar ? 'صاحب الوردية' : 'Shift cashier';
+  static String get posShiftCashierSelf =>
+      _ar ? 'أنت (الموظف الحالي)' : 'Yourself (current staff)';
+  static String get posShiftCashierLoading =>
+      _ar ? 'جارٍ تحميل موظفي الفرع...' : 'Loading the branch staff...';
+  static String get posShiftCashierLoadFailed => _ar
+      ? 'تعذر تحميل موظفي الفرع، وستُفتح الوردية باسمك.'
+      : 'Could not load the branch staff; the shift will open in your name.';
   static String get posShiftOpenedToast =>
       _ar ? 'تم فتح وردية الكاشير.' : 'Cashier shift opened.';
   static String get posShiftAlreadyOpenToast => _ar
@@ -3913,6 +4135,9 @@ class S {
       _ar ? 'طلبات آخر ٣٠ يومًا' : 'Orders in the last 30 days';
   static String get branchesMetricZones =>
       _ar ? 'مناطق التوصيل النشطة' : 'Active delivery zones';
+  static String get branchesMetricsFailed => _ar
+      ? 'تعذّر تحميل مؤشرات الفروع، والأرقام المعروضة من آخر تحميل ناجح.'
+      : 'Branch metrics could not be loaded; the numbers shown are from the last good load.';
   static String get branchesNoMatches => _ar
       ? 'لا توجد فروع مطابقة للبحث أو الفلتر.'
       : 'No branches match the search or filter.';
@@ -4369,6 +4594,8 @@ class S {
       _ar ? 'لم يتم إنشاء التصنيف.' : 'The category was not created.';
   static String get categoryNotUpdated =>
       _ar ? 'لم يتم تحديث التصنيف.' : 'The category was not updated.';
+  static String get categoryImageNotSaved =>
+      _ar ? 'لم يتم حفظ صورة التصنيف.' : 'The category picture was not saved.';
   static String get noWorksheet =>
       _ar ? 'الملف لا يحتوي على ورقة عمل.' : 'The workbook has no worksheet.';
   static String missingExcelColumn(String column) => _ar

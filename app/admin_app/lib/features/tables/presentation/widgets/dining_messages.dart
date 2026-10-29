@@ -2,16 +2,11 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 
 /// Error copy of a tables action, mapped from the repository outcome.
-String diningLoadErrorMessage(String? message) {
-  final text = (message ?? '').toLowerCase();
-  if (text.contains('permission') || text.contains('42501')) {
-    return S.tablesPermissionDenied;
-  }
-  if (text.contains('no branch') || text.contains('p0002')) {
-    return S.tablesNoBranch;
-  }
-  return S.tablesLoadFailed;
-}
+String diningLoadErrorMessage(DiningLoadFailure? failure) => switch (failure) {
+  DiningLoadFailure.permissionDenied => S.tablesPermissionDenied,
+  DiningLoadFailure.noBranch => S.tablesNoBranch,
+  DiningLoadFailure.failed || null => S.tablesLoadFailed,
+};
 
 String diningTableSaveErrorMessage(DiningTableSaveOutcome outcome) =>
     switch (outcome) {
@@ -45,7 +40,7 @@ String diningReservationSaveErrorMessage(
   DiningReservationSaveOutcome.invalidPhone ||
   DiningReservationSaveOutcome.invalidNote ||
   DiningReservationSaveOutcome.invalidDuration => S.reservationSaveFailed,
-  DiningReservationSaveOutcome.invalidParty ||
+  DiningReservationSaveOutcome.invalidParty => S.reservationInvalidParty,
   DiningReservationSaveOutcome.invalidTime => S.reservationInvalidTime,
   DiningReservationSaveOutcome.invalidTable => S.reservationTableUnavailable,
   DiningReservationSaveOutcome.partyTooLarge => S.reservationPartyTooLarge,
@@ -65,6 +60,7 @@ String diningReservationStatusErrorMessage(
   DiningReservationStatusOutcome.invalidStatus ||
   DiningReservationStatusOutcome.invalidTable => S.reservationStatusInvalid,
   DiningReservationStatusOutcome.tableBusy => S.reservationTableBusy,
+  DiningReservationStatusOutcome.tooEarly => S.reservationSeatTooEarly,
   DiningReservationStatusOutcome.notFound => S.reservationNotFound,
   DiningReservationStatusOutcome.permissionDenied => S.tablePermissionDenied,
   DiningReservationStatusOutcome.failed => S.reservationActionFailed,

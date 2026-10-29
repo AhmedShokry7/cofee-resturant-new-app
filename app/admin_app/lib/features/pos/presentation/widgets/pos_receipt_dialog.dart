@@ -6,6 +6,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/services/html_print_runner.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
@@ -13,6 +14,7 @@ import 'package:admin_app/features/pos/data/pos_receipt_print_service.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The confirmation the cashier sees right after a counter sale.
 Future<void> showPosReceiptDialog(BuildContext context, PosReceipt receipt) {
@@ -34,21 +36,26 @@ class _PosReceiptDialog extends StatefulWidget {
 class _PosReceiptDialogState extends State<_PosReceiptDialog> {
   bool _printing = false;
 
-  bool get _taxInvoiceReady => buildPosReceiptQrData(widget.receipt) != null;
+  /// A simplified tax invoice needs the seller identity, and the QR payload is
+  /// rebuilt on every frame if it is read inside `build`.
+  late final bool _taxInvoiceReady =
+      buildPosReceiptQrData(widget.receipt) != null;
 
   @override
   void initState() {
     super.initState();
-    // The customer leaves with the tax invoice; the print dialog is opened as
-    // soon as the sale is recorded so the cashier does not have to tap again.
-    if (_taxInvoiceReady) {
+    // The customer leaves with the tax invoice, so the browser print dialog is
+    // opened as soon as the sale is recorded. This attempt runs outside a click
+    // handler, where a browser may refuse to open a dialog, so its failure is
+    // not reported: the invoice card keeps a print button that reports fully.
+    if (_taxInvoiceReady && browserPrintingAvailable) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _print();
+        if (mounted) _print(silent: true);
       });
     }
   }
 
-  Future<void> _print() async {
+  Future<void> _print({bool silent = false}) async {
     if (_printing) return;
     setState(() => _printing = true);
     var printed = false;
@@ -59,12 +66,16 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
     }
     if (!mounted) return;
     setState(() => _printing = false);
-    if (!printed) {
+    if (!printed && !silent) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(S.posReceiptPrintFailed),
+            content: Text(
+              browserPrintingAvailable
+                  ? S.posReceiptPrintFailed
+                  : S.printNeedsBrowser,
+            ),
             backgroundColor: AppColor.errorColor,
           ),
         );
@@ -320,19 +331,16 @@ class _DetailGrid extends StatelessWidget {
     final customer = receipt.result.customerDisplayName;
     final customerPhone = receipt.result.customerPhone?.trim() ?? '';
     final payment = receipt.result.paymentMethodNameFor(language);
-    final fields = <(String, String)>[
-      (S.posTable, table.isEmpty ? '-' : table),
-      if (customer.isNotEmpty) (S.posCustomer, customer),
-      if (customerPhone.isNotEmpty) (S.posCustomerPhone, customerPhone),
+    final fields = <(String, String, bool)>[
+      (S.posTable, table.isEmpty ? '-' : table, false),
+      if (customer.isNotEmpty) (S.posCustomer, customer, false),
+      if (customerPhone.isNotEmpty) (S.posCustomerPhone, customerPhone, false),
       if (receipt.result.isSplitPayment)
         for (final tender in receipt.result.payments)
-          (
-            posTenderLabel(tender, language),
-            posMoney(tender.amount, receipt.currencyCode),
-          )
+          (posTenderLabel(tender, language), posAmount(tender.amount), true)
       else
-        (S.posReceiptPaymentMethod, payment.isEmpty ? '-' : payment),
-      (S.posReceiptTime, posDateTime(receipt.result.placedAt)),
+        (S.posReceiptPaymentMethod, payment.isEmpty ? '-' : payment, false),
+      (S.posReceiptTime, posDateTime(receipt.result.placedAt), false),
     ];
 
     return LayoutBuilder(
@@ -345,7 +353,11 @@ class _DetailGrid extends StatelessWidget {
             for (final field in fields)
               SizedBox(
                 width: width,
-                child: _DetailField(label: field.$1, value: field.$2),
+                child: _DetailField(
+                  label: field.$1,
+                  value: field.$2,
+                  money: field.$3,
+                ),
               ),
           ],
         );
@@ -355,10 +367,15 @@ class _DetailGrid extends StatelessWidget {
 }
 
 class _DetailField extends StatelessWidget {
-  const _DetailField({required this.label, required this.value});
+  const _DetailField({
+    required this.label,
+    required this.value,
+    this.money = false,
+  });
 
   final String label;
   final String value;
+  final bool money;
 
   @override
   Widget build(BuildContext context) {
@@ -387,17 +404,38 @@ class _DetailField extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSizes.px2),
-          Text(
-            value,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: adminBodyColor(theme),
-              fontSize: AppFontSizes.size11,
-              fontWeight: AppFontWeights.semiBold,
-              height: AppTextHeights.line1_5,
+          if (money)
+            Row(
+              children: [
+                Flexible(
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: adminBodyColor(theme),
+                      fontSize: AppFontSizes.size11,
+                      fontWeight: AppFontWeights.semiBold,
+                      height: AppTextHeights.line1_5,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSizes.px4),
+                CurrencyIcon(size: 12, color: adminBodyColor(theme)),
+              ],
+            )
+          else
+            Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: adminBodyColor(theme),
+                fontSize: AppFontSizes.size11,
+                fontWeight: AppFontWeights.semiBold,
+                height: AppTextHeights.line1_5,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -447,11 +485,7 @@ class _ItemsCard extends StatelessWidget {
           for (var index = 0; index < receipt.lines.length; index++) ...[
             if (index > 0)
               Divider(height: 15, color: adminRowBorderColor(theme)),
-            _ReceiptLineTile(
-              line: receipt.lines[index],
-              currencyCode: receipt.currencyCode,
-              language: language,
-            ),
+            _ReceiptLineTile(line: receipt.lines[index], language: language),
           ],
         ],
       ),
@@ -460,14 +494,9 @@ class _ItemsCard extends StatelessWidget {
 }
 
 class _ReceiptLineTile extends StatelessWidget {
-  const _ReceiptLineTile({
-    required this.line,
-    required this.currencyCode,
-    required this.language,
-  });
+  const _ReceiptLineTile({required this.line, required this.language});
 
   final PosCartLine line;
-  final String currencyCode;
   final AppLanguage language;
 
   @override
@@ -540,12 +569,25 @@ class _ReceiptLineTile extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSizes.px8),
-        Text(
-          posMoney(line.lineTotal, currencyCode),
-          style: TextStyle(
-            color: adminBodyColor(theme),
-            fontSize: AppFontSizes.size10_5,
-            fontWeight: AppFontWeights.semiBold,
+        Flexible(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  posAmount(line.lineTotal),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: adminBodyColor(theme),
+                    fontSize: AppFontSizes.size10_5,
+                    fontWeight: AppFontWeights.semiBold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(size: 12, color: adminBodyColor(theme)),
+            ],
           ),
         ),
       ],
@@ -562,7 +604,6 @@ class _TotalsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final result = receipt.result;
-    final currency = receipt.currencyCode;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -575,28 +616,33 @@ class _TotalsCard extends StatelessWidget {
           if (result.discountAmount > 0) ...[
             _AmountRow(
               label: S.posBeforeDiscount,
-              value: posMoney(result.beforeDiscount, currency),
+              value: posAmount(result.beforeDiscount),
+              money: true,
             ),
             const SizedBox(height: AppSizes.px4),
             _AmountRow(
               label: S.posDiscount,
-              value: '- ${posMoney(result.discountAmount, currency)}',
+              value: '- ${posAmount(result.discountAmount)}',
               valueColor: AppColor.trendPositive,
+              money: true,
             ),
             const SizedBox(height: AppSizes.px4),
             _AmountRow(
               label: S.posAfterDiscount,
-              value: posMoney(result.subtotal, currency),
+              value: posAmount(result.subtotal),
+              money: true,
             ),
           ] else
             _AmountRow(
               label: S.posSubtotal,
-              value: posMoney(result.subtotal, currency),
+              value: posAmount(result.subtotal),
+              money: true,
             ),
           const SizedBox(height: AppSizes.px4),
           _AmountRow(
             label: S.posTaxableAmount,
-            value: posMoney(result.invoiceTaxable, currency),
+            value: posAmount(result.invoiceTaxable),
+            money: true,
           ),
           if (result.taxRate > 0) ...[
             const SizedBox(height: AppSizes.px4),
@@ -605,7 +651,8 @@ class _TotalsCard extends StatelessWidget {
           const SizedBox(height: AppSizes.px4),
           _AmountRow(
             label: S.posVatAmount,
-            value: posMoney(result.invoiceVat, currency),
+            value: posAmount(result.invoiceVat),
+            money: true,
           ),
           const SizedBox(height: AppSizes.px8),
           Divider(height: 1, color: adminRowBorderColor(theme)),
@@ -621,12 +668,31 @@ class _TotalsCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Text(
-                posMoney(result.grandTotal, currency),
-                style: TextStyle(
-                  color: adminFlagForeground(theme, AppColor.adminAccent),
-                  fontSize: AppFontSizes.size18,
-                  fontWeight: AppFontWeights.bold,
+              Flexible(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        posAmount(result.grandTotal),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminFlagForeground(
+                            theme,
+                            AppColor.adminAccent,
+                          ),
+                          fontSize: AppFontSizes.size18,
+                          fontWeight: AppFontWeights.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.px4),
+                    CurrencyIcon(
+                      size: 20,
+                      color: adminFlagForeground(theme, AppColor.adminAccent),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -756,7 +822,6 @@ class _TaxInvoiceCard extends StatelessWidget {
           const SizedBox(height: AppSizes.px4),
           Text(
             '${S.posSellerVatNumber}: ${localizeDigits(result.sellerVatNumber.trim())}',
-            textDirection: TextDirection.rtl,
             style: TextStyle(
               color: adminBodyColor(theme),
               fontSize: AppFontSizes.size10,
@@ -781,15 +846,26 @@ class _TaxInvoiceCard extends StatelessWidget {
 }
 
 class _AmountRow extends StatelessWidget {
-  const _AmountRow({required this.label, required this.value, this.valueColor});
+  const _AmountRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+    this.money = false,
+  });
 
   final String label;
   final String value;
   final Color? valueColor;
+  final bool money;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final valueStyle = TextStyle(
+      color: valueColor ?? adminBodyColor(theme),
+      fontSize: AppFontSizes.size10,
+      fontWeight: AppFontWeights.semiBold,
+    );
     return Row(
       children: [
         Text(
@@ -800,14 +876,32 @@ class _AmountRow extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        Text(
-          value,
-          style: TextStyle(
-            color: valueColor ?? adminBodyColor(theme),
-            fontSize: AppFontSizes.size10,
-            fontWeight: AppFontWeights.semiBold,
+        if (money)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: valueStyle,
+                ),
+              ),
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(
+                size: 12,
+                color: valueColor ?? adminBodyColor(theme),
+              ),
+            ],
+          )
+        else
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: valueStyle,
           ),
-        ),
       ],
     );
   }

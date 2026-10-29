@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_badges.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The coupon exactly as the customer app would show it, used by the editor
 /// while the admin is still filling the form.
@@ -116,11 +117,42 @@ class CouponPreviewCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSizes.px16),
-          Text.rich(
-            TextSpan(
+          if (_isPercentage)
+            Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: couponCompactNumber(discountValue),
+                    style: const TextStyle(
+                      color: AppColor.whiteColor,
+                      fontSize: AppFontSizes.size34,
+                      fontWeight: AppFontWeights.extraBold,
+                      height: AppTextHeights.line1_1,
+                      letterSpacing: AppLetterSpacings.spaceNegative0_5,
+                    ),
+                  ),
+                  TextSpan(
+                    text: '%',
+                    style: TextStyle(
+                      color: AppColor.whiteColor.withValues(alpha: .9),
+                      fontSize: 22,
+                      fontWeight: AppFontWeights.bold,
+                      height: AppTextHeights.line1_2,
+                    ),
+                  ),
+                ],
+              ),
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.start,
+            )
+          else
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                TextSpan(
-                  text: couponCompactNumber(discountValue),
+                Text(
+                  couponCompactNumber(discountValue),
+                  textDirection: TextDirection.ltr,
                   style: const TextStyle(
                     color: AppColor.whiteColor,
                     fontSize: AppFontSizes.size34,
@@ -129,20 +161,13 @@ class CouponPreviewCard extends StatelessWidget {
                     letterSpacing: AppLetterSpacings.spaceNegative0_5,
                   ),
                 ),
-                TextSpan(
-                  text: _isPercentage ? '%' : ' ${S.currency}',
-                  style: TextStyle(
-                    color: AppColor.whiteColor.withValues(alpha: .9),
-                    fontSize: _isPercentage ? 22 : 15,
-                    fontWeight: AppFontWeights.bold,
-                    height: AppTextHeights.line1_2,
-                  ),
+                const SizedBox(width: AppSizes.px6),
+                CurrencyIcon(
+                  size: 20,
+                  color: AppColor.whiteColor.withValues(alpha: .9),
                 ),
               ],
             ),
-            textDirection: TextDirection.ltr,
-            textAlign: TextAlign.start,
-          ),
           const SizedBox(height: AppSizes.px8),
           Text(
             title,
@@ -178,16 +203,16 @@ class CouponPreviewCard extends StatelessWidget {
             const SizedBox(height: AppSizes.px10),
             _term(
               icon: AppIcons.shoppingBag01,
-              label: S.couponsMinOrder(couponMoneyWithCurrency(minOrderAmount)),
+              label: S.couponsMinOrder('').trim(),
+              money: minOrderAmount,
             ),
           ],
           if (_isPercentage && maxDiscount != null && maxDiscount! > 0) ...[
             const SizedBox(height: AppSizes.px10),
             _term(
               icon: AppIcons.percent,
-              label: S.couponsMaxDiscount(
-                couponMoneyWithCurrency(maxDiscount!),
-              ),
+              label: S.couponsMaxDiscount('').trim(),
+              money: maxDiscount,
             ),
           ],
           const SizedBox(height: AppSizes.px10),
@@ -206,6 +231,7 @@ class CouponPreviewCard extends StatelessWidget {
     required IconData icon,
     required String label,
     String? caption,
+    double? money,
   }) => Row(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -215,17 +241,39 @@ class CouponPreviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: AppColor.whiteColor,
-                fontSize: AppFontSizes.size10,
-                fontWeight: AppFontWeights.semiBold,
-                height: AppTextHeights.line1_5,
+            if (money == null)
+              Text(
+                label,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColor.whiteColor,
+                  fontSize: AppFontSizes.size10,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_5,
+                ),
+              )
+            else
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      '$label ${couponMoney(money)}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: AppColor.whiteColor,
+                        fontSize: AppFontSizes.size10,
+                        fontWeight: AppFontWeights.semiBold,
+                        height: AppTextHeights.line1_5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.px4),
+                  const CurrencyIcon(size: 11, color: AppColor.whiteColor),
+                ],
               ),
-            ),
             if (caption != null)
               Text(
                 caption,

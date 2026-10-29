@@ -9,9 +9,6 @@ String couponCount(int value) => localizeDigits(formatCount(value));
 
 String couponMoney(double value) => localizeDigits(formatAmount(value));
 
-String couponMoneyWithCurrency(double value) =>
-    '${couponMoney(value)} ${S.currency}';
-
 String couponCompactNumber(num value) {
   final rounded = value.roundToDouble();
   final text = (value - rounded).abs() < 0.0001
@@ -20,6 +17,15 @@ String couponCompactNumber(num value) {
   return localizeDigits(
     text.endsWith('.') ? text.substring(0, text.length - 1) : text,
   );
+}
+
+/// A coupon condition written as its label plus the money amount the UI marks
+/// with the riyal symbol.
+class CouponMoneyTerm {
+  const CouponMoneyTerm(this.label, this.amount);
+
+  final String label;
+  final double amount;
 }
 
 String couponStatusLabel(AdminCoupon coupon) =>
@@ -34,18 +40,24 @@ String couponStatusName(AdminCouponStatus status) => switch (status) {
   AdminCouponStatus.paused => S.couponsStatusPaused,
 };
 
+/// The discount headline. A percentage coupon keeps its prose; a fixed coupon
+/// is the bare amount the UI wears the riyal mark on.
 String couponDiscountHeadline(AdminCoupon coupon) => coupon.isPercentage
     ? localizeDigits(
         S.couponsPercentOff(couponCompactNumber(coupon.discountValue)),
       )
-    : S.couponsAmountOff(couponMoneyWithCurrency(coupon.discountValue));
+    : couponMoney(coupon.discountValue);
 
-String couponDiscountDetail(AdminCoupon coupon) => [
+/// Whether `couponDiscountHeadline` is a money amount.
+bool couponDiscountHeadlineIsMoney(AdminCoupon coupon) => !coupon.isPercentage;
+
+/// The conditions under the headline, each amount marked by the UI.
+List<CouponMoneyTerm> couponDiscountTerms(AdminCoupon coupon) => [
   if (coupon.minOrderAmount > 0)
-    S.couponsMinOrder(couponMoneyWithCurrency(coupon.minOrderAmount)),
+    CouponMoneyTerm(S.couponsMinOrder('').trim(), coupon.minOrderAmount),
   if (coupon.hasMaxDiscount)
-    S.couponsMaxDiscount(couponMoneyWithCurrency(coupon.maxDiscount!)),
-].join('  •  ');
+    CouponMoneyTerm(S.couponsMaxDiscount('').trim(), coupon.maxDiscount!),
+];
 
 String couponScopeLabel(AdminCoupon coupon) => switch (coupon.scope) {
   AdminCouponScope.all => S.couponsScopeAll,
@@ -125,8 +137,9 @@ String? couponExpiryCountdown(AdminCoupon coupon) {
   return S.couponsExpiresInDays(days);
 }
 
+/// The discount given away, as the amount the UI marks with the riyal symbol.
 String couponPerformanceLabel(AdminCoupon coupon) =>
-    couponMoneyWithCurrency(coupon.discountGiven);
+    couponMoney(coupon.discountGiven);
 
 String couponPerformanceDetail(AdminCoupon coupon) {
   if (!coupon.wasRedeemed) return S.couponsNeverRedeemed;

@@ -8,9 +8,6 @@ import 'package:admin_app/features/customers/domain/entities/admin_customer.dart
 
 String customerMoney(double value) => localizeDigits(formatAmount(value));
 
-String customerMoneyWithCurrency(double value) =>
-    '${customerMoney(value)} ${S.currency}';
-
 String customerCount(int value) => localizeDigits(formatCount(value));
 
 String customerOrders(int count) =>

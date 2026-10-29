@@ -12,6 +12,7 @@ import 'package:admin_app/features/coupons/presentation/widgets/coupon_actions_m
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_badges.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class CouponTable extends StatelessWidget {
   const CouponTable({
@@ -163,6 +164,9 @@ class _Row extends StatelessWidget {
     final theme = Theme.of(context);
     final dark = adminIsDark(theme);
     final body = adminBodyColor(theme);
+    final givenColor = coupon.wasRedeemed
+        ? (dark ? AppColor.darkText : AppColor.adminAmount)
+        : adminMutedColor(theme);
     final status = coupon.statusAt();
     final description =
         coupon.descriptionFor(AppLocale.instance.language) ??
@@ -235,22 +239,37 @@ class _Row extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      couponDiscountHeadline(coupon),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: dark ? AppColor.darkText : AppColor.adminAmount,
-                        fontSize: AppFontSizes.size11,
-                        fontWeight: AppFontWeights.bold,
-                        height: AppTextHeights.line1_5,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            couponDiscountHeadline(coupon),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: dark
+                                  ? AppColor.darkText
+                                  : AppColor.adminAmount,
+                              fontSize: AppFontSizes.size11,
+                              fontWeight: AppFontWeights.bold,
+                              height: AppTextHeights.line1_5,
+                            ),
+                          ),
+                        ),
+                        if (couponDiscountHeadlineIsMoney(coupon)) ...[
+                          const SizedBox(width: AppSizes.px4),
+                          CurrencyIcon(
+                            size: 13,
+                            color: dark
+                                ? AppColor.darkText
+                                : AppColor.adminAmount,
+                          ),
+                        ],
+                      ],
                     ),
-                    if (couponDiscountDetail(coupon).isNotEmpty)
-                      Text(
-                        couponDiscountDetail(coupon),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    if (couponDiscountTerms(coupon).isNotEmpty)
+                      CouponDiscountTerms(
+                        coupon: coupon,
                         style: TextStyle(
                           color: adminMutedColor(theme),
                           fontSize: AppFontSizes.size8_5,
@@ -300,18 +319,24 @@ class _Row extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      couponPerformanceLabel(coupon),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: coupon.wasRedeemed
-                            ? (dark ? AppColor.darkText : AppColor.adminAmount)
-                            : adminMutedColor(theme),
-                        fontSize: AppFontSizes.size10_5,
-                        fontWeight: AppFontWeights.semiBold,
-                        height: AppTextHeights.line1_5,
-                      ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            couponPerformanceLabel(coupon),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: givenColor,
+                              fontSize: AppFontSizes.size10_5,
+                              fontWeight: AppFontWeights.semiBold,
+                              height: AppTextHeights.line1_5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.px4),
+                        CurrencyIcon(size: 12, color: givenColor),
+                      ],
                     ),
                     Text(
                       couponPerformanceDetail(coupon),

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
@@ -322,6 +323,7 @@ class _FakePosRepository extends AdminPosRepository {
   int openShiftCalls = 0;
   double? lastOpeningFloat;
   String? lastOpenShiftNote;
+  String? lastOpenShiftCashierId;
 
   PosShift? movementShift;
   PosShiftException? movementError;
@@ -349,6 +351,12 @@ class _FakePosRepository extends AdminPosRepository {
   PosShiftException? shiftDetailError;
   int shiftDetailCalls = 0;
   String? lastDetailShiftId;
+
+  List<PosCashier> cashiers = const <PosCashier>[];
+  PosShiftException? cashiersError;
+  int cashierCalls = 0;
+  String? lastCashierBranchId;
+  Completer<void>? cashiersGate;
 
   @override
   Future<PosCatalog> loadCatalog({String? branchId}) async {
@@ -473,10 +481,12 @@ class _FakePosRepository extends AdminPosRepository {
     required String branchId,
     required double openingFloat,
     String? note,
+    String? cashierId,
   }) async {
     openShiftCalls += 1;
     lastOpeningFloat = openingFloat;
     lastOpenShiftNote = note;
+    lastOpenShiftCashierId = cashierId;
     final error = openShiftError;
     if (error != null) throw error;
     final opened =
@@ -546,6 +556,16 @@ class _FakePosRepository extends AdminPosRepository {
     final error = shiftDetailError;
     if (error != null) throw error;
     return shiftDetailValue ?? _closedShift(id: shiftId);
+  }
+
+  @override
+  Future<List<PosCashier>> loadCashiers(String branchId) async {
+    cashierCalls += 1;
+    lastCashierBranchId = branchId;
+    await cashiersGate?.future;
+    final error = cashiersError;
+    if (error != null) throw error;
+    return cashiers;
   }
 }
 
@@ -1151,6 +1171,121 @@ void main() {
       expect(cubit.state.shiftHistoryFailure, PosShiftFailure.permissionDenied);
       expect(cubit.state.shiftFailure, isNull);
       expect(cubit.state.shiftHistory, hasLength(1));
+    });
+  });
+
+  group('PosCubit shift cashier', () {
+    test(
+      'reads the staff who may own the drawer of the selected branch',
+      () async {
+        final repository = _FakePosRepository()
+          ..cashiers = const <PosCashier>[
+            PosCashier(id: 'st-1', fullName: 'منى علي', isSelf: true),
+            PosCashier(id: 'st-2', fullName: 'سامي حسن'),
+          ];
+        final cubit = _createCubit(repository);
+        await cubit.load();
+
+        await cubit.loadCashiers();
+
+        expect(repository.cashierCalls, 1);
+        expect(repository.lastCashierBranchId, 'b1');
+        expect(cubit.state.cashiers, hasLength(2));
+        expect(cubit.state.cashiers.first.isSelf, isTrue);
+        expect(cubit.state.isLoadingCashiers, isFalse);
+        expect(cubit.state.cashiersFailure, isNull);
+      },
+    );
+
+    test('reads nothing until a branch is selected', () async {
+      final repository = _FakePosRepository();
+      final cubit = _createCubit(repository);
+
+      await cubit.loadCashiers();
+
+      expect(repository.cashierCalls, 0);
+      expect(cubit.state.isLoadingCashiers, isFalse);
+    });
+
+    test('a failed cashier read keeps the self-open path usable', () async {
+      final repository = _FakePosRepository()
+        ..shift = null
+        ..cashiersError = const PosShiftException(
+          PosShiftFailure.permissionDenied,
+          'denied',
+        );
+      final cubit = _createCubit(repository);
+      await cubit.load();
+
+      await cubit.loadCashiers();
+
+      expect(cubit.state.cashiers, isEmpty);
+      expect(cubit.state.cashiersFailure, PosShiftFailure.permissionDenied);
+      expect(cubit.state.isLoadingCashiers, isFalse);
+
+      final opened = await cubit.openShift(openingFloat: 100);
+
+      expect(opened, isNotNull);
+      expect(repository.lastOpenShiftCashierId, isNull);
+    });
+
+    test('the chosen cashier is sent and no choice means the caller', () async {
+      final repository = _FakePosRepository()..shift = null;
+      final cubit = _createCubit(repository);
+      await cubit.load();
+
+      final assigned = await cubit.openShift(
+        openingFloat: 120,
+        cashierId: 'st-2',
+      );
+      expect(assigned, isNotNull);
+      expect(repository.lastOpenShiftCashierId, 'st-2');
+
+      final second = await cubit.openShift(openingFloat: 60);
+      expect(second, isNotNull);
+      expect(repository.lastOpenShiftCashierId, isNull);
+      expect(repository.openShiftCalls, 2);
+    });
+
+    test('switching branches drops the cashiers of the old branch', () async {
+      final repository = _FakePosRepository()
+        ..cashiers = const <PosCashier>[
+          PosCashier(id: 'st-2', fullName: 'سامي'),
+        ];
+      final cubit = _createCubit(repository);
+      await cubit.load();
+      await cubit.loadCashiers();
+
+      await cubit.setBranch('b2');
+
+      expect(cubit.state.cashiers, isEmpty);
+      expect(cubit.state.isLoadingCashiers, isFalse);
+
+      await cubit.loadCashiers();
+
+      expect(repository.cashierCalls, 2);
+      expect(repository.lastCashierBranchId, 'b2');
+    });
+
+    test('a slow cashier read cannot land after the branch changed', () async {
+      final repository = _FakePosRepository()
+        ..cashiers = const <PosCashier>[
+          PosCashier(id: 'st-2', fullName: 'سامي'),
+        ];
+      final cubit = _createCubit(repository);
+      await cubit.load();
+
+      repository.cashiersGate = Completer<void>();
+      final first = cubit.loadCashiers();
+      await _settle();
+      expect(cubit.state.isLoadingCashiers, isTrue);
+
+      await cubit.setBranch('b2');
+      repository.cashiersGate!.complete();
+      await first;
+
+      expect(cubit.state.cashiers, isEmpty);
+      expect(cubit.state.isLoadingCashiers, isFalse);
     });
   });
 
@@ -2129,6 +2264,75 @@ void main() {
 
       expect(cubit.state.cart, isEmpty);
       expect(cubit.state.products, hasLength(3));
+    });
+
+    test('holding an order parks the basket and resuming swaps with an active cart', () async {
+      final repository = _FakePosRepository();
+      final cubit = _createCubit(repository);
+      await cubit.load();
+
+      cubit.addToCart(cubit.state.productById('p-latte')!, quantity: 2);
+      cubit.selectCustomer(
+        const PosCustomer(id: 'c-1', fullName: 'أحمد', phone: '0500000000'),
+      );
+      cubit.setOrderNote('بدون سكر');
+      cubit.setCashReceived(100);
+
+      expect(cubit.holdCurrentOrder(), isTrue);
+      expect(cubit.state.cart, isEmpty);
+      expect(cubit.state.customer, isNull);
+      expect(cubit.state.orderNote, isEmpty);
+      expect(cubit.state.cashReceived, 0);
+      expect(cubit.state.heldOrders, hasLength(1));
+
+      final firstHeldId = cubit.state.heldOrders.single.id;
+      expect(cubit.state.heldOrders.single.quantity, 2);
+
+      // Start a second order while the first is on hold.
+      cubit.addToCart(cubit.state.productById('p-tea')!);
+      expect(cubit.state.cart.single.product.id, 'p-tea');
+
+      // Resume the first order; the second order is automatically held.
+      expect(cubit.resumeHeldOrder(firstHeldId), isTrue);
+      expect(cubit.state.cart.single.product.id, 'p-latte');
+      expect(cubit.state.cart.single.quantity, 2);
+      expect(cubit.state.customer?.fullName, 'أحمد');
+      expect(cubit.state.orderNote, 'بدون سكر');
+      expect(cubit.state.cashReceivedAmount, 100);
+      expect(cubit.state.heldOrders, hasLength(1));
+      expect(cubit.state.heldOrders.single.cart.single.product.id, 'p-tea');
+    });
+
+    test('cash received calculates change due and remaining due', () async {
+      final repository = _FakePosRepository();
+      repository.catalog = _catalog(
+        taxIncluded: true,
+        products: [
+          const PosProduct(
+            id: 'p-38',
+            categoryId: 'coffee',
+            nameAr: 'طلب',
+            nameEn: 'Order',
+            unitPrice: 38,
+          ),
+        ],
+      );
+      final cubit = _createCubit(repository);
+      await cubit.load();
+
+      cubit.addToCart(cubit.state.productById('p-38')!);
+      expect(cubit.state.cartTotal, 38);
+
+      cubit.setCashReceived(100);
+      expect(cubit.state.cashChangeDue, 62);
+      expect(cubit.state.cashRemainingDue, 0);
+
+      cubit.setCashReceived(200);
+      expect(cubit.state.cashChangeDue, 162);
+
+      cubit.setCashReceived(20);
+      expect(cubit.state.cashChangeDue, 0);
+      expect(cubit.state.cashRemainingDue, 18);
     });
   });
 }

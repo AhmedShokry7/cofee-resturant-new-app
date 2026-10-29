@@ -97,7 +97,6 @@ class _PosPageState extends State<PosPage> {
     final selection = await showPosOptionsDialog(
       context,
       product: product,
-      currencyCode: _cubit.state.currencyCode,
       maxQuantity: _cubit.state.remainingFor(product),
     );
     if (selection == null || !mounted) return;
@@ -179,6 +178,30 @@ class _PosPageState extends State<PosPage> {
     _cubit.setSplitCard(value);
   }
 
+  void _setCashReceived(double value) {
+    _clearCheckoutError();
+    _cubit.setCashReceived(value);
+  }
+
+  void _holdOrder() {
+    _clearCheckoutError();
+    if (_cubit.holdCurrentOrder()) {
+      _showMessage(S.posOrderHeldToast);
+    }
+  }
+
+  void _resumeHeldOrder(String id) {
+    _clearCheckoutError();
+    if (_cubit.resumeHeldOrder(id)) {
+      _showMessage(S.posOrderResumedToast);
+    }
+  }
+
+  void _discardHeldOrder(String id) {
+    _clearCheckoutError();
+    _cubit.discardHeldOrder(id);
+  }
+
   Future<PosCheckoutOutcome> _placeOrder() async {
     if (_checkoutError != null) setState(() => _checkoutError = null);
     final outcome = await _cubit.placeOrder();
@@ -212,7 +235,10 @@ class _PosPageState extends State<PosPage> {
   }
 
   Future<void> _openCart() async {
-    if (_cubit.state.isCartEmpty || _cubit.state.isPlacingOrder) return;
+    if ((_cubit.state.isCartEmpty && !_cubit.state.hasHeldOrders) ||
+        _cubit.state.isPlacingOrder) {
+      return;
+    }
 
     final outcome = await showModalBottomSheet<PosCheckoutOutcome>(
       context: context,
@@ -254,6 +280,10 @@ class _PosPageState extends State<PosPage> {
                       onPaymentModeChanged: _selectPaymentMode,
                       onSplitCashChanged: _setSplitCash,
                       onSplitCardChanged: _setSplitCard,
+                      onCashReceivedChanged: _setCashReceived,
+                      onHoldOrder: _holdOrder,
+                      onResumeHeldOrder: _resumeHeldOrder,
+                      onDiscardHeldOrder: _discardHeldOrder,
                       onCheckout: () => _checkoutFromSheet(sheetContext),
                       checkoutError: _checkoutError,
                     );
@@ -364,6 +394,10 @@ class _PosPageState extends State<PosPage> {
             onPaymentModeChanged: _selectPaymentMode,
             onSplitCashChanged: _setSplitCash,
             onSplitCardChanged: _setSplitCard,
+            onCashReceivedChanged: _setCashReceived,
+            onHoldOrder: _holdOrder,
+            onResumeHeldOrder: _resumeHeldOrder,
+            onDiscardHeldOrder: _discardHeldOrder,
             onCheckout: _checkout,
             onOpenCart: _openCart,
             onShiftPressed: _openShiftPanel,

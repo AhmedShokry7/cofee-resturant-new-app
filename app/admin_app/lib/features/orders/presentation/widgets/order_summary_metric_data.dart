@@ -43,6 +43,7 @@ class OrderSummaryMetricDataBuilder {
         isPositive:
             OrderSummaryMetricCounts.paid(current) >=
             OrderSummaryMetricCounts.paid(previous),
+        isMoney: true,
       ),
       OrderSummaryMetric(
         label: S.orderShipped,

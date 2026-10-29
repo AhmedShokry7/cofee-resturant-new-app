@@ -19,6 +19,7 @@ class DashboardPageBody extends StatelessWidget {
     required this.state,
     required this.staffName,
     required this.canManageTarget,
+    required this.canAddProduct,
     required this.onRefresh,
     required this.onRangeChanged,
     required this.onEditTarget,
@@ -27,6 +28,7 @@ class DashboardPageBody extends StatelessWidget {
   final AdminDashboardState state;
   final String staffName;
   final bool canManageTarget;
+  final bool canAddProduct;
   final VoidCallback onRefresh;
   final ValueChanged<int> onRangeChanged;
   final VoidCallback onEditTarget;
@@ -41,6 +43,7 @@ class DashboardPageBody extends StatelessWidget {
             DashboardHeader(
               staffName: staffName,
               refreshing: state.isLoading,
+              canAddProduct: canAddProduct,
               onRefresh: onRefresh,
             ),
             if (state.errorMessage != null) ...[

@@ -1,8 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/services/admin_image_bytes.dart';
 
 /// The longest edge a picked picture keeps.
 ///
@@ -41,23 +43,41 @@ Future<ProductImageSource?> pickAdminImage({
 
 /// The bytes of a picked file, as the source of a picture.
 ///
-/// The file is measured before it is read: a picture that the bucket of the
-/// catalogue would refuse is said so at once, instead of being carried into
-/// the memory of the page and rejected after a round trip to the server.
+/// The type comes from the bytes, not from the name: the browser re-encodes
+/// the picture it shrinks and keeps the name of the original file, so the name
+/// lies about what arrived. A picture bigger than the bucket accepts is
+/// shrunk once here, because the browser only applies a quality to JPEG and
+/// WEBP output and a large PNG comes back from it still large.
 Future<ProductImageSource> adminImageSourceOf(XFile picked) async {
   final size = await picked.length();
   if (size == 0) {
     throw AdminProductException(S.imageIsEmpty);
   }
-  if (size > adminImageMaxBytes) {
+  final bytes = await picked.readAsBytes();
+  final type =
+      adminImageSniffedType(bytes) ??
+      adminImageContentTypeOf(picked.name, picked.mimeType);
+  if (bytes.length <= adminImageMaxBytes) {
+    return ProductImageSource.file(bytes, picked.name, type);
+  }
+
+  final shrunk = await compute(_shrinkPicked, bytes);
+  if (shrunk == null || shrunk.length > adminImageMaxBytes) {
     throw AdminProductException(S.imageTooLarge);
   }
-  final bytes = await picked.readAsBytes();
   return ProductImageSource.file(
-    bytes,
-    picked.name,
-    adminImageContentTypeOf(picked.name, picked.mimeType),
+    shrunk,
+    adminImageJpegName(picked.name),
+    'image/jpeg',
   );
+}
+
+/// The name of a picture whose bytes became JPEG, so the extension of the
+/// file in the bucket matches what it holds.
+String adminImageJpegName(String fileName) {
+  final dot = fileName.lastIndexOf('.');
+  final stem = dot > 0 ? fileName.substring(0, dot) : fileName;
+  return '$stem.jpg';
 }
 
 /// The type of a picture file, from its name and what the device says.
@@ -68,3 +88,8 @@ String adminImageContentTypeOf(String fileName, String? mimeType) {
   if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
   return mimeType ?? 'image/jpeg';
 }
+
+/// The shrink runs away from the interface thread where the dashboard can be
+/// touched while a big picture is decoded.
+Uint8List? _shrinkPicked(Uint8List bytes) =>
+    adminImageShrinkToJpeg(bytes, adminImageQuality);

@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_order_result.dart';
@@ -185,9 +187,12 @@ class AdminPosRepository implements PosRepository {
   @override
   Future<List<PosCustomer>> searchCustomers({String? query}) async {
     try {
-      final response = await _supabase.rpc(
-        'admin_pos_customers',
-        params: {'p_search': _blankToNull(query), 'p_limit': 20},
+      final response = await AdminAvatarLinks.signTree(
+        await _supabase.rpc(
+          'admin_pos_customers',
+          params: {'p_search': _blankToNull(query), 'p_limit': 20},
+        ),
+        client: _supabase,
       );
       if (response is List) {
         return response
@@ -255,6 +260,37 @@ class AdminPosRepository implements PosRepository {
   }
 
   @override
+  Future<List<PosCashier>> loadCashiers(String branchId) async {
+    try {
+      final response = await _supabase.rpc(
+        'admin_pos_cashiers',
+        params: {'p_branch_id': branchId},
+      );
+      if (response is List) {
+        return response
+            .whereType<Map>()
+            .map((item) => PosCashier.fromJson(Map<String, dynamic>.from(item)))
+            .toList(growable: false);
+      }
+      if (response == null) return const <PosCashier>[];
+      if (kDebugMode) {
+        debugPrint(
+          '[POS] loadCashiers returned ${response.runtimeType} instead of a list',
+        );
+      }
+      throw const PosShiftException(PosShiftFailure.failed);
+    } on PosShiftException {
+      rethrow;
+    } on PostgrestException catch (error) {
+      _logError('loadCashiers', error);
+      throw PosShiftException(_shiftFailure(error), error.message);
+    } catch (error, stackTrace) {
+      _logError('loadCashiers', error, stackTrace);
+      throw PosShiftException(PosShiftFailure.failed, '$error');
+    }
+  }
+
+  @override
   Future<PosShift?> loadOpenShift(String branchId) async {
     try {
       final response = await _supabase.rpc(
@@ -288,6 +324,7 @@ class AdminPosRepository implements PosRepository {
     required String branchId,
     required double openingFloat,
     String? note,
+    String? cashierId,
   }) async {
     try {
       final response = await _supabase.rpc(
@@ -296,6 +333,7 @@ class AdminPosRepository implements PosRepository {
           'p_branch_id': branchId,
           'p_opening_float': openingFloat,
           'p_note': _blankToNull(note),
+          'p_cashier_id': _blankToNull(cashierId),
         },
       );
       final shift = _shiftFrom(response, 'openShift');

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:admin_app/core/auth/admin_role_scope.dart';
+import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
 
@@ -52,6 +54,46 @@ void main() {
     await tester.tap(find.text(S.products));
     await tester.pump();
     expect(selected, 'products');
+  });
+
+  testWidgets('sidebar names the signed-in roles in the active language', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+    // الشريط كان يولّد «Branch Manager» من الكود الإنجليزي نفسه، فيكسر عربيّة
+    // الواجهة تحت الاسم؛ صار الاسم من خريطة الأدوار المشتركة.
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+    await tester.pumpWidget(
+      _wrap(
+        AdminSidebar(
+          session: const AdminSession(
+            staffId: 'u2',
+            email: 'manager@example.com',
+            fullName: 'منى',
+            status: 'active',
+            roles: [
+              AdminRoleScope(roleId: 'r1', roleCode: 'branch_manager'),
+              AdminRoleScope(roleId: 'r2', roleCode: 'cashier'),
+            ],
+            permissionScopes: [],
+            canManageAllBranches: false,
+          ),
+          destinations: adminDestinations,
+          selectedId: 'dashboard',
+          onSelected: (_) {},
+          onSignOut: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(
+      find.text('${S.roleBranchManager}، ${S.roleCashier}'),
+      findsOneWidget,
+    );
+    expect(find.text('Branch Manager, Cashier'), findsNothing);
   });
 
   testWidgets('sidebar shows the live work count on the operations rows', (

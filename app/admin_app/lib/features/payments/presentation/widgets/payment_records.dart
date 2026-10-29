@@ -13,6 +13,7 @@ import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// The payments whose order, customer, provider, status or card holds
 /// [search].
@@ -146,15 +147,28 @@ class PaymentCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Text(
-                paymentMoney(payment),
-                maxLines: 1,
-                style: TextStyle(
-                  color: dark ? AppColor.darkText : AppColor.adminAmount,
-                  fontSize: AppFontSizes.size12,
-                  fontWeight: AppFontWeights.bold,
-                  height: AppTextHeights.line1_5,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: Text(
+                      paymentMoney(payment),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: dark ? AppColor.darkText : AppColor.adminAmount,
+                        fontSize: AppFontSizes.size12,
+                        fontWeight: AppFontWeights.bold,
+                        height: AppTextHeights.line1_5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.px4),
+                  CurrencyIcon(
+                    size: 14,
+                    color: dark ? AppColor.darkText : AppColor.adminAmount,
+                  ),
+                ],
               ),
               if (onPrint != null) ...[
                 const SizedBox(width: AppSizes.px2),

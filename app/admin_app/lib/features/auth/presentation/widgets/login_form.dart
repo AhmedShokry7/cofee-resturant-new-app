@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_state.dart';
+import 'package:admin_app/features/auth/presentation/widgets/invitation_accept_dialog.dart';
 import 'package:admin_app/features/auth/presentation/widgets/login_email_field.dart';
 import 'package:admin_app/features/auth/presentation/widgets/login_heading.dart';
 import 'package:admin_app/features/auth/presentation/widgets/login_password_field.dart';
@@ -83,11 +84,31 @@ class LoginForm extends StatelessWidget {
                 backgroundColor: scheme.primary,
                 textColor: scheme.onPrimary,
               ),
+              const SizedBox(height: AppSpacing.md),
+              // المدعو ليس عنده حساب بعد: هذا هو الباب الوحيد الذي لا يطلب
+              // بريد موظف، وهو الذي يفتح الرمز الذي أرسله المدير.
+              Align(
+                alignment: AlignmentDirectional.center,
+                child: TextButton(
+                  onPressed: () => _acceptInvitation(context),
+                  child: Text(S.invitationEntry),
+                ),
+              ),
             ],
           ),
         );
       },
     );
+  }
+
+  /// يقبل الرمز ثم يمرّر الحساب الجديد على طريق الدخول نفسه الذي يعرفه
+  /// [AuthBloc]: لا جلسة تُنشأ من غير ما تعترف به الشاشة من دخول.
+  Future<void> _acceptInvitation(BuildContext context) async {
+    final credentials = await showInvitationAcceptDialog(context);
+    if (credentials == null || !context.mounted) return;
+    emailController.text = credentials.email;
+    passwordController.text = credentials.password;
+    onSubmit();
   }
 }
 

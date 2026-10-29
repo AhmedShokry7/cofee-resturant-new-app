@@ -20,6 +20,7 @@ class DashboardPage extends StatefulWidget {
     required this.searchController,
     required this.staffName,
     required this.canManageTarget,
+    required this.canAddProduct,
     this.cubit,
   });
 
@@ -30,6 +31,7 @@ class DashboardPage extends StatefulWidget {
   /// اسم الموظف من جلسته، و`canManageTarget` صدقه على كتابة هدف الشهر.
   final String staffName;
   final bool canManageTarget;
+  final bool canAddProduct;
   final AdminDashboardCubit? cubit;
 
   @override
@@ -85,6 +87,7 @@ class _DashboardPageState extends State<DashboardPage> {
             state: state,
             staffName: widget.staffName,
             canManageTarget: widget.canManageTarget,
+            canAddProduct: widget.canAddProduct,
             onRefresh: _cubit.load,
             onRangeChanged: _cubit.setSalesRange,
             onEditTarget: _editTarget,

@@ -4,7 +4,9 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// مال المنتج وحصّته من إيراد الأسبوع، في زاوية الصف.
 ///
@@ -28,16 +30,25 @@ class DashboardTopProductFigure extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          formatMoneyWithCurrency(revenue),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: adminAmountColor(theme),
-            fontSize: AppFontSizes.size10_5,
-            fontWeight: AppFontWeights.semiBold,
-            height: AppTextHeights.line1_5,
-          ),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                localizeDigits(formatAmount(revenue)),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: adminAmountColor(theme),
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_5,
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSizes.px4),
+            CurrencyIcon(size: 13, color: adminAmountColor(theme)),
+          ],
         ),
         const SizedBox(width: AppSizes.px10),
         Text(

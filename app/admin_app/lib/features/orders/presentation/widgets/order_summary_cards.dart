@@ -41,6 +41,7 @@ class OrderSummaryCards extends StatelessWidget {
                   iconColor: metric.iconColor,
                   changeLabel: metric.changeLabel,
                   isPositive: metric.isPositive,
+                  isMoney: metric.isMoney,
                 ),
               ),
           ],

@@ -181,9 +181,7 @@ class _BranchPageState extends State<BranchPage> {
             onManagePricing: widget.canManagePricing ? _managePricing : null,
             onToggleActive: _toggleActive,
             onDelete: _delete,
-            errorMessage: state.status == AdminBranchStatus.failure
-                ? state.errorMessage
-                : null,
+            errorMessage: state.errorMessage,
             onRefresh: _cubit.load,
           );
         },

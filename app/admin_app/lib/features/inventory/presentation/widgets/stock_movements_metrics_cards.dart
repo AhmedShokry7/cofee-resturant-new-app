@@ -35,6 +35,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
             : S.stockMovementsMetricReceiptsHint(
                 inventoryMoney(metrics.receivedValue),
               ),
+        captionIsMoney: metrics.total != 0,
         value: localizeDigits('${metrics.receipts}'),
         icon: AppIcons.arrowDown01,
         iconBackground: AppColor.trendPositiveSurface,
@@ -47,6 +48,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
             : S.stockMovementsMetricIssuesHint(
                 inventoryMoney(metrics.issuedValue),
               ),
+        captionIsMoney: metrics.total != 0,
         value: localizeDigits('${metrics.issues}'),
         icon: AppIcons.arrowUp01,
         iconBackground: AppColor.adminInfoSurface,
@@ -59,6 +61,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
             : S.stockMovementsMetricWasteHint(
                 inventoryMoney(metrics.wasteValue),
               ),
+        captionIsMoney: metrics.total != 0,
         value: localizeDigits('${metrics.waste}'),
         icon: AppIcons.delete02,
         iconBackground: AppColor.trendNegativeSurface,
@@ -82,6 +85,7 @@ class StockMovementsMetricsCards extends StatelessWidget {
                 child: AdminMetricCard(
                   label: card.label,
                   caption: card.caption,
+                  captionIsMoney: card.captionIsMoney,
                   value: card.value,
                   icon: card.icon,
                   iconBackground: card.iconBackground,
@@ -103,6 +107,7 @@ class _MetricData {
     required this.icon,
     required this.iconBackground,
     required this.iconColor,
+    this.captionIsMoney = false,
   });
 
   final String label;
@@ -111,4 +116,5 @@ class _MetricData {
   final IconData icon;
   final Color iconBackground;
   final Color iconColor;
+  final bool captionIsMoney;
 }

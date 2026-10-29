@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
@@ -15,6 +16,7 @@ import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/domain/usecases/close_shift.dart';
 import 'package:admin_app/features/pos/domain/usecases/create_customer.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_catalog.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_cashiers.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_open_shift.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_shift_detail.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_shift_history.dart';
@@ -70,6 +72,7 @@ class PosCubit extends Cubit<PosState> {
       _closeShift = CloseShiftUseCase(repository),
       _loadShiftHistory = LoadShiftHistoryUseCase(repository),
       _loadShiftDetail = LoadShiftDetailUseCase(repository),
+      _loadCashiers = LoadCashiersUseCase(repository),
       _checkoutKeyFactory = checkoutKeyFactory,
       super(const PosState());
 
@@ -85,6 +88,7 @@ class PosCubit extends Cubit<PosState> {
   final CloseShiftUseCase _closeShift;
   final LoadShiftHistoryUseCase _loadShiftHistory;
   final LoadShiftDetailUseCase _loadShiftDetail;
+  final LoadCashiersUseCase _loadCashiers;
   final String Function() _checkoutKeyFactory;
 
   String? _checkoutKey;
@@ -92,6 +96,8 @@ class PosCubit extends Cubit<PosState> {
   int _tablesRequestId = 0;
   int _customerRequestId = 0;
   int _shiftRequestId = 0;
+  int _cashiersRequestId = 0;
+  int _heldOrderSequence = 0;
 
   Future<void> load() async {
     if (state.isLoading) return;
@@ -109,6 +115,7 @@ class PosCubit extends Cubit<PosState> {
     _checkoutKey = null;
     _customerRequestId += 1;
     _tablesRequestId += 1;
+    _cashiersRequestId += 1;
     emit(
       state.copyWith(
         status: PosStatus.loading,
@@ -122,6 +129,7 @@ class PosCubit extends Cubit<PosState> {
         isLoadingTables: false,
         isSeating: false,
         cart: const <PosCartLine>[],
+        heldOrders: const <PosHeldOrder>[],
         clearCustomer: true,
         customerResults: const <PosCustomer>[],
         customerQuery: '',
@@ -131,6 +139,7 @@ class PosCubit extends Cubit<PosState> {
         clearCategory: true,
         paymentMode: PosPaymentMode.cash,
         splitCash: 0,
+        cashReceived: 0,
         isRefreshing: false,
         clearFailure: true,
         clearError: true,
@@ -146,6 +155,9 @@ class PosCubit extends Cubit<PosState> {
         clearShiftHistoryFailure: true,
         clearShiftDetail: true,
         isLoadingShiftDetail: false,
+        cashiers: const <PosCashier>[],
+        isLoadingCashiers: false,
+        clearCashiersFailure: true,
       ),
     );
     await _fetch(branchId: branchId);
@@ -273,8 +285,112 @@ class PosCubit extends Cubit<PosState> {
   bool clearCart() {
     if (state.isPlacingOrder || state.cart.isEmpty) return false;
     _checkoutKey = null;
-    emit(state.copyWith(cart: const <PosCartLine>[]));
+    emit(state.copyWith(cart: const <PosCartLine>[], cashReceived: 0));
     return true;
+  }
+
+  /// Parks the active basket so the cashier can serve another guest and return
+  /// to this order later.
+  bool holdCurrentOrder() {
+    if (state.isPlacingOrder || state.cart.isEmpty) return false;
+    final held = _snapshotCurrentOrder();
+    _checkoutKey = null;
+    _customerRequestId += 1;
+    emit(
+      state.copyWith(
+        heldOrders: List<PosHeldOrder>.unmodifiable([
+          held,
+          ...state.heldOrders,
+        ]),
+        cart: const <PosCartLine>[],
+        clearCustomer: true,
+        customerResults: const <PosCustomer>[],
+        customerQuery: '',
+        isSearchingCustomers: false,
+        clearCustomerFailure: true,
+        clearSelectedTable: true,
+        orderNote: '',
+        splitCash: 0,
+        cashReceived: 0,
+      ),
+    );
+    return true;
+  }
+
+  /// Restores a held order into the active basket. When the active basket has
+  /// items, it is parked first so no work is lost.
+  bool resumeHeldOrder(String heldOrderId) {
+    if (state.isPlacingOrder) return false;
+    final index = state.heldOrders.indexWhere((item) => item.id == heldOrderId);
+    if (index < 0) return false;
+
+    final target = state.heldOrders[index];
+    final remainingHeld = <PosHeldOrder>[
+      if (state.cart.isNotEmpty) _snapshotCurrentOrder(),
+      for (var i = 0; i < state.heldOrders.length; i++)
+        if (i != index) state.heldOrders[i],
+    ];
+
+    final selectedTable = target.tableId == null
+        ? null
+        : state.tableById(target.tableId!);
+    final keepTable = selectedTable != null && selectedTable.isPosSelectable;
+
+    final paymentMode = switch (target.paymentMode) {
+      PosPaymentMode.split when state.canSplitPayment => PosPaymentMode.split,
+      PosPaymentMode.card when state.cardMethod != null => PosPaymentMode.card,
+      PosPaymentMode.cash when state.cashMethod != null => PosPaymentMode.cash,
+      _ => state.paymentMode,
+    };
+
+    _checkoutKey = null;
+    _customerRequestId += 1;
+    emit(
+      state.copyWith(
+        heldOrders: List<PosHeldOrder>.unmodifiable(remainingHeld),
+        cart: List<PosCartLine>.unmodifiable(target.cart),
+        customer: target.customer,
+        clearCustomer: target.customer == null,
+        customerResults: const <PosCustomer>[],
+        customerQuery: '',
+        isSearchingCustomers: false,
+        clearCustomerFailure: true,
+        selectedTableId: keepTable ? selectedTable.id : null,
+        clearSelectedTable: !keepTable,
+        orderNote: target.orderNote,
+        paymentMode: paymentMode,
+        splitCash: paymentMode == PosPaymentMode.split ? target.splitCash : 0,
+        cashReceived: target.cashReceived,
+      ),
+    );
+    return true;
+  }
+
+  bool discardHeldOrder(String heldOrderId) {
+    if (state.isPlacingOrder) return false;
+    final next = state.heldOrders
+        .where((item) => item.id != heldOrderId)
+        .toList(growable: false);
+    if (next.length == state.heldOrders.length) return false;
+    emit(state.copyWith(heldOrders: List<PosHeldOrder>.unmodifiable(next)));
+    return true;
+  }
+
+  PosHeldOrder _snapshotCurrentOrder() {
+    final number = ++_heldOrderSequence;
+    return PosHeldOrder(
+      id: 'hold-$number-${DateTime.now().microsecondsSinceEpoch}',
+      number: number,
+      heldAt: DateTime.now(),
+      cart: state.cart,
+      customer: state.customer,
+      tableId: state.selectedTableId,
+      tableName: state.selectedTable?.name,
+      orderNote: state.orderNote,
+      paymentMode: state.paymentMode,
+      splitCash: state.splitCash,
+      cashReceived: state.cashReceived,
+    );
   }
 
   void selectTable(DiningTable? table) {
@@ -511,7 +627,21 @@ class PosCubit extends Cubit<PosState> {
     };
     if (!available) return;
     _checkoutKey = null;
-    emit(state.copyWith(paymentMode: mode, splitCash: 0));
+    emit(
+      state.copyWith(
+        paymentMode: mode,
+        splitCash: 0,
+        cashReceived: mode == PosPaymentMode.card ? 0 : state.cashReceived,
+      ),
+    );
+  }
+
+  /// Records the cash amount handed over by the customer to calculate change.
+  void setCashReceived(double value) {
+    if (state.isPlacingOrder) return;
+    final normalized = value.isFinite && value > 0 ? posRound2(value) : 0.0;
+    if (normalized == state.cashReceived) return;
+    emit(state.copyWith(cashReceived: normalized));
   }
 
   /// Records the cash portion of a split payment; the remainder goes on card.
@@ -623,6 +753,7 @@ class PosCubit extends Cubit<PosState> {
           clearSelectedTable: true,
           orderNote: '',
           splitCash: 0,
+          cashReceived: 0,
           lastReceipt: receipt,
           clearError: true,
         ),
@@ -719,11 +850,55 @@ class PosCubit extends Cubit<PosState> {
     return null;
   }
 
-  /// Opens the branch drawer with a starting float. The server returns the
-  /// existing shift when one is already open, so a double tap is harmless.
+  /// Reads the staff members who may hold the drawer of the selected branch.
+  /// The form still opens the shift without them: opening for yourself needs
+  /// no candidate list.
+  Future<void> loadCashiers() async {
+    final branchId = state.branchId;
+    if (branchId == null || branchId.isEmpty) return;
+    if (state.isLoadingCashiers) return;
+
+    final request = ++_cashiersRequestId;
+    emit(state.copyWith(isLoadingCashiers: true, clearCashiersFailure: true));
+    try {
+      final cashiers = await _loadCashiers(branchId);
+      if (isClosed || request != _cashiersRequestId) return;
+      emit(
+        state.copyWith(
+          cashiers: cashiers,
+          isLoadingCashiers: false,
+          clearCashiersFailure: true,
+        ),
+      );
+    } on PosShiftException catch (error) {
+      if (isClosed || request != _cashiersRequestId) return;
+      emit(
+        state.copyWith(
+          cashiers: const <PosCashier>[],
+          isLoadingCashiers: false,
+          cashiersFailure: error.failure,
+        ),
+      );
+    } catch (_) {
+      if (isClosed || request != _cashiersRequestId) return;
+      emit(
+        state.copyWith(
+          cashiers: const <PosCashier>[],
+          isLoadingCashiers: false,
+          cashiersFailure: PosShiftFailure.failed,
+        ),
+      );
+    }
+  }
+
+  /// Opens the branch drawer with a starting float, in the name of the caller
+  /// or of a cashier the server accepts for that branch. The server returns
+  /// the existing shift when one is already open, so a double tap is harmless
+  /// and a live drawer is never reassigned.
   Future<PosShift?> openShift({
     required double openingFloat,
     String note = '',
+    String? cashierId,
   }) async {
     final branchId = state.branchId;
     if (branchId == null || branchId.isEmpty || state.isOpeningShift) {
@@ -737,6 +912,7 @@ class PosCubit extends Cubit<PosState> {
         branchId: branchId,
         openingFloat: openingFloat,
         note: note,
+        cashierId: cashierId,
       );
       if (isClosed) return shift;
       emit(

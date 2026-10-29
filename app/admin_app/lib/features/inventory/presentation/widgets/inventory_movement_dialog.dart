@@ -19,6 +19,7 @@ import 'package:admin_app/features/inventory/domain/entities/inventory_movement_
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 typedef MaterialSearchCallback =
     Future<List<AdminInventoryMaterialOption>> Function({
@@ -274,11 +275,11 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
     }
     final quantity = _quantity;
     if (quantity == null || quantity < 0) {
-      setState(() => _error = S.movementNeedsQuantity);
+      setState(() => _error = S.needsPositiveQuantity);
       return;
     }
     if (_type != InventoryMovementType.count && quantity <= 0) {
-      setState(() => _error = S.movementNeedsQuantity);
+      setState(() => _error = S.needsPositiveQuantity);
       return;
     }
     double? unitCost;
@@ -447,7 +448,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                           decimal: true,
                                         ),
                                     inputFormatters: [_quantityFormatter],
-                                    suffixText: S.currency,
+                                    suffixIcon: const CurrencyIcon(size: 15),
                                   ),
                                 ],
                               )
@@ -466,7 +467,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                             decimal: true,
                                           ),
                                       inputFormatters: [_quantityFormatter],
-                                      suffixText: S.currency,
+                                      suffixIcon: const CurrencyIcon(size: 15),
                                     ),
                                   ),
                                 ],
@@ -493,6 +494,8 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                       controller: _referenceController,
                       label: S.reference,
                       hint: S.movementReferenceHint,
+                      // 173 يرفض مرجعًا أطول من 80 أو ملاحظة أطول من 300.
+                      maxLength: 80,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _MovementField(
@@ -500,6 +503,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                       label: S.materialNotes,
                       hint: S.movementNoteHint,
                       maxLines: 3,
+                      maxLength: 300,
                     ),
                   ],
                 ),
@@ -785,7 +789,9 @@ class _MovementField extends StatelessWidget {
     this.keyboardType,
     this.inputFormatters,
     this.suffixText,
+    this.suffixIcon,
     this.maxLines = 1,
+    this.maxLength,
     this.onChanged,
   });
 
@@ -795,7 +801,9 @@ class _MovementField extends StatelessWidget {
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final String? suffixText;
+  final Widget? suffixIcon;
   final int maxLines;
+  final int? maxLength;
   final ValueChanged<String>? onChanged;
 
   @override
@@ -804,12 +812,15 @@ class _MovementField extends StatelessWidget {
     keyboardType: keyboardType,
     inputFormatters: inputFormatters,
     maxLines: maxLines,
+    maxLength: maxLength,
     onChanged: onChanged,
     decoration: InputDecoration(
       labelText: label,
       hintText: hint,
       suffixText: suffixText,
+      suffixIcon: suffixIcon,
       alignLabelWithHint: maxLines > 1,
+      counterText: '',
     ),
   );
 }

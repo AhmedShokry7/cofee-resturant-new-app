@@ -1,4 +1,3 @@
-import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
@@ -11,10 +10,9 @@ class OrderSummaryMetricFormat {
     return _digits('$amount%');
   }
 
-  static String money(double value) {
-    final number = count(value.round());
-    return AppLocale.instance.isArabic ? '$number ر.س' : '$number SAR';
-  }
+  /// The grouped amount with no currency word: the card prints the riyal mark
+  /// beside it as a `CurrencyIcon`, like every other price in the app.
+  static String money(double value) => count(value.round());
 
   static String count(int value) => _digits(formatCount(value));
 

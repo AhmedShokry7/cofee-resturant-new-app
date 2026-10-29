@@ -84,7 +84,10 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
         widget.table?.branchId ??
         widget.branchId ??
         widget.cubit.state.branchId;
-    if (branchId == null || branchId.isEmpty) return;
+    if (branchId == null || branchId.isEmpty) {
+      setState(() => _error = S.tablesNoBranch);
+      return;
+    }
 
     FocusScope.of(context).unfocus();
     setState(() {

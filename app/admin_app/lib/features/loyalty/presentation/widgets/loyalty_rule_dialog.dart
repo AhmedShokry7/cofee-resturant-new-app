@@ -11,8 +11,10 @@ import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule.da
 import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/presentation/manager/admin_loyalty_cubit.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
+import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 Future<void> showLoyaltyRuleDialog({
@@ -131,6 +133,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                         hint: S.loyaltyProgramValueHint,
                         helper: S.loyaltyProgramValueHelp,
                         validator: _validateValue,
+                        suffixIcon: const CurrencyIcon(size: 15),
                       ),
                       _preview(),
                       const SizedBox(height: AppSpacing.sm),
@@ -211,6 +214,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     required String hint,
     required String helper,
     required String? Function(String?) validator,
+    Widget? suffixIcon,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -222,6 +226,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
           hint: hint,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           validator: validator,
+          suffixIcon: suffixIcon,
           bottomPadding: 4,
         ),
         Padding(
@@ -252,6 +257,8 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
         value <= 1000;
     final points = valid ? (_previewAmount * rate).floor() : 0;
     final worth = valid ? _previewPoints * value : 0;
+    final earnAmount = loyaltyCompactNumber(_previewAmount);
+    final worthAmount = loyaltyCompactNumber(worth);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -302,17 +309,23 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
           else ...[
             _previewRow(
               icon: AppIcons.shoppingBag01,
-              text: S.loyaltyProgramPreviewEarn(
-                '${loyaltyCompactNumber(_previewAmount)} ${S.currency}',
-                loyaltyCompactNumber(points),
+              sentence: loyaltyMoneySentence(
+                earnAmount,
+                S.loyaltyProgramPreviewEarn(
+                  loyaltyMoneySlot(earnAmount),
+                  loyaltyCompactNumber(points),
+                ),
               ),
             ),
             const SizedBox(height: AppSizes.px6),
             _previewRow(
               icon: AppIcons.star,
-              text: S.loyaltyProgramPreviewWorth(
-                loyaltyCompactNumber(_previewPoints),
-                '${loyaltyCompactNumber(worth)} ${S.currency}',
+              sentence: loyaltyMoneySentence(
+                worthAmount,
+                S.loyaltyProgramPreviewWorth(
+                  loyaltyCompactNumber(_previewPoints),
+                  loyaltyMoneySlot(worthAmount),
+                ),
               ),
             ),
           ],
@@ -321,7 +334,10 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
     );
   }
 
-  Widget _previewRow({required IconData icon, required String text}) {
+  Widget _previewRow({
+    required IconData icon,
+    required LoyaltyMoneySentence sentence,
+  }) {
     final theme = Theme.of(context);
     return Row(
       children: [
@@ -332,8 +348,8 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
         ),
         const SizedBox(width: AppSizes.px8),
         Expanded(
-          child: Text(
-            text,
+          child: LoyaltyMoneyText(
+            sentence: sentence,
             style: TextStyle(
               color: adminFlagForeground(theme, AppColor.adminAccent),
               fontSize: AppFontSizes.size10,

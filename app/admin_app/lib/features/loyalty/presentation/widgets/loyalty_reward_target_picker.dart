@@ -12,6 +12,7 @@ import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_target_option.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
+import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
@@ -375,10 +376,8 @@ class _TargetTile extends StatelessWidget {
                           height: AppTextHeights.line1_5,
                         ),
                       ),
-                      Text(
-                        loyaltyTargetOptionCaption(target),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      LoyaltyMoneyText(
+                        sentence: loyaltyTargetOptionCaption(target),
                         style: TextStyle(
                           color: adminMutedColor(theme),
                           fontSize: AppFontSizes.size9_5,

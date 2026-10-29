@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/domain/entities/order_status_rules.dart';
@@ -14,7 +15,10 @@ class AdminOrderRepository implements OrderRepository {
 
   @override
   Future<List<AdminOrder>> loadOrders() async {
-    final response = await _supabase.rpc('admin_orders');
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc('admin_orders'),
+      client: _supabase,
+    );
     if (response is List) {
       return response
           .whereType<Map>()

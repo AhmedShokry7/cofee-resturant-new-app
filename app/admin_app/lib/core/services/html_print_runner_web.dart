@@ -1,42 +1,58 @@
 // This file is only compiled for the web target; the stub covers other
 // platforms, so the web-only library is intentional.
-// ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
+import 'dart:async';
+import 'dart:js_interop';
 
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
 
-/// Prints [document] from a hidden frame so the browser keeps the print
-/// dialog tied to the admin tab and no popup blocker is involved.
+/// The panel prints through the browser, so the channel exists on this target.
+const bool browserPrintingAvailable = true;
+
+/// Opens the browser print dialog with [document] and reports whether the
+/// print call was dispatched.
+///
+/// The document is written into an off-screen frame instead of a popup: a
+/// popup is blocked outside a click handler and would need its own window
+/// handle. `Window.print()` blocks the script until the dialog is closed, so
+/// the frame is still alive while the job is spooled and is removed right
+/// after — a fixed timer here used to blank the page mid-print.
 Future<bool> printHtmlDocument(String document) async {
-  final body = html.document.body;
+  final body = web.document.body;
   if (body == null) return false;
 
-  final frame = html.IFrameElement()
+  final frame = web.HTMLIFrameElement()
+    ..setAttribute('title', 'print')
     ..style.position = 'fixed'
     ..style.top = '0'
     ..style.left = '-10000px'
     ..style.width = '1024px'
     ..style.height = '768px'
-    ..style.border = '0'
-    ..srcdoc = document;
+    ..style.border = '0';
+  frame.srcdoc = document.toJS;
+
+  final loaded = Completer<void>();
+  void handleLoad(web.Event _) => _complete(loaded);
+  final JSFunction loadedCallback = handleLoad.toJS;
+  frame.addEventListener('load', loadedCallback);
   body.append(frame);
 
-  await Future.any([
-    frame.onLoad.first,
-    Future<void>.delayed(const Duration(seconds: 2)),
-  ]);
-
-  final frameWindow = frame.contentWindow as html.Window?;
-  if (frameWindow == null) {
-    frame.remove();
-    return false;
-  }
   try {
-    frameWindow.print();
+    await loaded.future.timeout(
+      const Duration(seconds: 3),
+      onTimeout: () => _complete(loaded),
+    );
+    final view = frame.contentWindow;
+    if (view == null) return false;
+    view.print();
+    return true;
   } catch (_) {
-    frame.remove();
     return false;
+  } finally {
+    frame.removeEventListener('load', loadedCallback);
+    frame.remove();
   }
-  await Future<void>.delayed(const Duration(milliseconds: 500));
-  frame.remove();
-  return true;
+}
+
+void _complete(Completer<void> completer) {
+  if (!completer.isCompleted) completer.complete();
 }

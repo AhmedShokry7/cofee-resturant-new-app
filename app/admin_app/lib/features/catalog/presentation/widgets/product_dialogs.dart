@@ -13,9 +13,12 @@ import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/catalog/data/category_excel_mapper.dart';
 import 'package:admin_app/features/catalog/data/product_excel_mapper.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/discount_pill.dart';
 
 /// The unit the admin picks for the preparation time.
@@ -171,12 +174,12 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
       nameEn: _nameEnController.text.trim(),
       descriptionAr: _serializeDescription(_descriptionArController),
       descriptionEn: _serializeDescription(_descriptionEnController),
-      basePrice: double.tryParse(_priceController.text.trim()) ?? 0,
-      compareAtPrice: double.tryParse(_compareAtPriceController.text.trim()),
+      basePrice: _decimal(_priceController) ?? 0,
+      compareAtPrice: _decimal(_compareAtPriceController),
       clearCompareAtPrice: _compareAtPriceController.text.trim().isEmpty,
       prepMinutes: _parsePrepMinutes(),
       clearPrepMinutes: _prepValueController.text.trim().isEmpty,
-      calories: int.tryParse(_caloriesController.text.trim()),
+      calories: _integer(_caloriesController),
       clearCalories: _caloriesController.text.trim().isEmpty,
       allergens: _allergensController.text
           .split(',')
@@ -193,9 +196,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
       clearCategoryNameEn: _categoryId == null,
       isFeatured: _isFeatured,
       isActive: _isActive,
-      discountPercentage: double.tryParse(
-        _discountPercentageController.text.trim(),
-      ),
+      discountPercentage: _decimal(_discountPercentageController),
       clearDiscountPercentage: _discountPercentageController.text
           .trim()
           .isEmpty,
@@ -209,7 +210,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   int? _parsePrepMinutes() {
     final text = _prepValueController.text.trim();
     if (text.isEmpty) return null;
-    final value = double.tryParse(text);
+    final value = double.tryParse(normalizeDigits(text));
     if (value == null) return null;
     switch (_prepUnit) {
       case ProductPrepTimeUnit.seconds:
@@ -262,15 +263,23 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     return jsonEncode(delta.toJson());
   }
 
+  /// Amount fields read the digits of either language: an Arabic keyboard
+  /// produces `١٢٣`, and the app prints every amount that way.
+  double? _decimal(TextEditingController controller) =>
+      double.tryParse(normalizeDigits(controller.text.trim()));
+
+  int? _integer(TextEditingController controller) =>
+      int.tryParse(normalizeDigits(controller.text.trim()));
+
   /// What the product still misses before the database accepts it.
   String? _missingData() {
     if (_nameArController.text.trim().isEmpty) return S.productNeedsName;
-    final price = double.tryParse(_priceController.text.trim());
+    final price = _decimal(_priceController);
     if (price == null) return S.invalidPrice;
 
     final compareText = _compareAtPriceController.text.trim();
     if (compareText.isNotEmpty) {
-      final compare = double.tryParse(compareText);
+      final compare = _decimal(_compareAtPriceController);
       if (compare == null || compare <= price) {
         return S.compareAtMustBeHigher;
       }
@@ -278,19 +287,19 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
 
     final prepText = _prepValueController.text.trim();
     if (prepText.isNotEmpty) {
-      final prep = double.tryParse(prepText);
+      final prep = _decimal(_prepValueController);
       if (prep == null || prep < 0) return S.invalidPrepTime;
     }
 
     final caloriesText = _caloriesController.text.trim();
     if (caloriesText.isNotEmpty) {
-      final calories = int.tryParse(caloriesText);
+      final calories = _integer(_caloriesController);
       if (calories == null || calories < 0) return S.invalidNumber;
     }
 
     final discountText = _discountPercentageController.text.trim();
     if (discountText.isNotEmpty) {
-      final discount = double.tryParse(discountText);
+      final discount = _decimal(_discountPercentageController);
       if (discount == null || discount < 0 || discount > 100) {
         return S.invalidDiscountPercentage;
       }
@@ -431,9 +440,15 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
                 _priceController,
                 '${S.price} *',
                 number: true,
+                currency: true,
                 onChanged: (_) => setState(() => _error = null),
               ),
-              _field(_compareAtPriceController, S.compareAtPrice, number: true),
+              _field(
+                _compareAtPriceController,
+                S.compareAtPrice,
+                number: true,
+                currency: true,
+              ),
             ),
             _section(S.discountPercentage),
             _row3(<Widget>[
@@ -476,12 +491,21 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
                           0,
                     ),
                     const SizedBox(width: AppSizes.px6),
+                    Flexible(
+                      child: Text(
+                        S.priceAfterDiscount,
+                        style: Theme.of(context).textTheme.bodySmall
+                            ?.copyWith(color: AppColor.greyColor),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.px4),
                     Text(
-                      '${S.priceAfterDiscount}: '
-                      '${_priceAfterDiscount!.toStringAsFixed(2)}',
+                      localizeDigits(formatAmount(_priceAfterDiscount!)),
                       style: Theme.of(context).textTheme.bodySmall
                           ?.copyWith(color: AppColor.greyColor),
                     ),
+                    const SizedBox(width: AppSizes.px4),
+                    const CurrencyIcon(size: 12),
                   ],
                 ),
               ),
@@ -557,6 +581,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     TextEditingController controller,
     String label, {
     bool number = false,
+    bool currency = false,
     int lines = 1,
     ValueChanged<String>? onChanged,
     TextDirection? textDirection,
@@ -577,6 +602,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
           labelText: label,
           labelStyle: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AppColor.greyColor),
+          suffixIcon: currency ? const CurrencyIcon(size: 15) : null,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.md,

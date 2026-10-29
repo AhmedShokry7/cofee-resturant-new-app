@@ -43,6 +43,9 @@ Future<void> _pumpPage(
   String search = '',
   bool canManage = false,
   ValueChanged<AdminStaffMember>? onManage,
+  ValueChanged<AdminStaffMember>? onEdit,
+  VoidCallback? onInvite,
+  VoidCallback? onShowInvitations,
   TextDirection direction = TextDirection.ltr,
 }) async {
   await tester.pumpWidget(
@@ -56,6 +59,9 @@ Future<void> _pumpPage(
             onSearchChanged: (_) {},
             canManagePermissions: canManage,
             onManage: onManage ?? (_) {},
+            onEdit: onEdit ?? (_) {},
+            onInvite: onInvite ?? () {},
+            onShowInvitations: onShowInvitations ?? () {},
           ),
         ),
       ),
@@ -144,6 +150,72 @@ void main() {
 
     expect(find.byTooltip(S.staffViewPermissions), findsWidgets);
     expect(find.byTooltip(S.staffManagePermissions), findsNothing);
+    expect(find.byTooltip(S.editStaffTitle), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the edit action opens the profile of one member', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280, 800);
+    final edited = <String>[];
+    await _pumpPage(
+      tester,
+      staff: [for (var index = 1; index <= 3; index++) _member(index)],
+      canManage: true,
+      onEdit: (member) => edited.add(member.id),
+    );
+
+    await tester.tap(find.byTooltip(S.editStaffTitle).first);
+    await tester.pump();
+
+    expect(edited, ['s1']);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the header invites only a writer, and always lists invites', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280, 800);
+    await _pumpPage(
+      tester,
+      staff: [for (var index = 1; index <= 3; index++) _member(index)],
+    );
+
+    expect(find.text(S.staffInvitations), findsOneWidget);
+    expect(find.text(S.inviteStaff), findsNothing);
+
+    var invited = 0;
+    await _pumpPage(
+      tester,
+      staff: [for (var index = 1; index <= 3; index++) _member(index)],
+      canManage: true,
+      onInvite: () => invited++,
+    );
+
+    expect(find.text(S.inviteStaff), findsOneWidget);
+    await tester.tap(find.text(S.inviteStaff));
+    await tester.pump();
+
+    expect(invited, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the invitations action opens the list the admin manages', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280, 800);
+    var opened = 0;
+    await _pumpPage(
+      tester,
+      staff: [for (var index = 1; index <= 3; index++) _member(index)],
+      onShowInvitations: () => opened++,
+    );
+
+    await tester.tap(find.text(S.staffInvitations));
+    await tester.pump();
+
+    expect(opened, 1);
     expect(tester.takeException(), isNull);
   });
 
@@ -161,6 +233,7 @@ void main() {
     await _pumpPage(
       tester,
       staff: [for (var index = 1; index <= 3; index++) _member(index)],
+      canManage: true,
       direction: TextDirection.rtl,
     );
 

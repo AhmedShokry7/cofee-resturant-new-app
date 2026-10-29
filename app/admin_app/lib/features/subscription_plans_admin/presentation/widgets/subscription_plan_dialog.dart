@@ -17,6 +17,7 @@ import 'package:admin_app/features/subscription_plans_admin/presentation/manager
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_product_picker.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 Future<void> showSubscriptionPlanDialog({
@@ -230,6 +231,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           ),
                           inputFormatters: [_decimalFormatter],
                           validator: _validatePrice,
+                          suffixIcon: const CurrencyIcon(size: 15),
                         ),
                         _field(
                           fieldKey: const Key('plan-currency'),
@@ -302,6 +304,9 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                             ),
                             inputFormatters: [_decimalFormatter],
                             validator: _validateBonusValue,
+                            suffixIcon: _bonusType == 'fixed'
+                                ? const CurrencyIcon(size: 15)
+                                : null,
                           ),
                         ]),
                       if (_bonusType != 'none')
@@ -423,6 +428,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
     TextInputAction textInputAction = TextInputAction.next,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
+    Widget? suffixIcon,
     int maxLines = 1,
   }) {
     return CustomTextFormField(
@@ -435,6 +441,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
       inputFormatters: inputFormatters,
       validator: validator,
       maxLines: maxLines,
+      suffixIcon: suffixIcon,
     );
   }
 
@@ -786,20 +793,20 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
   }
 
   String? _validateDuration(String? value) {
-    final days = int.tryParse(_normalizeDigits((value ?? '').trim()));
+    final days = int.tryParse(normalizeDigits((value ?? '').trim()));
     if (days == null) return S.subscriptionPlanInvalidNumber;
     if (days < 1) return S.subscriptionPlanInvalidDays;
     return null;
   }
 
   String? _validateCups(String? value) {
-    final cups = int.tryParse(_normalizeDigits((value ?? '').trim()));
+    final cups = int.tryParse(normalizeDigits((value ?? '').trim()));
     if (cups == null || cups < 0) return S.subscriptionPlanInvalidNumber;
     return null;
   }
 
   String? _validateRollover(String? value) {
-    final text = _normalizeDigits((value ?? '').trim());
+    final text = normalizeDigits((value ?? '').trim());
     if (text.isEmpty) return null;
     final cups = int.tryParse(text);
     if (cups == null || cups < 0) return S.subscriptionPlanInvalidNumber;
@@ -836,15 +843,15 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
       descriptionEn: _descriptionEn.text.trim(),
       price: _parseDecimal(_price.text) ?? 0,
       currencyCode: _currency.text.trim().toUpperCase(),
-      durationDays: int.tryParse(_normalizeDigits(_duration.text.trim())) ?? 0,
-      cupsPerCycle: int.tryParse(_normalizeDigits(_cups.text.trim())) ?? 0,
+      durationDays: int.tryParse(normalizeDigits(_duration.text.trim())) ?? 0,
+      cupsPerCycle: int.tryParse(normalizeDigits(_cups.text.trim())) ?? 0,
       bonusType: _bonusType,
       bonusValue: _bonusType == 'none'
           ? 0
           : (_parseDecimal(_bonusValue.text) ?? 0),
       bonusExpiresWithCycle: _bonusExpiresWithCycle,
       rolloverCapCups:
-          int.tryParse(_normalizeDigits(_rollover.text.trim())) ?? 0,
+          int.tryParse(normalizeDigits(_rollover.text.trim())) ?? 0,
       renewalPolicy: _renewalPolicy,
       autoRenewSupported: _autoRenewSupported,
       productScope: _productScope,
@@ -1148,24 +1155,9 @@ final _decimalFormatter = FilteringTextInputFormatter.allow(
 final _integerFormatter = FilteringTextInputFormatter.allow(RegExp('[0-9٠-٩]'));
 
 double? _parseDecimal(String? value) {
-  final text = _normalizeDigits((value ?? '').trim()).replaceAll(',', '');
+  final text = normalizeDigits((value ?? '').trim()).replaceAll(',', '');
   if (text.isEmpty) return null;
   return double.tryParse(text);
-}
-
-String _normalizeDigits(String value) {
-  const arabic = '٠١٢٣٤٥٦٧٨٩';
-  const western = '0123456789';
-  final buffer = StringBuffer();
-  for (final character in value.split('')) {
-    if (character == '٫' || character == '٬') {
-      buffer.write(character == '٫' ? '.' : '');
-      continue;
-    }
-    final index = arabic.indexOf(character);
-    buffer.write(index >= 0 ? western[index] : character);
-  }
-  return buffer.toString();
 }
 
 String _formatInitialAmount(double value) {

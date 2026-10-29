@@ -11,6 +11,7 @@ import 'package:admin_app/features/coupons/presentation/widgets/coupon_actions_m
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_badges.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class CouponCards extends StatelessWidget {
   const CouponCards({
@@ -152,13 +153,11 @@ class _CouponCard extends StatelessWidget {
                     ),
                   ),
                   const Spacer(),
-                  if (couponDiscountDetail(coupon).isNotEmpty)
+                  if (couponDiscountTerms(coupon).isNotEmpty)
                     Flexible(
-                      child: Text(
-                        couponDiscountDetail(coupon),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
+                      child: CouponDiscountTerms(
+                        coupon: coupon,
+                        align: TextAlign.end,
                         style: TextStyle(
                           color: adminMutedColor(theme),
                           fontSize: AppFontSizes.size8_5,
@@ -205,6 +204,7 @@ class _CouponCard extends StatelessWidget {
                           label: S.couponsTableGiven,
                           value: couponPerformanceLabel(coupon),
                           caption: couponPerformanceDetail(coupon),
+                          isMoney: true,
                         ),
                       ),
                       SizedBox(
@@ -234,16 +234,24 @@ class _Stat extends StatelessWidget {
     required this.label,
     required this.value,
     required this.caption,
+    this.isMoney = false,
   });
 
   final IconData icon;
   final String label;
   final String value;
   final String caption;
+  final bool isMoney;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final valueStyle = TextStyle(
+      color: AppColor.adminAmount,
+      fontSize: AppFontSizes.size10,
+      fontWeight: AppFontWeights.semiBold,
+      height: AppTextHeights.line1_5,
+    );
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -263,17 +271,28 @@ class _Stat extends StatelessWidget {
                   height: AppTextHeights.line1_4,
                 ),
               ),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: AppColor.adminAmount,
-                  fontSize: AppFontSizes.size10,
-                  fontWeight: AppFontWeights.semiBold,
-                  height: AppTextHeights.line1_5,
+              if (isMoney)
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        value,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: valueStyle,
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.px4),
+                    const CurrencyIcon(size: 12, color: AppColor.adminAmount),
+                  ],
+                )
+              else
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: valueStyle,
                 ),
-              ),
               Text(
                 caption,
                 maxLines: 1,

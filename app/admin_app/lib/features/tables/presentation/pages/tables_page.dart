@@ -201,12 +201,8 @@ class _TablesPageState extends State<TablesPage> {
   ) async {
     switch (status) {
       case DiningReservationStatus.seated:
-        final start = reservation.reservedFor;
-        if (start != null &&
-            start.isAfter(DateTime.now().add(const Duration(hours: 2)))) {
-          _showMessage(S.reservationSeatTooEarly, error: true);
-          return false;
-        }
+        // 207 enforces the two-hour window from the database clock; a local
+        // pre-check only refuses seating when the device clock disagrees.
         return confirmDiningSeating(context, reservation);
       case DiningReservationStatus.completed:
         return confirmDiningCompletion(context, reservation);
@@ -243,16 +239,16 @@ class _TablesPageState extends State<TablesPage> {
           }
           if (state.isFailure && !state.hasData) {
             return AdminFailureView(
-              message: diningLoadErrorMessage(state.errorMessage),
+              message: diningLoadErrorMessage(state.loadFailure),
               onRetry: _cubit.load,
             );
           }
           return TablesPageBody(
             state: state,
             canManage: widget.canManage,
-            errorMessage: state.errorMessage == null
+            errorMessage: state.loadFailure == null
                 ? null
-                : diningLoadErrorMessage(state.errorMessage),
+                : diningLoadErrorMessage(state.loadFailure),
             onSearchChanged: _cubit.updateSearch,
             onAreaChanged: _cubit.setArea,
             onBranchChanged: _cubit.setBranch,

@@ -6,6 +6,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/carts/data/models/admin_cart.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_details_dialog.dart';
 import 'package:admin_app/features/carts/presentation/widgets/cart_records.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 AdminCart _cart({String status = 'active'}) {
   return AdminCart(
@@ -58,7 +59,8 @@ void main() {
     await tester.pumpWidget(_wrap(CartCard(cart: _cart())));
 
     expect(find.text('Ahmed'), findsOneWidget);
-    expect(find.text('45.50 SAR'), findsOneWidget);
+    expect(find.text('45.50'), findsOneWidget);
+    expect(find.byType(CurrencyIcon), findsOneWidget);
     expect(find.text('2 items'), findsOneWidget);
     expect(find.text(S.cartStatusActive), findsOneWidget);
   });
@@ -108,7 +110,8 @@ void main() {
     // The branch association is valid and stays visible in the details.
     expect(find.textContaining('Main branch'), findsOneWidget);
     expect(find.textContaining('Latte'), findsOneWidget);
-    expect(find.text('45.50 SAR'), findsOneWidget);
+    expect(find.text('45.50'), findsOneWidget);
+    expect(find.byType(CurrencyIcon), findsWidgets);
     expect(find.textContaining(S.updatedAt), findsOneWidget);
     // No order actions on a cart.
     expect(find.text(S.changeStatus), findsNothing);

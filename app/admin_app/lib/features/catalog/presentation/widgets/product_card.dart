@@ -9,10 +9,12 @@ import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_footer.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_image.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card_rows.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
+import 'package:admin_app/shared/widgets/admin_feedback.dart';
 
 /// A product card the admin edits.
 ///
@@ -128,9 +130,15 @@ class _ProductCardState extends State<ProductCard> {
     }
   }
 
+  /// The price the admin typed, or `null` while the field holds something no
+  /// price can be read from. The field takes Arabic-Indic digits like every
+  /// other amount field in the app, so the text is normalized before parsing.
+  double? get _typedPrice =>
+      double.tryParse(normalizeDigits(_priceController.text.trim()));
+
   /// The price the customer pays while the discount runs.
   double? get _discountedPrice {
-    final price = double.tryParse(_priceController.text);
+    final price = _typedPrice;
     if (price == null) return null;
     return _draft.priceAfterDiscountAt(DateTime.now(), regularPrice: price);
   }
@@ -153,7 +161,7 @@ class _ProductCardState extends State<ProductCard> {
           ? name
           : (draft.isDraft && draft.nameAr.isEmpty ? name : draft.nameAr),
       nameEn: language.isArabic ? draft.nameEn : name,
-      basePrice: double.tryParse(_priceController.text) ?? 0,
+      basePrice: _typedPrice ?? draft.basePrice,
     );
   }
 
@@ -376,10 +384,11 @@ class _ProductCardState extends State<ProductCard> {
   }
 
   /// Writes the card, but only when the product carries the data the
-  /// database needs: a name and a category.
+  /// database needs: a name and a price that can be read.
   void _save() {
-    if (!_canBeSaved) {
-      _showMissingData();
+    final price = _typedPrice;
+    if (!_canBeSaved || price == null) {
+      _showMissingData(price: price);
       return;
     }
 
@@ -391,7 +400,7 @@ class _ProductCardState extends State<ProductCard> {
         clearCategoryNameAr: _categoryId == null,
         categoryNameEn: _categoryId == null ? null : _draft.categoryNameEn,
         clearCategoryNameEn: _categoryId == null,
-        basePrice: double.tryParse(_priceController.text) ?? 0,
+        basePrice: price,
       ),
     );
   }
@@ -402,14 +411,12 @@ class _ProductCardState extends State<ProductCard> {
     return true;
   }
 
-  /// Tells the admin what is still missing before the product can be saved.
-  void _showMissingData() {
+  /// Tells the admin what the card still misses before it can be written.
+  void _showMissingData({required double? price}) {
     final message = _draft.nameAr.trim().isEmpty
         ? S.productNeedsName
-        : S.productNeedsCategory;
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(content: Text(message)));
+        : (price == null ? S.invalidPrice : S.productNeedsCategory);
+    showErrorSnackBar(context, message);
   }
 
   @override

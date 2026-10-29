@@ -47,17 +47,20 @@ String subscriptionPlanName(AdminSubscriptionPlan plan) {
 String? subscriptionPlanDescription(AdminSubscriptionPlan plan) =>
     plan.descriptionFor(AppLocale.instance.language);
 
-String subscriptionPlanPrice(AdminSubscriptionPlan plan) {
-  final amount = localizeDigits(formatAmount(plan.price));
-  final currency = plan.currencyCode.trim();
-  return currency.isEmpty ? amount : '$amount $currency';
-}
+/// The plan price written as a number; the currency mark sits beside it.
+String subscriptionPlanPrice(AdminSubscriptionPlan plan) =>
+    localizeDigits(formatAmount(plan.price));
 
 String subscriptionPlanDuration(AdminSubscriptionPlan plan) =>
     localizeDigits(S.subscriptionsPlanDuration(plan.durationDays));
 
 String subscriptionPlanCups(AdminSubscriptionPlan plan) =>
     localizeDigits(S.subscriptionsCupsRedeemed(plan.cupsPerCycle));
+
+/// True when the bonus is a fixed sum of money, the only case where its
+/// currency mark is shown; percent and points bonuses carry their own unit.
+bool subscriptionPlanBonusIsMoney(AdminSubscriptionPlan plan) =>
+    plan.bonusType == 'fixed' && plan.bonusValue > 0;
 
 String subscriptionPlanBonus(AdminSubscriptionPlan plan) {
   if (plan.bonusType == 'none' || plan.bonusValue <= 0) {
@@ -67,9 +70,7 @@ String subscriptionPlanBonus(AdminSubscriptionPlan plan) {
     case 'percent':
       return localizeDigits('${_trimNumber(plan.bonusValue)}%');
     case 'fixed':
-      final amount = localizeDigits(formatAmount(plan.bonusValue));
-      final currency = plan.currencyCode.trim();
-      return currency.isEmpty ? amount : '$amount $currency';
+      return localizeDigits(formatAmount(plan.bonusValue));
     case 'points':
       final points = localizeDigits(formatCount(plan.bonusValue.round()));
       return '$points ${S.subscriptionPlanPointsUnit}';

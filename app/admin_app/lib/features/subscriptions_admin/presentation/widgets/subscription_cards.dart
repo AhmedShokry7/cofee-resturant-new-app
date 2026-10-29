@@ -10,6 +10,7 @@ import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subs
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_format.dart';
 import 'package:admin_app/shared/widgets/admin_labeled_value.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class SubscriptionCards extends StatelessWidget {
   const SubscriptionCards({
@@ -52,6 +53,7 @@ class _SubscriptionCard extends StatelessWidget {
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final status = SubscriptionStatusView.of(subscription);
     final contact = subscriptionContactLine(subscription);
+    final price = subscriptionPrice(subscription);
 
     return Material(
       color: theme.colorScheme.surface,
@@ -131,17 +133,27 @@ class _SubscriptionCard extends StatelessWidget {
                             height: AppTextHeights.line1_5,
                           ),
                         ),
-                        Text(
-                          subscriptionPrice(subscription),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: dark
-                                ? AppColor.darkTextSecondary
-                                : AppColor.adminMuted,
-                            fontSize: AppFontSizes.size10,
-                            height: AppTextHeights.line1_5,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                price ?? '—',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: dark
+                                      ? AppColor.darkTextSecondary
+                                      : AppColor.adminMuted,
+                                  fontSize: AppFontSizes.size10,
+                                  height: AppTextHeights.line1_5,
+                                ),
+                              ),
+                            ),
+                            if (price != null) ...[
+                              const SizedBox(width: AppSizes.px4),
+                              const CurrencyIcon(size: 11),
+                            ],
+                          ],
                         ),
                       ],
                     ),

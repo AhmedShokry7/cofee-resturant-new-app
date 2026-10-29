@@ -87,6 +87,8 @@ class AdminDialogHeader extends StatelessWidget {
 }
 
 /// Footer with the cancel/save pair shared by the admin editor dialogs.
+/// A null [onSave] renders the save button disabled, for dialogs that cannot
+/// submit until the form has something to act on.
 class AdminDialogFooter extends StatelessWidget {
   const AdminDialogFooter({
     super.key,
@@ -101,7 +103,7 @@ class AdminDialogFooter extends StatelessWidget {
 
   final bool saving;
   final VoidCallback onCancel;
-  final VoidCallback onSave;
+  final VoidCallback? onSave;
   final Key saveKey;
   final String saveLabel;
   final String savingLabel;

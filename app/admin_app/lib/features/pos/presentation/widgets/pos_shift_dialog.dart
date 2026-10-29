@@ -11,6 +11,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
 import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_cubit.dart';
@@ -21,6 +22,7 @@ import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 /// Opens the cashier shift panel: the live drawer, cash movements, the drawer
 /// count and the shift history.
@@ -117,6 +119,9 @@ class _PosShiftDialog extends StatelessWidget {
                       : _OpenShiftForm(
                           failure: state.shiftFailure,
                           opening: state.isOpeningShift,
+                          cashiers: state.cashiers,
+                          isLoadingCashiers: state.isLoadingCashiers,
+                          cashiersFailure: state.cashiersFailure,
                         ),
                 ),
                 _ShiftFooter(state: state),
@@ -303,7 +308,6 @@ class _ShiftOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currency = shift.currencyCode;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -317,21 +321,24 @@ class _ShiftOverview extends StatelessWidget {
               tint: AppColor.trendPositive,
               surface: AppColor.trendPositiveSurface,
               label: S.posShiftCashSales,
-              value: posMoney(shift.cashSales, currency),
+              value: posAmount(shift.cashSales),
+              money: true,
             ),
             _ShiftMetric(
               icon: AppIcons.creditCard,
               tint: AppColor.adminInfo,
               surface: AppColor.adminInfoSurface,
               label: S.posShiftCardSales,
-              value: posMoney(shift.cardSales, currency),
+              value: posAmount(shift.cardSales),
+              money: true,
             ),
             _ShiftMetric(
               icon: AppIcons.receiptDollar,
               tint: AppColor.adminAccent,
               surface: AppColor.adminAccentSurface,
               label: S.posShiftSalesTotal,
-              value: posMoney(shift.salesTotal, currency),
+              value: posAmount(shift.salesTotal),
+              money: true,
             ),
             _ShiftMetric(
               icon: AppIcons.shoppingCart01,
@@ -345,14 +352,16 @@ class _ShiftOverview extends StatelessWidget {
               tint: AppColor.trendPositive,
               surface: AppColor.trendPositiveSurface,
               label: S.posShiftCashIn,
-              value: posMoney(shift.cashIn, currency),
+              value: posAmount(shift.cashIn),
+              money: true,
             ),
             _ShiftMetric(
               icon: AppIcons.arrowUpRight01,
               tint: AppColor.trendNegative,
               surface: AppColor.trendNegativeSurface,
               label: S.posShiftCashOut,
-              value: posMoney(shift.cashOut, currency),
+              value: posAmount(shift.cashOut),
+              money: true,
             ),
           ],
         ),
@@ -467,7 +476,7 @@ class _ShiftHero extends StatelessWidget {
               Expanded(
                 child: _HeroFigure(
                   label: S.posShiftExpectedCash,
-                  value: posMoney(shift.expectedCash, shift.currencyCode),
+                  value: posAmount(shift.expectedCash),
                   emphasized: true,
                 ),
               ),
@@ -475,7 +484,7 @@ class _ShiftHero extends StatelessWidget {
               Expanded(
                 child: _HeroFigure(
                   label: S.posShiftOpeningFloat,
-                  value: posMoney(shift.openingFloat, shift.currencyCode),
+                  value: posAmount(shift.openingFloat),
                 ),
               ),
             ],
@@ -500,6 +509,15 @@ class _HeroFigure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = emphasized
+        ? adminFlagForeground(theme, AppColor.adminAccent)
+        : adminHeadingColor(theme);
+    final style = TextStyle(
+      color: color,
+      fontSize: emphasized ? 16 : 13,
+      fontWeight: AppFontWeights.bold,
+      height: AppTextHeights.line1_4,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -514,18 +532,40 @@ class _HeroFigure extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSizes.px1),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: emphasized
-                ? adminFlagForeground(theme, AppColor.adminAccent)
-                : adminHeadingColor(theme),
-            fontSize: emphasized ? 16 : 13,
-            fontWeight: AppFontWeights.bold,
-            height: AppTextHeights.line1_4,
+        _MoneyValue(value: value, style: style),
+      ],
+    );
+  }
+}
+
+/// A money value with the Saudi Riyal mark sitting against the number.
+///
+/// [value] is the number-only text; the mark is drawn beside it so every
+/// amount in the drawer carries its currency.
+class _MoneyValue extends StatelessWidget {
+  const _MoneyValue({required this.value, required this.style});
+
+  final String value;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final fontSize = style.fontSize ?? 11;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Flexible(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: style,
           ),
+        ),
+        const SizedBox(width: AppSizes.px4),
+        CurrencyIcon(
+          size: (fontSize + 2).clamp(10.0, 20.0),
+          color: style.color,
         ),
       ],
     );
@@ -566,6 +606,7 @@ class _ShiftMetric extends StatelessWidget {
     required this.label,
     required this.value,
     this.valueColor,
+    this.money = false,
   });
 
   final IconData icon;
@@ -574,6 +615,9 @@ class _ShiftMetric extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
+
+  /// Whether [value] is an amount that carries the Riyal mark.
+  final bool money;
 
   @override
   Widget build(BuildContext context) {
@@ -600,17 +644,28 @@ class _ShiftMetric extends StatelessWidget {
         children: [
           AdminIconTile(icon: icon, tint: tint, surface: surface, size: 24),
           const SizedBox(height: AppSizes.px6),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: valueColor ?? adminHeadingColor(theme),
-              fontSize: AppFontSizes.size13,
-              fontWeight: AppFontWeights.bold,
-              height: AppTextHeights.line1_35,
+          if (money)
+            _MoneyValue(
+              value: value,
+              style: TextStyle(
+                color: valueColor ?? adminHeadingColor(theme),
+                fontSize: AppFontSizes.size13,
+                fontWeight: AppFontWeights.bold,
+                height: AppTextHeights.line1_35,
+              ),
+            )
+          else
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: valueColor ?? adminHeadingColor(theme),
+                fontSize: AppFontSizes.size13,
+                fontWeight: AppFontWeights.bold,
+                height: AppTextHeights.line1_35,
+              ),
             ),
-          ),
           const SizedBox(height: AppSizes.px1),
           Text(
             label,
@@ -663,10 +718,7 @@ class _ShiftMovementsCard extends StatelessWidget {
             for (var index = 0; index < movements.length; index++) ...[
               if (index > 0)
                 Divider(height: 14, color: adminRowBorderColor(theme)),
-              _MovementRow(
-                movement: movements[index],
-                currencyCode: shift.currencyCode,
-              ),
+              _MovementRow(movement: movements[index]),
             ],
             Divider(height: 16, color: adminRowBorderColor(theme)),
             Row(
@@ -682,15 +734,17 @@ class _ShiftMovementsCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
-                  _signedMoney(net, shift.currencyCode),
-                  style: TextStyle(
-                    color: net < 0
-                        ? AppColor.errorColor
-                        : adminFlagForeground(theme, AppColor.adminAccent),
-                    fontSize: AppFontSizes.size10_5,
-                    fontWeight: AppFontWeights.bold,
-                    height: AppTextHeights.line1_4,
+                Flexible(
+                  child: _MoneyValue(
+                    value: _signedAmount(net),
+                    style: TextStyle(
+                      color: net < 0
+                          ? AppColor.errorColor
+                          : adminFlagForeground(theme, AppColor.adminAccent),
+                      fontSize: AppFontSizes.size10_5,
+                      fontWeight: AppFontWeights.bold,
+                      height: AppTextHeights.line1_4,
+                    ),
                   ),
                 ),
               ],
@@ -703,10 +757,9 @@ class _ShiftMovementsCard extends StatelessWidget {
 }
 
 class _MovementRow extends StatelessWidget {
-  const _MovementRow({required this.movement, required this.currencyCode});
+  const _MovementRow({required this.movement});
 
   final PosCashMovement movement;
-  final String currencyCode;
 
   @override
   Widget build(BuildContext context) {
@@ -773,13 +826,15 @@ class _MovementRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
-        Text(
-          '${incoming ? '+' : '-'}${posMoney(movement.amount, currencyCode)}',
-          style: TextStyle(
-            color: adminFlagForeground(theme, color),
-            fontSize: AppFontSizes.size10,
-            fontWeight: AppFontWeights.bold,
-            height: AppTextHeights.line1_4,
+        Flexible(
+          child: _MoneyValue(
+            value: '${incoming ? '+' : '-'}${posAmount(movement.amount)}',
+            style: TextStyle(
+              color: adminFlagForeground(theme, color),
+              fontSize: AppFontSizes.size10,
+              fontWeight: AppFontWeights.bold,
+              height: AppTextHeights.line1_4,
+            ),
           ),
         ),
       ],
@@ -839,10 +894,21 @@ class _NoteCard extends StatelessWidget {
 }
 
 class _OpenShiftForm extends StatefulWidget {
-  const _OpenShiftForm({required this.failure, required this.opening});
+  const _OpenShiftForm({
+    required this.failure,
+    required this.opening,
+    required this.cashiers,
+    required this.isLoadingCashiers,
+    required this.cashiersFailure,
+  });
 
   final PosShiftFailure? failure;
   final bool opening;
+
+  /// The staff members the server accepts as the owner of this branch drawer.
+  final List<PosCashier> cashiers;
+  final bool isLoadingCashiers;
+  final PosShiftFailure? cashiersFailure;
 
   @override
   State<_OpenShiftForm> createState() => _OpenShiftFormState();
@@ -852,6 +918,15 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
   final _float = TextEditingController();
   final _note = TextEditingController();
   String? _error;
+  String? _cashierId;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<PosCubit>().loadCashiers();
+    });
+  }
 
   @override
   void dispose() {
@@ -873,6 +948,7 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
     final shift = await context.read<PosCubit>().openShift(
       openingFloat: amount,
       note: _note.text.trim(),
+      cashierId: _cashierId,
     );
     if (!mounted || shift == null) return;
     _showShiftMessage(
@@ -889,6 +965,9 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
         (widget.failure == null
             ? null
             : posShiftFailureMessage(widget.failure));
+    final candidates = widget.cashiers
+        .where((cashier) => !cashier.isSelf && cashier.id.isNotEmpty)
+        .toList(growable: false);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -983,7 +1062,16 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
               label: S.posShiftOpeningFloat,
               hint: S.posShiftOpeningFloatHint,
               required: true,
-            ),
+            ).copyWith(suffixIcon: const CurrencyIcon(size: 15)),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _CashierPicker(
+            value: _cashierId,
+            candidates: candidates,
+            loading: widget.isLoadingCashiers,
+            failed: widget.cashiersFailure != null,
+            enabled: !widget.opening,
+            onChanged: (value) => setState(() => _cashierId = value),
           ),
           const SizedBox(height: AppSpacing.md),
           TextField(
@@ -1045,6 +1133,91 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Who the drawer belongs to. The candidates come from the database, the only
+/// place that knows which staff of this branch may hold a shift; choosing
+/// nothing leaves the shift owned by the signed-in staff member.
+class _CashierPicker extends StatelessWidget {
+  const _CashierPicker({
+    required this.value,
+    required this.candidates,
+    required this.loading,
+    required this.failed,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  static const String _selfValue = '';
+
+  final String? value;
+  final List<PosCashier> candidates;
+  final bool loading;
+  final bool failed;
+  final bool enabled;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final itemStyle = TextStyle(
+      color: adminBodyColor(theme),
+      fontSize: AppFontSizes.size12,
+      height: AppTextHeights.line1_5,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DropdownButtonFormField<String>(
+          key: const Key('pos-shift-open-cashier'),
+          initialValue: value ?? _selfValue,
+          isExpanded: true,
+          isDense: true,
+          style: itemStyle,
+          icon: AppIcon(
+            AppIcons.arrowDown01,
+            size: 16,
+            color: adminMutedColor(theme),
+          ),
+          dropdownColor: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          decoration: adminDialogFieldDecoration(
+            context,
+            label: S.posShiftCashier,
+            hint: S.posShiftCashierSelf,
+          ),
+          items: [
+            DropdownMenuItem<String>(
+              value: _selfValue,
+              child: Text(S.posShiftCashierSelf, style: itemStyle),
+            ),
+            for (final cashier in candidates)
+              DropdownMenuItem<String>(
+                value: cashier.id,
+                child: Text(cashier.fullName, style: itemStyle),
+              ),
+          ],
+          onChanged: enabled && !loading
+              ? (selected) => onChanged(
+                  selected == null || selected == _selfValue ? null : selected,
+                )
+              : null,
+        ),
+        if (loading || failed) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            loading ? S.posShiftCashierLoading : S.posShiftCashierLoadFailed,
+            style: TextStyle(
+              color: adminMutedColor(theme),
+              fontSize: AppFontSizes.size9_5,
+              height: AppTextHeights.line1_5,
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -1156,7 +1329,7 @@ class _MovementDialogState extends State<_MovementDialog> {
                             label: S.posShiftMovementAmount,
                             hint: S.posShiftOpeningFloatHint,
                             required: true,
-                          ),
+                          ).copyWith(suffixIcon: const CurrencyIcon(size: 15)),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextField(
@@ -1310,13 +1483,10 @@ class _CloseShiftDialogState extends State<_CloseShiftDialog> {
                             label: S.posShiftCountPrompt,
                             hint: S.posShiftCountHint,
                             required: true,
-                          ),
+                          ).copyWith(suffixIcon: const CurrencyIcon(size: 15)),
                         ),
                         const SizedBox(height: AppSpacing.md),
-                        _VarianceStrip(
-                          variance: variance,
-                          currencyCode: shift.currencyCode,
-                        ),
+                        _VarianceStrip(variance: variance),
                         const SizedBox(height: AppSpacing.md),
                         TextField(
                           key: const Key('pos-shift-close-note'),
@@ -1364,7 +1534,6 @@ class _DrawerSummary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final currency = shift.currencyCode;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -1376,27 +1545,24 @@ class _DrawerSummary extends StatelessWidget {
         children: [
           _ReportLine(
             label: S.posShiftOpeningFloat,
-            value: posMoney(shift.openingFloat, currency),
+            value: posAmount(shift.openingFloat),
           ),
           const SizedBox(height: AppSizes.px6),
           _ReportLine(
             label: S.posShiftCashSales,
-            value: posMoney(shift.cashSales, currency),
+            value: posAmount(shift.cashSales),
           ),
           const SizedBox(height: AppSizes.px6),
-          _ReportLine(
-            label: S.posShiftCashIn,
-            value: posMoney(shift.cashIn, currency),
-          ),
+          _ReportLine(label: S.posShiftCashIn, value: posAmount(shift.cashIn)),
           const SizedBox(height: AppSizes.px6),
           _ReportLine(
             label: S.posShiftCashOut,
-            value: posMoney(shift.cashOut, currency),
+            value: posAmount(shift.cashOut),
           ),
           Divider(height: 16, color: adminRowBorderColor(theme)),
           _ReportLine(
             label: S.posShiftExpectedCash,
-            value: posMoney(shift.expectedCash, currency),
+            value: posAmount(shift.expectedCash),
             strong: true,
           ),
         ],
@@ -1406,10 +1572,9 @@ class _DrawerSummary extends StatelessWidget {
 }
 
 class _VarianceStrip extends StatelessWidget {
-  const _VarianceStrip({required this.variance, required this.currencyCode});
+  const _VarianceStrip({required this.variance});
 
   final double? variance;
-  final String currencyCode;
 
   @override
   Widget build(BuildContext context) {
@@ -1468,13 +1633,15 @@ class _VarianceStrip extends StatelessWidget {
           ),
           if (variance != null) ...[
             const SizedBox(width: AppSpacing.sm),
-            Text(
-              _signedMoney(variance!, currencyCode),
-              style: TextStyle(
-                color: adminFlagForeground(theme, color),
-                fontSize: AppFontSizes.size10_5,
-                fontWeight: AppFontWeights.bold,
-                height: AppTextHeights.line1_5,
+            Flexible(
+              child: _MoneyValue(
+                value: _signedAmount(variance!),
+                style: TextStyle(
+                  color: adminFlagForeground(theme, color),
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.bold,
+                  height: AppTextHeights.line1_5,
+                ),
               ),
             ),
           ],
@@ -1495,7 +1662,6 @@ class _ShiftReportDialog extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final width = min(560.0, size.width - 32);
     final height = min(720.0, size.height * .9);
-    final currency = shift.currencyCode;
     final variance = shift.variance;
     final varianceColor = !shift.hasVariance
         ? AppColor.adminAccent
@@ -1541,28 +1707,32 @@ class _ShiftReportDialog extends StatelessWidget {
                         tint: AppColor.adminInfo,
                         surface: AppColor.adminInfoSurface,
                         label: S.posShiftOpeningFloat,
-                        value: posMoney(shift.openingFloat, currency),
+                        value: posAmount(shift.openingFloat),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.coins01,
                         tint: AppColor.trendPositive,
                         surface: AppColor.trendPositiveSurface,
                         label: S.posShiftCashSales,
-                        value: posMoney(shift.cashSales, currency),
+                        value: posAmount(shift.cashSales),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.creditCard,
                         tint: AppColor.adminInfo,
                         surface: AppColor.adminInfoSurface,
                         label: S.posShiftCardSales,
-                        value: posMoney(shift.cardSales, currency),
+                        value: posAmount(shift.cardSales),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.receiptDollar,
                         tint: AppColor.adminAccent,
                         surface: AppColor.adminAccentSurface,
                         label: S.posShiftSalesTotal,
-                        value: posMoney(shift.salesTotal, currency),
+                        value: posAmount(shift.salesTotal),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.shoppingCart01,
@@ -1576,21 +1746,24 @@ class _ShiftReportDialog extends StatelessWidget {
                         tint: AppColor.trendPositive,
                         surface: AppColor.trendPositiveSurface,
                         label: S.posShiftCashIn,
-                        value: posMoney(shift.cashIn, currency),
+                        value: posAmount(shift.cashIn),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.arrowUpRight01,
                         tint: AppColor.trendNegative,
                         surface: AppColor.trendNegativeSurface,
                         label: S.posShiftCashOut,
-                        value: posMoney(shift.cashOut, currency),
+                        value: posAmount(shift.cashOut),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.cash01,
                         tint: AppColor.adminAccent,
                         surface: AppColor.adminAccentSurface,
                         label: S.posShiftCountedCash,
-                        value: posMoney(shift.countedCash ?? 0, currency),
+                        value: posAmount(shift.countedCash ?? 0),
+                        money: true,
                       ),
                       _ShiftMetric(
                         icon: AppIcons.checkmarkCircle01,
@@ -1598,9 +1771,10 @@ class _ShiftReportDialog extends StatelessWidget {
                         surface: varianceSurface,
                         label: S.posShiftVariance,
                         value: variance == null
-                            ? posMoney(0, currency)
-                            : _signedMoney(variance, currency),
+                            ? posAmount(0)
+                            : _signedAmount(variance),
                         valueColor: varianceColor,
+                        money: true,
                       ),
                     ],
                   ),
@@ -1752,7 +1926,7 @@ class _ReportHero extends StatelessWidget {
               Expanded(
                 child: _HeroFigure(
                   label: S.posShiftExpectedCash,
-                  value: posMoney(shift.expectedCash, shift.currencyCode),
+                  value: posAmount(shift.expectedCash),
                   emphasized: true,
                 ),
               ),
@@ -1760,7 +1934,7 @@ class _ReportHero extends StatelessWidget {
               Expanded(
                 child: _HeroFigure(
                   label: S.posShiftCountedCash,
-                  value: posMoney(shift.countedCash ?? 0, shift.currencyCode),
+                  value: posAmount(shift.countedCash ?? 0),
                 ),
               ),
             ],
@@ -1801,13 +1975,17 @@ class _ReportLine extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
-        Text(
-          value,
-          style: TextStyle(
-            color: adminHeadingColor(theme),
-            fontSize: strong ? 11.5 : 10,
-            fontWeight: strong ? AppFontWeights.bold : AppFontWeights.semiBold,
-            height: AppTextHeights.line1_5,
+        Flexible(
+          child: _MoneyValue(
+            value: value,
+            style: TextStyle(
+              color: adminHeadingColor(theme),
+              fontSize: strong ? 11.5 : 10,
+              fontWeight: strong
+                  ? AppFontWeights.bold
+                  : AppFontWeights.semiBold,
+              height: AppTextHeights.line1_5,
+            ),
           ),
         ),
       ],
@@ -2065,17 +2243,27 @@ class _ShiftHistoryTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSizes.px2),
-                    Text(
-                      '${S.posShiftOrders}: ${localizeDigits('${shift.orderCount}')}'
-                      ' • ${posMoney(shift.salesTotal, shift.currencyCode)}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: adminBodyColor(theme),
-                        fontSize: AppFontSizes.size9,
-                        fontWeight: AppFontWeights.semiBold,
-                        height: AppTextHeights.line1_45,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${S.posShiftOrders}: '
+                            '${localizeDigits('${shift.orderCount}')}'
+                            ' • ${posAmount(shift.salesTotal)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: adminBodyColor(theme),
+                              fontSize: AppFontSizes.size9,
+                              fontWeight: AppFontWeights.semiBold,
+                              height: AppTextHeights.line1_45,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.px4),
+                        CurrencyIcon(size: 10, color: adminBodyColor(theme)),
+                      ],
                     ),
                   ],
                 ),
@@ -2100,8 +2288,9 @@ final _moneyInputFormatter = FilteringTextInputFormatter.allow(
   RegExp(r'[0-9\u0660-\u0669\u06F0-\u06F9.,]'),
 );
 
-String _signedMoney(double value, String currencyCode) {
+/// فرق نقدية بإشارتها، رقمًا بلا كلمة عملة؛ العلامة يضعها `_MoneyValue`.
+String _signedAmount(double value) {
   final rounded = posRound2(value);
-  if (rounded.abs() < .005) return posMoney(0, currencyCode);
-  return '${rounded < 0 ? '-' : '+'}${posMoney(rounded.abs(), currencyCode)}';
+  if (rounded.abs() < .005) return posAmount(0);
+  return '${rounded < 0 ? '-' : '+'}${posAmount(rounded.abs())}';
 }

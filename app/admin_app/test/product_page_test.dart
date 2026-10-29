@@ -10,6 +10,8 @@ import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_card.dart';
+import 'package:admin_app/features/catalog/presentation/widgets/product_card_footer.dart';
+import 'package:admin_app/features/catalog/presentation/widgets/product_card_rows.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_records.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
@@ -214,4 +216,66 @@ void main() {
     expect(find.text('10'), findsOneWidget);
     expect(find.byType(ProductCard), findsNWidgets(5));
   });
+
+  // النصّ الذي لا يُقرأ رقمًا كان يُكتب صفرًا في القاعدة بلا كلمة؛ الحقل الآن
+  // يرفضه، ويقبل ما تقبله بقية حقول المبلغ في التطبيق.
+  testWidgets('the card refuses a price it cannot read', (tester) async {
+    AdminProduct? saved;
+    await _pumpCard(tester, onSave: (product) => saved = product);
+
+    await _typePrice(tester, '1.2.3');
+    await tester.tap(find.byType(ProductCardSaveBar));
+    await tester.pumpAndSettle();
+
+    expect(saved, isNull);
+    expect(find.text(S.invalidPrice), findsOneWidget);
+  });
+
+  testWidgets('the card reads a price typed in Arabic numerals', (
+    tester,
+  ) async {
+    AdminProduct? saved;
+    await _pumpCard(tester, onSave: (product) => saved = product);
+
+    await _typePrice(tester, '٢٥');
+    await tester.tap(find.byType(ProductCardSaveBar));
+    await tester.pumpAndSettle();
+
+    expect(saved?.basePrice, 25);
+  });
+}
+
+Future<void> _pumpCard(
+  WidgetTester tester, {
+  required ValueChanged<AdminProduct> onSave,
+}) async {
+  _setViewport(tester, 900);
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: SizedBox(
+            width: 420,
+            child: ProductCard(
+              product: _products.first,
+              categories: const <AdminCategory>[],
+              onSave: onSave,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pump();
+}
+
+Future<void> _typePrice(WidgetTester tester, String value) async {
+  await tester.enterText(
+    find.descendant(
+      of: find.byType(ProductCardPriceRow),
+      matching: find.byType(TextField),
+    ),
+    value,
+  );
+  await tester.pump();
 }

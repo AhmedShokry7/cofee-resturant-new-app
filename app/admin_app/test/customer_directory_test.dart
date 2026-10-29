@@ -10,6 +10,7 @@ import 'package:admin_app/features/customers/presentation/widgets/customer_direc
 import 'package:admin_app/features/customers/presentation/widgets/customer_page_body.dart';
 import 'package:admin_app/features/customers/presentation/widgets/customer_table.dart';
 import 'package:admin_app/shared/widgets/admin_pagination.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 AdminCustomer _customer(
   int index, {
@@ -240,7 +241,8 @@ void main() {
     );
     await tester.pump();
 
-    expect(find.text('150.00 SAR'), findsOneWidget);
+    expect(find.text('150.00'), findsOneWidget);
+    expect(find.byType(CurrencyIcon), findsWidgets);
     expect(find.text('50%'), findsOneWidget);
     expect(find.text('7'), findsOneWidget);
     expect(find.text('42'), findsOneWidget);

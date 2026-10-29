@@ -101,6 +101,7 @@ void main() {
       dialog: CustomerDetailDialog(
         customer: _customer,
         details: _details(),
+        canManage: true,
         onSave: ({
           required bool isVip,
           required bool isBlacklisted,
@@ -147,6 +148,7 @@ void main() {
             },
           ],
         },
+        canManage: true,
         onSave: _noopSave,
       ),
       size: const Size(900, 900),
@@ -179,6 +181,7 @@ void main() {
           'orders': <dynamic>[],
           'subscriptions': <dynamic>[],
         },
+        canManage: true,
         onSave: _noopSave,
       ),
       size: const Size(320, 640),
@@ -201,6 +204,7 @@ void main() {
       dialog: CustomerDetailDialog(
         customer: _customer,
         details: _details(orderCount: 1),
+        canManage: true,
         onSave:
             ({
               required bool isVip,
@@ -239,6 +243,7 @@ void main() {
       dialog: CustomerDetailDialog(
         customer: _customer,
         details: _details(orderCount: 1, fulfillment: 'dine_in'),
+        canManage: true,
         onSave: _noopSave,
       ),
       size: const Size(900, 900),
@@ -248,6 +253,30 @@ void main() {
 
     expect(find.textContaining(S.fulfillmentDineIn), findsOneWidget);
     expect(find.textContaining('dine_in'), findsNothing);
+  });
+
+  testWidgets('a read-only admin gets the history without the write panel', (
+    tester,
+  ) async {
+    // 211 يرفض admin_update_customer بلا customers.write، فالأزرار التي لا
+    // يملك صاحبها صلاحية تنفيذها لا تُعرض أصلًا.
+    await _openDialog(
+      tester,
+      dialog: CustomerDetailDialog(
+        customer: _customer,
+        details: _details(orderCount: 1),
+        canManage: false,
+        onSave: _noopSave,
+      ),
+      size: const Size(900, 900),
+      dark: false,
+      isArabic: false,
+    );
+
+    expect(find.text(S.save), findsNothing);
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    expect(find.text('Prefers morning delivery'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 

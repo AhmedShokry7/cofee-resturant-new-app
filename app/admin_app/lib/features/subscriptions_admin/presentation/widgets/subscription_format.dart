@@ -110,12 +110,12 @@ String subscriptionLastUsed(AdminSubscription subscription) {
   return subscriptionDate(subscription.lastUsedAt);
 }
 
-String subscriptionPrice(AdminSubscription subscription) {
+/// The plan price written as a number, or null when the subscription has no
+/// price. The currency mark is drawn beside the number by the caller.
+String? subscriptionPrice(AdminSubscription subscription) {
   final price = subscription.planPrice;
-  if (price == null) return '—';
-  final currency = subscription.currencyCode?.trim() ?? '';
-  final amount = localizeDigits(formatAmount(price));
-  return currency.isEmpty ? amount : '$amount $currency';
+  if (price == null) return null;
+  return localizeDigits(formatAmount(price));
 }
 
 String subscriptionDuration(AdminSubscription subscription) {
@@ -124,11 +124,9 @@ String subscriptionDuration(AdminSubscription subscription) {
   return localizeDigits(S.subscriptionsPlanDuration(days));
 }
 
-String subscriptionBonusBalance(AdminSubscription subscription) {
-  final currency = subscription.currencyCode?.trim() ?? '';
-  final amount = localizeDigits(formatAmount(subscription.bonusBalance));
-  return currency.isEmpty ? amount : '$amount $currency';
-}
+/// The bonus balance written as a number; the currency mark sits beside it.
+String subscriptionBonusBalance(AdminSubscription subscription) =>
+    localizeDigits(formatAmount(subscription.bonusBalance));
 
 String subscriptionDaysRemaining(AdminSubscription subscription) {
   final days = subscription.daysRemaining;

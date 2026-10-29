@@ -7,6 +7,9 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 Future<void> showBranchProductPricingDialog({
   required BuildContext context,
@@ -188,8 +191,19 @@ class _BranchProductPricingDialogState
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          subtitle: Text(
-                            '${product.sku} • ${product.basePrice.toStringAsFixed(2)}',
+                          subtitle: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  '${product.sku} • ${localizeDigits(formatAmount(product.basePrice))}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: AppSizes.px4),
+                              const CurrencyIcon(size: 12),
+                            ],
                           ),
                           trailing: const Icon(Icons.edit_outlined, size: 18),
                           onTap: () => _editDiscount(product),

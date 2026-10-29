@@ -14,11 +14,19 @@ import 'package:admin_app/shared/widgets/admin_state_view.dart';
 part 'customer_page_export.dart';
 
 class CustomerPage extends StatefulWidget {
-  const CustomerPage({super.key, required this.searchController, this.cubit});
+  const CustomerPage({
+    super.key,
+    required this.searchController,
+    this.canManage = false,
+    this.cubit,
+  });
 
   static const String routeName = '/customers';
 
   final AdminSearchController searchController;
+
+  /// customers.write وحدها تفتح لوحة الأوسمة والملاحظات: القراءة تعرض السجل.
+  final bool canManage;
   final AdminCustomerCubit? cubit;
 
   @override
@@ -57,6 +65,7 @@ class _CustomerPageState extends State<CustomerPage> {
       context: context,
       cubit: _cubit,
       customer: customer,
+      canManage: widget.canManage,
     );
   }
 

@@ -17,7 +17,10 @@
 --
 -- Run as a privileged role; has_function_privilege reports another role's rights.
 --
--- Restored by 083_restore_client_function_execute_grants.sql.
+-- Restored by 083_restore_client_function_execute_grants.sql, except the two
+-- search rebuild functions: 205_admin_set_category_image.sql took them off the
+-- positive list in section 6 rather than granting them back. See that file for
+-- why a client-rol write there is not wanted.
 
 \set ON_ERROR_STOP on
 
@@ -123,6 +126,19 @@ select case when has_function_privilege('anon','subscriptions.my_subscription()'
 --    and PostgreSQL checks EXECUTE against the role performing the DML.
 --    core.set_updated_at fires on customer-writable tables; the catalog.search
 --    chain fires on staff catalogue writes.
+--
+--    REVISED 2026-10-28 by 205_admin_set_category_image.sql. Two earlier lines
+--    here asserted that `authenticated` holds EXECUTE on
+--    catalog.rebuild_product_search(uuid) and catalog.rebuild_category_search(uuid),
+--    because that is what 083 restored to make the direct
+--    `update public.categories set image_url = …` work. That premise is gone:
+--    081 revoked those grants on purpose (every signed-in customer is
+--    `authenticated`, and the functions are SECURITY DEFINER writes against the
+--    search tables), the live ACL no longer carries them, and the category
+--    picture write now runs inside admin_set_category_image, whose owner satisfies
+--    the trigger. So the positive assertions stop at the trigger functions
+--    `authenticated` genuinely calls, and the rebuild functions move to the
+--    negative side — with the definer entry points checked as the replacement.
 -- ---------------------------------------------------------------------------
 select case when has_function_privilege('authenticated','core.set_updated_at()','EXECUTE')
        then 'PASS' else 'FAIL: authenticated cannot execute core.set_updated_at' end as t35;
@@ -134,10 +150,21 @@ select case when has_function_privilege('authenticated','catalog.trg_product_sea
        then 'PASS' else 'FAIL: authenticated cannot execute catalog.trg_product_search' end as t38;
 select case when has_function_privilege('authenticated','catalog.trg_category_search()','EXECUTE')
        then 'PASS' else 'FAIL: authenticated cannot execute catalog.trg_category_search' end as t39;
-select case when has_function_privilege('authenticated','catalog.rebuild_product_search(uuid)','EXECUTE')
-       then 'PASS' else 'FAIL: authenticated cannot execute catalog.rebuild_product_search' end as t40;
-select case when has_function_privilege('authenticated','catalog.rebuild_category_search(uuid)','EXECUTE')
-       then 'PASS' else 'FAIL: authenticated cannot execute catalog.rebuild_category_search' end as t41;
+
+-- t40: the rebuild functions stay private to the owner and service_role.
+select case when not has_function_privilege('authenticated','catalog.rebuild_product_search(uuid)','EXECUTE')
+             and not has_function_privilege('authenticated','catalog.rebuild_category_search(uuid)','EXECUTE')
+             and has_function_privilege('postgres','catalog.rebuild_category_search(uuid)','EXECUTE')
+       then 'PASS' else 'FAIL: the search rebuild functions are reachable by authenticated again' end as t40;
+
+-- t41: the definer entry points that write catalogue rows in their place.
+select case when has_function_privilege('authenticated','public.admin_set_category_image(uuid, text)','EXECUTE')
+             and (select p.prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+                   where n.nspname = 'public' and p.proname = 'admin_set_category_image'
+                     and p.pronargs = 2)
+             and has_function_privilege('authenticated','public.admin_set_category_active(uuid, boolean)','EXECUTE')
+             and has_function_privilege('authenticated','public.admin_set_branch_image(uuid, text)','EXECUTE')
+       then 'PASS' else 'FAIL: the security-definer catalogue image/active writes are not reachable by authenticated' end as t41;
 
 -- ---------------------------------------------------------------------------
 -- 7. Signup and payment trigger paths.

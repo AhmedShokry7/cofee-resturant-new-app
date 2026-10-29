@@ -12,6 +12,19 @@ enum KitchenMutationOutcome {
   failed,
 }
 
+/// لماذا تعذّر قراءة سبورة المطبخ، بلا نصوص قاعدة بيانات تصل إلى الشاشة.
+enum KitchenLoadFailure { permissionDenied, failed }
+
+class KitchenLoadException implements Exception {
+  const KitchenLoadException(this.failure, [this.message]);
+
+  final KitchenLoadFailure failure;
+  final String? message;
+
+  @override
+  String toString() => message ?? failure.name;
+}
+
 /// عقد قراءة سبورة المطبخ ومؤشراتها وفلاترها وكتابة حالاتها.
 ///
 /// التنفيذ الفعلي (Supabase) في `data/repositories`، فلا يعرف المجال شيئًا عن

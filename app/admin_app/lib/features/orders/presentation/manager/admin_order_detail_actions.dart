@@ -26,43 +26,47 @@ extension OrderDetailActions on OrderDetailController {
   /// second tap and reloads the rows. The local copy changes only once that
   /// write was accepted, so a dropped or refused status never leaves the header
   /// showing a state the order does not have.
-  Future<void> changeStatus(String status) async {
+  Future<bool> changeStatus(String status) async {
     final orderId = order.id;
     final revision = _selectionRevision;
     final applied = await cubit.updateOrderStatus(orderId, status);
-    if (!applied) return;
-    if (revision != _selectionRevision || order.id != orderId) return;
+    if (!applied) return false;
+    if (revision != _selectionRevision || order.id != orderId) return true;
     order = order.copyWith(status: status);
     _notify();
     await reload();
+    return true;
   }
 
-  Future<void> changePaymentStatus(String status) async {
+  Future<bool> changePaymentStatus(String status) async {
     final orderId = order.id;
     final revision = _selectionRevision;
     final applied = await cubit.updatePaymentStatus(orderId, status);
-    if (!applied) return;
-    if (revision != _selectionRevision || order.id != orderId) return;
+    if (!applied) return false;
+    if (revision != _selectionRevision || order.id != orderId) return true;
     order = order.copyWith(paymentStatus: status);
     _notify();
     await reload();
+    return true;
   }
 
-  Future<void> addProduct(AdminProduct product, int quantity) async {
+  Future<bool> addProduct(AdminProduct product, int quantity) async {
     final orderId = order.id;
     final revision = _selectionRevision;
     final applied = await cubit.addOrderItem(orderId, product.id, quantity);
-    if (!applied) return;
-    if (revision != _selectionRevision || order.id != orderId) return;
+    if (!applied) return false;
+    if (revision != _selectionRevision || order.id != orderId) return true;
     await reload();
+    return true;
   }
 
-  Future<void> removeItem(String itemId) async {
+  Future<bool> removeItem(String itemId) async {
     final orderId = order.id;
     final revision = _selectionRevision;
     final applied = await cubit.removeOrderItem(itemId);
-    if (!applied) return;
-    if (revision != _selectionRevision || order.id != orderId) return;
+    if (!applied) return false;
+    if (revision != _selectionRevision || order.id != orderId) return true;
     await reload();
+    return true;
   }
 }

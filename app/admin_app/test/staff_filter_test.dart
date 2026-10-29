@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/utils/role_name.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/models/staff_filter.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_format.dart';
@@ -124,15 +125,30 @@ void main() {
 
   group('staff format', () {
     test('names the built-in roles in the active language', () {
-      expect(staffRoleName('owner'), S.owner);
-      expect(staffRoleName('manager'), S.roleManager);
-      expect(staffRoleName('branch_manager'), S.roleBranchManager);
-      expect(staffRoleName('cashier'), S.roleCashier);
-      expect(staffRoleName('shift_leader'), 'Shift Leader');
+      expect(roleName('owner'), S.owner);
+      expect(roleName('manager'), S.roleManager);
+      expect(roleName('branch_manager'), S.roleBranchManager);
+      expect(roleName('cashier'), S.roleCashier);
+      expect(roleName('shift_leader'), 'Shift Leader');
 
       AppLocale.instance.debugSet(AppLanguage.arabic);
-      expect(staffRoleName('owner'), S.owner);
-      expect(staffRoleName('manager'), S.roleManager);
+      expect(roleName('owner'), S.owner);
+      expect(roleName('manager'), S.roleManager);
+    });
+
+    test('joins distinct role names with the separator of the language', () {
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+      expect(
+        roleNames(const <String>['manager', 'cashier', 'manager']),
+        '${S.roleManager}، ${S.roleCashier}',
+      );
+      expect(roleNames(const <String>['owner', '']), S.owner);
+
+      AppLocale.instance.debugSet(AppLanguage.english);
+      expect(
+        roleNames(const <String>['manager', 'cashier']),
+        '${S.roleManager}, ${S.roleCashier}',
+      );
     });
 
     test('joins the roles or says the member has none', () {

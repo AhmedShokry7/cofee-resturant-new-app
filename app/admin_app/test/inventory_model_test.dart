@@ -27,7 +27,6 @@ void main() {
         'status': 'low',
         'notes': 'يُحفظ بعيدًا عن الرطوبة',
         'last_movement_at': '2026-10-24T09:15:00Z',
-        'stock_updated_at': '2026-10-24T09:15:00Z',
         'created_at': '2026-10-01T08:00:00Z',
         'updated_at': '2026-10-20T12:00:00Z',
       });
@@ -47,7 +46,6 @@ void main() {
       expect(item.nameFor(AppLanguage.arabic), 'حبوب أرابيكا');
       expect(item.nameFor(AppLanguage.english), 'Arabica beans');
       expect(item.lastMovementAt?.toUtc(), DateTime.utc(2026, 10, 24, 9, 15));
-      expect(item.stockUpdatedAt?.toUtc(), DateTime.utc(2026, 10, 24, 9, 15));
       expect(item.createdAt?.toUtc(), DateTime.utc(2026, 10, 1, 8));
       expect(item.updatedAt?.toUtc(), DateTime.utc(2026, 10, 20, 12));
     });

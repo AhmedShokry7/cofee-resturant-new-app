@@ -10,6 +10,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/inventory/domain/entities/admin_stock_movement.dart';
 import 'package:admin_app/features/inventory/presentation/widgets/inventory_format.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class StockMovementsTable extends StatelessWidget {
   const StockMovementsTable({
@@ -232,6 +233,8 @@ class _Row extends StatelessWidget {
                 child: _ValueCell(
                   value: inventoryMoney(movement.movementValue),
                   caption: inventoryMoney(movement.unitCost),
+                  valueIsMoney: true,
+                  captionIsMoney: true,
                 ),
               ),
               SizedBox(
@@ -296,40 +299,66 @@ class _ValueCell extends StatelessWidget {
     required this.value,
     required this.caption,
     this.valueColor,
+    this.valueIsMoney = false,
+    this.captionIsMoney = false,
   });
 
   final String value;
   final String caption;
   final Color? valueColor;
+  final bool valueIsMoney;
+  final bool captionIsMoney;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final valueColor = this.valueColor ?? adminBodyColor(theme);
+    final captionColor = adminSubtleColor(theme);
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: valueColor ?? adminBodyColor(theme),
-            fontSize: AppFontSizes.size10_5,
-            fontWeight: AppFontWeights.semiBold,
-            height: AppTextHeights.line1_5,
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: valueColor,
+                  fontSize: AppFontSizes.size10_5,
+                  fontWeight: AppFontWeights.semiBold,
+                  height: AppTextHeights.line1_5,
+                ),
+              ),
+            ),
+            if (valueIsMoney) ...[
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(size: 13, color: valueColor),
+            ],
+          ],
         ),
-        Text(
-          caption,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textDirection: caption == '—' ? TextDirection.ltr : null,
-          style: TextStyle(
-            color: adminSubtleColor(theme),
-            fontSize: AppFontSizes.size8_5,
-            height: AppTextHeights.line1_4,
-          ),
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textDirection: caption == '—' ? TextDirection.ltr : null,
+                style: TextStyle(
+                  color: captionColor,
+                  fontSize: AppFontSizes.size8_5,
+                  height: AppTextHeights.line1_4,
+                ),
+              ),
+            ),
+            if (captionIsMoney) ...[
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(size: 10, color: captionColor),
+            ],
+          ],
         ),
       ],
     );

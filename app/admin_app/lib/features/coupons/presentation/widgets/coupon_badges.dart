@@ -12,6 +12,7 @@ import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/presentation/widgets/coupon_format.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 Color couponStatusColor(AdminCouponStatus status) => switch (status) {
   AdminCouponStatus.active => AppColor.adminAccent,
@@ -47,10 +48,36 @@ class CouponDiscountTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = adminFlagForeground(theme, AppColor.adminAccent);
-    final suffix = coupon.isPercentage ? '%' : S.currency;
-    final value = localizeDigits(
-      '${couponCompactNumber(coupon.discountValue)}$suffix',
-    );
+    final number = couponCompactNumber(coupon.discountValue);
+    final value = coupon.isPercentage
+        ? Text(
+            localizeDigits('$number%'),
+            maxLines: 1,
+            textDirection: TextDirection.ltr,
+            style: TextStyle(
+              color: accent,
+              fontSize: size * .3,
+              fontWeight: AppFontWeights.extraBold,
+              height: AppTextHeights.line1_2,
+            ),
+          )
+        : Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                number,
+                maxLines: 1,
+                style: TextStyle(
+                  color: accent,
+                  fontSize: size * .3,
+                  fontWeight: AppFontWeights.extraBold,
+                  height: AppTextHeights.line1_2,
+                ),
+              ),
+              const SizedBox(width: AppSizes.px2),
+              CurrencyIcon(size: size * .28, color: accent),
+            ],
+          );
     return Container(
       width: size,
       height: size,
@@ -70,21 +97,53 @@ class CouponDiscountTile extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: size * .08),
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: Text(
-            value,
-            maxLines: 1,
-            textDirection: TextDirection.ltr,
-            style: TextStyle(
-              color: accent,
-              fontSize: size * .3,
-              fontWeight: AppFontWeights.extraBold,
-              height: AppTextHeights.line1_2,
-            ),
-          ),
-        ),
+        child: FittedBox(fit: BoxFit.scaleDown, child: value),
       ),
+    );
+  }
+}
+
+/// The coupon conditions under its headline; every amount wears the mark.
+class CouponDiscountTerms extends StatelessWidget {
+  const CouponDiscountTerms({
+    super.key,
+    required this.coupon,
+    required this.style,
+    this.align = TextAlign.start,
+  });
+
+  final AdminCoupon coupon;
+  final TextStyle style;
+  final TextAlign align;
+
+  @override
+  Widget build(BuildContext context) {
+    final terms = couponDiscountTerms(coupon);
+    final iconSize = ((style.fontSize ?? AppFontSizes.size9) + 1).clamp(
+      10.0,
+      20.0,
+    );
+    return Wrap(
+      alignment: switch (align) {
+        TextAlign.end || TextAlign.right => WrapAlignment.end,
+        TextAlign.center => WrapAlignment.center,
+        _ => WrapAlignment.start,
+      },
+      spacing: AppSizes.px6,
+      runSpacing: AppSizes.px2,
+      children: [
+        for (final term in terms)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(term.label, maxLines: 1, style: style),
+              const SizedBox(width: AppSizes.px4),
+              Text(couponMoney(term.amount), maxLines: 1, style: style),
+              const SizedBox(width: AppSizes.px4),
+              CurrencyIcon(size: iconSize, color: style.color),
+            ],
+          ),
+      ],
     );
   }
 }

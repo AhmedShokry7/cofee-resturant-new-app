@@ -170,12 +170,12 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
       emit(
         state.copyWith(
           status: AdminKitchenStatus.loading,
-          clearError: true,
+          clearLoadFailure: true,
           isRefreshing: false,
         ),
       );
     } else if (!silent) {
-      emit(state.copyWith(isRefreshing: true, clearError: true));
+      emit(state.copyWith(isRefreshing: true, clearLoadFailure: true));
     }
 
     final boardFuture = _loadBoard(
@@ -189,18 +189,20 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
         ? _loadFiltersSafely()
         : Future<AdminKitchenFilters?>.value(null);
 
-    Object? failure;
+    KitchenLoadFailure? loadFailure;
     var board = const AdminKitchenBoard();
     try {
       board = await boardFuture;
-    } catch (error) {
-      failure = error;
+    } on KitchenLoadException catch (error) {
+      loadFailure = error.failure;
+    } catch (_) {
+      loadFailure = KitchenLoadFailure.failed;
     }
     final metrics = await metricsFuture;
     final filters = await filtersFuture;
     if (isClosed || request != _requestId) return;
 
-    if (failure != null) {
+    if (loadFailure != null) {
       emit(
         state.copyWith(
           status: state.lastUpdatedAt != null
@@ -209,7 +211,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
           metrics: metrics,
           filters: filters,
           isRefreshing: false,
-          errorMessage: '$failure',
+          loadFailure: loadFailure,
         ),
       );
       return;
@@ -226,7 +228,7 @@ class AdminKitchenCubit extends Cubit<AdminKitchenState> {
         isRefreshing: false,
         lastUpdatedAt: now,
         now: now,
-        clearError: true,
+        clearLoadFailure: true,
       ),
     );
     _stampShownTickets(board.tickets);

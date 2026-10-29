@@ -19,6 +19,8 @@ class DashboardMetricTile extends StatelessWidget {
     required this.current,
     required this.previous,
     required this.caption,
+    this.isMoney = false,
+    this.captionIsMoney = false,
   });
 
   final String label;
@@ -34,6 +36,10 @@ class DashboardMetricTile extends StatelessWidget {
   final num previous;
   final String caption;
 
+  /// بلاطة مال: رقم بلا رمز عملة يُطبع معه، فالعملة علامة تُرى لا كلمة تُقرأ.
+  final bool isMoney;
+  final bool captionIsMoney;
+
   @override
   Widget build(BuildContext context) {
     final trend = metricPercentTrend(current, previous);
@@ -46,6 +52,8 @@ class DashboardMetricTile extends StatelessWidget {
       changeLabel: trend?.label,
       isPositive: trend?.positive ?? true,
       caption: caption,
+      isMoney: isMoney,
+      captionIsMoney: captionIsMoney,
     );
   }
 }

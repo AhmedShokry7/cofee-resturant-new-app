@@ -12,6 +12,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 enum DiningTableAction { edit, book, toggle, delete }
 
@@ -204,7 +205,8 @@ class DiningTableCard extends StatelessWidget {
         icon: AppIcons.receiptDollar,
         color: AppColor.errorColor,
         title: localizeDigits(S.tableOrderOpen(order.orderNumber)),
-        subtitle: formatMoneyWithCurrency(order.grandTotal),
+        subtitle: localizeDigits(formatAmount(order.grandTotal)),
+        isMoney: true,
       );
     }
     if (reservation != null) {
@@ -272,6 +274,7 @@ class _ContextRow extends StatelessWidget {
     required this.color,
     required this.title,
     required this.subtitle,
+    this.isMoney = false,
   });
 
   final IconData icon;
@@ -279,10 +282,25 @@ class _ContextRow extends StatelessWidget {
   final String title;
   final String subtitle;
 
+  /// سطر المال: رقمٌ بلا كلمة عملة وعلامة الريال بجانبه، كالأسعار كلها.
+  final bool isMoney;
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final dark = adminIsDark(theme);
+    final subtitleColor = dark
+        ? AppColor.darkTextSecondary
+        : adminMutedColor(theme);
+    final subtitleText = Text(
+      subtitle,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        color: subtitleColor,
+        fontSize: AppFontSizes.size8_8,
+        height: AppTextHeights.line1_4,
+      ),
+    );
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -316,18 +334,17 @@ class _ContextRow extends StatelessWidget {
                     height: AppTextHeights.line1_4,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: dark
-                        ? AppColor.darkTextSecondary
-                        : adminMutedColor(theme),
-                    fontSize: AppFontSizes.size8_8,
-                    height: AppTextHeights.line1_4,
-                  ),
-                ),
+                if (isMoney)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(child: subtitleText),
+                      const SizedBox(width: AppSizes.px4),
+                      CurrencyIcon(size: 11, color: subtitleColor),
+                    ],
+                  )
+                else
+                  subtitleText,
               ],
             ),
           ),

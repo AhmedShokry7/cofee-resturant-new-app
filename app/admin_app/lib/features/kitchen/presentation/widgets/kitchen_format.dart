@@ -120,3 +120,9 @@ String kitchenMutationErrorMessage(KitchenMutationOutcome outcome) =>
         S.kitchenInvalidTransitionMessage,
       _ => S.kitchenActionFailed,
     };
+
+String kitchenLoadErrorMessage(KitchenLoadFailure? failure) =>
+    switch (failure) {
+      KitchenLoadFailure.permissionDenied => S.kitchenBoardDenied,
+      KitchenLoadFailure.failed || null => S.kitchenLoadFailed,
+    };

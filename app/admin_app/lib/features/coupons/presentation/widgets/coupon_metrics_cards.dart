@@ -43,7 +43,8 @@ class CouponMetricsCards extends StatelessWidget {
       _MetricData(
         label: S.couponsMetricDiscountGiven,
         caption: S.couponsMetricDiscountGivenHint,
-        value: couponMoneyWithCurrency(metrics.discountGiven),
+        value: couponMoney(metrics.discountGiven),
+        isMoney: true,
         icon: AppIcons.coins01,
         iconBackground: AppColor.adminAccentSurface,
         iconColor: AppColor.trendPositive,
@@ -67,6 +68,7 @@ class CouponMetricsCards extends StatelessWidget {
                   label: card.label,
                   caption: card.caption,
                   value: card.value,
+                  isMoney: card.isMoney,
                   icon: card.icon,
                   iconBackground: card.iconBackground,
                   iconColor: card.iconColor,
@@ -87,6 +89,7 @@ class _MetricData {
     required this.icon,
     required this.iconBackground,
     required this.iconColor,
+    this.isMoney = false,
   });
 
   final String label;
@@ -95,4 +98,8 @@ class _MetricData {
   final IconData icon;
   final Color iconBackground;
   final Color iconColor;
+
+  /// Money tile: its value prints without the currency word and the card
+  /// draws the riyal mark beside it.
+  final bool isMoney;
 }

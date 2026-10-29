@@ -19,7 +19,6 @@ void main() {
   group('amounts and counts', () {
     test('use western numerals and grouped thousands in English', () {
       expect(customerMoney(1234.5), '1,234.50');
-      expect(customerMoneyWithCurrency(12.5), '12.50 SAR');
       expect(customerCount(1234), '1,234');
       expect(customerPercent(4.8), '4.8%');
       expect(customerPercent(50), '50%');
@@ -29,7 +28,6 @@ void main() {
       AppLocale.instance.debugSet(AppLanguage.arabic);
 
       expect(customerMoney(1234.5), '١٬٢٣٤٫٥٠');
-      expect(customerMoneyWithCurrency(12.5), '١٢٫٥٠ ر.س');
       expect(customerCount(1234), '١٬٢٣٤');
       expect(customerPercent(4.8), '٤٫٨٪');
     });

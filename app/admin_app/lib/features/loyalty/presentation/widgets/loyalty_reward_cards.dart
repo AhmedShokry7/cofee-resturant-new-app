@@ -10,6 +10,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_type.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
 import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_format.dart';
+import 'package:admin_app/features/loyalty/presentation/widgets/loyalty_money_bits.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
@@ -146,10 +147,8 @@ class _RewardCoupon extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: AppSizes.px2),
-                            Text(
-                              caption,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            LoyaltyMoneyText(
+                              sentence: caption,
                               style: TextStyle(
                                 color: adminSubtleColor(theme),
                                 fontSize: AppFontSizes.size9,

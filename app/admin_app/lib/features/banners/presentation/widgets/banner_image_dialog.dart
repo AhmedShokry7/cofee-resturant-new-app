@@ -45,8 +45,8 @@ class BannerImageDialog extends StatelessWidget {
         }
       },
       onRemove: () async {
-        await cubit.deleteBannerImageFile(banner.imageUrl);
         await cubit.updateBannerImage(banner.id, null);
+        await cubit.deleteBannerImageFile(banner.imageUrl);
       },
     );
   }

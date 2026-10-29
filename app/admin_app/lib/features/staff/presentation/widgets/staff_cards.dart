@@ -18,11 +18,13 @@ class StaffCards extends StatelessWidget {
     required this.staff,
     required this.canManagePermissions,
     required this.onManage,
+    required this.onEdit,
   });
 
   final List<AdminStaffMember> staff;
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
+  final ValueChanged<AdminStaffMember> onEdit;
 
   @override
   Widget build(BuildContext context) => ListView.separated(
@@ -35,6 +37,7 @@ class StaffCards extends StatelessWidget {
         member: member,
         canManagePermissions: canManagePermissions,
         onManage: () => onManage(member),
+        onEdit: () => onEdit(member),
       );
     },
   );
@@ -45,11 +48,13 @@ class _StaffCard extends StatelessWidget {
     required this.member,
     required this.canManagePermissions,
     required this.onManage,
+    required this.onEdit,
   });
 
   final AdminStaffMember member;
   final bool canManagePermissions;
   final VoidCallback onManage;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -173,6 +178,10 @@ class _StaffCard extends StatelessWidget {
                       ),
                     ),
                   ),
+                  if (canManagePermissions) ...[
+                    StaffEditAction(onPressed: onEdit),
+                    const SizedBox(width: AppSizes.px4),
+                  ],
                   StaffPermissionAction(
                     canManage: canManagePermissions,
                     onPressed: onManage,

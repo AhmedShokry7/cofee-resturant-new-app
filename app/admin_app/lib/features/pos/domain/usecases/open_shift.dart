@@ -11,9 +11,11 @@ class OpenShiftUseCase {
     required String branchId,
     required double openingFloat,
     String? note,
+    String? cashierId,
   }) => _repository.openShift(
     branchId: branchId,
     openingFloat: openingFloat,
     note: note,
+    cashierId: cashierId,
   );
 }

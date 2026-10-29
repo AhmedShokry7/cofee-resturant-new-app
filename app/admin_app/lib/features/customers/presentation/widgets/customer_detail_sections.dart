@@ -116,7 +116,9 @@ class _DialogFooter extends StatelessWidget {
 
   final bool saving;
   final VoidCallback onClose;
-  final VoidCallback onSave;
+
+  /// null حين لا يملك الأدمن customers.write: لا زر حفظ لا يملك صلاحية تنفيذها.
+  final VoidCallback? onSave;
 
   @override
   Widget build(BuildContext context) {
@@ -139,32 +141,36 @@ class _DialogFooter extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           TextButton(onPressed: saving ? null : onClose, child: Text(S.close)),
-          const SizedBox(width: AppSpacing.sm),
-          FilledButton(
-            onPressed: saving ? null : onSave,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColor.adminAccent,
-              foregroundColor: AppColor.whiteColor,
-              minimumSize: const Size(96, AppDimensions.dialogButtonHeight),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+          if (onSave != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            FilledButton(
+              onPressed: saving ? null : onSave,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColor.adminAccent,
+                foregroundColor: AppColor.whiteColor,
+                minimumSize: const Size(96, AppDimensions.dialogButtonHeight),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
               ),
-            ),
-            child: saving
-                ? const SizedBox(
-                    width: AppSizes.px18,
-                    height: AppSizes.px18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: AppDimensions.spinnerStroke,
-                      color: AppColor.whiteColor,
+              child: saving
+                  ? const SizedBox(
+                      width: AppSizes.px18,
+                      height: AppSizes.px18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: AppDimensions.spinnerStroke,
+                        color: AppColor.whiteColor,
+                      ),
+                    )
+                  : Text(
+                      S.save,
+                      style: const TextStyle(
+                        fontWeight: AppFontWeights.semiBold,
+                      ),
                     ),
-                  )
-                : Text(
-                    S.save,
-                    style: const TextStyle(fontWeight: AppFontWeights.semiBold),
-                  ),
-          ),
+            ),
+          ],
         ],
       ),
     );

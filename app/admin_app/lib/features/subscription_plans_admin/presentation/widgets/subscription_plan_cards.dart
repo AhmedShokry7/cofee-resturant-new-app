@@ -10,6 +10,7 @@ import 'package:admin_app/features/subscription_plans_admin/presentation/widgets
 import 'package:admin_app/shared/widgets/admin_labeled_value.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class SubscriptionPlanCards extends StatelessWidget {
   const SubscriptionPlanCards({
@@ -129,16 +130,24 @@ class _PlanCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          subscriptionPlanPrice(plan),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: body,
-                            fontSize: AppFontSizes.size15,
-                            fontWeight: AppFontWeights.bold,
-                            height: AppTextHeights.line1_3,
-                          ),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                subscriptionPlanPrice(plan),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: body,
+                                  fontSize: AppFontSizes.size15,
+                                  fontWeight: AppFontWeights.bold,
+                                  height: AppTextHeights.line1_3,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSizes.px4),
+                            const CurrencyIcon(size: 14),
+                          ],
                         ),
                         Text(
                           subscriptionPlanDuration(plan),
@@ -192,15 +201,25 @@ class _PlanCard extends StatelessWidget {
                   Expanded(
                     child: AdminLabeledValue(
                       label: S.subscriptionPlansColumnBonus,
-                      child: Text(
-                        subscriptionPlanBonus(plan),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: body,
-                          fontSize: AppFontSizes.size10_5,
-                          height: AppTextHeights.line1_5,
-                        ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Text(
+                              subscriptionPlanBonus(plan),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: body,
+                                fontSize: AppFontSizes.size10_5,
+                                height: AppTextHeights.line1_5,
+                              ),
+                            ),
+                          ),
+                          if (subscriptionPlanBonusIsMoney(plan)) ...[
+                            const SizedBox(width: AppSizes.px4),
+                            const CurrencyIcon(size: 12),
+                          ],
+                        ],
                       ),
                     ),
                   ),

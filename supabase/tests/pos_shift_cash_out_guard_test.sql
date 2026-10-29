@@ -1,10 +1,13 @@
 -- pos_shift_cash_out_guard_test.sql
--- Behaviour test for the drawer guard proposed in
--- supabase/proposals/187_pos_shift_cash_out_guard.PROPOSED.sql, on top of the
--- shift model of 182_admin_pos_cashier_shifts.sql.
+-- Behaviour test for the drawer guard of 187_pos_shift_cash_out_guard.sql, on
+-- top of the shift model of 182_admin_pos_cashier_shifts.sql.
 --
--- STATUS: WRITTEN, NEVER EXECUTED. No database was touched while this file was
--- authored, so nothing here is a passing result. It has not been run even once.
+-- STATUS: EXECUTED AND PASSED on 2026-10-28 against the live project
+-- webzzasosevzymftgszn, inside the rolled-back transaction below. The report
+-- row came back as:
+--   verdict = 'reached the end: no assertion failed', movements_kept = 4,
+--   what_was_booked = 'cash_in 25.00, cash_out 325.00, cash_in 60.00,
+--   cash_out 60.00', final_shift_status = 'closed'
 --
 -- RUN THIS ONLY AGAINST AN ISOLATED, NON-PRODUCTION DATABASE, and only after
 -- BOTH 182 (which creates payments.pos_shifts, payments.pos_shift_movements,

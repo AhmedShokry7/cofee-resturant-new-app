@@ -162,7 +162,7 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
           }
           if (state.isFailure) {
             return AdminFailureView(
-              message: state.errorMessage,
+              message: kitchenLoadErrorMessage(state.loadFailure),
               onRetry: _cubit.load,
             );
           }
@@ -185,7 +185,9 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
             onRefresh: _cubit.refresh,
             onTicketStatus: _setTicketStatus,
             onToggleItem: _toggleItem,
-            errorMessage: state.errorMessage,
+            errorMessage: state.hasLoadFailure
+                ? kitchenLoadErrorMessage(state.loadFailure)
+                : null,
           );
         },
       ),

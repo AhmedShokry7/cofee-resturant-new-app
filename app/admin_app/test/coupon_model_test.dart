@@ -166,14 +166,15 @@ void main() {
     test('discount headlines respect the type and currency', () {
       expect(couponDiscountHeadline(_coupon(discountValue: 25)), '25% off');
       expect(
-        couponDiscountHeadline(
-          _coupon(
-            discountType: AdminCouponDiscountType.fixedAmount,
-            discountValue: 15,
-          ),
-        ),
-        '15.00 ${S.currency} off',
+        couponDiscountHeadlineIsMoney(_coupon(discountValue: 25)),
+        isFalse,
       );
+      final fixed = _coupon(
+        discountType: AdminCouponDiscountType.fixedAmount,
+        discountValue: 15,
+      );
+      expect(couponDiscountHeadline(fixed), '15.00');
+      expect(couponDiscountHeadlineIsMoney(fixed), isTrue);
     });
 
     test('scope helpers count the selected targets', () {

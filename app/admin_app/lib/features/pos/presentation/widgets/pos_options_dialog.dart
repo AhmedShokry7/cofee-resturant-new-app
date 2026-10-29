@@ -13,6 +13,7 @@ import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class PosOptionSelection {
   const PosOptionSelection({
@@ -29,28 +30,19 @@ class PosOptionSelection {
 Future<PosOptionSelection?> showPosOptionsDialog(
   BuildContext context, {
   required PosProduct product,
-  required String currencyCode,
   int? maxQuantity,
 }) {
   return showDialog<PosOptionSelection>(
     context: context,
-    builder: (_) => _PosOptionsDialog(
-      product: product,
-      currencyCode: currencyCode,
-      maxQuantity: maxQuantity,
-    ),
+    builder: (_) =>
+        _PosOptionsDialog(product: product, maxQuantity: maxQuantity),
   );
 }
 
 class _PosOptionsDialog extends StatefulWidget {
-  const _PosOptionsDialog({
-    required this.product,
-    required this.currencyCode,
-    required this.maxQuantity,
-  });
+  const _PosOptionsDialog({required this.product, required this.maxQuantity});
 
   final PosProduct product;
-  final String currencyCode;
   final int? maxQuantity;
 
   @override
@@ -162,18 +154,13 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _PriceSummary(
-                      product: _product,
-                      currentPrice: _unitPrice,
-                      currencyCode: widget.currencyCode,
-                    ),
+                    _PriceSummary(product: _product, currentPrice: _unitPrice),
                     const SizedBox(height: AppSizes.px14),
                     for (final group in _product.optionGroups) ...[
                       _OptionGroupSection(
                         group: group,
                         selection: _selectionFor(group),
                         max: _maxFor(group),
-                        currencyCode: widget.currencyCode,
                         onToggle: (value) => _toggle(group, value),
                       ),
                       const SizedBox(height: AppSizes.px10),
@@ -218,7 +205,6 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
             ),
             _OptionsFooter(
               total: _total,
-              currencyCode: widget.currencyCode,
               enabled: _optionsSatisfied && _quantityCap > 0,
               onAdd: _optionsSatisfied
                   ? () => Navigator.of(context).pop(
@@ -238,15 +224,10 @@ class _PosOptionsDialogState extends State<_PosOptionsDialog> {
 }
 
 class _PriceSummary extends StatelessWidget {
-  const _PriceSummary({
-    required this.product,
-    required this.currentPrice,
-    required this.currencyCode,
-  });
+  const _PriceSummary({required this.product, required this.currentPrice});
 
   final PosProduct product;
   final double currentPrice;
-  final String currencyCode;
 
   @override
   Widget build(BuildContext context) {
@@ -272,13 +253,23 @@ class _PriceSummary extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSizes.px2),
-                Text(
-                  posMoney(currentPrice, currencyCode),
-                  style: TextStyle(
-                    color: adminHeadingColor(theme),
-                    fontSize: AppFontSizes.size16,
-                    fontWeight: AppFontWeights.bold,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        posAmount(currentPrice),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminHeadingColor(theme),
+                          fontSize: AppFontSizes.size16,
+                          fontWeight: AppFontWeights.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.px4),
+                    CurrencyIcon(size: 18, color: adminHeadingColor(theme)),
+                  ],
                 ),
               ],
             ),
@@ -302,14 +293,12 @@ class _OptionGroupSection extends StatelessWidget {
     required this.group,
     required this.selection,
     required this.max,
-    required this.currencyCode,
     required this.onToggle,
   });
 
   final PosOptionGroup group;
   final Set<String> selection;
   final int max;
-  final String currencyCode;
   final ValueChanged<PosOptionValue> onToggle;
 
   @override
@@ -350,7 +339,6 @@ class _OptionGroupSection extends StatelessWidget {
               selected: selection.contains(value.id),
               single: group.isSingle,
               enabled: selection.contains(value.id) || atMax,
-              currencyCode: currencyCode,
               onTap: () => onToggle(value),
             ),
             if (value != group.values.last)
@@ -421,7 +409,6 @@ class _OptionValueTile extends StatelessWidget {
     required this.selected,
     required this.single,
     required this.enabled,
-    required this.currencyCode,
     required this.onTap,
   });
 
@@ -429,7 +416,6 @@ class _OptionValueTile extends StatelessWidget {
   final bool selected;
   final bool single;
   final bool enabled;
-  final String currencyCode;
   final VoidCallback onTap;
 
   @override
@@ -486,13 +472,24 @@ class _OptionValueTile extends StatelessWidget {
                   ),
                   if (value.priceDelta != 0) ...[
                     const SizedBox(width: AppSizes.px8),
-                    Text(
-                      '+ ${posMoney(value.priceDelta, currencyCode)}',
-                      style: TextStyle(
-                        color: adminMutedColor(theme),
-                        fontSize: AppFontSizes.size9_5,
-                        fontWeight: AppFontWeights.medium,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '+ ${posAmount(value.priceDelta)}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: adminMutedColor(theme),
+                              fontSize: AppFontSizes.size9_5,
+                              fontWeight: AppFontWeights.medium,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSizes.px4),
+                        CurrencyIcon(size: 11, color: adminMutedColor(theme)),
+                      ],
                     ),
                   ],
                 ],
@@ -644,13 +641,11 @@ class _DialogLabel extends StatelessWidget {
 class _OptionsFooter extends StatelessWidget {
   const _OptionsFooter({
     required this.total,
-    required this.currencyCode,
     required this.enabled,
     required this.onAdd,
   });
 
   final double total;
-  final String currencyCode;
   final bool enabled;
   final VoidCallback? onAdd;
 
@@ -687,13 +682,23 @@ class _OptionsFooter extends StatelessWidget {
                     fontSize: AppFontSizes.size9_5,
                   ),
                 ),
-                Text(
-                  posMoney(total, currencyCode),
-                  style: TextStyle(
-                    color: adminHeadingColor(theme),
-                    fontSize: AppFontSizes.size15,
-                    fontWeight: AppFontWeights.bold,
-                  ),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        posAmount(total),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: adminHeadingColor(theme),
+                          fontSize: AppFontSizes.size15,
+                          fontWeight: AppFontWeights.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSizes.px4),
+                    CurrencyIcon(size: 17, color: adminHeadingColor(theme)),
+                  ],
                 ),
               ],
             ),

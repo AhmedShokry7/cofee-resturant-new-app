@@ -46,6 +46,11 @@ dependencies:
   qr: ^3.0.2
   syncfusion_flutter_xlsio: ^33.2.13
   universal_html: ^2.3.0
+  # The print runner writes the invoice into a hidden frame of the browser.
+  # `dart:html` is deprecated and drops out of newer web builds, and this
+  # package is the replacement Flutter itself resolves, so it adds nothing to
+  # the tree.
+  web: ^1.1.2
   flutter_map: ^8.3.2
   geolocator: ^14.0.1
   latlong2: ^0.10.1

@@ -7,7 +7,11 @@ extension OrderDetailLoading on OrderDetailController {
       final snapshot = await cubit.loadCatalog();
       if (_disposed) return;
       products = snapshot.products;
-    } catch (_) {}
+      productsFailed = false;
+    } catch (_) {
+      // قراءة فاشلة تُعلَّم، فالقائمة الفارغة وحدها تُقرأ كأن الفرع بلا منتجات.
+      productsFailed = true;
+    }
     _syncBranchCoordinates();
     await customerTask;
   }

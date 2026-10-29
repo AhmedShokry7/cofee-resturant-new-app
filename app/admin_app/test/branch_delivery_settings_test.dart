@@ -315,4 +315,71 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  // أجرة لا تُقرأ رقمًا كانت تُكتب صفرًا فيتحوّل الحي إلى توصيل مجاني بلا كلمة.
+  testWidgets('a fee typed in Arabic numerals is the fee the zone keeps', (
+    tester,
+  ) async {
+    final zone = await _saveZone(tester, fee: '١٢٫٥');
+
+    expect(zone?.deliveryFee, 12.5);
+    expect(zone?.minOrderAmount, 0);
+  });
+
+  testWidgets('an unreadable fee is refused instead of written as zero', (
+    tester,
+  ) async {
+    final zone = await _saveZone(tester, fee: '1.2.3');
+
+    expect(zone, isNull);
+    expect(find.text(S.invalidDeliveryZoneFields), findsOneWidget);
+  });
 }
+
+/// يفتح نموذج حيّ على مركز الفرع، يكتب الأجرة ويحفظ، فيرجع ما قبله Navigator.
+Future<AdminDeliveryZone?> _saveZone(
+  WidgetTester tester, {
+  required String fee,
+}) async {
+  tester.view.physicalSize = const Size(1100, 1400);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+
+  AdminDeliveryZone? result;
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () async {
+              result = await showDialog<AdminDeliveryZone>(
+                context: context,
+                builder: (_) => const DeliveryZoneFormDialog(
+                  defaultLatitude: 24.7136,
+                  defaultLongitude: 46.6753,
+                ),
+              );
+            },
+            child: const Text('open zone form'),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('open zone form'));
+  await tester.pumpAndSettle();
+
+  await tester.enterText(_labeled(S.zoneNameArabic), 'حي شمال');
+  await tester.enterText(_labeled(S.deliveryFeeAmount), fee);
+  await tester.pump();
+  await tester.tap(find.widgetWithText(FilledButton, S.save));
+  await tester.pumpAndSettle();
+
+  return result;
+}
+
+Finder _labeled(String label) => find.byWidgetPredicate(
+  (widget) => widget is TextField && widget.decoration?.labelText == label,
+);
