@@ -71,6 +71,7 @@ class S {
   static String get ordersLoadFailed => _ar
       ? 'تعذر تحميل الطلبات. حاول مرة أخرى.'
       : 'Orders could not be loaded. Please try again.';
+
   /// فشل قراءة الكتالوج داخل شاشة الطلب، وهي غير قائمة الطلبات نفسها.
   static String get ordersCatalogLoadFailed => _ar
       ? 'تعذر تحميل المنتجات. حاول مرة أخرى.'
@@ -3004,6 +3005,7 @@ class S {
       _ar ? 'اختر الفرع' : 'Choose a branch';
   static String get movementNeedsMaterial =>
       _ar ? 'اختر المادة الخام' : 'Choose a raw material';
+
   /// أي حقل كمية يطلب رقمًا أكبر من صفر: حركة مخزون أو إضافة منتج لطلب.
   static String get needsPositiveQuantity =>
       _ar ? 'أدخل كمية أكبر من صفر' : 'Enter a quantity greater than zero';
@@ -4854,4 +4856,945 @@ class S {
   static String get previewError => _ar
       ? 'تعذر تحميل معاينة تطبيق العميل.'
       : 'Unable to load the customer preview.';
+
+  // ---------- HR — sidebar ----------
+
+  /// عنوان قسم الموارد البشرية في الشريط الجانبي.
+  static String get sectionHr => _ar ? 'الموارد البشرية' : 'HR & Workforce';
+  static String get hrMyDay => _ar ? 'يومي' : 'My day';
+  static String get hrDashboard =>
+      _ar ? 'لوحة القوى العاملة' : 'Workforce board';
+  static String get hrEmployees => _ar ? 'الملفات الوظيفية' : 'Employee files';
+  static String get hrAttendance => _ar ? 'الحضور والانصراف' : 'Attendance';
+  static String get hrSchedules => _ar ? 'جداول العمل' : 'Work schedules';
+  static String get hrLeave => _ar ? 'الإجازات' : 'Leave';
+  static String get hrPayroll => _ar ? 'الرواتب' : 'Payroll';
+  static String get hrAdvances =>
+      _ar ? 'السلف والتسويات' : 'Advances & adjustments';
+  static String get hrDiscrepancies =>
+      _ar ? 'عجز الصناديق' : 'Cashier shortages';
+  static String get hrSettings =>
+      _ar ? 'إعدادات الموارد البشرية' : 'HR settings';
+
+  static String get searchHrMyDayHint => _ar
+      ? 'ابدأ وردتك وتابع رصيدك'
+      : 'Start your shift and follow your balance';
+  static String get searchHrDashboardHint => _ar
+      ? 'الحضور والرواتب والسلف المفتوحة'
+      : 'Attendance, payroll and open advances';
+  static String get searchHrEmployeesHint => _ar
+      ? 'ابحث باسم الموظف أو رقمه الوظيفي'
+      : 'Search by name or employee number';
+  static String get searchHrAttendanceHint => _ar
+      ? 'ابحث في جلسات الحضور بالتاريخ والفرع'
+      : 'Search attendance by date and branch';
+  static String get searchHrSchedulesHint =>
+      _ar ? 'ابحث في الورديات المجدولة' : 'Search scheduled shifts';
+  static String get searchHrLeaveHint =>
+      _ar ? 'ابحث في طلبات الإجازة بحالتها' : 'Search leave requests by status';
+  static String get searchHrPayrollHint => _ar
+      ? 'ابحث في دورات الرواتب وقسائمها'
+      : 'Search payroll runs and payslips';
+  static String get searchHrAdvancesHint => _ar
+      ? 'ابحث في طلبات السلف والتسويات'
+      : 'Search advance and adjustment requests';
+  static String get searchHrDiscrepanciesHint => _ar
+      ? 'ابحث في عجز الصناديق وإجراءاتها'
+      : 'Search cashier shortages and their actions';
+  static String get searchHrSettingsHint => _ar
+      ? 'المنطقة الزمنية والأسعار وأنواع الإجازة'
+      : 'Time zone, rates and leave types';
+
+  // إجراءات فرق الصندوق كما تسمّيها 212
+  static String get hrActionExplain => _ar ? 'توضيح' : 'Explain';
+  static String get hrActionReconcile => _ar ? 'طلب تسوية' : 'Reconcile';
+  static String get hrActionConfirm => _ar ? 'إثبات' : 'Confirm';
+  static String get hrActionReject => _ar ? 'رفض' : 'Reject';
+  static String get hrActionDeduct => _ar ? 'خصم من الراتب' : 'Deduct';
+  static String get hrActionClose => _ar ? 'إغلاق' : 'Close';
+
+  // ---------- HR — refusals from migration 212 ----------
+
+  /// كل رفض ترفعه دالة في 212 يقابل هنا رسالة بحروف المدير: نص القاعدة يبقى
+  /// نسخة احتياطية حين لا تعرف الشاشة مقابلًا له.
+
+  // الهوية والنطاق
+  static String get hrNotAuthenticated => _ar
+      ? 'لم تُحدَّد هويتك في القاعدة، سجّل الدخول ثم أعد المحاولة.'
+      : 'Your identity is not resolved in the database. Sign in and retry.';
+  static String get hrMissingPermission => _ar
+      ? 'لا تملك صلاحية هذا الإجراء في الموارد البشرية.'
+      : 'You do not have the HR permission for this action.';
+  static String get hrOutOfScope => _ar
+      ? 'هذا الموظف خارج النطاق المسموح لك به.'
+      : 'This employee is outside your allowed scope.';
+  static String get hrBranchOutOfScope => _ar
+      ? 'هذا الفرع خارج النطاق المسموح لك به.'
+      : 'This branch is outside your allowed scope.';
+  static String get hrEmployeeNotFound =>
+      _ar ? 'لم يُعثر على الموظف المطلوب.' : 'The employee was not found.';
+  static String get hrLeaveOutOfScope => _ar
+      ? 'طلب الإجازة هذا خارج نطاق فروعك.'
+      : 'This leave request is outside your branch scope.';
+  static String get hrAdvanceOutOfScope => _ar
+      ? 'طلب السلفة هذا خارج نطاق صلاحياتك.'
+      : 'This advance request is outside your scope.';
+  static String get hrNeedsAllBranchScope => _ar
+      ? 'هذا الإجراء يتطلب نطاق كل الفروع.'
+      : 'This action needs all-branch scope.';
+  static String get hrPayrollIsBrandLevel => _ar
+      ? 'دورة الرواتب تُحسب للعلامة كلها، لا لفرع واحد.'
+      : 'Payroll runs cover the whole brand, not a single branch.';
+
+  // الملف الوظيفي
+  static String get hrInvalidEmploymentType =>
+      _ar ? 'نوع العقد غير مسموح به.' : 'The employment type is not allowed.';
+  static String get hrInvalidEmploymentStatus => _ar
+      ? 'حالة الموظف غير مسموح بها.'
+      : 'The employment status is not allowed.';
+  static String get hrTerminationDateRequired => _ar
+      ? 'الموظف المنهي خدمته يحتاج تاريخ إنهاء.'
+      : 'A terminated employee needs a termination date.';
+  static String get hrTerminationBeforeHire => _ar
+      ? 'تاريخ الإنهاء يسبق تاريخ التعيين.'
+      : 'The termination date precedes the hire date.';
+  static String get hrStaffRequired =>
+      _ar ? 'يجب اختيار الموظف أولًا.' : 'Select the employee first.';
+  static String get hrBranchInactive => _ar
+      ? 'الفرع غير موجود أو غير مفعّل.'
+      : 'The branch is missing or inactive.';
+
+  // الحضور
+  static String get hrAlreadyClockedIn => _ar
+      ? 'يوجد جلسة حضور مفتوحة بالفعل.'
+      : 'An attendance session is already open.';
+  static String get hrNoOpenSession =>
+      _ar ? 'لا توجد جلسة حضور مفتوحة.' : 'No attendance session is open.';
+  static String get hrBreakAlreadyOpen =>
+      _ar ? 'استراحة مفتوحة بالفعل.' : 'A break is already open.';
+  static String get hrBreakUsed => _ar
+      ? 'هذه الجلسة استهلت استراحتها.'
+      : 'This session already used its break.';
+  static String get hrNoOpenBreak =>
+      _ar ? 'لا توجد استراحة مفتوحة.' : 'No break is open.';
+  static String get hrInvalidDateRange => _ar
+      ? 'مدى تواريخ الحضور غير صالح.'
+      : 'The attendance date range is invalid.';
+  static String get hrRangeTooWide => _ar
+      ? 'مدى تواريخ الحضور أوسع من المسموح.'
+      : 'The attendance range is wider than allowed.';
+  static String get hrClockOutBeforeIn => _ar
+      ? 'الانصراف لا يمكن أن يسبق بداية الحضور.'
+      : 'Clock-out cannot precede clock-in.';
+  static String get hrSessionNotFound => _ar
+      ? 'لم يُعثر على جلسة الحضور.'
+      : 'The attendance session was not found.';
+  static String get hrNeedsClockIn => _ar
+      ? 'السجل الجديد يحتاج وقت بداية حضور.'
+      : 'A new attendance record needs a clock-in time.';
+  static String get hrSessionOverlap => _ar
+      ? 'الجلسة المصححة تتداخل مع جلسة أخرى.'
+      : 'The corrected session overlaps another session.';
+  static String get hrNoBranchForAttendance => _ar
+      ? 'لا فرع لهذا الموظف يُسجَّل فيه الحضور.'
+      : 'The employee has no branch to record attendance in.';
+
+  // تصحيحات الحضور
+  static String get hrCorrectionNeedsReason => _ar
+      ? 'تصحيح الحضور يحتاج سببًا.'
+      : 'An attendance correction needs a reason.';
+  static String get hrNoChangeProposed =>
+      _ar ? 'لم يُقترح أي تعديل على الأوقات.' : 'No change was proposed.';
+  static String get hrCorrectionNotFound => _ar
+      ? 'لم يُعثر على طلب التصحيح.'
+      : 'The attendance correction was not found.';
+  static String get hrCorrectionReviewed => _ar
+      ? 'تمت مراجعة هذا التصحيح سابقًا.'
+      : 'This correction is already reviewed.';
+  static String get hrSelfApproveCorrection => _ar
+      ? 'لا يمكنك اعتماد تصحيحك الشخصي.'
+      : 'You cannot approve your own correction.';
+
+  // جداول العمل
+  static String get hrScheduleOverlap => _ar
+      ? 'جدول العمل يتداخل مع جدول قائم.'
+      : 'The work schedule overlaps an existing one.';
+  static String get hrInvalidScheduleWindow =>
+      _ar ? 'نافذة الوردية غير صالحة.' : 'The schedule window is invalid.';
+  static String get hrInvalidScheduleRange => _ar
+      ? 'مدى تواريخ الجداول غير صالح.'
+      : 'The schedule date range is invalid.';
+  static String get hrScheduleRangeTooWide => _ar
+      ? 'مدى الجداول أوسع من المسموح.'
+      : 'The schedule range is wider than allowed.';
+  static String get hrScheduleTooLong => _ar
+      ? 'الوردية لا تتجاوز أربعا وعشرين ساعة.'
+      : 'A shift cannot exceed 24 hours.';
+  static String get hrInvalidBreakLength =>
+      _ar ? 'مدة الاستراحة غير صالحة.' : 'The break length is invalid.';
+  static String get hrInvalidScheduleStatus => _ar
+      ? 'حالة الجدول غير مسموح بها.'
+      : 'The schedule status is not allowed.';
+  static String get hrScheduleNotFound =>
+      _ar ? 'لم يُعثر على جدول العمل.' : 'The work schedule was not found.';
+
+  // الإجازات
+  static String get hrInvalidLeaveDates =>
+      _ar ? 'تواريخ الإجازة غير صالحة.' : 'The leave dates are invalid.';
+  static String get hrLeaveTooLong => _ar
+      ? 'طلب الإجازة أطول من الحد المسموح.'
+      : 'The leave request is too long.';
+  static String get hrLeaveNeedsDocument => _ar
+      ? 'نوع الإجازة هذا يتطلب مستندًا داعمًا.'
+      : 'This leave type requires a supporting document.';
+  static String get hrNoBalanceForYear => _ar
+      ? 'رصيد الإجازات غير مُعدَّ لهذه السنة.'
+      : 'The leave balance is not configured for this year.';
+  static String get hrInsufficientBalance => _ar
+      ? 'الرصيد المتبقي لا يغطي طلب الإجازة.'
+      : 'The remaining balance does not cover this request.';
+  static String get hrLeaveOverlap => _ar
+      ? 'طلب الإجازة يتداخل مع طلب قائم.'
+      : 'The leave request overlaps another one.';
+  static String get hrLeaveNotFound =>
+      _ar ? 'لم يُعثر على طلب الإجازة.' : 'The leave request was not found.';
+  static String get hrLeaveAlreadyReviewed => _ar
+      ? 'تمت مراجعة طلب الإجازة هذا سابقًا.'
+      : 'This leave request is already reviewed.';
+  static String get hrSelfApproveLeave => _ar
+      ? 'لا يمكنك اعتماد إجازتك الشخصية.'
+      : 'You cannot approve your own leave request.';
+  static String get hrLeaveNotCancellable => _ar
+      ? 'طلب الإجازة لا يُلغى في حالته الحالية.'
+      : 'The request cannot be cancelled in its current state.';
+  static String get hrInvalidLeaveStatus =>
+      _ar ? 'حالة الإجازة غير مسموح بها.' : 'The leave status is not allowed.';
+  static String get hrInvalidLeaveYear =>
+      _ar ? 'سنة الإجازات غير صالحة.' : 'The leave year is invalid.';
+  static String get hrNegativeEntitlement => _ar
+      ? 'أيام الاستحقاق لا تكون سالبة.'
+      : 'Entitled days cannot be negative.';
+  static String get hrLeaveTypeNoBalance => _ar
+      ? 'نوع الإجازة هذا لا يتبع رصيدًا.'
+      : 'This leave type does not track a balance.';
+  static String get hrEntitlementBelowUsed => _ar
+      ? 'الاستحقاق لا ينزل تحت الأيام المستهلكة فعلًا.'
+      : 'Entitlement cannot be below the days already used.';
+  static String get hrLeaveTypeNotFound => _ar
+      ? 'نوع الإجازة غير موجود أو غير مفعّل.'
+      : 'The leave type is missing or inactive.';
+  static String get hrLeaveTypeCodeShape => _ar
+      ? 'رمز نوع الإجازة حروف صغيرة وشرطات سفلية.'
+      : 'Leave type code must be lowercase letters and underscores.';
+  static String get hrBothNamesRequired => _ar
+      ? 'الاسمان بالعربية والإنجليزية مطلوبان.'
+      : 'Both Arabic and English names are required.';
+
+  // الأجور ودورات الرواتب
+  static String get hrInvalidSalary =>
+      _ar ? 'الراتب الأساسي غير صالح.' : 'The basic salary is invalid.';
+  static String get hrNegativeAllowance =>
+      _ar ? 'البدلات لا تكون سالبة.' : 'Allowances cannot be negative.';
+  static String get hrCompensationOverlap => _ar
+      ? 'فترة الراتب تتداخل مع فترة قائمة.'
+      : 'The compensation period overlaps an existing one.';
+  static String get hrCompensationSameDate => _ar
+      ? 'يبدأ سجل راتب في هذا التاريخ بالفعل.'
+      : 'A compensation record already starts on this date.';
+  static String get hrCompensationBackdate => _ar
+      ? 'لا يمكن تأريخ السجل قبل سجل راتب لاحق.'
+      : 'The record cannot be backdated before a later one.';
+  static String get hrInvalidPayrollYear =>
+      _ar ? 'سنة دورة الرواتب غير صالحة.' : 'The payroll year is invalid.';
+  static String get hrInvalidPayrollMonth =>
+      _ar ? 'شهر دورة الرواتب غير صالح.' : 'The payroll month is invalid.';
+  static String get hrPeriodNotStarted => _ar
+      ? 'لم تبدأ فترة الرواتب هذه بعد.'
+      : 'This payroll period has not started yet.';
+  static String get hrPeriodAlreadyApproved => _ar
+      ? 'فترة الرواتب هذه معتمدة بالفعل.'
+      : 'This payroll period is already approved.';
+  static String get hrRunNotFound =>
+      _ar ? 'لم يُعثر على دورة الرواتب.' : 'The payroll run was not found.';
+  static String get hrRunTransitionBlocked => _ar
+      ? 'انتقال حالة دورة الرواتب غير مسموح.'
+      : 'The payroll run transition is not allowed.';
+  static String get hrOnlyCalculatedApprovable => _ar
+      ? 'الدورة المحسوبة وحدها يمكن اعتمادها.'
+      : 'Only a calculated run can be approved.';
+  static String get hrOnlyApprovedPayable => _ar
+      ? 'الدورة المعتمدة وحدها يمكن تسديدها.'
+      : 'Only an approved run can be marked paid.';
+  static String get hrRunNotCancellable => _ar
+      ? 'دورة الرواتب لا تُلغى في حالتها الحالية.'
+      : 'The run cannot be cancelled in its current state.';
+  static String get hrSelfApproveRun => _ar
+      ? 'من حسب الدورة لا يعتمدها بنفسه.'
+      : 'The person who calculated the run cannot approve it.';
+  static String get hrAdvanceChangedRegenerate => _ar
+      ? 'سلفة في هذه الدورة تغيّرت بعد الحساب، أعد توليد الدورة.'
+      : 'An advance in this run changed after calculation; regenerate it.';
+  static String get hrStatementNotFound =>
+      _ar ? 'لم يُعثر على قسيمة الراتب.' : 'The payslip was not found.';
+  static String get hrPayslipNotFinal => _ar
+      ? 'قسيمة الراتب هذه ليست نهائية بعد.'
+      : 'This payslip is not final yet.';
+  static String get hrStatementImmutable => _ar
+      ? 'القسيمة المعتمدة لا تُعدَّل.'
+      : 'An approved payslip is immutable.';
+  static String get hrStatementUndeletable => _ar
+      ? 'القسيمة المعتمدة لا تُحذف.'
+      : 'An approved payslip cannot be deleted.';
+
+  // تسويات القسائم
+  static String get hrInvalidCorrectionStatus => _ar
+      ? 'حالة التسوية غير مسموح بها.'
+      : 'The correction status is not allowed.';
+  static String get hrInvalidCorrectionKind =>
+      _ar ? 'نوع التسوية غير مسموح به.' : 'The correction kind is not allowed.';
+  static String get hrCorrectionNotPositive => _ar
+      ? 'قيمة التسوية يجب أن تكون أكبر من صفر.'
+      : 'The correction amount must be positive.';
+  static String get hrCorrectionReasonRequired =>
+      _ar ? 'التسوية تحتاج سببًا.' : 'A correction needs a reason.';
+  static String get hrCorrectionNeedsApproved => _ar
+      ? 'التسوية تُطبق على قسيمة معتمدة أو مدفوعة.'
+      : 'A correction applies to an approved or paid payslip.';
+  static String get hrCorrectionAfterPeriod => _ar
+      ? 'التسوية تبدأ بعد الفترة المصححة مباشرة.'
+      : 'The correction starts after the corrected period.';
+
+  // السلف
+  static String get hrAdvanceNotPositive => _ar
+      ? 'قيمة السلفة يجب أن تكون أكبر من صفر.'
+      : 'The advance amount must be positive.';
+  static String get hrAdvanceNeedsReason =>
+      _ar ? 'طلب السلفة يحتاج سببًا.' : 'An advance request needs a reason.';
+  static String get hrInvalidInstallment =>
+      _ar ? 'عدد الأقساط غير صالح.' : 'The installment count is invalid.';
+  static String get hrAdvanceAlreadyOpen => _ar
+      ? 'لهذه السلفة طلب مفتوح بالفعل.'
+      : 'An advance request is already open.';
+  static String get hrAdvanceNotFound =>
+      _ar ? 'لم يُعثر على السلفة.' : 'The advance was not found.';
+  static String get hrInvalidAdvanceStatus =>
+      _ar ? 'حالة السلفة غير مسموح بها.' : 'The advance status is not allowed.';
+  static String get hrAdvanceAlreadyReviewed =>
+      _ar ? 'تمت مراجعة طلب السلفة هذا.' : 'This advance is already reviewed.';
+  static String get hrSelfReviewAdvance => _ar
+      ? 'لا تراجع طلب سلفتك الشخصية.'
+      : 'You cannot review your own advance request.';
+  static String get hrAdvanceNotDisbursable => _ar
+      ? 'السلفة المعتمدة وحدها تُصرف.'
+      : 'Only an approved advance can be disbursed.';
+  static String get hrAdvanceNotCancellable => _ar
+      ? 'السلفة لا تُلغى في حالتها الحالية.'
+      : 'This advance cannot be cancelled.';
+  static String get hrAdvancePartlySettled => _ar
+      ? 'جزء من هذه السلفة استُرجع بالفعل.'
+      : 'Part of this advance is already recovered.';
+  static String get hrAdvanceFinanceOnly => _ar
+      ? 'السلفة المصروفة يُلغيها القسم المالي فقط.'
+      : 'A disbursed advance is cancelled by finance only.';
+
+  // التسويات المالية
+  static String get hrInvalidAdjustmentKind => _ar
+      ? 'نوع التسوية المالية غير مسموح به.'
+      : 'The adjustment kind is not allowed.';
+  static String get hrAdjustmentNotPositive => _ar
+      ? 'قيمة التسوية المالية يجب أن تكون أكبر من صفر.'
+      : 'The adjustment amount must be positive.';
+  static String get hrAdjustmentNeedsReason =>
+      _ar ? 'التسوية المالية تحتاج سببًا.' : 'An adjustment needs a reason.';
+  static String get hrInvalidQuantity => _ar
+      ? 'الكمية إن وُجدت تكون أكبر من صفر.'
+      : 'Quantity must be positive when given.';
+  static String get hrAdjustmentNotFound =>
+      _ar ? 'لم يُعثر على التسوية المالية.' : 'The adjustment was not found.';
+  static String get hrAdjustmentAlreadyReviewed => _ar
+      ? 'تمت مراجعة هذه التسوية سابقًا.'
+      : 'This adjustment is already reviewed.';
+  static String get hrSelfApproveAdjustment => _ar
+      ? 'لا تعتمد تسويتك الشخصية.'
+      : 'You cannot approve your own adjustment.';
+  static String get hrAdjustmentAlreadyInRun => _ar
+      ? 'هذه التسوية ضمن دورة رواتب بالفعل.'
+      : 'This adjustment is already in a payroll run.';
+  static String get hrAdjustmentNotReversible => _ar
+      ? 'المعتمدة وحدها يمكن عكسُها.'
+      : 'Only an approved adjustment can be reversed.';
+  static String get hrAdjustmentInSnapshot => _ar
+      ? 'التسوية داخل لقطة رواتب بالفعل.'
+      : 'This adjustment is already in a payroll snapshot.';
+  static String get hrReversalNeedsReason =>
+      _ar ? 'عكس التسوية يحتاج سببًا.' : 'A reversal needs a reason.';
+  static String get hrInvalidAdjustmentStatus => _ar
+      ? 'حالة التسوية المالية غير مسموح بها.'
+      : 'The adjustment status is not allowed.';
+  static String get hrInvalidAdjustmentSource => _ar
+      ? 'مصدر التسوية المالية غير مسموح به.'
+      : 'The adjustment source is not allowed.';
+
+  // عجز الصناديق
+  static String get hrInvalidDiscrepancyStatus => _ar
+      ? 'حالة العجز غير مسموح بها.'
+      : 'The discrepancy status is not allowed.';
+  static String get hrDiscrepancyNotFound =>
+      _ar ? 'لم يُعثر على حالة العجز.' : 'The discrepancy was not found.';
+  static String get hrConfirmBeforeDeduct => _ar
+      ? 'أثبت العجز قبل اعتماد الخصم.'
+      : 'Confirm the discrepancy before approving a deduction.';
+  static String get hrUnknownDiscrepancyAction =>
+      _ar ? 'إجراء غير معروف على حالة العجز.' : 'Unknown discrepancy action.';
+  static String get hrDiscrepancyNotExplainable => _ar
+      ? 'العجز لا يُوَضَّح في حالته الحالية.'
+      : 'The discrepancy cannot be explained in its current state.';
+  static String get hrDiscrepancyNotReconcilable => _ar
+      ? 'العجز لا ينتقل للتسوية في حالته.'
+      : 'The discrepancy cannot move to reconciliation.';
+  static String get hrDiscrepancyNotConfirmable => _ar
+      ? 'العجز لا يثبت في حالته الحالية.'
+      : 'The discrepancy cannot be confirmed in its state.';
+  static String get hrDiscrepancyNotRejectable => _ar
+      ? 'العجز لا يُرفض في حالته الحالية.'
+      : 'The discrepancy cannot be rejected in its state.';
+  static String get hrDiscrepancyNotClosable => _ar
+      ? 'العجز لا يُغلق في حالته الحالية.'
+      : 'The discrepancy cannot be closed in its state.';
+  static String get hrExplanationNeedsNote =>
+      _ar ? 'توضيح العجز يحتاج ملاحظة.' : 'An explanation needs a note.';
+  static String get hrRejectionNeedsNote =>
+      _ar ? 'رفض العجز يحتاج ملاحظة.' : 'Rejecting a discrepancy needs a note.';
+  static String get hrConfirmNeedsEmployee => _ar
+      ? 'إثبات العجز يتطلب تحديد الموظف المسؤول.'
+      : 'Confirming requires naming the responsible employee.';
+  static String get hrAttributedNotFound => _ar
+      ? 'الموظف المنسوب إليه غير موجود أو غير نشط.'
+      : 'The attributed employee is missing or inactive.';
+  static String get hrAttributedWrongBranch => _ar
+      ? 'الموظف المنسوب إليه لا يعمل في هذا الفرع.'
+      : 'The attributed employee is not in this branch.';
+  static String get hrAttributeToSelf => _ar
+      ? 'لا تنسب عجزًا إلى نفسك.'
+      : 'You cannot attribute a shortage to yourself.';
+  static String get hrNoOneAttributed => _ar
+      ? 'لا موظف منسوبًا إليه هذا العجز.'
+      : 'No employee is attributed to this discrepancy.';
+  static String get hrDeductFromSelf => _ar
+      ? 'لا يخصم المراجع من نفسه.'
+      : 'A reviewer cannot deduct from themselves.';
+  static String get hrDeductionsDisabled => _ar
+      ? 'خصم العجز من الراتب معطّل في إعدادات الموارد البشرية.'
+      : 'Cashier deductions are disabled in the HR settings.';
+  static String get hrDeductionOutOfRange => _ar
+      ? 'قيمة الخصم أكبر من صفر ولا تتجاوز العجز.'
+      : 'The deduction must be positive and no larger than the discrepancy.';
+  static String get hrDeductionExists => _ar
+      ? 'لهذا العجز خصم سابق.'
+      : 'A deduction already exists for this discrepancy.';
+  static String get hrDeductionNeedsNote => _ar
+      ? 'اعتماد الخصم يحتاج ملاحظة تشرح القرار.'
+      : 'Approving a deduction needs a note explaining the decision.';
+
+  // إعدادات الموارد البشرية
+  static String get hrUnknownTimeZone =>
+      _ar ? 'المنطقة الزمنية غير معروفة.' : 'The time zone is unknown.';
+  static String get hrGraceOutOfRange => _ar
+      ? 'سماحية التأخير خارج المدى المسموح.'
+      : 'The late grace is out of range.';
+  static String get hrRateOutOfRange => _ar
+      ? 'أسعار الدقيقة خارج المدى المسموح.'
+      : 'The minute rates are out of range.';
+  static String get hrAbsenceRateOutOfRange => _ar
+      ? 'سعر يوم الغياب خارج المدى.'
+      : 'The absence day rate is out of range.';
+  static String get hrCapOutOfRange => _ar
+      ? 'سقف الخصم بين صفر ومئة بالمئة.'
+      : 'The deduction cap must be between 0 and 100 percent.';
+  static String get hrDeductionsNeedCap => _ar
+      ? 'خصم العجز يحتاج سقفًا أكبر من صفر.'
+      : 'Cashier deductions need a positive cap.';
+
+  // ---------- HR — stored vocabularies, counts and the reason field ----------
+
+  /// ألفاظ الحالة والمصدر والفئة: الحرف الذي تخزنه 212 هو المفتاح، والكلمة هنا
+  /// للعرض وحده، فلا يختلف لفظ `approved` بين شاشة الرواتب وشاشة الإجازات.
+  static String get hrStatusActive => _ar ? 'نشط' : 'Active';
+  static String get hrStatusProbation => _ar ? 'تحت الاختبار' : 'Probation';
+  static String get hrStatusOnLeave => _ar ? 'في إجازة' : 'On leave';
+  static String get hrStatusTerminated => _ar ? 'منتهي الارتباط' : 'Terminated';
+  static String get hrStatusOpen => _ar ? 'مفتوح' : 'Open';
+  static String get hrStatusClosed => _ar ? 'مغلق' : 'Closed';
+  static String get hrStatusDraft => _ar ? 'مسودة' : 'Draft';
+  static String get hrStatusPublished => _ar ? 'منشور' : 'Published';
+  static String get hrStatusCancelled => _ar ? 'ملغى' : 'Cancelled';
+  static String get hrStatusPending => _ar ? 'بانتظار المراجعة' : 'Pending';
+  static String get hrStatusPendingReview =>
+      _ar ? 'بانتظار التوضيح' : 'Pending review';
+  static String get hrStatusApproved => _ar ? 'معتمد' : 'Approved';
+  static String get hrStatusRejected => _ar ? 'مرفوض' : 'Rejected';
+  static String get hrStatusCalculated => _ar ? 'محسوب' : 'Calculated';
+  static String get hrStatusPaid => _ar ? 'مدفوع' : 'Paid';
+  static String get hrStatusDisbursed => _ar ? 'مصروف' : 'Disbursed';
+  static String get hrStatusSettled => _ar ? 'مسدَّد' : 'Settled';
+  static String get hrStatusReversed => _ar ? 'معكوس' : 'Reversed';
+  static String get hrStatusExplained => _ar ? 'موضَّح' : 'Explained';
+  static String get hrStatusReconciliation =>
+      _ar ? 'يحتاج تسوية' : 'Reconciliation required';
+  static String get hrStatusConfirmed => _ar ? 'مُثبت' : 'Confirmed';
+  static String get hrStatusDeductionApproved =>
+      _ar ? 'خصم معتمد' : 'Deduction approved';
+
+  static String get hrTypeFullTime => _ar ? 'دوام كامل' : 'Full time';
+  static String get hrTypePartTime => _ar ? 'دوام جزئي' : 'Part time';
+  static String get hrTypeContract => _ar ? 'بعقد' : 'Contract';
+
+  static String get hrKindAddition => _ar ? 'إضافة' : 'Addition';
+  static String get hrKindDeduction => _ar ? 'خصم' : 'Deduction';
+  static String get hrKindAllowance => _ar ? 'بدل' : 'Allowance';
+  static String get hrKindBonus => _ar ? 'مكافأة' : 'Bonus';
+  static String get hrKindCommission => _ar ? 'عمولة' : 'Commission';
+  static String get hrKindOvertime => _ar ? 'ساعات إضافية' : 'Overtime';
+
+  static String get hrCategoryBasic => _ar ? 'الأجر الأساسي' : 'Basic pay';
+  static String get hrCategoryAdvance => _ar ? 'سلفة' : 'Advance';
+  static String get hrCategoryAttendance => _ar ? 'الحضور' : 'Attendance';
+  static String get hrCategoryCashierShortage =>
+      _ar ? 'عجز صندوق' : 'Cashier shortage';
+  static String get hrCategoryManual => _ar ? 'سطر يدوي' : 'Manual line';
+  static String get hrCategoryCorrection => _ar ? 'تصحيح راتب' : 'Correction';
+
+  static String get hrSourceCompensation =>
+      _ar ? 'تركيبة الأجر' : 'Compensation';
+  static String get hrSourceAdjustment => _ar ? 'تسوية مالية' : 'Adjustment';
+  static String get hrSourceSalaryAdvance =>
+      _ar ? 'سلفة راتب' : 'Salary advance';
+  static String get hrSourceAttendancePolicy =>
+      _ar ? 'سياسة الحضور' : 'Attendance policy';
+  static String get hrSourceManual => _ar ? 'إدخال يدوي' : 'Manual';
+  static String get hrSourcePayrollCorrection =>
+      _ar ? 'تصحيح رواتب' : 'Payroll correction';
+  static String get hrSourceCashierDiscrepancy =>
+      _ar ? 'فرق صندوق' : 'Cashier discrepancy';
+  static String get hrSourceAdjustmentReversal =>
+      _ar ? 'عكس تسوية' : 'Adjustment reversal';
+
+  /// عدّاد السطور في تذييل الترقيم، بنفس صيغة شاشة العملاء.
+  static String hrRowsLabel(int from, int to, int count) => _ar
+      ? 'عرض $from–$to من $count سجلًا'
+      : 'Showing $from–$to of $count records';
+
+  /// رمز خطأ القاعدة المعروض تحت رسالة الرفض: الشاشة لا تفسّر وحدها ما رفضته
+  /// الدالة، والرمز هو ما يفتش به من يراجع السجل لاحقًا.
+  static String get hrRefusalCode => _ar ? 'رمز الرفض' : 'Refusal code';
+
+  static String get hrReasonLabel => _ar ? 'السبب' : 'Reason';
+  static String get hrReasonHint => _ar
+      ? 'اكتب السبب كما سيُقرأ في سجل القرار'
+      : 'Write the reason as it will read in the decision record';
+  static String get hrReasonMissing => _ar
+      ? 'السبب مطلوب: القرار بلا سببه يُرفض في القاعدة.'
+      : 'A reason is required: the decision is refused without it.';
+
+  // ---------- HR — page subtitles ----------
+
+  static String get hrMyDaySubtitle => _ar
+      ? 'بصمتك وجلساتك وقسائمك: ما يخصّك وحدك'
+      : 'Your own clock, sessions and payslips';
+  static String get hrDashboardSubtitle => _ar
+      ? 'عدد الفريق وحضور اليوم وما ينتظر قرارك'
+      : 'Headcount, today attendance and what waits on you';
+  static String get hrEmployeesSubtitle => _ar
+      ? 'ملفات الموظفين وارتباطهم الوظيفي ضمن نطاقك'
+      : 'Employee files within your scope';
+  static String get hrAttendanceSubtitle => _ar
+      ? 'جلسات البصمة وتصحيحاتها المراجعة'
+      : 'Clock sessions and their corrections';
+  static String get hrSchedulesSubtitle => _ar
+      ? 'جدول العمل المنشور ومسوداته قبل الاعتماد'
+      : 'Published shifts and drafts before approval';
+  static String get hrLeaveSubtitle =>
+      _ar ? 'طلبات الإجازة وأرصدة السنة' : 'Leave requests and yearly balances';
+  static String get hrPayrollSubtitle => _ar
+      ? 'دورات الرواتب من الاحتساب إلى الدفع'
+      : 'Payroll runs from calculation to payment';
+  static String get hrAdvancesSubtitle => _ar
+      ? 'السلف والتسويات المالية وكل قرار عليها'
+      : 'Advances, adjustments and every decision on them';
+  static String get hrDiscrepanciesSubtitle => _ar
+      ? 'فروق صناديق الكاشير قبل أن تُنسب إلى أحد'
+      : 'Cashier variances before anyone is attributed';
+  static String get hrSettingsSubtitle => _ar
+      ? 'سياسة العمل وأنواع الإجازة في مكان واحد'
+      : 'Work policy and leave types in one place';
+
+  // ---------- HR — table columns and dialog fields ----------
+
+  static String get hrColEmployee => _ar ? 'الموظف' : 'Employee';
+  static String get hrColBranch => _ar ? 'الفرع' : 'Branch';
+  static String get hrColDay => _ar ? 'اليوم' : 'Day';
+  static String get hrColStart => _ar ? 'البداية' : 'Start';
+  static String get hrColEnd => _ar ? 'النهاية' : 'End';
+  static String get hrColWorked => _ar ? 'ساعات' : 'Worked';
+  static String get hrColLate => _ar ? 'تأخير' : 'Late';
+  static String get hrColScheduled => _ar ? 'الجدول' : 'Scheduled';
+  static String get hrColType => _ar ? 'النوع' : 'Type';
+  static String get hrColDays => _ar ? 'أيام' : 'Days';
+  static String get hrColBalance => _ar ? 'الرصيد' : 'Balance';
+  static String get hrColPeriod => _ar ? 'الدورة' : 'Period';
+  static String get hrColNet => _ar ? 'الصافي' : 'Net';
+  static String get hrColGross => _ar ? 'الإجمالي' : 'Gross';
+  static String get hrColDeductions => _ar ? 'الخصومات' : 'Deductions';
+  static String get hrColStatements => _ar ? 'القسائم' : 'Payslips';
+  static String get hrColVariance => _ar ? 'الفرق' : 'Variance';
+  static String get hrColAttributed => _ar ? 'نسب إليه' : 'Attributed to';
+  static String get hrColSource => _ar ? 'المصدر' : 'Source';
+  static String get hrColCategory => _ar ? 'الفئة' : 'Category';
+  static String get hrColDepartment => _ar ? 'القسم' : 'Department';
+  static String get hrColJobTitle => _ar ? 'المسمى الوظيفي' : 'Job title';
+  static String get hrColHiredOn => _ar ? 'التعيين' : 'Hired';
+  static String get hrColRemaining => _ar ? 'المتبقي' : 'Remaining';
+  static String get hrColInstallment => _ar ? 'القسط' : 'Installment';
+  static String get hrColEmployeeNumber =>
+      _ar ? 'الرقم الوظيفي' : 'Employee number';
+  static String get hrColSession => _ar ? 'الجلسة' : 'Session';
+  static String get hrColRequestedBy => _ar ? 'مقدّم الطلب' : 'Requested by';
+  static String get hrColReviewedBy => _ar ? 'المراجع' : 'Reviewed by';
+  static String get hrColQuantity => _ar ? 'الكمية' : 'Quantity';
+  static String get hrColDisbursedAt => _ar ? 'تاريخ التسليم' : 'Disbursed on';
+
+  static String get hrFieldFrom => _ar ? 'من تاريخ' : 'From date';
+  static String get hrFieldTo => _ar ? 'إلى تاريخ' : 'To date';
+  static String get hrFieldNote => _ar ? 'ملاحظة' : 'Note';
+  static String get hrFieldEvidence =>
+      _ar ? 'مرجع التحقق' : 'Evidence reference';
+  static String get hrFieldLeaveType => _ar ? 'نوع الإجازة' : 'Leave type';
+  static String get hrFieldEntitledDays =>
+      _ar ? 'أيام الاستحقاق' : 'Entitled days';
+  static String get hrFieldEmploymentType =>
+      _ar ? 'نوع الارتباط' : 'Employment type';
+  static String get hrFieldEmploymentStatus =>
+      _ar ? 'حالة الارتباط' : 'Employment status';
+  static String get hrFieldTerminatedOn => _ar ? 'تاريخ الانتهاء' : 'End date';
+  static String get hrFieldEmergencyContact =>
+      _ar ? 'جهة الطوارئ' : 'Emergency contact';
+  static String get hrFieldEmergencyPhone =>
+      _ar ? 'هاتف الطوارئ' : 'Emergency phone';
+  static String get hrFieldEmployeePhone =>
+      _ar ? 'هاتف الموظف' : 'Employee phone';
+  static String get hrFieldYear => _ar ? 'السنة' : 'Year';
+  static String get hrFieldMonth => _ar ? 'الشهر' : 'Month';
+  static String get hrFieldBasicPay => _ar ? 'الأجر الأساسي' : 'Basic pay';
+
+  // ---------- HR — actions and section labels ----------
+
+  static String get hrBtnClockIn => _ar ? 'بصمة بداية' : 'Clock in';
+  static String get hrBtnClockOut => _ar ? 'بصمة نهاية' : 'Clock out';
+  static String get hrBtnBreakStart => _ar ? 'بدء استراحة' : 'Start break';
+  static String get hrBtnBreakEnd => _ar ? 'إنهاء استراحة' : 'End break';
+  static String get hrBtnRequestLeave => _ar ? 'طلب إجازة' : 'Request leave';
+  static String get hrBtnRequestCorrection =>
+      _ar ? 'تصحيح جلسة' : 'Correct a session';
+  static String get hrBtnRequestAdvance =>
+      _ar ? 'طلب سلفة' : 'Request an advance';
+  static String get hrBtnNewSchedule => _ar ? 'جدول جديد' : 'New schedule';
+  static String get hrBtnPublish => _ar ? 'نشر' : 'Publish';
+  static String get hrBtnGeneratePayroll =>
+      _ar ? 'احتساب دورة' : 'Generate payroll';
+  static String get hrBtnApprove => _ar ? 'اعتماد' : 'Approve';
+  static String get hrBtnReview => _ar ? 'مراجعة' : 'Review';
+  static String get hrBtnPay => _ar ? 'دفع' : 'Pay';
+  static String get hrBtnDisburse => _ar ? 'تسليم المبلغ' : 'Disburse';
+  static String get hrBtnCancelRequest =>
+      _ar ? 'إلغاء الطلب' : 'Cancel request';
+  static String get hrBtnReverse => _ar ? 'عكس' : 'Reverse';
+  static String get hrBtnSetBalance => _ar ? 'تحديد الرصيد' : 'Set balance';
+  static String get hrBtnSetCompensation => _ar ? 'ضبط الأجر' : 'Set pay';
+  static String get hrBtnStatementCorrection =>
+      _ar ? 'تصحيح قسيمة' : 'Statement correction';
+  static String get hrBtnNewAdjustment =>
+      _ar ? 'تسوية جديدة' : 'New adjustment';
+  static String get hrBtnOpenFile => _ar ? 'فتح الملف' : 'Open file';
+  static String get hrBtnSavePolicy => _ar ? 'حفظ السياسة' : 'Save policy';
+  static String get hrBtnNewLeaveType =>
+      _ar ? 'نوع إجازة جديد' : 'New leave type';
+
+  static String get hrDoneLabel => _ar ? 'تم تنفيذ الأمر' : 'Action completed';
+  static String get hrEmptyList =>
+      _ar ? 'لا سجلات تُعرض الآن' : 'No records to show';
+  static String get hrMyOpenSession =>
+      _ar ? 'جلستك مفتوحة الآن' : 'Your session is open now';
+  static String get hrMyNoOpenSession =>
+      _ar ? 'لا جلسة مفتوحة عليك' : 'You have no open session';
+  static String get hrWorkedToday => _ar ? 'ساعات اليوم' : 'Hours today';
+  static String get hrMyPayslips => _ar ? 'قسائمي' : 'My payslips';
+  static String get hrMySessions => _ar ? 'جلساتي' : 'My sessions';
+  static String get hrMyLeaves => _ar ? 'طلبات إجازتي' : 'My leave requests';
+  static String get hrPendingSection =>
+      _ar ? 'بانتظار قرارك' : 'Waiting on you';
+  static String get hrHeadcount => _ar ? 'عدد الفريق' : 'Headcount';
+  static String get hrPresentToday => _ar ? 'حاضر اليوم' : 'Present today';
+
+  /// مصدر كل عدّاد في «يومي»: `hr.attendance_metrics` تحسب الحضور والتأخير من
+  /// الجداول المنشورة والمدة من البصمة نفسها، فاختلاف الرقمين ليس عطلًا.
+  static String get hrMetricsSources => _ar
+      ? 'الحضور والتأخير من جداولك المنشورة، والمدة من بصمتك'
+      : 'Present and late come from your published schedules; the duration comes from your punches';
+  static String get hrSectionAdvances => _ar ? 'السلف' : 'Advances';
+  static String get hrSectionAdjustments => _ar ? 'التسويات' : 'Adjustments';
+  static String get hrSectionCorrections => _ar ? 'التصحيحات' : 'Corrections';
+  static String get hrSectionAttendance => _ar ? 'الحضور' : 'Attendance';
+
+  /// للرقم الذي لم تُرسله القاعدة: لا صفر ولا فراغ، بل كلمة تقول إن السبب صلاحية.
+  static String get hrUnavailable =>
+      _ar ? 'غير متاح لصلاحيتك' : 'Not available to your role';
+  static String get hrScheduledToday =>
+      _ar ? 'مجدولون اليوم' : 'Scheduled today';
+  static String get hrOnLeaveToday => _ar ? 'في إجازة اليوم' : 'On leave today';
+  static String get hrActiveCount => _ar ? 'على رأس العمل' : 'Active';
+  static String get hrOnProbation => _ar ? 'تحت التجربة' : 'On probation';
+  static String get hrTerminatedCount => _ar ? 'انتهت خدمتهم' : 'Terminated';
+  static String get hrOpenShortages => _ar ? 'فروقات مفتوحة' : 'Open shortages';
+  static String get hrFinanceSection => _ar ? 'أموال الموظفين' : 'Staff money';
+  static String get hrOpenShortageValue =>
+      _ar ? 'قيمة الفروقات المفتوحة' : 'Open shortage value';
+  static String get hrOpenSessions => _ar ? 'جلسات لم تُقفل' : 'Open sessions';
+  static String get hrAdvancesOutstanding =>
+      _ar ? 'سلف لم تُسترد' : 'Outstanding advances';
+
+  // ---------- HR — self-service clock surface ----------
+
+  static String get hrNotSelected => _ar ? 'لم يُختَر' : 'Not selected';
+  static String get hrHoursShort => _ar ? 'س' : 'h';
+  static String get hrMinutesShort => _ar ? 'د' : 'm';
+  static String get hrNoBranch => _ar ? 'بلا فرع' : 'No branch';
+  static String get hrUnknownPerson => _ar ? 'غير مسمّى' : 'Unnamed';
+  static String get hrNoValue => _ar ? '—' : '—';
+  static String get hrOnBreak => _ar ? 'على استراحة' : 'On break';
+  static String get hrSinceLabel => _ar ? 'منذ' : 'Since';
+  static String get hrClockHint => _ar
+      ? 'البصمة تُختم في الفرع الذي تعمل فيه الآن'
+      : 'The clock stamps in the branch you are working at now';
+  static String get hrNoStaffProfile => _ar
+      ? 'حسابك غير مرتبط بسجل موظف، فلا تعرف البصمة من أنت'
+      : 'Your account has no staff record, so the clock cannot identify you';
+  static String get hrPickBranchFirst => _ar
+      ? 'اختر الفرع قبل بصمة البداية'
+      : 'Pick the branch before clocking in';
+  static String get hrNoBranchesForMe => _ar
+      ? 'لم تُقرأ فروعك بعد، أعد المحاولة بعد اكتمال الوصول'
+      : 'Your branches are not readable yet; retry once access is ready';
+
+  static String get hrSessionsUnread => _ar
+      ? 'لم تُقرأ جلساتك: اطلب التحديث لإعادة السؤال'
+      : 'Your sessions were not read: refresh to ask again';
+  static String get hrNoSessionsYet =>
+      _ar ? 'لا جلسة بصمة باسمك بعد' : 'No clock session under your name yet';
+  static String get hrPayslipsUnread => _ar
+      ? 'لم تُقرأ قسائمك، وقد تكون خارج صلاحية عرضها'
+      : 'Your payslips were not read; you may be outside their view scope';
+  static String get hrNoPayslipsYet => _ar
+      ? 'لم تصدر لك قسيمة راتب بعد'
+      : 'No payslip has been issued for you yet';
+  static String get hrLeavesUnread => _ar
+      ? 'لم تُقرأ طلبات إجازتك بعد'
+      : 'Your leave requests were not read yet';
+  static String get hrNoLeavesYet =>
+      _ar ? 'لا طلب إجازة باسمك' : 'No leave request under your name';
+
+  static String get hrLeaveStartsOn => _ar ? 'تبدأ في' : 'Starts on';
+  static String get hrLeaveEndsOn => _ar ? 'تنتهي في' : 'Ends on';
+  static String get hrInstallmentOptional =>
+      _ar ? 'القسط الشهري (اختياري)' : 'Monthly installment (optional)';
+  static String get hrDatesMissing => _ar
+      ? 'حدّد تاريخي البداية والنهاية'
+      : 'Pick both the start and end dates';
+
+  static String get hrDocumentLabel => _ar ? 'المستند' : 'Document';
+  static String get hrDocumentHint => _ar
+      ? 'رابط تقرير أو ورقة تثبت الإجازة'
+      : 'A link to the report or paper proving the leave';
+  static String get hrDocumentRequired => _ar
+      ? 'نوع الإجازة هذا يطلب مستندًا قبل الإرسال'
+      : 'This leave type needs a document before it can be sent';
+  static String get hrNoLeaveTypesRead =>
+      _ar ? 'لم تُقرأ أنواع الإجازة بعد' : 'Leave types were not read yet';
+  static String get hrAmountHint => _ar ? 'مثال 1500' : 'For example 1500';
+  static String get hrAmountMustBePositive => _ar
+      ? 'المبلغ يجب أن يكون أكبر من صفر'
+      : 'The amount must be greater than zero';
+  static String get hrAdvanceRequestHint => _ar
+      ? 'يُسجَّل الطلب بانتظار قرار الإدارة، ولا يُصرَف منه شيء الآن'
+      : 'The request is filed pending the admin decision; nothing is paid now';
+
+  // ---------- HR — empty states, filters and dashboard tiles ----------
+
+  static String get hrEmptyEmployees => _ar
+      ? 'لا ملفات موظفين داخل نطاقك'
+      : 'No employee files inside your scope';
+  static String get hrEmployeesUnread => _ar
+      ? 'لم تُقرأ ملفات الموظفين بعد، فأعد فتح الحوار بعد المرجع'
+      : 'Employee files were not read yet; reopen the dialog once the reference is ready';
+  static String get hrEmptyAttendance =>
+      _ar ? 'لا جلسات بصمة في هذا المدى' : 'No clock sessions in this range';
+  static String get hrEmptySchedules =>
+      _ar ? 'لا جداول عمل في هذا المدى' : 'No work schedules in this range';
+  static String get hrEmptyLeave => _ar
+      ? 'لا طلبات إجازة بالحالة المختارة'
+      : 'No leave requests with the chosen status';
+  static String get hrEmptyPayroll => _ar
+      ? 'لم تُحتسب دورة رواتب بعد'
+      : 'No payroll run has been calculated yet';
+  static String get hrEmptyAdvances =>
+      _ar ? 'لا طلبات سلفة عليك مراجعتها' : 'No advance requests to review';
+  static String get hrEmptyAdjustments =>
+      _ar ? 'لا تسويات مالية مسجّلة' : 'No financial adjustments recorded';
+  static String get hrEmptyDiscrepancies => _ar
+      ? 'لا فروق صناديق بانتظار قرار'
+      : 'No drawer variances waiting on a decision';
+  static String get hrEmptyCorrections =>
+      _ar ? 'لا طلبات تصحيح حضور' : 'No attendance correction requests';
+
+  static String get hrFilterStatus => _ar ? 'الحالة' : 'Status';
+  static String get hrFilterBranch => _ar ? 'الفرع' : 'Branch';
+  static String get hrFilterAll => _ar ? 'كل الحالات' : 'All statuses';
+  static String get hrFilterAllBranches => _ar ? 'كل الفروع' : 'All branches';
+  static String get hrFilterAllSources => _ar ? 'كل المصادر' : 'All sources';
+  static String get hrFilterAllEmployees =>
+      _ar ? 'كل الموظفين' : 'All employees';
+  static String get hrFilterAllDepartments =>
+      _ar ? 'كل الأقسام' : 'All departments';
+  static String get hrFilterRange => _ar ? 'المدى' : 'Range';
+  static String get hrAllEmployeesScope =>
+      _ar ? 'كل الموظفين' : 'All employees';
+
+  static String get hrPendingLeaves => _ar ? 'إجازات معلّقة' : 'Pending leave';
+  static String get hrPendingCorrections =>
+      _ar ? 'تصحيحات معلّقة' : 'Pending corrections';
+  static String get hrPendingAdvances =>
+      _ar ? 'سلف معلّقة' : 'Pending advances';
+  static String get hrPendingDiscrepancies =>
+      _ar ? 'فروق معلّقة' : 'Pending variances';
+  static String get hrPendingPayroll =>
+      _ar ? 'رواتب معلّقة' : 'Pending payroll';
+  static String get hrLatestRun => _ar ? 'آخر دورة' : 'Latest run';
+  static String get hrRunNone => _ar ? 'لا دورة بعد' : 'No run yet';
+  static String get hrDashboardUnread => _ar
+      ? 'لم تُقرأ اللوحة: الرقم المعروض غائب لا صفر'
+      : 'The board was not read: a shown gap is absent, not zero';
+  static String get hrMyOpenShift =>
+      _ar ? 'وردتيتي المفتوحة' : 'My open session';
+  static String get hrPermissionsMissing => _ar
+      ? 'لم تُقرأ صلاحياتك، فالأزرار مبنية على ما تملكه فعلاً'
+      : 'Your permissions were not read, so actions match what you really hold';
+
+  // ---------- HR — forms and dialogs ----------
+
+  static String get hrEmploymentTitle =>
+      _ar ? 'الارتباط الوظيفي' : 'Employment';
+  static String get hrScheduleTitle => _ar ? 'جدول عمل' : 'Work schedule';
+  static String get hrScheduleDate => _ar ? 'يوم الجدول' : 'Shift day';
+  static String get hrScheduleStartTime => _ar ? 'بداية الدوام' : 'Shift start';
+  static String get hrScheduleEndTime => _ar ? 'نهاية الدوام' : 'Shift end';
+  static String get hrScheduleBreak =>
+      _ar ? 'استراحة (دقائق)' : 'Break (minutes)';
+  static String get hrCorrectionTitle =>
+      _ar ? 'تصحيح بصمة' : 'Clock correction';
+  static String get hrCorrectionClockIn =>
+      _ar ? 'البصمة المقترحة للبداية' : 'Proposed clock-in';
+  static String get hrCorrectionClockOut =>
+      _ar ? 'البصمة المقترحة للنهاية' : 'Proposed clock-out';
+  static String get hrCorrectionCurrent =>
+      _ar ? 'المسجّل حالياً' : 'Currently recorded';
+  static String get hrAdjustmentTitle => _ar ? 'تسوية مالية' : 'Adjustment';
+  static String get hrAdjustmentKind => _ar ? 'نوع التسوية' : 'Adjustment kind';
+  static String get hrAdjustmentEffective =>
+      _ar ? 'تُحتسب من' : 'Effective from';
+  static String get hrCompensationTitle => _ar ? 'تركيبة الأجر' : 'Pay package';
+  static String get hrCompensationHousing => _ar ? 'بدل سكن' : 'Housing';
+  static String get hrCompensationTransport => _ar ? 'بدل نقل' : 'Transport';
+  static String get hrCompensationOther => _ar ? 'بدل آخر' : 'Other allowance';
+  static String get hrCompensationEffectiveFrom =>
+      _ar ? 'سارية من' : 'Effective from';
+  static String get hrCompensationNone => _ar
+      ? 'لم تُقرأ تركيبة أجر هذا الموظف'
+      : 'This employee’s pay package was not read';
+  static String get hrDiscrepancyTitle =>
+      _ar ? 'قرار في فرق صندوق' : 'Variance decision';
+  static String get hrDiscrepancyEvidence =>
+      _ar ? 'مرجع التحقق' : 'Evidence reference';
+  static String get hrDiscrepancyDeduction =>
+      _ar ? 'مبلغ الخصم المقترح' : 'Proposed deduction';
+  static String get hrDiscrepancyAttributed =>
+      _ar ? 'نسب الفرق إلى موظف' : 'Attribute the variance to';
+  static String get hrDiscrepancyAttributionHint => _ar
+      ? 'النسب قرار إداري: لا يُخصم شيء إلا بسقف السياسة وبموافقة صريحة'
+      : 'Attribution is an admin decision: nothing is deducted except under the policy cap with an explicit approval';
+  static String get hrBalanceTitle => _ar ? 'رصيد إجازة' : 'Leave balance';
+  static String get hrPayrollCorrectionTitle =>
+      _ar ? 'تصحيح على قسيمة' : 'Statement correction';
+  static String get hrGeneratePayrollHint => _ar
+      ? 'تحتسب القاعدة الدورة على الأجار والخصومات المعتمدة اليوم، ولا تدفع شيئًا'
+      : 'The database calculates the run on today’s approved pay and deductions; it pays nothing';
+  static String get hrTimeMissing => _ar
+      ? 'حدّد وقت البداية والنهاية معًا'
+      : 'Pick both the start and end times';
+  static String get hrStaffMissing =>
+      _ar ? 'اختر الموظف أولًا' : 'Pick the employee first';
+  static String get hrNumberMissing =>
+      _ar ? 'أدخل رقمًا صحيحًا في الحقل' : 'Enter a valid number in the field';
+
+  // ---------- HR — employee file sections ----------
+
+  static String get hrFileUnread =>
+      _ar ? 'لم يُقرأ ملف الموظف بعد' : 'The employee file was not read yet';
+  static String get hrFileAttendance => _ar ? 'حضور الملف' : 'File attendance';
+  static String get hrFileLeave => _ar ? 'إجازات الملف' : 'File leave';
+  static String get hrFilePayroll => _ar ? 'قسائم الملف' : 'File payslips';
+  static String get hrFileAdvances => _ar ? 'سلف الملف' : 'File advances';
+  static String get hrFileAdjustments =>
+      _ar ? 'تسويات الملف' : 'File adjustments';
+  static String get hrFileShifts => _ar ? 'ورديات الكاشير' : 'Cashier shifts';
+  static String get hrFileCompensation => _ar ? 'الأجر الحالي' : 'Current pay';
+  static String get hrFileCompensationHidden => _ar
+      ? 'تركيبة الأجر خارج صلاحياتك لهذا الموظف'
+      : 'The pay package is outside your permissions for this employee';
+  static String get hrEmploymentHistory =>
+      _ar ? 'سجل الارتباط' : 'Employment record';
+
+  // ---------- HR — settings surface ----------
+
+  static String get hrPolicyTitle => _ar ? 'سياسة العمل' : 'Work policy';
+  static String get hrPolicySubtitle => _ar
+      ? 'ما تقرأه قاعدة الموارد البشرية عند كل بصمة وكل احتساب'
+      : 'What the HR database reads at every clock stamp and every calculation';
+  static String get hrPolicyTimezone =>
+      _ar ? 'منطقة العمل الزمنية' : 'Business time zone';
+  static String get hrPolicyLateGrace =>
+      _ar ? 'دقائق سماح للتأخير' : 'Late grace minutes';
+  static String get hrPolicyLateRate =>
+      _ar ? 'قيمة دقيقة التأخير' : 'Late minute rate';
+  static String get hrPolicyEarlyRate =>
+      _ar ? 'قيمة دقيقة الانصراف المبكر' : 'Early-leave minute rate';
+  static String get hrPolicyAbsenceRate =>
+      _ar ? 'قيمة يوم الغياب' : 'Absence day rate';
+  static String get hrPolicyCashierSwitch =>
+      _ar ? 'السماح بخصم عجز الصندوق' : 'Allow cashier shortage deduction';
+  static String get hrPolicyDeductionCap =>
+      _ar ? 'سقف الخصم من الأجر (٪)' : 'Salary deduction cap (%)';
+  static String get hrPolicyCashierHint => _ar
+      ? 'مع تعطيل هذا المفتاح ترفض القاعدة أي خصم نسبته إلى موظف'
+      : 'With this switch off, the database refuses any deduction attributed to an employee';
+  static String get hrLeaveTypesTitle => _ar ? 'أنواع الإجازة' : 'Leave types';
+  static String get hrLeaveTypeCode => _ar ? 'الرمز' : 'Code';
+  static String get hrLeaveTypeNameAr => _ar ? 'الاسم بالعربية' : 'Arabic name';
+  static String get hrLeaveTypeNameEn =>
+      _ar ? 'الاسم بالإنجليزية' : 'English name';
+  static String get hrLeaveTypeDays => _ar ? 'أيام السنة' : 'Annual days';
+  static String get hrLeaveTypePaid => _ar ? 'مدفوعة' : 'Paid';
+  static String get hrLeaveTypeTracks =>
+      _ar ? 'تُخصم من الرصيد' : 'Tracks balance';
+  static String get hrLeaveTypeRequiresDoc =>
+      _ar ? 'تطلب مستندًا' : 'Requires a document';
+  static String get hrLeaveTypeActive => _ar ? 'مفعّلة' : 'Active';
 }

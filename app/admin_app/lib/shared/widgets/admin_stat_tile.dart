@@ -70,7 +70,9 @@ class AdminStatTile extends StatelessWidget {
           else
             Text(
               value!,
-              maxLines: 1,
+              // القيمتان قد تكونان جملةً لا رقمًا («لم تصدر قسيمة بعد»)، فسطر
+              // واحد يقطعها في نصف كلمة: البلاطة ترتفع سطرين ولا تُبتر.
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: valueColor ?? heading,
@@ -82,7 +84,7 @@ class AdminStatTile extends StatelessWidget {
           const SizedBox(height: AppSizes.px2),
           Text(
             label,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: muted,

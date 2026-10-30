@@ -1,17 +1,33 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
+import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/core/navigation/admin_navigator.dart';
-import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
+import 'package:admin_app/features/branches/presentation/pages/branch_page.dart';
+import 'package:admin_app/features/bundles/presentation/pages/bundle_page.dart';
 import 'package:admin_app/features/carts/presentation/pages/cart_page.dart';
+import 'package:admin_app/features/catalog/presentation/pages/category_page.dart';
+import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/coupons/presentation/pages/coupons_page.dart';
 import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
 import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
 import 'package:admin_app/features/dashboard/presentation/pages/dashboard_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_advances_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_attendance_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_dashboard_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_discrepancies_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_employees_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_leave_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_my_day_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_payroll_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_schedules_page.dart';
+import 'package:admin_app/features/hr/presentation/pages/hr_settings_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/stock_movements_page.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
@@ -22,29 +38,22 @@ import 'package:admin_app/features/payments/presentation/pages/payment_page.dart
 import 'package:admin_app/features/pos/presentation/pages/pos_page.dart';
 import 'package:admin_app/features/reviews/presentation/pages/reviews_page.dart';
 import 'package:admin_app/features/roles/presentation/pages/role_page.dart';
+import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
+import 'package:admin_app/features/shell/presentation/manager/admin_nav_cubit.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
+import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
+import 'package:admin_app/features/shell/presentation/widgets/admin_desktop_layout.dart';
+import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layout.dart';
+import 'package:admin_app/features/shell/presentation/widgets/admin_sign_out_dialog.dart';
 import 'package:admin_app/features/staff/presentation/pages/staff_page.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/pages/subscription_plan_page.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/pages/subscription_admin_page.dart';
 import 'package:admin_app/features/tables/presentation/pages/tables_page.dart';
-import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
-import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
-import 'package:admin_app/features/branches/presentation/pages/branch_page.dart';
-import 'package:admin_app/features/bundles/presentation/pages/bundle_page.dart';
-import 'package:admin_app/features/catalog/presentation/pages/category_page.dart';
-import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
-import 'package:admin_app/core/navigation/admin_destination.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
-import 'package:admin_app/core/search/admin_search_controller.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
-import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
-import 'package:admin_app/features/shell/data/models/admin_nav_counts.dart';
-import 'package:admin_app/features/shell/presentation/manager/admin_nav_cubit.dart';
-import 'package:admin_app/features/shell/presentation/widgets/admin_desktop_layout.dart';
-import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layout.dart';
-import 'package:admin_app/features/shell/presentation/widgets/admin_sign_out_dialog.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_feature_placeholder.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The frame around every admin page.
 ///
@@ -279,6 +288,57 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
               widget.session.hasPermission('notifications.manage') ||
               widget.session.isOwner,
         );
+      case 'hrMyDay':
+        // البصمة وقسيممة الأجر وطلب الإجازة حقٌّ لكل موظف، فلا إذن هنا:
+        // تعرف القاعدة من أنت من الجلسة نفسها.
+        return HrMyDayPage(searchController: _searchController);
+      case 'hrDashboard':
+        return const HrDashboardPage();
+      case 'hrEmployees':
+        return HrEmployeesPage(
+          searchController: _searchController,
+          canManage: widget.session.hasPermission('hr.employee.write'),
+          // الأجر صلاحية مستقلة في 212، فلا تُوهَب لمن يعدّل العقد.
+          canManageCompensation: widget.session.hasPermission(
+            'hr.compensation.manage',
+          ),
+        );
+      case 'hrAttendance':
+        // مراجعة التصحيح في `hr.attendance.manage` لا في قراءة السطور.
+        return HrAttendancePage(
+          searchController: _searchController,
+          canReview: widget.session.hasPermission('hr.attendance.manage'),
+        );
+      case 'hrSchedules':
+        return HrSchedulesPage(
+          searchController: _searchController,
+          canManage: widget.session.hasPermission('hr.schedule.manage'),
+        );
+      case 'hrLeave':
+        return HrLeavePage(
+          searchController: _searchController,
+          canReview: widget.session.hasPermission('hr.leave.review'),
+        );
+      case 'hrPayroll':
+        // ثلاثة أدوار لثلاثة أزرار: من يولّد لا يعتمد، ومن يعتمد لا يصرف.
+        return HrPayrollPage(
+          searchController: _searchController,
+          canManage: widget.session.hasPermission('hr.payroll.manage'),
+          canApprove: widget.session.hasPermission('hr.payroll.approve'),
+          canPay: widget.session.hasPermission('hr.payroll.pay'),
+        );
+      case 'hrAdvances':
+        return HrAdvancesPage(
+          searchController: _searchController,
+          canReview: widget.session.hasPermission('hr.finance.adjust'),
+        );
+      case 'hrDiscrepancies':
+        return HrDiscrepanciesPage(
+          searchController: _searchController,
+          canReview: widget.session.hasPermission('hr.finance.adjust'),
+        );
+      case 'hrSettings':
+        return const HrSettingsPage();
       default:
         return AdminFeaturePlaceholder(destination: destination);
     }

@@ -31,6 +31,21 @@ const Map<String, String> kPermissionNameEn = <String, String>{
   'subscriptions.manage': 'Manage subscriptions',
   'tables.read': 'View tables & rooms',
   'tables.manage': 'Manage tables & rooms',
+  'hr.employee.read': 'View employee files',
+  'hr.employee.write': 'Edit employee files',
+  'hr.attendance.read': 'View attendance',
+  'hr.attendance.manage': 'Manage attendance',
+  'hr.attendance.correction': 'Request attendance correction',
+  'hr.schedule.read': 'View schedules',
+  'hr.schedule.manage': 'Manage schedules',
+  'hr.leave.review': 'Review leave',
+  'hr.compensation.manage': 'Manage compensation',
+  'hr.payroll.read': 'View payroll',
+  'hr.payroll.manage': 'Calculate payroll',
+  'hr.payroll.approve': 'Approve payroll',
+  'hr.payroll.pay': 'Record payroll payment',
+  'hr.finance.adjust': 'Employee finance adjustments',
+  'hr.settings.manage': 'Manage HR settings',
 };
 
 /// The Arabic name of every permission code of the dashboard.
@@ -64,6 +79,21 @@ const Map<String, String> kPermissionNameAr = <String, String>{
   'subscriptions.manage': 'إدارة الاشتراكات',
   'tables.read': 'عرض الطاولات والغرف',
   'tables.manage': 'إدارة الطاولات والغرف',
+  'hr.employee.read': 'عرض ملفات الموظفين',
+  'hr.employee.write': 'تعديل ملفات الموظفين',
+  'hr.attendance.read': 'عرض الحضور',
+  'hr.attendance.manage': 'إدارة الحضور',
+  'hr.attendance.correction': 'طلب تصحيح حضور',
+  'hr.schedule.read': 'عرض الجدول',
+  'hr.schedule.manage': 'إدارة الجدول',
+  'hr.leave.review': 'مراجعة الإجازات',
+  'hr.compensation.manage': 'إدارة الرواتب الأساسية',
+  'hr.payroll.read': 'عرض الرواتب',
+  'hr.payroll.manage': 'احتساب الرواتب',
+  'hr.payroll.approve': 'اعتماد الرواتب',
+  'hr.payroll.pay': 'تسجيل صرف الرواتب',
+  'hr.finance.adjust': 'التسويات المالية للموظفين',
+  'hr.settings.manage': 'إعدادات الموارد البشرية',
 };
 
 /// The English description of every permission code of the dashboard.
@@ -97,6 +127,24 @@ const Map<String, String> kPermissionDescEn = <String, String>{
   'subscriptions.manage': 'Manage subscription plans.',
   'tables.read': 'View tables, rooms and guest bookings.',
   'tables.manage': 'Manage tables, rooms and guest bookings.',
+  'hr.employee.read': 'Open the employee directory and read files in scope.',
+  'hr.employee.write': 'Maintain employment details, department and status.',
+  'hr.attendance.read':
+      'See clock-in, clock-out and daily attendance in scope.',
+  'hr.attendance.manage': 'Review and approve attendance corrections in scope.',
+  'hr.attendance.correction':
+      'Request an attendance correction for another employee.',
+  'hr.schedule.read': 'See draft and published work schedules in scope.',
+  'hr.schedule.manage': 'Create, publish and cancel work schedules.',
+  'hr.leave.review': 'Decide leave requests and set yearly entitlements.',
+  'hr.compensation.manage': 'Add effective-dated salary records in scope.',
+  'hr.payroll.read': 'Read payroll runs and payslips for staff in scope.',
+  'hr.payroll.manage': 'Generate, recalculate and cancel payroll runs.',
+  'hr.payroll.approve': 'Approve a calculated payroll run.',
+  'hr.payroll.pay': 'Mark an approved payroll run as paid.',
+  'hr.finance.adjust':
+      'Review advances, adjustments and cashier discrepancies.',
+  'hr.settings.manage': 'Edit HR policy rates, leave types and the time zone.',
 };
 
 /// The Arabic description of every permission code of the dashboard.
@@ -131,6 +179,21 @@ const Map<String, String> kPermissionDescAr = <String, String>{
   'subscriptions.manage': 'إدارة الاشتراكات.',
   'tables.read': 'عرض الطاولات والغرف وحجوزات الضيوف.',
   'tables.manage': 'إدارة الطاولات والغرف وحجوزات الضيوف.',
+  'hr.employee.read': 'فتح دليل الموظفين وقراءة الملفات داخل النطاق.',
+  'hr.employee.write': 'تحرير بيانات التعاقد والقسم والمسمى والحالة.',
+  'hr.attendance.read': 'عرض البصمة والحضور اليومي لمن في النطاق.',
+  'hr.attendance.manage': 'مراجعة تصحيحات الحضور واعتمادها.',
+  'hr.attendance.correction': 'طلب تصحيح حضور نيابة عن موظف آخر.',
+  'hr.schedule.read': 'عرض الجداول المسودة والمنشورة داخل النطاق.',
+  'hr.schedule.manage': 'إنشاء الجداول ونشرها وإلغاءها.',
+  'hr.leave.review': 'اعتماد طلبات الإجازة أو رفضها وتحديد الاستحقاق.',
+  'hr.compensation.manage': 'إضافة سجلات أجر بتاريخ نفاذ لمن في النطاق.',
+  'hr.payroll.read': 'قراءة دورات الرواتب وقسيمات من في النطاق.',
+  'hr.payroll.manage': 'توليد دورات الرواتب وإعادة احتسابها وإلغاؤها.',
+  'hr.payroll.approve': 'اعتماد دورة رواتب محسوبة.',
+  'hr.payroll.pay': 'تسجيل صرف دورة رواتب معتمدة.',
+  'hr.finance.adjust': 'مراجعة السلف والتسويات وفروقات الصندوق.',
+  'hr.settings.manage': 'تعديل أسعار السياسة وأنواع الإجازة والمنطقة الزمنية.',
 };
 
 /// The order in which the permission groups are shown in the dialog.
@@ -150,6 +213,7 @@ const List<String> kPermissionGroupOrder = <String>[
   'audit',
   'settings',
   'tables',
+  'hr',
 ];
 
 /// The group a permission code belongs to, such as `orders`.
@@ -177,6 +241,7 @@ String permissionGroupName(String group) {
     'settings' => ar ? 'الإعدادات' : 'Settings',
     'subscriptions' => ar ? 'الاشتراكات' : 'Subscriptions',
     'tables' => ar ? 'الصالة والطاولات' : 'Tables & rooms',
+    'hr' => ar ? 'الموارد البشرية' : 'Human resources',
     _ => group,
   };
 }
