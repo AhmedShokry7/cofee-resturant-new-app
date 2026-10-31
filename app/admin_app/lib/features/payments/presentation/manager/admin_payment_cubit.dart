@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/payments/di/payments_dependencies.dart';
 import 'package:admin_app/features/payments/domain/repositories/payment_repository.dart';
 import 'package:admin_app/features/payments/domain/usecases/load_payments.dart';
@@ -30,7 +31,7 @@ class AdminPaymentCubit extends Cubit<AdminPaymentState> {
       emit(
         state.copyWith(
           status: AdminPaymentStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

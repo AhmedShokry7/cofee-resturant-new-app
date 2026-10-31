@@ -294,7 +294,6 @@ class _Controls extends StatelessWidget {
                   onPressed: state.isSaving ? null : cubit.saveDraft,
                   child: Text(S.previewSaveDraft),
                 ),
-                OutlinedButton(onPressed: null, child: Text(S.previewPublish)),
               ],
             ),
           ],

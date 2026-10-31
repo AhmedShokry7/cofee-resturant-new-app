@@ -22,7 +22,6 @@ dependencies:
   equatable: ^2.0.7
   hugeicons: ^0.0.11
   flutter_svg: ^2.3.0
-  flutter_launcher_icons: ^0.14.4
   # The pictures of the catalogue come from the database and are shown again
   # and again, so they are cached on the device instead of being fetched
   # every time a card is drawn.
@@ -39,27 +38,29 @@ dependencies:
   flutter_quill: ^11.6.0
   file_picker: ^13.1.0
   archive: ^4.0.7
-  xml: ^6.0.0
-  # The ZATCA simplified tax invoice carries a TLV QR code. The package builds
-  # the QR matrix in Dart and is drawn inline into the printed HTML, so no
-  # image hosting or extra web plugin is needed.
-  qr: ^3.0.2
-  syncfusion_flutter_xlsio: ^33.2.13
+  xml: ^7.0.1
+  syncfusion_flutter_xlsio: ^35.1.42
   universal_html: ^2.3.0
-  # The print runner writes the invoice into a hidden frame of the browser.
-  # `dart:html` is deprecated and drops out of newer web builds, and this
-  # package is the replacement Flutter itself resolves, so it adds nothing to
-  # the tree.
-  web: ^1.1.2
   flutter_map: ^8.3.2
   geolocator: ^14.0.1
   latlong2: ^0.10.1
   fl_chart: ^0.69.0
+  # الطباعة كانت تعمل في المتصفح فقط لأن المستند كان HTML داخل إطار مخفي.
+  # هذان الحزمتان ترسمان المستند PDFًا وتسلمانه لنافذة طباعة النظام على
+  # ويندوز وماك ولينكس، وللمعاينة على أندرويد وiOS، وللطباعة على الويب،
+  # فالمسار واحد على كل جهاز بلا أي إطار مخفي أو js-interop.
+  printing: ^5.14.0
+  pdf: ^3.13.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+
+  # A generator run from the command line (`dart run flutter_launcher_icons`,
+  # configured by flutter_launcher_icons.yaml) that writes the launcher icons.
+  # Nothing in `lib/` imports it, so it stays out of the shipped set.
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true

@@ -79,7 +79,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ProductPageView(cubit: cubit, excel: excel),
+          body: ProductPageView(cubit: cubit, excel: excel, canManage: true),
         ),
       ),
     );

@@ -219,7 +219,10 @@ class _InventoryPageState extends State<InventoryPage> {
             onClearFilters: _clearFilters,
             onPageChanged: _cubit.setPage,
             onRefresh: _cubit.refresh,
-            errorMessage: state.isFailure ? state.errorMessage : null,
+            // القاعدة تُبقي الصفوف القديمة وتضبط الخطأ معًا كي لا تُحذف قائمة
+            // صالحة لرفضٍ في إعادة القراءة؛ لذلك تُعرض الرسالة متى وُجدت، لا
+            // حين تنقلب الحالة إلى failure وحدها.
+            errorMessage: state.errorMessage,
           );
         },
       ),

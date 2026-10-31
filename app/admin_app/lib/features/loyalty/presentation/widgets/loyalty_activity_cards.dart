@@ -52,6 +52,7 @@ class _ActivityCard extends StatelessWidget {
           Row(
             children: [
               AdminAvatarImage(
+                url: transaction.avatarUrl,
                 size: 34,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 fallbackText: initialsOf(name),

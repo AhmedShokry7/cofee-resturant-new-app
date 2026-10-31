@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/di/staff_dependencies.dart';
@@ -11,10 +12,10 @@ import 'package:admin_app/features/staff/domain/repositories/staff_repository.da
 import 'package:admin_app/features/staff/domain/usecases/cancel_invitation.dart';
 import 'package:admin_app/features/staff/domain/usecases/delete_staff_image_file.dart';
 import 'package:admin_app/features/staff/domain/usecases/invite_staff.dart';
+import 'package:admin_app/features/staff/domain/usecases/load_invitations.dart';
+import 'package:admin_app/features/staff/domain/usecases/load_invite_options.dart';
 import 'package:admin_app/features/staff/domain/usecases/load_permissions.dart';
 import 'package:admin_app/features/staff/domain/usecases/load_staff.dart';
-import 'package:admin_app/features/staff/domain/usecases/load_invite_options.dart';
-import 'package:admin_app/features/staff/domain/usecases/load_invitations.dart';
 import 'package:admin_app/features/staff/domain/usecases/set_staff_image.dart';
 import 'package:admin_app/features/staff/domain/usecases/set_staff_permission.dart';
 import 'package:admin_app/features/staff/domain/usecases/update_staff.dart';
@@ -66,7 +67,7 @@ class AdminStaffCubit extends Cubit<AdminStaffState> {
       emit(
         state.copyWith(
           status: AdminStaffStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }
@@ -131,7 +132,7 @@ class AdminStaffCubit extends Cubit<AdminStaffState> {
       final invitations = await _loadInvitations();
       emit(state.copyWith(invitations: invitations, clearError: true));
     } catch (error) {
-      emit(state.copyWith(errorMessage: '$error'));
+      emit(state.copyWith(errorMessage: adminErrorMessage(error)));
     }
   }
 

@@ -6,7 +6,6 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
-import 'package:admin_app/core/services/html_print_runner.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
@@ -44,11 +43,10 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
   @override
   void initState() {
     super.initState();
-    // The customer leaves with the tax invoice, so the browser print dialog is
-    // opened as soon as the sale is recorded. This attempt runs outside a click
-    // handler, where a browser may refuse to open a dialog, so its failure is
-    // not reported: the invoice card keeps a print button that reports fully.
-    if (_taxInvoiceReady && browserPrintingAvailable) {
+    // العميل يغادر ومع فاتورته الضريبية، لذلك تُفتح نافذة الطباعة بمجرد تسجيل
+    // العملية. هذه المحاولة خارج ضغط الزر، وقد يرفضها النظام، فلا تُبلَّغ كفشل:
+    // بطاقة الفاتورة تحتفظ بزر طباعة يبلّغ كاملًا عند الضغط.
+    if (_taxInvoiceReady) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _print(silent: true);
       });
@@ -71,11 +69,7 @@ class _PosReceiptDialogState extends State<_PosReceiptDialog> {
         ..hideCurrentSnackBar()
         ..showSnackBar(
           SnackBar(
-            content: Text(
-              browserPrintingAvailable
-                  ? S.posReceiptPrintFailed
-                  : S.printNeedsBrowser,
-            ),
+            content: Text(S.posReceiptPrintFailed),
             backgroundColor: AppColor.errorColor,
           ),
         );

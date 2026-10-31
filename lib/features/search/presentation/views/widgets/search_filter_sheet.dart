@@ -118,32 +118,38 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
             SizedBox(height: SpacingTokens.lg.h),
             Text(S.category, style: AppFonts.medium16(context)),
             SizedBox(height: SpacingTokens.sm.h),
-            Wrap(
-              spacing: SpacingTokens.sm.w,
-              runSpacing: SpacingTokens.sm.h,
-              children: [
-                _ChoiceChip(
-                  label: S.all,
-                  selected: _categoryId == null,
-                  onTap: () => setState(() => _categoryId = null),
-                ),
-                ...context.read<SearchCubit>().state.categories.map((
-                  CategoryModel category,
-                ) {
-                  final id = category.id;
-                  if (id == null) {
-                    // Without an id this chip could only send a display
-                    // label, which the RPC would treat as an id and match
-                    // nothing. Skip it rather than offer a filter that lies.
-                    return const SizedBox.shrink();
-                  }
-                  return _ChoiceChip(
-                    label: category.label,
-                    selected: _categoryId == id,
-                    onTap: () => setState(() => _categoryId = id),
-                  );
-                }),
-              ],
+            // The categories arrive on their own request, so the chips rebuild
+            // from the cubit instead of being read once: a plain context.read
+            // here kept the section on whatever the first frame held, which was
+            // often nothing.
+            BlocBuilder<SearchCubit, SearchState>(
+              buildWhen: (previous, current) =>
+                  previous.categories != current.categories,
+              builder: (context, state) => Wrap(
+                spacing: SpacingTokens.sm.w,
+                runSpacing: SpacingTokens.sm.h,
+                children: [
+                  _ChoiceChip(
+                    label: S.all,
+                    selected: _categoryId == null,
+                    onTap: () => setState(() => _categoryId = null),
+                  ),
+                  ...state.categories.map((CategoryModel category) {
+                    final id = category.id;
+                    if (id == null) {
+                      // Without an id this chip could only send a display
+                      // label, which the RPC would treat as an id and match
+                      // nothing. Skip it rather than offer a filter that lies.
+                      return const SizedBox.shrink();
+                    }
+                    return _ChoiceChip(
+                      label: category.label,
+                      selected: _categoryId == id,
+                      onTap: () => setState(() => _categoryId = id),
+                    );
+                  }),
+                ],
+              ),
             ),
             SizedBox(height: SpacingTokens.lg.h),
             Text(S.priceRange, style: AppFonts.medium16(context)),

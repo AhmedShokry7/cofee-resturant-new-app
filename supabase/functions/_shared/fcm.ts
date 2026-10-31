@@ -30,6 +30,8 @@ export type FcmMessage = {
   body: string;
   /// FCM only accepts string values in the data payload.
   data: Record<string, string>;
+  /// A public picture shown next to the message, or null for a text message.
+  imageUrl?: string | null;
 };
 
 /// The outcome of one delivery attempt.
@@ -105,11 +107,23 @@ export async function importPrivateKey(pem: string): Promise<CryptoKey> {
 
 /// Exchanges the service account for a short lived access token.
 ///
-/// The token is valid for an hour, so it is cached for a few minutes less.
+/// The token is valid for an hour, so it is kept in the warm container and
+/// reused. A campaign writes one notification row per customer and every row
+/// arrives as its own request, so without the cache a thousand customers would
+/// mean a thousand JWT exchanges against Google.
+const accessTokens = new Map<string, { token: string; expiresAt: number }>();
+
+/// The seconds an access token is refreshed before it really expires.
+const TOKEN_REFRESH_MARGIN_SECONDS = 120;
+
 export async function createAccessToken(
   serviceAccount: ServiceAccount,
+  now: () => number = Date.now,
 ): Promise<string> {
-  const issuedAt = Math.floor(Date.now() / 1000);
+  const cached = accessTokens.get(serviceAccount.client_email);
+  if (cached && cached.expiresAt > now()) return cached.token;
+
+  const issuedAt = Math.floor(now() / 1000);
   const header = base64UrlEncodeText(
     JSON.stringify({ alg: "RS256", typ: "JWT" }),
   );
@@ -153,7 +167,20 @@ export async function createAccessToken(
   if (!json?.access_token) {
     throw new Error("Google token endpoint returned no access token");
   }
+
+  const lifetime = Number.isFinite(json.expires_in) && json.expires_in > 0
+    ? Math.floor(json.expires_in)
+    : 3600;
+  accessTokens.set(serviceAccount.client_email, {
+    token: json.access_token as string,
+    expiresAt: now() + (lifetime - TOKEN_REFRESH_MARGIN_SECONDS) * 1000,
+  });
   return json.access_token as string;
+}
+
+/// Forgets every cached access token. Used by the tests.
+export function resetAccessTokenCache(): void {
+  accessTokens.clear();
 }
 
 /// Sends one message to one device token.
@@ -166,6 +193,7 @@ export async function sendToToken(
   token: string,
   message: FcmMessage,
 ): Promise<FcmSendResult> {
+  const imageUrl = message.imageUrl?.trim() || null;
   try {
     const response = await fetch(
       `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
@@ -178,12 +206,20 @@ export async function sendToToken(
         body: JSON.stringify({
           message: {
             token,
-            notification: { title: message.title, body: message.body },
+            notification: {
+              title: message.title,
+              body: message.body,
+              // The generic image is what Android's own banner reads; the
+              // platform block repeats it so the picture survives on the
+              // devices that only look at the android settings.
+              ...(imageUrl ? { image: imageUrl } : {}),
+            },
             data: message.data,
             android: {
               priority: "high",
               notification: {
                 channel_id: "default_notification_channel",
+                ...(imageUrl ? { image: imageUrl } : {}),
               },
             },
           },

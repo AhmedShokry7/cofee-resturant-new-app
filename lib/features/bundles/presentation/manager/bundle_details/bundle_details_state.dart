@@ -15,9 +15,10 @@ class BundleDetailsState {
   final List<ProductModel> products;
   final Map<String, ProductModel> productsById;
 
-  /// Non-member products sharing a category with the bundle contents, for
-  /// the "Goes well with" section. Derived from the already-loaded page,
-  /// so it costs no extra request.
+  /// Non-member products sharing a category with the bundle contents, resolved
+  /// by one bounded page read once the price breakdown is on screen. The bundle
+  /// page deliberately shows no carousel — cross-sell belongs to product
+  /// details — so nothing here renders them today.
   final List<ProductModel> pairs;
   final bool isLoading;
   final String? error;

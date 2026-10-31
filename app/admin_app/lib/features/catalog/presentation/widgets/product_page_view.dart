@@ -15,17 +15,26 @@ import 'package:admin_app/features/catalog/presentation/widgets/product_page_foo
 ///
 /// The view reads the state of [cubit], shows what it asks for and keeps the
 /// footer while the catalogue is being scrolled to its end.
+///
+/// [canManage] is `catalog.product.write`: 117 refuses every product write
+/// without it, so the write controls are not shown instead of always failing.
+/// [canManageCategories] is the separate `catalog.category.write` that the
+/// inline "new category" inside the product dialog needs.
 class ProductPageView extends StatelessWidget {
   const ProductPageView({
     super.key,
     required this.cubit,
     required this.excel,
+    required this.canManage,
+    this.canManageCategories = false,
     this.importProgress,
     this.exportProgress,
   });
 
   final AdminProductCubit cubit;
   final ProductExcelController excel;
+  final bool canManage;
+  final bool canManageCategories;
   final double? importProgress;
   final double? exportProgress;
 
@@ -43,38 +52,53 @@ class ProductPageView extends StatelessWidget {
             },
             child: ProductPageBody(
               products: state.products,
-              selectedIds: state.selectedIds,
+              selectedIds: canManage ? state.selectedIds : const <String>{},
               isSelectingAll: state.isSelectingAll,
               isDeletingSelected: state.isDeletingSelected,
-              onSelectAll: cubit.selectAllProducts,
-              onClearSelection: cubit.clearSelection,
-              onDeleteSelected: () => _confirmDeleteSelected(context, cubit),
+              onSelectAll: canManage ? cubit.selectAllProducts : null,
+              onClearSelection: canManage ? cubit.clearSelection : null,
+              onDeleteSelected: canManage
+                  ? () => _confirmDeleteSelected(context, cubit)
+                  : null,
               total: state.total,
               categories: state.categories,
               savingProductId: state.savingProductId,
-              onAdd: () => showProductDataDialog(
-                context: context,
-                cubit: cubit,
-                categories: state.categories,
-              ),
-              onSave: (product) =>
-                  cubit.saveProduct(product).catchError((Object _) {}),
-              onToggleFeatured: cubit.toggleFeatured,
-              onDelete: (product) => cubit.deleteProduct(product.id),
-              onOpenImages: (product) => showProductImagesDialog(
-                context: context,
-                cubit: cubit,
-                product: product,
-              ),
-              onSelect: (product) => cubit.toggleSelection(product.id),
-              onCreateCategory: (nameAr, nameEn, [descAr, descEn]) =>
-                  cubit.createCategory(
-                    nameAr: nameAr,
-                    nameEn: nameEn,
-                    descriptionAr: descAr,
-                    descriptionEn: descEn,
-                  ),
-              onPickFile: () => runProductImport(context, excel),
+              onAdd: canManage
+                  ? () => showProductDataDialog(
+                      context: context,
+                      cubit: cubit,
+                      categories: state.categories,
+                    )
+                  : null,
+              onSave: canManage
+                  ? (product) =>
+                        cubit.saveProduct(product).catchError((Object _) {})
+                  : null,
+              onToggleFeatured: canManage ? cubit.toggleFeatured : null,
+              onDelete: canManage
+                  ? (product) => cubit.deleteProduct(product.id)
+                  : null,
+              onOpenImages: canManage
+                  ? (product) => showProductImagesDialog(
+                      context: context,
+                      cubit: cubit,
+                      product: product,
+                    )
+                  : null,
+              onSelect: canManage
+                  ? (product) => cubit.toggleSelection(product.id)
+                  : null,
+              onCreateCategory: canManageCategories
+                  ? (nameAr, nameEn, [descAr, descEn]) => cubit.createCategory(
+                      nameAr: nameAr,
+                      nameEn: nameEn,
+                      descriptionAr: descAr,
+                      descriptionEn: descEn,
+                    )
+                  : null,
+              onPickFile: canManage
+                  ? () => runProductImport(context, excel)
+                  : null,
               onDownloadSample: () => runProductSampleDownload(context, excel),
               onExport: () => runProductExport(context, excel),
               importProgress: importProgress,

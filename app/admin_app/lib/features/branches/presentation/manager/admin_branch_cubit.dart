@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/features/branches/di/branches_dependencies.dart';
@@ -80,7 +81,7 @@ class AdminBranchCubit extends Cubit<AdminBranchState> {
       emit(
         state.copyWith(
           status: AdminBranchStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

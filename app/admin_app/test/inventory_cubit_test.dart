@@ -361,6 +361,24 @@ void main() {
       expect(cubit.state.items, hasLength(1));
     });
 
+    test('إعادة قراءة فاشلة مع صفوفٍ محفوظة تترك الاثنين معًا', () async {
+      // الشاشة تعرض الصفوف القديمة وشريط الرفض جنبًا إلى جنب، فتحتاج الاثنين
+      // من الحالة نفسها: صفوف صالحة ورسالة لم تُمحَ.
+      final repository = _FakeInventoryRepository()
+        ..items = <AdminInventoryItem>[_item(1)]
+        ..total = 1;
+      final cubit = AdminInventoryCubit(repository: repository);
+      addTearDown(cubit.close);
+      await cubit.load();
+
+      repository.failRows = true;
+      await cubit.refresh();
+
+      expect(cubit.state.status, AdminInventoryStatus.ready);
+      expect(cubit.state.items, hasLength(1));
+      expect(cubit.state.errorMessage, contains('rows failed'));
+    });
+
     test('saving, deleting and moving refresh only on success', () async {
       final repository = _FakeInventoryRepository()
         ..items = <AdminInventoryItem>[_item(1)]

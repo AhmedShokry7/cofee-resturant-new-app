@@ -1,12 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
+import 'package:admin_app/features/loyalty/di/loyalty_dependencies.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_overview.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_reward_draft.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_rule_draft.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_transaction.dart';
-import 'package:admin_app/features/loyalty/di/loyalty_dependencies.dart';
 import 'package:admin_app/features/loyalty/domain/repositories/loyalty_repository.dart';
 import 'package:admin_app/features/loyalty/domain/usecases/delete_reward.dart';
 import 'package:admin_app/features/loyalty/domain/usecases/load_members.dart';
@@ -71,7 +72,7 @@ class AdminLoyaltyCubit extends Cubit<AdminLoyaltyState> {
       emit(
         state.copyWith(
           status: AdminLoyaltyStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }
@@ -90,7 +91,12 @@ class AdminLoyaltyCubit extends Cubit<AdminLoyaltyState> {
         ),
       );
     } catch (error) {
-      emit(state.copyWith(targetsLoading: false, targetsError: '$error'));
+      emit(
+        state.copyWith(
+          targetsLoading: false,
+          targetsError: adminErrorMessage(error),
+        ),
+      );
     }
   }
 

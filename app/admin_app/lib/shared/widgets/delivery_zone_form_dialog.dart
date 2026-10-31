@@ -112,24 +112,18 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
   /// that is not a number is refused instead of being written as a free
   /// delivery. The digits of either language are read.
   double? _amount(TextEditingController controller) {
-    final text = normalizeDigits(controller.text.trim());
+    final text = controller.text.trim();
     if (text.isEmpty) return 0;
-    return double.tryParse(text);
+    return parseLocalizedNumber(text);
   }
 
   /// A number field, read in the digits of either language; blank is `null`.
-  double? _number(TextEditingController controller) {
-    final text = normalizeDigits(controller.text.trim());
-    if (text.isEmpty) return null;
-    return double.tryParse(text);
-  }
+  double? _number(TextEditingController controller) =>
+      parseLocalizedNumber(controller.text);
 
   /// A whole-number field: a value the zone table stores as an integer count.
-  int? _integer(TextEditingController controller) {
-    final text = normalizeDigits(controller.text.trim());
-    if (text.isEmpty) return null;
-    return int.tryParse(text);
-  }
+  int? _integer(TextEditingController controller) =>
+      parseLocalizedInt(controller.text);
 
   void _accept() {
     final nameAr = _nameAr.text.trim();
@@ -197,7 +191,7 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
       : null;
 
   List<LatLng> get _deliveryRadiusOutline {
-    final radiusKm = double.tryParse(_radius.text.trim()) ?? 20;
+    final radiusKm = parseLocalizedNumber(_radius.text) ?? 20;
     final distance = Distance();
     return List<LatLng>.generate(
       72,
@@ -215,8 +209,8 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
   }
 
   void _onCoordinateChanged(String _) {
-    final latitude = double.tryParse(_lat.text.trim());
-    final longitude = double.tryParse(_lng.text.trim());
+    final latitude = parseLocalizedNumber(_lat.text);
+    final longitude = parseLocalizedNumber(_lng.text);
     if (latitude == null ||
         longitude == null ||
         latitude < -90 ||

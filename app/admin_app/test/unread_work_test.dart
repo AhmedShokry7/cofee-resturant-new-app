@@ -27,7 +27,7 @@ class _FakeNavRepository extends AdminNavRepository {
   int loads = 0;
 
   @override
-  Future<AdminNavCounts> loadCounts() async {
+  Future<AdminNavCounts> loadCounts({bool withNotifications = false}) async {
     loads += 1;
     if (failing) throw StateError('the counters are unreachable');
     return counts;
@@ -154,8 +154,11 @@ void main() {
         final feed = _FakeFeed();
         final cubit = AdminNavCubit(
           repository: repository,
-          liveFeed: ({required bool watchOrders, required bool watchKitchen}) =>
-              feed,
+          liveFeed: ({
+            required bool watchOrders,
+            required bool watchKitchen,
+            required bool watchNotifications,
+          }) => feed,
           refreshInterval: const Duration(days: 1),
         );
         addTearDown(cubit.close);
@@ -183,8 +186,11 @@ void main() {
       final feed = _FakeFeed();
       final cubit = AdminNavCubit(
         repository: repository,
-        liveFeed: ({required bool watchOrders, required bool watchKitchen}) =>
-            feed,
+        liveFeed: ({
+          required bool watchOrders,
+          required bool watchKitchen,
+          required bool watchNotifications,
+        }) => feed,
         refreshInterval: const Duration(days: 1),
       );
       addTearDown(cubit.close);
@@ -207,8 +213,11 @@ void main() {
       final feed = _FakeFeed();
       final cubit = AdminNavCubit(
         repository: _FakeNavRepository(AdminNavCounts.empty),
-        liveFeed: ({required bool watchOrders, required bool watchKitchen}) =>
-            feed,
+        liveFeed: ({
+          required bool watchOrders,
+          required bool watchKitchen,
+          required bool watchNotifications,
+        }) => feed,
       );
 
       cubit.start(watchOrders: true, watchKitchen: false);
@@ -223,11 +232,16 @@ void main() {
       final watched = <String, bool>{};
       final cubit = AdminNavCubit(
         repository: _FakeNavRepository(AdminNavCounts.empty),
-        liveFeed: ({required bool watchOrders, required bool watchKitchen}) {
-          watched['orders'] = watchOrders;
-          watched['kitchen'] = watchKitchen;
-          return _FakeFeed();
-        },
+        liveFeed:
+            ({
+              required bool watchOrders,
+              required bool watchKitchen,
+              required bool watchNotifications,
+            }) {
+              watched['orders'] = watchOrders;
+              watched['kitchen'] = watchKitchen;
+              return _FakeFeed();
+            },
       );
       addTearDown(cubit.close);
 
@@ -241,10 +255,15 @@ void main() {
         repository: _FakeNavRepository(
           const AdminNavCounts(unreadOrders: 5, unreadKitchen: 5),
         ),
-        liveFeed: ({required bool watchOrders, required bool watchKitchen}) {
-          built += 1;
-          return _FakeFeed();
-        },
+        liveFeed:
+            ({
+              required bool watchOrders,
+              required bool watchKitchen,
+              required bool watchNotifications,
+            }) {
+              built += 1;
+              return _FakeFeed();
+            },
       );
       addTearDown(cubit.close);
 

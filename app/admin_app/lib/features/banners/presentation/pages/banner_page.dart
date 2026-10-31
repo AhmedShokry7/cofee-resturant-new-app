@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
+import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_state.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_data_dialog.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_image_dialog.dart';
 import 'package:admin_app/features/banners/presentation/widgets/banner_page_body.dart';
-import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
+/// البانرز يقرؤه الجميع (022 يجعله عامًا)، أما كتابته فتطلب `settings.write`.
 class BannerPage extends StatefulWidget {
-  const BannerPage({super.key, required this.searchController, this.cubit});
+  const BannerPage({
+    super.key,
+    required this.searchController,
+    this.cubit,
+    this.canManage = false,
+  });
 
   static const String routeName = '/banners';
 
   final AdminSearchController searchController;
   final AdminBannerCubit? cubit;
+  final bool canManage;
 
   @override
   State<BannerPage> createState() => _BannerPageState();
@@ -48,12 +56,26 @@ class _BannerPageState extends State<BannerPage> {
   }
 
   Future<void> _togglePublished(AdminBanner banner) async {
+    if (!widget.canManage) return;
     try {
       await _cubit.togglePublished(banner);
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('$error')));
+          .showSnackBar(SnackBar(content: Text(adminErrorMessage(error))));
+    }
+  }
+
+  /// الحذف تُرفضه القاعدة (صلاحية أو بانر ما زال معلّقًا)، والرفض يجب أن يصل
+  /// لمن ضغط: سطر `catchError((_) {})` كان يترك البانر في مكانه بلا كلمة.
+  Future<void> _deleteBanner(AdminBanner banner) async {
+    if (!widget.canManage) return;
+    try {
+      await _cubit.deleteBanner(banner.id);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(adminErrorMessage(error))));
     }
   }
 
@@ -75,21 +97,25 @@ class _BannerPageState extends State<BannerPage> {
           return BannerPageBody(
             banners: state.banners,
             search: _searchQuery,
-            onAdd: () =>
-                showBannerCreateDialog(context: context, cubit: _cubit),
-            onEdit: (banner) => showBannerEditDialog(
-              context: context,
-              cubit: _cubit,
-              banner: banner,
-            ),
-            onDelete: (banner) =>
-                _cubit.deleteBanner(banner.id).catchError((_) {}),
-            onTogglePublished: _togglePublished,
-            onChangeImage: (banner) => showBannerImageDialog(
-              context: context,
-              cubit: _cubit,
-              banner: banner,
-            ),
+            onAdd: widget.canManage
+                ? () => showBannerCreateDialog(context: context, cubit: _cubit)
+                : null,
+            onEdit: widget.canManage
+                ? (banner) => showBannerEditDialog(
+                    context: context,
+                    cubit: _cubit,
+                    banner: banner,
+                  )
+                : null,
+            onDelete: widget.canManage ? _deleteBanner : null,
+            onTogglePublished: widget.canManage ? _togglePublished : null,
+            onChangeImage: widget.canManage
+                ? (banner) => showBannerImageDialog(
+                    context: context,
+                    cubit: _cubit,
+                    banner: banner,
+                  )
+                : null,
           );
         },
       ),

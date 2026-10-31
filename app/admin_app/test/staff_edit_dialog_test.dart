@@ -8,6 +8,7 @@ import 'package:admin_app/features/staff/domain/entities/staff_edit_outcome.dart
 import 'package:admin_app/features/staff/presentation/manager/admin_staff_cubit.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_edit_dialog.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_format.dart';
+import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 
 import 'helpers/fake_staff_repository.dart';
 
@@ -24,25 +25,30 @@ AdminStaffMember _member({String status = 'active'}) => AdminStaffMember(
 Future<void> _open(
   WidgetTester tester,
   AdminStaffCubit cubit,
-  AdminStaffMember member,
-) async {
-  tester.view.physicalSize = const Size(1200, 1000);
+  AdminStaffMember member, {
+  Size size = const Size(1200, 1000),
+  TextDirection direction = TextDirection.ltr,
+}) async {
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
   await tester.pumpWidget(
     MaterialApp(
-      home: Scaffold(
-        body: Center(
-          child: Builder(
-            builder: (context) => TextButton(
-              onPressed: () => showStaffEditDialog(
-                context: context,
-                cubit: cubit,
-                member: member,
+      home: Directionality(
+        textDirection: direction,
+        child: Scaffold(
+          body: Center(
+            child: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showStaffEditDialog(
+                  context: context,
+                  cubit: cubit,
+                  member: member,
+                ),
+                child: const Text('open'),
               ),
-              child: const Text('open'),
             ),
           ),
         ),
@@ -59,14 +65,79 @@ void main() {
   Future<({AdminStaffCubit cubit, FakeStaffRepository repo})> ready(
     WidgetTester tester, {
     StaffEditOutcome outcome = StaffEditOutcome.success,
+    Duration editDelay = Duration.zero,
+    Size size = const Size(1200, 1000),
+    TextDirection direction = TextDirection.ltr,
   }) async {
     final member = _member();
-    final repo = FakeStaffRepository(members: [member], editOutcome: outcome);
+    final repo = FakeStaffRepository(
+      members: [member],
+      editOutcome: outcome,
+      editDelay: editDelay,
+    );
     final cubit = AdminStaffCubit(repository: repo);
     await cubit.load();
-    await _open(tester, cubit, member);
+    await _open(tester, cubit, member, size: size, direction: direction);
     return (cubit: cubit, repo: repo);
   }
+
+  testWidgets('a narrow Arabic phone fits the editor', (tester) async {
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    await ready(
+      tester,
+      size: const Size(360, 720),
+      direction: TextDirection.rtl,
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(find.byType(StaffEditDialog), findsOneWidget);
+  });
+
+  testWidgets('the editor wears the shared dialog chrome', (tester) async {
+    await ready(tester);
+
+    // الرأس والتذييل المشتركان: زر إغلاق، وشريط حفظ يوقف الزرين أثناء الكتابة.
+    expect(find.byType(AdminDialogHeader), findsOneWidget);
+    expect(find.byType(AdminDialogFooter), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(AdminErrorBanner), findsNothing);
+  });
+
+  testWidgets('an address that is not an email stops before the database', (
+    tester,
+  ) async {
+    final opened = await ready(tester);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, S.email),
+      'not-an-email',
+    );
+    await tester.tap(find.text(S.save));
+    await tester.pumpAndSettle();
+
+    expect(opened.repo.edits, isEmpty);
+    expect(find.text(S.staffEditInvalidEmail), findsOneWidget);
+    expect(find.byType(StaffEditDialog), findsOneWidget);
+  });
+
+  testWidgets('a save still running shows it and refuses a second one', (
+    tester,
+  ) async {
+    final opened = await ready(tester, editDelay: const Duration(seconds: 1));
+    await tester.enterText(
+      find.widgetWithText(TextFormField, S.staffName),
+      'Cashier Two',
+    );
+    await tester.tap(find.text(S.save));
+    await tester.pump();
+
+    // الزر يتحول إلى حالة الحفظ فلا يبقى شيء يُنقر مرتين.
+    expect(find.text(S.saving), findsOneWidget);
+    expect(find.text(S.save), findsNothing);
+
+    await tester.pumpAndSettle();
+    expect(opened.repo.edits, hasLength(1));
+    expect(find.byType(StaffEditDialog), findsNothing);
+  });
 
   testWidgets('the dialog opens on what the account holds', (tester) async {
     await ready(tester);

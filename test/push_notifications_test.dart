@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
+import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/data/repositories/push_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
@@ -8,9 +9,21 @@ import 'package:new_coffee/features/notifications/presentation/manager/notificat
 
 /// A push repository that answers from memory.
 class _FakePushRepository implements PushRepository {
-  bool enabled = false;
+  bool pushEnabled = false;
+  bool orderStatus = true;
+  bool promo = true;
+  bool loyalty = true;
+  bool system = true;
   final List<String> registered = [];
   final List<String> removed = [];
+
+  NotificationPreferences get row => NotificationPreferences(
+    pushEnabled: pushEnabled,
+    orderStatus: orderStatus,
+    promo: promo,
+    loyalty: loyalty,
+    system: system,
+  );
 
   @override
   Future<void> registerToken({
@@ -31,12 +44,28 @@ class _FakePushRepository implements PushRepository {
 
   @override
   Future<bool> setPushEnabled(bool enabled) async {
-    this.enabled = enabled;
+    pushEnabled = enabled;
     return enabled;
   }
 
   @override
-  Future<bool> isPushEnabled() async => enabled;
+  Future<NotificationPreferences> preferences() async => row;
+
+  @override
+  Future<NotificationPreferences> setPreferences({
+    bool? pushEnabled,
+    bool? orderStatus,
+    bool? promo,
+    bool? loyalty,
+    bool? system,
+  }) async {
+    this.pushEnabled = pushEnabled ?? this.pushEnabled;
+    this.orderStatus = orderStatus ?? this.orderStatus;
+    this.promo = promo ?? this.promo;
+    this.loyalty = loyalty ?? this.loyalty;
+    this.system = system ?? this.system;
+    return row;
+  }
 }
 
 /// A notifications repository that always answers with an empty list.
@@ -70,7 +99,7 @@ void main() {
   });
 
   test('the switch of the customer is read from the server', () async {
-    final pushRepository = _FakePushRepository()..enabled = true;
+    final pushRepository = _FakePushRepository()..pushEnabled = true;
     final cubit = NotificationsCubit(
       repository: _EmptyNotificationsRepository(),
       pushRepository: pushRepository,

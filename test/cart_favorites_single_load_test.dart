@@ -24,6 +24,7 @@ class _CountingCatalog implements CatalogRepository {
   final CatalogRepository _inner;
 
   int getProductsCalls = 0;
+  int getByIdCalls = 0;
 
   @override
   Future<List<ProductModel>> getProducts({
@@ -42,8 +43,10 @@ class _CountingCatalog implements CatalogRepository {
   }
 
   @override
-  Future<ProductModel?> getById(String id, {String? branchId}) =>
-      _inner.getById(id, branchId: branchId);
+  Future<ProductModel?> getById(String id, {String? branchId}) {
+    getByIdCalls++;
+    return _inner.getById(id, branchId: branchId);
+  }
 
   @override
   Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) =>
@@ -82,11 +85,7 @@ class _CountingCatalog implements CatalogRepository {
     String? branchId,
     Duration period = const Duration(days: 30),
     int limit = 10,
-  }) => _inner.getBestSellers(
-    branchId: branchId,
-    period: period,
-    limit: limit,
-  );
+  }) => _inner.getBestSellers(branchId: branchId, period: period, limit: limit);
 
   @override
   Future<ResolvedPrice?> resolvePrice(
@@ -153,10 +152,7 @@ class _CountingFavorites implements FavoritesRepository {
   Future<Set<String>> synchronizedIds(
     Set<String> localIds, {
     required Set<String> validProductIds,
-  }) => _inner.synchronizedIds(
-    localIds,
-    validProductIds: validProductIds,
-  );
+  }) => _inner.synchronizedIds(localIds, validProductIds: validProductIds);
 
   @override
   Future<void> addFavorite(String productId) => _inner.addFavorite(productId);
@@ -181,7 +177,7 @@ Future<void> _settle(CartCubit cubit) async {
 
 void main() {
   group('cart initialises exactly once', () {
-    test('the constructor reads the catalogue once, not twice', () async {
+    test('the constructor reads only the stored ids, not a page', () async {
       SharedPreferences.setMockInitialValues({
         'cart_v1_guest': jsonEncode([
           {'productId': '1', 'quantity': 1},
@@ -196,16 +192,26 @@ void main() {
       addTearDown(cubit.close);
       await _settle(cubit);
 
+      // Restoration knows its own product ids, so it resolves exactly those
+      // rows (cart_cubit.dart:931). Downloading the whole catalogue page for a
+      // one-line cart was the old behaviour, and it is what this asserts
+      // against: a page read here is a regression, not a style choice.
+      expect(
+        catalog.getByIdCalls,
+        1,
+        reason: 'the one stored line costs the one product read it names',
+      );
       expect(
         catalog.getProductsCalls,
-        1,
-        reason: 'one catalogue read restores the stored lines',
+        0,
+        reason: 'a cart never pays for a catalogue page',
       );
 
-      // An explicit reload still costs exactly one more read: nothing runs
+      // An explicit reload resolves the same single id once more: nothing runs
       // twice behind the caller's back and nothing is repeated for free.
       await cubit.load();
-      expect(catalog.getProductsCalls, 2);
+      expect(catalog.getByIdCalls, 2);
+      expect(catalog.getProductsCalls, 0);
     });
 
     test('an empty cart never reaches the catalogue', () async {
@@ -220,6 +226,7 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
       expect(catalog.getProductsCalls, 0);
+      expect(catalog.getByIdCalls, 0);
       expect(cubit.state.items, isEmpty);
     });
   });
@@ -273,7 +280,7 @@ void main() {
         repository: MockProductRepository(),
         favorites: favorites,
       );
-addTearDown(cubit.close);
+      addTearDown(cubit.close);
 
       // Listen before either load can emit. The superseded constructor load is
       // discarded on purpose, so the second load owns the final state and its

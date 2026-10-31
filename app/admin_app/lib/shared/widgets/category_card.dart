@@ -83,25 +83,27 @@ class CategoryCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   _CategoryImage(url: category.imageUrl),
-                  PositionedDirectional(
-                    top: AppDimensions.recordImageInset,
-                    end: AppDimensions.recordImageInset,
-                    child: AdminSelectionCheckBox(
-                      checked: isSelected,
-                      onTap: onSelect,
+                  if (onSelect != null)
+                    PositionedDirectional(
+                      top: AppDimensions.recordImageInset,
+                      end: AppDimensions.recordImageInset,
+                      child: AdminSelectionCheckBox(
+                        checked: isSelected,
+                        onTap: onSelect,
+                      ),
                     ),
-                  ),
                   if (!category.isActive)
                     PositionedDirectional(
                       top: AppDimensions.recordImageInset,
                       start: AppDimensions.recordImageInset,
                       child: _InactiveBadge(onTap: onToggleActive),
                     ),
-                  PositionedDirectional(
-                    bottom: AppDimensions.recordImageInset,
-                    start: AppDimensions.recordImageInset,
-                    child: _ImagePill(onTap: onChangeImage),
-                  ),
+                  if (onChangeImage != null)
+                    PositionedDirectional(
+                      bottom: AppDimensions.recordImageInset,
+                      start: AppDimensions.recordImageInset,
+                      child: _ImagePill(onTap: onChangeImage),
+                    ),
                 ],
               ),
             ),
@@ -134,13 +136,15 @@ class CategoryCard extends StatelessWidget {
               ],
             ),
           ),
-          // Footer
-          _CategoryCardFooter(
-            isActive: category.isActive,
-            onEdit: onEdit,
-            onDelete: onDelete,
-            onToggleActive: onToggleActive,
-          ),
+          // ذيل البطاقة كلّه أداة كتابة: يُحجب عمن لا يملكها حتى لا يظهر زرّ
+          // يوهم بفعلٍ ترفضه القاعدة.
+          if (onEdit != null || onDelete != null || onToggleActive != null)
+            _CategoryCardFooter(
+              isActive: category.isActive,
+              onEdit: onEdit,
+              onDelete: onDelete,
+              onToggleActive: onToggleActive,
+            ),
         ],
       ),
     );

@@ -276,12 +276,16 @@ class _DetailsSheet extends StatelessWidget {
                   color: AppColor.greyColor,
                 ),
                 SizedBox(width: SpacingTokens.xs.w),
-                Text(
-                  product.calories == null
-                      ? S.caloriesUnavailable
-                      : S.caloriesValue(product.calories!),
-                  style: AppFonts.regular14(context)
-                      .copyWith(color: AppColor.greyColor),
+                // الجملة العربية أطول من المتاح، وبلا Flexible يفرز هذا السطر
+                // RenderFlex overflowed على كل شاشة تفاصيل.
+                Flexible(
+                  child: Text(
+                    product.calories == null
+                        ? S.caloriesUnavailable
+                        : S.caloriesValue(product.calories!),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
+                  ),
                 ),
               ],
             ),

@@ -7,16 +7,19 @@ import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.d
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 
 /// The header and the list of the bundles, the whole content of the page.
+///
+/// أدوات الكتابة اختيارية كلها: من لا يملك `catalog.product.write` تُعرض له
+/// الباقات قراءةً فقط لأن قاعدته ترفض كل كتابة منها.
 class BundlePageBody extends StatelessWidget {
   const BundlePageBody({
     super.key,
     required this.bundles,
     required this.search,
-    required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
-    required this.onToggleActive,
-    required this.onChangeImage,
+    this.onAdd,
+    this.onEdit,
+    this.onDelete,
+    this.onToggleActive,
+    this.onChangeImage,
     this.selectedIds = const <String>{},
     this.isDeletingSelected = false,
     this.onSelect,
@@ -27,11 +30,11 @@ class BundlePageBody extends StatelessWidget {
 
   final List<AdminBundle> bundles;
   final String search;
-  final VoidCallback onAdd;
-  final ValueChanged<AdminBundle> onEdit;
-  final ValueChanged<AdminBundle> onDelete;
-  final ValueChanged<AdminBundle> onToggleActive;
-  final ValueChanged<AdminBundle> onChangeImage;
+  final VoidCallback? onAdd;
+  final ValueChanged<AdminBundle>? onEdit;
+  final ValueChanged<AdminBundle>? onDelete;
+  final ValueChanged<AdminBundle>? onToggleActive;
+  final ValueChanged<AdminBundle>? onChangeImage;
   final Set<String> selectedIds;
   final bool isDeletingSelected;
   final ValueChanged<AdminBundle>? onSelect;

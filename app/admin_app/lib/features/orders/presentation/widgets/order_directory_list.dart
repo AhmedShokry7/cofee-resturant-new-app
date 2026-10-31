@@ -71,7 +71,13 @@ class OrderDirectoryList extends StatelessWidget {
                     statusRules: statusRules,
                     onOpen: onOpen,
                   )
-                : OrderTable(orders: visible, onOpen: onOpen),
+                : OrderTable(
+                    orders: visible,
+                    canManage: canManage,
+                    onChangeStatus: onChangeStatus,
+                    statusRules: statusRules,
+                    onOpen: onOpen,
+                  ),
           ),
           AdminPagination(
             page: current,

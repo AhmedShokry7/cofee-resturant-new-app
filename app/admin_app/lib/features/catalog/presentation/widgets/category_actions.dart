@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_cubit.dart';
-import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 import 'package:admin_app/features/catalog/presentation/widgets/product_dialogs.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 
 /// The dialog that creates or edits a category; it writes through the cubit
 /// of the page and closes itself when the write succeeded.
@@ -41,7 +42,9 @@ Future<void> showCategoryDataDialog({
           if (!context.mounted) return;
           Navigator.of(context).pop(category);
         } catch (error) {
-          messenger.showSnackBar(SnackBar(content: Text('$error')));
+          messenger.showSnackBar(
+            SnackBar(content: Text(adminErrorMessage(error))),
+          );
         }
       },
     ),
@@ -95,7 +98,10 @@ void confirmDeleteCategory(
         await cubit.deleteCategory(category.id);
       } catch (error) {
         if (!context.mounted) return;
-        showErrorSnackBar(context, S.couldNotDeleteCategory('$error'));
+        showErrorSnackBar(
+          context,
+          S.couldNotDeleteCategory(adminErrorMessage(error)),
+        );
       }
     },
   );
@@ -128,6 +134,9 @@ Future<void> toggleCategoryActive(
     await cubit.toggleActive(category);
   } catch (error) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, S.couldNotUpdateCategory('$error'));
+    showErrorSnackBar(
+      context,
+      S.couldNotUpdateCategory(adminErrorMessage(error)),
+    );
   }
 }

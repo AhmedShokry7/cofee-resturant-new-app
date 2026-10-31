@@ -17,7 +17,9 @@ class _OrderQuantityDialogState extends State<QuantityDialog> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: localizeDigits('${widget.initial}'));
+    _controller = TextEditingController(
+      text: localizeDigits('${widget.initial}'),
+    );
   }
 
   @override

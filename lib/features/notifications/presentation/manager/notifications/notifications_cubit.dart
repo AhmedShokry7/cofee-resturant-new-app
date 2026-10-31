@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
+import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/data/repositories/push_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
@@ -39,8 +40,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         ? SupabaseService.client.auth.currentUser?.id
         : null;
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange
-          .listen(_onAuthStateChanged);
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
       // The session can already be there when the cubit is created, in which
       // case the stream replays it and opens the channel. This covers the
       // moment between the two, when the customer is signed in but the
@@ -76,7 +78,6 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   /// channel reports one. The channel belongs to one customer at a time and
   /// is closed when that customer signs out.
   RealtimeChannel? _channel;
-
 
   /// Tail of the serialized load chain.
   ///
@@ -120,6 +121,9 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         // A signed-out customer has no rows at all, so say so straight away
         // rather than flashing a spinner over an empty list.
         signedOut: identity == null,
+        // The switches belong to the customer too: the next one must not see
+        // the switches of the previous one while their own read is in flight.
+        preferences: const NotificationPreferences(),
       ),
     );
     return true;
@@ -229,17 +233,17 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  /// Whether the customer wants to receive pushes on this phone.
+  /// The push switches of the signed-in customer.
   Future<void> loadPushState() async {
     try {
-      final enabled = await _pushRepository.isPushEnabled();
+      final switches = await _pushRepository.preferences();
       if (isClosed) return;
-      emit(state.copyWith(pushEnabled: enabled));
-    } catch (error) {
-      // A customer who is not signed in has no push state yet. The screen
-      // shows the switch as off, which is the honest answer.
+      emit(state.copyWith(preferences: switches));
+    } catch (_) {
+      // A customer who is not signed in has no switches yet. The screen shows
+      // the switches of a fresh account, which is the honest answer.
       if (isClosed) return;
-      emit(state.copyWith(pushEnabled: false));
+      emit(state.copyWith(preferences: const NotificationPreferences()));
     }
   }
 
@@ -253,6 +257,34 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     emit(state.copyWith(pushEnabled: changed));
   }
 
+  /// Turns one kind of push on or off, and says whether the server kept it.
+  ///
+  /// The switches belong to the customer's row, so the state takes what the
+  /// write returned rather than what was asked for. A caller that gets false
+  /// back has to leave the switch where the server left it and say why.
+  Future<bool> setTypePreference(
+    NotificationPreferenceKey key,
+    bool enabled,
+  ) async {
+    try {
+      final saved = switch (key) {
+        NotificationPreferenceKey.orderStatus =>
+          await _pushRepository.setPreferences(orderStatus: enabled),
+        NotificationPreferenceKey.promo => await _pushRepository.setPreferences(
+          promo: enabled,
+        ),
+        NotificationPreferenceKey.loyalty =>
+          await _pushRepository.setPreferences(loyalty: enabled),
+        NotificationPreferenceKey.system =>
+          await _pushRepository.setPreferences(system: enabled),
+      };
+      if (isClosed) return false;
+      emit(state.copyWith(preferences: saved));
+      return saved.valueOf(key) == enabled;
+    } catch (_) {
+      return false;
+    }
+  }
 
   Future<void> _load({required bool markRead}) async {
     final generation = ++_loadGeneration;
@@ -285,19 +317,23 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       if (isClosed) return;
       // A newer load, or a newer identity, already owns the state.
       if (generation != _loadGeneration) return;
-      emit(state.copyWith(
-        notifications: notifications,
-        isLoading: false,
-        signedOut: false,
-      ));
+      emit(
+        state.copyWith(
+          notifications: notifications,
+          isLoading: false,
+          signedOut: false,
+        ),
+      );
     } on NotificationSignInRequiredException {
       if (isClosed) return;
       if (generation != _loadGeneration) return;
-      emit(state.copyWith(
-        notifications: const [],
-        isLoading: false,
-        signedOut: true,
-      ));
+      emit(
+        state.copyWith(
+          notifications: const [],
+          isLoading: false,
+          signedOut: true,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       if (generation != _loadGeneration) return;

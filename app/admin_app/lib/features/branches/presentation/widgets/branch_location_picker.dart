@@ -117,24 +117,31 @@ class _AdminLocationPickerState extends State<AdminLocationPicker> {
     widget.onPicked?.call(point, address);
   }
 
+  /// يعيد العنوان، أو `null` إن لم يجلبه. والحالة بلا عنوان لا تُترك صامتة:
+  /// الخانة تبقى كما كتبها الأدمن، ومن يقرأ السكون يظن أن العنوان جُلب.
   Future<String?> _reverseGeocode(LatLng point) async {
+    String? address;
     try {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse?format=json&lat=${point.latitude}&lon=${point.longitude}&accept-language=ar',
       );
-      final response = await http.get(
-        url,
-        headers: {'User-Agent': 'admin_app/1.0'},
-      );
+      final response = await http
+          .get(url, headers: const {'User-Agent': 'admin_app/1.0'})
+          // بلا مهلة يعلق النداء على شبكةٍ صامتة والخرجة تنتظره بلا نهاية.
+          .timeout(const Duration(seconds: 8));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final address = data['display_name'] as String?;
-        if (address != null && address.trim().isNotEmpty) {
-          return address.trim();
-        }
+        final text = (data['display_name'] as String?)?.trim() ?? '';
+        if (text.isNotEmpty) address = text;
       }
-    } catch (_) {}
-    return null;
+    } catch (_) {
+      // الرفض أو انتهاء المهلة سيّان: لا عنوان، والسطر أدناه يقوله.
+    }
+    if (address == null && mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.addressLookupFailed)));
+    }
+    return address;
   }
 
   @override

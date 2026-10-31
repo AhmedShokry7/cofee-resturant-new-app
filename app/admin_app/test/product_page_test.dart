@@ -118,7 +118,11 @@ void main() {
     await cubit.load();
     await tester.pumpWidget(
       MaterialApp(
-        home: ProductPage(searchController: searchController, cubit: cubit),
+        home: ProductPage(
+          searchController: searchController,
+          cubit: cubit,
+          canManage: true,
+        ),
       ),
     );
     await tester.pumpAndSettle();

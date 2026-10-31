@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/features/notifications/data/services/notifications_realtime_feed.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
@@ -56,6 +58,9 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
   String? lastReadId;
   bool? lastReadValue;
   String? deletedId;
+  bool imageDeleteFails = false;
+  final List<String> uploadedImageNames = <String>[];
+  final List<String> deletedImageUrls = <String>[];
 
   @override
   Future<AdminNotificationPage> loadNotifications({
@@ -91,6 +96,23 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
   }
 
   @override
+  Future<String> uploadCampaignImage({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    uploadedImageNames.add(fileName);
+    return 'https://example.test/storage/v1/object/public/product-images/products/notifications/$fileName';
+  }
+
+  @override
+  Future<void> deleteCampaignImageFile(String? imageUrl) async {
+    if (imageUrl == null) return;
+    if (imageDeleteFails) throw StateError('the bucket refused it');
+    deletedImageUrls.add(imageUrl);
+  }
+
+  @override
   Future<AdminSendResult> sendNotification({
     required AdminNotificationType type,
     required String titleAr,
@@ -109,7 +131,10 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
       bodyEn: bodyEn,
       audience: audience,
       customerId: customerId,
-      payload: payload,
+      imageUrl: payload['image_url'] as String?,
+      destination: AdminNotificationDestination.fromValue(
+        payload['destination'],
+      ),
     );
     return sendResult;
   }
@@ -144,6 +169,30 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
 }
 
 Future<void> _settle() => Future<void>.delayed(const Duration(milliseconds: 1));
+
+/// A feed that records the subscriptions instead of opening a realtime channel.
+class _FakeNotificationsFeed extends NotificationsRealtimeFeed {
+  VoidCallback? _handler;
+  int starts = 0;
+  int disposes = 0;
+
+  @override
+  bool get isActive => starts > disposes;
+
+  @override
+  void start(VoidCallback onChanged) {
+    starts += 1;
+    _handler = onChanged;
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposes += 1;
+    _handler = null;
+  }
+
+  void emitChange() => _handler?.call();
+}
 
 void main() {
   setUp(() => AppLocale.instance.debugSet(AppLanguage.english));
@@ -306,7 +355,8 @@ void main() {
         bodyAr: 'لك نقاط إضافية',
         bodyEn: 'Extra points for you',
         audience: AdminNotificationAudience.pushEnabled,
-        payload: {'screen': 'loyalty'},
+        imageUrl: 'https://example.test/storage/v1/object/public/product-images/products/notifications/a.png',
+        destination: AdminNotificationDestination.loyalty,
       ),
     );
 
@@ -317,7 +367,11 @@ void main() {
       repository.sentDraft?.audience,
       AdminNotificationAudience.pushEnabled,
     );
-    expect(repository.sentDraft?.payload['screen'], 'loyalty');
+    expect(
+      repository.sentDraft?.payload['destination'],
+      AdminNotificationDestination.loyalty.value,
+    );
+    expect(repository.sentDraft?.payload['image_url'], isNotNull);
     expect(cubit.state.page, 0);
     expect(repository.loadCalls, 2);
     expect(repository.metricsCalls, 2);
@@ -338,6 +392,47 @@ void main() {
     expect(cubit.state.metrics.total, 0);
   });
 
+  test('a refused send leaves the directory untouched', () async {
+    final repository = _FakeNotificationsRepository()
+      ..total = 4
+      ..sendResult = const AdminSendResult(ok: false, reason: 'no_recipients');
+    final cubit = AdminNotificationsCubit(repository: repository);
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    final result = await cubit.send(
+      const AdminNotificationDraft(
+        type: AdminNotificationType.promo,
+        titleAr: 'عرض',
+        titleEn: 'A deal',
+        bodyAr: 'خصم',
+        bodyEn: 'A discount',
+        audience: AdminNotificationAudience.pushEnabled,
+      ),
+    );
+
+    expect(result.ok, isFalse);
+    expect(result.reason, 'no_recipients');
+    expect(repository.loadCalls, 1);
+    expect(repository.metricsCalls, 1);
+  });
+
+  test('a read the database refused keeps the rows and reports it', () async {
+    final repository = _FakeNotificationsRepository()
+      ..rows = [_notification('n1')]
+      ..total = 1
+      ..mutation = NotificationMutationOutcome.failed;
+    final cubit = AdminNotificationsCubit(repository: repository);
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    final outcome = await cubit.setRead('n1', true);
+
+    expect(outcome, NotificationMutationOutcome.failed);
+    expect(repository.loadCalls, 1);
+    expect(cubit.state.notifications, hasLength(1));
+  });
+
   test('a failing rows request becomes a failure state', () async {
     final repository = _FakeNotificationsRepository()..failRows = true;
     final cubit = AdminNotificationsCubit(repository: repository);
@@ -348,5 +443,158 @@ void main() {
     expect(cubit.state.status, AdminNotificationsPageStatus.failure);
     expect(cubit.state.errorMessage, isNotNull);
     expect(cubit.state.notifications, isEmpty);
+  });
+
+  group('the live feed', () {
+    test(
+      'one channel serves the page and each event reloads it quietly',
+      () async {
+        final repository = _FakeNotificationsRepository()
+          ..rows = [_notification('n1')]
+          ..total = 1;
+        final feed = _FakeNotificationsFeed();
+        final cubit = AdminNotificationsCubit(
+          repository: repository,
+          realtimeFeed: feed,
+        );
+        addTearDown(cubit.close);
+        await cubit.load();
+
+        cubit.startLiveUpdates();
+        cubit.startLiveUpdates();
+        expect(feed.starts, 1);
+
+        feed.emitChange();
+        await _settle();
+
+        expect(repository.loadCalls, 2);
+        expect(repository.metricsCalls, 2);
+        expect(repository.healthCalls, 2);
+        expect(cubit.state.isRefreshingRows, isFalse);
+        expect(cubit.state.status, AdminNotificationsPageStatus.ready);
+      },
+    );
+
+    test(
+      'closing releases the channel and a late event reloads nothing',
+      () async {
+        final repository = _FakeNotificationsRepository()..total = 1;
+        final feed = _FakeNotificationsFeed();
+        final cubit = AdminNotificationsCubit(
+          repository: repository,
+          realtimeFeed: feed,
+        );
+        await cubit.load();
+        cubit.startLiveUpdates();
+
+        await cubit.close();
+
+        expect(feed.disposes, 1);
+        expect(cubit.isClosed, isTrue);
+        final callsBefore = repository.loadCalls;
+        feed.emitChange();
+        await _settle();
+        expect(repository.loadCalls, callsBefore);
+      },
+    );
+  });
+
+  group('the picture and the screen a campaign carries', () {
+    test('the cubit puts the picked file in the bucket', () async {
+      final repository = _FakeNotificationsRepository();
+      final cubit = AdminNotificationsCubit(repository: repository);
+      addTearDown(cubit.close);
+
+      final url = await cubit.uploadCampaignImage(
+        bytes: Uint8List.fromList(<int>[1, 2, 3]),
+        fileName: 'offer.png',
+        contentType: 'image/png',
+      );
+
+      expect(repository.uploadedImageNames, ['offer.png']);
+      expect(url, contains('offer.png'));
+    });
+
+    test(
+      'a picture that will not be thrown away is still not a failure',
+      () async {
+        final repository = _FakeNotificationsRepository()
+          ..imageDeleteFails = true;
+        final cubit = AdminNotificationsCubit(repository: repository);
+        addTearDown(cubit.close);
+
+        await expectLater(
+          cubit.discardCampaignImage(
+            'https://example.test/storage/v1/object/public/product-images/'
+            'products/notifications/offer.png',
+          ),
+          completes,
+        );
+      },
+    );
+
+    test('a campaign carries only what the admin chose', () {
+      const plain = AdminNotificationDraft(
+        type: AdminNotificationType.promo,
+        titleAr: 'ع',
+        titleEn: 'a',
+        bodyAr: 'ع',
+        bodyEn: 'a',
+        audience: AdminNotificationAudience.all,
+        imageUrl: '   ',
+        destination: AdminNotificationDestination.none,
+      );
+      final dressed = const AdminNotificationDraft(
+        type: AdminNotificationType.promo,
+        titleAr: 'ع',
+        titleEn: 'a',
+        bodyAr: 'ع',
+        bodyEn: 'a',
+        audience: AdminNotificationAudience.all,
+        imageUrl: 'https://example.test/storage/v1/object/public/product-images/a.png',
+        destination: AdminNotificationDestination.offers,
+      );
+
+      expect(plain.payload, isEmpty);
+      expect(dressed.payload.keys.toSet(), {'image_url', 'destination'});
+      expect(
+        dressed.payload['image_url'],
+        'https://example.test/storage/v1/object/public/product-images/a.png',
+      );
+      expect(dressed.payload['destination'], 'offers');
+    });
+
+    test('only the screens the customer app registers are destinations', () {
+      expect(AdminNotificationDestination.fromValue('offers').value, 'offers');
+      expect(AdminNotificationDestination.fromValue('orders').value, 'orders');
+      expect(
+        AdminNotificationDestination.fromValue('loyalty').value,
+        'loyalty',
+      );
+      expect(
+        AdminNotificationDestination.fromValue('subscription').value,
+        'subscription',
+      );
+      expect(
+        AdminNotificationDestination.fromValue('notifications').value,
+        'notifications',
+      );
+      expect(
+        AdminNotificationDestination.fromValue(null),
+        AdminNotificationDestination.none,
+      );
+      expect(
+        AdminNotificationDestination.fromValue('settings'),
+        AdminNotificationDestination.none,
+      );
+      expect(
+        AdminNotificationDestination.fromValue('/orders'),
+        AdminNotificationDestination.none,
+      );
+      expect(
+        AdminNotificationDestination.fromValue('orders?id=7'),
+        AdminNotificationDestination.none,
+      );
+    });
   });
 }

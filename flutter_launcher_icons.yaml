@@ -21,8 +21,14 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/images/logo.png"
-    background_color: "#hexcode"
-    theme_color: "#hexcode"
+    # The generator rewrites web/manifest.json with these two values, so they
+    # are the theme token and the light scaffold of the app itself
+    # (AppColor.primaryColor 0xff1D4ED8 and AppColor.whiteColor 0xffFFFFFF in
+    # lib/core/theme/app_color.dart, and the same two the themes are built from
+    # in lib/core/theme/theme_class.dart). Leaving the template's `#hexcode`
+    # here is how an invalid colour reaches an installed PWA.
+    background_color: "#FFFFFF"
+    theme_color: "#1D4ED8"
 
   windows:
     generate: true

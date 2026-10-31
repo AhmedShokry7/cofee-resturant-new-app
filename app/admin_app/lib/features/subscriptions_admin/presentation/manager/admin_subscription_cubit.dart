@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/subscriptions_admin/di/subscriptions_admin_dependencies.dart';
 import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
 import 'package:admin_app/features/subscriptions_admin/domain/repositories/subscription_repository.dart';
@@ -44,7 +45,7 @@ class AdminSubscriptionCubit extends Cubit<AdminSubscriptionState> {
       emit(
         state.copyWith(
           status: AdminSubscriptionStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

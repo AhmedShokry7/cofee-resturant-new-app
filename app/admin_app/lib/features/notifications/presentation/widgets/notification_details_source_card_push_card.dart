@@ -53,6 +53,30 @@ class _SourceCard extends StatelessWidget {
               ),
             ),
           ],
+          if (campaign != null &&
+              notification.destination !=
+                  AdminNotificationDestination.none) ...[
+            const SizedBox(height: AppSizes.px4),
+            Text(
+              '${S.notificationsComposeDestination}: '
+              '${notificationDestinationLabel(notification.destination)}',
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size9,
+                height: AppTextHeights.line1_4,
+              ),
+            ),
+          ],
+          if (campaign != null && notification.imageUrl != null) ...[
+            const SizedBox(height: AppSizes.px8),
+            AdminNetworkThumb(
+              key: const Key('notification-details-image'),
+              imageUrl: notification.imageUrl,
+              width: 132,
+              height: 60,
+              icon: notificationTypeIcon(notification.type),
+            ),
+          ],
           if (campaign == null) ...[
             const SizedBox(height: AppSizes.px4),
             Text(

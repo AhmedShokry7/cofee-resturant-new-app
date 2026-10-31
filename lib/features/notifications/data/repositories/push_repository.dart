@@ -1,4 +1,6 @@
+import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show SupabaseClient;
 
 /// Thrown when a push operation needs a signed-in customer and there is none.
@@ -32,13 +34,22 @@ abstract class PushRepository {
   /// Turns the push of the customer on or off.
   Future<bool> setPushEnabled(bool enabled);
 
-  /// Whether the customer wants to receive pushes.
-  Future<bool> isPushEnabled();
+  /// The switches of the customer, as the server holds them.
+  Future<NotificationPreferences> preferences();
+
+  /// Writes any subset of the switches and answers with the row the server
+  /// kept, so the screen shows what was stored rather than what was asked.
+  Future<NotificationPreferences> setPreferences({
+    bool? pushEnabled,
+    bool? orderStatus,
+    bool? promo,
+    bool? loyalty,
+    bool? system,
+  });
 }
 
 class PushRepositoryImpl implements PushRepository {
-  const PushRepositoryImpl({SupabaseClient? client})
-    : _clientOverride = client;
+  const PushRepositoryImpl({SupabaseClient? client}) : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -94,24 +105,42 @@ class PushRepositoryImpl implements PushRepository {
 
   @override
   Future<bool> setPushEnabled(bool enabled) async {
-    final client = _requireClient();
-    final result = await client.rpc(
-      'set_push_preferences',
-      params: {'p_push_enabled': enabled},
-    );
-    if (result is Map<String, dynamic>) {
-      return result['push_enabled'] == true;
-    }
-    return enabled;
+    final saved = await setPreferences(pushEnabled: enabled);
+    return saved.pushEnabled;
   }
 
   @override
-  Future<bool> isPushEnabled() async {
+  Future<NotificationPreferences> preferences() async {
     final client = _requireClient();
     final result = await client.rpc('push_preferences');
-    if (result is Map<String, dynamic>) {
-      return result['push_enabled'] == true;
+    if (result is Map) {
+      return NotificationPreferences.fromJson(Db.asMap(result));
     }
-    return false;
+    return const NotificationPreferences();
+  }
+
+  @override
+  Future<NotificationPreferences> setPreferences({
+    bool? pushEnabled,
+    bool? orderStatus,
+    bool? promo,
+    bool? loyalty,
+    bool? system,
+  }) async {
+    final client = _requireClient();
+    final result = await client.rpc(
+      'set_push_preferences',
+      params: <String, Object?>{
+        'p_push_enabled': ?pushEnabled,
+        'p_order_status': ?orderStatus,
+        'p_promo': ?promo,
+        'p_loyalty': ?loyalty,
+        'p_system': ?system,
+      },
+    );
+    if (result is Map) {
+      return NotificationPreferences.fromJson(Db.asMap(result));
+    }
+    return const NotificationPreferences();
   }
 }

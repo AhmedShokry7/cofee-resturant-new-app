@@ -195,3 +195,167 @@ render it. The two CHECKs and the Z maths stay exactly as 182 wrote them.
 the development project, and the guard test in
 `supabase/tests/pos_shift_cash_out_guard_test.sql` passes against it, so the new
 arm can now fire.
+
+## G. Cancelling an advance ignores the staff scope (213)
+
+Draft:
+[`213_hr_advance_cancel_staff_scope.PROPOSED.sql`](213_hr_advance_cancel_staff_scope.PROPOSED.sql).
+**STATUS: created, not applied. Its behaviour test was run against the live
+project on 2026-10-31 inside one rolled-back transaction and passed — so the
+guard is proven, and the live function is still the unpatched 212 one.**
+
+`admin_hr_cancel_advance` (212:4490-4547) is the only one of the three advance
+money RPCs that never calls `hr.assert_staff_access`: review asserts it at
+212:4371 and disburse at 212:4459. `identity.has_permission('hr.finance.adjust')`
+is a boolean and 212:5782 grants it to `branch_manager`, whose authority is one
+branch, so a branch's finance holder can cancel an advance that belongs to a
+staff member of another branch. `admin_hr_advances` already hides those rows from
+them (212:4283-4292, 4327), so the write is reachable only by a caller that
+obtained the id out of band — and `security definer` with no policy on
+`hr.salary_advances` means the in-function checks are the only isolation there is.
+
+The draft adds one statement and changes nothing else. Its behaviour test,
+[`../tests/hr_advance_cancel_scope_test.sql`](../tests/hr_advance_cancel_scope_test.sql),
+was executed on 2026-10-31 with the 213 function applied in the same transaction
+and rolled back; it asserted the guard fires, that the refusal writes nothing, that
+the guard runs **after** the existing money refusals, and that self-cancels,
+in-scope cancels and global scopes still work. Running it also caught a defect in
+the test itself (section 6 inherited branch 1's JWT claims and so was refused by
+the very guard it was checking), which is now fixed in the file.
+
+## H. Any staff member can read every coupon redemption (214)
+
+Draft:
+[`214_coupon_redemptions_branch_scope.PROPOSED.sql`](214_coupon_redemptions_branch_scope.PROPOSED.sql).
+**STATUS: created, not applied. Its behaviour test was run against the live
+project on 2026-10-31 inside one rolled-back transaction and passed — the live
+policy is still 022's permission-only predicate, which is the leak itself.**
+
+`coupon_redemptions_select_staff` (022:80-82) is `identity.has_permission('orders.read')`
+and nothing more. `orders.read` is a permission, not a scope: 137 gives it to
+cashier, staff, branch_manager and manager, and `public.coupon_redemptions` is a
+`security_invoker` view (032:117-118) granted to `authenticated` (032:224-227).
+So a cashier token can list every customer, order id and discount amount in the
+company. 021 gave the two other child tables of `orders.orders` the branch half
+of the predicate (021:103-113, 021:114-123) and 186 the same isolation for the
+admin RPCs; this table was left out.
+
+The draft replaces that one policy with the 021 shape. The owner is accepting a
+visible narrowing: a branch manager or cashier sees fewer rows than today, and
+only a NULL-branch role row keeps the company-wide read. `coupon_redemptions_select_own`
+(022:76-78) is untouched, so a customer still reads their own rows, and the
+coupons screen is unaffected because 168's aggregates are definer behind
+`settings.write`. Test:
+[`../tests/coupon_redemptions_branch_scope_test.sql`](../tests/coupon_redemptions_branch_scope_test.sql),
+executed on 2026-10-31 with the 214 policy in the same rolled-back transaction. It
+also caught a defect in the test itself (section 8a asked for the metrics while the
+claims still carried a branch manager, so it got the settings.write refusal), which
+is now fixed in the file.
+
+Still separate, and deliberately not bundled here: whether
+`coupons_public_read` (022:58-60) should let anon read the coupon rows and their
+limits at all. That is a money and marketing decision for the owner, not a scope
+bug.
+
+## I. Five admin directories have no bound at all (215)
+
+Draft:
+[`215_admin_directory_pagination.PROPOSED.sql`](215_admin_directory_pagination.PROPOSED.sql).
+**STATUS: created, not applied. Its behaviour test was run against the live project
+on 2026-10-31 inside one rolled-back transaction that also applied the five
+definitions, and it reached the end with no assertion failed; a fresh session after
+the rollback found all five signatures back to [no arguments] and every fixture row
+gone.**
+
+`admin_orders()`, `admin_payments()`, `admin_customers()`, `admin_reviews()` and
+`admin_abandoned_carts()` take no parameters. Verified live, not inferred:
+`pg_get_function_identity_arguments` is the empty string for all five and their
+bodies contain no `limit`, while the one directory that does paginate,
+`admin_catalog_snapshot(p_branch_id, p_limit, p_offset, p_search)`, reports all four
+arguments. The admin app calls the five with nothing, so every page load, every
+realtime refresh and every search keystroke serialises the whole matching result set
+of the deployment into one JSON value. That is a capacity wall at real volume.
+
+The draft copies 122's shape onto all five: `p_limit`/`p_offset` defaulting to null,
+the match count taken BEFORE the cut, the rows cut in a subselect and only then
+aggregated, and the answer wrapped in `{rows,total}`. A caller that passes nothing
+keeps receiving everything, which is the only reason the Dart does not fail to
+compile. It is NOT the reason the Dart keeps working: all five admin repositories test
+`response is List`, so against these definitions they read an empty page and print an
+empty table over a populated one. The pair is the decision — this file plus the
+repository change — and the Dart was deliberately not touched here.
+
+**The drift this surfaced.** 211 reached the live database with two of its three
+sections: `admin_abandoned_carts()` carries its branch predicate and
+`admin_update_payment_status()` carries its not-found and cross-branch refusals, but
+the live `admin_payments()` is still 186's body, so POS walk-in tenders print no
+customer name. Measured with the test's own fixtures: the live answer gives that
+tender `customer_name = NULL`, the 215 body gives it `'DP Walk In'`. Because 215 is
+written on the CHAIN body, applying it reinstates 211 §3 as a side effect; the owner
+may instead repair that drift first and re-read the live body — either order lands
+the same text.
+
+Test: [`../tests/admin_directory_pagination_test.sql`](../tests/admin_directory_pagination_test.sql).
+It walks each directory page by page and compares the concatenation with the
+unbounded answer, so a skipped, repeated or re-ordered row fails the run; it re-asserts
+186's 31 order keys and 20 payment keys inside the envelope; and it re-runs every guard
+with its own message. Two files written against the bare array break with 215 and belong
+to the same release: `admin_orders_branch_scope_test.sql` and
+`admin_scope_and_write_guards_test.sql`.
+
+Still separate, and deliberately not bundled here: server-side search, status and date
+filters for `admin_orders()`, and a count RPC for the dashboard and the export that
+today compute over the whole Dart list.
+
+## J. Two trigger functions are still advertised to PUBLIC (216)
+
+Draft:
+[`216_trigger_function_grants.PROPOSED.sql`](216_trigger_function_grants.PROPOSED.sql).
+**STATUS: created, not applied. Its behaviour test was run against the live project
+on 2026-10-31 inside one rolled-back transaction that also ran the four REVOKEs, and
+it reached the end with no assertion failed; a fresh session after the rollback found
+both ACLs back to `=X/postgres,…`, `anon_can_execute` true again, the two COMMENTs
+back to 188's text and no fixture row anywhere.**
+
+188 ends with two GRANTs and no REVOKE, so the two trigger functions it created
+carry the default grant to PUBLIC: the live ACL of both begins `=X/postgres` and
+`has_function_privilege('anon', …, 'execute')` is true for both. That is exactly the
+state 081:14-15 exists to prevent — `revoke execute on all functions in schema
+identity from public; … from anon;` — and 081 runs at 081, long before 188 created
+anything. 105_grants_hardening.sql:5-15 documented the same sequence for
+marketing's two coupon helpers and repaired it one REVOKE per function. This is that
+repair, for the pair 188 added.
+
+The scope was measured, not assumed: 29 functions across the application schemas are
+executable by `anon`, almost all of them the legitimate public-read RPCs, and exactly
+two of the 29 are trigger functions — these two. So 216 is a two-name fix inside a
+class that should be empty, not a sweep.
+
+**This closes a contract, not an exploit, and the draft says so.** Three layers
+already refused an outside caller, all three measured: a direct call by `anon` answers
+`0A000 trigger functions can only be called as triggers` (and with 216 applied the same
+call answers `42501` — Postgres reads the function ACL before it complains about trigger
+context, so the refusal changes shape while remaining a refusal); PostgREST does not
+expose the `identity` schema at all, so `/rest/v1/rpc/reject_customer_profile_for_staff`
+returns the same 404 "not in the schema cache" as a name that does not exist, while an
+exposed function answers on its own terms (`/rest/v1/rpc/admin_orders` gives `401
+permission denied for function admin_orders` for the same anon key); and neither trigger
+has anything to do for `anon` or `service_role`, because neither role holds INSERT or
+UPDATE on `identity.profiles` or `identity.staff_members`. What remains is the artifact:
+`pg_proc` advertising EXECUTE to PUBLIC on two SECURITY DEFINER functions that modify
+the customer table, which every future privilege review has to re-litigate.
+
+Test: [`../tests/trigger_function_grants_test.sql`](../tests/trigger_function_grants_test.sql).
+The part worth naming is section 5c: `authenticated` is the one non-owner role with a
+write on `identity.profiles` (profiles_insert_own / profiles_update_own), so it is the
+role that really fires `trg_profile_not_staff`, and its own INSERT for a staff uid
+answered `23514` — the trigger's refusal, not a privilege error — with the REVOKEs
+already applied. 5d is its mirror: a plain customer's profile edit still goes through,
+and 5b/5e keep 188's drop and order-history guards firing. Section 4 asserts the
+whole-schema invariant rather than two names, so the next migration that creates an
+identity function without a REVOKE fails it too.
+
+Still separate, and deliberately not bundled here: whether `authenticated` needs
+EXECUTE on a function it can only ever reach through a trigger at all. 188 granted it
+and nothing in that file explains why; narrowing it further has a real blast radius,
+and it belongs in its own decision.

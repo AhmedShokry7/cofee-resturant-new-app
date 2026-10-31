@@ -7,5 +7,6 @@ class LoadCountsUseCase {
 
   final NavRepository _repository;
 
-  Future<AdminNavCounts> call() => _repository.loadCounts();
+  Future<AdminNavCounts> call({bool withNotifications = false}) =>
+      _repository.loadCounts(withNotifications: withNotifications);
 }

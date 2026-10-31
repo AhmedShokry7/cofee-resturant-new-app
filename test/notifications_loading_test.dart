@@ -2,18 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 
 /// Counts every repository round trip so a test can tell a bounded read from an
 /// endless one.
 class _FakeNotificationsRepository implements NotificationsRepository {
-  _FakeNotificationsRepository({List<NotificationModel>? rows, this.signedOut = false})
-    : rows = rows ?? const [];
+  _FakeNotificationsRepository({
+    List<NotificationModel>? rows,
+    this.signedOut = false,
+  }) : rows = rows ?? const [];
 
   List<NotificationModel> rows;
   bool signedOut;
@@ -44,21 +48,25 @@ class _FakeNotificationsRepository implements NotificationsRepository {
     bodyAr: row.bodyAr,
     bodyEn: row.bodyEn,
     type: row.type,
+    imageUrl: row.imageUrl,
+    destination: row.destination,
     createdAt: row.createdAt,
     isRead: true,
   );
 }
 
-NotificationModel _row(String id, {bool isRead = false}) => NotificationModel(
-  id: id,
-  titleAr: 'عنوان',
-  titleEn: 'Title $id',
-  bodyAr: 'نص',
-  bodyEn: 'Body $id',
-  type: 'order_status',
-  createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-  isRead: isRead,
-);
+NotificationModel _row(String id, {bool isRead = false, String? imageUrl}) =>
+    NotificationModel(
+      id: id,
+      titleAr: 'عنوان',
+      titleEn: 'Title $id',
+      bodyAr: 'نص',
+      bodyEn: 'Body $id',
+      type: 'order_status',
+      imageUrl: imageUrl,
+      createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+      isRead: isRead,
+    );
 
 Future<void> _setSurface(WidgetTester tester) async {
   tester.view.physicalSize = const Size(360, 800) * 3.0;
@@ -72,7 +80,10 @@ Future<void> _pumpPage(WidgetTester tester, NotificationsCubit cubit) {
     ScreenUtilInit(
       designSize: const Size(360, 690),
       builder: (context, _) => MaterialApp(
-        home: BlocProvider.value(value: cubit, child: const NotificationsPage()),
+        home: BlocProvider.value(
+          value: cubit,
+          child: const NotificationsPage(),
+        ),
       ),
     ),
   );
@@ -187,6 +198,43 @@ void main() {
       await cubit.markAllRead();
       expect(repository.markReadCalls, 0);
       expect(repository.markedIds, isEmpty);
+    });
+  });
+
+  group('the square at the head of a tile', () {
+    Future<void> pumpTile(WidgetTester tester, NotificationModel row) async {
+      await _setSurface(tester);
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(360, 690),
+          builder: (context, _) => MaterialApp(
+            home: Scaffold(
+              body: NotificationTile(notification: row, onTap: () {}),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+    }
+
+    testWidgets('a plain message keeps the icon of its type', (tester) async {
+      await pumpTile(tester, _row('n1'));
+
+      expect(find.byType(DbImage), findsNothing);
+      expect(find.byIcon(HugeIcons.strokeRoundedTruckDelivery), findsOneWidget);
+    });
+
+    testWidgets('a campaign picture replaces the icon', (tester) async {
+      const url =
+          'https://example.supabase.co/storage/v1/object/public/product-images/products/notifications/a.png';
+      await pumpTile(tester, _row('n1', imageUrl: url));
+
+      final image = tester.widget<DbImage>(
+        find.byKey(const ValueKey('notification-tile-image')),
+      );
+      expect(image.image, url);
+      expect(image.width, greaterThan(0));
+      expect(image.height, image.width);
     });
   });
 

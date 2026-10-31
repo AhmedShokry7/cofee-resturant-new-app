@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -7,6 +6,7 @@ import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -18,9 +18,15 @@ import 'package:admin_app/features/notifications/presentation/widgets/notificati
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/admin_toolbar.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
+
+/// The audience size that makes a campaign worth a second look before it is
+/// sent. Below it the estimate the composer already shows is the warning.
+const int kNotificationMassSendThreshold = 1000;
 
 Future<AdminSendResult?> showNotificationComposeDialog({
   required BuildContext context,
@@ -33,9 +39,16 @@ Future<AdminSendResult?> showNotificationComposeDialog({
 }
 
 class NotificationComposeDialog extends StatefulWidget {
-  const NotificationComposeDialog({super.key, required this.cubit});
+  const NotificationComposeDialog({
+    super.key,
+    required this.cubit,
+    this.onPickPicture,
+  });
 
   final AdminNotificationsCubit cubit;
+
+  /// Picks the campaign picture; tests give their own.
+  final Future<ProductImageSource?> Function()? onPickPicture;
 
   @override
   State<NotificationComposeDialog> createState() =>
@@ -51,11 +64,11 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
   final _titleEnController = TextEditingController();
   final _bodyArController = TextEditingController();
   final _bodyEnController = TextEditingController();
-  final _payloadController = TextEditingController();
   final _customerSearchController = TextEditingController();
 
   AdminNotificationType _type = AdminNotificationType.promo;
   AdminNotificationAudience _audience = AdminNotificationAudience.all;
+  AdminNotificationDestination _destination = AdminNotificationDestination.none;
   AdminNotificationComposerCustomer? _selectedCustomer;
   List<AdminNotificationComposerCustomer> _customers =
       const <AdminNotificationComposerCustomer>[];
@@ -65,6 +78,13 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
   bool _customerError = false;
   Timer? _customerTimer;
   int _customerRequest = 0;
+
+  /// The picture of the campaign, once it is in the bucket.
+  String? _imageUrl;
+
+  /// True when the campaign went out: the picture stays in the bucket because
+  /// the rows now point at it.
+  bool _sent = false;
 
   AdminAudienceEstimate? _estimate;
   bool _estimating = false;
@@ -98,10 +118,13 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
       _titleEnController,
       _bodyArController,
       _bodyEnController,
-      _payloadController,
       _customerSearchController,
     ]) {
       controller.dispose();
+    }
+    // A picture that never reached a campaign has no row that points at it.
+    if (!_sent && _imageUrl != null) {
+      widget.cubit.discardCampaignImage(_imageUrl);
     }
     super.dispose();
   }
@@ -226,28 +249,54 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
     return null;
   }
 
-  String? _validatePayload(String? value) {
-    final text = (value ?? '').trim();
-    if (text.isEmpty) return null;
-    try {
-      final decoded = jsonDecode(text);
-      if (decoded is! Map) return S.notificationsComposePayloadInvalid;
-    } catch (_) {
-      return S.notificationsComposePayloadInvalid;
-    }
-    return null;
+  void _setDestination(AdminNotificationDestination destination) {
+    if (_destination == destination) return;
+    setState(() => _destination = destination);
   }
 
-  Map<String, dynamic> _parsePayload() {
-    final text = _payloadController.text.trim();
-    if (text.isEmpty) return const <String, dynamic>{};
-    final decoded = jsonDecode(text);
-    if (decoded is Map<String, dynamic>) return decoded;
-    if (decoded is Map) return Map<String, dynamic>.from(decoded);
-    return const <String, dynamic>{};
+  /// Opens the shared picture chooser for the campaign.
+  ///
+  /// A link typed by hand is not offered: the push service only accepts a
+  /// picture from this project's own public folder, and anything else would
+  /// reach the device as a broken image or a url of somewhere else. A failure
+  /// is named by the chooser, which stays open for another try, and the
+  /// message keeps sending as text.
+  Future<void> _changeImage() async {
+    if (_sending) return;
+    final previous = _imageUrl;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => CategoryImageDialog(
+        currentImageUrl: _imageUrl,
+        allowLink: false,
+        onPickPicture: widget.onPickPicture,
+        onApply: (source) async {
+          final bytes = source.bytes;
+          if (bytes == null) return;
+          final url = await widget.cubit.uploadCampaignImage(
+            bytes: bytes,
+            fileName: source.fileName ?? 'notification.jpg',
+            contentType: source.contentType ?? 'image/jpeg',
+          );
+          if (!mounted) return;
+          // The picture that was replaced points at nothing now: no row
+          // carries its address any more.
+          if (previous != null && previous != url) {
+            await widget.cubit.discardCampaignImage(previous);
+          }
+          setState(() => _imageUrl = url);
+        },
+        onRemove: () async {
+          await widget.cubit.discardCampaignImage(_imageUrl);
+          if (!mounted) return;
+          setState(() => _imageUrl = null);
+        },
+      ),
+    );
   }
 
   Future<void> _send() async {
+    if (_sending) return;
     FocusScope.of(context).unfocus();
     final valid = _formKey.currentState?.validate() ?? false;
     if (!valid) return;
@@ -256,6 +305,7 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
       setState(() => _customerError = true);
       return;
     }
+    if (!await _confirmMassSend()) return;
     setState(() {
       _sending = true;
       _sendError = null;
@@ -272,11 +322,13 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
           customerId: _audience == AdminNotificationAudience.customer
               ? _selectedCustomer?.id
               : null,
-          payload: _parsePayload(),
+          imageUrl: _imageUrl,
+          destination: _destination,
         ),
       );
       if (!mounted) return;
       if (result.ok) {
+        _sent = true;
         Navigator.of(context).pop(result);
         return;
       }
@@ -295,6 +347,48 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
         _sendError = S.notificationsSendFailed;
       });
     }
+  }
+
+  /// Asks before a campaign that reaches many phones goes out. One message to
+  /// one customer is not mass; an audience nobody counted is treated as mass,
+  /// because the warning is cheaper than the campaign it stops.
+  Future<bool> _confirmMassSend() async {
+    if (_audience == AdminNotificationAudience.customer) return true;
+    final estimate = _estimate;
+    if (estimate != null && estimate.count < kNotificationMassSendThreshold) {
+      return true;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+        ),
+        title: Text(S.notificationsComposeMassTitle),
+        content: Text(
+          localizeDigits(
+            estimate == null
+                ? S.notificationsComposeMassUnknown
+                : S.notificationsComposeMassMessage(
+                    estimate.count,
+                    estimate.pushReady,
+                  ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            key: const Key('notification-compose-mass-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: Text(S.notificationsComposeMassConfirm),
+          ),
+        ],
+      ),
+    );
+    return confirmed ?? false;
   }
 
   @override
@@ -351,6 +445,14 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                           title: S.notificationsDetailsContent,
                           child: _messageFields(),
                         ),
+                        const SizedBox(height: AppSizes.px14),
+                        _ComposerBox(
+                          title: S.notificationsComposeImage,
+                          hint: S.notificationsComposeImageHint,
+                          child: _imageField(theme),
+                        ),
+                        const SizedBox(height: AppSizes.px14),
+                        _destinationField(theme),
                         const SizedBox(height: AppSizes.px14),
                         _ComposerBox(
                           title: S.notificationsComposePreview,
@@ -778,14 +880,109 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
             );
           },
         ),
-        const SizedBox(height: AppSizes.px12),
-        CustomTextFormField(
-          controller: _payloadController,
-          label: S.notificationsComposePayload,
-          hint: S.notificationsComposePayloadHint,
-          validator: _validatePayload,
-          maxLines: 3,
-          bottomPadding: 0,
+      ],
+    );
+  }
+
+  /// The picture row: what is attached, or nothing yet, and the one button
+  /// that opens the shared chooser for both cases.
+  Widget _imageField(ThemeData theme) {
+    final url = _imageUrl;
+    return Row(
+      children: [
+        if (url == null)
+          Container(
+            width: 56,
+            height: 56,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: adminTintedSurfaceColor(theme),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              border: Border.all(color: adminRowBorderColor(theme)),
+            ),
+            child: const AppIcon(
+              AppIcons.imageAdd01,
+              size: 20,
+              color: AppColor.greyColor,
+            ),
+          )
+        else
+          AdminNetworkThumb(
+            key: const Key('notification-compose-image'),
+            imageUrl: url,
+            width: 96,
+            height: 56,
+            icon: AppIcons.imageAdd01,
+          ),
+        const SizedBox(width: AppSizes.px12),
+        Expanded(
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: TextButton.icon(
+              key: const Key('notification-compose-image-button'),
+              onPressed: _sending ? null : _changeImage,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 32),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              ),
+              icon: AppIcon(
+                url == null ? AppIcons.imageAdd01 : AppIcons.edit01,
+                size: 14,
+                color: AppColor.adminAccent,
+              ),
+              label: Text(
+                url == null ? S.addImage : S.notificationsComposeImageChange,
+                style: const TextStyle(
+                  color: AppColor.adminAccent,
+                  fontSize: AppFontSizes.size9_5,
+                  fontWeight: AppFontWeights.semiBold,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// The screen the notification opens: only the codes the customer app
+  /// registers, so the composer never hands it a path.
+  Widget _destinationField(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _LabeledDropdown<AdminNotificationDestination>(
+          label: S.notificationsComposeDestination,
+          value: _destination,
+          items: [
+            for (final destination in AdminNotificationDestination.values)
+              DropdownMenuItem<AdminNotificationDestination>(
+                value: destination,
+                child: Row(
+                  children: [
+                    AppIcon(
+                      notificationDestinationIcon(destination),
+                      size: 14,
+                      color: adminMutedColor(theme),
+                    ),
+                    const SizedBox(width: AppSizes.px8),
+                    Flexible(
+                      child: Text(notificationDestinationLabel(destination)),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+          onChanged: _setDestination,
+        ),
+        const SizedBox(height: AppSizes.px4),
+        Text(
+          S.notificationsComposeDestinationHint,
+          style: TextStyle(
+            color: adminMutedColor(theme),
+            fontSize: AppFontSizes.size8_5,
+            height: AppTextHeights.line1_5,
+          ),
         ),
       ],
     );
@@ -798,92 +995,114 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
     final body = (arabic ? _bodyArController.text : _bodyEnController.text)
         .trim();
     final typeColor = notificationTypeColor(_type);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: adminTintedSurfaceColor(theme),
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: adminRowBorderColor(theme)),
-      ),
-      child: Directionality(
-        textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 34,
-              height: 34,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: adminFlagBackground(
-                  theme,
-                  typeColor,
-                  notificationTypeSurface(_type),
-                ),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: AppIcon(
-                notificationTypeIcon(_type),
-                size: 17,
-                color: adminFlagForeground(theme, typeColor),
-              ),
-            ),
-            const SizedBox(width: AppSizes.px10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          title.isEmpty
-                              ? S.notificationsComposePreviewEmptyTitle
-                              : title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: title.isEmpty
-                                ? adminMutedColor(theme)
-                                : adminHeadingColor(theme),
-                            fontSize: AppFontSizes.size11_5,
-                            fontWeight: AppFontWeights.bold,
-                            height: AppTextHeights.line1_5,
-                          ),
-                        ),
+    final picture = _imageUrl;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: adminTintedSurfaceColor(theme),
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: adminRowBorderColor(theme)),
+          ),
+          child: Directionality(
+            textDirection: arabic ? TextDirection.rtl : TextDirection.ltr,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (picture == null)
+                  Container(
+                    width: 34,
+                    height: 34,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: adminFlagBackground(
+                        theme,
+                        typeColor,
+                        notificationTypeSurface(_type),
                       ),
-                      const SizedBox(width: AppSizes.px8),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: AppIcon(
+                      notificationTypeIcon(_type),
+                      size: 17,
+                      color: adminFlagForeground(theme, typeColor),
+                    ),
+                  )
+                else
+                  AdminNetworkThumb(
+                    imageUrl: picture,
+                    size: 34,
+                    icon: notificationTypeIcon(_type),
+                  ),
+                const SizedBox(width: AppSizes.px10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title.isEmpty
+                                  ? S.notificationsComposePreviewEmptyTitle
+                                  : title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: title.isEmpty
+                                    ? adminMutedColor(theme)
+                                    : adminHeadingColor(theme),
+                                fontSize: AppFontSizes.size11_5,
+                                fontWeight: AppFontWeights.bold,
+                                height: AppTextHeights.line1_5,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSizes.px8),
+                          Text(
+                            S.notificationsComposePreviewNow,
+                            style: TextStyle(
+                              color: adminMutedColor(theme),
+                              fontSize: AppFontSizes.size8,
+                              height: AppTextHeights.line1_4,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSizes.px4),
                       Text(
-                        S.notificationsComposePreviewNow,
+                        body.isEmpty
+                            ? S.notificationsComposePreviewEmptyBody
+                            : body,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: adminMutedColor(theme),
-                          fontSize: AppFontSizes.size8,
-                          height: AppTextHeights.line1_4,
+                          color: body.isEmpty
+                              ? adminMutedColor(theme)
+                              : adminBodyColor(theme),
+                          fontSize: AppFontSizes.size9_5,
+                          height: AppTextHeights.line1_6,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSizes.px4),
-                  Text(
-                    body.isEmpty
-                        ? S.notificationsComposePreviewEmptyBody
-                        : body,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: body.isEmpty
-                          ? adminMutedColor(theme)
-                          : adminBodyColor(theme),
-                      fontSize: AppFontSizes.size9_5,
-                      height: AppTextHeights.line1_6,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: AppSizes.px6),
+        Text(
+          S.notificationsComposePreviewDeviceNote,
+          style: TextStyle(
+            color: adminSubtleColor(theme),
+            fontSize: AppFontSizes.size8_5,
+            height: AppTextHeights.line1_5,
+          ),
+        ),
+      ],
     );
   }
 

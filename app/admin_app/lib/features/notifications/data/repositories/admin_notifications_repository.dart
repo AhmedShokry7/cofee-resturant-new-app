@@ -1,5 +1,11 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/catalog/admin_product_exception.dart';
+import 'package:admin_app/core/config/app_config.dart';
+import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
@@ -26,7 +32,7 @@ class AdminNotificationsRepository implements NotificationsRepository {
     bool? isRead,
     String? pushState,
     int page = 0,
-    int pageSize = 10,
+    int pageSize = AdminNotificationsPaging.pageSize,
   }) async {
     final response = await AdminAvatarLinks.signTree(
       await _supabase.rpc(
@@ -184,6 +190,59 @@ class AdminNotificationsRepository implements NotificationsRepository {
     return _reason(response) == 'not_found'
         ? NotificationMutationOutcome.notFound
         : NotificationMutationOutcome.failed;
+  }
+
+  @override
+  Future<String> uploadCampaignImage({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    if (bytes.isEmpty) throw AdminProductException(S.imageIsEmpty);
+    if (bytes.length > adminImageMaxBytes) {
+      throw AdminProductException(S.imageTooLarge);
+    }
+    final path =
+        'products/notifications/${DateTime.now().microsecondsSinceEpoch}'
+        '${_extensionOf(fileName)}';
+
+    await _supabase.storage
+        .from(_imageBucket)
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType, upsert: false),
+        );
+
+    return '$_publicPrefix$path';
+  }
+
+  @override
+  Future<void> deleteCampaignImageFile(String? imageUrl) async {
+    final url = imageUrl?.trim();
+    if (url == null || url.isEmpty || !url.startsWith(_publicPrefix)) return;
+    try {
+      await _supabase.storage.from(_imageBucket).remove([
+        url.substring(_publicPrefix.length),
+      ]);
+    } catch (_) {
+      // A picture left behind in the bucket blocks nothing; the row that
+      // pointed at it is already gone.
+    }
+  }
+
+  /// The bucket the push function accepts, and the only prefix a campaign
+  /// picture can be removed by: anything else is not this app's object.
+  static const String _imageBucket = 'product-images';
+  static String get _publicPrefix =>
+      '${AppConfig.supabaseUrl}/storage/v1/object/public/$_imageBucket/';
+
+  static String _extensionOf(String fileName) {
+    final name = fileName.toLowerCase();
+    for (final ext in const ['.jpg', '.jpeg', '.png', '.webp']) {
+      if (name.endsWith(ext)) return ext == '.jpeg' ? '.jpg' : ext;
+    }
+    return '.jpg';
   }
 
   static String? _blankToNull(String? value) {

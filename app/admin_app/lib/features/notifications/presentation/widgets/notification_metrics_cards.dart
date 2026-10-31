@@ -55,6 +55,8 @@ class NotificationMetricsCards extends StatelessWidget {
                 S.notificationsMetricPushHint(
                   metrics.pushSent,
                   metrics.pushFailed,
+                  metrics.pushSkipped,
+                  metrics.pushInvalidToken,
                 ),
               ),
         value: notificationRateValue(rate),

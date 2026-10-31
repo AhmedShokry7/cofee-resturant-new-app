@@ -9,7 +9,7 @@ class ProductPageHeader extends StatelessWidget {
   const ProductPageHeader({
     super.key,
     required this.count,
-    required this.onAdd,
+    this.onAdd,
     this.selectedCount = 0,
     this.onSelectAll,
     this.onClearSelection,
@@ -24,7 +24,9 @@ class ProductPageHeader extends StatelessWidget {
   });
 
   final int count;
-  final VoidCallback onAdd;
+
+  /// لا تُعرض لمن يقرأ المنتجات فقط: 117 ترفض كتابته بـ `catalog.product.write`.
+  final VoidCallback? onAdd;
   final int selectedCount;
   final VoidCallback? onSelectAll;
   final VoidCallback? onClearSelection;

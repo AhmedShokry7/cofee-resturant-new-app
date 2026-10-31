@@ -13,10 +13,14 @@ class ProductCardNameRow extends StatelessWidget {
     required this.nameController,
     this.onMore,
     this.moreKey,
+    this.readOnly = false,
   });
 
   final TextEditingController nameController;
   final VoidCallback? onMore;
+
+  /// True on a card the admin may not write: the value is shown, not edited.
+  final bool readOnly;
 
   /// Finds the button of the menu, so the menu opens under it.
   final GlobalKey? moreKey;
@@ -35,6 +39,7 @@ class ProductCardNameRow extends StatelessWidget {
           child: RecordTextFieldBox(
             controller: nameController,
             hint: S.productName,
+            readOnly: readOnly,
           ),
         ),
       ],
@@ -54,6 +59,7 @@ class ProductCardPriceRow extends StatelessWidget {
     this.discountPercentage,
     this.discountActive = true,
     this.onMore,
+    this.readOnly = false,
   });
 
   final TextEditingController priceController;
@@ -69,6 +75,9 @@ class ProductCardPriceRow extends StatelessWidget {
 
   final VoidCallback? onMore;
 
+  /// True on a card the admin may not write: the price is shown, not edited.
+  final bool readOnly;
+
   @override
   Widget build(BuildContext context) {
     final row = Row(
@@ -82,6 +91,7 @@ class ProductCardPriceRow extends StatelessWidget {
           child: RecordTextFieldBox(
             controller: priceController,
             hint: S.price,
+            readOnly: readOnly,
             textInputType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9٠-٩.]')),

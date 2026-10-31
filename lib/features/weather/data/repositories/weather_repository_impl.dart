@@ -11,6 +11,7 @@ class WeatherRepositoryImpl implements WeatherRepository {
 
   static const double _fallbackLatitude = 16.8892;
   static const double _fallbackLongitude = 42.5511;
+  static const Duration _requestTimeout = Duration(seconds: 5);
 
   @override
   Future<WeatherModel> getCurrentWeather() async {
@@ -20,7 +21,9 @@ class WeatherRepositoryImpl implements WeatherRepository {
       'https://api.open-meteo.com/v1/forecast'
       '?latitude=$latitude&longitude=$longitude&current=temperature_2m',
     );
-    final response = await http.get(uri);
+    // A hung request would keep the widget on WeatherLoading forever, and the
+    // cubit already has a failure state to show: bound the wait instead.
+    final response = await http.get(uri).timeout(_requestTimeout);
     if (response.statusCode != 200) {
       throw Exception('Weather request failed');
     }
@@ -42,11 +45,13 @@ class WeatherRepositoryImpl implements WeatherRepository {
           permission == LocationPermission.deniedForever) {
         return (_fallbackLatitude, _fallbackLongitude);
       }
+      // A device that never fixes a position must not hold the card open: the
+      // timeout throws into the catch below and the fallback city is used.
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.low,
         ),
-      );
+      ).timeout(_requestTimeout);
       return (position.latitude, position.longitude);
     } catch (_) {
       return (_fallbackLatitude, _fallbackLongitude);

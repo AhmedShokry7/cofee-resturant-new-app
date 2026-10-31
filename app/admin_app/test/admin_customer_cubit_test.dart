@@ -67,6 +67,8 @@ void main() {
 
     expect(cubit.state.status, AdminCustomerStatus.failure);
     expect(cubit.state.customers, const <AdminCustomer>[customer]);
-    expect(cubit.state.errorMessage, contains('offline'));
+    // الفشل يُقال، لكن نصّ الاستثناء التقني يبقى في السجل وحده.
+    expect(cubit.state.errorMessage, isNotNull);
+    expect(cubit.state.errorMessage, isNot(contains('offline')));
   });
 }

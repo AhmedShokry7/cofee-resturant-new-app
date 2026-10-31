@@ -4,19 +4,21 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
+import 'package:admin_app/core/models/dining_table.dart';
+import 'package:admin_app/features/pos/di/pos_dependencies.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_cart.dart';
-import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_cashier.dart';
+import 'package:admin_app/features/pos/domain/entities/pos_catalog.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_customer.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_table.dart';
-import 'package:admin_app/features/pos/di/pos_dependencies.dart';
 import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/domain/usecases/close_shift.dart';
 import 'package:admin_app/features/pos/domain/usecases/create_customer.dart';
-import 'package:admin_app/features/pos/domain/usecases/load_catalog.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_cashiers.dart';
+import 'package:admin_app/features/pos/domain/usecases/load_catalog.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_open_shift.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_shift_detail.dart';
 import 'package:admin_app/features/pos/domain/usecases/load_shift_history.dart';
@@ -27,7 +29,6 @@ import 'package:admin_app/features/pos/domain/usecases/record_cash_movement.dart
 import 'package:admin_app/features/pos/domain/usecases/search_customers.dart';
 import 'package:admin_app/features/pos/domain/usecases/seat_reservation.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
-import 'package:admin_app/core/models/dining_table.dart';
 
 enum PosCheckoutOutcome {
   success,
@@ -1267,9 +1268,10 @@ class PosCubit extends Cubit<PosState> {
         ),
       );
     } on PosCatalogException catch (error) {
+      // المستودع ترجم الرفض قبل أن يرميه، فلا تُترجم مرتين.
       _failFetch(request, error.failure, error.message);
     } catch (error) {
-      _failFetch(request, PosCatalogFailure.failed, '$error');
+      _failFetch(request, PosCatalogFailure.failed, adminErrorMessage(error));
     }
   }
 

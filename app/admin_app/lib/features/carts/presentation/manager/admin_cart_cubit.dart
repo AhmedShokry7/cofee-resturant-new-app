@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/carts/di/carts_dependencies.dart';
 import 'package:admin_app/features/carts/domain/repositories/cart_repository.dart';
 import 'package:admin_app/features/carts/domain/usecases/load_carts.dart';
@@ -28,7 +29,10 @@ class AdminCartCubit extends Cubit<AdminCartState> {
       );
     } catch (error) {
       emit(
-        state.copyWith(status: AdminCartStatus.failure, errorMessage: '$error'),
+        state.copyWith(
+          status: AdminCartStatus.failure,
+          errorMessage: adminErrorMessage(error),
+        ),
       );
     }
   }

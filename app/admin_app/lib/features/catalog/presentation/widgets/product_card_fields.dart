@@ -124,6 +124,7 @@ class RecordTextFieldBox extends StatelessWidget {
     this.inputFormatters,
     this.textInputType,
     this.textAlign = TextAlign.start,
+    this.readOnly = false,
   });
 
   final TextEditingController controller;
@@ -131,6 +132,10 @@ class RecordTextFieldBox extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final TextInputType? textInputType;
   final TextAlign textAlign;
+
+  /// False for a card that cannot be written: the field shows the value but
+  /// refuses the edit, so no reader types a change the database would reject.
+  final bool readOnly;
 
   @override
   Widget build(BuildContext context) {
@@ -151,6 +156,7 @@ class RecordTextFieldBox extends StatelessWidget {
             textAlign: textAlign,
             keyboardType: textInputType,
             inputFormatters: inputFormatters,
+            readOnly: readOnly,
             maxLines: 1,
             style: theme.textTheme.bodySmall?.copyWith(
               color: _strongText(dark),

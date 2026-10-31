@@ -14,7 +14,7 @@ class LoadNotificationsUseCase {
     bool? isRead,
     String? pushState,
     int page = 0,
-    int pageSize = 10,
+    int pageSize = AdminNotificationsPaging.pageSize,
   }) => _repository.loadNotifications(
     search: search,
     type: type,

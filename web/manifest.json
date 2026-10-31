@@ -1,11 +1,11 @@
 {
-    "name": "new_cofee",
-    "short_name": "new_cofee",
+    "name": "غيم وسحب",
+    "short_name": "غيم وسحب",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#hexcode",
-    "theme_color": "#hexcode",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#1D4ED8",
+    "description": "غيم وسحب",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

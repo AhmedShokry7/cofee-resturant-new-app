@@ -669,6 +669,26 @@ class S {
   static String get phoneNumberHint => _ar ? 'رقم الهاتف' : 'Phone Number';
   static String get profileUpdated =>
       _ar ? 'تم تحديث الحساب بنجاح' : 'Profile updated successfully';
+  static String get changePassword =>
+      _ar ? 'تغيير كلمة المرور' : 'Change password';
+  static String get currentPasswordHint =>
+      _ar ? 'كلمة المرور الحالية' : 'Current password';
+  static String get passwordMinLength =>
+      _ar ? '٦ أحرف على الأقل' : 'At least 6 characters';
+  static String get passwordChanged =>
+      _ar ? 'تم تغيير كلمة المرور' : 'Password changed';
+  static String get passwordChangeFailed => _ar
+      ? 'تعذر تغيير كلمة المرور، تحقق من كلمة المرور الحالية'
+      : 'Could not change the password. Check the current one.';
+  static String get consumeSubscription =>
+      _ar ? 'استهلاك اشتراك' : 'Consume a subscription';
+  static String get qrTokenLabel => _ar ? 'رمز QR' : 'QR token';
+  static String get productIdLabel => _ar ? 'معرّف المنتج' : 'Product id';
+  static String get deduct => _ar ? 'خصم' : 'Deduct';
+  static String get invalidQuantity =>
+      _ar ? 'أدخل عدد أكواب صحيحًا' : 'Enter a whole number of cups';
+  static String cupsRemaining(int remaining) =>
+      _ar ? 'الأكواب المتبقية: $remaining' : 'Cups remaining: $remaining';
   static String get chooseFromGallery =>
       _ar ? 'اختر من المعرض' : 'Choose from gallery';
   static String get takePhoto => _ar ? 'التقط صورة' : 'Take a photo';
@@ -743,6 +763,29 @@ class S {
   static String get notificationPermissionDenied => _ar
       ? 'لم يُسمح بالإشعارات. فعّلها من إعدادات الهاتف.'
       : 'Notifications are not allowed. Turn them on in the phone settings.';
+  static String get notificationPreferences =>
+      _ar ? 'أنواع الإشعارات' : 'Notification types';
+  static String get notificationPreferencesHint => _ar
+      ? 'هذه المفاتيح تحدد الإشعارات الفورية التي تصل هاتفك. قائمة الإشعارات داخل التطبيق تصل كاملة مهما كان اختيارك.'
+      : 'These switches decide which pushes reach your phone. The in-app list arrives complete whatever you choose.';
+  static String get preferenceOrderStatus =>
+      _ar ? 'تحديثات الطلبات' : 'Order updates';
+  static String get preferenceOrderStatusHint => _ar
+      ? 'تغيّر حالة طلب عند الطهي أو التوصيل'
+      : 'When an order starts cooking or is out for delivery';
+  static String get preferencePromo =>
+      _ar ? 'العروض والخصومات' : 'Offers and discounts';
+  static String get preferencePromoHint =>
+      _ar ? 'حملات المتجر والكوبونات' : 'Store campaigns and coupons';
+  static String get preferenceLoyalty => _ar ? 'نقاط الولاء' : 'Loyalty points';
+  static String get preferenceLoyaltyHint =>
+      _ar ? 'إيداع النقاط والمكافآت' : 'Points earned and rewards';
+  static String get preferenceSystem => _ar ? 'رسائل المتجر' : 'Store messages';
+  static String get preferenceSystemHint =>
+      _ar ? 'إشعارات عامة من المتجر' : 'General messages from the store';
+  static String get preferenceNotSaved => _ar
+      ? 'لم يُحفظ التغيير. تحقّق من الاتصال وحاول مجددًا.'
+      : 'The change was not saved. Check the connection and try again.';
   static String get skip => _ar ? 'تخطي' : 'Skip';
 
   // ---------- Banners ----------

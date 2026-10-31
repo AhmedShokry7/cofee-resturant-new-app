@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/features/catalog/di/catalog_dependencies.dart';
 import 'package:admin_app/features/catalog/domain/usecases/create_category.dart';
@@ -68,7 +69,7 @@ class AdminCategoryCubit extends Cubit<AdminCategoryState> {
       emit(
         state.copyWith(
           status: AdminCategoryStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

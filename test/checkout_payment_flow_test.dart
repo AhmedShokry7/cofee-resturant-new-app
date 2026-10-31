@@ -190,11 +190,7 @@ class _FakePaymentMethods implements PaymentMethodRepository {
       code: 'card',
       isOnline: true,
     ),
-    PaymentMethodModel(
-      id: 'cash-1',
-      label: 'Cash',
-      code: 'cash',
-    ),
+    PaymentMethodModel(id: 'cash-1', label: 'Cash', code: 'cash'),
   ];
 }
 
@@ -281,26 +277,28 @@ void main() {
   });
 
   group('placed order identity', () {
-    test('the order keeps the server id next to the number the customer reads',
-        () async {
-      final orders = _FakeOrders();
-      final checkout = CheckoutCubit(
-        coupons: _FakeCoupons(),
-        addresses: _FakeAddresses(),
-        paymentMethods: _FakePaymentMethods(),
-        deliveryZoneRepository: _FakeDeliveryZones(),
-        orders: orders,
-        branchId: 'branch-1',
-        currentUserIdProvider: () => 'user-1',
-      );
-      addTearDown(checkout.close);
-      await checkout.load();
+    test(
+      'the order keeps the server id next to the number the customer reads',
+      () async {
+        final orders = _FakeOrders();
+        final checkout = CheckoutCubit(
+          coupons: _FakeCoupons(),
+          addresses: _FakeAddresses(),
+          paymentMethods: _FakePaymentMethods(),
+          deliveryZoneRepository: _FakeDeliveryZones(),
+          orders: orders,
+          branchId: 'branch-1',
+          currentUserIdProvider: () => 'user-1',
+        );
+        addTearDown(checkout.close);
+        await checkout.load();
 
-      final placed = await checkout.placeOrder(items: const []);
+        final placed = await checkout.placeOrder(items: const []);
 
-      expect(placed, isFalse, reason: 'an empty cart is refused');
-      expect(checkout.state.lastOrder, isNull);
-    });
+        expect(placed, isFalse, reason: 'an empty cart is refused');
+        expect(checkout.state.lastOrder, isNull);
+      },
+    );
 
     test('the last order carries the server id and the order number', () async {
       final orders = _FakeOrders();
@@ -339,12 +337,15 @@ void main() {
   });
 
   group('card payment', () {
-    Future<({
-      CartCubit cart,
-      CheckoutCubit checkout,
-      CardPaymentCubit charge,
-      _FakeTap tap,
-    })> buildPaymentTree(
+    Future<
+      ({
+        CartCubit cart,
+        CheckoutCubit checkout,
+        CardPaymentCubit charge,
+        _FakeTap tap,
+      })
+    >
+    buildPaymentTree(
       WidgetTester tester, {
       bool verified = true,
       bool withSavedCard = true,
@@ -394,9 +395,7 @@ void main() {
                 'paymentSuccessRoute': (context) =>
                     const Scaffold(body: Text('payment-success')),
               },
-              home: const Scaffold(
-                body: PaymentMethodBottomBar(),
-              ),
+              home: const Scaffold(body: PaymentMethodBottomBar()),
             ),
           ),
         ),
@@ -416,13 +415,20 @@ void main() {
       if (withSavedCard) {
         checkout.selectSavedCard(savedCard);
       }
+      // The real payment page owns the quote: CheckoutPageBody listens to the
+      // cart and the checkout cubits and refreshes the quote on every change
+      // (checkout_page_body.dart:39-52). This tree mounts the bottom bar alone,
+      // so it has to make the same call — the bar refuses to confirm without a
+      // priced quote, and that refusal is the product's, not a bug.
+      await checkout.refreshCheckoutQuote(cart.state.items);
       await tester.pumpAndSettle();
 
       return (cart: cart, checkout: checkout, charge: charge, tap: tap);
     }
 
-    testWidgets('the charge is made for the order id, never for the number',
-        (tester) async {
+    testWidgets('the charge is made for the order id, never for the number', (
+      tester,
+    ) async {
       final tree = await buildPaymentTree(tester);
 
       await tester.tap(find.text('Confirm Payment'));
@@ -433,8 +439,9 @@ void main() {
       expect(tree.tap.chargedOrderIds.first, isNot(orderNumber));
     });
 
-    testWidgets('a verified charge empties the cart and confirms the order',
-        (tester) async {
+    testWidgets('a verified charge empties the cart and confirms the order', (
+      tester,
+    ) async {
       final tree = await buildPaymentTree(tester);
 
       await tester.tap(find.text('Confirm Payment'));

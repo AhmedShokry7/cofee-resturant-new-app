@@ -117,6 +117,29 @@ String? notificationCustomerInitial(AdminNotification notification) {
   return name.substring(0, 1).toUpperCase();
 }
 
+String notificationDestinationLabel(AdminNotificationDestination destination) =>
+    switch (destination) {
+      AdminNotificationDestination.none => S.notificationsDestinationNone,
+      AdminNotificationDestination.offers => S.notificationsDestinationOffers,
+      AdminNotificationDestination.orders => S.notificationsDestinationOrders,
+      AdminNotificationDestination.loyalty => S.notificationsDestinationLoyalty,
+      AdminNotificationDestination.subscription =>
+        S.notificationsDestinationSubscription,
+      AdminNotificationDestination.notifications =>
+        S.notificationsDestinationNotifications,
+    };
+
+IconData notificationDestinationIcon(
+  AdminNotificationDestination destination,
+) => switch (destination) {
+  AdminNotificationDestination.none => AppIcons.cancel01,
+  AdminNotificationDestination.offers => AppIcons.promotion,
+  AdminNotificationDestination.orders => AppIcons.shoppingBag01,
+  AdminNotificationDestination.loyalty => AppIcons.gift,
+  AdminNotificationDestination.subscription => AppIcons.repeat,
+  AdminNotificationDestination.notifications => AppIcons.notification01,
+};
+
 String notificationAudienceLabel(AdminNotificationAudience? audience) =>
     switch (audience) {
       AdminNotificationAudience.all => S.notificationsAudienceAll,

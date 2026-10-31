@@ -11,6 +11,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/dining_format.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/tables/domain/entities/dining_reservation_draft.dart';
 import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_cubit.dart';
@@ -241,7 +242,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
         tableId: table.id,
         customerName: _name.text.trim(),
         customerPhone: _phone.text.trim(),
-        partySize: int.tryParse(_party.text.trim()) ?? 1,
+        partySize: parseLocalizedInt(_party.text) ?? 1,
         reservedFor: _startsAt,
         durationMinutes: _duration,
         note: _note.text.trim(),
@@ -356,9 +357,7 @@ class _DiningReservationDialogState extends State<_DiningReservationDialog> {
                                 keyboardType: TextInputType.number,
                                 textInputAction: TextInputAction.next,
                                 validator: (value) {
-                                  final count = int.tryParse(
-                                    (value ?? '').trim(),
-                                  );
+                                  final count = parseLocalizedInt(value ?? '');
                                   if (count == null ||
                                       count < 1 ||
                                       count > 40) {

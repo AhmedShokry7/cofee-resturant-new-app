@@ -18,6 +18,8 @@ class NotificationModel {
     this.type = 'system',
     this.relatedEntityType,
     this.relatedEntityId,
+    this.imageUrl,
+    this.destination,
     this.createdAt,
     this.isRead = true,
   }) : _legacyTitle = title ?? '',
@@ -33,6 +35,12 @@ class NotificationModel {
   final String type;
   final String? relatedEntityType;
   final String? relatedEntityId;
+
+  /// The campaign picture, or null for a plain message.
+  final String? imageUrl;
+
+  /// The screen the composer chose for this message, as a code, never a path.
+  final String? destination;
   final DateTime? createdAt;
   final bool isRead;
 
@@ -88,6 +96,7 @@ class NotificationModel {
 
   factory NotificationModel.fromDatabase(Map<String, dynamic> json) {
     final map = Db.asMap(json);
+    final payload = Db.asMap(map['payload']);
     final createdAt = Db.textOrNull(map['created_at']);
     return NotificationModel(
       id: Db.text(map['id']),
@@ -98,10 +107,33 @@ class NotificationModel {
       type: Db.text(map['type'], 'system'),
       relatedEntityType: Db.textOrNull(map['related_entity_type']),
       relatedEntityId: Db.textOrNull(map['related_entity_id']),
+      imageUrl: imageUrlOf(payload['image_url']),
+      destination: destinationOf(payload['destination']),
       createdAt: createdAt == null
           ? null
           : DateTime.tryParse(createdAt)?.toLocal(),
       isRead: Db.asBool(map['is_read']),
     );
   }
+}
+
+/// The picture of a row, or null when the value cannot be one.
+///
+/// The column is a free jsonb, and a campaign may be sent with no picture at
+/// all, so anything that is not an absolute url is dropped here rather than
+/// handed to the renderer.
+String? imageUrlOf(Object? value) {
+  final url = Db.textOrNull(value)?.trim();
+  if (url == null) return null;
+  return url.startsWith('https://') || url.startsWith('http://') ? url : null;
+}
+
+/// The screen code of a row, or null.
+///
+/// A value that carries a separator is not a code: the app opens only the
+/// destinations `routeForNotification` knows, never a path it was handed.
+String? destinationOf(Object? value) {
+  final code = Db.textOrNull(value)?.trim().toLowerCase();
+  if (code == null || code.length > 64) return null;
+  return RegExp(r'^[a-z0-9_-]+$').hasMatch(code) ? code : null;
 }

@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -266,10 +267,10 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   /// Amount fields read the digits of either language: an Arabic keyboard
   /// produces `١٢٣`, and the app prints every amount that way.
   double? _decimal(TextEditingController controller) =>
-      double.tryParse(normalizeDigits(controller.text.trim()));
+      parseLocalizedNumber(controller.text);
 
   int? _integer(TextEditingController controller) =>
-      int.tryParse(normalizeDigits(controller.text.trim()));
+      parseLocalizedInt(controller.text);
 
   /// What the product still misses before the database accepts it.
   String? _missingData() {
@@ -348,13 +349,13 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
           if (!mounted) return;
           setState(() {
             _saving = false;
-            _error = error.toString();
+            _error = adminErrorMessage(error);
           });
         });
   }
 
   String _discountStatus() {
-    final percent = double.tryParse(_discountPercentageController.text.trim());
+    final percent = _decimal(_discountPercentageController);
     if (percent == null || percent <= 0) return S.discountStatusNotActive;
 
     final now = DateTime.now();
@@ -373,9 +374,9 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   /// Null when there is no discount, or when the window says it is not
   /// running: the line then shows nothing rather than a price nobody pays.
   double? get _priceAfterDiscount {
-    final percent = double.tryParse(_discountPercentageController.text.trim());
+    final percent = _decimal(_discountPercentageController);
     if (percent == null || percent <= 0) return null;
-    final price = double.tryParse(_priceController.text.trim());
+    final price = _decimal(_priceController);
     if (price == null) return null;
 
     final now = DateTime.now();
@@ -485,10 +486,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
                   children: [
                     DiscountPill(
                       percent:
-                          double.tryParse(
-                            _discountPercentageController.text.trim(),
-                          )?.round() ??
-                          0,
+                          _decimal(_discountPercentageController)?.round() ?? 0,
                     ),
                     const SizedBox(width: AppSizes.px6),
                     Flexible(

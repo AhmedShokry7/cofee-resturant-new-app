@@ -1,6 +1,7 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_amount_field.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:flutter/material.dart';
@@ -50,8 +51,14 @@ class _HrAdvanceDialogState extends State<_HrAdvanceDialog> {
   }
 
   void _submit() {
-    final amount = double.tryParse(_amount.text.trim()) ?? 0;
+    // قراءة بأرقام اللغتين: `٣٠٠` طلبٌ سليم لا مبلغٌ مجهول، والقِسط المكتوب
+    // بلا رقم يجب أن يُرفض لا أن يُسقَط من الطلب بصمت.
+    final amount = parseLocalizedNumber(_amount.text);
     final reason = _reason.text.trim();
+    if (amount == null) {
+      setState(() => _error = S.hrNumberMissing);
+      return;
+    }
     if (amount <= 0) {
       setState(() => _error = S.hrAmountMustBePositive);
       return;
@@ -60,7 +67,11 @@ class _HrAdvanceDialogState extends State<_HrAdvanceDialog> {
       setState(() => _error = S.hrReasonMissing);
       return;
     }
-    final installment = double.tryParse(_installment.text.trim());
+    final installment = parseLocalizedNumber(_installment.text);
+    if (_installment.text.trim().isNotEmpty && installment == null) {
+      setState(() => _error = S.hrNumberMissing);
+      return;
+    }
     Navigator.of(context).pop(
       HrAdvanceDraft(
         amount: amount,

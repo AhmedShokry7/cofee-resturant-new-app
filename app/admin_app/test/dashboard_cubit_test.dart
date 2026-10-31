@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_metrics.dart';
 import 'package:admin_app/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:admin_app/features/dashboard/presentation/manager/admin_dashboard_cubit.dart';
@@ -66,8 +68,10 @@ void main() {
     test('a refused read becomes a failure the page can retry', () async {
       final cubit = AdminDashboardCubit(
         repository: _FakeDashboardRepository(
-          result: (_) async =>
-              throw Exception('missing permission: orders.read'),
+          result: (_) async => throw const PostgrestException(
+            message: 'missing permission: orders.read',
+            code: '42501',
+          ),
         ),
       );
 
@@ -75,7 +79,9 @@ void main() {
 
       expect(cubit.state.status, AdminDashboardStatus.failure);
       expect(cubit.state.hasMetrics, isFalse);
-      expect(cubit.state.errorMessage, contains('orders.read'));
+      // السبب يصل بالعربية التي يقرأها الأدمن، ونصّ القاعدة يبقى في السجل.
+      expect(cubit.state.errorMessage, S.errorNoPermission);
+      expect(cubit.state.errorMessage, isNot(contains('orders.read')));
       await cubit.close();
     });
 
@@ -138,8 +144,10 @@ void main() {
       () async {
         final cubit = AdminDashboardCubit(
           repository: _FakeDashboardRepository(
-            targetSaver: (_) async =>
-                throw Exception('missing permission: settings.write'),
+            targetSaver: (_) async => throw const PostgrestException(
+              message: 'missing permission: settings.write',
+              code: '42501',
+            ),
           ),
         );
         await cubit.load();
@@ -148,7 +156,8 @@ void main() {
 
         expect(saved, isFalse);
         expect(cubit.state.targetStatus, AdminDashboardTargetStatus.failure);
-        expect(cubit.state.targetError, contains('settings.write'));
+        expect(cubit.state.targetError, S.errorNoPermission);
+        expect(cubit.state.targetError, isNot(contains('settings.write')));
         expect(cubit.state.status, AdminDashboardStatus.ready);
         expect(cubit.state.metrics.totalOrders, 12);
         await cubit.close();

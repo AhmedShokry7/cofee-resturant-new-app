@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/constants/app_patterns.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
@@ -84,7 +85,7 @@ class _StaffInviteDialogState extends State<StaffInviteDialog> {
       });
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '$error');
+      setState(() => _error = adminErrorMessage(error));
     }
   }
 

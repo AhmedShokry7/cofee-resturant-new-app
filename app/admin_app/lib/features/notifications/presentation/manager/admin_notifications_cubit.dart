@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
+import 'package:admin_app/features/notifications/data/services/notifications_realtime_feed.dart';
 import 'package:admin_app/features/notifications/di/notifications_dependencies.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
+import 'package:admin_app/features/notifications/domain/usecases/campaign_image.dart';
 import 'package:admin_app/features/notifications/domain/usecases/delete_notification.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_audience.dart';
 import 'package:admin_app/features/notifications/domain/usecases/load_customers.dart';
@@ -21,11 +25,18 @@ import 'package:admin_app/features/notifications/presentation/manager/admin_noti
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
 
 class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
-  AdminNotificationsCubit({NotificationsRepository? repository})
-    : this._withUseCases(repository ?? NotificationsDependencies.repository);
+  AdminNotificationsCubit({
+    NotificationsRepository? repository,
+    NotificationsRealtimeFeed? realtimeFeed,
+  }) : this._withUseCases(
+         repository ?? NotificationsDependencies.repository,
+         realtimeFeed,
+       );
 
-  AdminNotificationsCubit._withUseCases(NotificationsRepository repository)
-    : _loadNotifications = LoadNotificationsUseCase(repository),
+  AdminNotificationsCubit._withUseCases(
+    NotificationsRepository repository,
+    NotificationsRealtimeFeed? realtimeFeed,
+  ) : _loadNotifications = LoadNotificationsUseCase(repository),
       _loadMetrics = LoadMetricsUseCase(repository),
       _loadPushHealth = LoadPushHealthUseCase(repository),
       _loadCustomers = LoadCustomersUseCase(repository),
@@ -34,6 +45,9 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
       _resendNotification = ResendNotificationUseCase(repository),
       _setRead = SetReadUseCase(repository),
       _deleteNotification = DeleteNotificationUseCase(repository),
+      _uploadCampaignImage = UploadCampaignImageUseCase(repository),
+      _discardCampaignImage = DiscardCampaignImageUseCase(repository),
+      _realtimeFeed = realtimeFeed ?? NotificationsRealtimeFeed(),
       super(const AdminNotificationsState());
 
   final LoadNotificationsUseCase _loadNotifications;
@@ -45,8 +59,26 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   final ResendNotificationUseCase _resendNotification;
   final SetReadUseCase _setRead;
   final DeleteNotificationUseCase _deleteNotification;
+  final UploadCampaignImageUseCase _uploadCampaignImage;
+  final DiscardCampaignImageUseCase _discardCampaignImage;
+  final NotificationsRealtimeFeed _realtimeFeed;
   Timer? _searchTimer;
   int _requestId = 0;
+  bool _liveStarted = false;
+
+  /// Listens to `engagement.notifications` so a campaign sent from another
+  /// screen, or a customer reading a message, moves the directory without a
+  /// manual reload. Starting it twice is a no-op: one page owns one channel.
+  void startLiveUpdates() {
+    if (_liveStarted) return;
+    _liveStarted = true;
+    _realtimeFeed.start(_onLiveChange);
+  }
+
+  void _onLiveChange() {
+    if (isClosed) return;
+    refresh();
+  }
 
   Future<void> load() async {
     if (state.isLoading) return;
@@ -120,6 +152,25 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
     required AdminNotificationAudience audience,
     String? customerId,
   }) => _loadAudience(type: type, audience: audience, customerId: customerId);
+
+  /// يرفع صورة الحملة ويعيد رابطها العام، ليحمله الحقل المرفوع في المسودة.
+  Future<String> uploadCampaignImage({
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) => _uploadCampaignImage(
+    bytes: bytes,
+    fileName: fileName,
+    contentType: contentType,
+  );
+
+  /// يتخلى عن صورة رُفعت ثم لم تُرسل. خطأ الحذف لا يوقف شيء: الملف يبقى في
+  /// الدلو بلا صف يشير إليه، والإشعار الذي أُرسل فعلًا لا يُمسّ هنا.
+  Future<void> discardCampaignImage(String? imageUrl) async {
+    try {
+      await _discardCampaignImage(imageUrl);
+    } catch (_) {}
+  }
 
   Future<AdminSendResult> send(AdminNotificationDraft draft) async {
     final result = await _sendNotification(
@@ -217,7 +268,7 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
           metrics: metrics,
           pushHealth: health,
           isRefreshingRows: false,
-          errorMessage: '$failure',
+          errorMessage: failure == null ? null : adminErrorMessage(failure),
         ),
       );
       return;
@@ -253,8 +304,10 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _searchTimer?.cancel();
+    _liveStarted = false;
+    await _realtimeFeed.dispose();
     return super.close();
   }
 }

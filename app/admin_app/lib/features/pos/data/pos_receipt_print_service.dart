@@ -1,14 +1,22 @@
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/services/html_print_runner.dart';
+import 'package:admin_app/core/services/app_pdf.dart';
+import 'package:admin_app/core/services/app_pdf_layout.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/pos/domain/entities/pos_receipt.dart';
 import 'package:admin_app/features/pos/data/pos_invoice_qr.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_format.dart';
 
-Future<bool> printPosReceipt(PosReceipt receipt) =>
-    printHtmlDocument(buildPosReceiptDocument(receipt));
+/// فاتورة الضريبية المبسطة تُطبع من نفس المسار على كل الأجهزة: تُرسم PDFًا
+/// وتُسلَّم إلى نافذة طباعة النظام (أو إلى معاينة الطباعة على الهاتف).
+Future<bool> printPosReceipt(PosReceipt receipt) async => AppPdf.print(
+  await buildPosReceiptDocument(receipt),
+  name: '${S.posTaxInvoiceTitle} ${receipt.result.orderNumber}',
+);
 
 /// The ZATCA QR payload of [receipt], or null when the seller identity needed
 /// by a simplified tax invoice is not configured.
@@ -35,313 +43,290 @@ String posInvoiceTimestamp(DateTime value) {
       '${two(utc.second)}Z';
 }
 
-/// The printable ZATCA Phase 1 simplified tax invoice of one counter sale.
-String buildPosReceiptDocument(PosReceipt receipt) {
-  final arabic = AppLocale.instance.isArabic;
-  final language = arabic ? 'ar' : 'en';
-  final direction = arabic ? 'rtl' : 'ltr';
+/// بيانات البائع كما تُطبع أعلى الفاتورة: الاسم ثم ما وُضع من عنوان ورقم
+/// ضريبي وهاتف، بلا أسطر فارغة.
+List<String> posReceiptSellerLines(PosReceipt receipt) {
   final result = receipt.result;
+  final language = AppLocale.instance.language;
+  return <String>[
+    result.sellerLegalNameFor(language),
+    result.sellerAddressFor(language),
+    if (result.sellerVatNumber.trim().isNotEmpty)
+      '${S.posSellerVatNumber}: ${localizeDigits(result.sellerVatNumber.trim())}',
+    result.sellerPhone,
+  ].map((line) => line.trim()).where((line) => line.isNotEmpty).toList();
+}
 
-  final rows = StringBuffer();
-  for (final line in receipt.lines) {
-    final options = line.optionsLabel(AppLocale.instance.language);
-    final note = line.note.trim();
-    rows.write(
-      '<tr>'
-      '<td class="qty">${_escape(localizeDigits('${line.quantity}'))}</td>'
-      '<td><strong>${_escape(line.product.nameFor(AppLocale.instance.language))}</strong>'
-      '${options.isEmpty ? '' : '<div class="detail">${_escape(options)}</div>'}'
-      '${note.isEmpty ? '' : '<div class="detail">${_escape(note)}</div>'}'
-      '</td>'
-      '<td class="num">${_escape(_money(line.unitPrice, receipt.currencyCode))}</td>'
-      '<td class="num">${_escape(_money(line.lineTotal, receipt.currencyCode))}</td>'
-      '</tr>',
-    );
-  }
-
+/// خانات الفاتورة: رقمها وتاريخها والطاولة والعميل ووسيلة الدفع أو دفعات
+/// مقسّمة، وهي نفسها ما يقيسه الاختبار.
+List<(String, String)> posReceiptDetails(PosReceipt receipt) {
+  final result = receipt.result;
+  final language = AppLocale.instance.language;
   final table = result.tableNumber?.trim() ?? '';
   final customer = result.customerDisplayName;
   final customerPhone = result.customerPhone?.trim() ?? '';
-  final details = <(String, String)>[
-    (S.posInvoiceNumber, _escape(result.orderNumber)),
-    (
-      S.posInvoiceDateTime,
-      _escape(posDateTime(result.placedAt ?? DateTime.now())),
-    ),
-    (S.posTable, _escape(table.isEmpty ? '-' : table)),
-    if (customer.isNotEmpty) (S.posCustomer, _escape(customer)),
-    if (customerPhone.isNotEmpty) (S.posCustomerPhone, _escape(customerPhone)),
+  return <(String, String)>[
+    (S.posInvoiceNumber, result.orderNumber),
+    (S.posInvoiceDateTime, posDateTime(result.placedAt ?? DateTime.now())),
+    (S.posTable, table.isEmpty ? '-' : table),
+    if (customer.isNotEmpty) (S.posCustomer, customer),
+    if (customerPhone.isNotEmpty) (S.posCustomerPhone, customerPhone),
     if (result.isSplitPayment)
       for (final tender in result.payments)
         (
-          posTenderLabel(tender, AppLocale.instance.language),
-          _escape(_money(tender.amount, receipt.currencyCode)),
+          posTenderLabel(tender, language),
+          _money(tender.amount, receipt.currencyCode),
         )
     else
-      (
-        S.posReceiptPaymentMethod,
-        _escape(result.paymentMethodNameFor(AppLocale.instance.language)),
-      ),
+      (S.posReceiptPaymentMethod, result.paymentMethodNameFor(language)),
   ];
-  final detailsHtml = details
-      .map(
-        (field) =>
-            '<div class="field"><span>${_escape(field.$1)}</span>'
-            '<strong>${field.$2}</strong></div>',
-      )
-      .join();
-
-  final money = receipt.currencyCode;
-  final totals = StringBuffer();
-  if (result.discountAmount > 0) {
-    totals
-      ..write(_row(S.posBeforeDiscount, _money(result.beforeDiscount, money)))
-      ..write(_row(S.posDiscount, '- ${_money(result.discountAmount, money)}'))
-      ..write(_row(S.posAfterDiscount, _money(result.subtotal, money)));
-  } else {
-    totals.write(_row(S.posSubtotal, _money(result.subtotal, money)));
-  }
-  totals.write(_row(S.posTaxableAmount, _money(result.invoiceTaxable, money)));
-  if (result.taxRate > 0) {
-    totals.write(_row(S.posVatRate, posPercent(result.taxRate)));
-  }
-  totals.write(_row(S.posVatAmount, _money(result.invoiceVat, money)));
-  totals.write(
-    '<div class="row grand"><span>${_escape(S.posTotal)}</span>'
-    '<strong>${_escape(_money(result.grandTotal, money))}</strong></div>',
-  );
-
-  final sellerName = result.sellerLegalNameFor(AppLocale.instance.language);
-  final sellerAddress = result.sellerAddressFor(AppLocale.instance.language);
-  final sellerVat = result.sellerVatNumber.trim();
-  final sellerPhone = result.sellerPhone.trim();
-  final sellerHtml = StringBuffer()
-    ..write('<div class="seller-name">${_escape(sellerName)}</div>')
-    ..write(
-      sellerAddress.isEmpty
-          ? ''
-          : '<div class="meta">${_escape(sellerAddress)}</div>',
-    )
-    ..write(
-      sellerVat.isEmpty
-          ? ''
-          : '<div class="meta">${_escape(S.posSellerVatNumber)}: '
-                '${_escape(localizeDigits(sellerVat))}</div>',
-    )
-    ..write(
-      sellerPhone.isEmpty
-          ? ''
-          : '<div class="meta">${_escape(sellerPhone)}</div>',
-    );
-
-  final qrData = buildPosReceiptQrData(receipt);
-  final qrHtml = qrData == null
-      ? '<section class="warning">${_escape(S.posVatNumberMissing)}</section>'
-      : '<section class="qr">'
-            '<div class="qr-image">${renderPosQrSvg(qrData)}</div>'
-            '<div class="qr-caption">${_escape(S.posInvoiceQrCaption)}</div>'
-            '</section>';
-
-  final note = receipt.orderNote;
-  final noteHtml = note.isEmpty
-      ? ''
-      : '<section class="note"><span>${_escape(S.posOrderNote)}</span>'
-            '<p>${_escape(note)}</p></section>';
-
-  return '''
-<!DOCTYPE html>
-<html dir="$direction" lang="$language">
-<head>
-<meta charset="utf-8">
-<title>${_escape(S.posTaxInvoiceTitle)} - ${_escape(result.orderNumber)}</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 24px;
-    color: #22332d;
-    background: #ffffff;
-    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
-  }
-  .receipt { max-width: 640px; margin: 0 auto; }
-  header {
-    text-align: center;
-    padding-bottom: 12px;
-    margin-bottom: 14px;
-    border-bottom: 2px solid #e6f1eb;
-  }
-  h1 { margin: 0 0 3px; font-size: 21px; }
-  .invoice-title { margin: 0; font-size: 21px; font-weight: 700; }
-  .invoice-subtitle { margin-top: 2px; color: #667085; font-size: 11px; }
-  .seller {
-    padding: 10px 12px;
-    margin-bottom: 14px;
-    border: 1px solid #eef1ef;
-    border-radius: 9px;
-    background: #fcfdfc;
-  }
-  .seller-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-  .meta { color: #667085; font-size: 10.5px; line-height: 1.6; }
-  .details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px;
-    margin-bottom: 16px;
-  }
-  .field {
-    padding: 8px 10px;
-    border: 1px solid #eef1ef;
-    border-radius: 8px;
-    background: #fcfdfc;
-  }
-  .field span {
-    display: block;
-    margin-bottom: 2px;
-    color: #819087;
-    font-size: 9.5px;
-  }
-  .field strong {
-    display: block;
-    color: #36473e;
-    font-size: 11px;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th {
-    padding: 7px 6px;
-    text-align: start;
-    font-weight: 700;
-    color: #36473e;
-    background: #f3f6f4;
-    border-top: 1px solid #e3e9e4;
-    border-bottom: 1px solid #e3e9e4;
-    white-space: nowrap;
-  }
-  td {
-    padding: 8px 6px;
-    vertical-align: top;
-    border-bottom: 1px solid #eef1ef;
-  }
-  td strong { display: block; font-size: 11.5px; }
-  .qty { white-space: nowrap; color: #49584f; }
-  .detail { margin-top: 2px; color: #819087; font-size: 10px; }
-  .num { white-space: nowrap; text-align: end; font-variant-numeric: tabular-nums; }
-  .totals { margin-top: 12px; padding: 10px 12px; border-radius: 9px; background: #f6faf7; }
-  .row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 3px 0;
-    color: #49584f;
-    font-size: 11px;
-  }
-  .row strong { color: #36473e; }
-  .row.grand { margin-top: 6px; padding-top: 8px; border-top: 1px solid #dce7e0; }
-  .row.grand span { font-weight: 700; color: #22332d; }
-  .row.grand strong { color: #087f68; font-size: 18px; }
-  .qr {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-top: 14px;
-    padding: 11px 12px;
-    border: 1px solid #dce7e0;
-    border-radius: 9px;
-  }
-  .qr-image svg { display: block; width: 132px; height: 132px; }
-  .qr-caption { color: #49584f; font-size: 10px; line-height: 1.7; }
-  .warning {
-    margin-top: 14px;
-    padding: 9px 11px;
-    border: 1px solid #f0c987;
-    border-radius: 8px;
-    background: #fff8e8;
-    color: #7a5200;
-    font-size: 10.5px;
-    line-height: 1.7;
-  }
-  .note {
-    margin-top: 12px;
-    padding: 9px 11px;
-    border: 1px dashed #dce7e0;
-    border-radius: 8px;
-    color: #49584f;
-    font-size: 10.5px;
-  }
-  .note span { color: #819087; font-size: 9.5px; }
-  .note p { margin: 3px 0 0; }
-  footer {
-    margin-top: 16px;
-    padding-top: 10px;
-    border-top: 1px solid #eef1ef;
-    text-align: center;
-    color: #819087;
-    font-size: 10px;
-    line-height: 1.6;
-  }
-  footer strong { display: block; margin-bottom: 3px; color: #087f68; font-size: 12px; }
-  @page { size: A4 portrait; margin: 14mm; }
-  @media print {
-    body { padding: 0; }
-    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
-</style>
-</head>
-<body>
-<div class="receipt">
-<header>
-  <div class="invoice-title">${_escape(S.posTaxInvoiceTitle)}</div>
-  <div class="invoice-subtitle">${_escape(S.posTaxInvoiceTitleAlt)}</div>
-</header>
-<section class="seller">
-  $sellerHtml
-</section>
-<div class="details">
-$detailsHtml
-</div>
-<table>
-  <thead>
-    <tr>
-      <th>${_escape(S.posQuantity)}</th>
-      <th>${_escape(S.posItems)}</th>
-      <th class="num">${_escape(S.posPrice)}</th>
-      <th class="num">${_escape(S.posTotal)}</th>
-    </tr>
-  </thead>
-  <tbody>
-$rows
-  </tbody>
-</table>
-<div class="totals">
-  $totals
-</div>
-$qrHtml
-$noteHtml
-<footer>
-  <strong>${_escape(S.posReceiptThanks)}</strong>
-  <div>${_escape(S.posTaxInvoiceCompliance)}</div>
-  ${_date(DateTime.now())}
-</footer>
-</div>
-</body>
-</html>
-''';
 }
 
-String _row(String label, String value) =>
-    '<div class="row"><span>${_escape(label)}</span>'
-    '<strong>${_escape(value)}</strong></div>';
+/// أسطر الأصناف: الكمية والاسم مع خياراته وملاحظته، ثم سعر الوحدة والإجمالي.
+List<PosReceiptPrintLine> posReceiptPrintLines(PosReceipt receipt) {
+  final language = AppLocale.instance.language;
+  return [
+    for (final line in receipt.lines)
+      PosReceiptPrintLine(
+        quantity: localizeDigits('${line.quantity}'),
+        name: line.product.nameFor(language),
+        details: <String>[
+          line.optionsLabel(language),
+          line.note.trim(),
+        ].where((value) => value.isNotEmpty).toList(),
+        unitPrice: _money(line.unitPrice, receipt.currencyCode),
+        lineTotal: _money(line.lineTotal, receipt.currencyCode),
+      ),
+  ];
+}
+
+/// مجاميع الفاتورة بترتيبها، وآخرها الإجمالي البارز.
+List<(String, String, bool)> posReceiptTotals(PosReceipt receipt) {
+  final result = receipt.result;
+  final money = receipt.currencyCode;
+  return <(String, String, bool)>[
+    if (result.discountAmount > 0) ...[
+      (S.posBeforeDiscount, _money(result.beforeDiscount, money), false),
+      (S.posDiscount, '- ${_money(result.discountAmount, money)}', false),
+      (S.posAfterDiscount, _money(result.subtotal, money), false),
+    ] else
+      (S.posSubtotal, _money(result.subtotal, money), false),
+    (S.posTaxableAmount, _money(result.invoiceTaxable, money), false),
+    if (result.taxRate > 0) (S.posVatRate, posPercent(result.taxRate), false),
+    (S.posVatAmount, _money(result.invoiceVat, money), false),
+    (S.posTotal, _money(result.grandTotal, money), true),
+  ];
+}
+
+/// سطر صنف واحد جاهز للورق، بلا أي وساطة لغة توصيف.
+class PosReceiptPrintLine {
+  const PosReceiptPrintLine({
+    required this.quantity,
+    required this.name,
+    required this.details,
+    required this.unitPrice,
+    required this.lineTotal,
+  });
+
+  final String quantity;
+  final String name;
+  final List<String> details;
+  final String unitPrice;
+  final String lineTotal;
+}
+
+/// فاتورة A4 رأسية بلغة اللوحة واتجاهها، تحمل رمز QR حين اكتملت هوية البائع.
+Future<pw.Document> buildPosReceiptDocument(PosReceipt receipt) async {
+  final arabic = AppLocale.instance.isArabic;
+  final result = receipt.result;
+  final qrData = buildPosReceiptQrData(receipt);
+  final note = receipt.orderNote.trim();
+  final sellerLines = posReceiptSellerLines(receipt);
+  final document = pw.Document(
+    theme: await AppPdf.theme(),
+    title: '${S.posTaxInvoiceTitle} ${result.orderNumber}',
+  );
+
+  document.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      textDirection: arabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+      build: (context) => pw.Padding(
+        padding: const pw.EdgeInsets.all(28),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Text(
+              S.posTaxInvoiceTitle,
+              textAlign: pw.TextAlign.center,
+              style: const pw.TextStyle(
+                fontSize: 17,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.Text(
+              S.posTaxInvoiceTitleAlt,
+              textAlign: pw.TextAlign.center,
+              style: AppPdfLayout.labelStyle(),
+            ),
+            pw.SizedBox(height: 12),
+            if (sellerLines.isNotEmpty) ...[
+              AppPdfLayout.panel([
+                for (final (index, line) in sellerLines.indexed)
+                  pw.Text(
+                    line,
+                    style: pw.TextStyle(
+                      fontSize: index == 0 ? 12 : 9,
+                      fontWeight: index == 0
+                          ? pw.FontWeight.bold
+                          : pw.FontWeight.normal,
+                      color: index == 0 ? AppPdf.ink : AppPdf.faint,
+                    ),
+                  ),
+              ]),
+              pw.SizedBox(height: 12),
+            ],
+            AppPdfLayout.fieldGrid(posReceiptDetails(receipt)),
+            pw.SizedBox(height: 14),
+            pw.Table(
+              border: AppPdfLayout.tableBorder(),
+              children: [
+                pw.TableRow(
+                  children: [
+                    AppPdfLayout.cell(S.posQuantity, header: true),
+                    AppPdfLayout.cell(S.posItems, header: true),
+                    AppPdfLayout.cell(S.posPrice, header: true, numeric: true),
+                    AppPdfLayout.cell(S.posTotal, header: true, numeric: true),
+                  ],
+                ),
+                for (final line in posReceiptPrintLines(receipt))
+                  pw.TableRow(
+                    children: [
+                      AppPdfLayout.cell(line.quantity),
+                      pw.Container(
+                        padding: const pw.EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 5,
+                        ),
+                        child: pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(
+                              line.name,
+                              style: const pw.TextStyle(
+                                fontSize: 10,
+                                fontWeight: pw.FontWeight.bold,
+                              ),
+                            ),
+                            for (final detail in line.details)
+                              pw.Text(
+                                detail,
+                                style: pw.TextStyle(
+                                  fontSize: 8.5,
+                                  color: AppPdf.muted,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      AppPdfLayout.cell(line.unitPrice, numeric: true),
+                      AppPdfLayout.cell(line.lineTotal, numeric: true),
+                    ],
+                  ),
+              ],
+            ),
+            pw.SizedBox(height: 12),
+            AppPdfLayout.panel([
+              for (final (label, value, grand) in posReceiptTotals(receipt))
+                AppPdfLayout.summaryRow(label, value, grand: grand),
+            ]),
+            if (qrData != null) ...[
+              pw.SizedBox(height: 12),
+              pw.Container(
+                padding: const pw.EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 9,
+                ),
+                decoration: pw.BoxDecoration(
+                  border: pw.Border.all(color: AppPdf.edge),
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Row(
+                  crossAxisAlignment: pw.CrossAxisAlignment.center,
+                  children: [
+                    pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: qrData,
+                      width: 92,
+                      height: 92,
+                      color: AppPdf.ink,
+                      // رمز ZATCA للتحقق الآلي، فلا يُطبع محتواه Base64 تحت المربع.
+                      drawText: false,
+                    ),
+                    pw.SizedBox(width: 12),
+                    pw.Expanded(
+                      child: pw.Text(
+                        S.posInvoiceQrCaption,
+                        style: pw.TextStyle(fontSize: 9, color: AppPdf.body),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            if (qrData == null) ...[
+              pw.SizedBox(height: 12),
+              AppPdfLayout.panel([
+                pw.Text(
+                  S.posVatNumberMissing,
+                  style: pw.TextStyle(fontSize: 9.5, color: AppPdf.warning),
+                ),
+              ]),
+            ],
+            if (note.isNotEmpty) ...[
+              pw.SizedBox(height: 12),
+              AppPdfLayout.panel([
+                pw.Text(note, style: pw.TextStyle(fontSize: 9.5)),
+              ], title: S.posOrderNote),
+            ],
+            pw.Container(
+              margin: const pw.EdgeInsets.only(top: 16),
+              padding: const pw.EdgeInsets.only(top: 9),
+              decoration: pw.BoxDecoration(
+                border: pw.Border(top: pw.BorderSide(color: AppPdf.hairline)),
+              ),
+              child: pw.Column(
+                children: [
+                  pw.Text(
+                    S.posReceiptThanks,
+                    style: pw.TextStyle(
+                      fontSize: 11,
+                      fontWeight: pw.FontWeight.bold,
+                      color: AppPdf.accent,
+                    ),
+                  ),
+                  pw.SizedBox(height: 3),
+                  pw.Text(
+                    S.posTaxInvoiceCompliance,
+                    textAlign: pw.TextAlign.center,
+                    style: pw.TextStyle(fontSize: 8.5, color: AppPdf.muted),
+                  ),
+                  pw.Text(
+                    _date(DateTime.now()),
+                    style: pw.TextStyle(fontSize: 8.5, color: AppPdf.muted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  return document;
+}
 
 String _money(num amount, String currency) =>
-    '${localizeDigits(formatAmount(amount))} ${_escape(currency)}';
+    '${localizeDigits(formatAmount(amount))} $currency';
 
-String _date(DateTime value) => _escape(localizeDigits(formatDateTime(value)));
-
-String _escape(String value) => value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+String _date(DateTime value) => localizeDigits(formatDateTime(value));

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
@@ -32,7 +33,7 @@ Future<void> toggleBundleActive(
     await cubit.toggleActive(bundle);
   } catch (error) {
     if (!context.mounted) return;
-    showErrorSnackBar(context, '$error');
+    showErrorSnackBar(context, adminErrorMessage(error));
   }
 }
 
@@ -50,7 +51,7 @@ void confirmDeleteBundle(
         await cubit.deleteBundle(bundle.id);
       } catch (error) {
         if (!context.mounted) return;
-        showErrorSnackBar(context, '$error');
+        showErrorSnackBar(context, adminErrorMessage(error));
       }
     },
   );

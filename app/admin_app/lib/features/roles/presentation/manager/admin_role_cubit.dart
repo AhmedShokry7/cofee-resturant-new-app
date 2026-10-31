@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/roles/di/roles_dependencies.dart';
 import 'package:admin_app/features/roles/domain/repositories/role_repository.dart';
 import 'package:admin_app/features/roles/domain/usecases/load_permissions.dart';
@@ -34,7 +35,10 @@ class AdminRoleCubit extends Cubit<AdminRoleState> {
       );
     } catch (error) {
       emit(
-        state.copyWith(status: AdminRoleStatus.failure, errorMessage: '$error'),
+        state.copyWith(
+          status: AdminRoleStatus.failure,
+          errorMessage: adminErrorMessage(error),
+        ),
       );
     }
   }

@@ -88,6 +88,7 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     _navCubit.start(
       watchOrders: widget.session.hasPermission('orders.read'),
       watchKitchen: widget.session.hasPermission('kitchen.read'),
+      watchNotifications: widget.session.hasPermission('notifications.read'),
     );
   }
 
@@ -172,7 +173,15 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
               widget.session.isOwner,
         );
       case 'products':
-        return ProductPage(searchController: _searchController);
+        return ProductPage(
+          searchController: _searchController,
+          // 117 و184 ترفض كل كتابة منتج أو باقة بلا catalog.product.write،
+          // و117 تطلب catalog.category.write لفئة جديدة من داخل حوار المنتج.
+          canManage: widget.session.hasPermission('catalog.product.write'),
+          canManageCategories: widget.session.hasPermission(
+            'catalog.category.write',
+          ),
+        );
       case 'categories':
         return CategoryPage(searchController: _searchController);
       case 'branches':
@@ -188,7 +197,10 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       case 'auditLog':
         return AuditLogPage(searchController: _searchController);
       case 'bundles':
-        return BundlePage(searchController: _searchController);
+        return BundlePage(
+          searchController: _searchController,
+          canManage: widget.session.hasPermission('catalog.product.write'),
+        );
       case 'payments':
         return PaymentPage(searchController: _searchController);
       case 'pos':
@@ -201,7 +213,12 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
           canManage: widget.session.hasPermission('orders.status.update'),
         );
       case 'banners':
-        return BannerPage(searchController: _searchController);
+        return BannerPage(
+          searchController: _searchController,
+          // سياسة 022 تطلب settings.write لكل كتابة على البانر، فلا أدوات
+          // كتابة لمن تُرفض كتابته دائمًا.
+          canManage: widget.session.hasPermission('settings.write'),
+        );
       case 'carts':
         return CartPage(searchController: _searchController);
       case 'customerPreview':
@@ -360,6 +377,8 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       badges: <String, int>{
         if (counts.unreadOrders > 0) 'orders': counts.unreadOrders,
         if (counts.unreadKitchen > 0) 'kitchen': counts.unreadKitchen,
+        if (counts.unreadNotifications > 0)
+          'notifications': counts.unreadNotifications,
       },
     );
   }

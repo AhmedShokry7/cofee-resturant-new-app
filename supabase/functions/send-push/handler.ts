@@ -13,6 +13,9 @@
 // when it fails, the customer still finds the notification in the app, and
 // engagement.push_deliveries keeps the reason.
 //
+// The campaign picture and the screen a tap opens ride inside the `payload`
+// column the database already hands over, so neither needs a new column.
+//
 // Secrets (set them with `supabase secrets set`):
 //   PUSH_WEBHOOK_SECRET     - shared with the database trigger (kept in Vault)
 //   FIREBASE_SERVICE_ACCOUNT - the service account key file of the Firebase project
@@ -22,6 +25,7 @@ import {
   createAccessToken,
   parseServiceAccount,
   sendToToken,
+  type FcmMessage,
   type FcmSendResult,
   type ServiceAccount,
 } from "../_shared/fcm.ts";
@@ -37,6 +41,10 @@ export type PushNotification = {
   bodyEn: string;
   relatedEntityType: string | null;
   relatedEntityId: string | null;
+  /// The public picture of the campaign, already checked by [pushImageUrlOf].
+  imageUrl: string | null;
+  /// The screen the app opens on a tap, as a code the app knows.
+  destination: string | null;
 };
 
 /// The push switches of one customer.
@@ -79,7 +87,7 @@ export type PushDeps = {
     accessToken: string,
     projectId: string,
     token: string,
-    message: { title: string; body: string; data: Record<string, string> },
+    message: FcmMessage,
   ) => Promise<FcmSendResult>;
   /// Exchanges the service account for an access token.
   accessToken: (serviceAccount: ServiceAccount) => Promise<string>;
@@ -130,12 +138,78 @@ function textFor(
   return primary.trim() || secondary.trim();
 }
 
+/// The buckets a push picture may come from.
+///
+/// FCM downloads the URL itself, on the device, minutes or days after the
+/// message was written. Only an anonymously readable object of this project
+/// can still be there then: a signed URL expires in an hour and a private
+/// bucket answers 404 to the phone, so both would be a broken banner.
+const PUSH_IMAGE_BUCKETS = ["product-images"];
+
+/// The longest URL FCM is handed.
+const MAX_IMAGE_URL_LENGTH = 2048;
+
+/// The host the storage objects of this project are read from.
+export function storageHostOf(supabaseUrl: string | undefined): string | null {
+  if (!supabaseUrl) return null;
+  try {
+    return new URL(supabaseUrl).host;
+  } catch {
+    return null;
+  }
+}
+
+/// The public picture of a campaign, or null when it is not one.
+///
+/// The value is chosen by an admin, so it is treated as untrusted input: a URL
+/// that carries credentials, points at another host, or comes from a private
+/// bucket would leak the vault secret to whoever the message is shown to, or
+/// hand out a link that dies before the phone fetches it.
+export function pushImageUrlOf(
+  raw: unknown,
+  allowedHost: string | null,
+): string | null {
+  if (typeof raw !== "string") return null;
+  const text = raw.trim();
+  if (text.length === 0 || text.length > MAX_IMAGE_URL_LENGTH) return null;
+  if (!allowedHost) return null;
+  let url: URL;
+  try {
+    url = new URL(text);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:" || url.host !== allowedHost) return null;
+  if (url.username !== "" || url.password !== "") return null;
+  return PUSH_IMAGE_BUCKETS.some((bucket) =>
+    url.pathname.startsWith(`/storage/v1/object/public/${bucket}/`)
+  )
+    ? url.toString()
+    : null;
+}
+
+/// The screen code of a campaign, or null when it is not a usable one.
+///
+/// The app owns the list of screens it can open; this only keeps a wild string
+/// out of the payload so a campaign cannot smuggle a navigation path.
+export function destinationOf(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const text = raw.trim().toLowerCase();
+  return /^[a-z0-9_-]{1,64}$/.test(text) ? text : null;
+}
+
 /// Reads the notification out of the request body.
-export function parseNotification(body: any): PushNotification | null {
+export function parseNotification(
+  body: any,
+  allowedImageHost: string | null = null,
+): PushNotification | null {
   if (!body || typeof body !== "object") return null;
   const notificationId = body.notification_id ?? body.notificationId;
   const userId = body.user_id ?? body.userId;
   if (typeof notificationId !== "string" || typeof userId !== "string") return null;
+  const payload = body.payload && typeof body.payload === "object"
+    ? body.payload
+    : {};
   return {
     notificationId,
     userId,
@@ -150,6 +224,8 @@ export function parseNotification(body: any): PushNotification | null {
         : null,
     relatedEntityId:
       typeof body.related_entity_id === "string" ? body.related_entity_id : null,
+    imageUrl: pushImageUrlOf(payload.image_url, allowedImageHost),
+    destination: destinationOf(payload.destination),
   };
 }
 
@@ -168,7 +244,26 @@ function dataFor(notification: PushNotification): Record<string, string> {
     body_en: notification.bodyEn,
     related_entity_type: notification.relatedEntityType ?? "",
     related_entity_id: notification.relatedEntityId ?? "",
+    // A tap is handled before the app has read the row, so the picture and the
+    // screen travel with the message too. An empty value is left out rather
+    // than sent as "", so the app cannot read a blank as a real choice.
+    ...(notification.imageUrl ? { image_url: notification.imageUrl } : {}),
+    ...(notification.destination
+      ? { destination: notification.destination }
+      : {}),
   };
+}
+
+/// The devices a skip is logged against.
+///
+/// `push_deliveries.platform` only accepts ios, android and web, so a customer
+/// without a single registered device is logged on the platform the app
+/// registers first. The row is what the admin needs: proof the message was not
+/// delivered and why, not a guess about the device.
+function skipTargets(tokens: DeviceToken[]): DeviceToken[] {
+  return tokens.length > 0
+    ? tokens
+    : [{ token: "", platform: "android", locale: null }];
 }
 
 /// The whole delivery of one notification.
@@ -184,27 +279,32 @@ export async function deliver(
     loyalty: true,
     system: true,
   };
-
-  if (!effective.pushEnabled) {
-    return { sent: 0, failed: 0, skipped: true, reason: "push_disabled" };
-  }
+  const tokens = await deps.store.readTokens(notification.userId);
 
   const preferenceKey = preferenceKeyFor(notification.type);
-  if (preferenceKey && effective[preferenceKey] === false) {
-    return { sent: 0, failed: 0, skipped: true, reason: "type_disabled" };
-  }
+  const skipReason = !effective.pushEnabled
+    ? "push_disabled"
+    : preferenceKey !== null && effective[preferenceKey] === false
+    ? "type_disabled"
+    : tokens.length === 0
+    ? "no_device_token"
+    : null;
 
-  const tokens = await deps.store.readTokens(notification.userId);
-  if (tokens.length === 0) {
-    await deps.store.recordDelivery({
-      notificationId: notification.notificationId,
-      userId: notification.userId,
-      platform: "android",
-      status: "skipped",
-      providerMessageId: null,
-      error: "no_device_token",
-    });
-    return { sent: 0, failed: 0, skipped: true, reason: "no_device_token" };
+  if (skipReason) {
+    // A skip is a delivery state of its own, so it is written like one. Without
+    // the row the admin reads "no device answered" for a customer who simply
+    // switched the messages off.
+    for (const device of skipTargets(tokens).slice(0, MAX_TOKENS)) {
+      await deps.store.recordDelivery({
+        notificationId: notification.notificationId,
+        userId: notification.userId,
+        platform: device.platform,
+        status: "skipped",
+        providerMessageId: null,
+        error: skipReason,
+      });
+    }
+    return { sent: 0, failed: 0, skipped: true, reason: skipReason };
   }
 
   const serviceAccount = parseServiceAccount(
@@ -256,6 +356,7 @@ export async function deliver(
       title: textFor(device.locale, notification.titleAr, notification.titleEn),
       body: textFor(device.locale, notification.bodyAr, notification.bodyEn),
       data: dataFor(notification),
+      imageUrl: notification.imageUrl,
     };
 
     const result = await deps.send(
@@ -400,7 +501,10 @@ export async function handleRequest(
     return fail("invalid_json", 400);
   }
 
-  const notification = parseNotification(body);
+  const notification = parseNotification(
+    body,
+    storageHostOf(env("SUPABASE_URL")),
+  );
   if (!notification) {
     return fail("invalid_payload", 400);
   }

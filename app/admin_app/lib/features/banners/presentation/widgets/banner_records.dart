@@ -7,7 +7,9 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
+import 'package:admin_app/features/banners/presentation/widgets/banner_format.dart';
 
 class BannerRecords extends StatelessWidget {
   const BannerRecords({
@@ -151,7 +153,9 @@ class _BannerCard extends StatelessWidget {
                     ),
                   ),
                 Text(
-                  'Type: ${banner.targetType}  •  Sort: ${banner.sortOrder}',
+                  '${S.targetType}: ${bannerTargetTypeLabel(banner.targetType)}'
+                  '  •  '
+                  '${S.sortOrder}: ${localizeDigits('${banner.sortOrder}')}',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: AppColor.greyColor,
                   ),
@@ -159,31 +163,33 @@ class _BannerCard extends StatelessWidget {
               ],
             ),
           ),
-          Column(
-            children: [
-              Switch(
-                value: banner.isPublished,
-                onChanged: onTogglePublished == null
-                    ? null
-                    : (_) => onTogglePublished!(),
-              ),
-              Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(AppIcons.edit01),
-                    onPressed: onEdit,
+          if (onTogglePublished != null || onEdit != null || onDelete != null)
+            Column(
+              children: [
+                if (onTogglePublished != null)
+                  Switch(
+                    value: banner.isPublished,
+                    onChanged: (_) => onTogglePublished!(),
                   ),
-                  IconButton(
-                    icon: const Icon(
-                      AppIcons.delete01,
-                      color: AppColor.errorColor,
-                    ),
-                    onPressed: onDelete,
-                  ),
-                ],
-              ),
-            ],
-          ),
+                Row(
+                  children: [
+                    if (onEdit != null)
+                      IconButton(
+                        icon: const Icon(AppIcons.edit01),
+                        onPressed: onEdit,
+                      ),
+                    if (onDelete != null)
+                      IconButton(
+                        icon: const Icon(
+                          AppIcons.delete01,
+                          color: AppColor.errorColor,
+                        ),
+                        onPressed: onDelete,
+                      ),
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     );

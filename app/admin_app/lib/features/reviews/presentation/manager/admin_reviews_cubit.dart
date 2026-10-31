@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review.dart';
 import 'package:admin_app/features/reviews/data/models/admin_review_metrics.dart';
 import 'package:admin_app/features/reviews/di/reviews_dependencies.dart';
@@ -48,7 +49,7 @@ class AdminReviewsCubit extends Cubit<AdminReviewsState> {
       emit(
         state.copyWith(
           status: AdminReviewsPageStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

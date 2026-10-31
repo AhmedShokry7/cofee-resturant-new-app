@@ -1,9 +1,10 @@
 import 'package:file_picker/file_picker.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product.dart';
-import 'package:admin_app/features/catalog/data/product_excel_mapper.dart';
 import 'package:admin_app/core/services/product_excel_service.dart';
+import 'package:admin_app/features/catalog/data/product_excel_mapper.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 
 /// The outcome of one Excel import of products.
@@ -44,18 +45,13 @@ class ProductExcelController {
   String? lastError;
 
   /// Turns a failure of one row into a sentence the admin understands.
+  ///
+  /// A duplicate SKU or slug is a cause of this table alone, so it keeps its
+  /// own words here; every other cause comes from the SQLSTATE the database
+  /// raised, through the shared mapper.
   static String explainSaveError(Object error) {
-    final message = error.toString();
-    if (message.contains('duplicate') || message.contains('unique')) {
-      return S.duplicateSkuOrSlug;
-    }
-    if (message.contains('network') || message.contains('connection')) {
-      return S.networkError;
-    }
-    if (message.contains('permission') || message.contains('unauthorized')) {
-      return S.permissionDenied;
-    }
-    return S.databaseError;
+    if (adminErrorSqlState(error) == '23505') return S.duplicateSkuOrSlug;
+    return adminErrorMessage(error);
   }
 
   /// Asks for a workbook, writes every row it holds and reloads the list.
@@ -131,7 +127,7 @@ class ProductExcelController {
         errors: allErrors,
       );
     } catch (error) {
-      lastError = '${S.invalidExcelFile}: $error';
+      lastError = adminErrorMessage(error, fallback: S.invalidExcelFile);
       return null;
     } finally {
       importing = false;
@@ -174,7 +170,7 @@ class ProductExcelController {
       await Future.delayed(const Duration(milliseconds: 300));
       return true;
     } catch (error) {
-      lastError = '${S.exportExcel}: $error';
+      lastError = adminErrorMessage(error, fallback: S.exportExcel);
       return false;
     } finally {
       exporting = false;

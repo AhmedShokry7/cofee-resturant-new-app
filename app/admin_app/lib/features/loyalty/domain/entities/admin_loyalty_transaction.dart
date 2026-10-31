@@ -10,6 +10,7 @@ class AdminLoyaltyTransaction {
     required this.reason,
     this.customerName,
     this.customerEmail,
+    this.avatarUrl,
     this.referenceType,
     this.referenceId,
     this.orderNumber,
@@ -26,6 +27,9 @@ class AdminLoyaltyTransaction {
   final String reason;
   final String? customerName;
   final String? customerEmail;
+
+  /// رابط عرض موقّت للدلو الخاص، أو مسار لم يُقبل توقيعه. انظر AdminAvatarImage.
+  final String? avatarUrl;
   final String? referenceType;
   final String? referenceId;
   final String? orderNumber;
@@ -66,6 +70,7 @@ class AdminLoyaltyTransaction {
       reason: '${json['reason'] ?? ''}',
       customerName: json['customer_name'] as String?,
       customerEmail: json['customer_email'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       referenceType: json['reference_type'] as String?,
       referenceId: json['reference_id'] as String?,
       orderNumber: json['order_number'] as String?,

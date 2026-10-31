@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/banners/di/banners_dependencies.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/domain/repositories/banner_repository.dart';
@@ -54,26 +55,23 @@ class AdminBannerCubit extends Cubit<AdminBannerState> {
       emit(
         state.copyWith(
           status: AdminBannerStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }
   }
 
-  Future<AdminBanner?> createBanner(AdminBanner banner) async {
-    try {
-      final created = await _createBanner(banner);
-      emit(
-        state.copyWith(
-          banners: <AdminBanner>[...state.banners, created],
-          clearError: true,
-        ),
-      );
-      return created;
-    } catch (error) {
-      emit(state.copyWith(errorMessage: '$error'));
-      return null;
-    }
+  /// يُنشئ البانر ويضيفه إلى القائمة، ويترك الرفض يمرّ كما تمرّ سائر كتابات
+  /// هذه القاعدة: من يستدعي هذا الأمر هو من يرى السبب، لا حالةٌ صامتة هنا.
+  Future<AdminBanner> createBanner(AdminBanner banner) async {
+    final created = await _createBanner(banner);
+    emit(
+      state.copyWith(
+        banners: <AdminBanner>[...state.banners, created],
+        clearError: true,
+      ),
+    );
+    return created;
   }
 
   Future<void> updateBanner(AdminBanner banner) async {

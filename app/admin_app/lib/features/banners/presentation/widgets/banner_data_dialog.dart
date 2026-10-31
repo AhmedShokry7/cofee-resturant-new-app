@@ -1,14 +1,18 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/banners/presentation/manager/admin_banner_cubit.dart';
+import 'package:admin_app/features/banners/presentation/widgets/banner_format.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/app_dependencies.dart';
 import 'package:admin_app/core/models/admin_product.dart';
@@ -52,11 +56,16 @@ class BannerDataDialog extends StatefulWidget {
     required this.onSave,
     this.initialBanner,
     this.cubit,
+    this.catalog,
   });
 
   final Future<void> Function(AdminBanner banner) onSave;
   final AdminBanner? initialBanner;
   final AdminBannerCubit? cubit;
+
+  /// قراءة الكتالوج التي تملأ قائمتي الهدف؛ تمرّرها الشاشة في الاختبار وتعود
+  /// إلى الاعتمادية عند الاستخدام العادي.
+  final CatalogData? catalog;
 
   @override
   State<BannerDataDialog> createState() => _BannerDataDialogState();
@@ -77,6 +86,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
   late final TextEditingController _sortOrderController;
 
   late final AdminBannerCubit _cubit;
+  late final CatalogData _catalog;
   String? _imageUrl;
   bool _isPublished = true;
   bool _saving = false;
@@ -85,10 +95,14 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
   List<AdminCategory> _categories = const <AdminCategory>[];
   bool _loadingTargets = true;
 
+  /// قراءة الكتالوج رُفضت، لا أن صفوفها صفر.
+  bool _targetsFailed = false;
+
   @override
   void initState() {
     super.initState();
     _cubit = widget.cubit ?? AdminBannerCubit();
+    _catalog = widget.catalog ?? AppDependencies.catalog;
     final b = widget.initialBanner;
     _titleArController = TextEditingController(text: b?.titleAr ?? '');
     _titleEnController = TextEditingController(text: b?.titleEn ?? '');
@@ -116,8 +130,12 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
   }
 
   Future<void> _loadTargets() async {
+    setState(() {
+      _loadingTargets = true;
+      _targetsFailed = false;
+    });
     try {
-      final snapshot = await AppDependencies.catalog.loadCatalog();
+      final snapshot = await _catalog.loadCatalog();
       if (!mounted) return;
       setState(() {
         _products = snapshot.products;
@@ -125,8 +143,13 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
         _loadingTargets = false;
       });
     } catch (_) {
+      // رفض القراءة ليس «لا منتجات»: تُقال القراءة الفاشلة ويُترك للأدمن أن
+      // يعيدها، وإلا حفظ بانرًا يشير إلى منتج لم يُعرض أصلًا.
       if (!mounted) return;
-      setState(() => _loadingTargets = false);
+      setState(() {
+        _loadingTargets = false;
+        _targetsFailed = true;
+      });
     }
   }
 
@@ -178,7 +201,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
       setState(() => _imageUrl = url);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = error.toString());
+      setState(() => _error = adminErrorMessage(error));
     }
   }
 
@@ -195,12 +218,20 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
     if (_saving) return;
     final titleAr = _titleArController.text.trim();
     final titleEn = _titleEnController.text.trim();
+    final sortText = _sortOrderController.text.trim();
+    final sort = parseLocalizedInt(sortText);
     if (titleAr.isEmpty || titleEn.isEmpty) {
       setState(() => _error = S.titleRequired);
       return;
     }
     if (_imageUrl == null || _imageUrl!.trim().isEmpty) {
       setState(() => _error = S.imageRequired);
+      return;
+    }
+    // الترتيب يُقرأ بأرقام اللغتين، وما ليس رقمًا يُرفض بدل أن يُحفظ صفرًا
+    // فيقف البانر أمام كل بانرٍ آخر بلا سبب ظاهر.
+    if (sortText.isNotEmpty && sort == null) {
+      setState(() => _error = S.invalidNumber);
       return;
     }
 
@@ -251,7 +282,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               targetUrl: _targetUrlController.text.trim().isEmpty
                   ? null
                   : _targetUrlController.text.trim(),
-              sortOrder: int.tryParse(_sortOrderController.text.trim()) ?? 0,
+              sortOrder: sort ?? 0,
               isPublished: _isPublished,
             );
 
@@ -263,7 +294,7 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = error.toString();
+        _error = adminErrorMessage(error);
       });
     }
   }
@@ -396,13 +427,11 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
                     : _targetTypeController.text,
                 decoration: InputDecoration(labelText: S.targetType),
                 items: [
-                  DropdownMenuItem(value: 'none', child: Text(S.none)),
-                  DropdownMenuItem(
-                    value: 'product',
-                    child: Text(S.productLabel),
-                  ),
-                  DropdownMenuItem(value: 'category', child: Text(S.category)),
-                  DropdownMenuItem(value: 'url', child: Text(S.url)),
+                  for (final code in bannerTargetTypeCodes)
+                    DropdownMenuItem(
+                      value: code,
+                      child: Text(bannerTargetTypeLabel(code)),
+                    ),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -414,51 +443,35 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               ),
               const SizedBox(height: AppSpacing.md),
               if (_targetTypeController.text == 'product')
-                _loadingTargets
-                    ? const CircularProgressIndicator()
-                    : DropdownButtonFormField<String>(
-                        initialValue: _targetIdController.text.isEmpty
-                            ? null
-                            : _targetIdController.text,
-                        decoration: InputDecoration(labelText: S.targetProduct),
-                        items: [
-                          for (final product in _products)
-                            DropdownMenuItem(
-                              value: product.id,
-                              child: Text(
-                                product.nameFor(AppLocale.instance.language),
-                              ),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => _targetIdController.text = value);
-                        },
-                      ),
-              if (_targetTypeController.text == 'category')
-                _loadingTargets
-                    ? const CircularProgressIndicator()
-                    : DropdownButtonFormField<String>(
-                        initialValue: _targetIdController.text.isEmpty
-                            ? null
-                            : _targetIdController.text,
-                        decoration: InputDecoration(
-                          labelText: S.targetCategory,
+                _targetPicker(
+                  label: S.targetProduct,
+                  emptyLabel: S.noProductsFound,
+                  failedLabel: S.couldNotLoadProducts,
+                  items: [
+                    for (final product in _products)
+                      DropdownMenuItem(
+                        value: product.id,
+                        child: Text(
+                          product.nameFor(AppLocale.instance.language),
                         ),
-                        items: [
-                          for (final category in _categories)
-                            DropdownMenuItem(
-                              value: category.id,
-                              child: Text(
-                                category.nameFor(AppLocale.instance.language),
-                              ),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          if (value == null) return;
-                          setState(() => _targetIdController.text = value);
-                        },
                       ),
+                  ],
+                ),
+              if (_targetTypeController.text == 'category')
+                _targetPicker(
+                  label: S.targetCategory,
+                  emptyLabel: S.noCategoriesFound,
+                  failedLabel: S.couldNotLoadCategories,
+                  items: [
+                    for (final category in _categories)
+                      DropdownMenuItem(
+                        value: category.id,
+                        child: Text(
+                          category.nameFor(AppLocale.instance.language),
+                        ),
+                      ),
+                  ],
+                ),
               const SizedBox(height: AppSpacing.md),
               TextField(
                 controller: _targetUrlController,
@@ -503,6 +516,51 @@ class _BannerDataDialogState extends State<BannerDataDialog> {
               : Text(S.save),
         ),
       ],
+    );
+  }
+
+  /// قائمة هدف من الكتالوج: قيد القراءة، أو قراءةٌ فشلت تُقال وتُعاد، أو فراغٌ
+  /// حقيقي بعد قراءةٍ ناجحة.
+  Widget _targetPicker({
+    required String label,
+    required String emptyLabel,
+    required String failedLabel,
+    required List<DropdownMenuItem<String>> items,
+  }) {
+    if (_loadingTargets) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.md),
+        child: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_targetsFailed || items.isEmpty) {
+      return Row(
+        children: [
+          Expanded(
+            child: Text(
+              '$label: ${_targetsFailed ? failedLabel : emptyLabel}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: _targetsFailed
+                    ? AppColor.errorColor
+                    : AppColor.greyColor,
+              ),
+            ),
+          ),
+          if (_targetsFailed)
+            TextButton(onPressed: _loadTargets, child: Text(S.retry)),
+        ],
+      );
+    }
+    return DropdownButtonFormField<String>(
+      initialValue: _targetIdController.text.isEmpty
+          ? null
+          : _targetIdController.text,
+      decoration: InputDecoration(labelText: label),
+      items: items,
+      onChanged: (value) {
+        if (value == null) return;
+        setState(() => _targetIdController.text = value);
+      },
     );
   }
 }

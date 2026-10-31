@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
@@ -292,8 +293,12 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
   }
 
   void _applyDiscount() {
-    final discount = double.tryParse(_discountController.text.trim());
-    if (discount == null || discount < 0 || discount > 100) return;
+    final discount = parseLocalizedNumber(_discountController.text);
+    if (discount == null || discount < 0 || discount > 100) {
+      // كان النص غير الرقم يمرّ بلا ردّ، فيظنّ من كتب نسبةً أن الزرّ معطّل.
+      setState(() => _error = S.invalidNumber);
+      return;
+    }
     final total = _componentsTotal;
     if (total <= 0) return;
     final price = total * (1 - discount / 100);
@@ -308,7 +313,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
 
   void _syncPriceWithTotal() {
     final total = _componentsTotal;
-    final current = double.tryParse(_priceController.text.trim());
+    final current = parseLocalizedNumber(_priceController.text);
     if (_priceController.text.trim().isEmpty ||
         (_lastAutoTotal != null && current == _lastAutoTotal)) {
       _priceController.text = total.toStringAsFixed(2);
@@ -321,6 +326,10 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
 
     final nameAr = _nameArController.text.trim();
     final nameEn = _nameEnController.text.trim();
+    final priceText = _priceController.text.trim();
+    final sortText = _sortOrderController.text.trim();
+    final price = parseLocalizedNumber(priceText);
+    final sort = parseLocalizedInt(sortText);
 
     if (nameAr.isEmpty) {
       setState(() => _error = S.nameRequired);
@@ -328,6 +337,17 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
     }
     if (_components.isEmpty) {
       setState(() => _error = S.addAtLeastOneComponent);
+      return;
+    }
+    // حقول تقرأ أرقام اللغتين وترفض ما ليس رقمًا بدل أن تكتب null أو صفرًا لم
+    // يقرأه أحد: السعر فارغ مشروع، لكن «١٢٫٥» المكتوبة بحروف غير رقمية كانت
+    // تُحفظ بلا سعر، والترتيب غير الرقم كان يُحفظ صفرًا.
+    if (priceText.isNotEmpty && price == null) {
+      setState(() => _error = S.invalidNumber);
+      return;
+    }
+    if (sortText.isNotEmpty && sort == null) {
+      setState(() => _error = S.invalidNumber);
       return;
     }
 
@@ -352,8 +372,8 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
               descriptionEn: _descriptionEnController.text.trim().isEmpty
                   ? null
                   : _descriptionEnController.text.trim(),
-              bundlePrice: double.tryParse(_priceController.text.trim()),
-              sortOrder: int.tryParse(_sortOrderController.text.trim()) ?? 0,
+              bundlePrice: price,
+              sortOrder: sort ?? 0,
               components: _components,
             );
 
@@ -365,7 +385,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = error.toString();
+        _error = adminErrorMessage(error);
       });
     }
   }
@@ -585,7 +605,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                             ),
                           ),
                           onChanged: (value) {
-                            final qty = int.tryParse(value);
+                            final qty = parseLocalizedInt(value);
                             if (qty != null && qty > 0) {
                               _updateComponentQuantity(i, qty);
                             }

@@ -1,9 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
+import 'package:admin_app/features/coupons/di/coupons_dependencies.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon_draft.dart';
 import 'package:admin_app/features/coupons/domain/entities/admin_coupon_metrics.dart';
-import 'package:admin_app/features/coupons/di/coupons_dependencies.dart';
 import 'package:admin_app/features/coupons/domain/repositories/coupon_repository.dart';
 import 'package:admin_app/features/coupons/domain/usecases/delete_coupon.dart';
 import 'package:admin_app/features/coupons/domain/usecases/load_coupons.dart';
@@ -55,7 +56,7 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
       emit(
         state.copyWith(
           status: AdminCouponPageStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }
@@ -74,7 +75,12 @@ class AdminCouponCubit extends Cubit<AdminCouponState> {
         ),
       );
     } catch (error) {
-      emit(state.copyWith(targetsLoading: false, targetsError: '$error'));
+      emit(
+        state.copyWith(
+          targetsLoading: false,
+          targetsError: adminErrorMessage(error),
+        ),
+      );
     }
   }
 

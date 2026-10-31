@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/utils/database_error_text.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/orders/presentation/manager/admin_order_detail_controller.dart';
+import 'package:admin_app/features/orders/presentation/order_refusal_reasons.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_product_picker.dart';
 import 'package:admin_app/shared/widgets/admin_feedback.dart';
 
@@ -23,7 +24,11 @@ Future<void> changeOrderStatus(
     if (!context.mounted) return;
     showErrorSnackBar(
       context,
-      databaseErrorText(error, fallback: S.orderActionFailed),
+      adminErrorMessage(
+        error,
+        fallback: S.orderActionFailed,
+        reasons: orderRefusalReasons(),
+      ),
     );
   }
 }
@@ -42,7 +47,11 @@ Future<void> changePaymentStatus(
     if (!context.mounted) return;
     showErrorSnackBar(
       context,
-      databaseErrorText(error, fallback: S.orderActionFailed),
+      adminErrorMessage(
+        error,
+        fallback: S.orderActionFailed,
+        reasons: orderRefusalReasons(),
+      ),
     );
   }
 }
@@ -76,7 +85,11 @@ Future<void> addProductToOrder(
     if (!context.mounted) return;
     showErrorSnackBar(
       context,
-      databaseErrorText(error, fallback: S.orderActionFailed),
+      adminErrorMessage(
+        error,
+        fallback: S.orderActionFailed,
+        reasons: orderRefusalReasons(),
+      ),
     );
   }
 }
@@ -95,7 +108,11 @@ Future<void> removeOrderLine(
     if (!context.mounted) return;
     showErrorSnackBar(
       context,
-      databaseErrorText(error, fallback: S.orderActionFailed),
+      adminErrorMessage(
+        error,
+        fallback: S.orderActionFailed,
+        reasons: orderRefusalReasons(),
+      ),
     );
   }
 }

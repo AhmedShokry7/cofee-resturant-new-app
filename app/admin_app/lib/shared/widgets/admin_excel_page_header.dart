@@ -20,7 +20,7 @@ class AdminExcelPageHeader extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.addActionLabel,
-    required this.onAdd,
+    this.onAdd,
     this.onPickFile,
     this.onDownloadSample,
     this.onExport,
@@ -32,7 +32,10 @@ class AdminExcelPageHeader extends StatelessWidget {
   final String title;
   final String subtitle;
   final String addActionLabel;
-  final VoidCallback onAdd;
+
+  /// زر الإنشاء: يُحجب حين تكون الصفحة للقراءة فقط، لأن القاعدة ترفض كتابة
+  /// من لا يملك صلاحية الكتابة على هذه الجدول.
+  final VoidCallback? onAdd;
 
   /// Starts the import of the page, after the admin chose the file.
   final VoidCallback? onPickFile;
@@ -60,25 +63,34 @@ class AdminExcelPageHeader extends StatelessWidget {
       progress: progress,
       progressLabel: importProgress != null ? S.importing : S.exporting,
       actions: [
-        if (onPickFile != null || onDownloadSample != null)
+        // الاستيراد كتابةٌ على الجدول، فلا يُعرض لمن ترفض قاعدته الكتابة.
+        // من يقرأ وحده يبقى له القالب الفارغ والتصدير: قراءتان لا كتابة.
+        if (onPickFile != null)
           AdminExcelButton(
             action: ExcelAction.import,
             onPressed: busy ? null : () => _showImportDialog(context),
+          ),
+        if (onPickFile == null && onDownloadSample != null)
+          AdminExcelButton(
+            action: ExcelAction.export,
+            label: S.downloadSampleFile,
+            onPressed: busy ? null : onDownloadSample,
           ),
         if (onExport != null)
           AdminExcelButton(
             action: ExcelAction.export,
             onPressed: busy ? null : onExport,
           ),
-        CustomBtn(
-          text: addActionLabel,
-          onPressed: busy ? null : onAdd,
-          leadingIcon: const Icon(AppIcons.add01, size: 18),
-          height: 42,
-          borderRadius: AppRadius.pill,
-          backgroundColor: AppColor.primaryColor,
-          textColor: AppColor.whiteColor,
-        ),
+        if (onAdd != null)
+          CustomBtn(
+            text: addActionLabel,
+            onPressed: busy ? null : onAdd,
+            leadingIcon: const Icon(AppIcons.add01, size: 18),
+            height: 42,
+            borderRadius: AppRadius.pill,
+            backgroundColor: AppColor.primaryColor,
+            textColor: AppColor.whiteColor,
+          ),
       ],
       footer: footer,
     );

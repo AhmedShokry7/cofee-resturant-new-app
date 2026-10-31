@@ -2,8 +2,11 @@ import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
+import 'package:admin_app/app_dependencies.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/bundles/di/bundles_dependencies.dart';
+import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/bundles/domain/repositories/bundle_repository.dart';
 import 'package:admin_app/features/bundles/domain/usecases/create_bundle.dart';
 import 'package:admin_app/features/bundles/domain/usecases/delete_bundle.dart';
@@ -13,8 +16,6 @@ import 'package:admin_app/features/bundles/domain/usecases/set_bundle_active.dar
 import 'package:admin_app/features/bundles/domain/usecases/update_bundle.dart';
 import 'package:admin_app/features/bundles/domain/usecases/update_bundle_image.dart';
 import 'package:admin_app/features/bundles/domain/usecases/upload_bundle_image.dart';
-import 'package:admin_app/app_dependencies.dart';
-import 'package:admin_app/core/catalog/catalog_data.dart';
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_state.dart';
 
 class AdminBundleCubit extends Cubit<AdminBundleState> {
@@ -68,7 +69,7 @@ class AdminBundleCubit extends Cubit<AdminBundleState> {
       emit(
         state.copyWith(
           status: AdminBundleStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

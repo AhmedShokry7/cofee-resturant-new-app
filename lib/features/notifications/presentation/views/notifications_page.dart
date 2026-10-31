@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/navigation/notification_routes.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
+import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_preferences_sheet.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
-import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
-import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -82,6 +83,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
           appBar: AppBar(
             title: Text(S.notifications),
             actions: [
+              if (!state.signedOut)
+                IconButton(
+                  tooltip: S.notificationPreferences,
+                  icon: const Icon(HugeIcons.strokeRoundedSettings01),
+                  onPressed: () => showNotificationPreferencesSheet(context),
+                ),
               BlocBuilder<NotificationsCubit, NotificationsState>(
                 buildWhen: (previous, current) =>
                     previous.pushEnabled != current.pushEnabled ||
@@ -136,12 +143,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         notification: notification,
                         isRead: notification.isRead,
                         onTap: () {
-                          final route = switch (notification
-                              .relatedEntityType) {
-                            'order' => OrdersPage.routeName,
-                            'subscription' => SubscriptionDetailsPage.routeName,
-                            _ => null,
-                          };
+                          final route = routeForNotification(
+                            relatedEntityType: notification.relatedEntityType,
+                            type: notification.type,
+                            destination: notification.destination,
+                          );
                           if (route != null) {
                             Navigator.of(context).pushNamed(route);
                           }

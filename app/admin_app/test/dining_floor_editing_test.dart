@@ -536,5 +536,110 @@ void main() {
       expect(find.text(S.tablesNoBranch), findsOneWidget);
       expect(repository.savedTable, isNull);
     });
+
+    testWidgets('سعةٌ وترتيبٌ بأرقام عربية يُحفظان رقمَين', (tester) async {
+      final repository = _FakeFloorRepository();
+      final cubit = _cubitWith(repository);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showDiningTableDialog(
+                  context,
+                  cubit: cubit,
+                  branchId: 'b1',
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.first, 'AF-٩');
+      await tester.enterText(fields.at(1), '٤');
+      await tester.enterText(fields.at(2), '٧');
+      await tester.tap(find.byKey(const Key('dining-table-save')));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedTable, isNotNull);
+      expect(repository.savedTable!.capacity, 4);
+      expect(repository.savedTable!.sortOrder, 7);
+    });
+
+    testWidgets('ترتيبٌ غير رقمي يُرفض ولا يُحفظ صفرًا', (tester) async {
+      final repository = _FakeFloorRepository();
+      final cubit = _cubitWith(repository);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showDiningTableDialog(
+                  context,
+                  cubit: cubit,
+                  branchId: 'b1',
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.first, 'AF-9');
+      await tester.enterText(fields.at(2), 'أول');
+      await tester.tap(find.byKey(const Key('dining-table-save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(S.invalidNumber), findsOneWidget);
+      expect(repository.savedTable, isNull);
+    });
+
+    testWidgets('عدد ضيوفٍ بأرقام عربية يصل الحجز رقمًا', (tester) async {
+      final repository = _FakeFloorRepository();
+      final cubit = _cubitWith(repository);
+      addTearDown(cubit.close);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => TextButton(
+                onPressed: () => showDiningReservationDialog(
+                  context,
+                  cubit: cubit,
+                  tables: const <DiningTable>[_table],
+                  initialTable: _table,
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+
+      final fields = find.byType(TextFormField);
+      await tester.enterText(fields.first, 'ضيف');
+      await tester.enterText(fields.at(2), '٣');
+      await tester.tap(find.byKey(const Key('dining-reservation-save')));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedReservation, isNotNull);
+      expect(repository.savedReservation!.partySize, 3);
+    });
   });
 }

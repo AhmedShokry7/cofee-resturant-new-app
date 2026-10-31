@@ -82,6 +82,35 @@ class S {
   static String get orderStatusClosed => _ar
       ? 'لا توجد حالة تالية مسموحة لهذا الطلب.'
       : 'No further status is allowed for this order.';
+  // refusals that orders.* RPCs name exactly; adminErrorMessage keys off the
+  // database phrase, so each phrase keeps one sentence here (190, 191, 200).
+  static String get orderRefusalStock => _ar
+      ? 'المخزون الحالي لا يكفي هذه الكمية.'
+      : 'The current stock is not enough for this quantity.';
+  static String get orderRefusalBranch => _ar
+      ? 'لا تدير فرع هذا الطلب، فلا تنفع هذه الكتابة.'
+      : 'You do not manage this branch, so this change is refused.';
+  static String get orderRefusalRefunded => _ar
+      ? 'أُعيد مبلغ هذا الطلب، فلم يعد قابلاً للتعديل.'
+      : 'This order was refunded and can no longer be edited.';
+  static String get orderRefusalNotEditable => _ar
+      ? 'لم يعد هذا الطلب قابلاً للتعديل في حالته الحالية.'
+      : 'This order can no longer be edited in its current status.';
+  static String get orderRefusalItemGone => _ar
+      ? 'لم يُوجد هذا السطر في الطلب. حدّث الصفحة.'
+      : 'That line is not in the order any more. Refresh the page.';
+  static String get orderRefusalProductUnavailable => _ar
+      ? 'هذا المنتج غير متوفر في فرع الطلب.'
+      : 'This product is not available in the order branch.';
+  static String get orderRefusalTransition => _ar
+      ? 'الحالة الحالية للطلب لا تسمح بهذا التغيير.'
+      : 'The current status of this order does not allow that change.';
+  static String get orderRefusalCancelClosed => _ar
+      ? 'لم يعد بالإمكان إلغاء الطلب في حالته الحالية.'
+      : 'This order can no longer be cancelled in its current status.';
+  static String get orderRefusalAlready => _ar
+      ? 'الطلب في هذه الحالة بالفعل.'
+      : 'The order is already in that status.';
   static String get orderExportFailed => _ar
       ? 'تعذر تصدير الطلبات. حاول مرة أخرى.'
       : 'Orders could not be exported. Please try again.';
@@ -675,6 +704,9 @@ class S {
   static String get activeStatus => _ar ? 'نشط' : 'Active';
   static String get inactiveStatus => _ar ? 'غير نشط' : 'Inactive';
   static String get editStaffTitle => _ar ? 'تعديل الموظف' : 'Edit staff';
+  static String get staffEditSubtitle => _ar
+      ? 'الاسم والبريد والحالة وصورة الحساب'
+      : 'Name, email, status and the account picture';
   static String get roleHint =>
       _ar ? 'الدور (owner/staff/manager)' : 'Role (owner/staff/manager)';
 
@@ -875,12 +907,6 @@ class S {
       ? 'تعذر فتح نافذة الطباعة. حاول مرة أخرى.'
       : 'The print dialog could not be opened. Please try again.';
 
-  /// Shown instead of [paymentsPrintFailed] when the running build has no
-  /// browser to print from, so the message never blames the printer for a
-  /// missing channel.
-  static String get printNeedsBrowser => _ar
-      ? 'الطباعة متاحة عند تشغيل لوحة الإدارة في المتصفح.'
-      : 'Printing is available when the admin panel runs in the browser.';
   static String get paymentsPrintTitle =>
       _ar ? 'كشف المدفوعات' : 'Payments statement';
   static String get paymentsPrintGeneratedAt =>
@@ -2042,9 +2068,14 @@ class S {
       : '$campaigns campaigns';
   static String get notificationsMetricPushRate =>
       _ar ? 'نجاح الإرسال للهاتف' : 'Push delivery rate';
-  static String notificationsMetricPushHint(int sent, int failed) => _ar
-      ? '$sent ناجح • $failed فاشل خلال 30 يومًا'
-      : '$sent delivered • $failed failed in 30 days';
+  static String notificationsMetricPushHint(
+    int sent,
+    int failed,
+    int skipped,
+    int invalidToken,
+  ) => _ar
+      ? '$sent ناجح • $failed فاشل • $skipped تخطّى • $invalidToken رمز جهاز غير صالح خلال 30 يومًا'
+      : '$sent delivered • $failed failed • $skipped skipped • $invalidToken dead device tokens in 30 days';
   static String get notificationsMetricNoPush =>
       _ar ? 'لا توجد محاولات' : 'No attempts yet';
 
@@ -2336,14 +2367,30 @@ class S {
       _ar ? 'النص بالعربية' : 'Body in Arabic';
   static String get notificationsComposeBodyEn =>
       _ar ? 'النص بالإنجليزية' : 'Body in English';
-  static String get notificationsComposePayload =>
-      _ar ? 'بيانات إضافية (JSON)' : 'Extra payload (JSON)';
-  static String get notificationsComposePayloadHint => _ar
-      ? 'اختياري: كائن JSON يُرفق بالإشعار، مثل {"deep_link":"app://offers"}.'
-      : 'Optional JSON object attached to the notification, such as {"deep_link":"app://offers"}.';
-  static String get notificationsComposePayloadInvalid => _ar
-      ? 'أدخل كائن JSON صالحًا أو اترك الحقل فارغًا.'
-      : 'Enter a valid JSON object, or leave the field empty.';
+  static String get notificationsComposeImage =>
+      _ar ? 'صورة الإشعار' : 'Notification image';
+  static String get notificationsComposeImageHint => _ar
+      ? 'اختيارية، وتُحفظ في مجلد الصور العام. يظهر الرسم في الإشعار على الأجهزة التي تدعمه، ولا يمنع إرسال النص إذا تعذّر تحميلها.'
+      : 'Optional, stored in the public images folder. Devices that support a picture in a notification show it; a message without one still sends.';
+  static String get notificationsComposeImageChange =>
+      _ar ? 'تغيير الصورة' : 'Change image';
+
+  static String get notificationsComposeDestination =>
+      _ar ? 'تفتح عند اللمس' : 'Opens on tap';
+  static String get notificationsComposeDestinationHint => _ar
+      ? 'شاشات التطبيق المسجلة فقط؛ لا يمكن كتابة مسار مخصص.'
+      : 'Only screens the app already registers; a custom path cannot be typed.';
+  static String get notificationsDestinationNone =>
+      _ar ? 'بدون شاشة' : 'No screen';
+  static String get notificationsDestinationOffers => _ar ? 'العروض' : 'Offers';
+  static String get notificationsDestinationOrders =>
+      _ar ? 'طلباتي' : 'My orders';
+  static String get notificationsDestinationLoyalty =>
+      _ar ? 'نقاط الولاء' : 'Loyalty';
+  static String get notificationsDestinationSubscription =>
+      _ar ? 'الاشتراك' : 'Subscription';
+  static String get notificationsDestinationNotifications =>
+      _ar ? 'الإشعارات' : 'Notifications';
   static String get notificationsComposeCustomer =>
       _ar ? 'العميل المستهدف' : 'Target customer';
   static String get notificationsComposeCustomerSearch => _ar
@@ -2382,10 +2429,23 @@ class S {
       _ar ? 'إرسال الإشعار' : 'Send notification';
   static String get notificationsComposeSending =>
       _ar ? 'جارٍ الإرسال...' : 'Sending...';
+  static String get notificationsComposeMassTitle =>
+      _ar ? 'إرسال إلى جمهور كبير' : 'Sending to a large audience';
+  static String notificationsComposeMassMessage(int count, int pushReady) => _ar
+      ? 'سيُنشأ سجل إشعار داخل التطبيق لـ $count عميلًا، ويُرسل Push لـ $pushReady منهم. لا يمكن سحب الإشعار من جهاز وصل إليه.'
+      : 'This creates an in-app record for $count customers and a push for $pushReady of them. A notification cannot be taken back from a device that received it.';
+  static String get notificationsComposeMassUnknown => _ar
+      ? 'لم يُحسب عدد العملاء الذين سيصلهم الإشعار. سيُنشأ سجل لكل عميل مؤهل، ويُرسل Push لمن فعّل الإشعارات.'
+      : 'The number of customers this reaches has not been counted. Every eligible customer gets a record, and everyone with push enabled gets one.';
+  static String get notificationsComposeMassConfirm =>
+      _ar ? 'متابعة الإرسال' : 'Continue and send';
   static String get notificationsComposePreview => _ar ? 'المعاينة' : 'Preview';
   static String get notificationsComposePreviewHint => _ar
       ? 'كما سيظهر في التطبيق بلغة الواجهة الحالية.'
       : 'How it will appear in the app in the current language.';
+  static String get notificationsComposePreviewDeviceNote => _ar
+      ? 'هذه معاينة للنص داخل اللوحة؛ نظام التشغيل قد يعرض الإشعار بشكل مختلف، والصورة تظهر حيث يدعم الجهاز عرضها.'
+      : 'This is the dashboard preview. The operating system may render the notification differently, and the picture shows only where the device supports it.';
   static String get notificationsComposePreviewEmptyTitle =>
       _ar ? 'عنوان الإشعار' : 'Notification title';
   static String get notificationsComposePreviewEmptyBody =>
@@ -3731,7 +3791,6 @@ class S {
       _ar ? 'فاتورة ضريبية مبسطة' : 'Simplified tax invoice';
   static String get posTaxInvoiceTitleAlt =>
       _ar ? 'Simplified tax invoice' : 'فاتورة ضريبية مبسطة';
-  static String get posReceiptDocumentTitle => posTaxInvoiceTitle;
   static String get posReceiptThanks => _ar ? 'شكرًا لزيارتكم' : 'Thank you';
   static String get posItems => _ar ? 'الأصناف' : 'Items';
   static String get posPrice => _ar ? 'السعر' : 'Price';
@@ -4580,6 +4639,9 @@ class S {
       _ar ? 'تعذر تحديث التصنيف: $error' : 'Could not update category: $error';
   static String couldNotGetLocation(String error) =>
       _ar ? 'تعذر تحديد الموقع: $error' : 'Could not get location: $error';
+  static String get addressLookupFailed => _ar
+      ? 'تعذر جلب العنوان من الخريطة، اكتبه يدويًا.'
+      : 'The address could not be read from the map. Type it manually.';
   static String get imageTooLarge =>
       _ar ? 'حجم الصورة أكبر من 5 ميجابايت.' : 'The image is bigger than 5 MB.';
   static String get imageMustBeFormat => _ar
@@ -4628,11 +4690,33 @@ class S {
       : 'The catalogue could not be reached. Please try again.';
   static String get duplicateCategoryName =>
       _ar ? 'اسم التصنيف مكرر' : 'Duplicate category name';
-  static String get networkError => _ar ? 'خطأ في الشبكة' : 'Network error';
-  static String get permissionDenied =>
-      _ar ? 'تم رفض الإذن' : 'Permission denied';
-  static String get databaseError =>
-      _ar ? 'خطأ في قاعدة البيانات' : 'Database error';
+  // أسباب الرفض التي تُعرض بدل نص قاعدة البيانات الخام؛ يسمّيها
+  // adminErrorMessage بشيفرة SQLSTATE وحدها.
+  static String get actionFailedUnexpectedly => _ar
+      ? 'تعذّر إتمام العملية. حاول مرة أخرى.'
+      : 'The action could not be completed. Please try again.';
+  static String get errorNoPermission => _ar
+      ? 'لا تملك صلاحية لهذا الإجراء.'
+      : 'You do not have permission for this action.';
+  static String get errorSignInRequired => _ar
+      ? 'انتهت الجلسة. سجّل الدخول من جديد.'
+      : 'Your session ended. Please sign in again.';
+  static String get errorAlreadyExists =>
+      _ar ? 'هذا السجل موجود بالفعل.' : 'This record already exists.';
+  static String get errorRejectedValues => _ar
+      ? 'قاعدة البيانات ترفض هذه القيم. راجع الحقول وأعد المحاولة.'
+      : 'The database rejected these values. Check the fields and try again.';
+  static String get errorMissingRequiredField =>
+      _ar ? 'أحد الحقول المطلوبة فارغ.' : 'A required field is empty.';
+  static String get errorRecordInUse => _ar
+      ? 'لا تتم العملية لأن هذا السجل مرتبط بسجلات أخرى.'
+      : 'This cannot be done while other records still use it.';
+  static String get errorRecordNotFound => _ar
+      ? 'لم يُوجد هذا السجل. حدّث القائمة وأعد المحاولة.'
+      : 'That record was not found. Refresh the list and try again.';
+  static String get errorRecordChangedConcurrently => _ar
+      ? 'تغيّر هذا السجل أثناء العملية. أعد المحاولة.'
+      : 'This record changed while the action was running. Please try again.';
   static String get imageFormats =>
       _ar ? 'JPG أو PNG أو WEBP' : 'JPG, PNG or WEBP';
   static String get enterAddressManually =>
@@ -4836,7 +4920,6 @@ class S {
   static String get previewResetDraft =>
       _ar ? 'إعادة ضبط المسودة' : 'Reset draft';
   static String get previewSaveDraft => _ar ? 'حفظ المسودة' : 'Save draft';
-  static String get previewPublish => _ar ? 'نشر' : 'Publish';
   static String get previewViewport => _ar ? 'مقاس العرض' : 'Viewport';
   static String get previewScreen => _ar ? 'الشاشة' : 'Screen';
   static String get previewCustomerAppUrl =>

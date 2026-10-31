@@ -19,22 +19,46 @@ import 'package:admin_app/features/auth/presentation/pages/auth_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  _installErrorHandlers();
 
-  await AppLocale.instance.initialize();
-  await AppTheme.instance.initialize();
-
-  try {
-    await SupabaseService.init();
-  } catch (error, stackTrace) {
-    if (kDebugMode) {
-      debugPrint('[main] Supabase init failed.');
-      debugPrint('[main] $error');
-      debugPrintStack(stackTrace: stackTrace);
-    }
-  }
+  await _guard('locale.init', () => AppLocale.instance.initialize());
+  await _guard('theme.init', () => AppTheme.instance.initialize());
+  await _guard('supabase.init', () => SupabaseService.init());
 
   AppConfig.debugLogConfiguration();
   runApp(const AdminApp());
+}
+
+/// معالجات الأخطاء العامة: بدونها يبتلع الإصدار المُطلَق كل خطأ بعد
+/// `runApp` ويخرج الأدمن من الشاشة دون أثر يُقرأ، فيبقى العطل بلا شاهد.
+///
+/// تُركّب أخطاء الـ framework كما تُطبع، فالفحص البصري في التطوير لا يتغيّر.
+void _installErrorHandlers() {
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    _logUncaught('FlutterError', details.exceptionAsString(), details.stack);
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    _logUncaught('UncaughtError', error.toString(), stack);
+    return true;
+  };
+}
+
+Future<void> _guard(String label, Future<void> Function() action) async {
+  try {
+    await action();
+  } catch (error, stackTrace) {
+    _logUncaught(label, error.toString(), stackTrace);
+  }
+}
+
+/// سطرٌ واحد ونهايات المكدس: كافٍ لتشخيص العطل، ولا يحمل أي قيمة اعتمادية
+/// لأن ما يُطبع هنا نصُّ الخطأ نفسه لا محتويات الإعدادات.
+void _logUncaught(String label, String message, StackTrace? stackTrace) {
+  debugPrint('[$label] $message');
+  if (stackTrace != null) {
+    debugPrintStack(stackTrace: stackTrace, maxFrames: 12);
+  }
 }
 
 /// جذر التطبيق: يبني الاعتماديات مرة واحدة ويوفرها لشجرة الواجهة.

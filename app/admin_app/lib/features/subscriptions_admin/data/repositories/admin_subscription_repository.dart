@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription_usage.dart';
@@ -14,7 +15,10 @@ class AdminSubscriptionRepository implements SubscriptionRepository {
 
   @override
   Future<List<AdminSubscription>> loadSubscriptions() async {
-    final response = await _supabase.rpc('admin_subscriptions');
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc('admin_subscriptions'),
+      client: _supabase,
+    );
     if (response is List) {
       return response
           .whereType<Map>()

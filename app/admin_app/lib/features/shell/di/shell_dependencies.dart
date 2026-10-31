@@ -18,6 +18,7 @@ abstract final class ShellDependencies {
   static PostgresChangesFeed? newLiveFeed({
     required bool watchOrders,
     required bool watchKitchen,
+    required bool watchNotifications,
   }) {
     if (!SupabaseService.isReady) return null;
     return PostgresChangesFeed(
@@ -25,6 +26,8 @@ abstract final class ShellDependencies {
       tables: <RealtimeTable>[
         if (watchOrders) const RealtimeTable('orders', 'orders'),
         if (watchKitchen) const RealtimeTable('kitchen', 'tickets'),
+        if (watchNotifications)
+          const RealtimeTable('engagement', 'notifications'),
       ],
     );
   }

@@ -12,7 +12,7 @@ class BundlePageHeader extends StatelessWidget {
   const BundlePageHeader({
     super.key,
     required this.count,
-    required this.onAdd,
+    this.onAdd,
     this.selectedCount = 0,
     this.onSelectAll,
     this.onClearSelection,
@@ -21,7 +21,10 @@ class BundlePageHeader extends StatelessWidget {
   });
 
   final int count;
-  final VoidCallback onAdd;
+
+  /// 020 يطلب `catalog.product.write` لكتابة الباقة، فالصفحة تُعرض للقارئ
+  /// وأدوات الكتابة تُحجب عنه.
+  final VoidCallback? onAdd;
   final int selectedCount;
   final VoidCallback? onSelectAll;
   final VoidCallback? onClearSelection;
@@ -34,15 +37,16 @@ class BundlePageHeader extends StatelessWidget {
       title: S.bundles,
       subtitle: S.bundlesCount(count),
       actions: [
-        CustomBtn(
-          text: S.addBundle,
-          onPressed: onAdd,
-          leadingIcon: const Icon(AppIcons.add01, size: 18),
-          height: 42,
-          borderRadius: AppRadius.pill,
-          backgroundColor: AppColor.primaryColor,
-          textColor: AppColor.whiteColor,
-        ),
+        if (onAdd != null)
+          CustomBtn(
+            text: S.addBundle,
+            onPressed: onAdd,
+            leadingIcon: const Icon(AppIcons.add01, size: 18),
+            height: 42,
+            borderRadius: AppRadius.pill,
+            backgroundColor: AppColor.primaryColor,
+            textColor: AppColor.whiteColor,
+          ),
       ],
       footer: selectedCount > 0
           ? AdminBulkSelectionBar(

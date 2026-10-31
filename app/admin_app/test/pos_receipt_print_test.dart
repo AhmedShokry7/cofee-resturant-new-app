@@ -101,128 +101,224 @@ Map<int, String> _decodeTlv(String data) {
   return fields;
 }
 
+Map<String, String> _asMap(List<(String, String)> fields) => {
+  for (final field in fields) field.$1: field.$2,
+};
+
+Map<String, String> _totalsMap(PosReceipt receipt) => {
+  for (final (label, value, _) in posReceiptTotals(receipt)) label: value,
+};
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() => AppLocale.instance.debugSet(AppLanguage.arabic));
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.arabic));
 
-  test('the Arabic invoice is RTL, escaped and totals the sale', () {
-    final receipt = _receipt();
-    final document = buildPosReceiptDocument(receipt);
+  group('arabic invoice', () {
+    test('the seller block carries the tax identity', () {
+      final lines = posReceiptSellerLines(_receipt());
 
-    expect(receipt.itemCount, 3);
-    expect(receipt.orderNote, 'تغليف هدية & <بطاقة>');
+      expect(lines.first, 'مقهى النخبة للتجارة');
+      expect(lines, contains('الرياض - حي العليا'));
+      expect(
+        lines,
+        contains(
+          '${S.posSellerVatNumber}: ${localizeDigits('310123456789003')}',
+        ),
+      );
+      expect(lines, contains('0112345678'));
+      // الاسم النظامي يحل محل الاسم التجاري، فلا تكرار في الرأس ولا سطر فارغ.
+      expect(lines, isNot(contains('مقهى النخبة')));
+      expect(lines.every((line) => line.trim().isNotEmpty), isTrue);
+    });
 
-    expect(document, contains('dir="rtl" lang="ar"'));
-    expect(document, contains(S.posTaxInvoiceTitle));
-    expect(document, contains(S.posTaxInvoiceTitleAlt));
-    expect(document, contains(S.posReceiptDocumentTitle));
-    expect(document, contains('POS-2026-000042'));
-    expect(document, contains(S.posInvoiceNumber));
-    expect(document, contains(S.posInvoiceDateTime));
-    expect(document, contains(S.posTable));
-    expect(document, contains(S.posCustomer));
-    expect(document, contains('أحمد محمد'));
-    expect(document, contains('01000000000'));
-    expect(document, isNot(contains(S.posKitchenReceiptNote)));
-    expect(document, isNot(contains(S.posDineIn)));
-    expect(document, contains(S.posReceiptPaymentMethod));
-    expect(document, contains('نقدي'));
-    expect(document, contains(S.posQuantity));
-    expect(document, contains(S.posItems));
-    expect(document, contains(S.posBeforeDiscount));
-    expect(document, contains(S.posDiscount));
-    expect(document, contains(S.posAfterDiscount));
-    expect(document, contains(S.posTaxableAmount));
-    expect(document, contains(S.posVatRate));
-    expect(document, contains(S.posVatAmount));
-    expect(document, contains(S.posTotal));
-    expect(document, contains(S.posOrderNote));
-    expect(document, contains(S.posReceiptThanks));
-    expect(document, contains(S.posTaxInvoiceCompliance));
-    expect(document, contains('size: A4 portrait'));
+    test('the fields name the sale without leaking internal labels', () {
+      final details = _asMap(posReceiptDetails(_receipt()));
 
-    expect(document, contains('لاتيه'));
-    expect(document, contains('كيك'));
-    expect(document, contains('كبير'));
-    expect(document, contains('>٢<'));
+      expect(details[S.posInvoiceNumber], 'POS-2026-000042');
+      expect(details[S.posTable], '7');
+      expect(details[S.posCustomer], 'أحمد محمد');
+      expect(details[S.posCustomerPhone], '01000000000');
+      expect(details[S.posReceiptPaymentMethod], 'نقدي');
+      expect(details.containsKey(S.posInvoiceDateTime), isTrue);
+      // الفاتورة الضريبية لا تذكر طريقة التقديم ولا ملاحظة المطبخ.
+      expect(details.containsKey(S.posKitchenReceiptNote), isFalse);
+      expect(details.containsKey(S.posDineIn), isFalse);
+    });
 
-    expect(document, contains('بدون &lt;سكر&gt;'));
-    expect(document, isNot(contains('بدون <سكر>')));
-    expect(document, contains('تغليف هدية &amp; &lt;بطاقة&gt;'));
-    expect(document, isNot(contains('تغليف هدية & <بطاقة>')));
+    test('the item rows keep quantity, options and the line note', () {
+      final lines = posReceiptPrintLines(_receipt());
 
-    expect(document, contains(S.posSellerVatNumber));
-    expect(document, contains('مقهى النخبة للتجارة'));
-    expect(document, contains('الرياض - حي العليا'));
-    expect(document, contains('0112345678'));
-    expect(document, contains(localizeDigits('310123456789003')));
+      expect(lines, hasLength(2));
+      expect(_receipt().itemCount, 3);
+      expect(lines.first.quantity, localizeDigits('2'));
+      expect(lines.first.name, 'لاتيه');
+      expect(lines.first.details, contains('كبير'));
+      expect(lines.first.details, contains('بدون <سكر>'));
+      expect(lines.first.unitPrice, '${localizeDigits('25.00')} SAR');
+      expect(lines.first.lineTotal, '${localizeDigits('50.00')} SAR');
+      expect(lines.last.name, 'كيك');
+      expect(lines.last.details, isEmpty);
+    });
 
-    expect(document, contains(localizeDigits('85.00')));
-    expect(document, contains(localizeDigits('20.00')));
-    expect(document, contains(localizeDigits('65.00')));
-    expect(document, contains(localizeDigits('9.75')));
-    expect(document, contains(localizeDigits('74.75')));
-    expect(document, contains('SAR'));
+    test('the totals run from before the discount to the grand total', () {
+      final totals = _totalsMap(_receipt());
 
-    expect(document, contains(S.posInvoiceQrCaption));
-    expect(document, contains('<svg'));
-    expect(document, isNot(contains(S.posVatNumberMissing)));
+      expect(totals[S.posBeforeDiscount], '${localizeDigits('85.00')} SAR');
+      expect(totals[S.posDiscount], '- ${localizeDigits('20.00')} SAR');
+      expect(totals[S.posAfterDiscount], '${localizeDigits('65.00')} SAR');
+      expect(totals[S.posTaxableAmount], '${localizeDigits('65.00')} SAR');
+      expect(totals[S.posVatRate], isNotNull);
+      expect(totals[S.posVatAmount], '${localizeDigits('9.75')} SAR');
+      expect(totals[S.posTotal], '${localizeDigits('74.75')} SAR');
+      expect(
+        posReceiptTotals(_receipt()).last.$3,
+        isTrue,
+        reason: 'الإجمالي آخر السطور وهو البارز',
+      );
+    });
+
+    test('the QR is present whenever the tax identity is complete', () {
+      expect(buildPosReceiptQrData(_receipt()), isNotNull);
+    });
   });
 
-  test('the English invoice follows the English layout', () {
-    AppLocale.instance.debugSet(AppLanguage.english);
+  group('english invoice', () {
+    setUp(() => AppLocale.instance.debugSet(AppLanguage.english));
 
-    final document = buildPosReceiptDocument(_receipt());
+    test('the same sale reads in English with Arabic names kept', () {
+      final details = _asMap(posReceiptDetails(_receipt()));
+      final lines = posReceiptPrintLines(_receipt());
 
-    expect(document, contains('dir="ltr" lang="en"'));
-    expect(document, contains(S.posTaxInvoiceTitle));
-    expect(document, contains(S.posTaxInvoiceTitleAlt));
-    expect(document, contains(S.posTable));
-    expect(document, contains(S.posCustomer));
-    expect(document, contains('أحمد محمد'));
-    expect(document, isNot(contains(S.posKitchenReceiptNote)));
-    expect(document, contains(S.posReceiptThanks));
-    expect(document, contains('Cash'));
-    expect(document, contains('Latte'));
-    expect(document, contains('Cake'));
-    expect(document, contains('Large'));
-    expect(document, contains('85.00'));
-    expect(document, contains('20.00'));
-    expect(document, contains('65.00'));
-    expect(document, contains('9.75'));
-    expect(document, contains('74.75'));
-    expect(document, contains('SAR'));
-    expect(document, contains('310123456789003'));
-    expect(document, contains('مقهى النخبة للتجارة'));
-    expect(document, contains('Riyadh - Olaya'));
-    expect(document, contains(S.posInvoiceQrCaption));
-    expect(document, contains('<svg'));
-    expect(document, isNot(contains('>٢<')));
+      expect(details[S.posInvoiceNumber], 'POS-2026-000042');
+      expect(details[S.posCustomer], 'أحمد محمد');
+      expect(details[S.posReceiptPaymentMethod], 'Cash');
+      expect(lines.first.name, 'Latte');
+      expect(lines.first.details, contains('Large'));
+      expect(lines.first.quantity, '2');
+      expect(posReceiptSellerLines(_receipt()).first, 'مقهى النخبة للتجارة');
+      expect(posReceiptSellerLines(_receipt()), contains('Riyadh - Olaya'));
+      expect(_totalsMap(_receipt())[S.posTotal], '74.75 SAR');
+    });
   });
 
-  test('a sale without the branch tax identity warns instead of a QR', () {
-    AppLocale.instance.debugSet(AppLanguage.english);
+  group('a sale without the branch tax identity', () {
+    test('has no QR payload and no seller block beyond the name', () {
+      final receipt = _receiptWithoutSeller();
 
-    final receipt = _receiptWithoutSeller();
-    final document = buildPosReceiptDocument(receipt);
+      expect(buildPosReceiptQrData(receipt), isNull);
+      expect(receipt.itemCount, 0);
+      expect(posReceiptPrintLines(receipt), isEmpty);
+      expect(posReceiptSellerLines(receipt), isEmpty);
+      expect(receipt.orderNote.trim(), isEmpty);
+    });
 
-    expect(receipt.itemCount, 0);
-    expect(buildPosReceiptQrData(receipt), isNull);
-    expect(document, contains('dir="ltr" lang="en"'));
-    expect(document, contains(S.posTable));
-    expect(document, contains('>-<'));
-    expect(document, isNot(contains(S.posDineIn)));
-    expect(document, isNot(contains(S.posPickup)));
-    expect(document, contains(S.posTaxableAmount));
-    expect(document, contains(S.posVatAmount));
-    expect(document, contains('0.00 EGP'));
-    expect(document, contains('20.00 EGP'));
-    expect(document, contains('نقدي'));
-    expect(document, contains(S.posInvoiceDateTime));
-    expect(document, contains(S.posReceiptThanks));
-    expect(document, contains(S.posVatNumberMissing));
-    expect(document, isNot(contains('<svg')));
-    expect(document, isNot(contains(S.posOrderNote)));
+    test('keeps the table dash and the zero totals in the currency', () {
+      final receipt = _receiptWithoutSeller();
+      final details = _asMap(posReceiptDetails(receipt));
+      final totals = _totalsMap(receipt);
+
+      expect(details[S.posTable], '-');
+      expect(details.containsKey(S.posDineIn), isFalse);
+      expect(details.containsKey(S.posPickup), isFalse);
+      expect(totals[S.posTaxableAmount], '${localizeDigits('20.00')} EGP');
+      expect(totals[S.posVatAmount], '${localizeDigits('0.00')} EGP');
+      expect(totals[S.posTotal], '${localizeDigits('20.00')} EGP');
+      expect(totals.containsKey(S.posVatRate), isFalse);
+      expect(details[S.posReceiptPaymentMethod], 'نقدي');
+      expect(details.containsKey(S.posInvoiceDateTime), isTrue);
+    });
+  });
+
+  group('the paper itself', () {
+    test('builds a real PDF in Arabic and in English', () async {
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+      final arabicBytes = await (await buildPosReceiptDocument(_receipt()))
+          .save();
+      expect(arabicBytes, isNotEmpty);
+
+      AppLocale.instance.debugSet(AppLanguage.english);
+      final englishBytes = await (await buildPosReceiptDocument(_receipt()))
+          .save();
+      expect(
+        latin1.decode(englishBytes.take(5).toList()),
+        '%PDF-',
+        reason: 'الفاتورة تُرسم PDFًا حقيقيًا لا صفحة وسيطة',
+      );
+    });
+
+    test(
+      'draws the missing-VAT warning instead of a QR without crashing',
+      () async {
+        final bytes = await (await buildPosReceiptDocument(
+          _receiptWithoutSeller(),
+        )).save();
+        expect(latin1.decode(bytes.take(5).toList()), '%PDF-');
+      },
+    );
+
+    test('keeps the order text verbatim on the paper', () {
+      const receipt = PosReceipt(
+        result: PosOrderResult(
+          orderId: 'o3',
+          orderNumber: 'POS-<42>&"',
+          subtotal: 10,
+          grandTotal: 10,
+          currencyCode: 'SAR',
+          paymentMethodNameEn: 'Cash',
+        ),
+      );
+
+      // لا وسيط HTML: الورقة تحمل النص نفسه الذي في القاعدة، بلا تحويل رموز.
+      expect(
+        _asMap(posReceiptDetails(receipt))[S.posInvoiceNumber],
+        'POS-<42>&"',
+      );
+    });
+
+    test('a split sale prints one payment row per tender', () {
+      AppLocale.instance.debugSet(AppLanguage.english);
+
+      const receipt = PosReceipt(
+        result: PosOrderResult(
+          orderId: 'o4',
+          orderNumber: 'POS-2026-000044',
+          subtotal: 40,
+          taxTotal: 6,
+          grandTotal: 46,
+          currencyCode: 'SAR',
+          paymentMethodId: 'pay-card',
+          paymentMethodCode: 'card',
+          paymentMethodNameAr: 'بطاقة',
+          paymentMethodNameEn: 'Card',
+          payments: [
+            PosTender(
+              methodId: 'pay-cash',
+              code: 'cash',
+              nameAr: 'نقدي',
+              nameEn: 'Cash',
+              amount: 10,
+            ),
+            PosTender(
+              methodId: 'pay-card',
+              code: 'card',
+              nameAr: 'بطاقة',
+              nameEn: 'Card',
+              amount: 36,
+            ),
+          ],
+        ),
+      );
+
+      final details = posReceiptDetails(receipt);
+      expect(receipt.result.isSplitPayment, isTrue);
+      expect(
+        details.any((field) => field.$1 == S.posReceiptPaymentMethod),
+        isFalse,
+      );
+      expect(_asMap(details)[S.posPayCash], '10.00 SAR');
+      expect(_asMap(details)[S.posPayCard], '36.00 SAR');
+    });
   });
 
   test('the QR carries the five ZATCA TLV tags', () {
@@ -240,67 +336,5 @@ void main() {
       posInvoiceTimestamp(DateTime.utc(2026, 1, 2, 3, 4, 5)),
       '2026-01-02T03:04:05Z',
     );
-  });
-
-  test('special characters in the order number are escaped', () {
-    AppLocale.instance.debugSet(AppLanguage.english);
-
-    const receipt = PosReceipt(
-      result: PosOrderResult(
-        orderId: 'o3',
-        orderNumber: 'POS-<42>&"',
-        subtotal: 10,
-        grandTotal: 10,
-        currencyCode: 'SAR',
-        paymentMethodNameEn: 'Cash',
-      ),
-    );
-    final document = buildPosReceiptDocument(receipt);
-
-    expect(document, contains('POS-&lt;42&gt;&amp;&quot;'));
-    expect(document, isNot(contains('POS-<42>&"')));
-  });
-
-  test('a split sale prints one payment row per tender', () {
-    AppLocale.instance.debugSet(AppLanguage.english);
-
-    const receipt = PosReceipt(
-      result: PosOrderResult(
-        orderId: 'o4',
-        orderNumber: 'POS-2026-000044',
-        subtotal: 40,
-        taxTotal: 6,
-        grandTotal: 46,
-        currencyCode: 'SAR',
-        paymentMethodId: 'pay-card',
-        paymentMethodCode: 'card',
-        paymentMethodNameAr: 'بطاقة',
-        paymentMethodNameEn: 'Card',
-        payments: [
-          PosTender(
-            methodId: 'pay-cash',
-            code: 'cash',
-            nameAr: 'نقدي',
-            nameEn: 'Cash',
-            amount: 10,
-          ),
-          PosTender(
-            methodId: 'pay-card',
-            code: 'card',
-            nameAr: 'بطاقة',
-            nameEn: 'Card',
-            amount: 36,
-          ),
-        ],
-      ),
-    );
-    final document = buildPosReceiptDocument(receipt);
-
-    expect(receipt.result.isSplitPayment, isTrue);
-    expect(document, contains(S.posPayCash));
-    expect(document, contains(S.posPayCard));
-    expect(document, contains('10.00 SAR'));
-    expect(document, contains('36.00 SAR'));
-    expect(document, isNot(contains(S.posReceiptPaymentMethod)));
   });
 }

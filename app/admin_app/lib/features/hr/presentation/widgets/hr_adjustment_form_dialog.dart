@@ -1,6 +1,7 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_person_option.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_amount_field.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_date_field.dart';
@@ -84,7 +85,7 @@ class _HrAdjustmentFormDialogState extends State<_HrAdjustmentFormDialog> {
   }
 
   void _submit() {
-    final amount = double.tryParse(_amount.text.trim());
+    final amount = parseLocalizedNumber(_amount.text);
     final reason = _reason.text.trim();
     if (_staffId == null) {
       setState(() => _error = S.hrStaffMissing);
@@ -101,7 +102,7 @@ class _HrAdjustmentFormDialogState extends State<_HrAdjustmentFormDialog> {
     // الكمية تظهر للوقت الإضافي وحده؛ إن كُتبت وجب أن تكون موجبة.
     double? quantity;
     if (_kind == 'overtime' && _quantity.text.trim().isNotEmpty) {
-      final parsed = double.tryParse(_quantity.text.trim());
+      final parsed = parseLocalizedNumber(_quantity.text);
       if (parsed == null || parsed <= 0) {
         setState(() => _error = S.hrInvalidQuantity);
         return;

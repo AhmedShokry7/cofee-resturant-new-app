@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
-import 'package:admin_app/core/services/html_print_runner.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/payments/data/models/admin_payment.dart';
 import 'package:admin_app/features/payments/data/payment_excel_exporter.dart';
@@ -87,15 +86,8 @@ class _PaymentPageState extends State<PaymentPage> {
   }
 
   void _showPrintFailure() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          browserPrintingAvailable
-              ? S.paymentsPrintFailed
-              : S.printNeedsBrowser,
-        ),
-      ),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(S.paymentsPrintFailed)));
   }
 
   @override

@@ -1,6 +1,7 @@
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
+import 'package:admin_app/features/notifications/domain/repositories/notifications_repository.dart';
 import 'package:admin_app/features/notifications/presentation/models/notification_filters.dart';
 
 enum AdminNotificationsPageStatus { initial, loading, ready, failure }
@@ -17,7 +18,7 @@ class AdminNotificationsState {
     this.readFilter = NotificationReadFilter.all,
     this.pushFilter = NotificationPushFilter.all,
     this.page = 0,
-    this.pageSize = 10,
+    this.pageSize = AdminNotificationsPaging.pageSize,
     this.isRefreshingRows = false,
     this.errorMessage,
   });

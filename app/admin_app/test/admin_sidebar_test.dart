@@ -8,6 +8,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/shell/presentation/models/admin_destinations.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar.dart';
+import 'package:admin_app/features/shell/presentation/widgets/admin_sidebar_item.dart';
 
 AdminSession _session() => const AdminSession(
   staffId: 'u1',
@@ -117,6 +118,49 @@ void main() {
 
     expect(find.text(localizeDigits('12')), findsOneWidget);
     expect(find.text(localizeDigits('99+')), findsOneWidget);
+  });
+
+  testWidgets('the notifications row carries its own unread count', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280);
+
+    await tester.pumpWidget(
+      _wrap(
+        AdminSidebar(
+          session: _session(),
+          destinations: adminDestinations,
+          selectedId: 'dashboard',
+          badges: const <String, int>{'notifications': 7},
+          onSelected: (_) {},
+          onSignOut: () {},
+        ),
+      ),
+    );
+    await tester.pump();
+
+    // The sidebar is a list, and the notifications row sits deep in it, so the
+    // row has to be scrolled into view before it exists at all.
+    final badge = find.text(localizeDigits('7'));
+    await tester.scrollUntilVisible(badge, 200);
+    await tester.pump();
+
+    // The counters are keyed by the id of the destination: this proves the
+    // number lands on the notifications row itself, not on any other row.
+    final row = find.ancestor(
+      of: badge,
+      matching: find.byType(AdminSidebarItem),
+    );
+    expect(row, findsOneWidget);
+    expect(
+      find.descendant(
+        of: row,
+        matching: find.text(
+          adminDestinations.firstWhere((d) => d.id == 'notifications').label,
+        ),
+      ),
+      findsOneWidget,
+    );
   });
 
   test('every database feature is listed as a destination', () {

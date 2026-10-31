@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/admin_image_picker.dart';
@@ -177,9 +177,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
     } catch (error) {
       if (!mounted) return;
       _showMessage(
-        error is AdminProductException
-            ? error.message
-            : '${S.imageCouldNotBeOpened}: $error',
+        adminErrorMessage(error, fallback: S.imageCouldNotBeOpened),
         isError: true,
       );
     }
@@ -230,7 +228,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
         _busy = false;
         _phaseText = null;
       });
-      _showMessage('$error', isError: true);
+      _showMessage(adminErrorMessage(error), isError: true);
     }
   }
 
@@ -251,7 +249,7 @@ class _BranchImageDialogState extends State<BranchImageDialog> {
         _busy = false;
         _phaseText = null;
       });
-      _showMessage('$error', isError: true);
+      _showMessage(adminErrorMessage(error), isError: true);
     }
   }
 

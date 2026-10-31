@@ -48,6 +48,9 @@ class BundleDetailsCubit extends Cubit<BundleDetailsState> {
           isLoading: false,
         ),
       );
+      // Second emit: the carousel is decorative, so it arrives after the
+      // price breakdown is already on screen rather than delaying it.
+      await _loadPairs(members);
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
@@ -59,6 +62,37 @@ class BundleDetailsCubit extends Cubit<BundleDetailsState> {
     if (branchId == this.branchId) return Future.value();
     this.branchId = branchId;
     return load();
+  }
+
+  /// "Goes well with" neighbours: what else the bundle's own category offers.
+  ///
+  /// The bundle row carries no admin-defined pairing, so the category of the
+  /// first component is the only relation available, and one bounded page of
+  /// it is enough — the whole menu would rebuild the page the bulk read
+  /// deliberately avoided.
+  Future<void> _loadPairs(List<ProductModel> members) async {
+    if (members.isEmpty) return;
+    final hero = members.first;
+    final categoryKey = hero.categoryId?.isNotEmpty == true
+        ? hero.categoryId!
+        : hero.category.trim();
+    if (categoryKey.isEmpty) return;
+    try {
+      final rows = await _repository.getProducts(
+        branchId: branchId,
+        categoryId: categoryKey,
+        limit: 10,
+      );
+      if (isClosed) return;
+      final memberIds = bundle.productIds.toSet();
+      emit(
+        state.copyWith(
+          pairs: rows.where((p) => !memberIds.contains(p.id)).take(5).toList(),
+        ),
+      );
+    } catch (_) {
+      // Decorative section; a failure must not touch page state.
+    }
   }
 
   double originalTotalFor() =>

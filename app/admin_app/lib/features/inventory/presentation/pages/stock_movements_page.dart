@@ -136,7 +136,9 @@ class _StockMovementsPageState extends State<StockMovementsPage> {
             onOpen: _openDetails,
             onRecordMovement: _openMovement,
             onRefresh: _cubit.refresh,
-            errorMessage: state.isFailure ? state.errorMessage : null,
+            // الحركات تُبقي سطورها السابقة عند رفض إعادة القراءة؛ الرسالة تُعرض
+            // معها وإلا قرأ الموظف سجلًّا قديمًا كأنه حاضر.
+            errorMessage: state.errorMessage,
           );
         },
       ),

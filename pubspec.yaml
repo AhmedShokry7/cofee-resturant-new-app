@@ -37,8 +37,6 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   flutter_screenutil: ^5.9.3
-  flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.4.8
   flutter_bloc: ^9.1.1
   shared_preferences: ^2.5.6
   hugeicons: ^0.0.11
@@ -64,6 +62,13 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Both packages are generators run from the command line
+  # (`dart run flutter_launcher_icons` / `dart run flutter_native_splash:create`)
+  # that write the launcher icon and the native splash resources. Nothing in
+  # `lib/` imports them, so they stay out of the shipped dependency set.
+  flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.8
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

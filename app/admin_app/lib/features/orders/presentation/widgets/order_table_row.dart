@@ -3,6 +3,7 @@ import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/order_status.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -14,7 +15,13 @@ import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
 class OrderTableRow extends StatelessWidget {
-  const OrderTableRow({super.key, required this.order, this.onTap});
+  const OrderTableRow({
+    super.key,
+    required this.order,
+    this.onTap,
+    this.onChangeStatus,
+    this.allowedStatuses,
+  });
 
   /// ارتفاع الصف: ثابت لا يحكمه المحتوى، فبه تُقاس المساحة التي يعبّيها
   /// الجدول قبل أن يُقرر كم طلبًا يُطبع في الصفحة.
@@ -22,6 +29,13 @@ class OrderTableRow extends StatelessWidget {
 
   final AdminOrder order;
   final VoidCallback? onTap;
+
+  /// تحريك حالة هذا الطلب، أو `null` لدورٍ يقرأ ولا يُحرّك.
+  final ValueChanged<String>? onChangeStatus;
+
+  /// الحالات التي يقبلها الخادم من حالة هذا الطلب. `null` يعني أن المصفوفة لم
+  /// تُقرأ بعد، فتعود القائمة إلى عرض كل الحالات.
+  final List<String>? allowedStatuses;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +45,7 @@ class OrderTableRow extends StatelessWidget {
     final date = dark ? AppColor.darkTextSecondary : AppColor.adminDate;
     final rtl = Directionality.of(context) == TextDirection.rtl;
     final contact = orderContactLine(order);
+    final menuStatuses = allowedStatuses ?? OrderStatusView.allCodes;
 
     return Material(
       color: AppColor.transparent,
@@ -153,9 +168,37 @@ class OrderTableRow extends StatelessWidget {
               ),
               Expanded(
                 flex: 2,
-                child: Align(
-                  alignment: AlignmentDirectional.centerStart,
-                  child: OrderStatusPill(status: order.status, dense: true),
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: OrderStatusPill(
+                          status: order.status,
+                          dense: true,
+                        ),
+                      ),
+                    ),
+                    if (onChangeStatus != null && menuStatuses.isNotEmpty)
+                      PopupMenuButton<String>(
+                        tooltip: S.changeStatus,
+                        onSelected: onChangeStatus,
+                        itemBuilder: (_) => [
+                          for (final code in menuStatuses)
+                            PopupMenuItem(
+                              value: code,
+                              child: Text(OrderStatusView.of(code).label),
+                            ),
+                        ],
+                        icon: AppIcon(
+                          AppIcons.moreHorizontalCircle01,
+                          size: 16,
+                          color: dark
+                              ? AppColor.darkTextSecondary
+                              : AppColor.adminMuted,
+                        ),
+                      ),
+                  ],
                 ),
               ),
               SizedBox(

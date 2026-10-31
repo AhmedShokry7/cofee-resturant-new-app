@@ -1,222 +1,234 @@
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/services/app_pdf.dart';
+import 'package:admin_app/core/services/app_pdf_layout.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/payments/data/models/admin_payment.dart';
-import 'package:admin_app/core/services/html_print_runner.dart';
 
-/// Opens the browser print dialog with a statement of [payments].
-///
-/// The statement is written into a hidden frame so the browser can print it
-/// with the Arabic or English layout of the panel, without a PDF dependency.
+/// يفتح طباعة النظام بكشف أو إيصال، على ويندوز وmacOS وLinux وAndroid وiOS
+/// والويب من نفس المسار: المستند يُرسم PDFًا ثم يُسلَّم إلى نافذة الطباعة.
 class PaymentPrintService {
   PaymentPrintService._();
 
   static Future<bool> printPayments(List<AdminPayment> payments) async {
     if (payments.isEmpty) return false;
-    return printHtmlDocument(buildPaymentPrintDocument(payments));
+    return AppPdf.print(
+      await buildPaymentStatementDocument(payments),
+      name: S.paymentsPrintTitle,
+      format: PdfPageFormat.a4.landscape,
+    );
   }
 
   /// Prints a single transaction as its own receipt.
-  static Future<bool> printPayment(AdminPayment payment) =>
-      printHtmlDocument(buildPaymentReceiptDocument(payment));
+  static Future<bool> printPayment(AdminPayment payment) async => AppPdf.print(
+    await buildPaymentReceiptDocument(payment),
+    name: S.paymentReceiptTitle,
+  );
 }
 
-/// The printable receipt of one payment transaction, in the language of the
-/// panel.
-String buildPaymentReceiptDocument(AdminPayment payment) {
-  final arabic = AppLocale.instance.isArabic;
-  final direction = arabic ? 'rtl' : 'ltr';
-  final language = arabic ? 'ar' : 'en';
+/// الخانات المطبوعة لإيداع واحد، بترتيبها: ما يُقرأ في الورق هو نفسه ما
+/// يقيسه الاختبار، بلا وساطة لغة توصيف.
+List<(String, String)> paymentReceiptFields(AdminPayment payment) {
   final order = payment.orderNumber?.trim();
   final customer = payment.customerName?.trim();
   final reference = payment.providerReference?.trim();
   final holder = payment.cardHolderName?.trim();
-  final status = S.paymentStatusLabel(payment.status);
 
-  final fields = <(String, String)>[
-    (
-      S.orderNumber,
-      _escape(order == null || order.isEmpty ? payment.id : order),
-    ),
+  return <(String, String)>[
+    (S.orderNumber, order == null || order.isEmpty ? payment.id : order),
     (
       S.customer,
-      _escape(
-        customer == null || customer.isEmpty ? S.unknownCustomer : customer,
-      ),
+      customer == null || customer.isEmpty ? S.unknownCustomer : customer,
     ),
-    (S.provider, _escape(payment.provider)),
-    (
-      S.reference,
-      _escape(reference == null || reference.isEmpty ? '-' : reference),
-    ),
-    (S.paymentStatusLabelTitle, _escape(status)),
+    (S.provider, payment.provider),
+    (S.reference, reference == null || reference.isEmpty ? '-' : reference),
+    (S.paymentStatusLabelTitle, S.paymentStatusLabel(payment.status)),
     (S.paidAt, _date(payment.paidAt)),
     (S.refundedAt, _date(payment.refundedAt)),
-    (S.paymentCard, _escape(_cardLabel(payment) ?? '-')),
-    (
-      S.paymentCardHolder,
-      _escape(holder == null || holder.isEmpty ? '-' : holder),
-    ),
-    (S.verifiedByServer, _escape(payment.verifiedByServer ? S.yes : S.no)),
+    (S.paymentCard, _cardLabel(payment) ?? '-'),
+    (S.paymentCardHolder, holder == null || holder.isEmpty ? '-' : holder),
+    (S.verifiedByServer, payment.verifiedByServer ? S.yes : S.no),
     (S.createdAt, _date(payment.createdAt)),
   ];
-
-  final fieldsHtml = fields
-      .map(
-        (field) =>
-            '<div class="field"><span>${_escape(field.$1)}</span>'
-            '<strong>${field.$2}</strong></div>',
-      )
-      .join();
-
-  return '''
-<!DOCTYPE html>
-<html dir="$direction" lang="$language">
-<head>
-<meta charset="utf-8">
-<title>${_escape(S.paymentReceiptTitle)}</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 24px;
-    color: #22332d;
-    background: #ffffff;
-    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
-  }
-  .receipt { max-width: 680px; margin: 0 auto; }
-  header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 12px;
-    margin-bottom: 18px;
-    border-bottom: 2px solid #e6f1eb;
-  }
-  h1 { margin: 0 0 4px; font-size: 22px; }
-  .meta { color: #667085; font-size: 11px; }
-  .status {
-    display: inline-block;
-    padding: 5px 10px;
-    border: 1px solid #dce7e0;
-    border-radius: 999px;
-    background: #f6faf7;
-    color: #087f68;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .amount {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 14px 16px;
-    margin-bottom: 16px;
-    border: 1px solid #e6f1eb;
-    border-radius: 10px;
-    background: #f6faf7;
-  }
-  .amount span { color: #49584f; font-size: 11px; }
-  .amount strong { color: #087f68; font-size: 26px; line-height: 1.2; }
-  h2 {
-    margin: 0 0 10px;
-    color: #36473e;
-    font-size: 13px;
-  }
-  .grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .field {
-    padding: 9px 12px;
-    border: 1px solid #eef1ef;
-    border-radius: 8px;
-    background: #fcfdfc;
-  }
-  .field span {
-    display: block;
-    margin-bottom: 2px;
-    color: #819087;
-    font-size: 9.5px;
-  }
-  .field strong {
-    display: block;
-    color: #36473e;
-    font-size: 11.5px;
-    font-weight: 600;
-    overflow-wrap: anywhere;
-  }
-  footer {
-    margin-top: 18px;
-    padding-top: 10px;
-    border-top: 1px solid #eef1ef;
-    color: #819087;
-    font-size: 10px;
-  }
-  @page { size: A4 portrait; margin: 14mm; }
-  @media print {
-    body { padding: 0; }
-    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
-</style>
-</head>
-<body>
-<div class="receipt">
-<header>
-  <div>
-    <h1>${_escape(S.paymentReceiptTitle)}</h1>
-    <div class="meta">${_escape(S.paymentTransactionNumber)}: ${_escape(payment.id)}</div>
-  </div>
-  <div class="status">${_escape(status)}</div>
-</header>
-<div class="amount">
-  <span>${_escape(S.amount)}</span>
-  <strong>${_money(payment.amount, payment.currencyCode)}</strong>
-</div>
-<h2>${_escape(S.paymentReceiptDetails)}</h2>
-<div class="grid">
-$fieldsHtml
-</div>
-<footer>${_escape(S.paymentsPrintGeneratedAt)}: ${_date(DateTime.now())}</footer>
-</div>
-</body>
-</html>
-''';
 }
 
-/// The printable HTML statement of [payments], in the language of the panel.
-String buildPaymentPrintDocument(List<AdminPayment> payments) {
+/// إيصال عملية واحدة على A4 رأسي، بلغة اللوحة واتجاهها.
+Future<pw.Document> buildPaymentReceiptDocument(AdminPayment payment) async {
   final arabic = AppLocale.instance.isArabic;
-  final direction = arabic ? 'rtl' : 'ltr';
-  final language = arabic ? 'ar' : 'en';
+  final status = S.paymentStatusLabel(payment.status);
+  final document = pw.Document(
+    theme: await AppPdf.theme(),
+    title: S.paymentReceiptTitle,
+  );
 
-  final rows = StringBuffer();
-  for (final payment in payments) {
-    final order = payment.orderNumber?.trim();
-    final customer = payment.customerName?.trim();
-    rows.write(
-      '<tr>'
-      '<td>${_escape(order == null || order.isEmpty ? payment.id : order)}</td>'
-      '<td>${_escape(customer == null || customer.isEmpty ? S.unknownCustomer : customer)}</td>'
-      '<td>${_escape(payment.provider)}</td>'
-      '<td>${_escape(payment.providerReference?.trim() ?? '-')}</td>'
-      '<td class="num">${_money(payment.amount, payment.currencyCode)}</td>'
-      '<td class="status">${_escape(S.paymentStatusLabel(payment.status))}</td>'
-      '<td class="num">${_date(payment.paidAt ?? payment.createdAt)}</td>'
-      '<td>${_escape(_cardLabel(payment) ?? '-')}</td>'
-      '</tr>',
-    );
-  }
-  if (payments.isEmpty) {
-    rows.write(
-      '<tr><td colspan="8" class="empty">${_escape(S.noPaymentsYet)}</td></tr>',
-    );
-  }
+  document.addPage(
+    pw.Page(
+      pageFormat: PdfPageFormat.a4,
+      textDirection: arabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+      build: (context) => pw.Padding(
+        padding: const pw.EdgeInsets.all(32),
+        child: pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.stretch,
+          children: [
+            pw.Row(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Expanded(
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        S.paymentReceiptTitle,
+                        style: pw.TextStyle(
+                          fontSize: 18,
+                          fontWeight: pw.FontWeight.bold,
+                          color: AppPdf.ink,
+                        ),
+                      ),
+                      pw.SizedBox(height: 3),
+                      pw.Text(
+                        '${S.paymentTransactionNumber}: ${payment.id}',
+                        style: AppPdfLayout.labelStyle(),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: AppPdf.edge),
+                    borderRadius: pw.BorderRadius.circular(20),
+                    color: AppPdf.surface,
+                  ),
+                  child: pw.Text(
+                    status,
+                    style: pw.TextStyle(
+                      fontSize: 9.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: AppPdf.accent,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            pw.SizedBox(height: 16),
+            pw.Container(
+              padding: const pw.EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 12,
+              ),
+              decoration: pw.BoxDecoration(
+                border: pw.Border.all(color: AppPdf.edge),
+                borderRadius: pw.BorderRadius.circular(9),
+                color: AppPdf.surface,
+              ),
+              child: pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: pw.CrossAxisAlignment.center,
+                children: [
+                  pw.Text(
+                    S.amount,
+                    style: pw.TextStyle(fontSize: 10, color: AppPdf.body),
+                  ),
+                  pw.Text(
+                    _money(payment.amount, payment.currencyCode),
+                    style: pw.TextStyle(
+                      fontSize: 20,
+                      fontWeight: pw.FontWeight.bold,
+                      color: AppPdf.accent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            pw.SizedBox(height: 16),
+            pw.Text(
+              S.paymentReceiptDetails,
+              style: AppPdfLayout.sectionStyle(),
+            ),
+            pw.SizedBox(height: 6),
+            AppPdfLayout.fieldGrid(paymentReceiptFields(payment)),
+            pw.Container(
+              margin: const pw.EdgeInsets.only(top: 16),
+              padding: const pw.EdgeInsets.only(top: 8),
+              decoration: pw.BoxDecoration(
+                border: pw.Border(top: pw.BorderSide(color: AppPdf.hairline)),
+              ),
+              child: pw.Text(
+                '${S.paymentsPrintGeneratedAt}: ${_date(DateTime.now())}',
+                style: pw.TextStyle(fontSize: 9, color: AppPdf.muted),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+  return document;
+}
 
+/// سطور الكشف: ثمانية أعمدة نصية جاهزة للورق دون أي تحويل وسطي.
+List<List<String>> paymentStatementRows(List<AdminPayment> payments) => [
+  for (final payment in payments)
+    [
+      payment.orderNumber?.trim() ?? '',
+      payment.customerName?.trim() ?? '',
+      payment.provider,
+      payment.providerReference?.trim() ?? '',
+      _money(payment.amount, payment.currencyCode),
+      S.paymentStatusLabel(payment.status),
+      _date(payment.paidAt ?? payment.createdAt),
+      _cardLabel(payment) ?? '',
+    ].map(_orDash).toList(),
+];
+
+/// ترويسة أعمدة الكشف، بلغة اللوحة وقت الطباعة.
+List<String> paymentStatementHeaders() => <String>[
+  S.orderNumber,
+  S.customer,
+  S.provider,
+  S.reference,
+  S.amount,
+  S.paymentStatusLabelTitle,
+  S.paidAt,
+  S.paymentCard,
+];
+
+/// جدول الكشف كله في عنصر واحد: `pw.Table` يقدر يمتد على صفحات `MultiPage`
+/// تلقائيًا، فالسطور الكثيرة لا تُقطع عند نهاية الصفحة الأولى ولا تختلف
+/// أعرضتها بين صفحة وأخرى.
+pw.Widget _statementTable(List<List<String>> rows) => pw.Table(
+  border: AppPdfLayout.tableBorder(),
+  children: [
+    pw.TableRow(
+      children: [
+        for (final label in paymentStatementHeaders())
+          AppPdfLayout.cell(label, header: true),
+      ],
+    ),
+    for (final row in rows)
+      pw.TableRow(
+        children: [
+          for (var column = 0; column < row.length; column++)
+            AppPdfLayout.cell(
+              row[column],
+              numeric: column == 4 || column == 6,
+              strong: column == 0,
+            ),
+        ],
+      ),
+  ],
+);
+
+/// مجموع ما حُصَّل لكل عملة، أو null حين لا شيء: بلا أرقام مختلَقة.
+String? paymentStatementCollected(List<AdminPayment> payments) {
   final totals = <String, double>{};
   for (final payment in payments) {
     if (payment.status != 'captured') continue;
@@ -226,117 +238,85 @@ String buildPaymentPrintDocument(List<AdminPayment> payments) {
       ifAbsent: () => payment.amount,
     );
   }
-  final totalsHtml = totals.isEmpty
-      ? ''
-      : '<div class="summary">'
-            '<span>${_escape(S.paymentsPrintCollected)}</span>'
-            '<strong>${totals.entries.map((entry) => _money(entry.value, entry.key)).join(' • ')}</strong>'
-            '</div>';
-
-  return '''
-<!DOCTYPE html>
-<html dir="$direction" lang="$language">
-<head>
-<meta charset="utf-8">
-<title>${_escape(S.paymentsPrintTitle)}</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 24px;
-    color: #22332d;
-    background: #ffffff;
-    font-family: 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
-  }
-  header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 10px;
-    margin-bottom: 14px;
-    border-bottom: 2px solid #e6f1eb;
-  }
-  h1 { margin: 0 0 4px; font-size: 20px; }
-  .meta, .count { color: #667085; font-size: 11px; }
-  .summary {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 9px 12px;
-    margin-bottom: 12px;
-    border: 1px solid #e6f1eb;
-    border-radius: 8px;
-    background: #f6faf7;
-    font-size: 11px;
-    color: #49584f;
-  }
-  .summary strong { color: #087f68; font-size: 13px; }
-  table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-  thead { display: table-header-group; }
-  th {
-    padding: 7px 6px;
-    text-align: start;
-    font-weight: 700;
-    color: #36473e;
-    background: #f3f6f4;
-    border: 1px solid #e3e9e4;
-    white-space: nowrap;
-  }
-  td {
-    padding: 6px;
-    vertical-align: top;
-    border: 1px solid #eef1ef;
-  }
-  tbody tr:nth-child(even) { background: #fafcfb; }
-  tr { page-break-inside: avoid; }
-  .num { white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .status { white-space: nowrap; }
-  .empty { padding: 20px; text-align: center; color: #667085; }
-  @page { size: A4 landscape; margin: 12mm; }
-  @media print {
-    body { padding: 0; }
-    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  }
-</style>
-</head>
-<body>
-<header>
-  <div>
-    <h1>${_escape(S.paymentsPrintTitle)}</h1>
-    <div class="meta">${_escape(S.paymentsPrintGeneratedAt)}: ${_date(DateTime.now())}</div>
-  </div>
-  <div class="count">${_escape(S.paymentsPrintCount(payments.length))}</div>
-</header>
-$totalsHtml
-<table>
-  <thead>
-    <tr>
-      <th>${_escape(S.orderNumber)}</th>
-      <th>${_escape(S.customer)}</th>
-      <th>${_escape(S.provider)}</th>
-      <th>${_escape(S.reference)}</th>
-      <th>${_escape(S.amount)}</th>
-      <th>${_escape(S.paymentStatusLabelTitle)}</th>
-      <th>${_escape(S.paidAt)}</th>
-      <th>${_escape(S.paymentCard)}</th>
-    </tr>
-  </thead>
-  <tbody>
-$rows
-  </tbody>
-</table>
-</body>
-</html>
-''';
+  if (totals.isEmpty) return null;
+  return totals.entries
+      .map((entry) => _money(entry.value, entry.key))
+      .join(' • ');
 }
 
+/// كشف A4 أفقي متعدد الصفحات: الترويسة مرة واحدة ثم جدول يمتد مع الصفحات،
+/// فلا ينقطع السرد في الصفحة الثانية ولا يضيع عمود بين صفحة وأخرى.
+Future<pw.Document> buildPaymentStatementDocument(
+  List<AdminPayment> payments,
+) async {
+  final arabic = AppLocale.instance.isArabic;
+  final rows = paymentStatementRows(payments);
+  final collected = paymentStatementCollected(payments);
+  final document = pw.Document(
+    theme: await AppPdf.theme(),
+    title: S.paymentsPrintTitle,
+  );
+
+  document.addPage(
+    pw.MultiPage(
+      pageFormat: PdfPageFormat.a4.landscape,
+      margin: const pw.EdgeInsets.all(24),
+      textDirection: arabic ? pw.TextDirection.rtl : pw.TextDirection.ltr,
+      build: (context) => [
+        pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  S.paymentsPrintTitle,
+                  style: pw.TextStyle(
+                    fontSize: 16,
+                    fontWeight: pw.FontWeight.bold,
+                    color: AppPdf.ink,
+                  ),
+                ),
+                pw.SizedBox(height: 3),
+                pw.Text(
+                  '${S.paymentsPrintGeneratedAt}: ${_date(DateTime.now())}',
+                  style: AppPdfLayout.labelStyle(),
+                ),
+              ],
+            ),
+            pw.Text(
+              S.paymentsPrintCount(payments.length),
+              style: AppPdfLayout.labelStyle(),
+            ),
+          ],
+        ),
+        if (collected != null) ...[
+          pw.SizedBox(height: 10),
+          AppPdfLayout.panel([
+            AppPdfLayout.summaryRow(S.paymentsPrintCollected, collected),
+          ]),
+        ],
+        pw.SizedBox(height: 12),
+        if (rows.isEmpty)
+          pw.Text(
+            S.noPaymentsYet,
+            style: pw.TextStyle(fontSize: 10, color: AppPdf.faint),
+          ),
+        _statementTable(rows),
+      ],
+    ),
+  );
+  return document;
+}
+
+String _orDash(String value) => value.trim().isEmpty ? '-' : value.trim();
+
 String _money(num amount, String currency) =>
-    '${localizeDigits(formatAmount(amount))} ${_escape(currency)}';
+    '${localizeDigits(formatAmount(amount))} $currency';
 
 String _date(DateTime? value) =>
-    value == null ? '-' : _escape(localizeDigits(formatDateTime(value)));
+    value == null ? '-' : localizeDigits(formatDateTime(value));
 
 String? _cardLabel(AdminPayment payment) {
   final brand = payment.cardBrand?.trim() ?? '';
@@ -344,10 +324,3 @@ String? _cardLabel(AdminPayment payment) {
   if (last4.isEmpty) return brand.isEmpty ? null : brand;
   return brand.isEmpty ? '•••• $last4' : '$brand •••• $last4';
 }
-
-String _escape(String value) => value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');

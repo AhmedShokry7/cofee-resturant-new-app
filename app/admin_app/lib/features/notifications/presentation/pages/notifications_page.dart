@@ -50,7 +50,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
     super.initState();
     _ownsCubit = widget.cubit == null;
     _cubit = widget.cubit ?? AdminNotificationsCubit();
-    if (_ownsCubit) _load();
+    if (_ownsCubit) {
+      _load();
+      _cubit.startLiveUpdates();
+    }
     widget.searchController.bind(_onSearch);
   }
 

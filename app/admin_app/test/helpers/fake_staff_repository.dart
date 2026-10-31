@@ -16,6 +16,7 @@ class FakeStaffRepository implements StaffRepository {
     this.options = const AdminInviteOptions(),
     this.invitations = const <AdminStaffInvitation>[],
     this.editOutcome = StaffEditOutcome.success,
+    this.editDelay = Duration.zero,
     this.inviteOutcome = StaffInviteOutcome.failed,
     this.inviteCode,
     this.cancelOutcome = StaffInviteOutcome.failed,
@@ -25,6 +26,9 @@ class FakeStaffRepository implements StaffRepository {
   AdminInviteOptions options;
   List<AdminStaffInvitation> invitations;
   StaffEditOutcome editOutcome;
+
+  /// كم تبطئ القاعدة الكتابة، للاختبار الذي يريد حالة الحفظ لا نتيجتها.
+  Duration editDelay;
 
   /// سبب الرفض أو النجاح الذي تجيب به `admin_invite_staff`.
   StaffInviteOutcome inviteOutcome;
@@ -76,6 +80,8 @@ class FakeStaffRepository implements StaffRepository {
       'email': email,
       'status': status,
     });
+    final delay = editDelay;
+    if (delay > Duration.zero) await Future.delayed(delay);
     if (editOutcome == StaffEditOutcome.success) {
       members = [
         for (final member in members)

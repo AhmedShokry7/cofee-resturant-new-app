@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/customers/di/customers_dependencies.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer.dart';
 import 'package:admin_app/features/customers/domain/entities/admin_customer_metrics.dart';
@@ -45,7 +46,7 @@ class AdminCustomerCubit extends Cubit<AdminCustomerState> {
       emit(
         state.copyWith(
           status: AdminCustomerStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

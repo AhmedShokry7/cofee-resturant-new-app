@@ -24,3 +24,16 @@ String normalizeDigits(String value) {
     return index < 0 ? character : _westernDigits[index];
   }).join();
 }
+
+/// Reads a decimal typed in either language's digits.
+///
+/// `null` means the text was not a number at all, so the caller can refuse it
+/// instead of writing a zero it never read — the same rule the catalogue price
+/// and the delivery-fee fields already follow.
+double? parseLocalizedNumber(String value) =>
+    double.tryParse(normalizeDigits(value.trim()));
+
+/// Reads a whole number typed in either language's digits; `null` when the
+/// text is blank or not a number.
+int? parseLocalizedInt(String value) =>
+    int.tryParse(normalizeDigits(value.trim()));

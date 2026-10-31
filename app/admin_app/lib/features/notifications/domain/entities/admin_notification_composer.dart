@@ -63,6 +63,10 @@ class AdminNotificationComposerCustomer {
 }
 
 /// A composed message that is ready to be sent.
+///
+/// The payload the database hands to the push function is built here and only
+/// here: the composer offers a picture and a destination, and anything the
+/// customer app cannot read is never written into the row.
 class AdminNotificationDraft {
   const AdminNotificationDraft({
     required this.type,
@@ -72,7 +76,8 @@ class AdminNotificationDraft {
     required this.bodyEn,
     required this.audience,
     this.customerId,
-    this.payload = const <String, dynamic>{},
+    this.imageUrl,
+    this.destination = AdminNotificationDestination.none,
   });
 
   final AdminNotificationType type;
@@ -82,7 +87,22 @@ class AdminNotificationDraft {
   final String bodyEn;
   final AdminNotificationAudience audience;
   final String? customerId;
-  final Map<String, dynamic> payload;
+
+  /// The public address of the campaign picture, or null.
+  final String? imageUrl;
+
+  /// The screen the notification opens, or none.
+  final AdminNotificationDestination destination;
+
+  Map<String, dynamic> get payload => <String, dynamic>{
+    if (_image != null) 'image_url': _image,
+    if (destination.value != null) 'destination': destination.value,
+  };
+
+  String? get _image {
+    final image = imageUrl?.trim();
+    return image == null || image.isEmpty ? null : image;
+  }
 }
 
 /// How many customers a draft would reach, and how many are push-ready.

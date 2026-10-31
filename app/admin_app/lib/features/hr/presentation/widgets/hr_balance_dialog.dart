@@ -69,7 +69,7 @@ class _HrBalanceDialogState extends State<_HrBalanceDialog> {
   }
 
   void _submit() {
-    final days = double.tryParse(_days.text.trim());
+    final days = parseLocalizedNumber(_days.text);
     if (_staffId == null || _typeId == null) {
       setState(() => _error = S.hrStaffMissing);
       return;

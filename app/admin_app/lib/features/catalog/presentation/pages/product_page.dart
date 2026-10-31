@@ -11,13 +11,25 @@ import 'package:admin_app/core/search/admin_search_controller.dart';
 ///
 /// The page owns the page level state only: the cubit of the catalogue, the
 /// Excel jobs and the search query of the shell.
+///
+/// [canManage] و[canManageCategories] صلاحيتان منفصلتان تسألهما القاعدة في كل
+/// كتابة (`catalog.product.write` في 117 و184، و`catalog.category.write` في
+/// 117)، فالصفحة تُعرض للجميع أما أدوات الكتابة فلمن يُقبل فعله.
 class ProductPage extends StatefulWidget {
-  const ProductPage({super.key, required this.searchController, this.cubit});
+  const ProductPage({
+    super.key,
+    required this.searchController,
+    this.cubit,
+    this.canManage = false,
+    this.canManageCategories = false,
+  });
 
   static const String routeName = '/products';
 
   final AdminSearchController searchController;
   final AdminProductCubit? cubit;
+  final bool canManage;
+  final bool canManageCategories;
 
   @override
   State<ProductPage> createState() => _ProductPageState();
@@ -69,6 +81,8 @@ class _ProductPageState extends State<ProductPage> {
     return ProductPageView(
       cubit: _cubit,
       excel: _excel,
+      canManage: widget.canManage,
+      canManageCategories: widget.canManageCategories,
       importProgress: _importProgress,
       exportProgress: _exportProgress,
     );

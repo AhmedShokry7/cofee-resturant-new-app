@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/dashboard/di/dashboard_dependencies.dart';
 import 'package:admin_app/features/dashboard/domain/repositories/dashboard_repository.dart';
 import 'package:admin_app/features/dashboard/domain/usecases/load_dashboard_metrics.dart';
@@ -42,7 +43,7 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
       emit(
         state.copyWith(
           status: AdminDashboardStatus.failure,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }
@@ -68,7 +69,7 @@ class AdminDashboardCubit extends Cubit<AdminDashboardState> {
       emit(
         state.copyWith(
           targetStatus: AdminDashboardTargetStatus.failure,
-          targetError: '$error',
+          targetError: adminErrorMessage(error),
         ),
       );
       return false;

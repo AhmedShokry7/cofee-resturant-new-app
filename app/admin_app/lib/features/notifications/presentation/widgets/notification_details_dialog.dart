@@ -13,6 +13,7 @@ import 'package:admin_app/features/notifications/presentation/widgets/notificati
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
+import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 part 'notification_details_banner_localized_content.dart';

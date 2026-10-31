@@ -52,9 +52,12 @@ class AdminLoyaltyRepository implements LoyaltyRepository {
   Future<AdminLoyaltyTransactionFeed> loadTransactions({
     int limit = 300,
   }) async {
-    final response = await _supabase.rpc(
-      'admin_loyalty_transactions',
-      params: {'p_limit': limit},
+    final response = await AdminAvatarLinks.signTree(
+      await _supabase.rpc(
+        'admin_loyalty_transactions',
+        params: {'p_limit': limit},
+      ),
+      client: _supabase,
     );
     if (response is Map) {
       return AdminLoyaltyTransactionFeed.fromJson(

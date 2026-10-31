@@ -12,7 +12,11 @@ extension _OrderPageActions on _OrderPageState {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            databaseErrorText(error, fallback: S.orderActionFailed),
+            adminErrorMessage(
+              error,
+              fallback: S.orderActionFailed,
+              reasons: orderRefusalReasons(),
+            ),
           ),
         ),
       );

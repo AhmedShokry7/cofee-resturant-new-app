@@ -1,6 +1,7 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_discrepancy.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_discrepancy_action.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_person_option.dart';
@@ -122,7 +123,7 @@ class _HrDiscrepancyReviewDialogState
         setState(() => _error = S.hrConfirmNeedsEmployee);
         return;
       }
-      final parsed = double.tryParse(_deduction.text.trim());
+      final parsed = parseLocalizedNumber(_deduction.text);
       if (parsed == null || parsed <= 0 || parsed > _cap) {
         setState(() => _error = S.hrDeductionOutOfRange);
         return;

@@ -30,6 +30,33 @@ const List<AdminNotificationType> kComposableNotificationTypes =
       AdminNotificationType.loyalty,
     ];
 
+/// The screen a campaign sends its reader to.
+///
+/// The customer app matches this code against the routes it already registers,
+/// so a campaign can only open a screen the app knows: the composer never
+/// offers a path, and a code outside this list opens nothing.
+enum AdminNotificationDestination {
+  none(null),
+  offers('offers'),
+  orders('orders'),
+  loyalty('loyalty'),
+  subscription('subscription'),
+  notifications('notifications');
+
+  const AdminNotificationDestination(this.value);
+
+  /// The value stored in `engagement.notifications.payload ->> 'destination'`.
+  final String? value;
+
+  static AdminNotificationDestination fromValue(Object? value) {
+    for (final destination in AdminNotificationDestination.values) {
+      final stored = destination.value;
+      if (stored != null && stored == value) return destination;
+    }
+    return AdminNotificationDestination.none;
+  }
+}
+
 /// The audience a campaign was sent to.
 enum AdminNotificationAudience {
   all('all'),
@@ -189,6 +216,14 @@ class AdminNotification {
   final AdminNotificationCampaign? campaign;
 
   bool get isAdminSent => campaign != null;
+
+  /// The picture the campaign carries, or null for a plain message.
+  String? get imageUrl => notificationText(payload['image_url']);
+
+  /// The screen the campaign points at; [AdminNotificationDestination.none]
+  /// when it carries no code the app recognises.
+  AdminNotificationDestination get destination =>
+      AdminNotificationDestination.fromValue(payload['destination']);
 
   String? titleFor(AppLanguage language) =>
       _localized(titleAr, titleEn, language);

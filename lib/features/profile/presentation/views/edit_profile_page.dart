@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
@@ -41,11 +39,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (!mounted) return;
       final parts = (user?.name ?? '').trim().split(RegExp(r'\s+'));
       _firstNameController.text = parts.isNotEmpty ? parts.first : '';
-      _lastNameController.text = parts.length > 1 ? parts.sublist(1).join(' ') : '';
+      _lastNameController.text = parts.length > 1
+          ? parts.sublist(1).join(' ')
+          : '';
       _emailController.text = user?.email ?? '';
       _phoneController.text = user?.phone ?? '';
-    } catch (_) {
-    }
+    } catch (_) {}
   }
 
   @override
@@ -66,7 +65,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       final changed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('تغيير كلمة المرور'),
+          title: Text(S.changePassword),
           content: Form(
             key: formKey,
             child: Column(
@@ -75,33 +74,43 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextFormField(
                   controller: oldPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'كلمة المرور الحالية'),
-                  validator: (value) =>
-                      (value == null || value.trim().isEmpty) ? 'مطلوب' : null,
+                  decoration: InputDecoration(labelText: S.currentPasswordHint),
+                  validator: (value) => (value == null || value.trim().isEmpty)
+                      ? S.required
+                      : null,
                 ),
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'كلمة المرور الجديدة'),
+                  decoration: InputDecoration(labelText: S.newPasswordHint),
                   validator: (value) =>
-                      (value == null || value.trim().length < 6) ? '6 أحرف على الأقل' : null,
+                      (value == null || value.trim().length < 6)
+                      ? S.passwordMinLength
+                      : null,
                 ),
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(labelText: 'تأكيد كلمة المرور'),
-                  validator: (value) => value != newPasswordController.text ? 'غير متطابقة' : null,
+                  decoration: InputDecoration(labelText: S.confirmPasswordHint),
+                  validator: (value) => value != newPasswordController.text
+                      ? S.passwordsNoMatch
+                      : null,
                 ),
               ],
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: const Text('إلغاء')),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(S.cancel),
+            ),
             TextButton(
               onPressed: () {
-                if (formKey.currentState?.validate() ?? false) Navigator.of(dialogContext).pop(true);
+                if (formKey.currentState?.validate() ?? false) {
+                  Navigator.of(dialogContext).pop(true);
+                }
               },
-              child: const Text('حفظ'),
+              child: Text(S.save),
             ),
           ],
         ),
@@ -112,10 +121,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
         newPassword: newPasswordController.text.trim(),
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تم تغيير كلمة المرور')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.passwordChanged)));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('فشل تغيير كلمة المرور (تحقق من القديمة)')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.passwordChangeFailed)));
     } finally {
       oldPasswordController.dispose();
       newPasswordController.dispose();
@@ -128,17 +139,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _saving = true);
     try {
-      final fullName = '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'.trim();
+      final fullName =
+          '${_firstNameController.text.trim()} ${_lastNameController.text.trim()}'
+              .trim();
       await context.read<AuthRepository>().updateProfile(
-        fullName: fullName.isEmpty ? (_firstNameController.text.trim()) : fullName,
+        fullName: fullName.isEmpty
+            ? (_firstNameController.text.trim())
+            : fullName,
         phone: _phoneController.text.trim(),
       );
       if (!mounted) return;
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.profileUpdated)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.profileUpdated)));
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(S.profileUpdateFailed)));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.profileUpdateFailed)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -149,48 +166,50 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return AuthGuard(
       child: Scaffold(
         appBar: AppBar(title: Text(S.yourProfile)),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            SpacingTokens.lg.w,
+        body: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              SpacingTokens.lg.w,
+              SpacingTokens.md.h,
+              SpacingTokens.lg.w,
+              SpacingTokens.lg.w,
+            ),
+            children: [
+              CustomTextFormField(
+                controller: _firstNameController,
+                hint: S.firstNameHint,
+                keyboardType: TextInputType.name,
+                validator: (value) => (value == null || value.trim().isEmpty)
+                    ? S.nameRequired
+                    : null,
+              ),
+              CustomTextFormField(
+                controller: _lastNameController,
+                hint: S.lastNameHint,
+                keyboardType: TextInputType.name,
+              ),
+              CustomTextFormField(
+                controller: _emailController,
+                hint: S.emailHint,
+                keyboardType: TextInputType.emailAddress,
+              ),
+              CustomTextFormField(
+                controller: _phoneController,
+                hint: S.phoneNumberHint,
+                keyboardType: TextInputType.phone,
+              ),
+              SizedBox(height: SpacingTokens.lg.h),
+              CustomBtn(text: S.save, onPressed: _saving ? null : _save),
+              SizedBox(height: SpacingTokens.md.h),
+              OutlinedButton(
+                onPressed: _showChangePasswordDialog,
+                child: Text(S.changePassword),
+              ),
+            ],
           ),
-          children: [
-            CustomTextFormField(
-              controller: _firstNameController,
-              hint: S.firstNameHint,
-              keyboardType: TextInputType.name,
-              validator: (value) => (value == null || value.trim().isEmpty) ? S.nameRequired : null,
-            ),
-            CustomTextFormField(
-              controller: _lastNameController,
-              hint: S.lastNameHint,
-              keyboardType: TextInputType.name,
-            ),
-            CustomTextFormField(
-              controller: _emailController,
-              hint: S.emailHint,
-              keyboardType: TextInputType.emailAddress,
-            ),
-            CustomTextFormField(
-              controller: _phoneController,
-              hint: S.phoneNumberHint,
-              keyboardType: TextInputType.phone,
-            ),
-            SizedBox(height: SpacingTokens.lg.h),
-            CustomBtn(text: S.save, onPressed: _saving ? null : _save),
-            SizedBox(height: SpacingTokens.md.h),
-            OutlinedButton(
-              onPressed: _showChangePasswordDialog,
-              child: const Text('تغيير كلمة المرور'),
-            ),
-          ],
         ),
       ),
-    ),
     );
   }
 }

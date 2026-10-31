@@ -11,7 +11,7 @@ import 'package:admin_app/features/staff/presentation/manager/admin_staff_cubit.
 import 'package:admin_app/features/staff/presentation/widgets/staff_format.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_messages.dart';
 import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
-import 'package:admin_app/shared/widgets/admin_inline_error.dart';
+import 'package:admin_app/shared/widgets/admin_dialog_chrome.dart';
 import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/shared/widgets/category_image_dialog.dart';
@@ -52,6 +52,11 @@ class StaffEditDialog extends StatefulWidget {
 class _StaffEditDialogState extends State<StaffEditDialog> {
   static const _statuses = <String>['active', 'invited', 'suspended'];
 
+  /// الشكل وحده يُقرأ هنا: صلاحية الحساب والبريد المتكرر تقرّرهما القاعدة، فلا
+  /// يمنع هذا النموذج إلا الخطأ البيّن الذي يراه الكاتب.
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  static const Key _saveKey = Key('staff-edit-save');
+
   /// The code of each status in the words the directory already uses for it,
   /// so the picker and the badge of the row never say two different things.
   late final Map<String, String> _statusLabels = {
@@ -67,6 +72,7 @@ class _StaffEditDialogState extends State<StaffEditDialog> {
   /// value, never through a path the screen invented.
   String? _picture;
   String? _error;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -98,59 +104,120 @@ class _StaffEditDialogState extends State<StaffEditDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AlertDialog(
-      title: Text(S.editStaffTitle),
-      content: SingleChildScrollView(
+    return Dialog(
+      clipBehavior: Clip.antiAlias,
+      insetPadding: EdgeInsets.symmetric(
+        horizontal:
+            MediaQuery.sizeOf(context).width < AppBreakpoints.dialogPadding
+            ? AppSpacing.md
+            : AppSpacing.xxxl,
+        vertical: AppSpacing.lg,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            _PictureRow(
-              member: widget.member,
-              picture: _picture,
-              onChange: _changePicture,
+            AdminDialogHeader(
+              title: S.editStaffTitle,
+              subtitle: S.staffEditSubtitle,
+              onClose: _close,
             ),
-            const SizedBox(height: AppSpacing.md),
-            CustomTextFormField(
-              label: S.staffName,
-              hint: S.staffName,
-              controller: _name,
-              bottomPadding: AppSizes.px8,
-            ),
-            CustomTextFormField(
-              label: S.email,
-              hint: S.email,
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              bottomPadding: AppSizes.px8,
-            ),
-            Text(
-              S.status,
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: AppFontWeights.medium,
-              ),
-            ),
-            const SizedBox(height: AppSizes.px6),
-            AdminSegmentedControl(
-              options: [for (final code in _statuses) _statusLabels[code]!],
-              selected: _statusLabels[_status]!,
-              onChanged: (label) => setState(
-                () => _status = _statuses.firstWhere(
-                  (code) => _statusLabels[code] == label,
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (_error != null) ...[
+                        AdminErrorBanner(message: _error!),
+                        const SizedBox(height: AppSpacing.lg),
+                      ],
+                      _PictureRow(
+                        member: widget.member,
+                        picture: _picture,
+                        onChange: _changePicture,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      CustomTextFormField(
+                        label: S.staffName,
+                        hint: S.staffName,
+                        controller: _name,
+                        validator: _validateName,
+                        bottomPadding: AppSpacing.md,
+                      ),
+                      CustomTextFormField(
+                        label: S.email,
+                        hint: S.email,
+                        controller: _email,
+                        keyboardType: TextInputType.emailAddress,
+                        validator: _validateEmail,
+                        bottomPadding: AppSpacing.md,
+                      ),
+                      Text(
+                        S.status,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          fontWeight: AppFontWeights.medium,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      AdminSegmentedControl(
+                        options: [
+                          for (final code in _statuses) _statusLabels[code]!,
+                        ],
+                        selected: _statusLabels[_status]!,
+                        onChanged: (label) => setState(
+                          () => _status = _statuses.firstWhere(
+                            (code) => _statusLabels[code] == label,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            if (_error != null) AdminInlineError(message: _error!),
+            AdminDialogFooter(
+              saving: _saving,
+              onCancel: _close,
+              onSave: _save,
+              saveKey: _saveKey,
+              saveLabel: S.save,
+              savingLabel: S.saving,
+            ),
           ],
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(S.cancel),
-        ),
-        FilledButton(onPressed: _save, child: Text(S.save)),
-      ],
     );
+  }
+
+  /// الاسم مطلوب حين كان للحساب اسم فعلًا: الحقل الفارغ لا يمسح العمود في
+  /// القاعدة، فتركه يمر يعني زرًا لا يفعل شيئًا.
+  String? _validateName(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty && (widget.member.fullName?.trim().isNotEmpty ?? false)) {
+      return S.staffEditInvalidName;
+    }
+    return null;
+  }
+
+  String? _validateEmail(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return null;
+    if (!RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(text)) {
+      return S.staffEditInvalidEmail;
+    }
+    return null;
+  }
+
+  void _close() {
+    if (_saving) return;
+    Navigator.of(context).pop();
   }
 
   Future<void> _changePicture() async {
@@ -198,6 +265,8 @@ class _StaffEditDialogState extends State<StaffEditDialog> {
   }
 
   Future<void> _save() async {
+    if (_saving) return;
+    if (!(_formKey.currentState?.validate() ?? true)) return;
     final name = _name.text.trim();
     final email = _email.text.trim();
     // An unchanged or blank field is not sent: null tells the RPC to leave the
@@ -216,6 +285,10 @@ class _StaffEditDialogState extends State<StaffEditDialog> {
       Navigator.of(context).pop();
       return;
     }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
     final outcome = await widget.cubit.updateStaff(
       staffId: widget.member.id,
       fullName: fullName,
@@ -227,7 +300,10 @@ class _StaffEditDialogState extends State<StaffEditDialog> {
       Navigator.of(context).pop(true);
       return;
     }
-    setState(() => _error = staffEditErrorMessage(outcome));
+    setState(() {
+      _saving = false;
+      _error = staffEditErrorMessage(outcome);
+    });
   }
 }
 
@@ -249,13 +325,13 @@ class _PictureRow extends StatelessWidget {
       children: [
         AdminAvatarImage(
           url: picture,
-          size: 56,
+          size: AppSizes.px56,
           borderRadius: BorderRadius.circular(AppRadius.lg),
           fallbackText: staffInitials(member),
           placeholderColor: colors.$1,
           fallbackColor: colors.$2,
         ),
-        const SizedBox(width: AppSizes.px12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
           child: Align(
             alignment: AlignmentDirectional.centerStart,

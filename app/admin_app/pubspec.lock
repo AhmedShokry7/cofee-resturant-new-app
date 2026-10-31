@@ -65,6 +65,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.13.1"
+  barcode:
+    dependency: transitive
+    description:
+      name: barcode
+      sha256: "7b6729c37e3b7f34233e2318d866e8c48ddb46c1f7ad01ff7bb2a8de1da2b9f4"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.9"
+  bidi:
+    dependency: transitive
+    description:
+      name: bidi
+      sha256: "77f475165e94b261745cf1032c751e2032b8ed92ccb2bf5716036db79320637d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.13"
   bloc:
     dependency: transitive
     description:
@@ -447,7 +463,7 @@ packages:
     source: hosted
     version: "1.0.0"
   flutter_launcher_icons:
-    dependency: "direct main"
+    dependency: "direct dev"
     description:
       name: flutter_launcher_icons
       sha256: "10f13781741a2e3972126fae08393d3c4e01fa4cd7473326b94b72cf594195e7"
@@ -965,6 +981,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  pdf:
+    dependency: "direct main"
+    description:
+      name: pdf
+      sha256: "6e40827f370d196e97c6611724d923a3d86c431ce8e2ce1e59edd03a67a1a6e6"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.13.1"
+  pdf_widget_wrapper:
+    dependency: transitive
+    description:
+      name: pdf_widget_wrapper
+      sha256: c930860d987213a3d58c7ec3b7ecf8085c3897f773e8dc23da9cae60a5d6d0f5
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   petitparser:
     dependency: transitive
     description:
@@ -1013,6 +1045,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.9.1"
+  printing:
+    dependency: "direct main"
+    description:
+      name: printing
+      sha256: "0f72f29f2e08b8453b7a45b6c7781eb792b1da3468bf0910be0eb3b1d6781f49"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.15.1"
   proj4dart:
     dependency: transitive
     description:
@@ -1038,7 +1078,7 @@ packages:
     source: hosted
     version: "2.2.1"
   qr:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: qr
       sha256: "5a1d2586170e172b8a8c8470bbbffd5eb0cd38a66c0d77155ea138d3af3a4445"
@@ -1318,26 +1358,26 @@ packages:
     dependency: transitive
     description:
       name: syncfusion_flutter_core
-      sha256: f054f5636c618dbf1a155409d0b5f3e70f8e9beb7ac7a8fdc870653968875e7d
+      sha256: "366faa4c374fdc0a789eb1d234c78ddbaca34ae575fe8a6481f9f72db5eb0d69"
       url: "https://pub.dev"
     source: hosted
-    version: "33.2.15"
+    version: "35.1.42"
   syncfusion_flutter_xlsio:
     dependency: "direct main"
     description:
       name: syncfusion_flutter_xlsio
-      sha256: "580bf556217c7fa01c6dd88a139dafefbf9ef2bab6290fe25505dbba6ced694e"
+      sha256: "24c7dd074db00943da15627f3516385cd49e2ec6ea63dbe767bd0d616e458439"
       url: "https://pub.dev"
     source: hosted
-    version: "33.2.13"
+    version: "35.1.42"
   syncfusion_officecore:
     dependency: transitive
     description:
       name: syncfusion_officecore
-      sha256: "15409ebaae30e5cca39c25cb979019e2fe9c6da9b3b46d5a1d62494ea608faf5"
+      sha256: "43b5c8c47b17dea963f869f8ddd11612f61a71162f71f3bcfd9cd570098b834c"
       url: "https://pub.dev"
     source: hosted
-    version: "33.2.15"
+    version: "35.1.42"
   synchronized:
     dependency: transitive
     description:
@@ -1507,7 +1547,7 @@ packages:
     source: hosted
     version: "15.4.0"
   web:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: web
       sha256: e119e82ac4795c7925103b7cf3768191f33941b99e7ccffbd6c645201d9f606b
@@ -1566,10 +1606,10 @@ packages:
     dependency: "direct main"
     description:
       name: xml
-      sha256: "971043b3a0d3da28727e40ed3e0b5d18b742fa5a68665cca88e74b7876d5e025"
+      sha256: "67f0aff7be013d107995e9b75bf4e7f2c3ef2dfdb2c8e68024bba0a7fd5756a4"
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.1"
+    version: "7.0.1"
   yaml:
     dependency: transitive
     description:

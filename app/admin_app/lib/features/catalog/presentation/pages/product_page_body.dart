@@ -11,7 +11,7 @@ class ProductPageBody extends StatelessWidget {
   const ProductPageBody({
     super.key,
     required this.products,
-    required this.onAdd,
+    this.onAdd,
     this.total,
     this.categories = const <AdminCategory>[],
     this.onPickFile,
@@ -36,7 +36,7 @@ class ProductPageBody extends StatelessWidget {
   });
 
   final List<AdminProduct> products;
-  final VoidCallback onAdd;
+  final VoidCallback? onAdd;
   final int? total;
   final List<AdminCategory> categories;
   final VoidCallback? onPickFile;

@@ -14,6 +14,7 @@ import 'package:admin_app/features/shell/domain/usecases/load_counts.dart';
 typedef NavLiveFeedFactory = PostgresChangesFeed? Function({
   required bool watchOrders,
   required bool watchKitchen,
+  required bool watchNotifications,
 });
 
 /// Keeps the sidebar counters in step with the server.
@@ -22,11 +23,11 @@ typedef NavLiveFeedFactory = PostgresChangesFeed? Function({
 /// duplicated event or two staff members on the same screen cannot make a
 /// badge count the same work twice.
 ///
-/// Realtime is the fast path: a new order or ticket moves the badge the moment
-/// it is written, and so does opening one. A slow timer is the safety net for a
-/// blocked websocket or a project with realtime disabled. A failed read keeps
-/// the last numbers: a busy dashboard must never show a zero because one
-/// request failed.
+/// Realtime is the fast path: a new order, ticket or notification moves the
+/// badge the moment it is written, and so does opening one. A slow timer is the
+/// safety net for a blocked websocket or a project with realtime disabled. A
+/// failed read keeps the last numbers: a busy dashboard must never show a zero
+/// because one request failed.
 class AdminNavCubit extends Cubit<AdminNavCounts> {
   AdminNavCubit({
     NavRepository? repository,
@@ -45,27 +46,46 @@ class AdminNavCubit extends Cubit<AdminNavCounts> {
   Timer? _timer;
   PostgresChangesFeed? _feed;
   bool _isWatching = false;
+  bool _watchNotifications = false;
   bool _isRefreshing = false;
 
   /// Starts watching the counters for the destinations the caller may open.
-  void start({required bool watchOrders, required bool watchKitchen}) {
+  ///
+  /// A destination the account cannot open is not watched and not read: the
+  /// notifications counter in particular comes from an RPC the database refuses
+  /// without `notifications.read`.
+  void start({
+    required bool watchOrders,
+    required bool watchKitchen,
+    bool watchNotifications = false,
+  }) {
     _timer?.cancel();
-    _isWatching = watchOrders || watchKitchen;
+    _watchNotifications = watchNotifications;
+    _isWatching = watchOrders || watchKitchen || watchNotifications;
     if (!_isWatching) {
       unawaited(_closeFeed());
       if (state != AdminNavCounts.empty) emit(AdminNavCounts.empty);
       return;
     }
-    _watchLive(watchOrders: watchOrders, watchKitchen: watchKitchen);
+    _watchLive(
+      watchOrders: watchOrders,
+      watchKitchen: watchKitchen,
+      watchNotifications: watchNotifications,
+    );
     unawaited(refresh());
     _timer = Timer.periodic(refreshInterval, (_) => refresh());
   }
 
-  void _watchLive({required bool watchOrders, required bool watchKitchen}) {
+  void _watchLive({
+    required bool watchOrders,
+    required bool watchKitchen,
+    required bool watchNotifications,
+  }) {
     if (_feed != null) return;
     final feed = _newLiveFeed(
       watchOrders: watchOrders,
       watchKitchen: watchKitchen,
+      watchNotifications: watchNotifications,
     );
     if (feed == null) return;
     _feed = feed;
@@ -81,7 +101,7 @@ class AdminNavCubit extends Cubit<AdminNavCounts> {
     if (isClosed || !_isWatching || _isRefreshing) return;
     _isRefreshing = true;
     try {
-      final counts = await _loadCounts();
+      final counts = await _loadCounts(withNotifications: _watchNotifications);
       if (!isClosed && counts != state) emit(counts);
     } catch (_) {
       // The last numbers stay until the next poll succeeds.

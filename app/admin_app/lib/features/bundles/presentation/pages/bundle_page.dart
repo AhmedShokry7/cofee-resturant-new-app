@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/features/bundles/presentation/manager/admin_bundle_cubit.dart';
@@ -11,13 +11,21 @@ import 'package:admin_app/features/bundles/presentation/widgets/bundle_records.d
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
+/// الباقات يقرؤها كل موظف، أما كتابتها فتطلب `catalog.product.write` (020)،
+/// فالصفحة تُفتح للجميع وأدوات الكتابة تُحجب عمن ترفض قاعدته كتابته.
 class BundlePage extends StatefulWidget {
-  const BundlePage({super.key, required this.searchController, this.cubit});
+  const BundlePage({
+    super.key,
+    required this.searchController,
+    this.cubit,
+    this.canManage = false,
+  });
 
   static const String routeName = '/bundles';
 
   final AdminSearchController searchController;
   final AdminBundleCubit? cubit;
+  final bool canManage;
 
   @override
   State<BundlePage> createState() => _BundlePageState();
@@ -66,34 +74,48 @@ class _BundlePageState extends State<BundlePage> {
           return BundlePageBody(
             bundles: state.bundles,
             search: _searchQuery,
-            selectedIds: state.selectedIds,
+            selectedIds: widget.canManage ? state.selectedIds : const {},
             isDeletingSelected: state.isDeletingSelected,
-            onSelect: (bundle) => _cubit.toggleSelection(bundle.id),
-            onSelectAll: () => _cubit.selectMany(
-              filterBundles(state.bundles, _searchQuery).map((b) => b.id),
-            ),
-            onClearSelection: _cubit.clearSelection,
-            onDeleteSelected: () =>
-                confirmDeleteSelectedBundles(context, _cubit),
-            onAdd: () => showBundleCreateDialog(
-              context: context,
-              cubit: _cubit,
-              products: state.products,
-            ),
-            onEdit: (bundle) => showBundleEditDialog(
-              context: context,
-              cubit: _cubit,
-              bundle: bundle,
-              products: state.products,
-            ),
-            onDelete: (bundle) => confirmDeleteBundle(context, _cubit, bundle),
-            onToggleActive: (bundle) =>
-                toggleBundleActive(context, _cubit, bundle),
-            onChangeImage: (bundle) => showBundleImageDialog(
-              context: context,
-              cubit: _cubit,
-              bundle: bundle,
-            ),
+            onSelect: widget.canManage
+                ? (bundle) => _cubit.toggleSelection(bundle.id)
+                : null,
+            onSelectAll: widget.canManage
+                ? () => _cubit.selectMany(
+                    filterBundles(state.bundles, _searchQuery).map((b) => b.id),
+                  )
+                : null,
+            onClearSelection: widget.canManage ? _cubit.clearSelection : null,
+            onDeleteSelected: widget.canManage
+                ? () => confirmDeleteSelectedBundles(context, _cubit)
+                : null,
+            onAdd: widget.canManage
+                ? () => showBundleCreateDialog(
+                    context: context,
+                    cubit: _cubit,
+                    products: state.products,
+                  )
+                : null,
+            onEdit: widget.canManage
+                ? (bundle) => showBundleEditDialog(
+                    context: context,
+                    cubit: _cubit,
+                    bundle: bundle,
+                    products: state.products,
+                  )
+                : null,
+            onDelete: widget.canManage
+                ? (bundle) => confirmDeleteBundle(context, _cubit, bundle)
+                : null,
+            onToggleActive: widget.canManage
+                ? (bundle) => toggleBundleActive(context, _cubit, bundle)
+                : null,
+            onChangeImage: widget.canManage
+                ? (bundle) => showBundleImageDialog(
+                    context: context,
+                    cubit: _cubit,
+                    bundle: bundle,
+                  )
+                : null,
           );
         },
       ),

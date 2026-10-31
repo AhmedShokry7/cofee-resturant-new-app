@@ -1,8 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
-import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/admin_image_picker.dart';
@@ -168,12 +168,10 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
     }
   }
 
-  /// Why the picture did not reach the panel: the reason of the picture
-  /// itself is shown alone, anything else is named as a failure to open it.
-  String _messageFor(Object error) {
-    if (error is AdminProductException) return error.message;
-    return '${S.imageCouldNotBeOpened}: $error';
-  }
+  /// Why the picture did not reach the panel: the reason the app already
+  /// names is shown alone, and anything else is named as a failure to open it.
+  String _messageFor(Object error) =>
+      adminErrorMessage(error, fallback: S.imageCouldNotBeOpened);
 
   Future<void> _askForLink() async {
     final controller = TextEditingController(
@@ -221,9 +219,7 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
         _phaseText = null;
       });
       _showMessage(
-        error is AdminProductException
-            ? error.message
-            : '${S.imageActionFailed}: $error',
+        adminErrorMessage(error, fallback: S.imageActionFailed),
         isError: true,
       );
     }
@@ -248,9 +244,7 @@ class _CategoryImageDialogState extends State<CategoryImageDialog> {
         _phaseText = null;
       });
       _showMessage(
-        error is AdminProductException
-            ? error.message
-            : '${S.imageActionFailed}: $error',
+        adminErrorMessage(error, fallback: S.imageActionFailed),
         isError: true,
       );
     }

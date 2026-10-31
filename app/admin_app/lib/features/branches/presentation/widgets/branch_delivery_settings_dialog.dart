@@ -2,17 +2,18 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/app_dependencies.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/delivery_zones/delivery_zone_repository.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_branch.dart';
+import 'package:admin_app/core/models/admin_delivery_zone.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
-import 'package:admin_app/core/models/admin_branch.dart';
-import 'package:admin_app/core/models/admin_delivery_zone.dart';
-import 'package:admin_app/core/delivery_zones/delivery_zone_repository.dart';
-import 'package:admin_app/shared/widgets/delivery_zone_form_dialog.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/delivery_zone_form_dialog.dart';
 
 Future<void> showBranchDeliverySettingsDialog({
   required BuildContext context,
@@ -90,7 +91,7 @@ class _BranchDeliverySettingsDialogState
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _error = '$error';
+        _error = adminErrorMessage(error);
       });
     }
   }
@@ -115,7 +116,7 @@ class _BranchDeliverySettingsDialogState
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _error = '$error';
+        _error = adminErrorMessage(error);
       });
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -132,7 +133,7 @@ class _BranchDeliverySettingsDialogState
       await _load();
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '$error');
+      setState(() => _error = adminErrorMessage(error));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -426,7 +427,9 @@ class _ZoneCard extends StatelessWidget {
     'per_km' => _Detail(
       icon: Icons.payments_outlined,
       text: S.deliveryFeePerKm,
-      money: zone.feePerKm ?? 0,
+      // صفر هنا كان يُقرأ «مجانًا لكل كيلومتر»؛ العمود nullable ومعناه فعلًا
+      // أن الرسوم لم تُعيَّن، فيُترك بلا رقم كما تقرر `_Detail`.
+      money: zone.feePerKm,
     ),
     'free' => _Detail(icon: Icons.payments_outlined, text: S.freeDelivery),
     _ => _Detail(

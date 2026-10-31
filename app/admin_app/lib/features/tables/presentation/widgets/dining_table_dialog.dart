@@ -10,6 +10,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/dining_format.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/tables/domain/entities/dining_table_draft.dart';
 import 'package:admin_app/features/tables/domain/repositories/dining_table_repository.dart';
 import 'package:admin_app/features/tables/presentation/manager/dining_tables_cubit.dart';
@@ -100,9 +101,9 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
         branchId: branchId,
         name: _name.text.trim(),
         area: _area.value,
-        capacity: int.tryParse(_capacity.text.trim()) ?? 2,
+        capacity: parseLocalizedInt(_capacity.text) ?? 2,
         note: _note.text.trim(),
-        sortOrder: int.tryParse(_sort.text.trim()) ?? 0,
+        sortOrder: parseLocalizedInt(_sort.text) ?? 0,
         isActive: _active,
       ),
     );
@@ -211,9 +212,7 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                                 keyboardType: TextInputType.number,
                                 textInputAction: TextInputAction.next,
                                 validator: (value) {
-                                  final count = int.tryParse(
-                                    (value ?? '').trim(),
-                                  );
+                                  final count = parseLocalizedInt(value ?? '');
                                   return count == null ||
                                           count < 1 ||
                                           count > 40
@@ -239,6 +238,15 @@ class _DiningTableDialogState extends State<_DiningTableDialog> {
                                 maxLength: 3,
                                 keyboardType: TextInputType.number,
                                 textInputAction: TextInputAction.next,
+                                // بلا هذا الفحص كان النص غير الرقمي يمرّ ترتيبًا صفرًا:
+                                // الترتيب الذي كتبه المدير يختفي ولا أحد يُنبَّه.
+                                validator: (value) {
+                                  final text = (value ?? '').trim();
+                                  if (text.isEmpty) return null;
+                                  return parseLocalizedInt(text) == null
+                                      ? S.invalidNumber
+                                      : null;
+                                },
                                 style: TextStyle(
                                   color: adminBodyColor(theme),
                                   fontSize: AppFontSizes.size11_5,

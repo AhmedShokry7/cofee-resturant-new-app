@@ -104,6 +104,7 @@ class _Row extends StatelessWidget {
             child: Row(
               children: [
                 AdminAvatarImage(
+                  url: transaction.avatarUrl,
                   size: 27,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                   fallbackText: initialsOf(name),

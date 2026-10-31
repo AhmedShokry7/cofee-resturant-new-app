@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/features/auth/di/auth_dependencies.dart';
 import 'package:admin_app/features/auth/domain/entities/invitation_accept_outcome.dart';
 import 'package:admin_app/features/auth/domain/repositories/auth_repository.dart';
@@ -57,7 +58,7 @@ class InvitationAcceptCubit extends Cubit<InvitationAcceptState> {
         state.copyWith(
           status: InvitationAcceptStatus.refused,
           outcome: InvitationAcceptOutcome.failed,
-          errorMessage: '$error',
+          errorMessage: adminErrorMessage(error),
         ),
       );
     }

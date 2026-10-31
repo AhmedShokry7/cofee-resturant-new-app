@@ -54,22 +54,27 @@ class ProductCardImage extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: _CoverImage(url: imageUrl, fit: fit, alignment: alignment),
           ),
-          PositionedDirectional(
-            top: AppDimensions.recordImageInset,
-            end: AppDimensions.recordImageInset,
-            child: AdminSelectionCheckBox(checked: isSelected, onTap: onSelect),
-          ),
+          if (onSelect != null)
+            PositionedDirectional(
+              top: AppDimensions.recordImageInset,
+              end: AppDimensions.recordImageInset,
+              child: AdminSelectionCheckBox(
+                checked: isSelected,
+                onTap: onSelect,
+              ),
+            ),
           if (isFeatured)
             PositionedDirectional(
               top: AppDimensions.recordImageInset,
               start: AppDimensions.recordImageInset,
               child: const _FeaturedBadge(),
             ),
-          PositionedDirectional(
-            bottom: AppDimensions.recordImageInset,
-            start: AppDimensions.recordImageInset,
-            child: _MediaPill(onTap: onChangeImage),
-          ),
+          if (onChangeImage != null)
+            PositionedDirectional(
+              bottom: AppDimensions.recordImageInset,
+              start: AppDimensions.recordImageInset,
+              child: _MediaPill(onTap: onChangeImage),
+            ),
         ],
       ),
     );

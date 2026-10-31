@@ -237,31 +237,15 @@ class _ProductCardState extends State<ProductCard> {
     });
   }
 
-  Future<void> _changeImage() async {
-    final url = await showDialog<String>(
-      context: context,
-      builder: (context) => ImageUrlDialog(initialValue: _draft.imageUrl ?? ''),
-    );
-    if (url == null || !mounted) return;
-
-    setState(() {
-      _draft = _draft.copyWith(
-        imageUrl: url.trim().isEmpty ? null : url.trim(),
-        clearImageUrl: url.trim().isEmpty,
-      );
-    });
-  }
-
   /// Opens the menu of the button that was pressed.
   ///
   /// The menu opens right under that button, not in a corner of the screen.
+  /// Every item is a write the database refuses without
+  /// `catalog.product.write` (117), so an item is only offered when the page
+  /// handed over its callback — a control that does nothing is not shown.
   Future<void> _openMore(GlobalKey buttonKey) async {
-    final geometry = _menuGeometry(buttonKey);
-    final selected = await showMenu<String>(
-      context: context,
-      position: geometry.position,
-      constraints: geometry.constraints,
-      items: [
+    final items = <PopupMenuEntry<String>>[
+      if (widget.onToggleFeatured != null)
         PopupMenuItem<String>(
           value: 'featured',
           child: Row(
@@ -282,6 +266,7 @@ class _ProductCardState extends State<ProductCard> {
             ],
           ),
         ),
+      if (widget.onDelete != null)
         PopupMenuItem<String>(
           value: 'delete',
           child: Row(
@@ -296,7 +281,15 @@ class _ProductCardState extends State<ProductCard> {
             ],
           ),
         ),
-      ],
+    ];
+    if (items.isEmpty) return;
+
+    final geometry = _menuGeometry(buttonKey);
+    final selected = await showMenu<String>(
+      context: context,
+      position: geometry.position,
+      constraints: geometry.constraints,
+      items: items,
     );
     if (selected == null || !mounted) return;
 
@@ -349,6 +342,8 @@ class _ProductCardState extends State<ProductCard> {
 
   /// The product is only removed when the admin confirms in the snackbar.
   void _askToDelete() {
+    final onDelete = widget.onDelete;
+    if (onDelete == null) return;
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
@@ -357,7 +352,7 @@ class _ProductCardState extends State<ProductCard> {
         action: SnackBarAction(
           label: S.delete,
           textColor: AppColor.whiteColor,
-          onPressed: widget.onDelete ?? () {},
+          onPressed: onDelete,
         ),
       ),
     );
@@ -435,6 +430,10 @@ class _ProductCardState extends State<ProductCard> {
   Widget _buildCard(BuildContext context) {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
+    // الكتابة كلها تمرّ بـ onSave: من لا يملك catalog.product.write تُعرض له
+    // البطاقة قراءةً فقط، فلا حقل يُكتب ولا زرّ لا يملك قاعدةً تنفّذه.
+    final canWrite = widget.onSave != null;
+    final canPickCategory = canWrite && widget.onCreateCategory != null;
     return Container(
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -453,7 +452,7 @@ class _ProductCardState extends State<ProductCard> {
             isSelected: widget.isSelected,
             isFeatured: _draft.isFeatured,
             // The pictures of a product are managed in one place: the gallery.
-            onChangeImage: widget.onOpenImages ?? _changeImage,
+            onChangeImage: widget.onOpenImages,
             onOpenImages: widget.onOpenImages,
             onSelect: widget.onSelect,
             fit: _draft.imageFit,
@@ -471,8 +470,9 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 ProductCardNameRow(
                   nameController: _nameController,
-                  onMore: () => _openMore(_nameMoreKey),
+                  onMore: canWrite ? () => _openMore(_nameMoreKey) : null,
                   moreKey: _nameMoreKey,
+                  readOnly: !canWrite,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProductCardPriceRow(
@@ -480,26 +480,26 @@ class _ProductCardState extends State<ProductCard> {
                   discountedPrice: _discountedPrice,
                   discountPercentage: _draft.discountPercentage,
                   discountActive: _draft.isDiscountActiveAt(DateTime.now()),
+                  readOnly: !canWrite,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ProductCardCategoryRow(
                   categoryName: _categoryName,
                   muted: _categoryId == null || _categoryId!.isEmpty,
-                  onPickCategory: _pickCategory,
-                  onAddCategory: _addCategory,
+                  onPickCategory: canWrite ? _pickCategory : null,
+                  onAddCategory: canPickCategory ? _addCategory : null,
                 ),
               ],
             ),
           ),
-          ProductCardFooter(
-            onMore: () => _openMore(_footerMoreKey),
-            onProductData: _openProductData,
-            moreKey: _footerMoreKey,
-          ),
-          ProductCardSaveBar(
-            onPressed: widget.onSave == null ? null : _save,
-            isSaving: widget.isSaving,
-          ),
+          if (canWrite)
+            ProductCardFooter(
+              onMore: () => _openMore(_footerMoreKey),
+              onProductData: _openProductData,
+              moreKey: _footerMoreKey,
+            ),
+          if (canWrite)
+            ProductCardSaveBar(onPressed: _save, isSaving: widget.isSaving),
         ],
       ),
     );

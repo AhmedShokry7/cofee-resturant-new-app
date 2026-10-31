@@ -7,7 +7,7 @@ class NotificationsState {
     this.isLoading = true,
     this.error,
     this.signedOut = false,
-    this.pushEnabled = false,
+    this.preferences = const NotificationPreferences(),
   });
 
   final List<NotificationModel> notifications;
@@ -15,11 +15,14 @@ class NotificationsState {
   final String? error;
   final bool signedOut;
 
+  /// Every push switch of the customer, as the server holds it.
+  final NotificationPreferences preferences;
+
   /// Whether the customer receives push notifications on this phone.
   ///
   /// It is a switch of the customer, not of the device, so it is the same on
   /// every phone they sign in on.
-  final bool pushEnabled;
+  bool get pushEnabled => preferences.pushEnabled;
 
   bool get isEmpty =>
       !isLoading && error == null && !signedOut && notifications.isEmpty;
@@ -30,13 +33,18 @@ class NotificationsState {
     String? error,
     bool clearError = false,
     bool? signedOut,
+    NotificationPreferences? preferences,
     bool? pushEnabled,
-  }) =>
-      NotificationsState(
-        notifications: notifications ?? this.notifications,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-        signedOut: signedOut ?? this.signedOut,
-        pushEnabled: pushEnabled ?? this.pushEnabled,
-      );
+  }) {
+    final switches = preferences ?? this.preferences;
+    return NotificationsState(
+      notifications: notifications ?? this.notifications,
+      isLoading: isLoading ?? this.isLoading,
+      error: clearError ? null : (error ?? this.error),
+      signedOut: signedOut ?? this.signedOut,
+      preferences: pushEnabled == null
+          ? switches
+          : switches.copyWith(pushEnabled: pushEnabled),
+    );
+  }
 }

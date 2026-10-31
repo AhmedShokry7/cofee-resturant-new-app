@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/app_dependencies.dart';
+import 'package:admin_app/core/catalog/catalog_data.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_branch.dart';
 import 'package:admin_app/core/models/admin_product.dart';
-import 'package:admin_app/core/catalog/catalog_data.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
@@ -106,7 +107,7 @@ class _BranchProductPricingDialogState
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = '$error';
+        _error = adminErrorMessage(error);
         _loading = false;
         _loadingMore = false;
       });
@@ -287,7 +288,7 @@ class _BranchProductDiscountDialogState
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = '$error';
+        _error = adminErrorMessage(error);
         _loading = false;
       });
     }
@@ -300,7 +301,7 @@ class _BranchProductDiscountDialogState
     final percentageText = _percentage.text.trim();
     final percentage = percentageText.isEmpty
         ? null
-        : double.tryParse(percentageText);
+        : parseLocalizedNumber(percentageText);
     final startsText = _startsAt.text.trim();
     final endsText = _endsAt.text.trim();
     final startsAt = startsText.isEmpty ? null : DateTime.tryParse(startsText);
@@ -330,7 +331,7 @@ class _BranchProductDiscountDialogState
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
-      setState(() => _error = '$error');
+      setState(() => _error = adminErrorMessage(error));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

@@ -9,6 +9,7 @@ class AdminSubscription {
     this.customerName,
     this.customerEmail,
     this.customerPhone,
+    this.avatarUrl,
     this.planId,
     this.planCode,
     this.planNameAr,
@@ -37,6 +38,9 @@ class AdminSubscription {
   final String? customerName;
   final String? customerEmail;
   final String? customerPhone;
+
+  /// رابط عرض موقّت للدلو الخاص، أو مسار لم يُقبل توقيعه. انظر AdminAvatarImage.
+  final String? avatarUrl;
   final String? planId;
   final String? planCode;
   final String? planNameAr;
@@ -113,6 +117,7 @@ class AdminSubscription {
       customerName: json['customer_name'] as String?,
       customerEmail: json['customer_email'] as String?,
       customerPhone: json['customer_phone'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       planId: json['plan_id'] as String?,
       planCode: json['plan_code'] as String?,
       planNameAr: json['plan_name_ar'] as String?,

@@ -1,5 +1,6 @@
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_finance.dart';
 import 'package:admin_app/features/hr/presentation/manager/hr_adjustments_cubit.dart';
 import 'package:admin_app/features/hr/presentation/manager/hr_advances_cubit.dart';
@@ -93,11 +94,20 @@ class _HrAdvancesPageState extends State<HrAdvancesPage> {
       noteRequired: false,
     );
     if (installment == null) return;
-    final amount = double.tryParse(installment.trim());
+    final text = installment.trim();
+    final amount = text.isEmpty ? null : parseLocalizedNumber(text);
+    // القسط بأرقام العربية قسطٌ سليم، والمكتوب بلا رقم أو بصفر لا يجوز أن
+    // يمرّ اعتمادًا بلا قسط: يُرفض هنا ولا يُسقطه النداء بصمت.
+    if (text.isNotEmpty && (amount == null || amount <= 0)) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.invalidNumber)));
+      return;
+    }
     await _advances.review(
       advanceId: item.id,
       approve: true,
-      installment: amount != null && amount > 0 ? amount : null,
+      installment: amount,
     );
   }
 
