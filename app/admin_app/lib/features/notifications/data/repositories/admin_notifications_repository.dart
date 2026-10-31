@@ -2,12 +2,10 @@ import 'dart:typed_data';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:admin_app/core/catalog/admin_product_exception.dart';
 import 'package:admin_app/core/config/app_config.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/models/admin_product_image.dart';
 import 'package:admin_app/core/services/admin_avatar_links.dart';
 import 'package:admin_app/core/services/supabase_service.dart';
+import 'package:admin_app/features/notifications/data/campaign_push_image.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_composer.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
@@ -198,20 +196,23 @@ class AdminNotificationsRepository implements NotificationsRepository {
     required String fileName,
     required String contentType,
   }) async {
-    if (bytes.isEmpty) throw AdminProductException(S.imageIsEmpty);
-    if (bytes.length > adminImageMaxBytes) {
-      throw AdminProductException(S.imageTooLarge);
-    }
+    // سقف الصورة هنا سقف FCM لا سقف الدلو: صورة أنجح من الحد تُرفع وتُقبل
+    // وتصل بلا بانر مصوَّر، فلا فائدة من حفظها أصلية.
+    final image = await campaignPushImageOf(
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
     final path =
         'products/notifications/${DateTime.now().microsecondsSinceEpoch}'
-        '${_extensionOf(fileName)}';
+        '${_extensionOf(image.fileName)}';
 
     await _supabase.storage
         .from(_imageBucket)
         .uploadBinary(
           path,
-          bytes,
-          fileOptions: FileOptions(contentType: contentType, upsert: false),
+          image.bytes,
+          fileOptions: FileOptions(contentType: image.type, upsert: false),
         );
 
     return '$_publicPrefix$path';

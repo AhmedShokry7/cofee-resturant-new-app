@@ -33,7 +33,16 @@ bool _ascii(Uint8List bytes, int at, String marker) {
 /// The browser only applies a quality to JPEG and WEBP output, so a large PNG
 /// comes back from it still large. Re-encoding here is what lets a screenshot
 /// or a logo of a category reach the panel instead of being refused.
-Uint8List? adminImageShrinkToJpeg(Uint8List bytes, int quality) {
+///
+/// With [maxBytes] the encoder walks its own quality down until the picture
+/// fits that budget: one pass at [quality] is a guess about how busy the
+/// picture is, and a busy picture of the same pixels can weigh twice a calm
+/// one. The decode happens once for every budget.
+Uint8List? adminImageShrinkToJpeg(
+  Uint8List bytes,
+  int quality, {
+  int? maxBytes,
+}) {
   final picture = img.decodeImage(bytes);
   if (picture == null) return null;
   final edge = AppDimensions.imagePreviewCacheWidth.round() * 2;
@@ -45,5 +54,20 @@ Uint8List? adminImageShrinkToJpeg(Uint8List bytes, int quality) {
           interpolation: img.Interpolation.average,
         )
       : picture;
-  return Uint8List.fromList(img.encodeJpg(scaled, quality: quality));
+  for (final step in _qualitiesFrom(quality, maxBytes != null)) {
+    final encoded = Uint8List.fromList(img.encodeJpg(scaled, quality: step));
+    if (maxBytes == null || encoded.length <= maxBytes) return encoded;
+  }
+  return null;
+}
+
+/// The qualities the encoder tries, in order. Without a budget it is the one
+/// asked for; with one, it keeps stepping down until the bytes stop shrinking.
+List<int> _qualitiesFrom(int quality, bool hasBudget) {
+  if (!hasBudget) return [quality];
+  return [
+    quality,
+    for (final step in const [75, 60, 45])
+      if (step < quality) step,
+  ];
 }

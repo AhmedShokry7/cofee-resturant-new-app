@@ -29,7 +29,11 @@ class MainActivity : FlutterActivity() {
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.app_name),
-            NotificationManager.IMPORTANCE_DEFAULT,
+            // A picture rides only an expanded banner, and a banner that lands
+            // straight in the shade is never expanded. High importance is what
+            // puts the notification on the screen; which kinds reach the phone
+            // at all stays the customer's switch in the app.
+            NotificationManager.IMPORTANCE_HIGH,
         )
         channel.description = getString(R.string.notification_channel_description)
         manager.createNotificationChannel(channel)

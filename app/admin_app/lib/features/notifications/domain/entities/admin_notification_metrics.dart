@@ -19,6 +19,13 @@ class AdminNotificationMetrics {
     this.pushSkipped = 0,
     this.pushInvalidToken = 0,
     this.pushSuccessRate,
+    this.emailEnabledCustomers = 0,
+    this.emailableCustomers = 0,
+    this.emailSent = 0,
+    this.emailFailed = 0,
+    this.emailSkipped = 0,
+    this.emailLastError,
+    this.emailSuccessRate,
     this.byType = const <AdminNotificationType, int>{},
   });
 
@@ -42,6 +49,24 @@ class AdminNotificationMetrics {
   /// between 0 and 100, or null when nothing was attempted.
   final double? pushSuccessRate;
 
+  /// Customers who opted in to the mail channel, whether or not they have an
+  /// address on file.
+  final int emailEnabledCustomers;
+
+  /// Customers the panel can actually mail: opted in and holding an address.
+  final int emailableCustomers;
+  final int emailSent;
+  final int emailFailed;
+  final int emailSkipped;
+
+  /// The provider's own words about the last failed delivery, or null when no
+  /// delivery has failed. It is what tells the admin why nothing arrived.
+  final String? emailLastError;
+
+  /// The share of mail attempts that reached the provider in the last 30 days,
+  /// between 0 and 100, or null when nothing was attempted.
+  final double? emailSuccessRate;
+
   final Map<AdminNotificationType, int> byType;
 
   static const empty = AdminNotificationMetrics();
@@ -51,6 +76,7 @@ class AdminNotificationMetrics {
   factory AdminNotificationMetrics.fromJson(Map<String, dynamic> json) {
     final rawByType = notificationMap(json['by_type']);
     final rawPush = notificationMap(json['push']);
+    final rawEmail = notificationMap(json['email']);
     final byType = <AdminNotificationType, int>{
       for (final type in AdminNotificationType.values)
         type: notificationInt(rawByType?[type.value]),
@@ -74,6 +100,15 @@ class AdminNotificationMetrics {
       pushSuccessRate: json['push_success_rate'] == null
           ? null
           : notificationDouble(json['push_success_rate']),
+      emailEnabledCustomers: notificationInt(json['email_enabled_customers']),
+      emailableCustomers: notificationInt(json['emailable_customers']),
+      emailSent: notificationInt(rawEmail?['sent']),
+      emailFailed: notificationInt(rawEmail?['failed']),
+      emailSkipped: notificationInt(rawEmail?['skipped']),
+      emailLastError: notificationText(rawEmail?['last_error']),
+      emailSuccessRate: json['email_success_rate'] == null
+          ? null
+          : notificationDouble(json['email_success_rate']),
       byType: Map<AdminNotificationType, int>.unmodifiable(byType),
     );
   }

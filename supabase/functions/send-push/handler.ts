@@ -29,6 +29,10 @@ import {
   type FcmSendResult,
   type ServiceAccount,
 } from "../_shared/fcm.ts";
+import {
+  publicImageUrlOf,
+  storageHostOf,
+} from "../_shared/storage_url.ts";
 
 /// The notification as the database hands it over.
 export type PushNotification = {
@@ -138,55 +142,11 @@ function textFor(
   return primary.trim() || secondary.trim();
 }
 
-/// The buckets a push picture may come from.
-///
-/// FCM downloads the URL itself, on the device, minutes or days after the
-/// message was written. Only an anonymously readable object of this project
-/// can still be there then: a signed URL expires in an hour and a private
-/// bucket answers 404 to the phone, so both would be a broken banner.
-const PUSH_IMAGE_BUCKETS = ["product-images"];
-
-/// The longest URL FCM is handed.
-const MAX_IMAGE_URL_LENGTH = 2048;
-
-/// The host the storage objects of this project are read from.
-export function storageHostOf(supabaseUrl: string | undefined): string | null {
-  if (!supabaseUrl) return null;
-  try {
-    return new URL(supabaseUrl).host;
-  } catch {
-    return null;
-  }
-}
-
-/// The public picture of a campaign, or null when it is not one.
-///
-/// The value is chosen by an admin, so it is treated as untrusted input: a URL
-/// that carries credentials, points at another host, or comes from a private
-/// bucket would leak the vault secret to whoever the message is shown to, or
-/// hand out a link that dies before the phone fetches it.
-export function pushImageUrlOf(
-  raw: unknown,
-  allowedHost: string | null,
-): string | null {
-  if (typeof raw !== "string") return null;
-  const text = raw.trim();
-  if (text.length === 0 || text.length > MAX_IMAGE_URL_LENGTH) return null;
-  if (!allowedHost) return null;
-  let url: URL;
-  try {
-    url = new URL(text);
-  } catch {
-    return null;
-  }
-  if (url.protocol !== "https:" || url.host !== allowedHost) return null;
-  if (url.username !== "" || url.password !== "") return null;
-  return PUSH_IMAGE_BUCKETS.some((bucket) =>
-    url.pathname.startsWith(`/storage/v1/object/public/${bucket}/`)
-  )
-    ? url.toString()
-    : null;
-}
+/// Which picture may travel to a device is a rule the mail channel needs in
+/// exactly the same form, so it lives in one shared file. The name the push
+/// has always used stays here, so its callers and its tests are untouched.
+export const pushImageUrlOf = publicImageUrlOf;
+export { storageHostOf };
 
 /// The screen code of a campaign, or null when it is not a usable one.
 ///

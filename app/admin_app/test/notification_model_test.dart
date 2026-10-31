@@ -309,6 +309,15 @@ void main() {
         'devices_total': 340,
         'push_success_rate': 93.4,
         'push': {'sent': 180, 'failed': 9, 'skipped': 4, 'invalid_token': 3},
+        'email_enabled_customers': 40,
+        'emailable_customers': 37,
+        'email_success_rate': 88.9,
+        'email': {
+          'sent': 24,
+          'failed': 3,
+          'skipped': 6,
+          'last_error': 'resend 403: the domain is not verified',
+        },
         'by_type': {
           'order_status': 70,
           'promo': 20,
@@ -334,6 +343,13 @@ void main() {
       expect(metrics.pushFailed, 9);
       expect(metrics.pushSkipped, 4);
       expect(metrics.pushInvalidToken, 3);
+      expect(metrics.emailEnabledCustomers, 40);
+      expect(metrics.emailableCustomers, 37);
+      expect(metrics.emailSent, 24);
+      expect(metrics.emailFailed, 3);
+      expect(metrics.emailSkipped, 6);
+      expect(metrics.emailSuccessRate, 88.9);
+      expect(metrics.emailLastError, 'resend 403: the domain is not verified');
       expect(metrics.countFor(AdminNotificationType.orderStatus), 70);
       expect(metrics.countFor(AdminNotificationType.loyalty), 15);
       expect(metrics.countFor(AdminNotificationType.system), 10);
@@ -347,6 +363,9 @@ void main() {
       expect(metrics.total, 0);
       expect(metrics.pushSuccessRate, isNull);
       expect(metrics.pushSent, 0);
+      expect(metrics.emailSuccessRate, isNull);
+      expect(metrics.emailLastError, isNull);
+      expect(metrics.emailableCustomers, 0);
       expect(metrics.countFor(AdminNotificationType.promo), 0);
       expect(metrics.byType.keys, AdminNotificationType.values);
       expect(AdminNotificationMetrics.empty.total, 0);
@@ -360,6 +379,58 @@ void main() {
       expect(
         notificationRowsLabel(1, 10, 25),
         'Showing 1–10 of 25 notifications',
+      );
+    });
+
+    test(
+      'a refusal outranks an empty audience and a delivered one reads ready',
+      () {
+        const refused = AdminNotificationMetrics(
+          emailableCustomers: 0,
+          emailLastError: 'resend 403: the domain is not verified',
+        );
+        expect(
+          notificationEmailChannelStatus(refused),
+          NotificationEmailChannelStatus.blocked,
+        );
+
+        const nobody = AdminNotificationMetrics(
+          emailableCustomers: 0,
+          emailSkipped: 4,
+        );
+        expect(
+          notificationEmailChannelStatus(nobody),
+          NotificationEmailChannelStatus.noTarget,
+        );
+
+        const untried = AdminNotificationMetrics(emailableCustomers: 3);
+        expect(
+          notificationEmailChannelStatus(untried),
+          NotificationEmailChannelStatus.idle,
+        );
+
+        const delivered = AdminNotificationMetrics(
+          emailableCustomers: 3,
+          emailSent: 2,
+          emailSuccessRate: 100,
+        );
+        expect(
+          notificationEmailChannelStatus(delivered),
+          NotificationEmailChannelStatus.ready,
+        );
+      },
+    );
+
+    test('a channel that reached the provider prints the refusal anyway', () {
+      const mixed = AdminNotificationMetrics(
+        emailableCustomers: 3,
+        emailSent: 2,
+        emailFailed: 1,
+        emailLastError: 'resend 429: too many requests',
+      );
+      expect(
+        notificationEmailChannelStatus(mixed),
+        NotificationEmailChannelStatus.ready,
       );
     });
   });
@@ -479,6 +550,43 @@ void main() {
       );
       expect(
         notificationPushHealthStatus(deliveryFailure),
+        NotificationPushHealthStatus.warning,
+      );
+    });
+
+    test('an error the channel already recovered from reads healthy', () {
+      final recovered = AdminPushHealth(
+        vaultAvailable: true,
+        webhookSecretConfigured: true,
+        pgNetInstalled: true,
+        dispatchTriggerInstalled: true,
+        functionUrlConfigured: true,
+        reachableCustomers: 3,
+        delivered30d: 16,
+        lastSuccessAt: DateTime.utc(2026, 10, 31, 20, 43),
+        lastError: 'Google token endpoint 400: Invalid JWT Signature',
+        lastErrorAt: DateTime.utc(2026, 10, 29, 8, 2),
+      );
+      final stillBroken = AdminPushHealth(
+        vaultAvailable: true,
+        webhookSecretConfigured: true,
+        pgNetInstalled: true,
+        dispatchTriggerInstalled: true,
+        functionUrlConfigured: true,
+        reachableCustomers: 3,
+        lastSuccessAt: DateTime.utc(2026, 10, 29, 8, 2),
+        lastError: 'Google token endpoint 400: Invalid JWT Signature',
+        lastErrorAt: DateTime.utc(2026, 10, 31, 20, 43),
+      );
+
+      expect(recovered.hasCurrentError, isFalse);
+      expect(
+        notificationPushHealthStatus(recovered),
+        NotificationPushHealthStatus.ready,
+      );
+      expect(stillBroken.hasCurrentError, isTrue);
+      expect(
+        notificationPushHealthStatus(stillBroken),
         NotificationPushHealthStatus.warning,
       );
     });

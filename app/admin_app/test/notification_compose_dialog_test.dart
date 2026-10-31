@@ -47,6 +47,10 @@ class _FakeComposeRepository extends AdminNotificationsRepository {
   /// The files the composer asked to throw away again.
   final List<String> deletedImageUrls = <String>[];
 
+  /// What the page already knows about the two channels when the composer
+  /// opens — the same metrics the panel above the directory is reading.
+  AdminNotificationMetrics metrics = AdminNotificationMetrics.empty;
+
   @override
   Future<AdminNotificationPage> loadNotifications({
     String? search,
@@ -58,8 +62,7 @@ class _FakeComposeRepository extends AdminNotificationsRepository {
   }) async => const AdminNotificationPage();
 
   @override
-  Future<AdminNotificationMetrics> loadMetrics() async =>
-      AdminNotificationMetrics.empty;
+  Future<AdminNotificationMetrics> loadMetrics() async => metrics;
 
   @override
   Future<AdminPushHealth> loadPushHealth() async => const AdminPushHealth();
@@ -424,5 +427,44 @@ void main() {
     expect(find.byKey(const Key('notification-compose-dialog')), findsNothing);
     expect(repository.sentDraft, isNull);
     expect(repository.deletedImageUrls, hasLength(1));
+  });
+
+  testWidgets('a refused mail channel is said before the campaign goes out', (
+    tester,
+  ) async {
+    _setViewport(tester, 1200);
+    final repository = _FakeComposeRepository();
+    repository.metrics = const AdminNotificationMetrics(
+      emailableCustomers: 1,
+      emailEnabledCustomers: 1,
+      emailFailed: 2,
+      emailLastError: 'resend 403: the ofoq.com domain is not verified',
+    );
+    final cubit = AdminNotificationsCubit(repository: repository);
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    await _openComposer(tester, cubit);
+
+    expect(find.text(S.notificationsComposeMailBlocked), findsOneWidget);
+  });
+
+  testWidgets('a mail channel that reached the inbox is not doubted', (
+    tester,
+  ) async {
+    _setViewport(tester, 1200);
+    final repository = _FakeComposeRepository();
+    repository.metrics = const AdminNotificationMetrics(
+      emailableCustomers: 4,
+      emailEnabledCustomers: 6,
+      emailSent: 3,
+    );
+    final cubit = AdminNotificationsCubit(repository: repository);
+    addTearDown(cubit.close);
+    await cubit.load();
+
+    await _openComposer(tester, cubit);
+
+    expect(find.text(S.notificationsComposeMailBlocked), findsNothing);
   });
 }

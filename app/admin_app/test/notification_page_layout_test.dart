@@ -263,6 +263,13 @@ void main() {
     );
     expect(find.byKey(const Key('notification-health-setup')), findsOneWidget);
 
+    expect(
+      find.byKey(const Key('notification-email-channel')),
+      findsOneWidget,
+    );
+    expect(find.text(S.notificationsEmailTitle), findsOneWidget);
+    expect(find.text(S.notificationsEmailNoTarget), findsOneWidget);
+
     expect(find.text(S.notificationsTableNotification), findsOneWidget);
     expect(find.text(S.notificationsTableCustomer), findsOneWidget);
     expect(find.text(S.notificationsTableType), findsOneWidget);

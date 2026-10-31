@@ -69,6 +69,20 @@ class AdminPushHealth {
   /// True when at least one customer can actually receive a push.
   bool get hasReachableDevices => reachableCustomers > 0;
 
+  /// True when the recorded error still describes the channel.
+  ///
+  /// The error line is the newest failure the database holds, not the newest
+  /// event: one refused token months ago stays there after a hundred later
+  /// sends went through. Reading it as the current state would keep a working
+  /// channel marked unhealthy forever, and the operator would stop trusting the
+  /// panel. An error that cannot be dated stays current.
+  bool get hasCurrentError =>
+      lastError != null &&
+      lastError!.isNotEmpty &&
+      (lastErrorAt == null ||
+          lastSuccessAt == null ||
+          !lastErrorAt!.isBefore(lastSuccessAt!));
+
   factory AdminPushHealth.fromJson(Map<String, dynamic> json) {
     final deliveries = notificationMap(json['deliveries_30d']);
     return AdminPushHealth(

@@ -4,17 +4,21 @@ import 'package:new_coffee/core/data/db_values.dart';
 
 /// The switches the server holds for one customer.
 ///
-/// [pushEnabled] is the master gate. The four type switches decide which kinds
-/// may still be pushed after it is open, and the send-push function reads them
-/// from this same row before it contacts FCM, so a switch written here is
-/// honoured on every device of the customer.
+/// [pushEnabled] and [emailEnabled] are the two channels, each with its own
+/// gate: a phone banner and a mailbox are different promises, and a customer
+/// who wants one of them is not asked for the other. The four type switches
+/// decide which kinds may still go out after a channel is open, and the
+/// send-push and send-email functions read them from this same row before they
+/// contact FCM or Resend, so a switch written here is honoured on every device
+/// and every address of the customer.
 ///
 /// In-app rows are not filtered by any of them: the list on the notifications
-/// screen stays complete whether or not a push was allowed to go out.
+/// screen stays complete whether or not a push or a mail was allowed to go out.
 @immutable
 class NotificationPreferences {
   const NotificationPreferences({
     this.pushEnabled = false,
+    this.emailEnabled = false,
     this.orderStatus = true,
     this.promo = true,
     this.loyalty = true,
@@ -22,6 +26,7 @@ class NotificationPreferences {
   });
 
   final bool pushEnabled;
+  final bool emailEnabled;
   final bool orderStatus;
   final bool promo;
   final bool loyalty;
@@ -30,6 +35,7 @@ class NotificationPreferences {
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) =>
       NotificationPreferences(
         pushEnabled: Db.asBool(json['push_enabled']),
+        emailEnabled: Db.asBool(json['email_enabled']),
         orderStatus: Db.asBool(json['order_status'], fallback: true),
         promo: Db.asBool(json['promo'], fallback: true),
         loyalty: Db.asBool(json['loyalty'], fallback: true),
@@ -38,12 +44,14 @@ class NotificationPreferences {
 
   NotificationPreferences copyWith({
     bool? pushEnabled,
+    bool? emailEnabled,
     bool? orderStatus,
     bool? promo,
     bool? loyalty,
     bool? system,
   }) => NotificationPreferences(
     pushEnabled: pushEnabled ?? this.pushEnabled,
+    emailEnabled: emailEnabled ?? this.emailEnabled,
     orderStatus: orderStatus ?? this.orderStatus,
     promo: promo ?? this.promo,
     loyalty: loyalty ?? this.loyalty,
@@ -61,16 +69,23 @@ class NotificationPreferences {
   bool operator ==(Object other) =>
       other is NotificationPreferences &&
       other.pushEnabled == pushEnabled &&
+      other.emailEnabled == emailEnabled &&
       other.orderStatus == orderStatus &&
       other.promo == promo &&
       other.loyalty == loyalty &&
       other.system == system;
 
   @override
-  int get hashCode =>
-      Object.hash(pushEnabled, orderStatus, promo, loyalty, system);
+  int get hashCode => Object.hash(
+    pushEnabled,
+    emailEnabled,
+    orderStatus,
+    promo,
+    loyalty,
+    system,
+  );
 }
 
-/// A type switch the customer can turn off. The master push switch is not one
-/// of these: it gates every push on its own.
+/// A type switch the customer can turn off. The two channel switches are not
+/// among these: each of them gates every kind of its own channel on its own.
 enum NotificationPreferenceKey { orderStatus, promo, loyalty, system }

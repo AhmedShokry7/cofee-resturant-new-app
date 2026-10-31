@@ -7,6 +7,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_directory.dart';
+import 'package:admin_app/features/notifications/presentation/widgets/notification_email_channel_panel.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_metrics_cards.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_push_health_panel.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
@@ -82,6 +83,8 @@ class NotificationPageBody extends StatelessWidget {
               onRecheck: onRecheck,
               onSetup: onSetup,
             ),
+            const SizedBox(height: AppSizes.px14),
+            NotificationEmailChannelPanel(metrics: metrics),
             const SizedBox(height: AppSizes.px14),
           ];
           if (compact) {

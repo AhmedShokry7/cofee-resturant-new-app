@@ -727,11 +727,53 @@ class _NotificationComposeDialogState extends State<NotificationComposeDialog> {
                 ),
                 const SizedBox(height: AppSizes.px2),
                 _estimateBody(theme),
+                if (_mailChannelBlocked) ...[
+                  const SizedBox(height: AppSizes.px6),
+                  _mailChannelNote(theme),
+                ],
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  /// The mail half of this campaign is already known to fail.
+  ///
+  /// Every insert into `engagement.notifications` asks the mail function, so a
+  /// campaign that goes out while the provider refuses the domain produces a
+  /// refused row per customer. Saying so before the send is what keeps the
+  /// directory's "delivered" from reading as though nothing was missed.
+  bool get _mailChannelBlocked =>
+      notificationEmailChannelStatus(widget.cubit.state.metrics) ==
+      NotificationEmailChannelStatus.blocked;
+
+  Widget _mailChannelNote(ThemeData theme) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: AppSpacing.xs),
+          child: AppIcon(
+            AppIcons.email,
+            size: 13,
+            color: AppColor.adminWarning,
+          ),
+        ),
+        const SizedBox(width: AppSizes.px6),
+        Expanded(
+          child: Text(
+            S.notificationsComposeMailBlocked,
+            style: TextStyle(
+              color: adminFlagForeground(theme, AppColor.adminWarning),
+              fontSize: AppFontSizes.size8_5,
+              fontWeight: AppFontWeights.medium,
+              height: AppTextHeights.line1_5,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

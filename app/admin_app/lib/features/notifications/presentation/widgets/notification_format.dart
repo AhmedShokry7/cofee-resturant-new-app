@@ -8,6 +8,7 @@ import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification.dart';
+import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 
 String notificationCountValue(int value) => localizeDigits(formatCount(value));
@@ -188,9 +189,7 @@ NotificationPushHealthStatus notificationPushHealthStatus(
   final webhookStatus = health.lastWebhookStatus;
   final webhookFailed =
       webhookStatus != null && (webhookStatus < 200 || webhookStatus >= 300);
-  if (!health.hasReachableDevices ||
-      webhookFailed ||
-      health.lastError != null) {
+  if (!health.hasReachableDevices || webhookFailed || health.hasCurrentError) {
     return NotificationPushHealthStatus.warning;
   }
   return NotificationPushHealthStatus.ready;
@@ -248,3 +247,49 @@ List<NotificationHealthCheck> notificationHealthChecks(
     ok: health.functionUrlConfigured,
   ),
 ];
+
+/// Where the mail channel stands, read only from what the database recorded.
+///
+/// A refusal outranks an empty audience: an address the provider rejected is
+/// the more urgent of the two, and unlike push there is no device that can be
+/// blamed for it.
+enum NotificationEmailChannelStatus { blocked, noTarget, idle, ready }
+
+NotificationEmailChannelStatus notificationEmailChannelStatus(
+  AdminNotificationMetrics metrics,
+) {
+  if (metrics.emailSent == 0 && metrics.emailLastError != null) {
+    return NotificationEmailChannelStatus.blocked;
+  }
+  if (metrics.emailableCustomers == 0) {
+    return NotificationEmailChannelStatus.noTarget;
+  }
+  if (metrics.emailSent + metrics.emailFailed + metrics.emailSkipped == 0) {
+    return NotificationEmailChannelStatus.idle;
+  }
+  return NotificationEmailChannelStatus.ready;
+}
+
+String notificationEmailChannelLabel(NotificationEmailChannelStatus status) =>
+    switch (status) {
+      NotificationEmailChannelStatus.blocked => S.notificationsEmailBlocked,
+      NotificationEmailChannelStatus.noTarget => S.notificationsEmailNoTarget,
+      NotificationEmailChannelStatus.idle => S.notificationsEmailIdle,
+      NotificationEmailChannelStatus.ready => S.notificationsEmailReady,
+    };
+
+Color notificationEmailChannelColor(NotificationEmailChannelStatus status) =>
+    switch (status) {
+      NotificationEmailChannelStatus.blocked => AppColor.trendNegative,
+      NotificationEmailChannelStatus.noTarget => AppColor.adminWarning,
+      NotificationEmailChannelStatus.idle => AppColor.adminMuted,
+      NotificationEmailChannelStatus.ready => AppColor.trendPositive,
+    };
+
+Color notificationEmailChannelSurface(NotificationEmailChannelStatus status) =>
+    switch (status) {
+      NotificationEmailChannelStatus.blocked => AppColor.trendNegativeSurface,
+      NotificationEmailChannelStatus.noTarget => AppColor.adminWarningSurface,
+      NotificationEmailChannelStatus.idle => AppColor.adminTableHeader,
+      NotificationEmailChannelStatus.ready => AppColor.trendPositiveSurface,
+    };

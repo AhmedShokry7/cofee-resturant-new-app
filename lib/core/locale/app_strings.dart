@@ -764,10 +764,15 @@ class S {
       ? 'لم يُسمح بالإشعارات. فعّلها من إعدادات الهاتف.'
       : 'Notifications are not allowed. Turn them on in the phone settings.';
   static String get notificationPreferences =>
-      _ar ? 'أنواع الإشعارات' : 'Notification types';
+      _ar ? 'إعدادات الإشعارات' : 'Notification settings';
   static String get notificationPreferencesHint => _ar
-      ? 'هذه المفاتيح تحدد الإشعارات الفورية التي تصل هاتفك. قائمة الإشعارات داخل التطبيق تصل كاملة مهما كان اختيارك.'
-      : 'These switches decide which pushes reach your phone. The in-app list arrives complete whatever you choose.';
+      ? 'هذه المفاتيح تحدد ما يصلك فورًا على الهاتف أو في بريدك. قائمة الإشعارات داخل التطبيق تصل كاملة مهما كان اختيارك.'
+      : 'These switches decide what reaches your phone or your mailbox at once. The in-app list arrives complete whatever you choose.';
+  static String get preferenceEmail =>
+      _ar ? 'رسائل البريد الإلكتروني' : 'E-mail messages';
+  static String get preferenceEmailHint => _ar
+      ? 'تصل إلى البريد المسجّل في حسابك، منفصلة تمامًا عن إشعارات الهاتف'
+      : 'They arrive at the address on your account, apart from phone notifications';
   static String get preferenceOrderStatus =>
       _ar ? 'تحديثات الطلبات' : 'Order updates';
   static String get preferenceOrderStatusHint => _ar

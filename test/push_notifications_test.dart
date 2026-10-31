@@ -54,6 +54,7 @@ class _FakePushRepository implements PushRepository {
   @override
   Future<NotificationPreferences> setPreferences({
     bool? pushEnabled,
+    bool? emailEnabled,
     bool? orderStatus,
     bool? promo,
     bool? loyalty,

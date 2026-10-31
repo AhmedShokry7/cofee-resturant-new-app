@@ -257,6 +257,22 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     emit(state.copyWith(pushEnabled: changed));
   }
 
+  /// Turns the mail channel on or off, and says whether the server kept it.
+  ///
+  /// No system permission is involved here, unlike the push: the address is
+  /// already on the account. The state takes what the write returned, so a
+  /// refused write leaves the switch where the server left it.
+  Future<bool> setEmailEnabled(bool enabled) async {
+    try {
+      final saved = await _pushRepository.setPreferences(emailEnabled: enabled);
+      if (isClosed) return false;
+      emit(state.copyWith(preferences: saved));
+      return saved.emailEnabled == enabled;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// Turns one kind of push on or off, and says whether the server kept it.
   ///
   /// The switches belong to the customer's row, so the state takes what the

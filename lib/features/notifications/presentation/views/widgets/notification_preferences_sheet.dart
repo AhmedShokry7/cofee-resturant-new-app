@@ -9,7 +9,8 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 
-/// Opens the type switches of the signed-in customer.
+/// Opens the switches of the signed-in customer: the mail channel and the four
+/// kinds.
 ///
 /// Every switch is read from, and written to, the server row, so the sheet
 /// shows what the store actually holds rather than what this phone once asked
@@ -67,6 +68,7 @@ class _PreferencesSheet extends StatelessWidget {
                   previous.preferences != current.preferences,
               builder: (context, state) => Column(
                 children: [
+                  _EmailSwitchRow(value: state.preferences.emailEnabled),
                   for (final preference in NotificationPreferenceKey.values)
                     _PreferenceRow(
                       preference: preference,
@@ -78,6 +80,38 @@ class _PreferencesSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The mail channel of the customer, one switch of the server row.
+///
+/// It sits above the type switches because it gates every kind of mail on its
+/// own, exactly like the push switch does for the phone. A write the server
+/// refuses leaves the switch where the row left it and says so.
+class _EmailSwitchRow extends StatelessWidget {
+  const _EmailSwitchRow({required this.value});
+
+  final bool value;
+
+  @override
+  Widget build(BuildContext context) {
+    return SwitchListTile(
+      value: value,
+      onChanged: (requested) async {
+        final saved = await context
+            .read<NotificationsCubit>()
+            .setEmailEnabled(requested);
+        if (saved || !context.mounted) return;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(S.preferenceNotSaved)));
+      },
+      title: Text(S.preferenceEmail, style: AppFonts.semiBold16(context)),
+      subtitle: Text(
+        S.preferenceEmailHint,
+        style: AppFonts.regular14(context).copyWith(color: AppColor.greyColor),
+      ),
+      contentPadding: EdgeInsets.zero,
     );
   }
 }

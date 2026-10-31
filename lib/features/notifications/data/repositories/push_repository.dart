@@ -39,8 +39,12 @@ abstract class PushRepository {
 
   /// Writes any subset of the switches and answers with the row the server
   /// kept, so the screen shows what was stored rather than what was asked.
+  ///
+  /// [pushEnabled] and [emailEnabled] are the two channels; an argument left
+  /// null is a switch this write does not touch.
   Future<NotificationPreferences> setPreferences({
     bool? pushEnabled,
+    bool? emailEnabled,
     bool? orderStatus,
     bool? promo,
     bool? loyalty,
@@ -122,6 +126,7 @@ class PushRepositoryImpl implements PushRepository {
   @override
   Future<NotificationPreferences> setPreferences({
     bool? pushEnabled,
+    bool? emailEnabled,
     bool? orderStatus,
     bool? promo,
     bool? loyalty,
@@ -132,6 +137,7 @@ class PushRepositoryImpl implements PushRepository {
       'set_push_preferences',
       params: <String, Object?>{
         'p_push_enabled': ?pushEnabled,
+        'p_email_enabled': ?emailEnabled,
         'p_order_status': ?orderStatus,
         'p_promo': ?promo,
         'p_loyalty': ?loyalty,

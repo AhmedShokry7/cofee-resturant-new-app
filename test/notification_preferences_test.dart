@@ -17,6 +17,7 @@ import 'package:new_coffee/features/notifications/presentation/views/widgets/not
 /// not leave a switch drawn in a position the server never stored.
 class _FakePushRepository implements PushRepository {
   bool pushEnabled = false;
+  bool emailEnabled = false;
   bool orderStatus = true;
   bool promo = true;
   bool loyalty = true;
@@ -26,6 +27,7 @@ class _FakePushRepository implements PushRepository {
 
   NotificationPreferences get row => NotificationPreferences(
     pushEnabled: pushEnabled,
+    emailEnabled: emailEnabled,
     orderStatus: orderStatus,
     promo: promo,
     loyalty: loyalty,
@@ -56,6 +58,7 @@ class _FakePushRepository implements PushRepository {
   @override
   Future<NotificationPreferences> setPreferences({
     bool? pushEnabled,
+    bool? emailEnabled,
     bool? orderStatus,
     bool? promo,
     bool? loyalty,
@@ -64,6 +67,7 @@ class _FakePushRepository implements PushRepository {
     writeCount++;
     if (refuseWrites) throw StateError('The write was refused.');
     this.pushEnabled = pushEnabled ?? this.pushEnabled;
+    this.emailEnabled = emailEnabled ?? this.emailEnabled;
     this.orderStatus = orderStatus ?? this.orderStatus;
     this.promo = promo ?? this.promo;
     this.loyalty = loyalty ?? this.loyalty;
@@ -91,9 +95,10 @@ NotificationsCubit _cubit(_FakePushRepository push) => NotificationsCubit(
 
 void main() {
   group('NotificationPreferences', () {
-    test('a missing row allows every type and pushes nothing', () {
+    test('a missing row allows every type and opens no channel', () {
       const preferences = NotificationPreferences();
       expect(preferences.pushEnabled, isFalse);
+      expect(preferences.emailEnabled, isFalse);
       expect(preferences.orderStatus, isTrue);
       expect(preferences.promo, isTrue);
       expect(preferences.loyalty, isTrue);
@@ -104,6 +109,7 @@ void main() {
       final preferences = NotificationPreferences.fromJson(
         const <String, dynamic>{
           'push_enabled': true,
+          'email_enabled': true,
           'order_status': false,
           'promo': true,
           'loyalty': false,
@@ -111,6 +117,7 @@ void main() {
         },
       );
       expect(preferences.pushEnabled, isTrue);
+      expect(preferences.emailEnabled, isTrue);
       expect(preferences.orderStatus, isFalse);
       expect(preferences.loyalty, isFalse);
       expect(preferences.valueOf(NotificationPreferenceKey.promo), isTrue);
@@ -122,6 +129,9 @@ void main() {
       );
       expect(preferences.orderStatus, isTrue);
       expect(preferences.system, isTrue);
+      // A row written before the mail channel existed mails nobody: the switch
+      // is asked for, never assumed.
+      expect(preferences.emailEnabled, isFalse);
     });
   });
 
@@ -209,6 +219,54 @@ void main() {
       expect(cubit.state.preferences.orderStatus, isFalse);
     });
 
+    test('the mail switch opens the mail channel and nothing else', () async {
+      final push = _FakePushRepository()
+        ..pushEnabled = true
+        ..promo = false;
+      final cubit = _cubit(push);
+      addTearDown(cubit.close);
+      await cubit.loadPushState();
+
+      final saved = await cubit.setEmailEnabled(true);
+
+      expect(saved, isTrue);
+      expect(push.emailEnabled, isTrue);
+      // The push is a separate promise: agreeing to mail does not switch the
+      // phone banner on, and it does not re-open a type the customer closed.
+      expect(push.pushEnabled, isTrue);
+      expect(push.promo, isFalse);
+      expect(cubit.state.preferences.emailEnabled, isTrue);
+    });
+
+    test('a refused mail write leaves the switch where the server left it',
+      () async {
+        final push = _FakePushRepository()..refuseWrites = true;
+        final cubit = _cubit(push);
+        addTearDown(cubit.close);
+        await cubit.loadPushState();
+
+        final saved = await cubit.setEmailEnabled(true);
+
+        expect(saved, isFalse);
+        expect(push.emailEnabled, isFalse);
+        expect(cubit.state.preferences.emailEnabled, isFalse);
+      },
+    );
+
+    test('closing the mail channel does not close the phone one', () async {
+      final push = _FakePushRepository()
+        ..pushEnabled = true
+        ..emailEnabled = true;
+      final cubit = _cubit(push);
+      addTearDown(cubit.close);
+      await cubit.loadPushState();
+
+      await cubit.setEmailEnabled(false);
+
+      expect(cubit.state.preferences.emailEnabled, isFalse);
+      expect(cubit.state.pushEnabled, isTrue);
+    });
+
     test(
       'a customer who signs out loses the switches of the previous one',
       () async {
@@ -229,9 +287,11 @@ void main() {
 
   group('preferences sheet', () {
     testWidgets(
-      'every type switch is offered and reads what the server holds',
+      'the mail channel and every type switch read what the server holds',
       (tester) async {
-        final push = _FakePushRepository()..loyalty = false;
+        final push = _FakePushRepository()
+          ..emailEnabled = true
+          ..loyalty = false;
         final cubit = _cubit(push);
         addTearDown(cubit.close);
         await cubit.loadPushState();
@@ -240,23 +300,49 @@ void main() {
         await tester.tap(find.byKey(const Key('open-preferences')));
         await tester.pumpAndSettle();
 
-        expect(find.byType(SwitchListTile), findsNWidgets(4));
+        expect(find.byType(SwitchListTile), findsNWidgets(5));
         final rows = tester
             .widgetList<SwitchListTile>(find.byType(SwitchListTile))
             .toList();
-        // The order is the order of NotificationPreferenceKey: order updates,
-        // offers, loyalty, store messages.
+        // The mail channel is offered first, then the types in the order of
+        // NotificationPreferenceKey: order updates, offers, loyalty, messages.
         expect(rows[0].value, isTrue);
-        expect(rows[2].value, isFalse);
+        expect(rows[1].value, isTrue);
+        expect(rows[3].value, isFalse);
 
-        await tester.tap(find.byType(Switch).at(1));
+        // Five rows are taller than the test window, so the row that is about
+        // to be tapped is brought into view first.
+        await tester.ensureVisible(find.byType(SwitchListTile).at(2));
+        await tester.tap(find.byType(Switch).at(2));
         await tester.pumpAndSettle();
 
         expect(push.promo, isFalse);
         final after = tester
             .widgetList<SwitchListTile>(find.byType(SwitchListTile))
             .toList();
-        expect(after[1].value, isFalse);
+        expect(after[2].value, isFalse);
+      },
+    );
+
+    testWidgets(
+      'tapping the mail switch writes the mail column of the row',
+      (tester) async {
+        final push = _FakePushRepository();
+        final cubit = _cubit(push);
+        addTearDown(cubit.close);
+        await cubit.loadPushState();
+
+        await tester.pumpWidget(_harness(cubit));
+        await tester.tap(find.byKey(const Key('open-preferences')));
+        await tester.pumpAndSettle();
+
+        await tester.tap(find.byType(Switch).first);
+        await tester.pumpAndSettle();
+
+        expect(push.writeCount, 1);
+        expect(push.emailEnabled, isTrue);
+        expect(push.pushEnabled, isFalse);
+        expect(find.byType(SnackBar), findsNothing);
       },
     );
 
@@ -272,14 +358,16 @@ void main() {
         await tester.tap(find.byKey(const Key('open-preferences')));
         await tester.pumpAndSettle();
 
-        await tester.tap(find.byType(Switch).first);
+        // The second switch is the first of the types: order updates.
+        await tester.ensureVisible(find.byType(SwitchListTile).at(1));
+        await tester.tap(find.byType(Switch).at(1));
         await tester.pumpAndSettle();
 
         expect(push.orderStatus, isTrue);
         final rows = tester
             .widgetList<SwitchListTile>(find.byType(SwitchListTile))
             .toList();
-        expect(rows[0].value, isTrue);
+        expect(rows[1].value, isTrue);
         // The customer is told, rather than left with a switch that moved and
         // silently moved back.
         expect(find.byType(SnackBar), findsOneWidget);

@@ -458,7 +458,7 @@ class _ProblemList extends StatelessWidget {
         messages.add(webhookError);
       }
       final error = health.lastError;
-      if (error != null && error.isNotEmpty) {
+      if (health.hasCurrentError && error != null && error.isNotEmpty) {
         messages.add('${S.notificationsPushLastError}: $error');
       }
     }

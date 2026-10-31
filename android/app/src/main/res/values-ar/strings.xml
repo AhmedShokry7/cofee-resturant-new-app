@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shown under the notification channel in the settings of an Arabic
+         phone. The channel name stays the brand, so only this line is here. -->
+    <string name="notification_channel_description">تحديثات الطلبات والعروض والمكافآت</string>
+</resources>

@@ -2044,8 +2044,8 @@ class S {
 
   // Notifications -----------------------------------------------------------
   static String get notificationsDescription => _ar
-      ? 'تابع كل إشعارات العملاء، وأنشئ حملات جديدة، وتأكد من وصول الإشعارات إلى الهواتف عبر Firebase.'
-      : 'Follow every customer notification, compose new campaigns, and verify that pushes reach phones through Firebase.';
+      ? 'تابع كل إشعارات العملاء، وأنشئ حملات جديدة، وتأكد من وصولها إلى الهواتف عبر Firebase وإلى صناديق البريد عبر دالة الإرسال.'
+      : 'Follow every customer notification, compose new campaigns, and verify that they reach phones through Firebase and mailboxes through the send function.';
   static String get notificationsReadOnly => _ar
       ? 'لديك صلاحية العرض فقط. إنشاء الإشعارات أو حذفها أو تغيير حالة القراءة يتطلب صلاحيات الإدارة.'
       : 'You can view notifications only. Composing, deleting, or changing read state requires admin permissions.';
@@ -2132,6 +2132,42 @@ class S {
   static String get notificationsPushFunctionHint => _ar
       ? 'انشر دالة send-push واضبط رابطها في إعدادات التطبيق.'
       : 'Deploy the send-push function and set its URL in app settings.';
+
+  static String get notificationsEmailTitle =>
+      _ar ? 'قناة البريد الإلكتروني' : 'Email channel';
+  static String get notificationsEmailSubtitle => _ar
+      ? 'تصل رسائل البريد إلى العميل عبر دالة send-email ومقدّم البريد، وهي منفصلة تمامًا عن إشعارات الهاتف.'
+      : 'Mail reaches the customer through the send-email function and the mail provider, entirely apart from phone pushes.';
+  static String get notificationsEmailReady =>
+      _ar ? 'جاهزة للإرسال' : 'Ready to send';
+  static String get notificationsEmailIdle =>
+      _ar ? 'لم تُجرَّب بعد' : 'Not tried yet';
+  static String get notificationsEmailBlocked =>
+      _ar ? 'مرفوضة من المقدّم' : 'Refused by the provider';
+  static String get notificationsEmailNoTarget =>
+      _ar ? 'لا عميل قابل للبريد' : 'Nobody to mail';
+  static String notificationsEmailOptIn(int count) =>
+      _ar ? '$count عميل فعّل القناة' : '$count opted in';
+  static String notificationsEmailReachable(int count) =>
+      _ar ? '$count عنوان جاهز' : '$count mailable addresses';
+  static String notificationsEmailAttempts(int sent, int failed, int skipped) =>
+      _ar
+      ? '$sent ناجح • $failed مرفوض • $skipped تخطّى خلال 30 يومًا'
+      : '$sent sent • $failed refused • $skipped skipped in 30 days';
+  static String notificationsEmailRate(String rate) =>
+      _ar ? 'نسبة الوصول: $rate' : 'Delivery rate: $rate';
+  static String notificationsEmailRefused(String error) => _ar
+      ? 'رفض مقدّم البريد آخر رسالة: $error'
+      : 'The mail provider refused the last message: $error';
+  static String get notificationsEmailNoTargetHint => _ar
+      ? 'لم يفعّل أي عميل قناة البريد، أو أن عميلًا مفعّلًا لا يملك بريدًا مسجلًا. يفتح العميل القناة من «إعدادات الإشعارات» في تطبيقه.'
+      : 'No customer has the mail channel on, or the opted-in customers have no address on file. Customers open the channel from Notification settings in their own app.';
+  static String get notificationsEmailNoAttempts => _ar
+      ? 'لم تُسجل محاولات إرسال بالبريد بعد.'
+      : 'No mail attempts recorded yet.';
+  static String get notificationsComposeMailBlocked => _ar
+      ? 'قناة البريد مرفوضة من المقدّم حاليًا: سيصل هذا الإشعار إلى الهواتف فقط حتى يتحقّق المقدّم من نطاق الإرسال.'
+      : 'The mail channel is refused by the provider right now: this notification reaches phones only, until the sending domain is verified.';
 
   static String get notificationsSetupTitle =>
       _ar ? 'إعداد إرسال الإشعارات' : 'Set up push delivery';
@@ -2353,8 +2389,8 @@ class S {
   static String get notificationsComposeTitle =>
       _ar ? 'إنشاء إشعار جديد' : 'Compose a notification';
   static String get notificationsComposeSubtitle => _ar
-      ? 'يُنشأ سجل لكل عميل داخل التطبيق، ويُرسل Push لمن فعّل الإشعارات.'
-      : 'One in-app record is created per customer, and a push is sent to everyone who enabled notifications.';
+      ? 'يُنشأ سجل لكل عميل داخل التطبيق، ويُرسل Push لمن فعّل الإشعارات، وبريد إلكتروني لمن فعّل قناة البريد من إعداداته.'
+      : 'One in-app record is created per customer, a push is sent to everyone who enabled notifications, and mail to everyone who enabled the mail channel.';
   static String get notificationsComposeType =>
       _ar ? 'نوع الإشعار' : 'Notification type';
   static String get notificationsComposeAudience =>
