@@ -151,8 +151,10 @@ class _BalanceCard extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(SpacingTokens.xl.w),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+        // Not const: the brand colours are read from the CMS at start-up, so a
+        // const gradient would freeze the values the app shipped with.
+        gradient: LinearGradient(
+          colors: [AppColor.primaryColor, AppColor.primaryColorEnd],
         ),
         borderRadius: BorderRadius.circular(20.r),
       ),
