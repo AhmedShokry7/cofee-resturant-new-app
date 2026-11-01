@@ -8,10 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/data/model/payment_method_model.dart';
-import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';

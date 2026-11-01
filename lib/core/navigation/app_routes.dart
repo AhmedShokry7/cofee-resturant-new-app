@@ -23,8 +23,8 @@ import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_v
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
-import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
-import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
+import 'package:new_coffee/features/content/presentation/views/help_page.dart';
+import 'package:new_coffee/features/content/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';

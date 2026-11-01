@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
+import 'package:new_coffee/features/subscriptions/presentation/manager/subscription_consume/subscription_consume_cubit.dart';
 
+/// The counter screen a cashier uses to spend cups from a subscription.
 class CashierSubscriptionConsumePage extends StatefulWidget {
   const CashierSubscriptionConsumePage({super.key});
 
@@ -20,8 +24,6 @@ class _CashierSubscriptionConsumePageState
   final _tokenController = TextEditingController();
   final _productController = TextEditingController();
   final _quantityController = TextEditingController(text: '1');
-  String? _result;
-  bool _loading = false;
 
   @override
   void dispose() {
@@ -31,62 +33,80 @@ class _CashierSubscriptionConsumePageState
     super.dispose();
   }
 
-  Future<void> _consume() async {
-    // A quantity that is not a positive whole number must stop here. Reading
-    // it as "1" used to deduct a cup the cashier never asked for.
-    final quantity = int.tryParse(_quantityController.text.trim());
-    if (quantity == null || quantity < 1) {
-      setState(() => _result = S.invalidQuantity);
-      return;
-    }
-    setState(() => _loading = true);
-    try {
-      final branchId = context.read<BranchCubit>().state.selected?.id ?? '';
-      final remaining = await context.read<SubscriptionRepository>().consumeQr(
-        token: _tokenController.text.trim(),
-        branchId: branchId,
-        productId: _productController.text.trim(),
-        quantity: quantity,
-        idempotencyKey: DateTime.now().microsecondsSinceEpoch.toString(),
-      );
-      setState(() => _result = S.cupsRemaining(remaining));
-    } catch (error) {
-      setState(() => _result = error.toString());
-    } finally {
-      setState(() => _loading = false);
-    }
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => SubscriptionConsumeCubit(
+        repository: context.read<SubscriptionRepository>(),
+      ),
+      child: _ConsumeForm(
+        tokenController: _tokenController,
+        productController: _productController,
+        quantityController: _quantityController,
+      ),
+    );
   }
+}
+
+class _ConsumeForm extends StatelessWidget {
+  const _ConsumeForm({
+    required this.tokenController,
+    required this.productController,
+    required this.quantityController,
+  });
+
+  final TextEditingController tokenController;
+  final TextEditingController productController;
+  final TextEditingController quantityController;
 
   @override
   Widget build(BuildContext context) {
+    final branchId = context.watch<BranchCubit>().state.selected?.id ?? '';
     return Scaffold(
       appBar: AppBar(title: Text(S.consumeSubscription)),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(SpacingTokens.lg.w),
         child: Column(
           children: [
             TextField(
-              controller: _tokenController,
+              controller: tokenController,
               decoration: InputDecoration(labelText: S.qrTokenLabel),
             ),
             TextField(
-              controller: _productController,
+              controller: productController,
               decoration: InputDecoration(labelText: S.productIdLabel),
             ),
             TextField(
-              controller: _quantityController,
+              controller: quantityController,
               keyboardType: TextInputType.number,
               decoration: InputDecoration(labelText: S.quantity),
             ),
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _loading ? null : _consume,
-              child: Text(S.deduct),
+            SizedBox(height: SpacingTokens.md.h),
+            BlocBuilder<SubscriptionConsumeCubit, SubscriptionConsumeState>(
+              builder: (context, state) => Column(
+                children: [
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: state.isSubmitting
+                          ? null
+                          : () => context.read<SubscriptionConsumeCubit>()
+                              .consume(
+                                token: tokenController.text,
+                                branchId: branchId,
+                                productId: productController.text,
+                                quantityText: quantityController.text,
+                              ),
+                      child: Text(S.deduct),
+                    ),
+                  ),
+                  if (state.message != null) ...[
+                    SizedBox(height: SpacingTokens.md.h),
+                    Text(state.message!),
+                  ],
+                ],
+              ),
             ),
-            if (_result != null) ...[
-              const SizedBox(height: 12),
-              Text(_result!),
-            ],
           ],
         ),
       ),

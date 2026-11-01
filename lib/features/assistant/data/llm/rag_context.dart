@@ -5,7 +5,7 @@ import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
-import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
+import 'package:new_coffee/features/assistant/data/model/chat_message.dart';
 
 String buildSystemPrompt({required AssistantMemory memory}) {
   final buffer = StringBuffer(

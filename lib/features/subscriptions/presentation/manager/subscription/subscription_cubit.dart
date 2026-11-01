@@ -1,51 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/subscriptions/data/model/customer_subscription.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
+import 'package:new_coffee/features/subscriptions/data/model/subscription_plan_product.dart';
+import 'package:new_coffee/features/subscriptions/data/model/subscription_usage.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
+import 'package:new_coffee/shared/utils/idempotency_key.dart';
 
-class SubscriptionState {
-  const SubscriptionState({
-    this.loading = false,
-    this.plans = const [],
-    this.subscription,
-    this.error,
-    this.qrToken,
-  });
+part 'subscription_state.dart';
 
-  final bool loading;
-  final List<SubscriptionPlan> plans;
-  final CustomerSubscription? subscription;
-  final String? error;
-  final String? qrToken;
-
-  SubscriptionState copyWith({
-    bool? loading,
-    List<SubscriptionPlan>? plans,
-    CustomerSubscription? subscription,
-    bool clearSubscription = false,
-    String? error,
-    bool clearError = false,
-    String? qrToken,
-    bool clearQr = false,
-  }) {
-    return SubscriptionState(
-      loading: loading ?? this.loading,
-      plans: plans ?? this.plans,
-      subscription: clearSubscription ? null : (subscription ?? this.subscription),
-      error: clearError ? null : (error ?? this.error),
-      qrToken: clearQr ? null : (qrToken ?? this.qrToken),
-    );
-  }
-
-}
-
+/// The customer's coffee subscription: the plans on sale, the active one and
+/// the QR pass that spends it.
 class SubscriptionCubit extends Cubit<SubscriptionState> {
   SubscriptionCubit({required SubscriptionRepository repository})
       : _repository = repository,
         super(const SubscriptionState());
 
   final SubscriptionRepository _repository;
+
+  /// One idempotency key per intended mutation, kept until it succeeds.
+  ///
+  /// A fresh key on every attempt made a retry after a timeout look like a
+  /// request the backend had never seen, so one tap on "Subscribe" could end
+  /// with two subscriptions.
+  final Map<String, String> _idempotencyKeys = {};
+
+  String _keyFor(String intent) => _idempotencyKeys.putIfAbsent(
+    intent,
+    IdempotencyKey.create,
+  );
 
   /// The plan the customer's subscription belongs to, null while the plans are
   /// not in this state.
@@ -68,30 +52,72 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         _repository.plans(branchId: branchId),
         _repository.mySubscription(),
       ]);
+      if (isClosed) return;
+      final subscription = results[1] as CustomerSubscription?;
       emit(
         state.copyWith(
           loading: false,
           plans: results[0] as List<SubscriptionPlan>,
-          subscription: results[1] as CustomerSubscription?,
-          clearSubscription: results[1] == null,
+          subscription: subscription,
+          clearSubscription: subscription == null,
         ),
       );
-    } catch (error) {
+      // The history belongs to the subscription the customer just opened the
+      // page for, so it is read here instead of by another widget holding the
+      // repository.
+      if (subscription != null) await loadUsage(subscription.id);
+    } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(loading: false, error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  /// The cups already spent, read apart from the subscription so a failed
+  /// side list cannot blank the page the customer is paying for.
+  Future<void> loadUsage(String subscriptionId) async {
+    try {
+      final usage = await _repository.usageHistory(
+        subscriptionId: subscriptionId,
+      );
+      if (isClosed) return;
+      emit(state.copyWith(usage: usage, clearUsageError: true));
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(usageError: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  Future<void> loadPlanProducts(String planId) async {
+    try {
+      final products = await _repository.planProducts(planId);
+      if (isClosed) return;
+      emit(
+        state.copyWith(planProducts: products, clearPlanProductsError: true),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(planProductsError: error.toString()));
+      addError(error, stackTrace);
     }
   }
 
   Future<void> subscribe(SubscriptionPlan plan) async {
     emit(state.copyWith(loading: true, clearError: true));
+    final intent = 'subscribe:${plan.id}';
     try {
-      final key = DateTime.now().microsecondsSinceEpoch.toString();
       final subscription = await _repository.subscribe(
         planId: plan.id,
-        idempotencyKey: key,
+        idempotencyKey: _keyFor(intent),
       );
+      _idempotencyKeys.remove(intent);
+      if (isClosed) return;
       emit(state.copyWith(loading: false, subscription: subscription));
-    } catch (error) {
+    } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(loading: false, error: error.toString()));
+      addError(error, stackTrace);
     }
   }
 
@@ -99,16 +125,20 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     final current = state.subscription;
     if (current == null) return;
     emit(state.copyWith(loading: true, clearError: true));
+    final intent = 'renew:${current.id}';
     try {
-      final key = DateTime.now().microsecondsSinceEpoch.toString();
       final subscription = await _repository.renew(
         subscriptionId: current.id,
         paymentReference: 'pending-payment',
-        idempotencyKey: key,
+        idempotencyKey: _keyFor(intent),
       );
+      _idempotencyKeys.remove(intent);
+      if (isClosed) return;
       emit(state.copyWith(loading: false, subscription: subscription));
-    } catch (error) {
+    } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(loading: false, error: error.toString()));
+      addError(error, stackTrace);
     }
   }
 
@@ -116,10 +146,16 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     final current = state.subscription;
     if (current == null) return;
     try {
-      await _repository.setAutoRenew(subscriptionId: current.id, enabled: enabled);
+      await _repository.setAutoRenew(
+        subscriptionId: current.id,
+        enabled: enabled,
+      );
+      if (isClosed) return;
       emit(state.copyWith(subscription: current.copyWith(autoRenew: enabled)));
-    } catch (error) {
+    } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(error: error.toString()));
+      addError(error, stackTrace);
     }
   }
 
@@ -129,9 +165,13 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     emit(state.copyWith(loading: true, clearError: true));
     try {
       await _repository.cancel(subscriptionId: current.id);
+      _idempotencyKeys.remove('renew:${current.id}');
+      if (isClosed) return;
       emit(state.copyWith(loading: false, clearSubscription: true));
-    } catch (error) {
+    } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(loading: false, error: error.toString()));
+      addError(error, stackTrace);
     }
   }
 
@@ -139,10 +179,15 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     final current = state.subscription;
     if (current == null) return;
     try {
-      final token = await _repository.generateQrToken(subscriptionId: current.id);
+      final token = await _repository.generateQrToken(
+        subscriptionId: current.id,
+      );
+      if (isClosed) return;
       emit(state.copyWith(qrToken: token));
-    } catch (error) {
+    } catch (error, stackTrace) {
+      if (isClosed) return;
       emit(state.copyWith(error: error.toString()));
+      addError(error, stackTrace);
     }
   }
 }

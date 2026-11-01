@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
+import 'package:new_coffee/features/profile/data/model/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 
 /// In-memory [ProfilePhotoRepository] for widget tests.

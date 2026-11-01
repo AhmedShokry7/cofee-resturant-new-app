@@ -1,26 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/presentation/views/widgets/address_form_body.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
+import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 
-import 'package:new_coffee/features/checkout/presentation/views/widgets/add_address_page_body.dart';
-
+/// The address editor reached from checkout.
+///
+/// It writes through [CheckoutCubit] rather than the address book cubit,
+/// because picking a delivery address also decides the zone and the fee the
+/// order is quoted with.
 class AddAddressPage extends StatelessWidget {
   const AddAddressPage({super.key});
 
-  static const routeName = "addAddressRoute";
+  static const routeName = 'addAddressRoute';
 
   @override
   Widget build(BuildContext context) {
-    final address = ModalRoute.of(context)?.settings.arguments;
+    final argument = ModalRoute.of(context)?.settings.arguments;
+    final existing = argument is AddressModel ? argument : null;
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          address is AddressModel ? S.editAddress : S.enterLocation,
-        ),
+        title: Text(existing == null ? S.enterLocation : S.editAddress),
       ),
-      body: AddAddressPageBody(
-        address: address is AddressModel ? address : null,
+      body: AddressFormBody(
+        address: existing,
+        onSave: (draft) {
+          final cubit = context.read<CheckoutCubit>();
+          if (draft.id.isEmpty) {
+            cubit.addAddress(draft);
+          } else {
+            cubit.updateAddress(draft);
+          }
+        },
       ),
     );
   }

@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 
 @immutable
 sealed class PhoneAuthState {

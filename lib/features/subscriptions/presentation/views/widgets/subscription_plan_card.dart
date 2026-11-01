@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 
 /// Plan card used by the subscription plans grid.
@@ -25,55 +28,50 @@ class SubscriptionPlanCard extends StatelessWidget {
   /// Starts the subscription.
   final VoidCallback onSubscribe;
 
-  String _t(String ar, String en) => AppLocale.instance.isArabic ? ar : en;
-
   @override
   Widget build(BuildContext context) {
-    final title = plan.nameAr.isNotEmpty && AppLocale.instance.isArabic
-        ? plan.nameAr
-        : plan.nameEn;
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(SpacingTokens.md.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                   child: SizedBox.expand(
                     child: DbImage(image: plan.imageUrl, fit: BoxFit.cover),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: SpacingTokens.sm.h),
               Text(
-                title,
+                plan.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
-              const SizedBox(height: 4),
+              SizedBox(height: SpacingTokens.xs.h),
               Text(
-                '${_t('السعر', 'Price')}: ${plan.price} ${plan.currencyCode}',
+                '${S.priceLabel}: ${Formatters.price(plan.price, plan.currencyCode)}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
               Text(
-                '${_t('الأكواب', 'Cups')}: ${plan.cupsPerCycle}',
+                '${S.cupsLabel}: ${plan.cupsPerCycle}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: SpacingTokens.sm.h),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: onSubscribe,
-                  child: Text(_t('اشترك الآن', 'Subscribe now')),
+                  child: Text(S.subscribeNow),
                 ),
               ),
             ],

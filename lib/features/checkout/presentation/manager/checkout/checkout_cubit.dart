@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -8,17 +7,18 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/checkout/data/model/payment_method_model.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
-import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/shared/utils/idempotency_key.dart';
 
 part 'checkout_state.dart';
 
@@ -1012,7 +1012,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     if (_pendingOrderSignature != requestSignature ||
         _pendingOrderIdempotencyKey == null) {
       _pendingOrderSignature = requestSignature;
-      _pendingOrderIdempotencyKey = _newOrderIdempotencyKey();
+      _pendingOrderIdempotencyKey = IdempotencyKey.create();
     }
     final key = _pendingOrderIdempotencyKey!;
     if (userId != null) {
@@ -1057,14 +1057,5 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       hash = ((hash ^ BigInt.from(unit)) * prime) & mask;
     }
     return hash.toRadixString(16).padLeft(16, '0');
-  }
-
-  String _newOrderIdempotencyKey() {
-    final random = Random.secure();
-    return List<String>.generate(
-      32,
-      (_) => random.nextInt(16).toRadixString(16),
-      growable: false,
-    ).join();
   }
 }

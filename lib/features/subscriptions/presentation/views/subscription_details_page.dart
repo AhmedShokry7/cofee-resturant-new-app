@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
-import 'package:new_coffee/features/subscriptions/data/model/subscription_usage.dart';
+import 'package:new_coffee/features/subscriptions/data/model/customer_subscription.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
   const SubscriptionDetailsPage({super.key});
@@ -27,12 +33,10 @@ class SubscriptionDetailsPage extends StatelessWidget {
 class _SubscriptionDetailsView extends StatelessWidget {
   const _SubscriptionDetailsView();
 
-  String _t(String ar, String en) => AppLocale.instance.isArabic ? ar : en;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_t('\u0627\u0634\u062A\u0631\u0627\u0643\u064A', 'My subscription'))),
+      appBar: AppBar(title: Text(S.mySubscription)),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           if (state.loading) {
@@ -43,144 +47,222 @@ class _SubscriptionDetailsView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.error!, textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
+                  Text(S.couldNotLoadSubscription),
+                  SizedBox(height: SpacingTokens.md.h),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
-                    child: Text(_t('\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629', 'Retry')),
+                    child: Text(S.retry),
                   ),
                 ],
               ),
             );
           }
-          final sub = state.subscription;
-          if (sub == null) {
+          final subscription = state.subscription;
+          if (subscription == null) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(_t('\u0644\u0627 \u064A\u0648\u062C\u062F \u0627\u0634\u062A\u0631\u0627\u0643 \u062D\u0627\u0644\u064A\u0627\u064B', 'No subscription yet')),
-                  const SizedBox(height: 12),
+                  Text(S.noSubscriptionYet),
+                  SizedBox(height: SpacingTokens.md.h),
                   FilledButton(
-                    onPressed: () => Navigator.of(context).pushNamed('/subscriptions'),
-                    child: Text(_t('\u062A\u0635\u0641\u062D \u0627\u0644\u0628\u0627\u0642\u0627\u062A', 'Browse plans')),
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).pushNamed(SubscriptionPlansPage.routeName),
+                    child: Text(S.browsePlans),
                   ),
                 ],
               ),
             );
           }
-          final isPending = sub.status == 'pending_payment';
-          final isActive = sub.status == 'active';
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(sub.planName, style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(_t('\u0627\u0644\u062D\u0627\u0644\u0629', 'Status') + ': ' + _statusLabel(sub.status)),
-              if (sub.startsAt != null) Text(_t('\u0627\u0644\u0628\u062F\u0627\u064A\u0629', 'Start') + ': ${sub.startsAt}'),
-              if (sub.endsAt != null) Text(_t('\u0627\u0644\u0627\u0646\u062A\u0647\u0627\u0621', 'End') + ': ${sub.endsAt}'),
-              Text(_t('\u0627\u0644\u0623\u0643\u0648\u0627\u0628 \u0627\u0644\u0645\u062A\u0627\u062D\u0629', 'Available cups') + ': ${sub.availableCups}'),
-              Text(_t('\u0627\u0644\u0645\u0633\u062A\u062E\u062F\u0645', 'Used') + ': ${sub.cupsUsed}'),
-              Text(_t('\u0627\u0644\u0645\u0631\u062D\u0644', 'Carried over') + ': ${sub.cupsCarriedOver}'),
-              Text(_t('\u0627\u0644\u0631\u0635\u064A\u062F \u0627\u0644\u0625\u0636\u0627\u0641\u064A', 'Extra credit') + ': ${sub.bonusBalance}'),
-              if (sub.bonusExpiresAt != null)
-                Text(_t('\u0627\u0646\u062A\u0647\u0627\u0621 \u0627\u0644\u0631\u0635\u064A\u062F', 'Credit expires') + ': ${sub.bonusExpiresAt}'),
-              SwitchListTile(
-                title: Text(_t('\u062A\u062C\u062F\u064A\u062F \u062A\u0644\u0642\u0627\u0626\u064A', 'Auto renew')),
-                value: sub.autoRenew,
-                onChanged: isActive
-                    ? (value) => context.read<SubscriptionCubit>().setAutoRenew(value)
-                    : null,
-              ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (isPending)
-                    FilledButton(
-                      onPressed: () => context.read<SubscriptionCubit>().load(),
-                      child: Text(_t('\u0627\u0644\u062A\u062D\u0642\u0642 \u0645\u0646 \u062D\u0627\u0644\u0629 \u0627\u0644\u062F\u0641\u0639', 'Check payment status')),
-                    ),
-                  if (isActive)
-                    FilledButton(
-                      onPressed: () => context.read<SubscriptionCubit>().showQr(),
-                      child: Text(_t('\u0639\u0631\u0636 \u0631\u0645\u0632 QR', 'Show QR code')),
-                    ),
-                  OutlinedButton(
-                    onPressed: () async {
-                      final cubit = context.read<SubscriptionCubit>();
-                      await cubit.renew();
-                      if (!context.mounted) return;
-                      final renewed = cubit.state.subscription;
-                      if (renewed != null && renewed.id != sub.id) {
-                        CardPaymentPage.pushForSubscription(
-                          context,
-                          subscriptionId: renewed.id,
-                          amount: cubit.renewalPlan?.price ?? 0,
-                          currency:
-                              cubit.renewalPlan?.currencyCode ??
-                              TapCheckoutConfig.defaultCurrency,
-                        );
-                      }
-                    },
-                    child: Text(_t('\u062A\u062C\u062F\u064A\u062F', 'Renew')),
-                  ),
-                  OutlinedButton(
-                    onPressed: isActive
-                        ? () => context.read<SubscriptionCubit>().cancel()
-                        : null,
-                    child: Text(_t('\u0625\u0644\u063A\u0627\u0621', 'Cancel')),
-                  ),
-                ],
-              ),
-              if (state.qrToken != null) ...[
-                const SizedBox(height: 12),
-                Text(_t('\u0631\u0645\u0632 QR (\u0635\u0627\u0644\u062D 5 \u062F\u0642\u0627\u0626\u0642\u060C \u0644\u0645\u0631\u0629 \u0648\u0627\u062D\u062F\u0629):', 'QR code (valid 5 minutes, single use):')),
-                SelectableText(state.qrToken!),
-              ],
-              const SizedBox(height: 16),
-              Text(_t('\u0633\u062C\u0644 \u0627\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645', 'Usage history'), style: const TextStyle(fontWeight: FontWeight.bold)),
-              FutureBuilder<List<SubscriptionUsage>>(
-                future: context.read<SubscriptionRepository>().usageHistory(subscriptionId: sub.id),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  final items = snapshot.data ?? const [];
-                  if (items.isEmpty) return Text(_t('\u0644\u0627 \u062A\u0648\u062C\u062F \u0639\u0645\u0644\u064A\u0627\u062A', 'No usage yet'));
-                  return Column(
-                    children: [
-                      for (final item in items)
-                        ListTile(
-                          title: Text(item.method),
-                          subtitle: Text('${item.quantity} ' + _t('\u0643\u0648\u0628', 'cup')),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
+          return _SubscriptionBody(
+            subscription: subscription,
+            state: state,
+            cubit: context.read<SubscriptionCubit>(),
           );
         },
       ),
     );
   }
+}
 
-  String _statusLabel(String status) {
-    switch (status) {
-      case 'pending_payment':
-        return _t('\u0628\u0627\u0646\u062A\u0638\u0627\u0631 \u062A\u0623\u0643\u064A\u062F \u0627\u0644\u062F\u0641\u0639', 'Pending payment');
-      case 'active':
-        return _t('\u0641\u0639\u0627\u0644', 'Active');
-      case 'expired':
-        return _t('\u0645\u0646\u062A\u0647\u064A', 'Expired');
-      case 'cancelled':
-        return _t('\u0645\u0644\u063A\u064A', 'Cancelled');
-      default:
-        return status;
+class _SubscriptionBody extends StatelessWidget {
+  const _SubscriptionBody({
+    required this.subscription,
+    required this.state,
+    required this.cubit,
+  });
+
+  final CustomerSubscription subscription;
+  final SubscriptionState state;
+  final SubscriptionCubit cubit;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: EdgeInsets.all(SpacingTokens.lg.w),
+      children: [
+        Text(subscription.planName, style: AppFonts.semiBold20(context)),
+        SizedBox(height: SpacingTokens.sm.h),
+        SubscriptionDetailRow(
+          label: S.subscriptionStatus,
+          value: subscription.statusLabel,
+        ),
+        if (subscription.startsAt != null)
+          SubscriptionDetailRow(
+            label: S.subscriptionStart,
+            value: Formatters.date(subscription.startsAt!),
+          ),
+        if (subscription.endsAt != null)
+          SubscriptionDetailRow(
+            label: S.subscriptionEnd,
+            value: Formatters.date(subscription.endsAt!),
+          ),
+        SubscriptionDetailRow(
+          label: S.availableCups,
+          value: '${subscription.availableCups}',
+        ),
+        SubscriptionDetailRow(
+          label: S.cupsUsed,
+          value: '${subscription.cupsUsed}',
+        ),
+        SubscriptionDetailRow(
+          label: S.cupsCarriedOver,
+          value: '${subscription.cupsCarriedOver}',
+        ),
+        SubscriptionDetailRow(
+          label: S.extraCredit,
+          value: Formatters.amount(subscription.bonusBalance),
+        ),
+        if (subscription.bonusExpiresAt != null)
+          SubscriptionDetailRow(
+            label: S.creditExpires,
+            value: Formatters.date(subscription.bonusExpiresAt!),
+          ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(S.autoRenew),
+          value: subscription.autoRenew,
+          onChanged: subscription.isActive
+              ? (value) => cubit.setAutoRenew(value)
+              : null,
+        ),
+        Wrap(
+          spacing: SpacingTokens.sm.w,
+          runSpacing: SpacingTokens.sm.h,
+          children: [
+            if (subscription.isPendingPayment)
+              FilledButton(
+                onPressed: () => cubit.load(),
+                child: Text(S.checkPaymentStatus),
+              ),
+            if (subscription.isActive)
+              FilledButton(
+                onPressed: () => cubit.showQr(),
+                child: Text(S.showQrCode),
+              ),
+            OutlinedButton(
+              onPressed: () => _renew(context),
+              child: Text(S.renew),
+            ),
+            OutlinedButton(
+              onPressed: subscription.isActive
+                  ? () => _cancel(context)
+                  : null,
+              child: Text(S.cancel),
+            ),
+          ],
+        ),
+        if (state.qrToken != null) ...[
+          SizedBox(height: SpacingTokens.md.h),
+          Text(S.qrSingleUseHint, style: AppFonts.regular14(context)),
+          SizedBox(height: SpacingTokens.xs.h),
+          SelectableText(state.qrToken!),
+        ],
+        SizedBox(height: SpacingTokens.lg.h),
+        Text(S.usageHistory, style: AppFonts.semiBold16(context)),
+        SizedBox(height: SpacingTokens.xs.h),
+        _UsageHistory(
+          state: state,
+          onRetry: () => cubit.loadUsage(subscription.id),
+        ),
+      ],
+    );
+  }
+
+  /// A renewal is a new subscription, so the page tells one apart from a
+  /// failure by the id it ends up with.
+  Future<void> _renew(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await cubit.renew();
+    final renewed = cubit.state.subscription;
+    if (renewed == null || renewed.id == subscription.id) {
+      if (cubit.state.error != null) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(S.couldNotRenewSubscription)),
+        );
+      }
+      return;
     }
+    if (!context.mounted) return;
+    CardPaymentPage.pushForSubscription(
+      context,
+      subscriptionId: renewed.id,
+      amount: cubit.renewalPlan?.price ?? 0,
+      currency:
+          cubit.renewalPlan?.currencyCode ?? TapCheckoutConfig.defaultCurrency,
+    );
+  }
+
+  Future<void> _cancel(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    await cubit.cancel();
+    if (cubit.state.error != null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(S.couldNotCancelSubscription)),
+      );
+    }
+  }
+}
+
+/// The cups already spent.
+///
+/// "Not read yet" and "read, nothing there" are shown apart, so an empty
+/// history never looks like a spinner that never stops.
+class _UsageHistory extends StatelessWidget {
+  const _UsageHistory({required this.state, required this.onRetry});
+
+  final SubscriptionState state;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.usageError != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(S.couldNotLoadUsage, style: AppFonts.regular14(context)),
+          TextButton(onPressed: onRetry, child: Text(S.retry)),
+        ],
+      );
+    }
+    final usage = state.usage;
+    if (usage == null) {
+      return Padding(
+        padding: EdgeInsets.all(SpacingTokens.sm.w),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (usage.isEmpty) return Text(S.noUsageYet);
+    return Column(
+      children: [
+        for (final entry in usage)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text(entry.productName ?? entry.method),
+            subtitle: Text('${entry.quantity} ${S.cupUnit}'),
+          ),
+      ],
+    );
   }
 }

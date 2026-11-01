@@ -1,5 +1,5 @@
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Customer-owned delivery addresses.

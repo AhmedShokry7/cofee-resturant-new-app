@@ -1,4 +1,4 @@
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 
 abstract class AuthRepository {
   Future<AuthUser> signIn({
@@ -42,4 +42,12 @@ abstract class AuthRepository {
     required String oldPassword,
     required String newPassword,
   });
+
+  /// Whether the account that was just signed up still has to confirm its
+  /// email.
+  ///
+  /// The sign-up screen asks the repository it was given rather than testing
+  /// its class, so a decorator in front of the real repository cannot turn the
+  /// question into "no" and send an unconfirmed customer into the app.
+  bool get lastSignUpNeedsEmailConfirmation => false;
 }

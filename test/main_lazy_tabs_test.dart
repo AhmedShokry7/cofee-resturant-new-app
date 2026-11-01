@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
+import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/cart/presentation/views/cart_page.dart';
@@ -36,6 +38,16 @@ class _FakeWeatherRepository implements WeatherRepository {
   @override
   Future<WeatherModel> getCurrentWeather() async =>
       const WeatherModel(temperature: 25);
+}
+
+/// The home tab reads the signed-in customer for its greeting; this test is
+/// about which tabs get built, so the session stays empty.
+class _FakeAuthRepository implements AuthRepository {
+  @override
+  Future<AuthUser?> currentUser() async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
 
 Future<void> _setSurface(WidgetTester tester) async {
@@ -95,7 +107,10 @@ void main() {
               BlocProvider.value(value: home),
               BlocProvider.value(value: categories),
             ],
-            child: const MainPage(),
+            child: RepositoryProvider<AuthRepository>.value(
+              value: _FakeAuthRepository(),
+              child: const MainPage(),
+            ),
           ),
         ),
       ),

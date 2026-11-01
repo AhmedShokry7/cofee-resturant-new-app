@@ -11,8 +11,8 @@ import 'package:new_coffee/features/addresses/presentation/views/addresses_page.
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
@@ -21,23 +21,44 @@ import 'package:new_coffee/features/subscriptions/presentation/views/subscriptio
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
-import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
+import 'package:new_coffee/features/profile/data/model/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_avatar.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_image_source_sheet.dart';
-import 'package:new_coffee/features/profile/presentation/views/help_page.dart';
-import 'package:new_coffee/features/profile/presentation/views/privacy_policy_page.dart';
+import 'package:new_coffee/features/content/presentation/views/help_page.dart';
+import 'package:new_coffee/features/content/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bottom_sheet.dart';
-import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
 
-class SettingsPage extends StatefulWidget {
+/// The account tab.
+///
+/// The customer's own name is read through [CurrentUserCubit] instead of a
+/// future started inside this widget, so the tab that shows it and the tab that
+/// edits it work on one read.
+class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   @override
-  State<SettingsPage> createState() => _SettingsPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => CurrentUserCubit(
+        repository: context.read<AuthRepository>(),
+      )..load(),
+      // Not const: a canonicalised instance would be handed to the same
+      // element on every rebuild, so the screen would keep the labels of the
+      // language it first started in after the customer switches.
+      child: _SettingsView(),
+    );
+  }
+}
+
+class _SettingsView extends StatefulWidget {
+  const _SettingsView();
+
+  @override
+  State<_SettingsView> createState() => _SettingsViewState();
 }
 
 class _LanguageOption extends StatelessWidget {
@@ -72,20 +93,10 @@ class _LanguageOption extends StatelessWidget {
   }
 }
 
-class _SettingsPageState extends State<SettingsPage> {
-  late Future<AuthUser?> _userFuture = _loadUser();
-
+class _SettingsViewState extends State<_SettingsView> {
   /// Guards a second sign-out while the first is still in flight, so a double
   /// tap cannot run two sign-outs or navigate twice.
   bool _loggingOut = false;
-
-  Future<AuthUser?> _loadUser() async {
-    try {
-      return await context.read<AuthRepository>().currentUser();
-    } catch (_) {
-      return null;
-    }
-  }
 
   /// Signs the customer out for real, then returns to the auth screen.
   ///
@@ -213,10 +224,9 @@ class _SettingsPageState extends State<SettingsPage> {
                     },
                   ),
                   SizedBox(height: SpacingTokens.md.h),
-                  FutureBuilder<AuthUser?>(
-                    future: _userFuture,
-                    builder: (context, snapshot) {
-                      final name = snapshot.data?.name?.trim() ?? '';
+                  BlocBuilder<CurrentUserCubit, CurrentUserState>(
+                    builder: (context, state) {
+                      final name = state.name;
                       if (name.isEmpty) return const SizedBox.shrink();
                       return Text(name, style: AppFonts.semiBold24(context));
                     },
@@ -229,12 +239,11 @@ class _SettingsPageState extends State<SettingsPage> {
               icon: HugeIcons.strokeRoundedUserCircle,
               label: S.yourProfile,
               onTap: () async {
+                final cubit = context.read<CurrentUserCubit>();
                 await Navigator.of(context).pushNamed(EditProfilePage.routeName);
-                if (!context.mounted) return;
-                final future = _loadUser();
-                setState(() {
-                  _userFuture = future;
-                });
+                // The edit page writes the name through the same session, so
+                // the tab re-reads it instead of guessing what was typed.
+                cubit.load();
               },
             ),
             ProfileMenuTile(
@@ -257,13 +266,13 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedPackage,
-              label: AppLocale.instance.isArabic ? '\u0628\u0627\u0642\u0627\u062A \u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u0642\u0647\u0648\u0629' : 'Coffee subscription plans',
+              label: S.subscriptionPlans,
               onTap: () =>
                   Navigator.of(context).pushNamed(SubscriptionPlansPage.routeName),
             ),
             ProfileMenuTile(
               icon: HugeIcons.strokeRoundedCreditCard,
-              label: AppLocale.instance.isArabic ? '\u0627\u0634\u062A\u0631\u0627\u0643\u0627\u062A\u064A' : 'My subscriptions',
+              label: S.mySubscription,
               onTap: () =>
                   Navigator.of(context).pushNamed(SubscriptionDetailsPage.routeName),
             ),

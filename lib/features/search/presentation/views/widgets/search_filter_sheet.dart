@@ -12,6 +12,7 @@ import 'package:new_coffee/features/search/presentation/manager/search/search_cu
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/shared/widgets/sheet_handle.dart';
 
 Future<void> showSearchFilterSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -87,16 +88,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(
-              child: Container(
-                height: 4.h,
-                width: 100.w,
-                decoration: BoxDecoration(
-                  color: AppColor.borderColor,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
-            ),
+            const SheetHandle(),
             SizedBox(height: SpacingTokens.lg.h),
             Text(S.filters, style: AppFonts.semiBold18(context)),
             SizedBox(height: SpacingTokens.lg.h),

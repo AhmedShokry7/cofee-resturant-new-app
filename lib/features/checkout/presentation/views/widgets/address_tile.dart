@@ -6,7 +6,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
 
 class AddressTile extends StatelessWidget {

@@ -9,8 +9,8 @@ import 'package:new_coffee/core/services/shared_pref.dart';
 
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -22,9 +22,8 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 
 /// The real authentication layer.
 ///
-/// Implements the same [AuthRepository] contract that AuthRepositoryImpl
-/// faked, so no screen and no cubit changes. Swapping the binding in
-/// app_providers.dart is the only edit required.
+/// Implements the [AuthRepository] contract against Supabase, so no screen and
+/// no cubit changes when it is swapped in for another binding.
 ///
 /// Every method verifies the caller's intent against the server. No method
 /// invents a user, and no method accepts an identity the server did not issue.
@@ -198,6 +197,7 @@ class SupabaseAuthRepository implements AuthRepository {
 
   /// Whether the signed-up address still needs confirming.
   /// The UI uses this to route to "check your inbox" instead of the home page.
+  @override
   bool get lastSignUpNeedsEmailConfirmation {
     final user = _client.auth.currentUser;
     return user != null && user.emailConfirmedAt == null;

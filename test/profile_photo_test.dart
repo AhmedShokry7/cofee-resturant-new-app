@@ -10,7 +10,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hugeicons/hugeicons.dart';
-import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
+import 'package:new_coffee/features/profile/data/model/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_avatar.dart';

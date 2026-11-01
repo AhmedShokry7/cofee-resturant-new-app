@@ -2,7 +2,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_card.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_image.dart';
@@ -30,26 +33,46 @@ Future<double> _assetRatio(String asset) async {
   return ratio;
 }
 
+/// Builds [child] and lets the real image decoder run.
+///
+/// Decoding is engine work, so it only completes outside the fake clock;
+/// without this the widgets below would be measured while still showing the
+/// placeholder box.
+Future<void> _pumpWithRealDecoder(WidgetTester tester, Widget child) async {
+  await tester.runAsync(() async {
+    await tester.pumpWidget(child);
+    await tester.pump();
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    await tester.pump();
+  });
+}
+
 void main() {
+  // The plan fixtures carry Arabic names, so the cards are read in Arabic.
+  setUp(() => AppLocale.instance.debugSet(AppLanguage.arabic));
+
   group('SubscriptionPlanCard', () {
     Widget host(SubscriptionPlan plan, {VoidCallback? onTap, VoidCallback? onSubscribe}) {
-      return MaterialApp(
-        home: Scaffold(
-          body: SizedBox(
-            width: 360,
-            height: 800,
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.6,
-              ),
-              itemCount: 1,
-              itemBuilder: (context, _) => SubscriptionPlanCard(
-                plan: plan,
-                onTap: onTap ?? () {},
-                onSubscribe: onSubscribe ?? () {},
+      return ScreenUtilInit(
+        designSize: const Size(360, 690),
+        builder: (context, _) => MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 360,
+              height: 800,
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 0.6,
+                ),
+                itemCount: 1,
+                itemBuilder: (context, _) => SubscriptionPlanCard(
+                  plan: plan,
+                  onTap: onTap ?? () {},
+                  onSubscribe: onSubscribe ?? () {},
+                ),
               ),
             ),
           ),
@@ -67,7 +90,7 @@ void main() {
 
       expect(tester.takeException(), isNull);
       expect(find.text('الباقة الأساسية'), findsOneWidget);
-      expect(find.text('الأكواب: 30'), findsOneWidget);
+      expect(find.text('${S.cupsLabel}: 30'), findsOneWidget);
       // The picture takes the free space of the card.
       expect(find.byType(DbImage), findsOneWidget);
     });
@@ -86,7 +109,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('اشترك الآن'));
+      await tester.tap(find.text(S.subscribeNow));
       await tester.pump();
       expect(subscribed, 1);
 
@@ -99,10 +122,10 @@ void main() {
   group('SubscriptionPlanImage', () {
     testWidgets('shows the whole picture, keeping its own ratio', (tester) async {
       const asset = 'assets/images/product.png';
-      // Decoding is real engine work, so it has to run outside the fake clock.
       final ratio = (await tester.runAsync(() => _assetRatio(asset)))!;
 
-      await tester.pumpWidget(
+      await _pumpWithRealDecoder(
+        tester,
         const MaterialApp(
           home: Scaffold(
             body: SizedBox(
@@ -112,10 +135,6 @@ void main() {
           ),
         ),
       );
-      // The shimmer keeps animating, so settle is not an option here.
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
 
       final size = tester.getSize(find.byType(SubscriptionPlanImage));
       expect(size.height, closeTo(300 / ratio, 1));
@@ -125,7 +144,8 @@ void main() {
     });
 
     testWidgets('caps the height of a very tall picture', (tester) async {
-      await tester.pumpWidget(
+      await _pumpWithRealDecoder(
+        tester,
         const MaterialApp(
           home: Scaffold(
             body: SizedBox(
@@ -138,9 +158,6 @@ void main() {
           ),
         ),
       );
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      await tester.pump(const Duration(milliseconds: 100));
 
       final size = tester.getSize(find.byType(SubscriptionPlanImage));
       expect(size.height, 100);

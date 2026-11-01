@@ -8,13 +8,16 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 
 class _FakeAuthRepository implements AuthRepository {
+  @override
+  bool get lastSignUpNeedsEmailConfirmation => false;
+
   int googleCalls = 0;
   AuthUser? googleUser;
   Object? googleError;

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 
 /// Regression cover for the insert payload.
 ///

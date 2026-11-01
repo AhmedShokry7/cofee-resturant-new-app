@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 
 class SubscriptionPlanProduct {
   const SubscriptionPlanProduct({
@@ -15,7 +16,8 @@ class SubscriptionPlanProduct {
   final String? imageUrl;
   final double price;
 
-  String get name => nameAr.isNotEmpty ? nameAr : nameEn;
+  String get name =>
+      pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 
   factory SubscriptionPlanProduct.fromDatabase(Map<String, dynamic> row) {
     final map = Db.asMap(row);

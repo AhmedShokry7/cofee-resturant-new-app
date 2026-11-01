@@ -4,8 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
-import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 
 /// Integration checks for the `public.set_default_address` bridge.
 ///

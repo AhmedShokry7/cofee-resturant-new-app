@@ -11,7 +11,7 @@ import 'package:new_coffee/features/cart/data/repositories/local_cart_repository
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
-import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/delivery_zone_repository.dart';
 import 'package:new_coffee/features/checkout/data/repositories/payment_method_repository.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';

@@ -11,8 +11,8 @@ import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
@@ -88,6 +88,10 @@ class _ScriptedLoyaltyRepository implements LoyaltyRepository {
 }
 
 class _FakeAuthRepository implements AuthRepository {
+  // A fake that never needs the email confirmed: the flow it tests ends in the app.
+  @override
+  bool get lastSignUpNeedsEmailConfirmation => false;
+
   int signOutCalls = 0;
   Object? signOutError;
   Future<void>? signOutGate;

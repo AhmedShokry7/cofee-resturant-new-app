@@ -337,8 +337,13 @@ class _LocationPickerState extends State<LocationPicker> {
     final point = LatLng(result.position!.latitude, result.position!.longitude);
     _movePin(point, zoom: _searchZoom);
     final label = await _resolveLabel(point);
-    if (!mounted || generation != _positionGeneration || _point != point)
+    // Another pick, a pan or a new search may have landed while this one was
+    // in flight; only the latest result may write to the screen.
+    if (!mounted ||
+        generation != _positionGeneration ||
+        _point != point) {
       return;
+    }
     setState(() => _isLocating = false);
     if (label != null) {
       _setSearchText(label);
@@ -374,9 +379,6 @@ class _LocationPickerState extends State<LocationPicker> {
     if (mounted) setState(() => _isResolving = false);
     return (label == null || label.trim().isEmpty) ? null : label;
   }
-
-  static String _coordinates(LatLng point) =>
-      '${point.latitude.toStringAsFixed(5)}, ${point.longitude.toStringAsFixed(5)}';
 
   Future<Position?> _lastKnownPosition() async {
     try {
@@ -417,8 +419,6 @@ class _LocationPickerState extends State<LocationPicker> {
         return (position: null, failure: LocationFailure.permissionDenied);
       }
 
-      // A cached fix first so the pin appears immediately, then refine.
-      final last = await _lastKnownPosition();
       final fresh = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           // `medium`, not `high`. `high` maps to PRIORITY_HIGH_ACCURACY, which
@@ -429,13 +429,13 @@ class _LocationPickerState extends State<LocationPicker> {
           // what the weather feature in this app already uses.
           accuracy: LocationAccuracy.medium,
           // Without this the platform future is never wrapped in a timeout, so
-          // "hangs forever" was unbounded rather than merely slow.
+          // "hangs forever" was unbounded rather than merely slow. A stalled
+          // fix arrives as the TimeoutException below, which falls back to the
+          // cached position.
           timeLimit: _positionTimeout,
         ),
       );
-      // Prefer the fresh fix, but keep the cached one if the fresh one somehow
-      // has nothing — never return null just because the refine step stalled.
-      return (position: fresh ?? last, failure: null);
+      return (position: fresh, failure: null);
     } on TimeoutException {
       final last = await _lastKnownPosition();
       if (last != null) return (position: last, failure: null);

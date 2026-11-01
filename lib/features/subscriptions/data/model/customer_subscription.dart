@@ -1,4 +1,6 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 class CustomerSubscription {
   const CustomerSubscription({
@@ -65,7 +67,22 @@ class CustomerSubscription {
 
   bool get isActive => status == 'active' && (endsAt == null || endsAt!.isAfter(DateTime.now()));
 
-  String get planName => planNameAr.isNotEmpty ? planNameAr : planNameEn;
+  bool get isPendingPayment => status == 'pending_payment';
+
+  String get planName => pickText(
+    (ar: planNameAr, en: planNameEn),
+    isArabic: AppLocale.instance.isArabic,
+  );
+
+  /// The status in the language the customer reads the app in; a status the
+  /// app has never seen is shown as it arrived rather than renamed wrongly.
+  String get statusLabel => switch (status) {
+    'pending_payment' => S.subscriptionPendingPayment,
+    'active' => S.subscriptionActive,
+    'expired' => S.subscriptionExpired,
+    'cancelled' => S.subscriptionCancelled,
+    _ => status,
+  };
 
   factory CustomerSubscription.fromDatabase(Map<String, dynamic> row) {
     final map = Db.asMap(row);

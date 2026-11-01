@@ -508,8 +508,9 @@ class S {
   static String get copyCode => _ar ? 'نسخ الكود' : 'Copy Code';
   static String get noCoupons =>
       _ar ? 'لا توجد كوبونات حاليًا' : 'No coupons right now';
-  static String couponsLoadError(String error) =>
-      _ar ? 'تعذر تحميل الكوبونات: $error' : 'Could not load coupons: $error';
+  static String get couldNotLoadCoupons => _ar
+      ? 'تعذر تحميل الكوبونات.'
+      : 'Could not load the coupons.';
   static String get couponCheckFailed => _ar
       ? 'لم يتم التحقق من الكوبون للطلب الحالي. حدّث وحاول مرة أخرى.'
       : "Couldn't verify the coupon for the current cart. Refresh and try again.";
@@ -765,11 +766,11 @@ class S {
       : 'Could not delete the address. Please try again.';
 
   // ---------- Help / FAQ / policy ----------
-  static String faqsLoadError(String error) =>
-      _ar ? 'تعذر تحميل الأسئلة: $error' : 'Could not load FAQs: $error';
+  static String get couldNotLoadFaqs =>
+      _ar ? 'تعذر تحميل الأسئلة.' : 'Could not load the questions.';
   static String get noFaqs => _ar ? 'لا توجد أسئلة متاحة' : 'No FAQs available';
-  static String policyLoadError(String error) =>
-      _ar ? 'تعذر تحميل السياسة: $error' : 'Could not load policy: $error';
+  static String get couldNotLoadPolicy =>
+      _ar ? 'تعذر تحميل السياسة.' : 'Could not load the policy.';
   static String get policyUnavailable =>
       _ar ? 'سياسة الخصوصية غير متوفرة.' : 'Privacy policy unavailable.';
 
@@ -1013,6 +1014,88 @@ class S {
       _ar ? 'تعديل في الرصيد' : 'Balance adjustment';
   static String get loyaltyActivityLabel =>
       _ar ? 'نشاط على النقاط' : 'Loyalty activity';
+
+  // ---------- Subscriptions ----------
+  static String get subscriptionPlans =>
+      _ar ? 'باقات اشتراك القهوة' : 'Coffee subscription plans';
+  static String get mySubscription => _ar ? 'اشتراكي' : 'My subscription';
+  static String get noPlansAvailable => _ar
+      ? 'لا توجد باقات متاحة حالياً'
+      : 'No plans available';
+  static String get noSubscriptionYet =>
+      _ar ? 'لا يوجد اشتراك حالياً' : 'No subscription yet';
+  static String get browsePlans => _ar ? 'تصفح الباقات' : 'Browse plans';
+  static String get planDetails => _ar ? 'تفاصيل الباقة' : 'Plan details';
+  static String get planLabel => _ar ? 'الباقة' : 'Plan';
+  static String get subscribeNow => _ar ? 'اشترك الآن' : 'Subscribe now';
+  static String get renew => _ar ? 'تجديد' : 'Renew';
+  static String get subscriptionStatus => _ar ? 'الحالة' : 'Status';
+  static String get subscriptionPendingPayment => _ar
+      ? 'بانتظار تأكيد الدفع'
+      : 'Pending payment';
+  static String get subscriptionActive => _ar ? 'فعال' : 'Active';
+  static String get subscriptionExpired => _ar ? 'منتهي' : 'Expired';
+  static String get subscriptionCancelled => _ar ? 'ملغي' : 'Cancelled';
+  static String get subscriptionStart => _ar ? 'البداية' : 'Start';
+  static String get subscriptionEnd => _ar ? 'الانتهاء' : 'End';
+  static String get availableCups => _ar ? 'الأكواب المتاحة' : 'Available cups';
+  static String get cupsUsed => _ar ? 'المستخدم' : 'Used';
+  static String get cupsCarriedOver => _ar ? 'المرحل' : 'Carried over';
+  static String get extraCredit => _ar ? 'الرصيد الإضافي' : 'Extra credit';
+  static String get creditExpires => _ar ? 'انتهاء الرصيد' : 'Credit expires';
+  static String get autoRenew => _ar ? 'تجديد تلقائي' : 'Auto renew';
+  static String get checkPaymentStatus =>
+      _ar ? 'التحقق من حالة الدفع' : 'Check payment status';
+  static String get showQrCode => _ar ? 'عرض رمز QR' : 'Show QR code';
+  static String get qrSingleUseHint => _ar
+      ? 'رمز QR (صالح 5 دقائق، لمرة واحدة):'
+      : 'QR code (valid 5 minutes, single use):';
+  static String get usageHistory => _ar ? 'سجل الاستخدام' : 'Usage history';
+  static String get noUsageYet => _ar ? 'لا توجد عمليات' : 'No usage yet';
+  static String get cupUnit => _ar ? 'كوب' : 'cup';
+  static String get cupsLabel => _ar ? 'الأكواب' : 'Cups';
+  static String get priceLabel => _ar ? 'السعر' : 'Price';
+  static String get durationLabel => _ar ? 'المدة' : 'Duration';
+  static String get cupsPerCycle => _ar
+      ? 'الأكواب في كل دورة'
+      : 'Cups per cycle';
+  static String get rolloverCap => _ar ? 'حد ترحيل الأكواب' : 'Rollover cap';
+  static String get renewalLabel => _ar ? 'التجديد' : 'Renewal';
+  static String get renewalAutomatic => _ar ? 'تلقائي' : 'Automatic';
+  static String get renewalManual => _ar ? 'يدوي' : 'Manual';
+  static String get branchLabel => _ar ? 'الفرع' : 'Branch';
+  static String get allBranches => _ar ? 'جميع الفروع' : 'All branches';
+  static String get selectedBranches =>
+      _ar ? 'فروع محددة' : 'Selected branches';
+  static String get productsLabel => _ar ? 'المنتجات' : 'Products';
+  static String get allProducts => _ar ? 'جميع المنتجات' : 'All products';
+  static String get selectedProducts =>
+      _ar ? 'منتجات محددة' : 'Selected products';
+  static String get includedProducts =>
+      _ar ? 'المنتجات المشمولة' : 'Included products';
+
+  static String get couldNotLoadSubscription => _ar
+      ? 'تعذر تحميل الاشتراك.'
+      : 'Could not load the subscription.';
+  static String get couldNotLoadUsage =>
+      _ar ? 'تعذر تحميل سجل الاستخدام.' : 'Could not load the usage history.';
+  static String get couldNotLoadPlanProducts => _ar
+      ? 'تعذر تحميل منتجات الباقة.'
+      : 'Could not load the products of this plan.';
+
+  static String get couldNotStartSubscription => _ar
+      ? 'تعذر بدء الاشتراك. حاول مرة أخرى.'
+      : 'Could not start the subscription. Try again.';
+  static String get couldNotRenewSubscription => _ar
+      ? 'تعذر تجديد الاشتراك. حاول مرة أخرى.'
+      : 'Could not renew the subscription. Try again.';
+  static String get couldNotCancelSubscription => _ar
+      ? 'تعذر إلغاء الاشتراك. حاول مرة أخرى.'
+      : 'Could not cancel the subscription. Try again.';
+
+  static String get couldNotDeductCups => _ar
+      ? 'تعذر خصم الكوب. حاول مرة أخرى.'
+      : 'Could not deduct the cup. Try again.';
 
   // ---------- Shared widgets ----------
   static String get showPassword => _ar ? 'إظهار كلمة المرور' : 'Show password';

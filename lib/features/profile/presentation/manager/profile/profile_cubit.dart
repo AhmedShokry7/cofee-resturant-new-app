@@ -6,7 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
-import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
+import 'package:new_coffee/features/profile/data/model/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;

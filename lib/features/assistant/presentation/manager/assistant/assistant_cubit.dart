@@ -20,7 +20,7 @@ import 'package:new_coffee/features/assistant/data/llm/http_llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_config.dart';
 import 'package:new_coffee/features/assistant/data/llm/rag_context.dart';
-import 'package:new_coffee/features/assistant/data/models/chat_message.dart';
+import 'package:new_coffee/features/assistant/data/model/chat_message.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';

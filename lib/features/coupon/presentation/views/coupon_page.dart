@@ -43,10 +43,7 @@ class _CouponsView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    S.couponsLoadError(state.errorMessage!),
-                    textAlign: TextAlign.center,
-                  ),
+                  Text(S.couldNotLoadCoupons, textAlign: TextAlign.center),
                   SizedBox(height: SpacingTokens.md.h),
                   TextButton(
                     onPressed: () => context.read<CouponsCubit>().load(),

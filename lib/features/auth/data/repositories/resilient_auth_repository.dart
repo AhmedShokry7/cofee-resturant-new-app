@@ -1,6 +1,6 @@
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 
@@ -35,6 +35,10 @@ class ResilientAuthRepository implements AuthRepository {
     }
     return _delegate;
   }
+
+  @override
+  bool get lastSignUpNeedsEmailConfirmation =>
+      _delegate.lastSignUpNeedsEmailConfirmation;
 
   @override
   Future<AuthUser> signIn({

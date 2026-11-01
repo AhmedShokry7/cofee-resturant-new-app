@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'support/in_memory_profile_photo_repository.dart';
@@ -13,6 +13,9 @@ import 'package:new_coffee/features/profile/presentation/views/profile_page.dart
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeAuthRepository implements AuthRepository {
+  @override
+  bool get lastSignUpNeedsEmailConfirmation => false;
+
   @override
   Future<AuthUser?> currentUser() async => null;
 

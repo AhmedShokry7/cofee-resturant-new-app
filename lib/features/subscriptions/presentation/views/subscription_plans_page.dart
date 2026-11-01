@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
@@ -27,12 +29,10 @@ class SubscriptionPlansPage extends StatelessWidget {
 class _SubscriptionPlansView extends StatelessWidget {
   const _SubscriptionPlansView();
 
-  String _t(String ar, String en) => AppLocale.instance.isArabic ? ar : en;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_t('\u0628\u0627\u0642\u0627\u062A \u0627\u0634\u062A\u0631\u0627\u0643 \u0627\u0644\u0642\u0647\u0648\u0629', 'Coffee subscription plans'))),
+      appBar: AppBar(title: Text(S.subscriptionPlans)),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           if (state.loading) {
@@ -44,24 +44,24 @@ class _SubscriptionPlansView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(state.error!, textAlign: TextAlign.center),
-                  const SizedBox(height: 12),
+                  SizedBox(height: SpacingTokens.md.h),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
-                    child: Text(_t('\u0625\u0639\u0627\u062F\u0629 \u0627\u0644\u0645\u062D\u0627\u0648\u0644\u0629', 'Retry')),
+                    child: Text(S.retry),
                   ),
                 ],
               ),
             );
           }
           if (state.plans.isEmpty) {
-            return Center(child: Text(_t('\u0644\u0627 \u062A\u0648\u062C\u062F \u0628\u0627\u0642\u0627\u062A \u0645\u062A\u0627\u062D\u0629 \u062D\u0627\u0644\u064A\u0627\u064B', 'No plans available')));
+            return Center(child: Text(S.noPlansAvailable));
           }
           return GridView.builder(
-            padding: const EdgeInsets.all(12),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            padding: EdgeInsets.all(SpacingTokens.md.w),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: SpacingTokens.md.w,
+              mainAxisSpacing: SpacingTokens.md.h,
               childAspectRatio: 0.6,
             ),
             itemCount: state.plans.length,

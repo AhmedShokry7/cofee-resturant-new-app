@@ -13,6 +13,7 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/utils/profile_image_picker.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
+import 'package:new_coffee/shared/widgets/sheet_handle.dart';
 
 Future<void> showProfileImagePicker(BuildContext context) async {
   final source = await showModalBottomSheet<ImageSource>(
@@ -50,16 +51,7 @@ class _ImageSourceSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Center(
-              child: Container(
-                height: 4.h,
-                width: 100.w,
-                decoration: BoxDecoration(
-                  color: AppColor.borderColor,
-                  borderRadius: BorderRadius.circular(100),
-                ),
-              ),
-            ),
+            const SheetHandle(),
             SizedBox(height: SpacingTokens.lg.h),
             Text(
               S.profilePicture,

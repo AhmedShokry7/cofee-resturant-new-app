@@ -1,14 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan_product.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_image.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 
 class SubscriptionPlanDetailsPage extends StatelessWidget {
   const SubscriptionPlanDetailsPage({super.key, required this.plan});
@@ -19,67 +24,112 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => SubscriptionCubit(
+        repository: context.read<SubscriptionRepository>(),
+      )..loadPlanProducts(plan.id),
+      child: _PlanDetailsView(plan: plan),
+    );
+  }
+}
+
+class _PlanDetailsView extends StatelessWidget {
+  const _PlanDetailsView({required this.plan});
+
+  final SubscriptionPlan plan;
+
+  Future<void> _subscribe(BuildContext context) async {
+    final cubit = context.read<SubscriptionCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    await cubit.subscribe(plan);
+    final subscription = cubit.state.subscription;
+    if (subscription == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(S.couldNotStartSubscription)),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    CardPaymentPage.pushForSubscription(
+      context,
+      subscriptionId: subscription.id,
+      amount: plan.price,
+      currency: plan.currencyCode,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_t(plan.nameAr, plan.nameEn, 'Plan details'))),
-      body: FutureBuilder<List<SubscriptionPlanProduct>>(
-        future: context.read<SubscriptionRepository>().planProducts(plan.id),
-        builder: (context, snapshot) {
-          final products = snapshot.data ?? const [];
+      appBar: AppBar(title: Text(plan.name.isEmpty ? S.planDetails : plan.name)),
+      body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
+        builder: (context, state) {
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(SpacingTokens.lg.w),
             children: [
               if (plan.imageUrl != null && plan.imageUrl!.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: EdgeInsets.only(bottom: SpacingTokens.md.h),
                   child: SubscriptionPlanImage(imageUrl: plan.imageUrl!),
                 ),
-              Text(_t(plan.nameAr, plan.nameEn, 'Plan'), style: Theme.of(context).textTheme.titleLarge),
-              if (plan.descriptionAr != null || plan.descriptionEn != null)
-                Text(_t(plan.descriptionAr ?? '', plan.descriptionEn ?? '', '')),
-              const SizedBox(height: 8),
-              Text(_t('السعر', 'Price', 'Price') + ': ${plan.price} ${plan.currencyCode}'),
-              Text(_t('المدة', 'Duration', 'Duration') + ': ${plan.durationDays}'),
-              Text(_t('الأكواب في كل دورة', 'Cups per cycle', 'Cups per cycle') + ': ${plan.cupsPerCycle}'),
-              Text(_t('حد ترحيل الأكواب', 'Rollover cap', 'Rollover cap') + ': ${plan.rolloverCapCups}'),
-              if (plan.bonusType != 'none')
-                Text(_t('رصيد إضافي', 'Extra credit', 'Extra credit') + ': ${plan.bonusValue} (${plan.bonusType})'),
-              Text(_t('التجديد', 'Renewal', 'Renewal') + ': ${plan.renewalPolicy == 'auto' ? _t('تلقائي', 'Automatic', 'Automatic') : _t('يدوي', 'Manual', 'Manual')}'),
-              Text(_t('الفرع', 'Branch', 'Branch') + ': ${plan.allBranches ? _t('جميع الفروع', 'All branches', 'All branches') : _t('فروع محددة', 'Selected branches', 'Selected branches')}'),
-              Text(_t('المنتجات', 'Products', 'Products') + ': ${plan.productScope == 'all' ? _t('جميع المنتجات', 'All products', 'All products') : _t('منتجات محددة', 'Selected products', 'Selected products')}'),
-              if (plan.productScope == 'selected') ...[
-                const SizedBox(height: 8),
-                Text(_t('المنتجات المشمولة', 'Included products', 'Included products'), style: const TextStyle(fontWeight: FontWeight.bold)),
-                if (products.isEmpty)
-                  const Text('...')
-                else
-                  ...products.map((p) => ListTile(
-                        leading: p.imageUrl != null
-                            ? (p.imageUrl!.startsWith('assets/')
-                                ? Image.asset(p.imageUrl!, width: 40, height: 40, fit: BoxFit.cover)
-                                : CachedNetworkImage(imageUrl: p.imageUrl!, width: 40, height: 40, fit: BoxFit.fill))
-                            : null,
-                        title: Text(_t(p.nameAr, p.nameEn, p.nameEn)),
-                        subtitle: Text('${p.price}'),
-                      )),
+              Text(plan.name, style: AppFonts.semiBold20(context)),
+              if (plan.description.isNotEmpty) ...[
+                SizedBox(height: SpacingTokens.sm.h),
+                Text(plan.description, style: AppFonts.regular14(context)),
               ],
-              const SizedBox(height: 16),
+              SizedBox(height: SpacingTokens.md.h),
+              SubscriptionDetailRow(
+                label: S.priceLabel,
+                value: Formatters.price(plan.price, plan.currencyCode),
+              ),
+              SubscriptionDetailRow(
+                label: S.durationLabel,
+                value: '${plan.durationDays}',
+              ),
+              SubscriptionDetailRow(
+                label: S.cupsPerCycle,
+                value: '${plan.cupsPerCycle}',
+              ),
+              SubscriptionDetailRow(
+                label: S.rolloverCap,
+                value: '${plan.rolloverCapCups}',
+              ),
+              if (plan.bonusType != 'none')
+                SubscriptionDetailRow(
+                  label: S.extraCredit,
+                  value: Formatters.amount(plan.bonusValue),
+                ),
+              SubscriptionDetailRow(
+                label: S.renewalLabel,
+                value: plan.renewalPolicy == 'auto'
+                    ? S.renewalAutomatic
+                    : S.renewalManual,
+              ),
+              SubscriptionDetailRow(
+                label: S.branchLabel,
+                value: plan.allBranches ? S.allBranches : S.selectedBranches,
+              ),
+              SubscriptionDetailRow(
+                label: S.productsLabel,
+                value: plan.productScope == 'all'
+                    ? S.allProducts
+                    : S.selectedProducts,
+              ),
+              if (plan.productScope == 'selected') ...[
+                SizedBox(height: SpacingTokens.md.h),
+                Text(S.includedProducts, style: AppFonts.semiBold16(context)),
+                SizedBox(height: SpacingTokens.xs.h),
+                _IncludedProducts(
+                  state: state,
+                  currencyCode: plan.currencyCode,
+                  onRetry: () => context.read<SubscriptionCubit>()
+                      .loadPlanProducts(plan.id),
+                ),
+              ],
+              SizedBox(height: SpacingTokens.lg.h),
               FilledButton(
-                onPressed: () async {
-                  final cubit = SubscriptionCubit(
-                    repository: context.read<SubscriptionRepository>(),
-                  );
-                  await cubit.subscribe(plan);
-                  final subscription = cubit.state.subscription;
-                  if (!context.mounted) return;
-                  if (subscription == null) return;
-                  CardPaymentPage.pushForSubscription(
-                    context,
-                    subscriptionId: subscription.id,
-                    amount: plan.price,
-                    currency: plan.currencyCode,
-                  );
-                },
-                child: Text(_t('اشترك الآن', 'Subscribe now', 'Subscribe now')),
+                onPressed: state.loading ? null : () => _subscribe(context),
+                child: Text(S.subscribeNow),
               ),
             ],
           );
@@ -87,9 +137,73 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _t(String ar, String en, String fallback) {
-    if (AppLocale.instance.isArabic) return ar.isNotEmpty ? ar : (en.isNotEmpty ? en : fallback);
-    return en.isNotEmpty ? en : (ar.isNotEmpty ? ar : fallback);
+/// The products a "selected products" plan covers.
+///
+/// A read that has not come back yet and one that found nothing are shown
+/// apart, so an empty list never looks like a spinner that never stops.
+class _IncludedProducts extends StatelessWidget {
+  const _IncludedProducts({
+    required this.state,
+    required this.currencyCode,
+    required this.onRetry,
+  });
+
+  final SubscriptionState state;
+  final String currencyCode;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (state.planProductsError != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(S.couldNotLoadPlanProducts, style: AppFonts.regular14(context)),
+          TextButton(onPressed: onRetry, child: Text(S.retry)),
+        ],
+      );
+    }
+    final products = state.planProducts;
+    if (products == null) {
+      return Padding(
+        padding: EdgeInsets.all(SpacingTokens.sm.w),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (products.isEmpty) return Text(S.noProductsYet);
+    return Column(
+      children: [
+        for (final product in products)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: _ProductImage(product: product),
+            title: Text(product.name),
+            subtitle: Text(Formatters.price(product.price, currencyCode)),
+          ),
+      ],
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.product});
+
+  final SubscriptionPlanProduct product;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = product.imageUrl;
+    if (url == null || url.isEmpty) return const SizedBox(width: 40, height: 40);
+    if (url.startsWith('assets/')) {
+      return Image.asset(url, width: 40, height: 40, fit: BoxFit.cover);
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: 40,
+      height: 40,
+      fit: BoxFit.cover,
+    );
   }
 }

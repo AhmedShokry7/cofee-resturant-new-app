@@ -5,23 +5,39 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
-import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/features/location/presentation/widgets/location_picker.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 
-class AddAddressPageBody extends StatefulWidget {
-  const AddAddressPageBody({super.key, this.address});
+/// The address editor: a label, a pin or a typed place, and the rules that
+/// decide whether the result may be saved.
+///
+/// The address book and the checkout flow used to carry two copies of this
+/// form, so every rule written here had to be written twice — including the
+/// guard below that rejects a coordinate-only label.
+class AddressFormBody extends StatefulWidget {
+  const AddressFormBody({
+    super.key,
+    this.address,
+    required this.onSave,
+  });
 
+  /// The saved address being edited, null when adding a new one.
   final AddressModel? address;
 
+  /// Called with what the customer confirmed, once it passed the checks.
+  ///
+  /// [AddressModel.id] is empty for a new address: the server assigns the real
+  /// one, and both callers read it back from the repository result.
+  final ValueChanged<AddressModel> onSave;
+
   @override
-  State<AddAddressPageBody> createState() => _AddAddressPageBodyState();
+  State<AddressFormBody> createState() => _AddressFormBodyState();
 }
 
-class _AddAddressPageBodyState extends State<AddAddressPageBody> {
+class _AddressFormBodyState extends State<AddressFormBody> {
   final _nameController = TextEditingController();
 
   /// Owned here rather than inside the picker so confirming can read it: a
@@ -55,10 +71,12 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
     super.dispose();
   }
 
-  /// Turns what is on screen into a location. A pin is already a complete
-  /// answer; free text is resolved only when it does not match the pin, and an
-  /// unrecognised name falls back to the pin rather than discarding a
-  /// deliberate choice.
+  /// Turns what is on screen into a location.
+  ///
+  /// A pin is already a complete answer, so it is preferred. Free text is only
+  /// resolved when there is no pin — or when the customer edited the text after
+  /// picking — and a name the geocoder does not recognise falls back to the pin
+  /// rather than discarding a deliberate choice.
   Future<PickedLocation?> _resolveLocation() async {
     final typed = _searchController.text.trim();
     final picked = _picked;
@@ -78,12 +96,20 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
     }
   }
 
-  /// A reverse-geocoded label that is only numbers is not an address, so it
-  /// must never reach `customer_addresses.details`.
+  /// A reverse-geocoded label that is only numbers is not an address.
+  ///
+  /// OpenStreetMap answers with `"24.71360, 46.67530"` when it has no name for
+  /// a point, and that string used to be saved as the customer's `details` with
+  /// no error anywhere — an address that is literally coordinates. Anything
+  /// numeric-looking is rejected here so it cannot be persisted.
   static bool _looksLikeCoordinates(String value) {
     final compact = value.replaceAll(RegExp(r'[\s.,-]'), '');
     return compact.isNotEmpty && RegExp(r'^\d+$').hasMatch(compact);
   }
+
+  void _warn(String message) => ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(message)),
+  );
 
   Future<void> _confirm() async {
     final label = _nameController.text.trim();
@@ -102,33 +128,25 @@ class _AddAddressPageBodyState extends State<AddAddressPageBody> {
       return;
     }
 
-    final cubit = context.read<CheckoutCubit>();
-    if (widget.address != null) {
-      cubit.updateAddress(
-        widget.address!.copyWith(
-          label: label,
-          details: picked.label,
-          latitude: picked.point.latitude,
-          longitude: picked.point.longitude,
-        ),
-      );
-    } else {
-      cubit.addAddress(
-        AddressModel(
-          id: DateTime.now().microsecondsSinceEpoch.toString(),
-          label: label,
-          details: picked.label,
-          latitude: picked.point.latitude,
-          longitude: picked.point.longitude,
-        ),
-      );
-    }
+    final existing = widget.address;
+    final draft = existing == null
+        ? AddressModel(
+            id: '',
+            label: label,
+            details: picked.label,
+            latitude: picked.point.latitude,
+            longitude: picked.point.longitude,
+          )
+        : existing.copyWith(
+            label: label,
+            details: picked.label,
+            latitude: picked.point.latitude,
+            longitude: picked.point.longitude,
+          );
+
+    widget.onSave(draft);
     Navigator.of(context).pop();
   }
-
-  void _warn(String message) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
 
   @override
   Widget build(BuildContext context) {

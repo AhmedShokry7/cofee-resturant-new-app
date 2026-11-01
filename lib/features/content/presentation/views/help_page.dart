@@ -7,7 +7,8 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
-import 'package:new_coffee/features/profile/data/model/faq_model.dart';
+import 'package:new_coffee/features/content/presentation/manager/faqs/faqs_cubit.dart';
+import 'package:new_coffee/features/content/presentation/manager/faqs/faqs_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
 class HelpPage extends StatelessWidget {
@@ -17,21 +18,41 @@ class HelpPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => FaqsCubit(
+        repository: context.read<ContentRepository>(),
+      ),
+      child: const _FaqsView(),
+    );
+  }
+}
+
+class _FaqsView extends StatelessWidget {
+  const _FaqsView();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(S.help)),
-      body: FutureBuilder<List<FaqModel>>(
-        future: context.read<ContentRepository>().faqs(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const FaqLoadingView();
+      body: BlocBuilder<FaqsCubit, FaqsState>(
+        builder: (context, state) {
+          if (state.isLoading) return const FaqLoadingView();
+          if (state.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(S.couldNotLoadFaqs, textAlign: TextAlign.center),
+                  SizedBox(height: SpacingTokens.md.h),
+                  TextButton(
+                    onPressed: () => context.read<FaqsCubit>().load(),
+                    child: Text(S.retry),
+                  ),
+                ],
+              ),
+            );
           }
-          if (snapshot.hasError) {
-            return Center(child: Text(S.faqsLoadError('${snapshot.error}')));
-          }
-          final faqs = snapshot.data ?? const [];
-          if (faqs.isEmpty) {
-            return Center(child: Text(S.noFaqs));
-          }
+          if (state.faqs.isEmpty) return Center(child: Text(S.noFaqs));
           return ListView(
             padding: EdgeInsets.fromLTRB(
               SpacingTokens.lg.w,
@@ -42,7 +63,7 @@ class HelpPage extends StatelessWidget {
             children: [
               Text(S.faqTitle, style: AppFonts.semiBold16(context)),
               SizedBox(height: SpacingTokens.md.h),
-              ...faqs.map(
+              ...state.faqs.map(
                 (faq) => Container(
                   margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
                   clipBehavior: Clip.antiAlias,

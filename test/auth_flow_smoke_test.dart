@@ -3,14 +3,17 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
-import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
+import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class _FakeAuthRepository implements AuthRepository {
+  @override
+  bool get lastSignUpNeedsEmailConfirmation => false;
+
   @override
   Future<AuthUser> signIn({required String email, required String password}) async =>
       throw const AuthException('invalid login credentials');

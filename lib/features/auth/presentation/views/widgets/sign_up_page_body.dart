@@ -15,7 +15,6 @@ import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacing
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
 import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
-import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
@@ -84,9 +83,9 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                 message: state.message,
               );
             } else if (state is AuthSuccess) {
-              final repo = context.read<AuthRepository>();
-              final needsVerification = repo is SupabaseAuthRepository &&
-                  repo.lastSignUpNeedsEmailConfirmation;
+              final needsVerification = context
+                  .read<AuthRepository>()
+                  .lastSignUpNeedsEmailConfirmation;
               if (needsVerification) {
                 AuthMessageDialog.show(
                   context,

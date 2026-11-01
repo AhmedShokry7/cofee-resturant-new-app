@@ -8,8 +8,8 @@ import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
-import 'package:new_coffee/features/checkout/data/model/address_model.dart';
-import 'package:new_coffee/features/checkout/data/repositories/address_repository.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
+import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 import 'package:new_coffee/features/location/data/model/place_suggestion.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 

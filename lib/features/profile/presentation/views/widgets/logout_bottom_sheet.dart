@@ -6,6 +6,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/shared/widgets/sheet_handle.dart';
 
 Future<void> showLogoutSheet(
   BuildContext context, {
@@ -34,14 +35,7 @@ class _LogoutSheet extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              height: 4.h,
-              width: 100.w,
-              decoration: BoxDecoration(
-                color: AppColor.borderColor,
-                borderRadius: BorderRadius.circular(100),
-              ),
-            ),
+            const SheetHandle(),
             SizedBox(height: SpacingTokens.lg.h),
             Text(S.logOut, style: AppFonts.semiBold18(context)),
             SizedBox(height: SpacingTokens.md.h),

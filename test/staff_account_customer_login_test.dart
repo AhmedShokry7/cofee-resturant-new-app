@@ -6,7 +6,7 @@ import 'package:http/testing.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/auth/data/models/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:shared_preferences/shared_preferences.dart';

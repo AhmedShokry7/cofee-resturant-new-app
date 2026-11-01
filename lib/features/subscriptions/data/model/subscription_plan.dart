@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 
 class SubscriptionPlan {
   const SubscriptionPlan({
@@ -51,7 +52,15 @@ class SubscriptionPlan {
   final List<String> branchIds;
   final List<String> productIds;
 
-  String get name => nameAr.isNotEmpty ? nameAr : nameEn;
+  /// The name in the language the customer reads the app in, falling back to
+  /// the other language when the CMS left that half of the row empty.
+  String get name =>
+      pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
+
+  String get description => pickText(
+    (ar: descriptionAr ?? '', en: descriptionEn ?? ''),
+    isArabic: AppLocale.instance.isArabic,
+  );
 
   factory SubscriptionPlan.fromDatabase(Map<String, dynamic> row) {
     final map = Db.asMap(row);

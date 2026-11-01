@@ -9,6 +9,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/assistant/presentation/widgets/assistant_fab.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
+import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
@@ -29,6 +31,16 @@ class _FakeWeatherRepository implements WeatherRepository {
   @override
   Future<WeatherModel> getCurrentWeather() async =>
       const WeatherModel(temperature: 32);
+}
+
+/// The home tab reads the signed-in customer for its greeting; these tests are
+/// about the FAB and the product cards, so the session stays empty.
+class _FakeAuthRepository implements AuthRepository {
+  @override
+  Future<AuthUser?> currentUser() async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
 
 Future<void> _setSurface(WidgetTester tester) async {
@@ -118,7 +130,10 @@ void main() {
                 BlocProvider.value(value: weather),
                 BlocProvider.value(value: favorites),
               ],
-              child: const HomePage(),
+              child: RepositoryProvider<AuthRepository>.value(
+                value: _FakeAuthRepository(),
+                child: const HomePage(),
+              ),
             ),
           ),
         ),

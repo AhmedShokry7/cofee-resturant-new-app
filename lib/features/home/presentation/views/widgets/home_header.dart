@@ -8,29 +8,13 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/auth/data/models/auth_user.dart';
-import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 
-class HomeHeader extends StatefulWidget {
+class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
-
-  @override
-  State<HomeHeader> createState() => _HomeHeaderState();
-}
-
-class _HomeHeaderState extends State<HomeHeader> {
-  late final Future<AuthUser?> _userFuture = _loadUser();
-
-  Future<AuthUser?> _loadUser() async {
-    try {
-      return await context.read<AuthRepository>().currentUser();
-    } catch (_) {
-      return null;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,10 +26,9 @@ class _HomeHeaderState extends State<HomeHeader> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              FutureBuilder<AuthUser?>(
-                future: _userFuture,
-                builder: (context, snapshot) {
-                  final first = firstNameOf(snapshot.data?.name);
+              BlocBuilder<CurrentUserCubit, CurrentUserState>(
+                builder: (context, state) {
+                  final first = firstNameOf(state.name);
                   final greeting = first == null
                       ? getGreeting(now)
                       : '${getGreeting(now)}, $first';

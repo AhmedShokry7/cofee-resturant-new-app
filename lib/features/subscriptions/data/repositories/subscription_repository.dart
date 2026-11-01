@@ -150,12 +150,6 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     return subscription;
   }
 
-  Future<CustomerSubscription?> _byId(SupabaseClient client, String id) async {
-    // The subscriptions table is not exposed through PostgREST; refresh the
-    // caller's latest subscription instead.
-    return mySubscription();
-  }
-
   @override
   Future<void> setAutoRenew({
     required String subscriptionId,
