@@ -5,7 +5,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
-import 'package:new_coffee/shared/utils/card_brand.dart';
+import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 
 class _FakeSavedCardsRepository implements SavedCardsRepository {
   _FakeSavedCardsRepository({this.failWith});
@@ -31,9 +31,9 @@ class _FakeSavedCardsRepository implements SavedCardsRepository {
     final card = SavedCardModel(
       id: 'card-${stored.length + 1}',
       brand: CardBrand.visa,
-      last4: number.replaceAll(RegExp(r'\D'), '').substring(
-            number.replaceAll(RegExp(r'\D'), '').length - 4,
-          ),
+      last4: number
+          .replaceAll(RegExp(r'\D'), '')
+          .substring(number.replaceAll(RegExp(r'\D'), '').length - 4),
       holder: holderName,
       expiry: '$expiryMonth/$expiryYear',
     );
@@ -93,26 +93,29 @@ void main() {
       await cubit.close();
     });
 
-    test('a failure is reported in the app language and stores nothing', () async {
-      final repository = _FakeSavedCardsRepository(
-        failWith: SaveCardException(S.cardDeclined),
-      );
-      final cubit = SavedCardsCubit(repository: repository);
+    test(
+      'a failure is reported in the app language and stores nothing',
+      () async {
+        final repository = _FakeSavedCardsRepository(
+          failWith: SaveCardException(S.cardDeclined),
+        );
+        final cubit = SavedCardsCubit(repository: repository);
 
-      final saved = await cubit.addCard(
-        number: '4242424242424242',
-        expiryMonth: '12',
-        expiryYear: '30',
-        cvv: '123',
-        holderName: 'Test Holder',
-      );
+        final saved = await cubit.addCard(
+          number: '4242424242424242',
+          expiryMonth: '12',
+          expiryYear: '30',
+          cvv: '123',
+          holderName: 'Test Holder',
+        );
 
-      expect(saved, isNull);
-      expect(cubit.state.cards, isEmpty);
-      expect(cubit.state.saveError, S.cardDeclined);
-      expect(cubit.state.isSaving, isFalse);
-      await cubit.close();
-    });
+        expect(saved, isNull);
+        expect(cubit.state.cards, isEmpty);
+        expect(cubit.state.saveError, S.cardDeclined);
+        expect(cubit.state.isSaving, isFalse);
+        await cubit.close();
+      },
+    );
 
     test('the message follows the app language', () async {
       AppLocale.instance.debugSet(AppLanguage.arabic);
@@ -159,21 +162,24 @@ void main() {
       await cubit.close();
     });
 
-    test('without a backend it reports rather than pretending to save', () async {
-      final cubit = SavedCardsCubit();
+    test(
+      'without a backend it reports rather than pretending to save',
+      () async {
+        final cubit = SavedCardsCubit();
 
-      final saved = await cubit.addCard(
-        number: '4242424242424242',
-        expiryMonth: '12',
-        expiryYear: '30',
-        cvv: '123',
-        holderName: 'Test Holder',
-      );
+        final saved = await cubit.addCard(
+          number: '4242424242424242',
+          expiryMonth: '12',
+          expiryYear: '30',
+          cvv: '123',
+          holderName: 'Test Holder',
+        );
 
-      expect(saved, isNull);
-      expect(cubit.state.saveError, S.cardSaveNotAllowed);
-      await cubit.close();
-    });
+        expect(saved, isNull);
+        expect(cubit.state.saveError, S.cardSaveNotAllowed);
+        await cubit.close();
+      },
+    );
 
     test('the cubit starts empty and never persists raw card data', () async {
       final cubit = SavedCardsCubit();
@@ -207,31 +213,33 @@ void main() {
       final ok = await cubit.setDefaultCard('b');
 
       expect(ok, isTrue);
-      expect(
-        cubit.state.cards.where((c) => c.isDefault).map((c) => c.id),
-        ['b'],
-      );
+      expect(cubit.state.cards.where((c) => c.isDefault).map((c) => c.id), [
+        'b',
+      ]);
       expect(cubit.state.saveError, isNull);
       await cubit.close();
     });
 
-    test('a failure is reported and leaves the previous default alone', () async {
-      final repository = _FakeSavedCardsRepository(
-        failWith: SaveCardException(S.cardDeclined),
-      );
-      repository.stored.addAll([_card('a'), _card('b')]);
-      final cubit = SavedCardsCubit(repository: repository);
-      await cubit.load();
+    test(
+      'a failure is reported and leaves the previous default alone',
+      () async {
+        final repository = _FakeSavedCardsRepository(
+          failWith: SaveCardException(S.cardDeclined),
+        );
+        repository.stored.addAll([_card('a'), _card('b')]);
+        final cubit = SavedCardsCubit(repository: repository);
+        await cubit.load();
 
-      final ok = await cubit.setDefaultCard('b');
+        final ok = await cubit.setDefaultCard('b');
 
-      expect(ok, isFalse);
-      expect(cubit.state.saveError, S.cardDeclined);
-      // The list is untouched: a failed preference change must not silently
-      // leave the customer with no default at all.
-      expect(cubit.state.cards.where((c) => c.isDefault), isEmpty);
-      await cubit.close();
-    });
+        expect(ok, isFalse);
+        expect(cubit.state.saveError, S.cardDeclined);
+        // The list is untouched: a failed preference change must not silently
+        // leave the customer with no default at all.
+        expect(cubit.state.cards.where((c) => c.isDefault), isEmpty);
+        await cubit.close();
+      },
+    );
 
     test('an unknown card is refused rather than defaulting nothing', () async {
       final repository = _FakeSavedCardsRepository();

@@ -6,7 +6,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/shared/utils/card_brand.dart';
+import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 
 class CardPreview extends StatelessWidget {
   const CardPreview({

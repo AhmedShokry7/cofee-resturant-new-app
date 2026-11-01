@@ -1,4 +1,4 @@
-import 'package:new_coffee/shared/utils/card_brand.dart';
+import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 
 class SavedCardModel {
   const SavedCardModel({
@@ -48,7 +48,8 @@ class SavedCardModel {
     );
     final month = json['expiry_month']?.toString();
     final year = json['expiry_year']?.toString();
-    final expiry = (month != null && year != null && month.isNotEmpty && year.isNotEmpty)
+    final expiry =
+        (month != null && year != null && month.isNotEmpty && year.isNotEmpty)
         ? '$month/$year'
         : (json['expiry']?.toString() ?? '');
     final last4 = json['last4']?.toString() ?? '';

@@ -50,8 +50,7 @@ class CustomTextFormField extends StatefulWidget {
   });
 
   @override
-  State<CustomTextFormField> createState() =>
-      _CustomTextFormFieldState();
+  State<CustomTextFormField> createState() => _CustomTextFormFieldState();
 }
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
@@ -86,16 +85,11 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         children: [
           if (widget.label != null) ...[
             Padding(
-              padding: EdgeInsets.only(
-                bottom: 8.h,
-                left: 4.w,
-                right: 4.w,
-              ),
+              padding: EdgeInsets.only(bottom: 8.h, left: 4.w, right: 4.w),
               child: Text(
                 widget.label!,
-                style: AppFonts.semiBold14(context).copyWith(
-                  color: AppColor.secondryColor,
-                ),
+                style: AppFonts.semiBold14(context)
+                    .copyWith(color: AppColor.secondryColor),
               ),
             ),
           ],
@@ -105,14 +99,12 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             decoration: BoxDecoration(
               color: _isFocused
                   ? AppColor.secondryColor.withValues(alpha: 0.035)
-                  : Colors.white,
+                  : AppColor.whiteColor,
               borderRadius: BorderRadius.circular(18.r),
               boxShadow: _isFocused
                   ? [
                       BoxShadow(
-                        color: AppColor.secondryColor.withValues(
-                          alpha: 0.07,
-                        ),
+                        color: AppColor.secondryColor.withValues(alpha: 0.07),
                         blurRadius: 12.r,
                         offset: Offset(0, 3.h),
                       ),
@@ -130,21 +122,20 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 focusNode: widget.focusNode,
                 obscureText: _isObscure,
                 keyboardType: widget.keyboardType,
-            textInputAction: widget.textInputAction,
-            inputFormatters: widget.inputFormatters,
-            autovalidateMode: widget.autovalidateMode,
+                textInputAction: widget.textInputAction,
+                inputFormatters: widget.inputFormatters,
+                autovalidateMode: widget.autovalidateMode,
                 validator: widget.validator,
                 onSaved: widget.onSaved,
                 onChanged: widget.onChanged,
                 cursorColor: AppColor.secondryColor,
-                style: AppFonts.semiBold16(context).copyWith(
-                  color: AppColor.secondryColor,
-                ),
+                style: AppFonts.semiBold16(context)
+                    .copyWith(color: AppColor.secondryColor),
                 decoration: InputDecoration(
                   hintText: widget.hint,
-                  hintStyle: AppFonts.semiBold14(context).copyWith(
-                    color: AppColor.greyColor.withValues(alpha: 0.85),
-                  ),
+                  hintStyle: AppFonts.semiBold14(
+                    context,
+                  ).copyWith(color: AppColor.greyColor.withValues(alpha: 0.85)),
                   prefixIcon: widget.prefixIcon == null
                       ? null
                       : Padding(
@@ -180,16 +171,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     color: AppColor.secondryColor,
                     width: 1.5,
                   ),
-                  errorBorder: _buildBorder(
-                    color: Colors.red.shade400,
-                  ),
+                  errorBorder: _buildBorder(color: AppColor.errorColor),
                   focusedErrorBorder: _buildBorder(
-                    color: Colors.red.shade400,
+                    color: AppColor.errorColor,
                     width: 1.5,
                   ),
-                  errorStyle: AppFonts.semiBold12(context).copyWith(
-                    color: Colors.red.shade400,
-                  ),
+                  errorStyle: AppFonts.semiBold12(context)
+                      .copyWith(color: AppColor.errorColor),
                 ),
               ),
             ),
@@ -219,10 +207,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     return widget.suffixIcon;
   }
 
-  OutlineInputBorder _buildBorder({
-    double width = 1,
-    Color? color,
-  }) {
+  OutlineInputBorder _buildBorder({double width = 1, Color? color}) {
     return OutlineInputBorder(
       borderRadius: BorderRadius.circular(18.r),
       borderSide: BorderSide(

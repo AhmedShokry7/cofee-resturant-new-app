@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
+
 import 'supabase_public_config.dart';
 
 /// Build-time configuration.
@@ -62,9 +64,9 @@ class AppConfig {
   );
 
   /// Shown if public configuration was intentionally cleared. Never includes
-  /// a key value.
-  static String get missingConfigurationMessage =>
-      'Supabase public configuration is missing. Check the app configuration.';
+  /// a key value, and speaks the language the customer is reading the app in:
+  /// this reaches an `AuthException` the sign-in screen can show.
+  static String get missingConfigurationMessage => S.configMissing;
 
   static bool get isSupabaseConfigured =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;

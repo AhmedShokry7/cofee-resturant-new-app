@@ -143,11 +143,4 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     final names = {'bundles', S.bundles.trim().toLowerCase()};
     return names.contains(label);
   }
-
-  /// clears the categories cache so the next load fetches fresh data.
-  static void clearCache() {
-    CacheManager().remove('categories_list');
-    CacheManager().removeWhereStartingWith('categories_products_');
-    CacheManager().removeWhereStartingWith('categories_bundles_');
-  }
 }

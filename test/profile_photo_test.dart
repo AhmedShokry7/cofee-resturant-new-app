@@ -9,6 +9,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/features/profile/data/models/profile_photo_exception.dart';
 import 'package:new_coffee/features/profile/data/repositories/profile_photo_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
@@ -502,7 +503,7 @@ void main() {
       await tester.pumpWidget(host(const ProfileState(isLoading: false)));
       await tester.pump();
 
-      expect(find.byIcon(Icons.image_not_supported), findsNothing);
+      expect(find.byIcon(HugeIcons.strokeRoundedImageNotFound01), findsNothing);
       expect(find.byType(CircleAvatar), findsOneWidget);
     });
 

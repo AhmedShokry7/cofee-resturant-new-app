@@ -193,13 +193,6 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  /// clears the home cache so the next load fetches fresh data from Supabase.
-  /// Called when the customer switches language or logs out.
-  static void clearCache() {
-    CacheManager().remove('home_banners');
-    CacheManager().remove('home_categories');
-  }
-
   /// Products contained by the loaded bundles, keyed by product id.
   ///
   /// Used to show a bundle's contents and the saving it represents, which used

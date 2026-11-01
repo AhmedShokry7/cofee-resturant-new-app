@@ -29,7 +29,7 @@ import 'package:new_coffee/features/orders/data/repositories/order_repository.da
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
-import 'package:new_coffee/shared/utils/card_brand.dart';
+import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 
 /// The uuid the server stores the order under.
 const String serverOrderId = '7c9e6679-7425-40de-944b-e07fc1f90ae7';

@@ -1,5 +1,4 @@
 import 'package:new_coffee/core/locale/app_locale.dart';
-import 'package:new_coffee/features/location/data/model/location_failure.dart';
 
 /// Every user-visible string in one place.
 ///
@@ -60,7 +59,9 @@ class S {
   // ---------- Home ----------
   static String get homeQuestion =>
       _ar ? 'ماذا تريد اليوم؟' : 'What would you like today?';
-  static String get categories => _ar ? 'التصنيفات' : 'Categories';
+
+  /// Same label as the bottom-nav tab; defined once there.
+  static String get categories => navCategories;
   static String get category => _ar ? 'التصنيف' : 'Category';
   static String get seeAll => _ar ? 'عرض الكل' : 'See all';
   static String get viewMore => _ar ? 'عرض المزيد' : 'View more';
@@ -143,7 +144,7 @@ class S {
       : 'You can pick at most $max for $name';
 
   // ---------- Cart ----------
-  static String get cart => _ar ? 'السلة' : 'Cart';
+  static String get cart => navCart;
   static String get cartEmpty => _ar ? 'سلتك فارغة' : 'Your cart is empty';
   static String get cartEmptyHint => _ar
       ? 'أضف قهوتك المفضلة من القائمة'
@@ -198,29 +199,28 @@ class S {
   /// Why a position could not be used.
   ///
   /// Each case needs a different action from the customer, so they are separate
-  /// strings rather than one shared apology. The permanently-denied case in
-  /// particular: the system dialog will never appear again, so only Settings
-  /// can fix it — which is why the UI offers a button to open them.
-  static String locationFailed(LocationFailure failure) => switch (failure) {
-    LocationFailure.servicesDisabled =>
-      _ar
-          ? 'خدمة الموقع مغلقة. شغّلها ثم حاول مرة أخرى.'
-          : 'Location is off. Turn it on and try again.',
-    LocationFailure.permissionDenied =>
-      _ar
-          ? 'التطبيق يحتاج صلاحية الموقع لتحديد عنوانك.'
-          : 'The app needs location permission to find your address.',
-    LocationFailure.permissionPermanentlyDenied =>
-      _ar ? 'صلاحية الموقع مرفوضة نهائيًا. فعّلها من إعدادات التطبيق.' : 'Location permission is permanently denied. Enable it in app settings.',
-    LocationFailure.timeout =>
-      _ar
-          ? 'ما قدرناش نحدد موقعك في الوقت المناسب. جرّب مكانًا مفتوحًا.'
-          : "We couldn't fix your position in time. Try somewhere more open.",
-    LocationFailure.unavailable =>
-      _ar
-          ? 'تعذّر تحديد موقعك حاليًا. حدّد المكان على الخريطة يدويًا.'
-          : 'Could not get your position. Pick a spot on the map.',
-  };
+  /// strings rather than one shared apology. Which case is showing is decided
+  /// by the location feature (`LocationFailure.userMessage`), because core must
+  /// not know that type; the wording always stays here.
+  static String get locationServicesDisabled => _ar
+      ? 'خدمة الموقع مغلقة. شغّلها ثم حاول مرة أخرى.'
+      : 'Location is off. Turn it on and try again.';
+
+  static String get locationPermissionNeeded => _ar
+      ? 'التطبيق يحتاج صلاحية الموقع لتحديد عنوانك.'
+      : 'The app needs location permission to find your address.';
+
+  static String get locationPermissionPermanentlyDenied => _ar
+      ? 'صلاحية الموقع مرفوضة نهائيًا. فعّلها من إعدادات التطبيق.'
+      : 'Location permission is permanently denied. Enable it in app settings.';
+
+  static String get locationTimeout => _ar
+      ? 'ما قدرناش نحدد موقعك في الوقت المناسب. جرّب مكانًا مفتوحًا.'
+      : "We couldn't fix your position in time. Try somewhere more open.";
+
+  static String get locationNoFix => _ar
+      ? 'تعذّر تحديد موقعك حاليًا. حدّد المكان على الخريطة يدويًا.'
+      : 'Could not get your position. Pick a spot on the map.';
 
   /// Opens the app's settings page, for the one case that only Settings fixes.
   static String get openSettings => _ar ? 'فتح الإعدادات' : 'Open settings';
@@ -414,7 +414,7 @@ class S {
   static String get history => _ar ? 'السجل' : 'History';
 
   // ---------- Favorites ----------
-  static String get favorites => _ar ? 'المفضلة' : 'Favorites';
+  static String get favorites => navFavorites;
   static String get noFavorites =>
       _ar ? 'لا توجد مفضلة بعد' : 'No favorites yet';
   static String get favoritesHint => _ar
@@ -810,21 +810,18 @@ class S {
       _ar ? 'لا توجد شرائح تعريفية' : 'No onboarding slides';
 
   /// The three intro slides the first launch shows.
-  static String get onBoardingCatalogTitle => _ar
-      ? 'كل ما تحب في مكان واحد'
-      : 'Everything You Love, in One Place';
+  static String get onBoardingCatalogTitle =>
+      _ar ? 'كل ما تحب في مكان واحد' : 'Everything You Love, in One Place';
   static String get onBoardingCatalogBody => _ar
       ? 'اكتشف القهوة والمشروبات ومنتجاتك المفضلة بسهولة.'
       : 'Explore coffee, drinks, and your favorite products with ease.';
-  static String get onBoardingPaymentTitle => _ar
-      ? 'ادفع بالطريقة التي تناسبك'
-      : 'Pay Your Way';
+  static String get onBoardingPaymentTitle =>
+      _ar ? 'ادفع بالطريقة التي تناسبك' : 'Pay Your Way';
   static String get onBoardingPaymentBody => _ar
       ? 'استمتع بتجربة دفع سهلة وآمنة لإكمال طلبك بكل راحة.'
       : 'Enjoy a smooth and secure payment experience every time you order.';
-  static String get onBoardingAssistantTitle => _ar
-      ? 'مساعدك الذكي معك دائمًا'
-      : 'Meet Your AI Assistant';
+  static String get onBoardingAssistantTitle =>
+      _ar ? 'مساعدك الذكي معك دائمًا' : 'Meet Your AI Assistant';
   static String get onBoardingAssistantBody => _ar
       ? 'احصل على اقتراحات ذكية واكتشف ما يناسب ذوقك بسهولة.'
       : 'Get smart recommendations and discover what matches your taste.';
@@ -989,4 +986,10 @@ class S {
   static String get saudiRiyal => _ar ? 'ريال سعودي' : 'Saudi Riyal';
   static String get bundleLabel => _ar ? 'باقة' : 'Bundle';
   static String get subscriptionLabel => _ar ? 'اشتراك' : 'Subscription';
+
+  /// A build with no backend configured still has to explain itself in the
+  /// language the customer is reading the app in.
+  static String get configMissing => _ar
+      ? 'إعدادات الخدمة غير مكتملة. راجع ضبط التطبيق.'
+      : 'Service configuration is missing. Check the app configuration.';
 }

@@ -141,12 +141,7 @@ class BundleDetailsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       children: [
         Shimmer(
           child: ShimmerBox(
@@ -166,11 +161,7 @@ class BundleDetailsSkeleton extends StatelessWidget {
           Container(
             margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
             padding: EdgeInsets.all(SpacingTokens.sm.w),
-            decoration: BoxDecoration(
-              color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColor.borderColor),
-            ),
+            decoration: skeletonCardDecoration(context, radius: 12),
             child: Shimmer(
               child: Row(
                 children: [
@@ -226,11 +217,7 @@ class OrderCardSkeleton extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
       padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColor.borderColor),
-      ),
+      decoration: skeletonCardDecoration(context, radius: 12),
       child: Shimmer(
         child: Row(
           children: [
@@ -274,12 +261,7 @@ class OrdersSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       itemCount: itemCount,
       itemBuilder: (context, index) => const OrderCardSkeleton(),
     );
@@ -296,11 +278,7 @@ class NotificationTileSkeleton extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
       padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColor.borderColor),
-      ),
+      decoration: skeletonCardDecoration(context, radius: 16),
       child: Shimmer(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -352,12 +330,7 @@ class NotificationsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       itemCount: itemCount,
       itemBuilder: (context, index) => const NotificationTileSkeleton(),
     );
@@ -374,11 +347,7 @@ class CouponCardSkeleton extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: SpacingTokens.lg.h),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColor.borderColor),
-      ),
+      decoration: skeletonCardDecoration(context, radius: 16),
       child: Shimmer(
         child: Column(
           children: [
@@ -434,12 +403,7 @@ class CouponsLoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       children: [
         const Shimmer(child: ShimmerLine(width: 130, height: 17)),
         SizedBox(height: SpacingTokens.lg.h),
@@ -459,11 +423,7 @@ class RewardCardSkeleton extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
       padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColor.borderColor),
-      ),
+      decoration: skeletonCardDecoration(context, radius: 16),
       child: Shimmer(
         child: Row(
           children: [
@@ -505,21 +465,12 @@ class LoyaltyLoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       children: [
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(SpacingTokens.xl.w),
-          decoration: BoxDecoration(
-            color: AppColor.whiteColor,
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: AppColor.borderColor),
-          ),
+          decoration: skeletonCardDecoration(context, radius: 20),
           child: Shimmer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -599,12 +550,7 @@ class FaqLoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       children: [
         const Shimmer(child: ShimmerLine(width: 150, height: 15)),
         SizedBox(height: SpacingTokens.md.h),
@@ -615,11 +561,7 @@ class FaqLoadingView extends StatelessWidget {
               horizontal: SpacingTokens.lg.w,
               vertical: SpacingTokens.md.h,
             ),
-            decoration: BoxDecoration(
-              color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: AppColor.borderColor),
-            ),
+            decoration: skeletonCardDecoration(context, radius: 12),
             child: Shimmer(
               child: Row(
                 children: [
@@ -646,12 +588,7 @@ class PolicyLoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       children: [
         Shimmer(
           child: Column(

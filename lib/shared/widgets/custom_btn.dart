@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
@@ -25,8 +24,10 @@ class CustomBtn extends StatelessWidget {
   final TextStyle? textStyle;
   final String? loadingText;
 
-  static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF1D4ED8), Color(0xFF2563EB)],
+  /// Brand gradient; [AppColor.primaryColor] is a runtime theming value, so this
+  /// cannot be const.
+  static final LinearGradient primaryGradient = LinearGradient(
+    colors: [AppColor.primaryColor, AppColor.primaryColorEnd],
   );
 
   const CustomBtn({
@@ -68,7 +69,7 @@ class CustomBtn extends StatelessWidget {
         bgColor = backgroundColor ?? Colors.transparent;
         fgColor = textColor ?? AppColor.primaryColor;
       case BtnVariant.destructive:
-        bgColor = backgroundColor ?? Colors.red;
+        bgColor = backgroundColor ?? AppColor.errorColor;
         fgColor = textColor ?? AppColor.whiteColor;
     }
 
@@ -171,7 +172,7 @@ class CustomBtn extends StatelessWidget {
         child: CircularProgressIndicator(
           strokeWidth: 2.5,
           color: AppColor.whiteColor,
-        )
+        ),
         // CustomLoadingWidget()
       );
     }

@@ -10,8 +10,8 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/card_preview.dart';
-import 'package:new_coffee/shared/utils/card_brand.dart';
-import 'package:new_coffee/shared/utils/input_formatters.dart';
+import 'package:new_coffee/features/payment/data/model/card_brand.dart';
+import 'package:new_coffee/features/payment/presentation/formatters/card_input_formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
@@ -80,8 +80,7 @@ class _AddCardPageState extends State<AddCardPage> {
     final fullYear = 2000 + year;
     final now = DateTime.now();
     // A card is good through the last day of its expiry month.
-    return fullYear < now.year ||
-        (fullYear == now.year && month < now.month);
+    return fullYear < now.year || (fullYear == now.year && month < now.month);
   }
 
   Future<void> _save() async {
@@ -120,36 +119,36 @@ class _AddCardPageState extends State<AddCardPage> {
     return AuthGuard(
       child: BlocBuilder<SavedCardsCubit, SavedCardsState>(
         builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(title: Text(S.addCard)),
-          // Once we know the provider cannot be reached, there is nothing to
-          // collect: asking for a full card number that cannot be saved is how
-          // the customer ends up typing a real PAN into a form that fails.
-          body: state.isSavingUnavailable
-              ? _UnavailableNotice(message: state.saveError)
-              : AbsorbPointer(
-                  absorbing: state.isSaving,
-                  child: Form(key: _formKey, child: _formBody()),
-                ),
-          bottomNavigationBar: state.isSavingUnavailable
-              ? null
-              : Container(
-                  padding: EdgeInsets.all(SpacingTokens.lg.w),
-                  decoration: const BoxDecoration(
-                    color: AppColor.whiteColor,
-                    border: Border(
-                      top: BorderSide(color: AppColor.borderColor),
+          return Scaffold(
+            appBar: AppBar(title: Text(S.addCard)),
+            // Once we know the provider cannot be reached, there is nothing to
+            // collect: asking for a full card number that cannot be saved is how
+            // the customer ends up typing a real PAN into a form that fails.
+            body: state.isSavingUnavailable
+                ? _UnavailableNotice(message: state.saveError)
+                : AbsorbPointer(
+                    absorbing: state.isSaving,
+                    child: Form(key: _formKey, child: _formBody()),
+                  ),
+            bottomNavigationBar: state.isSavingUnavailable
+                ? null
+                : Container(
+                    padding: EdgeInsets.all(SpacingTokens.lg.w),
+                    decoration: const BoxDecoration(
+                      color: AppColor.whiteColor,
+                      border: Border(
+                        top: BorderSide(color: AppColor.borderColor),
+                      ),
+                    ),
+                    child: CustomBtn(
+                      text: state.isSaving ? S.savingCard : S.addCard,
+                      onPressed: state.isSaving ? null : _save,
                     ),
                   ),
-                  child: CustomBtn(
-                    text: state.isSaving ? S.savingCard : S.addCard,
-                    onPressed: state.isSaving ? null : _save,
-                  ),
-                ),
-        );
-      },
-    ),
-  );
+          );
+        },
+      ),
+    );
   }
 
   Widget _formBody() => ListView(
@@ -160,75 +159,74 @@ class _AddCardPageState extends State<AddCardPage> {
       SpacingTokens.lg.w,
     ),
     children: [
-                  CardPreview(
-                    number: _numberController.text,
-                    name: _nameController.text,
-                    expiry: _expiryController.text,
-                  ),
-                  SizedBox(height: SpacingTokens.xl.h),
-                  CustomTextFormField(
-                    controller: _nameController,
-                    hint: S.cardHolderName,
-                    keyboardType: TextInputType.name,
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(() {}),
-                    validator: (value) =>
-                        (value == null || value.trim().isEmpty)
-                        ? S.cardHolderRequired
-                        : null,
-                  ),
-                  CustomTextFormField(
-                    controller: _numberController,
-                    hint: S.cardNumber,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [CardNumberInputFormatter()],
-                    textInputAction: TextInputAction.next,
-                    onChanged: (_) => setState(_syncCvvLength),
-                    validator: (value) =>
-                        (value == null || value.replaceAll(' ', '').length < 16)
-                        ? S.validCardNumber
-                        : null,
-                  ),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: CustomTextFormField(
-                          controller: _expiryController,
-                          hint: S.expiryFormatHint,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [ExpiryDateInputFormatter()],
-                          textInputAction: TextInputAction.next,
-                          onChanged: (_) => setState(() {}),
-                          validator: (value) {
-                            if (value == null || value.length < 5) {
-                              return S.invalidDate;
-                            }
-                            if (_hasExpired()) return S.cardExpired;
-                            return null;
-                          },
-                        ),
-                      ),
-                      SizedBox(width: SpacingTokens.md.w),
-                      Expanded(
-                        child: CustomTextFormField(
-                          controller: _cvvController,
-                          hint: S.cvvHint(_cvvLength),
-                          keyboardType: TextInputType.number,
-                          obscureText: true,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                            LengthLimitingTextInputFormatter(_cvvLength),
-                          ],
-                          textInputAction: TextInputAction.done,
-                          validator: (value) =>
-                              (value == null || value.length != _cvvLength)
-                              ? S.invalidCvvLength(_cvvLength)
-                              : null,
-                        ),
-                      ),
-                    ],
-                  ),
+      CardPreview(
+        number: _numberController.text,
+        name: _nameController.text,
+        expiry: _expiryController.text,
+      ),
+      SizedBox(height: SpacingTokens.xl.h),
+      CustomTextFormField(
+        controller: _nameController,
+        hint: S.cardHolderName,
+        keyboardType: TextInputType.name,
+        textInputAction: TextInputAction.next,
+        onChanged: (_) => setState(() {}),
+        validator: (value) => (value == null || value.trim().isEmpty)
+            ? S.cardHolderRequired
+            : null,
+      ),
+      CustomTextFormField(
+        controller: _numberController,
+        hint: S.cardNumber,
+        keyboardType: TextInputType.number,
+        inputFormatters: [CardNumberInputFormatter()],
+        textInputAction: TextInputAction.next,
+        onChanged: (_) => setState(_syncCvvLength),
+        validator: (value) =>
+            (value == null || value.replaceAll(' ', '').length < 16)
+            ? S.validCardNumber
+            : null,
+      ),
+      Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: CustomTextFormField(
+              controller: _expiryController,
+              hint: S.expiryFormatHint,
+              keyboardType: TextInputType.number,
+              inputFormatters: [ExpiryDateInputFormatter()],
+              textInputAction: TextInputAction.next,
+              onChanged: (_) => setState(() {}),
+              validator: (value) {
+                if (value == null || value.length < 5) {
+                  return S.invalidDate;
+                }
+                if (_hasExpired()) return S.cardExpired;
+                return null;
+              },
+            ),
+          ),
+          SizedBox(width: SpacingTokens.md.w),
+          Expanded(
+            child: CustomTextFormField(
+              controller: _cvvController,
+              hint: S.cvvHint(_cvvLength),
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(_cvvLength),
+              ],
+              textInputAction: TextInputAction.done,
+              validator: (value) =>
+                  (value == null || value.length != _cvvLength)
+                  ? S.invalidCvvLength(_cvvLength)
+                  : null,
+            ),
+          ),
+        ],
+      ),
     ],
   );
 }
@@ -256,9 +254,8 @@ class _UnavailableNotice extends StatelessWidget {
             Text(
               message ?? S.cardSavingNotConfigured,
               textAlign: TextAlign.center,
-              style: AppFonts.regular14(context).copyWith(
-                color: AppColor.greyColor,
-              ),
+              style: AppFonts.regular14(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
             SizedBox(height: SpacingTokens.lg.h),
             CustomBtn(

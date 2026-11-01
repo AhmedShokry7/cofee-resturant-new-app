@@ -182,7 +182,9 @@ class _LocationPickerState extends State<LocationPicker> {
   }
 
   void _applyDevicePoint(Position position) {
-    setState(() => _devicePoint = LatLng(position.latitude, position.longitude));
+    setState(
+      () => _devicePoint = LatLng(position.latitude, position.longitude),
+    );
     // `initialCenter` is only read on the map's first build, which may already
     // have happened at the world view, so the camera has to be moved
     // explicitly. Deferred to the next frame so the controller is attached.
@@ -332,13 +334,11 @@ class _LocationPickerState extends State<LocationPicker> {
       return;
     }
 
-    final point = LatLng(
-      result.position!.latitude,
-      result.position!.longitude,
-    );
+    final point = LatLng(result.position!.latitude, result.position!.longitude);
     _movePin(point, zoom: _searchZoom);
     final label = await _resolveLabel(point);
-    if (!mounted || generation != _positionGeneration || _point != point) return;
+    if (!mounted || generation != _positionGeneration || _point != point)
+      return;
     setState(() => _isLocating = false);
     if (label != null) {
       _setSearchText(label);
@@ -397,7 +397,8 @@ class _LocationPickerState extends State<LocationPicker> {
         permission == LocationPermission.always;
   }
 
-  Future<({Position? position, LocationFailure? failure})> _devicePosition() async {
+  Future<({Position? position, LocationFailure? failure})>
+  _devicePosition() async {
     try {
       if (!await Geolocator.isLocationServiceEnabled()) {
         return (position: null, failure: LocationFailure.servicesDisabled);
@@ -474,10 +475,9 @@ class _LocationPickerState extends State<LocationPicker> {
           Padding(
             padding: EdgeInsets.only(bottom: SpacingTokens.sm.h),
             child: Text(
-              S.locationFailed(_locationFailure!),
-              style: AppFonts.regular12(context).copyWith(
-                color: AppColor.greyColor,
-              ),
+              _locationFailure!.userMessage,
+              style: AppFonts.regular12(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
           ),
         if (widget.onLocationFailure != null &&
@@ -538,7 +538,10 @@ class _LocationPickerState extends State<LocationPicker> {
           ),
           SizedBox(width: SpacingTokens.sm.w),
           Expanded(
-            child: Text(S.useCurrentLocation, style: AppFonts.medium16(context)),
+            child: Text(
+              S.useCurrentLocation,
+              style: AppFonts.medium16(context),
+            ),
           ),
           // Bound to the acquisition, not to the reverse-geocode. It used to
           // hang off `_isResolving`, so while the position itself was still
@@ -563,7 +566,9 @@ class _LocationPickerState extends State<LocationPicker> {
           mapController: _mapController,
           options: MapOptions(
             initialCenter: known ?? _unknownLocationCenter,
-            initialZoom: known == null ? _unknownLocationZoom : widget.initialZoom,
+            initialZoom: known == null
+                ? _unknownLocationZoom
+                : widget.initialZoom,
             onTap: _onMapTap,
           ),
           children: [
@@ -616,13 +621,9 @@ class _LocationPickerState extends State<LocationPicker> {
       shrinkWrap: true,
       padding: EdgeInsets.symmetric(vertical: SpacingTokens.xs.h),
       itemCount: _suggestions.length,
-      separatorBuilder: (_, _) => Divider(
-        height: 1,
-        indent: 52.w,
-        color: AppColor.borderColor,
-      ),
-      itemBuilder: (context, index) =>
-          _suggestionRow(_suggestions[index]),
+      separatorBuilder: (_, _) =>
+          Divider(height: 1, indent: 52.w, color: AppColor.borderColor),
+      itemBuilder: (context, index) => _suggestionRow(_suggestions[index]),
     ),
   );
 
@@ -656,9 +657,8 @@ class _LocationPickerState extends State<LocationPicker> {
                     place.subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppFonts.regular12(context).copyWith(
-                      color: AppColor.greyColor,
-                    ),
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
               ],
             ),

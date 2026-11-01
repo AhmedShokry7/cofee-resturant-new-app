@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
@@ -235,7 +236,10 @@ void main() {
       tester,
     ) async {
       await pumpSkeleton(tester, const DbImage(image: null));
-      expect(find.byIcon(Icons.image_not_supported), findsOneWidget);
+      expect(
+        find.byIcon(HugeIcons.strokeRoundedImageNotFound01),
+        findsOneWidget,
+      );
       expect(find.byType(Shimmer), findsNothing);
     });
 
@@ -243,7 +247,10 @@ void main() {
       tester,
     ) async {
       await pumpSkeleton(tester, const DbImage(image: '  '));
-      expect(find.byIcon(Icons.image_not_supported), findsOneWidget);
+      expect(
+        find.byIcon(HugeIcons.strokeRoundedImageNotFound01),
+        findsOneWidget,
+      );
       expect(find.byType(Shimmer), findsNothing);
     });
   });

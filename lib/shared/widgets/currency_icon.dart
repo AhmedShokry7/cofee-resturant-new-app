@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
 
 /// Standard Saudi Riyal symbol used everywhere a currency icon is shown.
 ///
@@ -27,8 +28,8 @@ class CurrencyIcon extends StatelessWidget {
     final resolved =
         color ??
         (Theme.of(context).brightness == Brightness.dark
-            ? Colors.white
-            : const Color(0xFF242424));
+            ? AppColor.whiteColor
+            : AppColor.iconOnLight);
     return SvgPicture.asset(
       asset,
       width: size.w,

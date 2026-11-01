@@ -33,11 +33,7 @@ class ProductCardSkeleton extends StatelessWidget {
             aspectRatio: 0.60,
             child: Container(
               padding: EdgeInsets.all(SpacingTokens.md.w),
-              decoration: BoxDecoration(
-                color: AppColor.whiteColor,
-                borderRadius: BorderRadius.circular(16.r),
-                border: Border.all(color: AppColor.borderColor),
-              ),
+              decoration: skeletonCardDecoration(context, radius: 16),
               child: Shimmer(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -180,11 +176,7 @@ class BundleCardSkeleton extends StatelessWidget {
     return Container(
       width: 180.w,
       padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColor.borderColor),
-      ),
+      decoration: skeletonCardDecoration(context, radius: 16),
       child: Shimmer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -253,11 +245,7 @@ class BundleListTileSkeleton extends StatelessWidget {
     return Container(
       margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
       padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: BoxDecoration(
-        color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: AppColor.borderColor),
-      ),
+      decoration: skeletonCardDecoration(context, radius: 16),
       child: Shimmer(
         child: Row(
           children: [
@@ -297,12 +285,7 @@ class BundleListSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView.builder(
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: skeletonListPadding(context),
       itemCount: itemCount,
       itemBuilder: (context, index) => const BundleListTileSkeleton(),
     );

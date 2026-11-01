@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/shared/widgets/search_pill.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
@@ -21,21 +21,11 @@ class HomeSearchBar extends StatelessWidget {
         Navigator.of(context).pushNamed(SearchPage.routeName);
       },
       child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.lg.w,
-          vertical: SpacingTokens.md.h,
-        ),
-        decoration: BoxDecoration(
-          color: AppColor.lightGreyColor,
-          borderRadius: BorderRadius.circular(100.r),
-        ),
+        padding: SearchPill.padding(),
+        decoration: SearchPill.decoration(),
         child: Row(
           children: [
-            Icon(
-              HugeIcons.strokeRoundedSearch01,
-              size: 20.w,
-              color: AppColor.greyColor,
-            ),
+            SearchPill.icon(),
             SizedBox(width: SpacingTokens.sm.w),
             Expanded(
               child: Text(

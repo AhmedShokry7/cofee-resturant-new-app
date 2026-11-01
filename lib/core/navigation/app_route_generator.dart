@@ -15,82 +15,36 @@ import 'package:new_coffee/features/orders/presentation/views/order_details_page
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 
 /// Routes that require arguments passed via [RouteSettings.arguments].
+///
+/// A page name that arrives with the wrong argument falls through and the
+/// navigator reports the route as unhandled — pushing a route is the caller's
+/// contract, not something a screen can be built around here.
 class AppRouteGenerator {
   const AppRouteGenerator._();
 
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
-    if (settings.name == ProductDetailsPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is ProductModel) {
-        return MaterialPageRoute(
-          builder: (context) => ProductDetailsPage(product: arguments),
-        );
-      }
-    }
-    if (settings.name == BundleDetailsPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is BundleModel) {
-        return MaterialPageRoute(
-          builder: (context) => BundleDetailsPage(bundle: arguments),
-        );
-      }
-    }
-    if (settings.name == OrderDetailsPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is OrderItemModel) {
-        return MaterialPageRoute(
-          builder: (context) => OrderDetailsPage(order: arguments),
-        );
-      }
-      if (arguments is OrderGroup) {
-        return MaterialPageRoute(
-          builder: (context) => OrderDetailsPage(
-            order: arguments.header,
-            lines: arguments.lines,
-          ),
-        );
-      }
-    }
-    if (settings.name == BannerDetailsPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is BannerModel) {
-        return MaterialPageRoute(
-          builder: (context) => BannerDetailsPage(banner: arguments),
-        );
-      }
-    }
-    if (settings.name == SeeAllProductsPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is SeeAllProductsArgs) {
-        return MaterialPageRoute(
-          builder: (context) => SeeAllProductsPage(args: arguments),
-        );
-      }
-    }
-    if (settings.name == OtpPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is String) {
-        return MaterialPageRoute(
-          builder: (context) => OtpPage(phone: arguments),
-        );
-      }
-    }
-    if (settings.name == TrackOrderPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is OrderItemModel) {
-        return MaterialPageRoute(
-          builder: (context) => TrackOrderPage(order: arguments),
-        );
-      }
-    }
-    if (settings.name == LeaveReviewPage.routeName) {
-      final arguments = settings.arguments;
-      if (arguments is OrderItemModel) {
-        return MaterialPageRoute(
-          builder: (context) => LeaveReviewPage(order: arguments),
-        );
-      }
-    }
-    return null;
+    final arguments = settings.arguments;
+    final Widget? page = switch (settings.name) {
+      ProductDetailsPage.routeName when arguments is ProductModel =>
+        ProductDetailsPage(product: arguments),
+      BundleDetailsPage.routeName when arguments is BundleModel =>
+        BundleDetailsPage(bundle: arguments),
+      OrderDetailsPage.routeName when arguments is OrderItemModel =>
+        OrderDetailsPage(order: arguments),
+      OrderDetailsPage.routeName when arguments is OrderGroup =>
+        OrderDetailsPage(order: arguments.header, lines: arguments.lines),
+      BannerDetailsPage.routeName when arguments is BannerModel =>
+        BannerDetailsPage(banner: arguments),
+      SeeAllProductsPage.routeName when arguments is SeeAllProductsArgs =>
+        SeeAllProductsPage(args: arguments),
+      OtpPage.routeName when arguments is String => OtpPage(phone: arguments),
+      TrackOrderPage.routeName when arguments is OrderItemModel =>
+        TrackOrderPage(order: arguments),
+      LeaveReviewPage.routeName when arguments is OrderItemModel =>
+        LeaveReviewPage(order: arguments),
+      _ => null,
+    };
+    if (page == null) return null;
+    return MaterialPageRoute(builder: (context) => page);
   }
 }

@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
@@ -87,8 +88,12 @@ class DbImage extends StatelessWidget {
         alignment: alignment,
         width: width,
         height: height,
-        memCacheWidth: (width != null && width!.isFinite && width! > 0) ? width!.toInt() : null,
-        memCacheHeight: (height != null && height!.isFinite && height! > 0) ? height!.toInt() : null,
+        memCacheWidth: (width != null && width!.isFinite && width! > 0)
+            ? width!.toInt()
+            : null,
+        memCacheHeight: (height != null && height!.isFinite && height! > 0)
+            ? height!.toInt()
+            : null,
         // Shimmer fills the exact image bounds so the layout never jumps
         // when the photo arrives. The error/empty states stay static and
         // neutral on purpose: a missing picture is not loading.
@@ -104,8 +109,12 @@ class DbImage extends StatelessWidget {
         fit: fit,
         width: width,
         height: height,
-        cacheWidth: (width != null && width!.isFinite && width! > 0) ? width!.toInt() : null,
-        cacheHeight: (height != null && height!.isFinite && height! > 0) ? height!.toInt() : null,
+        cacheWidth: (width != null && width!.isFinite && width! > 0)
+            ? width!.toInt()
+            : null,
+        cacheHeight: (height != null && height!.isFinite && height! > 0)
+            ? height!.toInt()
+            : null,
         errorBuilder: (context, error, stackTrace) =>
             _UnavailableDbImage(iconSize: iconSize),
       );
@@ -126,7 +135,7 @@ class _UnavailableDbImage extends StatelessWidget {
     color: AppColor.surfaceColor,
     child: Center(
       child: Icon(
-        Icons.image_not_supported,
+        HugeIcons.strokeRoundedImageNotFound01,
         color: AppColor.greyColor,
         size: iconSize,
       ),

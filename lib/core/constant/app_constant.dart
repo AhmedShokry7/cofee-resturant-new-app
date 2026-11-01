@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 
 class AppConstant {
   static const String routesKey = "routes";
@@ -15,8 +14,6 @@ class AppConstant {
   /// logout. Keeping the onboarding marker on its own means a returning
   /// customer is never pushed back to the welcome screen because of it.
   static const String onBoardingDoneKey = "onboarding_done";
-
-  static double horizontalPadding(BuildContext context) => SpacingTokens.lg.w;
 
   static double btnHeight(BuildContext context) => 52.h;
 

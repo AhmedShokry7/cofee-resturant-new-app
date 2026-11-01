@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
@@ -32,7 +33,7 @@ class DiscountBadge extends StatelessWidget {
       child: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/icons/discount.png'),
+            image: AssetImage(AppImages.discount),
             matchTextDirection: true,
             fit: BoxFit.contain,
           ),

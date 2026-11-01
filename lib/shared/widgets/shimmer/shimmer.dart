@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 
 /// Central configuration for every skeleton/shimmer loading widget.
 ///
@@ -13,12 +15,12 @@ class ShimmerColors {
   static Color baseOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.darkCard
-      : const Color(0xFFE9E9E9);
+      : AppColor.skeletonBase;
 
   static Color highlightOf(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
       ? AppColor.darkBorder
-      : const Color(0xFFF7F7F7);
+      : AppColor.skeletonHighlight;
 }
 
 /// Subtle sliding-highlight wrapper for skeleton content.
@@ -195,3 +197,31 @@ class ShimmerCircle extends StatelessWidget {
     );
   }
 }
+
+/// The card a skeleton row sits in: a surface that follows the theme, the
+/// shared hairline border and one radius.
+///
+/// Every skeleton used to copy this decoration out and hardcode a white
+/// surface, so a loading screen in dark mode kept painting white cards.
+BoxDecoration skeletonCardDecoration(
+  BuildContext context, {
+  double radius = 12,
+}) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  return BoxDecoration(
+    color: dark ? AppColor.darkCard : AppColor.whiteColor,
+    borderRadius: BorderRadius.circular(radius.r),
+    border: Border.all(
+      color: dark ? AppColor.darkBorder : AppColor.borderColor,
+    ),
+  );
+}
+
+/// The padding around a list of skeleton cards.
+EdgeInsetsGeometry skeletonListPadding(BuildContext context) =>
+    EdgeInsets.fromLTRB(
+      SpacingTokens.lg.w,
+      SpacingTokens.md.h,
+      SpacingTokens.lg.w,
+      SpacingTokens.lg.h,
+    );

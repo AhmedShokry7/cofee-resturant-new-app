@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/shared/widgets/search_pill.dart';
 
-/// Search input styled to match [HomeSearchBar] (light-grey pill), shared so
-/// the search page does not repeat the field decoration.
+/// Search input styled with [SearchPill], so the search page and the Home bar
+/// cannot drift apart.
 class SearchTextField extends StatelessWidget {
   const SearchTextField({
     super.key,
@@ -26,7 +24,7 @@ class SearchTextField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(100.r),
+      borderRadius: BorderRadius.circular(SearchPill.radius()),
       borderSide: BorderSide.none,
     );
     return TextField(
@@ -37,20 +35,12 @@ class SearchTextField extends StatelessWidget {
       cursorColor: AppColor.primaryColor,
       decoration: InputDecoration(
         hintText: hint ?? S.searchHint,
-        hintStyle: AppFonts.regular14(context).copyWith(
-          color: AppColor.greyColor,
-        ),
-        prefixIcon: Icon(
-          HugeIcons.strokeRoundedSearch01,
-          size: 20.w,
-          color: AppColor.greyColor,
-        ),
+        hintStyle: AppFonts.regular14(context)
+            .copyWith(color: AppColor.greyColor),
+        prefixIcon: SearchPill.icon(),
         filled: true,
         fillColor: AppColor.lightGreyColor,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.lg.w,
-          vertical: SpacingTokens.md.h,
-        ),
+        contentPadding: SearchPill.padding(),
         border: border,
         enabledBorder: border,
         focusedBorder: border,

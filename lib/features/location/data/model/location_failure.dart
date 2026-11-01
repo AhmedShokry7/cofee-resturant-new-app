@@ -1,3 +1,5 @@
+import 'package:new_coffee/core/locale/app_strings.dart';
+
 /// Why the device position could not be used.
 ///
 /// Every case needs a different action from the customer, so they are kept
@@ -20,4 +22,19 @@ enum LocationFailure {
 
   /// Anything else the platform reported.
   unavailable,
+}
+
+/// What to tell the customer about a missing position.
+///
+/// The wording itself lives in [S]; this only says which case is showing, so
+/// the string table never has to import the location feature.
+extension LocationFailureCopy on LocationFailure {
+  String get userMessage => switch (this) {
+    LocationFailure.servicesDisabled => S.locationServicesDisabled,
+    LocationFailure.permissionDenied => S.locationPermissionNeeded,
+    LocationFailure.permissionPermanentlyDenied =>
+      S.locationPermissionPermanentlyDenied,
+    LocationFailure.timeout => S.locationTimeout,
+    LocationFailure.unavailable => S.locationNoFix,
+  };
 }

@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
@@ -236,14 +237,14 @@ class _AddToCartButtonVisual extends StatelessWidget {
     } else if (status == _AddToCartStatus.added) {
       decoration = BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF15803D), Color(0xFF22C55E)],
+          colors: [AppColor.successColorDeep, AppColor.successColor],
         ),
         borderRadius: _radius,
       );
     } else if (status == _AddToCartStatus.error) {
       decoration = BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFB91C1C), Color(0xFFDC2626)],
+          colors: [AppColor.errorColorDeep, AppColor.errorColor],
         ),
         borderRadius: _radius,
       );
@@ -293,83 +294,48 @@ class _AddToCartButtonVisual extends StatelessWidget {
     final color = AppColor.whiteColor;
     final textStyle = AppFonts.semiBold16(context).copyWith(color: color);
 
-    switch (status) {
-      case _AddToCartStatus.adding:
-        return Row(
-          key: const ValueKey('adding'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _AddingIcon(icon: idleIcon, size: iconSize, color: color),
-            if (!compact) ...[
-              SizedBox(width: 8.w),
-              Flexible(
-                child: Text(
-                  S.adding,
-                  style: textStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
-        );
-      case _AddToCartStatus.added:
-        return Row(
-          key: const ValueKey('added'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.check_rounded, size: iconSize, color: color),
-            if (!compact) ...[
-              SizedBox(width: 8.w),
-              Flexible(
-                child: Text(
-                  S.added,
-                  style: textStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
-        );
-      case _AddToCartStatus.error:
-        return Row(
-          key: const ValueKey('error'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.error_outline_rounded, size: iconSize, color: color),
-            if (!compact) ...[
-              SizedBox(width: 8.w),
-              Flexible(
-                child: Text(
-                  label,
-                  style: textStyle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
-        );
-      case _AddToCartStatus.idle:
-        return Row(
-          key: const ValueKey('idle'),
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(idleIcon, size: iconSize, color: color),
-            if (!compact) ...[
-              SizedBox(width: 8.w),
-              Flexible(
-                child: Text(
-                  label,
-                  style: textStyle,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ],
-        );
-    }
+    // Every phase renders the same row; only the key, the glyph and the words
+    // differ, so the differences are what the switch has to say.
+    final ({String key, IconData icon, String text}) phase = switch (status) {
+      _AddToCartStatus.adding => (
+        key: 'adding',
+        icon: idleIcon,
+        text: S.adding,
+      ),
+      _AddToCartStatus.added => (
+        key: 'added',
+        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+        text: S.added,
+      ),
+      _AddToCartStatus.error => (
+        key: 'error',
+        icon: HugeIcons.strokeRoundedAlertCircle,
+        text: label,
+      ),
+      _AddToCartStatus.idle => (key: 'idle', icon: idleIcon, text: label),
+    };
+
+    return Row(
+      key: ValueKey(phase.key),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (status == _AddToCartStatus.adding)
+          _AddingIcon(icon: phase.icon, size: iconSize, color: color)
+        else
+          Icon(phase.icon, size: iconSize, color: color),
+        if (!compact) ...[
+          SizedBox(width: SpacingTokens.sm.w),
+          Flexible(
+            child: Text(
+              phase.text,
+              style: textStyle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }
 

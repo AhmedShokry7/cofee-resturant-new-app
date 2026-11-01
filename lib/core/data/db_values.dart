@@ -83,9 +83,6 @@ class Db {
     return const [];
   }
 
-  static List<String> asStringListOrNull(dynamic value) =>
-      value == null ? const <String>[] : asStringList(value);
-
   static Map<String, dynamic> asMap(dynamic value) {
     if (value is Map) return value.map((k, v) => MapEntry(k.toString(), v));
     return const {};
