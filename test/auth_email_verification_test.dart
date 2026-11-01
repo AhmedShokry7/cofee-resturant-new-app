@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
@@ -10,6 +11,7 @@ import 'package:new_coffee/features/auth/data/repositories/resilient_auth_reposi
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/sign_up_page_body.dart';
+import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -98,12 +100,21 @@ void main() {
       final repository = _FakeAuthRepository(needsEmailConfirmation: needs);
       await tester.pumpWidget(
         ScreenUtilInit(
-          designSize: const Size(360, 690),
+          designSize: AppConstant.designSize,
           builder: (context, _) => RepositoryProvider<AuthRepository>(
             create: (_) => repository,
             child: BlocProvider(
               create: (_) => AuthCubit(repository),
-              child: const MaterialApp(home: Scaffold(body: SignUpPageBody())),
+              child: MaterialApp(
+                routes: {
+                  // The handover target. The real home page needs the whole
+                  // provider tree, which is irrelevant to the question this
+                  // group asks.
+                  MainPage.routeName: (context) =>
+                      const Scaffold(body: Text('home-stub')),
+                },
+                home: const Scaffold(body: SignUpPageBody()),
+              ),
             ),
           ),
         ),
@@ -133,6 +144,11 @@ void main() {
       await signUp(tester, needs: false);
 
       expect(find.text(S.signUpEmailVerification), findsNothing);
+      // And the customer is dropped into the app: the handover is what this
+      // branch exists for, so proving "no dialog" without it would pass on a
+      // sign-up that went nowhere.
+      expect(find.text('home-stub'), findsOneWidget);
+      expect(find.byType(SignUpPageBody), findsNothing);
     });
 
     test('the offline-safe decorator forwards the answer', () {

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -17,7 +15,6 @@ import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
-import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -66,10 +63,6 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     } else {
       Navigator.of(context).pushReplacementNamed(MainPage.routeName);
     }
-    // The location prompt is asked for after the handover: it is a system
-    // dialog, and waiting for it before navigating left the app on the login
-    // screen until the customer answered it.
-    unawaited(LocationPermissionService.requestOnFirstLaunch());
   }
 
   @override
@@ -97,9 +90,8 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                   onTap: () async {
                     await const SessionRepository().markAuthenticated();
                     if (!context.mounted) return;
-                    Navigator.of(context).pushReplacementNamed(MainPage.routeName);
-                    unawaited(
-                      LocationPermissionService.requestOnFirstLaunch(),
+                    Navigator.of(context).pushReplacementNamed(
+                      MainPage.routeName,
                     );
                   },
                 ),

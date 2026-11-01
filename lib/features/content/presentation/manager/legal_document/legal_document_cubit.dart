@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:new_coffee/features/content/data/model/legal_document_model.dart';
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 
-import 'legal_document_state.dart';
+part 'legal_document_state.dart';
 
 /// One published legal document, read by its CMS slug.
 class LegalDocumentCubit extends Cubit<LegalDocumentState> {

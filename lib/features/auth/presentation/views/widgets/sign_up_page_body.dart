@@ -13,7 +13,6 @@ import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
-import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -56,8 +55,6 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
 
   Future<void> _onAuthenticated() async {
     await const SessionRepository().markAuthenticated();
-    if (!mounted) return;
-    await LocationPermissionService.requestOnFirstLaunch();
     if (!mounted) return;
     final origin = ModalRoute.of(context)?.settings.arguments;
     if (Navigator.of(context).canPop()) {
@@ -105,9 +102,9 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                   onTap: () async {
                     await const SessionRepository().markAuthenticated();
                     if (!context.mounted) return;
-                    await LocationPermissionService.requestOnFirstLaunch();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushReplacementNamed(MainPage.routeName);
+                    Navigator.of(context).pushReplacementNamed(
+                      MainPage.routeName,
+                    );
                   },
                 ),
                 Form(

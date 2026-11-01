@@ -701,18 +701,8 @@ class AssistantEngine {
   /// The knowledge base holds facts and the intents handle actions. "عايز
   /// اطلب لاتيه كبير" is an order, not a question about lattes, so the
   /// knowledge base must stay out of it.
-  static bool _isActionRequest(String query) {
-    final normalized = normalizeText(query);
-    const markers = [
-      'اطلب', 'اعمل', 'اعملي', 'عايز', 'عاوز', 'حط', 'ضيف', 'زود',
-      'الغي', 'كنسل', 'امسح', 'ادفع', 'هات', 'جيب', 'عطني', 'نطلب',
-      'محتاج', 'ابغى', 'ابي', 'بدي', 'ودي', 'عايزك', 'بنطلبه',
-    ];
-    for (final marker in markers) {
-      if (_containsWord(normalized, normalizeText(marker))) return true;
-    }
-    return false;
-  }
+  static bool _isActionRequest(String query) =>
+      mentionsWord(query, AssistantPhrases.actionWords);
 
   static AssistantAnswer? _knowledgeAnswer(
     String query,
@@ -748,41 +738,20 @@ class AssistantEngine {
     required bool arabic,
     required Set<String> cartProductIds,
   }) {
-    final normalized = normalizeText(query);
-    final mentionsCart = [
-      'السلة',
-      'سلتي',
-      'السلة',
-      'cart',
-      'basket',
-    ].any((word) => _containsWord(normalized, normalizeText(word)));
+    final mentionsCart = mentionsWord(query, AssistantPhrases.cartWords);
     if (!mentionsCart) return null;
 
-    final isRemoval = [
-      'شيل',
-      'امسح',
-      'احذف',
-      'انقص',
-      'remove',
-      'delete',
-    ].any((word) => _containsWord(normalized, normalizeText(word)));
-
-    if (isRemoval) {
-      return _removeFromCart(query, memory, arabic: arabic, cartProductIds: cartProductIds);
+    if (mentionsWord(query, AssistantPhrases.cartRemovalWords)) {
+      return _removeFromCart(
+        query,
+        memory,
+        arabic: arabic,
+        cartProductIds: cartProductIds,
+      );
     }
 
-    final asksEmpty = [
-      'فاضي',
-      'فاضية',
-      'فاضيه',
-      'empty',
-    ].any((word) => _containsWord(normalized, normalizeText(word)));
-    final asksCount = [
-      'كام',
-      'كمان كام',
-      'how many',
-      'number',
-    ].any((word) => _containsWord(normalized, normalizeText(word)));
+    final asksEmpty = mentionsWord(query, AssistantPhrases.cartEmptyWords);
+    final asksCount = mentionsWord(query, AssistantPhrases.cartCountWords);
     if (!asksEmpty && !asksCount) return null;
 
     return _cartStatus(arabic: arabic, cartProductIds: cartProductIds);
@@ -972,15 +941,8 @@ class AssistantEngine {
   }
 
   /// True for "which one has X" style asks (اللي فيه / the one with).
-  static bool _isDescriptiveAsk(String query) {
-    final normalized = normalizeText(query);
-    return normalized.contains('لي فيه') ||
-        normalized.contains('لي فيها') ||
-        normalized.contains('الي فيه') ||
-        normalized.contains('الي فيها') ||
-        normalized.contains('the one with') ||
-        normalized.contains('which one has');
-  }
+  static bool _isDescriptiveAsk(String query) =>
+      mentionsFragment(query, AssistantPhrases.descriptiveAskWords);
 
   /// "Completes" the cart: coffee in cart -> dessert pairing and vice versa.
   static ProductModel? _pairing(

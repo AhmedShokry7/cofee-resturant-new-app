@@ -1,5 +1,4 @@
-import 'package:flutter/foundation.dart';
-import 'package:new_coffee/features/content/data/model/faq_model.dart';
+part of 'faqs_cubit.dart';
 
 @immutable
 class FaqsState {
@@ -14,6 +13,10 @@ class FaqsState {
 
   /// Why the questions could not be read, in the customer's language.
   final String? errorMessage;
+
+  /// Whether the last read failed, which is what decides the screen's copy -
+  /// the reason itself is never shown to the customer.
+  bool get hasError => errorMessage != null;
 
   FaqsState copyWith({
     bool? isLoading,

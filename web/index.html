@@ -37,6 +37,18 @@
 
   <title>غيم وسحب</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- The page is painted white before Flutter's first frame, the way the
+       native launch windows are (see flutter_native_splash.yaml). Without it the
+       browser's own default shows for a moment and the handover to SplashView,
+       which renders AppColor.whiteColor, is visible as a flash. -->
+  <style>
+    html,
+    body {
+      background: #ffffff;
+      margin: 0;
+    }
+  </style>
 </head>
 <body>
   <!--

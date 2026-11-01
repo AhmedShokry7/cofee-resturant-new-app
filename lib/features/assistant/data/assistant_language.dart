@@ -167,3 +167,37 @@ String? closestMatch(String token, Iterable<String> candidates) {
   final threshold = x.length <= 4 ? 0.8 : 0.7;
   return bestScore >= threshold ? best : null;
 }
+
+/// True when [phrase] sits in the already-normalized [text] as its own word.
+///
+/// Substring matching alone reads "كم" inside "كمان" and "عايز" inside
+/// "عايزين", so a short marker would claim questions it was never asked.
+bool containsWholeWord(String text, String phrase) {
+  if (phrase.length < 3) return false;
+  var index = text.indexOf(phrase);
+  while (index >= 0) {
+    final beforeOk = index == 0 || text[index - 1] == ' ';
+    final after = index + phrase.length;
+    final afterOk = after >= text.length || text[after] == ' ';
+    if (beforeOk && afterOk) return true;
+    index = text.indexOf(phrase, index + 1);
+  }
+  return false;
+}
+
+/// True when any of [phrases] appears in [query] as a whole word.
+///
+/// The single place a trigger list is matched: the engine used to repeat the
+/// normalize-then-loop over inline lists, each with its own idea of what
+/// counts as a word.
+bool mentionsWord(String query, Iterable<String> phrases) {
+  final normalized = normalizeText(query);
+  return phrases.any((phrase) => containsWholeWord(normalized, normalizeText(phrase)));
+}
+
+/// True when any of [markers] occurs anywhere in [query], including inside a
+/// longer word ("سعر" in "السعر").
+bool mentionsFragment(String query, Iterable<String> markers) {
+  final normalized = normalizeText(query);
+  return markers.any((marker) => normalized.contains(normalizeText(marker)));
+}

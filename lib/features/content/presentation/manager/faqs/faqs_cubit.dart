@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:new_coffee/features/content/data/model/faq_model.dart';
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 
-import 'faqs_state.dart';
+part 'faqs_state.dart';
 
 /// The help-centre questions the app shows to the customer.
 ///

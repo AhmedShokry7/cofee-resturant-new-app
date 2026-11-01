@@ -369,4 +369,70 @@ class AssistantPhrases {
     ' Hot or cold today? Strong or on the sweet side?',
     ' Tell me hot or cold, strong or sweet, and I will nail it next time.',
   ];
+
+  /// Words that make a question about the cart itself.
+  static const List<String> cartWords = ['السلة', 'سلتي', 'cart', 'basket'];
+
+  /// Verbs that take something out of the cart rather than ordering it.
+  static const List<String> cartRemovalWords = [
+    'شيل', 'امسح', 'احذف', 'انقص', 'remove', 'delete',
+  ];
+
+  /// Words asking whether the cart is empty.
+  static const List<String> cartEmptyWords = [
+    'فاضي', 'فاضية', 'فاضيه', 'empty',
+  ];
+
+  /// Words asking how much the cart holds.
+  static const List<String> cartCountWords = [
+    'كام', 'كمان كام', 'how many', 'number',
+  ];
+
+  /// Words that mean the customer is asking the bot to DO something.
+  ///
+  /// The knowledge base holds facts and the intents handle actions, so a
+  /// request carrying one of these must not be answered with an article.
+  static const List<String> actionWords = [
+    'اطلب', 'اعمل', 'اعملي', 'عايز', 'عاوز', 'حط', 'ضيف', 'زود',
+    'الغي', 'كنسل', 'امسح', 'ادفع', 'هات', 'جيب', 'عطني', 'نطلب',
+    'محتاج', 'ابغى', 'ابي', 'بدي', 'ودي', 'عايزك', 'بنطلبه',
+  ];
+
+  /// Fragments that make a question about price or the bill.
+  static const List<String> priceWords = [
+    'بكام', 'بكم', 'سعر', 'اسعار', 'how much', 'total', 'الحساب',
+    'فاتوره', 'التوتال', 'يكلف', 'هيكلف', 'price', 'cost',
+  ];
+
+  /// Fragments that make a question about discounts.
+  static const List<String> couponWords = [
+    'عروض', 'عرض', 'كوبون', 'كوبونات', 'خصم', 'تخفيض', 'برومو',
+    'discount', 'offer', 'promo', 'coupon',
+  ];
+
+  /// Fragments naming something the customer can choose per cup.
+  static const List<String> optionWords = [
+    'سكر', 'حجم', 'مقاس', 'كبير', 'صغير', 'وسط', 'اضافه', 'اضافات',
+    'حليب', 'ثلج', 'مركز', 'sugar', 'size', 'large', 'small', 'medium',
+    'extra', 'shot', 'cream', 'ice',
+  ];
+
+  /// Which option group a question is about, keyed by the group id the shop
+  /// uses. Listing every group when one was asked about buries the answer.
+  static const Map<String, List<String>> optionGroupWords = {
+    'sugar': ['سكر', 'sugar', 'حلو', 'sweet'],
+    'size': [
+      'حجم', 'مقاس', 'كبير', 'صغير', 'وسط', 'size', 'large', 'small', 'medium',
+    ],
+    'extras': [
+      'اضافه', 'اضافات', 'شيبس', 'حليب', 'ثلج', 'كرميه', 'عسل',
+      'extra', 'shot', 'cream', 'ice', 'syrup',
+    ],
+  };
+
+  /// Fragments that describe a drink instead of naming it ("اللي فيه كرميل").
+  static const List<String> descriptiveAskWords = [
+    'لي فيه', 'لي فيها', 'الي فيه', 'الي فيها', 'the one with',
+    'which one has',
+  ];
 }

@@ -15,9 +15,10 @@ import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart
 /// Regression cover for the failures that only showed up in a release build on
 /// a real device:
 ///
-///  * the splash used to stay on screen forever when the location prompt threw
-///    while it was asking for permission, because the handover was sequenced
-///    after that call;
+///  * the splash used to stay on screen forever, because the handover was
+///    sequenced after a location prompt that never came back. The splash owns
+///    the handover alone now, and the prompt belongs to the home shell, which
+///    fires it without waiting (see `location_first_launch_prompt_test.dart`);
 ///  * the onboarding marker used to be written without being confirmed, so a
 ///    customer could meet the onboarding again on the next launch;
 ///  * a missing route value sent a returning customer back to the welcome
@@ -26,14 +27,12 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('splash handover', () {
-    testWidgets('hands over even when the location prompt cannot run', (
+    testWidgets('hands over to the saved route and nothing else', (
       tester,
     ) async {
-      // Geolocator has no platform implementation in a widget test, so the
-      // permission request fails. The handover must not depend on it.
       await tester.pumpWidget(
         ScreenUtilInit(
-          designSize: const Size(360, 690),
+          designSize: AppConstant.designSize,
           builder: (context, child) => MaterialApp(
             routes: {
               SplashView.routeName: (context) => const SplashView(

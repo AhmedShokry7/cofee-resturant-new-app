@@ -1,5 +1,4 @@
-import 'package:flutter/foundation.dart';
-import 'package:new_coffee/features/content/data/model/legal_document_model.dart';
+part of 'legal_document_cubit.dart';
 
 @immutable
 class LegalDocumentState {
@@ -16,6 +15,10 @@ class LegalDocumentState {
 
   /// Why the document could not be read, in the customer's language.
   final String? errorMessage;
+
+  /// Whether the last read failed, which is what decides the screen's copy -
+  /// the reason itself is never shown to the customer.
+  bool get hasError => errorMessage != null;
 
   LegalDocumentState copyWith({
     bool? isLoading,

@@ -2,16 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
+import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 
-/// Mirrors main.dart: the entry route is the splash and ScreenUtil wraps the
+/// Mirrors app.dart: the entry route is the splash and ScreenUtil wraps the
 /// app, which the destination page needs.
 Widget _app(String targetRoute) => ScreenUtilInit(
-  designSize: const Size(360, 690),
+  designSize: AppConstant.designSize,
   builder: (context, child) => MaterialApp(
     onGenerateRoute: AppRouteGenerator.onGenerateRoute,
     routes: {
@@ -42,14 +46,15 @@ Future<void> _pumpSplash(
 int _destinations(WidgetTester tester) =>
     find.byType(WelcomePage, skipOffstage: false).evaluate().length;
 
+Image _logo(WidgetTester tester) => tester.widget<Image>(find.byType(Image));
+
 void main() {
   testWidgets('splash paints the brand mark on a white screen', (tester) async {
     await _pumpSplash(tester, const Size(360, 690));
 
     expect(find.byType(SplashView), findsOneWidget);
 
-    final logo = tester.widget<Image>(find.byType(Image));
-    expect((logo.image as AssetImage).assetName, AppImages.logo);
+    expect((_logo(tester).image as AssetImage).assetName, AppImages.logo);
 
     final background = tester.widget<Scaffold>(
       find.descendant(
@@ -57,7 +62,7 @@ void main() {
         matching: find.byType(Scaffold),
       ),
     );
-    expect(background.backgroundColor, const Color(0xFFFFFFFF));
+    expect(background.backgroundColor, AppColor.whiteColor);
   });
 
   testWidgets('the mark starts transparent and reaches full opacity', (
@@ -69,7 +74,7 @@ void main() {
 
     expect(opacity(), 0);
 
-    await tester.pump(SplashView.entranceDuration);
+    await tester.pump(MotionTokens.entrance);
     await tester.pump();
 
     expect(opacity(), 1);
@@ -92,9 +97,9 @@ void main() {
         // usable here because it reports the untouched z axis as 1.0.
         .storage[0];
 
-    expect(scale(), closeTo(0.92, 0.001));
+    expect(scale(), closeTo(SplashBrandMark.startScale, 0.001));
 
-    await tester.pump(SplashView.entranceDuration);
+    await tester.pump(MotionTokens.entrance);
     await tester.pump();
 
     expect(scale(), closeTo(1.0, 0.001));
@@ -105,11 +110,19 @@ void main() {
   ) async {
     await _pumpSplash(tester, const Size(360, 800), pixelRatio: 3);
 
-    final logo = tester.widget<Image>(find.byType(Image));
     const screenWidth = 360.0;
 
-    expect(logo.width, closeTo(screenWidth * 0.66, 0.5));
-    expect(logo.width, greaterThan(160));
+    expect(
+      _logo(tester).width,
+      closeTo(screenWidth * SplashBrandMark.widthRatio, 0.5),
+    );
+    expect(_logo(tester).width, greaterThan(SplashBrandMark.minWidth));
+  });
+
+  testWidgets('a wide screen does not get an oversized mark', (tester) async {
+    await _pumpSplash(tester, const Size(1024, 1366));
+
+    expect(_logo(tester).width, SplashBrandMark.maxWidth);
   });
 
   testWidgets('splash is still on screen just before it hands over', (
@@ -204,16 +217,12 @@ void main() {
     for (final size in sizes) {
       await _pumpSplash(tester, size);
 
-      final logo = tester.widget<Image>(find.byType(Image));
-      // The asset is 1024x827, so the height follows from the width requested.
-      final logoHeight = logo.width! * 827 / 1024;
+      final width = _logo(tester).width!;
+      final height =
+          width * SplashBrandMark.assetHeight / SplashBrandMark.assetWidth;
 
-      expect(
-        logo.width!,
-        lessThanOrEqualTo(size.shortestSide),
-        reason: '$size',
-      );
-      expect(logoHeight, lessThanOrEqualTo(size.shortestSide), reason: '$size');
+      expect(width, lessThanOrEqualTo(size.shortestSide), reason: '$size');
+      expect(height, lessThanOrEqualTo(size.shortestSide), reason: '$size');
       expect(tester.takeException(), isNull, reason: 'render error at $size');
     }
   });
