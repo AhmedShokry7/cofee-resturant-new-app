@@ -47,6 +47,20 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   final SubscriptionRepository _repository;
 
+  /// The plan the customer's subscription belongs to, null while the plans are
+  /// not in this state.
+  ///
+  /// Renewing charges the plan price, and the card form shows that figure, so
+  /// a caller that cannot see the plan cannot show an honest amount.
+  SubscriptionPlan? get renewalPlan {
+    final planId = state.subscription?.planId;
+    if (planId == null) return null;
+    for (final plan in state.plans) {
+      if (plan.id == planId) return plan;
+    }
+    return null;
+  }
+
   Future<void> load({String? branchId}) async {
     emit(state.copyWith(loading: true, clearError: true));
     try {

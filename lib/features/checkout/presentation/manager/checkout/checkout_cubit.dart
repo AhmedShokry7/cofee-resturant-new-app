@@ -527,12 +527,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(
         state.copyWith(
           addresses: remaining,
-          selectedAddress: remaining.isEmpty
-              ? null
-              : remaining.firstWhere(
-                  (address) => address.isDefault,
-                  orElse: () => remaining.first,
-                ),
+          selectedAddress: _pickInitial(remaining),
           // The last address is gone: the selection must go with it, or the
           // checkout would submit an address the server no longer has.
           clearSelectedAddress: remaining.isEmpty,

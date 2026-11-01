@@ -10,7 +10,6 @@ import 'package:new_coffee/features/auth/presentation/views/reset_password_page.
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/add_address_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
-import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/payment_method_page.dart';
@@ -51,12 +50,6 @@ class AppRoutes {
     AddAddressPage.routeName: (context) => const AddAddressPage(),
     PaymentMethodPage.routeName: (context) => const PaymentMethodPage(),
     AddCardPage.routeName: (context) => const AddCardPage(),
-    CardPaymentPage.routeName: (context) => const CardPaymentPage(
-      orderId: '',
-      idempotencyKey: '',
-      publicKey: '',
-      sdkConfiguration: {},
-    ),
     PaymentSuccessPage.routeName: (context) => const PaymentSuccessPage(),
     EReceiptPage.routeName: (context) => const EReceiptPage(),
     CouponPage.routeName: (context) => const CouponPage(),

@@ -1,18 +1,15 @@
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 enum OrderStatus {
   active,
   completed,
   cancelled;
 
-  String get label {
-    final arabic = AppLocale.instance.isArabic;
-    return switch (this) {
-      OrderStatus.active => arabic ? 'قيد التنفيذ' : 'Active',
-      OrderStatus.completed => arabic ? 'مكتمل' : 'Completed',
-      OrderStatus.cancelled => arabic ? 'ملغي' : 'Cancelled',
-    };
-  }
+  String get label => switch (this) {
+    OrderStatus.active => S.orderStatusActive,
+    OrderStatus.completed => S.orderStatusCompleted,
+    OrderStatus.cancelled => S.orderStatusCancelled,
+  };
 
   /// Maps the database status to the three customer-facing buckets.
   ///

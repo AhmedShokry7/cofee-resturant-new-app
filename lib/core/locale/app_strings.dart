@@ -308,6 +308,17 @@ class S {
       _ar ? 'السعر بعد الخصم' : 'Price after discount';
   static String get couponBreakdown =>
       _ar ? 'تفصيل خصم الكوبون' : 'Coupon discount breakdown';
+
+  /// The rule of a percentage coupon, e.g. `خصم 20% حتى 15.00` /
+  /// `20% off up to 15.00`. [cappedAt] is the money already formatted.
+  static String couponPercentOff(String percent, String? cappedAt) =>
+      cappedAt == null
+      ? (_ar ? 'خصم $percent%' : '$percent% off')
+      : (_ar ? 'خصم $percent% حتى $cappedAt' : '$percent% off up to $cappedAt');
+
+  /// The rule of a fixed-amount coupon, e.g. `خصم 10.00` / `10.00 off`.
+  static String couponAmountOff(String amount) =>
+      _ar ? 'خصم $amount' : '$amount off';
   static String get setDefaultCard =>
       _ar ? 'تعيين كافتراضية' : 'Set as default';
   static String get defaultCardBadge => _ar ? 'افتراضية' : 'Default';
@@ -399,6 +410,25 @@ class S {
   static String get placed => _ar ? 'تم الطلب' : 'Placed';
   static String get itemsCount => _ar ? 'عدد الأصناف' : 'Items count';
   static String get trackOrder => _ar ? 'تتبع الطلب' : 'Track Order';
+
+  /// The three buckets the order list groups by.
+  static String get orderStatusActive => _ar ? 'قيد التنفيذ' : 'Active';
+  static String get orderStatusCompleted => _ar ? 'مكتمل' : 'Completed';
+  static String get orderStatusCancelled => _ar ? 'ملغي' : 'Cancelled';
+
+  /// The tracking timeline, one label per server status.
+  static String get trackingOrderPlaced =>
+      _ar ? 'تم استلام الطلب' : 'Order placed';
+  static String get trackingOrderConfirmed =>
+      _ar ? 'تم تأكيد الطلب' : 'Order confirmed';
+  static String get trackingPreparing => _ar ? 'قيد التحضير' : 'Preparing';
+  static String get trackingReadyForDelivery =>
+      _ar ? 'جاهز للتوصيل' : 'Ready for delivery';
+  static String get trackingReadyForPickup =>
+      _ar ? 'جاهز للاستلام' : 'Ready for pickup';
+  static String get trackingOutForDelivery =>
+      _ar ? 'خرج للتوصيل' : 'Out for delivery';
+  static String get trackingCompleted => _ar ? 'مكتمل' : 'Completed';
   static String get leaveReview => _ar ? 'قيّم الطلب' : 'Leave Review';
   static String get addBundleToCart =>
       _ar ? 'أضف الباقة إلى السلة' : 'Add Bundle to Cart';

@@ -704,23 +704,15 @@ class CartCubit extends Cubit<CartState> {
   /// the bundle share.
   List<CartLine> _linesFromState() => [
     for (final item in state.items)
-      if (item.isBundle)
-        for (final component in item.bundleComponents)
-          CartLine(
-            productId: component.productId,
-            quantity: component.quantity * item.quantity,
-            note: item.note,
-            optionValueIds: item.optionValueIds,
-            bundleId: item.bundleId,
-          )
-      else
-        CartLine(
-          productId: item.product.id,
-          quantity: item.quantity,
-          note: item.note,
-          optionValueIds: item.optionValueIds,
-          bundleId: item.bundleId,
-        ),
+      ..._serverLines(
+        quantity: item.quantity,
+        note: item.note,
+        optionValueIds: item.optionValueIds,
+        bundleId: item.bundleId,
+        isBundle: item.isBundle,
+        productId: item.product.id,
+        components: item.bundleComponents,
+      ),
   ];
 
   /// The server lines for a stored cart.
@@ -729,32 +721,61 @@ class CartCubit extends Cubit<CartState> {
   /// same way the checkout sends it.
   List<CartLine> _linesFromEntries(List<Map<String, dynamic>> entries) => [
     for (final entry in entries)
-      if (entry['isBundle'] == true)
-        for (final component in _bundleComponentsOf(entry))
-          CartLine(
-            productId: component.productId,
-            quantity:
-                component.quantity *
-                ((entry['quantity'] as num?)?.toInt() ?? 1),
-            note: entry['note']?.toString() ?? '',
-            optionValueIds: canonicalOptionIds(
-              (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
-                  const <String>[],
-            ),
-            bundleId: entry['bundleId']?.toString(),
-          )
-      else
-        CartLine(
-          productId: entry['productId']?.toString() ?? '',
-          quantity: (entry['quantity'] as num?)?.toInt() ?? 1,
-          note: entry['note']?.toString() ?? '',
-          optionValueIds: canonicalOptionIds(
-            (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
-                const <String>[],
-          ),
-          bundleId: entry['bundleId']?.toString(),
+      ..._serverLines(
+        quantity: (entry['quantity'] as num?)?.toInt() ?? 1,
+        note: entry['note']?.toString() ?? '',
+        optionValueIds: canonicalOptionIds(
+          (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
+              const <String>[],
         ),
+        bundleId: entry['bundleId']?.toString(),
+        isBundle: entry['isBundle'] == true,
+        productId: entry['productId']?.toString(),
+        components: entry['isBundle'] == true
+            ? _bundleComponentsOf(entry)
+            : const [],
+      ),
   ];
+
+  /// One cart line as the server stores it.
+  ///
+  /// A bundle line has no product of its own: it becomes one line per
+  /// component, each scaled by the quantity ordered, and every line carries the
+  /// bundle id so the bundle share keeps being charged. A line that reads as a
+  /// bundle but has no components names no product either, so it is not sent.
+  static List<CartLine> _serverLines({
+    required int quantity,
+    required String note,
+    required List<String> optionValueIds,
+    required String? bundleId,
+    required bool isBundle,
+    String? productId,
+    List<CartBundleComponent> components = const [],
+  }) {
+    if (components.isEmpty) {
+      return isBundle
+          ? const []
+          : [
+              CartLine(
+                productId: productId ?? '',
+                quantity: quantity,
+                note: note,
+                optionValueIds: optionValueIds,
+                bundleId: bundleId,
+              ),
+            ];
+    }
+    return [
+      for (final component in components)
+        CartLine(
+          productId: component.productId,
+          quantity: component.quantity * quantity,
+          note: note,
+          optionValueIds: optionValueIds,
+          bundleId: bundleId,
+        ),
+    ];
+  }
 
   /// The components of a stored bundle line.
   static List<CartBundleComponent> _bundleComponentsOf(

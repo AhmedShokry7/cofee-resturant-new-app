@@ -1,5 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/orders/data/model/tracking_step_model.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
@@ -45,7 +45,6 @@ class OrderTrackingSteps {
     required List<OrderStatusEvent> events,
     DateTime? placedAt,
   }) {
-    final arabic = AppLocale.instance.isArabic;
     final dates = <String, DateTime>{};
     for (final event in events) {
       final at = event.changedAt;
@@ -59,12 +58,12 @@ class OrderTrackingSteps {
     if (databaseStatus == 'cancelled') {
       return [
         TrackingStepModel(
-          title: arabic ? 'تم استلام الطلب' : 'Order placed',
+          title: S.trackingOrderPlaced,
           date: dateFor('pending', fallback: placedAt),
           done: true,
         ),
         TrackingStepModel(
-          title: arabic ? 'تم إلغاء الطلب' : 'Order cancelled',
+          title: S.orderCancelled,
           date: dateFor('cancelled'),
           done: true,
         ),
@@ -83,16 +82,14 @@ class OrderTrackingSteps {
         : const ['pending', 'confirmed', 'preparing', 'ready', 'completed'];
     final current = flow.indexOf(databaseStatus);
     final titles = {
-      'pending': arabic ? 'تم استلام الطلب' : 'Order placed',
-      'confirmed': arabic ? 'تم تأكيد الطلب' : 'Order confirmed',
-      'preparing': arabic ? 'قيد التحضير' : 'Preparing',
-      'ready': arabic
-          ? (fulfillmentType == 'delivery' ? 'جاهز للتوصيل' : 'جاهز للاستلام')
-          : (fulfillmentType == 'delivery'
-                ? 'Ready for delivery'
-                : 'Ready for pickup'),
-      'out_for_delivery': arabic ? 'خرج للتوصيل' : 'Out for delivery',
-      'completed': arabic ? 'مكتمل' : 'Completed',
+      'pending': S.trackingOrderPlaced,
+      'confirmed': S.trackingOrderConfirmed,
+      'preparing': S.trackingPreparing,
+      'ready': fulfillmentType == 'delivery'
+          ? S.trackingReadyForDelivery
+          : S.trackingReadyForPickup,
+      'out_for_delivery': S.trackingOutForDelivery,
+      'completed': S.trackingCompleted,
     };
     return [
       for (var i = 0; i < flow.length; i++)

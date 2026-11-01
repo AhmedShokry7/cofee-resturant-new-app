@@ -6,47 +6,57 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
-import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
+import 'package:new_coffee/features/coupon/presentation/manager/coupons/coupons_cubit.dart';
+import 'package:new_coffee/features/coupon/presentation/manager/coupons/coupons_state.dart';
 import 'package:new_coffee/features/coupon/presentation/views/widgets/coupon_card.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
-class CouponPage extends StatefulWidget {
+class CouponPage extends StatelessWidget {
   const CouponPage({super.key});
 
   static const routeName = "couponRoute";
 
   @override
-  State<CouponPage> createState() => _CouponPageState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => CouponsCubit(
+        repository: context.read<CouponRepository>(),
+      ),
+      child: const _CouponsView(),
+    );
+  }
 }
 
-class _CouponPageState extends State<CouponPage> {
-  // Held in state so the list is fetched once and can be refreshed after a
-  // coupon is applied from here, instead of re-issuing the query on every
-  // rebuild.
-  late Future<List<CouponModel>> _couponsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _couponsFuture = context.read<CouponRepository>().activeCoupons();
-  }
+class _CouponsView extends StatelessWidget {
+  const _CouponsView();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(S.coupon)),
-      body: FutureBuilder<List<CouponModel>>(
-        future: _couponsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const CouponsLoadingView();
+      body: BlocBuilder<CouponsCubit, CouponsState>(
+        builder: (context, state) {
+          if (state.isLoading) return const CouponsLoadingView();
+          if (state.errorMessage != null) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    S.couponsLoadError(state.errorMessage!),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: SpacingTokens.md.h),
+                  TextButton(
+                    onPressed: () => context.read<CouponsCubit>().load(),
+                    child: Text(S.retry),
+                  ),
+                ],
+              ),
+            );
           }
-          if (snapshot.hasError) {
-            return Center(child: Text(S.couponsLoadError('${snapshot.error}')));
-          }
-          final coupons = snapshot.data ?? const [];
-          if (coupons.isEmpty) {
+          if (state.coupons.isEmpty) {
             return Center(child: Text(S.noCoupons));
           }
           // Highlights the code already attached to the cart so the customer
@@ -67,7 +77,7 @@ class _CouponPageState extends State<CouponPage> {
             children: [
               Text(S.bestOffers, style: AppFonts.semiBold18(context)),
               SizedBox(height: SpacingTokens.lg.h),
-              ...coupons.map(
+              ...state.coupons.map(
                 (coupon) => CouponCard(
                   coupon: coupon,
                   isApplied: coupon.code == appliedCode,

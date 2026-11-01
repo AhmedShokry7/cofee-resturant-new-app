@@ -1,5 +1,6 @@
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 
 /// A coupon backed by `marketing.coupons`.
@@ -156,35 +157,51 @@ class CouponModel {
 
   /// Human-readable rule derived from the numeric fields, in the app language.
   String get discount {
-    final ar = AppLocale.instance.isArabic;
     if (discountType == 'percentage') {
       final percent = discountValue == discountValue.roundToDouble()
           ? discountValue.toInt().toString()
           : discountValue.toString();
-      if (ar) {
-        final capped = maxDiscount == null
-            ? ''
-            : ' حتى ${Formatters.price(maxDiscount!)}';
-        return 'خصم $percent%$capped';
-      }
       final capped = maxDiscount == null
-          ? ''
-          : ' up to ${Formatters.price(maxDiscount!)}';
-      return '$percent% off$capped';
+          ? null
+          : Formatters.price(maxDiscount!);
+      return S.couponPercentOff(percent, capped);
     }
-    return ar
-        ? 'خصم ${Formatters.price(discountValue)}'
-        : '${Formatters.price(discountValue)} off';
+    return S.couponAmountOff(Formatters.price(discountValue));
   }
 
-  double discountFor(double subtotal) {
-    if (subtotal < minOrderAmount) return 0;
-    final amount = discountType == 'percentage'
-        ? subtotal * discountValue / 100
-        : discountValue;
-    final capped = maxDiscount == null ? amount : amount.clamp(0, maxDiscount!);
-    return capped.clamp(0, subtotal).toDouble();
-  }
+  /// The same coupon with its discount rule replaced.
+  ///
+  /// The rule is stored on the row and never recomputed, so this exists for
+  /// tests and for a server answer that restates the offer.
+  CouponModel copyWith({
+    String? discountType,
+    double? discountValue,
+    double? maxDiscount,
+    String? message,
+  }) => CouponModel(
+    id: id,
+    code: code,
+    title: _legacyTitle,
+    description: _legacyDescription,
+    titleAr: titleAr,
+    titleEn: titleEn,
+    descriptionAr: descriptionAr,
+    descriptionEn: descriptionEn,
+    discountType: discountType ?? this.discountType,
+    discountValue: discountValue ?? this.discountValue,
+    maxDiscount: maxDiscount ?? this.maxDiscount,
+    minOrderAmount: minOrderAmount,
+    message: message ?? this.message,
+    usedCount: usedCount,
+    perUserLimit: perUserLimit,
+    usageLimit: usageLimit,
+    totalUsed: totalUsed,
+    appliesTo: appliesTo,
+    scopeCategoryIds: scopeCategoryIds,
+    scopeProductIds: scopeProductIds,
+    scopeNamesAr: scopeNamesAr,
+    scopeNamesEn: scopeNamesEn,
+  );
 
   factory CouponModel.fromDatabase(Map<String, dynamic> json) {
     final map = Db.asMap(json);
@@ -241,28 +258,7 @@ class CouponModel {
     required double subtotal,
     String? message,
   }) => ValidatedCoupon(
-    coupon: CouponModel(
-      id: id,
-      code: code,
-      titleAr: titleAr,
-      titleEn: titleEn,
-      descriptionAr: descriptionAr,
-      descriptionEn: descriptionEn,
-      discountType: discountType,
-      discountValue: discountValue,
-      maxDiscount: maxDiscount,
-      minOrderAmount: minOrderAmount,
-      message: message ?? this.message,
-      usedCount: usedCount,
-      perUserLimit: perUserLimit,
-      usageLimit: usageLimit,
-      totalUsed: totalUsed,
-      appliesTo: appliesTo,
-      scopeCategoryIds: scopeCategoryIds,
-      scopeProductIds: scopeProductIds,
-      scopeNamesAr: scopeNamesAr,
-      scopeNamesEn: scopeNamesEn,
-    ),
+    coupon: copyWith(message: message),
     discount: discount,
     subtotal: subtotal,
   );

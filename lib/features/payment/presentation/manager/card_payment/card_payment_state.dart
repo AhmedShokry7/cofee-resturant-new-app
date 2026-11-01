@@ -14,6 +14,12 @@ enum CardPaymentStatus {
   paymentSucceeded,
 }
 
+/// How the verification of a charge after the bank's page ended.
+///
+/// The redirect happens outside the app, so the customer coming back is the
+/// only moment the outcome can be read; this is what the page acts on.
+enum PaymentOutcome { succeeded, pending, failed }
+
 @immutable
 class CardPaymentState {
   const CardPaymentState({

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_usage.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
@@ -112,15 +113,13 @@ class _SubscriptionDetailsView extends StatelessWidget {
                       if (!context.mounted) return;
                       final renewed = cubit.state.subscription;
                       if (renewed != null && renewed.id != sub.id) {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => CardPaymentPage(
-                              subscriptionId: renewed.id,
-                              idempotencyKey: renewed.id,
-                              publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
-                              sdkConfiguration: const <String, dynamic>{},
-                            ),
-                          ),
+                        CardPaymentPage.pushForSubscription(
+                          context,
+                          subscriptionId: renewed.id,
+                          amount: cubit.renewalPlan?.price ?? 0,
+                          currency:
+                              cubit.renewalPlan?.currencyCode ??
+                              TapCheckoutConfig.defaultCurrency,
                         );
                       }
                     },

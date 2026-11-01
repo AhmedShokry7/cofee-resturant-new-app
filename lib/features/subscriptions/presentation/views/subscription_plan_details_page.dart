@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
-import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
-import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan_product.dart';
@@ -67,27 +65,18 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: () async {
-                  final cubit = SubscriptionCubit(repository: context.read<SubscriptionRepository>());
+                  final cubit = SubscriptionCubit(
+                    repository: context.read<SubscriptionRepository>(),
+                  );
                   await cubit.subscribe(plan);
-                  if (!context.mounted) return;
                   final subscription = cubit.state.subscription;
+                  if (!context.mounted) return;
                   if (subscription == null) return;
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => BlocProvider(
-                        create: (_) => CardPaymentCubit(
-                          repository: context.read<TapPaymentRepository>(),
-                        ),
-                        child: CardPaymentPage(
-                          subscriptionId: subscription.id,
-                          idempotencyKey: subscription.id,
-                          amount: plan.price,
-                          currency: plan.currencyCode,
-                          publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
-                          sdkConfiguration: const <String, dynamic>{},
-                        ),
-                      ),
-                    ),
+                  CardPaymentPage.pushForSubscription(
+                    context,
+                    subscriptionId: subscription.id,
+                    amount: plan.price,
+                    currency: plan.currencyCode,
                   );
                 },
                 child: Text(_t('اشترك الآن', 'Subscribe now', 'Subscribe now')),

@@ -59,7 +59,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
         // directly, so the customer is never asked for a number they already
         // gave.
         chargeCubit.start(orderId: orderId, savedCardId: savedCard.id);
-        await chargeCubit.createCharge();
+        await chargeCubit.chargeSavedCard();
         if (!context.mounted) return;
         if (chargeCubit.state.status != CardPaymentStatus.chargeCreated) {
           messenger.showSnackBar(
@@ -79,10 +79,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => CardPaymentPage(
             orderId: orderId,
-            idempotencyKey: orderId,
             amount: order?.total ?? total,
-            publicKey: const String.fromEnvironment('TAP_PUBLIC_KEY'),
-            sdkConfiguration: <String, dynamic>{},
             savedCardId: savedCard?.id,
           ),
         ),

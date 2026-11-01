@@ -8,31 +8,57 @@ import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
+import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+/// The hosted card form, the 3DS redirect it opens, and what happens when the
+/// customer comes back from it.
+///
+/// The page is the route entry only: tokenizing, charging and verifying all
+/// belong to [CardPaymentCubit].
 class CardPaymentPage extends StatefulWidget {
   const CardPaymentPage({
     super.key,
     this.orderId = '',
     this.subscriptionId,
-    required this.idempotencyKey,
-    required this.publicKey,
-    required this.sdkConfiguration,
     this.savedCardId,
     this.amount = 0,
-    this.currency = 'SAR',
+    this.currency = TapCheckoutConfig.defaultCurrency,
   });
 
   /// The server id of the order being paid (a uuid), never the order number.
   final String orderId;
   final String? subscriptionId;
-  final String idempotencyKey;
-  final String publicKey;
-  final Map<String, dynamic> sdkConfiguration;
+
+  /// Opens the form for a subscription the customer just started or renewed.
+  ///
+  /// [amount] has to be the price of the plan being paid for, because the form
+  /// shows the figure the server is going to charge.
+  static void pushForSubscription(
+    BuildContext context, {
+    required String subscriptionId,
+    required double amount,
+    required String currency,
+  }) {
+    final repository = context.read<TapPaymentRepository>();
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => CardPaymentCubit(repository: repository),
+          child: CardPaymentPage(
+            subscriptionId: subscriptionId,
+            amount: amount,
+            currency: currency,
+          ),
+        ),
+      ),
+    );
+  }
 
   /// When set, the page charges this saved card instead of showing the hosted
   /// form. The bottom bar sets it after placing the order.
@@ -40,13 +66,11 @@ class CardPaymentPage extends StatefulWidget {
 
   /// The amount the customer is charged, in [currency].
   ///
-  /// The card form shows this figure, so it has to be the real one: the
-  /// server charges `orders.grand_total` (or the plan price for a
-  /// subscription), and a form that shows anything else is a lie.
+  /// The card form shows this figure, so it has to be the real one: the server
+  /// charges `orders.grand_total` (or the plan price for a subscription), and a
+  /// form that shows anything else is a lie.
   final double amount;
   final String currency;
-
-  static const routeName = "cardPaymentRoute";
 
   @override
   State<CardPaymentPage> createState() => _CardPaymentPageState();
@@ -54,57 +78,13 @@ class CardPaymentPage extends StatefulWidget {
 
 class _CardPaymentPageState extends State<CardPaymentPage>
     with WidgetsBindingObserver {
-  bool _generateToken = false;
-  bool _tokenRequested = false;
-
   /// True once the 3DS page was opened. The charge is only verified when the
   /// app comes back from it, so this is what tells the resume handler that
   /// there is something to verify.
   bool _redirectLaunched = false;
 
-  Map<String, dynamic> get _config {
-    final config = Map<String, dynamic>.from(widget.sdkConfiguration);
-    config['operator'] = {
-      'publicKey': widget.publicKey,
-    };
-    config['scope'] = 'Token';
-    config['purpose'] = 'Charge';
-    final targetId = widget.subscriptionId ?? widget.orderId;
-    config['order'] = {
-      'id': targetId,
-      'currency': widget.currency,
-      // The card form shows this amount, so it is the amount the customer is
-      // charged. A caller that does not know it keeps the previous nominal
-      // figure rather than showing nothing at all.
-      'amount': widget.amount > 0 ? widget.amount : 1.0,
-      'reference': targetId,
-      'description': '',
-    };
-    config['customer'] = {
-      'name': [
-        {'lang': 'en', 'first': '', 'last': ''}
-      ],
-      'contact': {'email': ''},
-      'editable': false,
-    };
-    config['acceptance'] = {
-      'supportedSchemes': ['VISA', 'MASTERCARD', 'AMERICAN_EXPRESS'],
-      'supportedFundSource': ['CREDIT', 'DEBIT'],
-      'supportedPaymentAuthentications': ['3DS'],
-    };
-    config['interface'] = {
-      'locale': 'ar',
-      'theme': 'light',
-      'edges': 'curved',
-      'colorStyle': 'colored',
-      'loader': true,
-    };
-    config['features'] = {
-      'customerCards': {'saveCard': false, 'autoSave': false},
-      'acceptanceBadge': true,
-    };
-    return config;
-  }
+  /// The order or subscription the form is opened for.
+  String get _targetId => widget.subscriptionId ?? widget.orderId;
 
   /// Whether a stored card pays this order, so the card form is not shown.
   bool get _chargesSavedCard {
@@ -135,7 +115,9 @@ class _CardPaymentPageState extends State<CardPaymentPage>
       // has to be followed from here.
       final url = cubit.state.transactionUrl;
       if (url != null && url.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback((_) => _launch3DS(url));
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) => _launch3DS(url),
+        );
       }
     }
   }
@@ -154,40 +136,6 @@ class _CardPaymentPageState extends State<CardPaymentPage>
     if (state == AppLifecycleState.resumed) {
       unawaited(_verifyAfterRedirect());
     }
-  }
-
-  void _onValidInput(String? value) {
-    if (value == null) return;
-    context.read<CardPaymentCubit>().onCardValidInput(value.toLowerCase() == 'true');
-  }
-
-  void _onSuccess(String? value) {
-    _tokenRequested = false;
-    if (value == null) return;
-    final tokenId = context.read<CardPaymentCubit>().extractTokenId(value);
-    if (tokenId.isEmpty) {
-      return;
-    }
-    _generateToken = false;
-    // The token only exists here, so it is handed to the cubit directly.
-    context.read<CardPaymentCubit>().createCharge(sourceToken: value);
-  }
-
-  void _onError(String? value) {
-    _tokenRequested = false;
-    _generateToken = false;
-  }
-
-  Future<void> _onPayPressed() async {
-    final cubit = context.read<CardPaymentCubit>();
-    if (cubit.state.isBusy) return;
-    if (cubit.state.status != CardPaymentStatus.cardInputValid) return;
-
-    if (_tokenRequested) return;
-    _tokenRequested = true;
-    setState(() {
-      _generateToken = true;
-    });
   }
 
   Future<void> _launch3DS(String url) async {
@@ -212,19 +160,24 @@ class _CardPaymentPageState extends State<CardPaymentPage>
       _finish();
       return;
     }
-    final result = await cubit.verifyCharge();
+    final outcome = await cubit.verifyCharge();
     if (!mounted) return;
-    if (result == 'succeeded') {
-      _finish();
-    } else if (result == 'pending') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.paymentProcessing)),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(cubit.state.errorMessage ?? S.paymentFailed)),
-      );
+    switch (outcome) {
+      case PaymentOutcome.succeeded:
+        _finish();
+      case PaymentOutcome.pending:
+        _showMessage(S.paymentProcessing);
+      case PaymentOutcome.failed:
+        _showMessage(cubit.state.errorMessage ?? S.paymentFailed);
+      case null:
+        break;
     }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   /// Leaves the payment screen.
@@ -246,20 +199,16 @@ class _CardPaymentPageState extends State<CardPaymentPage>
 
   @override
   Widget build(BuildContext context) {
-    final cubit = context.read<CardPaymentCubit>();
     return BlocProvider.value(
-      value: cubit,
+      value: context.read<CardPaymentCubit>(),
       child: _CardPaymentView(
-        generateToken: _generateToken,
-        onPayPressed: _onPayPressed,
-        onValidInput: _onValidInput,
-        onSuccess: _onSuccess,
-        onError: _onError,
-        onReady: () {},
-        onFocus: () {},
-        sdkConfiguration: _config,
-        on3DSLaunch: _launch3DS,
+        sdkConfiguration: TapCheckoutConfig.payload(
+          targetId: _targetId,
+          amount: widget.amount,
+          currency: widget.currency,
+        ),
         chargesSavedCard: _chargesSavedCard,
+        on3DSLaunch: _launch3DS,
       ),
     );
   }
@@ -267,25 +216,11 @@ class _CardPaymentPageState extends State<CardPaymentPage>
 
 class _CardPaymentView extends StatelessWidget {
   const _CardPaymentView({
-    required this.generateToken,
-    required this.onPayPressed,
-    required this.onValidInput,
-    required this.onSuccess,
-    required this.onError,
-    required this.onReady,
-    required this.onFocus,
     required this.sdkConfiguration,
-    required this.on3DSLaunch,
     required this.chargesSavedCard,
+    required this.on3DSLaunch,
   });
 
-  final bool generateToken;
-  final VoidCallback onPayPressed;
-  final Function(String?) onValidInput;
-  final Function(String?) onSuccess;
-  final Function(String?) onError;
-  final VoidCallback onReady;
-  final VoidCallback onFocus;
   final Map<String, dynamic> sdkConfiguration;
   final Function(String) on3DSLaunch;
 
@@ -297,14 +232,13 @@ class _CardPaymentView extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<CardPaymentCubit, CardPaymentState>(
       listener: (context, state) {
-        if (state.status == CardPaymentStatus.chargeCreated &&
-            state.transactionUrl != null &&
-            state.transactionUrl!.isNotEmpty) {
-          on3DSLaunch(state.transactionUrl!);
+        if (state.status == CardPaymentStatus.chargeCreated) {
+          final url = state.transactionUrl;
+          if (url != null && url.isNotEmpty) on3DSLaunch(url);
         }
       },
       builder: (context, state) {
-        final canPay = state.canSubmit;
+        final cubit = context.read<CardPaymentCubit>();
         return Scaffold(
           appBar: AppBar(title: Text(S.payment)),
           body: Column(
@@ -316,12 +250,17 @@ class _CardPaymentView extends StatelessWidget {
                         padding: EdgeInsets.all(SpacingTokens.lg.w),
                         child: TapCardViewWidget(
                           sdkConfiguration: sdkConfiguration,
-                          generateToken: generateToken,
-                          onValidInput: onValidInput,
-                          onSuccess: onSuccess,
-                          onError: onError,
-                          onReady: onReady,
-                          onFocus: onFocus,
+                          generateToken:
+                              state.status == CardPaymentStatus.tokenizing,
+                          onValidInput: (value) => cubit.onCardValidInput(
+                            value?.toLowerCase() == 'true',
+                          ),
+                          onSuccess: cubit.onHostedFormResult,
+                          onError: (_) => cubit.onHostedFormError(),
+                          // The SDK calls these two through a force unwrap, so
+                          // they must not be null even though nothing uses them.
+                          onReady: () {},
+                          onFocus: () {},
                           showLoading: true,
                         ),
                       ),
@@ -342,7 +281,9 @@ class _CardPaymentView extends StatelessWidget {
                 PrimaryBottomBar(
                   text: S.confirmPayment,
                   isLoading: state.isBusy,
-                  onPressed: canPay ? onPayPressed : () {},
+                  onPressed: state.canSubmit
+                      ? cubit.requestCardToken
+                      : () {},
                 ),
             ],
           ),

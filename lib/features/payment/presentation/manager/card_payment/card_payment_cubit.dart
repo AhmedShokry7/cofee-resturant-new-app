@@ -7,27 +7,24 @@ import 'package:new_coffee/features/payment/data/repositories/tap_payment_reposi
 import 'card_payment_state.dart';
 
 class CardPaymentCubit extends Cubit<CardPaymentState> {
-  CardPaymentCubit({
-    required this.repository,
-    this.sourceTokenProvider,
-  }) : super(const CardPaymentState());
+  CardPaymentCubit({required this.repository}) : super(const CardPaymentState());
 
   final TapPaymentRepository repository;
-
-  /// Provides a one-time token from the hosted card form. Null when the cubit
-  /// was built to charge a saved card instead.
-  final Future<String?> Function()? sourceTokenProvider;
 
   /// The order or subscription being paid. Set once it has been created.
   String? _orderId;
   String? _subscriptionId;
 
-  /// When set, [createCharge] charges this saved card instead of asking for a
-  /// token -- the server mints a single-use token from the card id, so no card
-  /// number crosses the client a second time.
+  /// When set, [chargeSavedCard] charges this card instead of asking the
+  /// customer for a number again.
   String? _savedCardId;
 
-  /// Binds the cubit to an order/subscription and, optionally, a saved card to charge.
+  /// Guards a second charge while one is already on its way, whichever of the
+  /// two entry points asked for it.
+  bool _chargeStarted = false;
+
+  /// Binds the cubit to an order/subscription and, optionally, a saved card to
+  /// charge.
   ///
   /// [reset] clears the state of a previous attempt. It is false when the
   /// charge for this very order already exists (the saved-card flow creates
@@ -51,35 +48,27 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     if (state.isBusy) return;
     if (isValid) {
       if (state.status != CardPaymentStatus.cardInputValid) {
-        emit(state.copyWith(status: CardPaymentStatus.cardInputValid, clearError: true));
+        emit(state.copyWith(
+          status: CardPaymentStatus.cardInputValid,
+          clearError: true,
+        ));
       }
     } else {
       if (state.status != CardPaymentStatus.cardInputInvalid) {
-        emit(state.copyWith(status: CardPaymentStatus.cardInputInvalid, clearError: true));
+        emit(state.copyWith(
+          status: CardPaymentStatus.cardInputInvalid,
+          clearError: true,
+        ));
       }
     }
   }
 
-  /// Creates the charge for the order or subscription this cubit is bound to.
+  /// The customer pressed pay: the hosted form is asked to tokenize the card.
   ///
-  /// [sourceToken] is the token the hosted card form produced. It is passed
-  /// in by the caller that owns the form, because the token only exists there;
-  /// [sourceTokenProvider] stays available for callers that fetch the token
-  /// themselves. Without either, the attempt fails as a tokenization failure
-  /// instead of leaving the screen stuck in "tokenizing".
-  Future<void> createCharge({String? sourceToken}) async {
+  /// That request is a state of the payment, not of the page, so the form's
+  /// `generateToken` flag is read back from here rather than held by the widget.
+  void requestCardToken() {
     if (state.isBusy) return;
-    final orderId = _orderId;
-    final subscriptionId = _subscriptionId;
-    final targetId = subscriptionId ?? orderId;
-    if (targetId == null || targetId.isEmpty) return;
-
-    // A saved card needs no token: the server mints one from the card id.
-    final savedCard = _savedCardId;
-    if (savedCard != null && savedCard.isNotEmpty) {
-      return createChargeFromSavedCard(savedCard);
-    }
-
     if (state.status != CardPaymentStatus.cardInputValid) {
       emit(state.copyWith(
         status: CardPaymentStatus.cardInputInvalid,
@@ -87,52 +76,50 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       ));
       return;
     }
-
-    emit(state.copyWith(status: CardPaymentStatus.tokenizing, clearError: true));
-
-    final provider = sourceTokenProvider;
-    final token = sourceToken ?? (provider == null ? null : await provider());
-    if (isClosed) return;
-
-    if (token == null || token.isEmpty) {
-      emit(state.copyWith(
-        status: CardPaymentStatus.tokenizationFailed,
-        errorMessage: S.tokenizationFailed,
-      ));
-      return;
-    }
-
-    emit(state.copyWith(status: CardPaymentStatus.creatingCharge));
-
-    try {
-      final result = subscriptionId != null
-          ? await repository.createSubscriptionCharge(
-              subscriptionId: subscriptionId,
-              idempotencyKey: subscriptionId,
-              sourceToken: token,
-            )
-          : await repository.createCharge(
-              orderId: orderId!,
-              idempotencyKey: orderId,
-              sourceToken: token,
-            );
-      if (isClosed) return;
-
-      emit(state.copyWith(
-        status: CardPaymentStatus.chargeCreated,
-        chargeId: result.chargeId,
-        transactionUrl: result.transactionUrl,
-      ));
-    } catch (error) {
-      if (isClosed) return;
-      emit(state.copyWith(
-        status: CardPaymentStatus.paymentFailed,
-        errorMessage: S.paymentRetryLater,
-      ));
-    }
+    emit(state.copyWith(
+      status: CardPaymentStatus.tokenizing,
+      clearError: true,
+    ));
   }
 
-  Future<String?> verifyCharge() async {
+  /// Charges the order with the token the hosted form reported.
+  ///
+  /// Tap identifies the card by the token's id and the server builds the charge
+  /// from that id, so the rest of what the form hands over is not forwarded.
+  Future<void> onHostedFormResult(String? response) async {
+    if (state.status != CardPaymentStatus.tokenizing) return;
+    final tokenId = _tokenId(response);
+    if (tokenId.isEmpty) {
+      onHostedFormError();
+      return;
+    }
+    await _createCharge(sourceToken: tokenId);
+  }
+
+  /// The form could not tokenize the card, so the customer can try again.
+  void onHostedFormError() {
+    if (state.status != CardPaymentStatus.tokenizing) return;
+    emit(state.copyWith(
+      status: CardPaymentStatus.tokenizationFailed,
+      errorMessage: S.tokenizationFailed,
+    ));
+  }
+
+  /// Charges the saved card [start] named, without the hosted form.
+  ///
+  /// The server mints a single-use token from the card id, so no card number
+  /// crosses the client a second time.
+  Future<void> chargeSavedCard() async {
+    final savedCardId = _savedCardId;
+    if (savedCardId == null || savedCardId.isEmpty) return;
+    await _createCharge(savedCardId: savedCardId);
+  }
+
+  /// Verifies the charge after the customer came back from the bank.
+  ///
+  /// Null means there was nothing to verify: no charge, or this cubit was
+  /// closed while the check was running.
+  Future<PaymentOutcome?> verifyCharge() async {
     final id = state.chargeId;
     if (id == null || id.isEmpty) return null;
 
@@ -144,16 +131,16 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
 
       if (result.verified) {
         emit(state.copyWith(status: CardPaymentStatus.paymentSucceeded));
-        return 'succeeded';
+        return PaymentOutcome.succeeded;
       } else if (result.orderPaymentStatus == 'pending') {
         emit(state.copyWith(status: CardPaymentStatus.paymentPending));
-        return 'pending';
+        return PaymentOutcome.pending;
       } else {
         emit(state.copyWith(
           status: CardPaymentStatus.paymentFailed,
           errorMessage: S.paymentNotCompleted,
         ));
-        return 'failed';
+        return PaymentOutcome.failed;
       }
     } catch (error) {
       if (isClosed) return null;
@@ -161,60 +148,70 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
         status: CardPaymentStatus.paymentFailed,
         errorMessage: S.paymentVerificationFailed,
       ));
-      return 'failed';
+      return PaymentOutcome.failed;
     }
   }
 
-/// Charges a card the customer already saved, without opening the hosted form.
+  /// Creates the charge for whatever this cubit is bound to.
   ///
-  /// The server mints a single-use token from the saved card id and charges that,
-  /// so no card number ever crosses the client a second time.
-  Future<void> createChargeFromSavedCard(String savedCardId) async {
-    if (state.isBusy) return;
+  /// Exactly one source is given: the id of a token the customer typed, or the
+  /// saved card the server turns into a token. The order and its idempotency
+  /// key are the same server id, so a retap reuses the charge instead of
+  /// billing twice.
+  Future<void> _createCharge({
+    String? sourceToken,
+    String? savedCardId,
+  }) async {
+    if (_chargeStarted) return;
     final orderId = _orderId;
     final subscriptionId = _subscriptionId;
     final targetId = subscriptionId ?? orderId;
     if (targetId == null || targetId.isEmpty) return;
-    emit(
-      state.copyWith(
-        status: CardPaymentStatus.creatingCharge,
-        clearError: true,
-      ),
-    );
+
+    _chargeStarted = true;
+    emit(state.copyWith(
+      status: CardPaymentStatus.creatingCharge,
+      clearError: true,
+    ));
+
     try {
       final result = subscriptionId != null
           ? await repository.createSubscriptionCharge(
               subscriptionId: subscriptionId,
               idempotencyKey: subscriptionId,
+              sourceToken: sourceToken,
               savedCardId: savedCardId,
             )
           : await repository.createCharge(
               orderId: orderId!,
               idempotencyKey: orderId,
+              sourceToken: sourceToken,
               savedCardId: savedCardId,
             );
       if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: CardPaymentStatus.chargeCreated,
-          chargeId: result.chargeId,
-          transactionUrl: result.transactionUrl,
-        ),
-      );
+      emit(state.copyWith(
+        status: CardPaymentStatus.chargeCreated,
+        chargeId: result.chargeId,
+        transactionUrl: result.transactionUrl,
+      ));
     } catch (error) {
       if (isClosed) return;
-      emit(
-        state.copyWith(
-          status: CardPaymentStatus.paymentFailed,
-          errorMessage: S.paymentRetryLater,
-        ),
-      );
+      emit(state.copyWith(
+        status: CardPaymentStatus.paymentFailed,
+        errorMessage: S.paymentRetryLater,
+      ));
+    } finally {
+      _chargeStarted = false;
     }
   }
 
-  String extractTokenId(String successResponse) {
+  /// The id Tap gave the token, empty when the form reported something that
+  /// carries none.
+  String _tokenId(String? response) {
+    final value = response;
+    if (value == null) return '';
     try {
-      final map = jsonDecode(successResponse);
+      final map = jsonDecode(value);
       if (map is Map) {
         final id = map['id'];
         if (id is String && id.isNotEmpty) return id;
