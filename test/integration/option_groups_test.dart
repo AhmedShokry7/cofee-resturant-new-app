@@ -4,7 +4,7 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import '../support/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';

@@ -21,7 +21,7 @@ import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.d
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';

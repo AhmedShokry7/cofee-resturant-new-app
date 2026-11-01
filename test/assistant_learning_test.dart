@@ -10,7 +10,7 @@ import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_reply_sanitizer.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';

@@ -1,4 +1,4 @@
-import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 
@@ -78,18 +78,11 @@ class OptionSelection {
 
   /// True when the customer must pick more before adding to the cart.
   String? validationError(List<OptionGroup> groups) {
-    final ar = AppLocale.instance.isArabic;
     for (final group in groups) {
       final count = inGroup(group.id).length;
-      if (count < group.minSelect) {
-        return ar ? 'يجب اختيار ${group.name}' : 'Please choose ${group.name}';
-      }
+      if (count < group.minSelect) return S.chooseOption(group.name);
       final max = group.maxSelect;
-      if (max != null && count > max) {
-        return ar
-            ? 'يمكنك اختيار $max فقط من ${group.name}'
-            : 'You can pick at most $max for ${group.name}';
-      }
+      if (max != null && count > max) return S.maxOption(max, group.name);
     }
     return null;
   }

@@ -7,7 +7,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 
 void main() {
   test(

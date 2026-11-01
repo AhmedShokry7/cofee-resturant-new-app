@@ -6,7 +6,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 
 void main() {
   // The default app language is Arabic; the wallet/title contract is asserted

@@ -10,7 +10,7 @@ import 'package:new_coffee/features/cart/data/repositories/local_cart_repository
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 
 /// The card must show the whole price. When a product is discounted the row

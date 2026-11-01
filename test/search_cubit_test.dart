@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 
 /// Search page states: idle prompt before searching, results after a hit,

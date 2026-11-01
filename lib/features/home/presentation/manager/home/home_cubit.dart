@@ -1,12 +1,15 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/features/bundles/data/bundle_pricing.dart'
+    as pricing;
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
+import 'package:new_coffee/features/weather/data/model/weather_model.dart';
 import 'package:new_coffee/shared/utils/cache_manager.dart';
 
 part 'home_state.dart';
@@ -193,31 +196,24 @@ class HomeCubit extends Cubit<HomeState> {
     );
   }
 
-  /// Products contained by the loaded bundles, keyed by product id.
+  /// Products contained by the loaded bundles.
   ///
-  /// Used to show a bundle's contents and the saving it represents, which used
-  /// to be computed from the compiled-in menu.
-  List<ProductModel> productsIn(BundleModel bundle) => [
-    for (final c in bundle.components)
-      if (state.bundleProducts[c.productId] != null)
-        state.bundleProducts[c.productId]!,
-  ];
+  /// The arithmetic lives with the bundles feature so home, the Bundles tab
+  /// and the details page all report the same numbers for the same bundle.
+  List<ProductModel> productsIn(BundleModel bundle) =>
+      pricing.bundleProducts(bundle, state.bundleProducts);
 
   /// What the bundle contents would cost at their own prices.
-  double originalTotalFor(BundleModel bundle) {
-    var total = 0.0;
-    for (final c in bundle.components) {
-      final product = state.bundleProducts[c.productId];
-      if (product != null) total += product.price * c.quantity;
-    }
-    return total;
-  }
+  double originalTotalFor(BundleModel bundle) =>
+      pricing.bundleOriginalTotal(bundle, state.bundleProducts);
 
   /// Never negative: a bundle can be priced above its contents.
-  double savingFor(BundleModel bundle) {
-    final saving = originalTotalFor(bundle) - bundle.price;
-    return saving > 0 ? saving : 0;
-  }
+  double savingFor(BundleModel bundle) =>
+      pricing.bundleSavings(bundle, state.bundleProducts);
+
+  /// Whole percent the customer keeps, zero when the bundle saves nothing.
+  int savingPercentFor(BundleModel bundle) =>
+      pricing.bundleSavingPercent(bundle, state.bundleProducts);
 
   /// Reloads after the customer picks a different branch.
   ///

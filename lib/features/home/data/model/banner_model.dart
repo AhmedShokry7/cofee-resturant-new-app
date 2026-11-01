@@ -3,9 +3,34 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
+/// What a banner sends the customer to.
+///
+/// The database stores this as a short text code, so the codes live here once
+/// instead of being compared as string literals all over the UI.
+enum BannerTarget {
+  category('category'),
+  product('product'),
+  bundle('bundle'),
+  url('url'),
+  none('none');
+
+  const BannerTarget(this.storage);
+
+  /// The value stored in `banners.target_type`.
+  final String storage;
+
+  /// Anything the app does not know is treated as 'none': a banner then shows
+  /// itself but its button does nothing, which is what an unknown target did
+  /// when the type was a raw string.
+  static BannerTarget fromStorage(String value) => values.firstWhere(
+    (target) => target.storage == value,
+    orElse: () => BannerTarget.none,
+  );
+}
+
 /// A home page banner.
 ///
-/// [targetType] and [targetId] replace the raw English `targetCategory` string
+/// [target] and [targetId] replace the raw English `targetCategory` string
 /// the model used to carry. The database stores a typed reference, so renaming
 /// a category can no longer silently break a banner.
 class BannerModel {
@@ -27,7 +52,7 @@ class BannerModel {
     this.ctaLabelEn,
     this.targetCategoryAr,
     this.targetCategoryEn,
-    this.targetType = 'category',
+    this.target = BannerTarget.category,
     this.targetId,
     this.targetUrl,
     this.sortOrder = 0,
@@ -55,8 +80,8 @@ class BannerModel {
   final String? targetCategoryAr;
   final String? targetCategoryEn;
 
-  /// 'category' | 'product' | 'bundle' | 'url' | 'none'
-  final String targetType;
+  /// Where the banner's button takes the customer.
+  final BannerTarget target;
   final String? targetId;
   final String? targetUrl;
 
@@ -67,11 +92,11 @@ class BannerModel {
 
   final String image;
 
-  /// Resolved target product when [targetType] is 'product'. Populated by the
+  /// Resolved when [target] is [BannerTarget.product]. Populated by the
   /// repository after loading banners.
   final ProductModel? targetProduct;
 
-  /// Resolved target bundle when [targetType] is 'bundle'. Populated by the
+  /// Resolved when [target] is [BannerTarget.bundle]. Populated by the
   /// repository after loading banners.
   final BundleModel? targetBundle;
 
@@ -120,7 +145,7 @@ class BannerModel {
     String? ctaLabelEn,
     String? targetCategoryAr,
     String? targetCategoryEn,
-    String? targetType,
+    BannerTarget? target,
     String? targetId,
     String? targetUrl,
     int? sortOrder,
@@ -147,7 +172,7 @@ class BannerModel {
     ctaLabelEn: ctaLabelEn ?? this.ctaLabelEn,
     targetCategoryAr: targetCategoryAr ?? this.targetCategoryAr,
     targetCategoryEn: targetCategoryEn ?? this.targetCategoryEn,
-    targetType: targetType ?? this.targetType,
+    target: target ?? this.target,
     targetId: targetId ?? this.targetId,
     targetUrl: targetUrl ?? this.targetUrl,
     sortOrder: sortOrder ?? this.sortOrder,
@@ -175,7 +200,7 @@ class BannerModel {
     targetCategoryAr: Db.textOrNull(json['target_category_name_ar']),
     targetCategoryEn: Db.textOrNull(json['target_category_name_en']),
     image: Db.textOrNull(json['image_url']) ?? '',
-    targetType: Db.text(json['target_type'], 'category'),
+    target: BannerTarget.fromStorage(Db.text(json['target_type'], 'category')),
     targetId: Db.textOrNull(json['target_id']),
     targetUrl: Db.textOrNull(json['target_url']),
     sortOrder: Db.asInt(json['sort_order']),
@@ -195,7 +220,7 @@ class BannerModel {
     'cta_label_ar': ctaLabelAr,
     'cta_label_en': ctaLabelEn,
     'image_url': image,
-    'target_type': targetType,
+    'target_type': target.storage,
     'target_id': targetId,
     'target_url': targetUrl,
     'sort_order': sortOrder,

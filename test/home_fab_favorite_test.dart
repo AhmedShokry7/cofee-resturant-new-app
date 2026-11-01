@@ -17,7 +17,7 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/home/presentation/views/home_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_favorite_button.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';

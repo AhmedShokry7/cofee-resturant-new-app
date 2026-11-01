@@ -97,6 +97,10 @@ class S {
       _ar ? 'جرّب كلمة أو فلاتر مختلفة' : 'Try a different keyword or filters';
   static String get filters => _ar ? 'الفلاتر' : 'Filters';
   static String get sortBy => _ar ? 'ترتيب حسب' : 'Sort by';
+  static String get sortRelevance => _ar ? 'الأكثر صلة' : 'Relevance';
+  static String get sortPriceLow => _ar ? 'السعر: من الأقل' : 'Price: Low';
+  static String get sortPriceHigh => _ar ? 'السعر: من الأعلى' : 'Price: High';
+  static String get sortName => _ar ? 'الاسم' : 'Name';
   static String get priceRange => _ar ? 'نطاق السعر' : 'Price range';
   static String get all => _ar ? 'الكل' : 'All';
   static String get reset => _ar ? 'إعادة تعيين' : 'Reset';

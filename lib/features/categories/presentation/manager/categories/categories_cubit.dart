@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -38,6 +37,10 @@ class CategoriesCubit extends Cubit<CategoriesState> {
 
   /// The category whose bundles get a dedicated tab.
   static const String bundlesSlug = 'bundles';
+
+  /// Names stored on legacy rows that have no slug, in the language the row
+  /// was written in. Not UI strings: the rule must not follow the app language.
+  static const Set<String> bundlesNames = {bundlesSlug, 'الباقات'};
 
   Future<void> load() async {
     if (isClosed) return;
@@ -128,19 +131,18 @@ class CategoriesCubit extends Cubit<CategoriesState> {
 
   /// True when the tab at [index] should render bundles instead of products.
   ///
-  /// The slug is the reliable key. The label fallback covers legacy rows with no
-  /// slug, and has to be checked against *both* names: [CategoryModel.label] is
-  /// localized, so matching only the English one silently stopped finding the
-  /// bundles tab as soon as the app was switched to Arabic.
+  /// The slug is the reliable key. The name fallback covers legacy rows with no
+  /// slug and is checked against the two names the row stores, never against
+  /// the displayed label: that label is localized, so the rule would change
+  /// with the app language, and matching only the English one silently stopped
+  /// finding the bundles tab as soon as the app was switched to Arabic.
   bool isBundlesTab(int index) {
     final categories = state.categories;
     if (categories.isEmpty) return false;
-    final safeIndex = index.clamp(0, categories.length - 1);
-    final category = categories[safeIndex];
+    final category = categories[index.clamp(0, categories.length - 1)];
     if (category.slug == bundlesSlug) return true;
-    final label = category.label.trim().toLowerCase();
-    if (label.isEmpty) return false;
-    final names = {'bundles', S.bundles.trim().toLowerCase()};
-    return names.contains(label);
+    return {category.nameAr, category.nameEn}.any(
+      (name) => name != null && bundlesNames.contains(name.trim().toLowerCase()),
+    );
   }
 }

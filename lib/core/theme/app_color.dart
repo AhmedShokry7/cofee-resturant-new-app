@@ -26,6 +26,10 @@ class AppColor {
   /// The darker half of [errorColor], for a gradient that reports a failure.
   static const Color errorColorDeep = Color(0xFFB91C1C);
 
+  /// The dot that counts unread items. Brighter than [errorColor] because it
+  /// sits on a white chip and has to read as a badge, not as an error message.
+  static const Color unreadBadgeColor = Color(0xFFFF3B30);
+
   // Dark mode
   static const darkBackground = Color(0xff121212);
   static const darkSurface = Color(0xff1E1E1E);

@@ -49,8 +49,10 @@ class _BundleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = context.read<HomeCubit>().productsIn(bundle);
+    final cubit = context.read<HomeCubit>();
+    final products = cubit.productsIn(bundle);
     final imageProduct = products.isEmpty ? null : products.first;
+    final savingPercent = cubit.savingPercentFor(bundle);
     return GestureDetector(
       onTap: () =>
           Navigator.of(context)
@@ -61,82 +63,79 @@ class _BundleCard extends StatelessWidget {
           Container(
             width: 180.w,
             padding: EdgeInsets.all(SpacingTokens.md.w),
-        decoration: BoxDecoration(
-          color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(16.r),
-          border: Border.all(color: AppColor.borderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12.r),
-                child: imageProduct == null
-                    ? const SizedBox.shrink()
-                    : SizedBox.expand(
-                        child: ProductImageView(product: imageProduct),
-                      ),
-              ),
+            decoration: BoxDecoration(
+              color: AppColor.whiteColor,
+              borderRadius: BorderRadius.circular(16.r),
+              border: Border.all(color: AppColor.borderColor),
             ),
-            SizedBox(height: SpacingTokens.sm.h),
-            Text(
-              bundle.title,
-              style: AppFonts.semiBold14(context),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 4.h),
-            Text(
-              bundle.subtitle,
-              style: AppFonts.regular12(context)
-                  .copyWith(color: AppColor.greyColor),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 4.h),
-            Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Flexible(
-                  child: PriceLabel(
-                    amount: bundle.price,
-                    style: AppFonts.semiBold14(context)
-                        .copyWith(color: AppColor.primaryColor),
-                    iconSize: 14,
-                    iconColor: AppColor.primaryColor,
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12.r),
+                    child: imageProduct == null
+                        ? const SizedBox.shrink()
+                        : SizedBox.expand(
+                            child: ProductImageView(product: imageProduct),
+                          ),
                   ),
                 ),
-                SizedBox(width: SpacingTokens.xs.w),
-                Flexible(
-                  child: PriceLabel(
-                    amount: context.read<HomeCubit>().originalTotalFor(bundle),
-                    style: AppFonts.regular12(context).copyWith(
-                      color: AppColor.greyColor,
-                      decoration: TextDecoration.lineThrough,
+                SizedBox(height: SpacingTokens.sm.h),
+                Text(
+                  bundle.title,
+                  style: AppFonts.semiBold14(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  bundle.subtitle,
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 4.h),
+                Row(
+                  children: [
+                    Flexible(
+                      child: PriceLabel(
+                        amount: bundle.price,
+                        style: AppFonts.semiBold14(context)
+                            .copyWith(color: AppColor.primaryColor),
+                        iconSize: 14,
+                        iconColor: AppColor.primaryColor,
+                      ),
                     ),
-                    iconSize: 12,
-                    iconColor: AppColor.greyColor,
-                  ),
+                    SizedBox(width: SpacingTokens.xs.w),
+                    Flexible(
+                      child: PriceLabel(
+                        amount: cubit.originalTotalFor(bundle),
+                        style: AppFonts.regular12(context).copyWith(
+                          color: AppColor.greyColor,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                        iconSize: 12,
+                        iconColor: AppColor.greyColor,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-        if (context.read<HomeCubit>().originalTotalFor(bundle) > bundle.price)
-          PositionedDirectional(
-            top: DiscountBadge.cardTop,
-            end: DiscountBadge.cardRight,
-            child: DiscountBadge(
-              percent: (((context.read<HomeCubit>().originalTotalFor(bundle) - bundle.price) /
-                      context.read<HomeCubit>().originalTotalFor(bundle)) *
-                  100)
-                  .round(),
-              size: DiscountBadge.cardSize,
-            ),
           ),
-      ],
-    ),
-  );
+          if (savingPercent > 0)
+            PositionedDirectional(
+              top: DiscountBadge.cardTop,
+              end: DiscountBadge.cardRight,
+              child: DiscountBadge(
+                percent: savingPercent,
+                size: DiscountBadge.cardSize,
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

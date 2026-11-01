@@ -5,12 +5,12 @@ import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 
-/// Reads the catalogue from the Dart constants that predate the database.
+/// A catalogue with no database behind it, for tests.
 ///
-/// Kept so the app still runs with no Supabase credentials, and so the two
-/// implementations can be compared side by side. Delete this together with
-/// menu_list.dart and categories_list.dart once the database path is the only
-/// one in use.
+/// The compiled-in menu rows that predate Supabase, wrapped in the real
+/// [CatalogRepository] interface. Nothing in `lib/` uses it — the app has one
+/// fallback path, an empty catalogue — so this lives under `test/support`
+/// where a test double belongs.
 class MockProductRepository implements CatalogRepository {
   const MockProductRepository();
 
@@ -161,7 +161,7 @@ class MockProductRepository implements CatalogRepository {
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
-    int limit = 100,
+    int limit = CatalogLimits.products,
     int offset = 0,
   }) async {
     var items = List<ProductModel>.of(_legacyMenu);
@@ -229,7 +229,7 @@ class MockProductRepository implements CatalogRepository {
     String? branchId,
     String? categoryId,
     String sort = 'relevance',
-    int limit = 20,
+    int limit = CatalogLimits.search,
     int offset = 0,
   }) async {
     final q = query.trim().toLowerCase();
@@ -270,7 +270,7 @@ class MockProductRepository implements CatalogRepository {
   @override
   Future<List<FeaturedProduct>> getFeatured({
     String? branchId,
-    int limit = 10,
+    int limit = CatalogLimits.featured,
   }) async {
     final all = _legacyMenu;
     final featured = <FeaturedProduct>[
@@ -294,7 +294,7 @@ class MockProductRepository implements CatalogRepository {
   Future<List<BestSeller>> getBestSellers({
     String? branchId,
     Duration period = const Duration(days: 30),
-    int limit = 10,
+    int limit = CatalogLimits.bestSellers,
   }) async => const [];
 
   @override
@@ -315,12 +315,14 @@ class MockProductRepository implements CatalogRepository {
   /// Banners always come from the database. The offline fallback carries no
   /// fake banners: a fabricated banner would link to fabricated targets.
   @override
-  Future<List<BannerModel>> getBanners({int limit = 20}) async => const [];
+  Future<List<BannerModel>> getBanners({
+    int limit = CatalogLimits.banners,
+  }) async => const [];
 
   @override
   Future<List<BundleModel>> getBundles({
     String? branchId,
-    int limit = 20,
+    int limit = CatalogLimits.bundles,
   }) async => _legacyBundles.take(limit).toList();
 
   @override

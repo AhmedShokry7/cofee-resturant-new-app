@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/widgets/search_filter_sheet.dart';
 

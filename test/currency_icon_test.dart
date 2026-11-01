@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/currency_icon.dart';

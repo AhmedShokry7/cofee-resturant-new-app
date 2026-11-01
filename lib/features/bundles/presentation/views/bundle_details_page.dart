@@ -119,6 +119,7 @@ class _BundleDetailsBody extends StatelessWidget {
         }
 
         final cubit = context.read<BundleDetailsCubit>();
+        final savingPercent = cubit.savingPercentFor();
         final imageProduct = state.products.isEmpty
             ? null
             : state.products.first;
@@ -143,17 +144,12 @@ class _BundleDetailsBody extends StatelessWidget {
                         child: ProductImageView(product: imageProduct),
                       ),
                     ),
-                    if (cubit.originalTotalFor() > state.bundle.price)
+                    if (savingPercent > 0)
                       PositionedDirectional(
                         top: -12,
                         end: 8,
                         child: DiscountBadge(
-                          percent:
-                              (((cubit.originalTotalFor() -
-                                              state.bundle.price) /
-                                          cubit.originalTotalFor()) *
-                                      100)
-                                  .round(),
+                          percent: savingPercent,
                           size: 52,
                         ),
                       ),

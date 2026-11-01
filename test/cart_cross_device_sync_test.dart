@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 
 import 'support/fake_postgrest_server.dart';
 

@@ -25,13 +25,17 @@ class BundleListTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final products = productsById == null
-        ? const <ProductModel>[]
-        : pricing.bundleProducts(bundle, productsById!);
+    final byId = productsById ?? const <String, ProductModel>{};
+    final products = pricing.bundleProducts(bundle, byId);
     final imageProduct = products.isEmpty ? null : products.first;
+    // Without the loaded catalogue there is nothing to compare the bundle
+    // price against, so the tile shows its own price and no saving badge.
+    final savingPercent = productsById == null
+        ? 0
+        : pricing.bundleSavingPercent(bundle, byId);
     final original = productsById == null
         ? bundle.price
-        : pricing.bundleOriginalTotal(bundle, productsById!);
+        : pricing.bundleOriginalTotal(bundle, byId);
     return GestureDetector(
       onTap: () =>
           Navigator.of(context)
@@ -121,12 +125,12 @@ class BundleListTile extends StatelessWidget {
               ],
             ),
           ),
-          if (original > bundle.price)
+          if (savingPercent > 0)
             PositionedDirectional(
               top: DiscountBadge.cardTop,
               end: DiscountBadge.cardRight,
               child: DiscountBadge(
-                percent: (((original - bundle.price) / original) * 100).round(),
+                percent: savingPercent,
                 size: DiscountBadge.cardSize,
               ),
             ),

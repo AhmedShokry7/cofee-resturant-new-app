@@ -13,7 +13,7 @@ import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
 void main() {

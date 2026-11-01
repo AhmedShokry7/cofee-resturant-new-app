@@ -10,6 +10,20 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 /// only on this, so the data source can be swapped without touching a widget.
 /// Two implementations ship: one that reads the database, one that reads the
 /// old Dart constants so the app stays runnable when Supabase is not configured.
+/// How many rows a catalogue read returns when the caller does not say.
+///
+/// The interface and each implementation used to repeat these numbers, so a
+/// default could drift between the database reader and a test double without
+/// anything noticing.
+abstract final class CatalogLimits {
+  static const int products = 100;
+  static const int search = 20;
+  static const int featured = 10;
+  static const int bestSellers = 10;
+  static const int banners = 20;
+  static const int bundles = 20;
+}
+
 abstract class ProductRepository {
   /// The catalogue for a branch, with branch pricing already applied.
   ///
@@ -18,7 +32,7 @@ abstract class ProductRepository {
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
-    int limit = 100,
+    int limit = CatalogLimits.products,
     int offset = 0,
   });
 
@@ -48,20 +62,23 @@ abstract class ProductRepository {
     String? branchId,
     String? categoryId,
     String sort = 'relevance',
-    int limit = 20,
+    int limit = CatalogLimits.search,
     int offset = 0,
   });
 
   /// Manual is_featured first, then best sellers. Each row carries a `source`
   /// so the UI can explain why a product is shown.
-  Future<List<FeaturedProduct>> getFeatured({String? branchId, int limit = 10});
+  Future<List<FeaturedProduct>> getFeatured({
+    String? branchId,
+    int limit = CatalogLimits.featured,
+  });
 
   /// Ranked from completed orders inside a period. Returns an empty list while
   /// there is no sales history, which is a valid answer rather than an error.
   Future<List<BestSeller>> getBestSellers({
     String? branchId,
     Duration period = const Duration(days: 30),
-    int limit = 10,
+    int limit = CatalogLimits.bestSellers,
   });
 
   /// Branch-specific price for one product, resolved on the server.
@@ -75,10 +92,13 @@ abstract class ProductRepository {
   ///
   /// The window filter runs on the server so an expired banner never reaches
   /// the client at all.
-  Future<List<BannerModel>> getBanners({int limit = 20});
+  Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners});
 
   /// Active bundles with their components and quantities resolved.
-  Future<List<BundleModel>> getBundles({String? branchId, int limit = 20});
+  Future<List<BundleModel>> getBundles({
+    String? branchId,
+    int limit = CatalogLimits.bundles,
+  });
 
   /// One bundle by id, with components resolved. Null when not found.
   Future<BundleModel?> getBundleById(String id);

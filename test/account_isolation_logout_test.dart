@@ -21,7 +21,7 @@ import 'package:new_coffee/features/favorites/data/repositories/favorite_reposit
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';

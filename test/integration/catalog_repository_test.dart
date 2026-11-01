@@ -2,7 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import '../support/mock_product_repository.dart';
+import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
@@ -263,9 +264,9 @@ void main() {
         expect(banner.ctaLabel, isNotEmpty);
 
         // A category-targeted banner is only useful if the target resolves. The
-        // old banner_details_page matched on a display-name string, so a banner
+        // old banner page matched on a display-name string, so a banner
         // pointing at a renamed category silently showed nothing.
-        if (banner.targetType == 'category') {
+        if (banner.target == BannerTarget.category) {
           expect(
             banner.targetId,
             isNotNull,

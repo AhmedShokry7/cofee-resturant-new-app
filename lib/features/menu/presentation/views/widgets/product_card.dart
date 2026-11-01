@@ -20,7 +20,7 @@ import 'package:new_coffee/shared/widgets/price_label.dart';
 /// Shared reusable product card used across the entire application.
 ///
 /// All product-list and cart pages must use this component instead of
-/// [PopularCard] variants. The card displays the product's primary image from
+/// variants. The card displays the product's primary image from
 /// the database, falls back to a neutral unavailable state when no image is
 /// available, and uses [CachedNetworkImage] for loading and caching the remote
 /// image.

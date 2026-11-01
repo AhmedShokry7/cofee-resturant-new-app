@@ -134,7 +134,7 @@ class _NotificationBell extends StatelessWidget {
                 padding: EdgeInsets.symmetric(horizontal: 4.w),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFF3B30),
+                  color: AppColor.unreadBadgeColor,
                   borderRadius: BorderRadius.circular(100.r),
                   border: Border.all(color: AppColor.whiteColor, width: 1.5.w),
                 ),

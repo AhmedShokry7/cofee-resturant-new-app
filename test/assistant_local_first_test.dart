@@ -23,7 +23,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';

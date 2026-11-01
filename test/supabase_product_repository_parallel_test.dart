@@ -396,6 +396,27 @@ void main() {
       },
     );
   });
+
+  group('getWithOptions', () {
+    test('reads the gallery once for the product it already loaded', () async {
+      final catalog = _Catalog(
+        products: productRows(),
+        images: imageRows(),
+        pricing: pricingRows(),
+      );
+
+      final loaded = await catalog.repository().getWithOptions('p1');
+
+      expect(loaded, isNotNull);
+      expect(
+        catalog.imageRequests,
+        1,
+        reason:
+            'the detail read reused a second gallery query for the same product',
+      );
+      expect(loaded!.images, isNotEmpty);
+    });
+  });
 }
 
 /// A fake PostgREST endpoint: records what was asked for and answers with

@@ -215,7 +215,7 @@ class SupabaseProductRepository
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
-    int limit = 100,
+    int limit = CatalogLimits.products,
     int offset = 0,
   }) async {
     final rows = await (categoryId == null
@@ -293,19 +293,28 @@ class SupabaseProductRepository
   }
 
   @override
-  Future<ProductModel?> getById(String id, {String? branchId}) async {
+  Future<ProductModel?> getById(String id, {String? branchId}) async =>
+      (await _loadWithImages(id, branchId: branchId))?.product;
+
+  /// The product row together with the gallery that was read for it.
+  ///
+  /// The details screen needs both, and used to ask for the gallery a second
+  /// time right after [getById] had already fetched it.
+  Future<({ProductModel product, List<ProductImage> images})?>
+  _loadWithImages(String id, {String? branchId}) async {
     final rows = await _client
         .from('products')
         .select(_productColumns)
         .eq('id', id)
         .limit(1);
     if (rows.isEmpty) return null;
+    final images = await _productImages(id);
     final product = _withPrimaryImage(
       ProductModel.fromJson(rows.first),
-      await _productImages(id),
+      images,
     );
     final prices = await _branchPrices([product.id], branchId);
-    return _withBranch(product, prices);
+    return (product: _withBranch(product, prices), images: images);
   }
 
   @override
@@ -381,25 +390,24 @@ class SupabaseProductRepository
   }) async {
     // The product row and its option bindings do not depend on each other, so
     // they are fetched together rather than one round trip after another.
-    final productFuture = getById(id, branchId: branchId);
+    final loadedFuture = _loadWithImages(id, branchId: branchId);
     final linksFuture = _client
         .from('product_option_groups')
         .select('group_id, sort_order, is_required')
         .eq('product_id', id);
 
-    final product = await productFuture;
+    final loaded = await loadedFuture;
     final links = await linksFuture;
-    if (product == null) return null;
+    if (loaded == null) return null;
+    final product = loaded.product;
+    final images = loaded.images;
 
     final bindingByGroup = {
       for (final link in links) link['group_id'].toString(): link,
     };
     final groupIds = bindingByGroup.keys.toList();
     if (groupIds.isEmpty) {
-      return ProductWithOptions(
-        product: product,
-        images: await _productImages(id),
-      );
+      return ProductWithOptions(product: product, images: images);
     }
 
     final groupRows = await _client
@@ -442,7 +450,7 @@ class SupabaseProductRepository
     return ProductWithOptions(
       product: product,
       groups: groups,
-      images: await _productImages(id),
+      images: images,
     );
   }
 
@@ -615,7 +623,7 @@ class SupabaseProductRepository
     String? branchId,
     String? categoryId,
     String sort = 'relevance',
-    int limit = 20,
+    int limit = CatalogLimits.search,
     int offset = 0,
   }) async {
     final rows = await _client.rpc(
@@ -639,7 +647,7 @@ class SupabaseProductRepository
   @override
   Future<List<FeaturedProduct>> getFeatured({
     String? branchId,
-    int limit = 10,
+    int limit = CatalogLimits.featured,
   }) async {
     final rows = await _client.rpc(
       'get_featured',
@@ -676,7 +684,7 @@ class SupabaseProductRepository
   Future<List<BestSeller>> getBestSellers({
     String? branchId,
     Duration period = const Duration(days: 30),
-    int limit = 10,
+    int limit = CatalogLimits.bestSellers,
   }) async {
     final rows = await _client.rpc(
       'get_best_sellers',
@@ -728,7 +736,7 @@ class SupabaseProductRepository
   // --- Home page content ---------------------------------------------------
 
   @override
-  Future<List<BannerModel>> getBanners({int limit = 20}) async {
+  Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners}) async {
     // Only eq/order/limit filters here: complex `or` date expressions are a
     // PostgREST version-sensitive failure point, and a 400 on this query
     // would empty the whole banner section. The publish window is enforced
@@ -759,7 +767,7 @@ class SupabaseProductRepository
   @override
   Future<List<BundleModel>> getBundles({
     String? branchId,
-    int limit = 20,
+    int limit = CatalogLimits.bundles,
   }) async {
     final rows = await _client
         .from('bundles')
@@ -776,13 +784,29 @@ class SupabaseProductRepository
         .inFilter('bundle_id', bundleIds)
         .order('sort_order');
 
+    final byBundle = _componentsByBundle(items);
+
+    return rows
+        .map(
+          (r) => BundleModel.fromJson(
+            r,
+            components: byBundle[r['id'].toString()] ?? const [],
+          ),
+        )
+        .toList();
+  }
+
+  /// Bundle component rows grouped by the bundle they belong to.
+  ///
+  /// Both bundle reads used to rebuild this map with their own copy of the
+  /// loop, so a new component column had to be added twice.
+  Map<String, List<BundleComponent>> _componentsByBundle(List rows) {
     final byBundle = <String, List<BundleComponent>>{};
-    for (final row in items) {
-      final bundleId = row['bundle_id'].toString();
+    for (final row in rows) {
       final product = row['product'];
       final embedded = product is Map ? product : const <String, dynamic>{};
       byBundle
-          .putIfAbsent(bundleId, () => [])
+          .putIfAbsent(row['bundle_id'].toString(), () => [])
           .add(
             BundleComponent(
               productId: Db.text(row['product_id']),
@@ -794,15 +818,7 @@ class SupabaseProductRepository
             ),
           );
     }
-
-    return rows
-        .map(
-          (r) => BundleModel.fromJson(
-            r,
-            components: byBundle[r['id'].toString()] ?? const [],
-          ),
-        )
-        .toList();
+    return byBundle;
   }
 
   @override
@@ -822,27 +838,9 @@ class SupabaseProductRepository
         .eq('bundle_id', bundleId)
         .order('sort_order');
 
-    final byBundle = <String, List<BundleComponent>>{};
-    for (final row in items) {
-      final product = row['product'];
-      final embedded = product is Map ? product : const <String, dynamic>{};
-      byBundle
-          .putIfAbsent(bundleId, () => [])
-          .add(
-            BundleComponent(
-              productId: Db.text(row['product_id']),
-              quantity: Db.asInt(row['quantity'], fallback: 1),
-              allowOptions: row['allow_options'] == true,
-              nameAr: Db.textOrNull(embedded['name_ar']),
-              nameEn: Db.textOrNull(embedded['name_en']),
-              imageUrl: Db.textOrNull(embedded['image_url']),
-            ),
-          );
-    }
-
     return BundleModel.fromJson(
       bundle,
-      components: byBundle[bundleId] ?? const [],
+      components: _componentsByBundle(items)[bundleId] ?? const [],
     );
   }
 

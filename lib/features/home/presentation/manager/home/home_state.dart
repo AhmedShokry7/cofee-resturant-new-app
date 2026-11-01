@@ -54,8 +54,8 @@ class HomeState {
   /// Replaces the old lookup that compared products to a raw category name
   /// string, which broke whenever a category was renamed.
   List<ProductModel> productsForBanner(BannerModel banner) {
-    switch (banner.targetType) {
-      case 'product':
+    switch (banner.target) {
+      case BannerTarget.product:
         final product = banner.targetProduct;
         if (product != null) return [product];
         // Fall back to the pool when the target was not resolved.
@@ -64,7 +64,7 @@ class HomeState {
         return recommendationPool
             .where((p) => p.id == id)
             .toList(growable: false);
-      case 'bundle':
+      case BannerTarget.bundle:
         final bundle = banner.targetBundle;
         if (bundle == null) return const [];
         return [
@@ -72,7 +72,7 @@ class HomeState {
             if (bundleProducts[c.productId] != null)
               bundleProducts[c.productId]!,
         ];
-      case 'category':
+      case BannerTarget.category:
         final id = banner.targetId;
         if (id == null) return const [];
         return recommendationPool
@@ -81,6 +81,50 @@ class HomeState {
       default:
         return const [];
     }
+  }
+
+  /// Category slugs that suit a hot day, and those that suit a cold one.
+  ///
+  /// Slugs, not display names: renaming a category must not silently break the
+  /// rule, which is what happened when this matched on English strings.
+  static const Set<String> hotDayCategorySlugs = {
+    'cold-coffee',
+    'soft-drinks',
+    'milkshakes',
+  };
+  static const Set<String> coldDayCategorySlugs = {'hot-coffee', 'tea'};
+
+  /// How many rows the recommendations strip shows.
+  static const int maxRecommendations = 4;
+
+  /// The [recommendationPool] ordered for the customer: something they
+  /// favourited first, then whatever the weather suggests, then menu order.
+  ///
+  /// The home widget used to rank this during build, so the rule could not be
+  /// tested and was re-run on every frame.
+  List<ProductModel> recommendations({
+    WeatherModel? weather,
+    Set<String> favoriteIds = const {},
+  }) {
+    final seasonalSlugs = weather == null
+        ? const <String>{}
+        : weather.isHot
+        ? hotDayCategorySlugs
+        : coldDayCategorySlugs;
+    int score(ProductModel product) =>
+        (favoriteIds.contains(product.id) ? 2 : 0) +
+        (weather != null && seasonalSlugs.contains(product.categorySlug)
+            ? 1
+            : 0);
+    final ranked = recommendationPool.indexed.toList()
+      ..sort((a, b) {
+        final byScore = score(b.$2).compareTo(score(a.$2));
+        return byScore != 0 ? byScore : a.$1.compareTo(b.$1);
+      });
+    return ranked
+        .take(maxRecommendations)
+        .map((entry) => entry.$2)
+        .toList(growable: false);
   }
 
   HomeState copyWith({

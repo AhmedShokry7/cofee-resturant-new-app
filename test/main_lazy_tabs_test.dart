@@ -22,7 +22,7 @@ import 'package:new_coffee/features/home/presentation/views/home_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/weather/data/model/weather_model.dart';
 import 'package:new_coffee/features/weather/data/repositories/weather_repository.dart';
 import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';

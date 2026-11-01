@@ -18,7 +18,7 @@ import 'package:new_coffee/features/checkout/presentation/manager/checkout/check
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';

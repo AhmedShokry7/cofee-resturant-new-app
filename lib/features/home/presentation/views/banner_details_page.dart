@@ -10,10 +10,11 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/home/presentation/manager/banner_details/banner_details_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
@@ -29,90 +30,58 @@ class BannerDetailsPage extends StatefulWidget {
 }
 
 class _BannerDetailsPageState extends State<BannerDetailsPage> {
-  late BannerModel _banner;
-  bool _resolving = false;
-
-  BannerModel get banner => _banner;
-
   @override
-  void initState() {
-    super.initState();
-    _banner = widget.banner;
-    _resolveIfNeeded();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => BannerDetailsCubit(
+        repository: context.read<CatalogRepository>(),
+        banner: widget.banner,
+      ),
+      child: const _BannerDetailsView(),
+    );
   }
+}
 
-  Future<void> _resolveIfNeeded() async {
-    final needsProduct = banner.targetType == 'product' &&
-        banner.targetProduct == null &&
-        banner.targetId != null;
-    final needsBundle = banner.targetType == 'bundle' &&
-        banner.targetBundle == null &&
-        banner.targetId != null;
-    if (!needsProduct && !needsBundle) return;
-    if (_resolving) return;
-    _resolving = true;
-    try {
-      final repo = context.read<CatalogRepository>();
-      var next = banner;
-      if (needsProduct) {
-        final product = await repo.getById(banner.targetId!);
-        if (product != null) next = next.copyWith(targetProduct: product);
-      }
-      if (needsBundle) {
-        final bundle = await repo.getBundleById(banner.targetId!);
-        if (bundle != null) next = next.copyWith(targetBundle: bundle);
-      }
-      if (mounted) setState(() => _banner = next);
-    } catch (_) {
-      // Keep the (possibly partial) banner; navigation degrades gracefully.
-    } finally {
-      _resolving = false;
-    }
-  }
+class _BannerDetailsView extends StatelessWidget {
+  const _BannerDetailsView();
 
-  Future<void> _onCta(BuildContext context) async {
-    switch (banner.targetType) {
-      case 'category':
-        if (banner.targetId != null) {
-          Navigator.of(context).push(
+  Future<void> _onCta(BuildContext context, BannerModel banner) async {
+    final nav = Navigator.of(context);
+    switch (banner.target) {
+      case BannerTarget.category:
+        final id = banner.targetId;
+        if (id != null) {
+          nav.push(
             MaterialPageRoute(
-              builder: (_) =>
-                  CategoriesPage(initialCategoryId: banner.targetId),
+              builder: (_) => CategoriesPage(initialCategoryId: id),
             ),
           );
         }
-        return;
-      case 'product':
+      case BannerTarget.product:
         final product = banner.targetProduct;
         if (product != null) {
-          Navigator.of(context)
-              .pushNamed(ProductDetailsPage.routeName, arguments: product);
+          nav.pushNamed(ProductDetailsPage.routeName, arguments: product);
         }
-        return;
-      case 'bundle':
+      case BannerTarget.bundle:
         final bundle = banner.targetBundle;
         if (bundle != null) {
-          Navigator.of(context)
-              .pushNamed(BundleDetailsPage.routeName, arguments: bundle);
+          nav.pushNamed(BundleDetailsPage.routeName, arguments: bundle);
         }
-        return;
-      case 'url':
+      case BannerTarget.url:
         final url = banner.targetUrl;
-        if (url != null && url.isNotEmpty) {
-          final uri = Uri.parse(url);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
+        if (url == null || url.isEmpty) return;
+        final uri = Uri.parse(url);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
         }
-        return;
-      case 'none':
-      default:
-        return;
+      case BannerTarget.none:
+        break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final banner = context.watch<BannerDetailsCubit>().state;
     final related = context.select(
       (HomeCubit c) => c.state.productsForBanner(banner),
     );
@@ -145,7 +114,7 @@ class _BannerDetailsPageState extends State<BannerDetailsPage> {
                 SizedBox(height: SpacingTokens.lg.h),
                 CustomBtn(
                   text: banner.ctaLabel,
-                  onPressed: () => _onCta(context),
+                  onPressed: () => _onCta(context, banner),
                 ),
                 SizedBox(height: SpacingTokens.xl.h),
                 HomeProductsCarousel(title: S.youMayLike, products: related),

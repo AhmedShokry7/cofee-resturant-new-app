@@ -7,7 +7,7 @@ import 'package:new_coffee/features/cart/data/repositories/local_cart_repository
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 
 /// Per-customer isolation for carts and favourites.
 ///

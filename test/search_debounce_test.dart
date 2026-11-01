@@ -6,7 +6,7 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/features/menu/data/repositories/mock_product_repository.dart';
+import 'support/mock_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/search/data/model/search_sort.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
