@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// First-load skeleton for the home page.
 ///
@@ -21,25 +20,22 @@ class HomeLoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: physics ?? const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.only(
-        top: SpacingTokens.md.h,
-        bottom: SpacingTokens.lg.h,
-      ),
+      padding: EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.lg),
       children: [
         const _HomeSection(child: HomeHeader()),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const _HomeSection(child: HomeSearchBar()),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const BannerSkeleton(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const _HomeSection(child: HomeCategoriesSkeleton()),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const _HomeSection(child: ProductsCarouselSkeleton()),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         _HomeSection(child: ShimmerBannerBox(height: 164, borderRadius: 8)),
-        SizedBox(height: SpacingTokens.xl.h),
+        SizedBox(height: AppSpacing.xl),
         const _HomeSection(child: ProductsCarouselSkeleton(showSubtitle: true)),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const _HomeSection(child: BundlesCarouselSkeleton()),
       ],
     );
@@ -47,7 +43,7 @@ class HomeLoadingView extends StatelessWidget {
 }
 
 /// Single full-width promo banner skeleton mirroring
-/// [HomeSingleBannerSection]: 164.h tall with radius 8.r and no dots row.
+/// [HomeSingleBannerSection]: [AppDimensions.homeBannerHeight] tall with radius [AppRadius.r8] and no dots row.
 class ShimmerBannerBox extends StatelessWidget {
   const ShimmerBannerBox({
     super.key,
@@ -76,7 +72,7 @@ class _HomeSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: SpacingTokens.lg.w),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: child,
     );
   }

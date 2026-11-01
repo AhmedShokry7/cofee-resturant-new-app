@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
+
+import 'support/pump_harness.dart';
 
 /// Pumps [child] inside a 375x812 ScreenUtil context, matching the app's
 /// responsive setup, so `.w` / `.h` / `.r` extensions resolve 1:1.
@@ -21,12 +24,7 @@ Future<void> pumpSkeleton(
     tester.view.resetPhysicalSize();
     tester.view.resetDevicePixelRatio();
   });
-  await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(375, 812),
-      builder: (context, _) => MaterialApp(home: Scaffold(body: child)),
-    ),
-  );
+  await tester.pumpWidget(MaterialApp(home: Scaffold(body: child)));
 }
 
 void main() {
@@ -35,13 +33,10 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(375, 812),
-          builder: (context, _) => const MaterialApp(
-            home: MediaQuery(
-              data: MediaQueryData(disableAnimations: true),
-              child: Shimmer(child: ShimmerLine(width: 100, height: 12)),
-            ),
+        const MaterialApp(
+          home: MediaQuery(
+            data: MediaQueryData(disableAnimations: true),
+            child: Shimmer(child: ShimmerLine(width: 100, height: 12)),
           ),
         ),
       );
@@ -73,14 +68,14 @@ void main() {
       expect(find.byType(AspectRatio), findsOneWidget);
       expect(
         tester.widget<AspectRatio>(find.byType(AspectRatio)).aspectRatio,
-        0.60,
+        ProductCard.cardAspectRatio,
       );
       // Image area, title, description, price row and add button slots.
       expect(find.byType(ShimmerBox), findsWidgets);
       expect(find.byType(ShimmerCircle), findsWidgets);
     });
 
-    testWidgets('ProductsGridSkeleton shows six cards in two columns', (
+    testWidgets('ProductsGridSkeleton shows six cards in a phone row', (
       tester,
     ) async {
       await pumpSkeleton(
@@ -90,9 +85,11 @@ void main() {
       expect(find.byType(ProductCardSkeleton), findsNWidgets(6));
       final grid = tester.widget<GridView>(find.byType(GridView));
       final delegate =
-          grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 2);
-      expect(delegate.childAspectRatio, 0.60);
+          grid.gridDelegate as SliverGridDelegateWithMaxCrossAxisExtent;
+      expect(delegate.maxCrossAxisExtent, AppBreakpoints.productCardMaxWidth);
+      expect(delegate.childAspectRatio, ProductCard.cardAspectRatio);
+      // The same self-counting row the real grid uses: two cards at this width.
+      expect(columnCount(find.byType(ProductCardSkeleton)), 2);
     });
 
     testWidgets('ProductsCarouselSkeleton keeps the derived list height', (
@@ -109,7 +106,7 @@ void main() {
       // The derived-height strip is laid out; only viewport-visible cards are built,
       // exactly like the real horizontal carousel.
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(168 / 0.60, 1));
+      expect(strip.height, closeTo(168 / ProductCard.cardAspectRatio, 1));
       expect(find.byType(ProductCardSkeleton), findsWidgets);
       // Scrolling reveals more skeleton cards, proving all four exist.
       await tester.drag(find.byType(ListView), const Offset(-400, 0));
@@ -117,7 +114,7 @@ void main() {
       expect(find.byType(ProductCardSkeleton), findsWidgets);
     });
 
-    testWidgets('CategoryTabsSkeleton keeps the 50.h bar height', (
+    testWidgets('CategoryTabsSkeleton keeps the AppSizes.px50 bar height', (
       tester,
     ) async {
       await pumpSkeleton(tester, const CategoryTabsSkeleton());
@@ -236,10 +233,7 @@ void main() {
       tester,
     ) async {
       await pumpSkeleton(tester, const DbImage(image: null));
-      expect(
-        find.byIcon(HugeIcons.strokeRoundedImageNotFound01),
-        findsOneWidget,
-      );
+      expect(find.byIcon(AppIcons.imageMissing), findsOneWidget);
       expect(find.byType(Shimmer), findsNothing);
     });
 
@@ -247,10 +241,7 @@ void main() {
       tester,
     ) async {
       await pumpSkeleton(tester, const DbImage(image: '  '));
-      expect(
-        find.byIcon(HugeIcons.strokeRoundedImageNotFound01),
-        findsOneWidget,
-      );
+      expect(find.byIcon(AppIcons.imageMissing), findsOneWidget);
       expect(find.byType(Shimmer), findsNothing);
     });
   });

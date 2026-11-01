@@ -46,7 +46,10 @@ void main() {
       expect(place.title, 'Grand Central Terminal');
       expect(place.subtitle, 'Mid Town, New York, United States');
       // The full name is what belongs in the search field.
-      expect(place.label, 'Grand Central Terminal, Mid Town, New York, United States');
+      expect(
+        place.label,
+        'Grand Central Terminal, Mid Town, New York, United States',
+      );
     });
 
     test('a single-segment name leaves the subtitle empty', () {
@@ -141,19 +144,21 @@ void main() {
   });
 
   group('reverse', () {
-    test('asks for the most precise zoom so a pin resolves to a building', () async {
-      Uri? seen;
-      final repository = repositoryReturning(
-        {'display_name': '350 5th Ave, New York'},
-        onRequest: (uri) => seen = uri,
-      );
+    test(
+      'asks for the most precise zoom so a pin resolves to a building',
+      () async {
+        Uri? seen;
+        final repository = repositoryReturning({
+          'display_name': '350 5th Ave, New York',
+        }, onRequest: (uri) => seen = uri);
 
-      await repository.reverse(latitude: 40.7484, longitude: -73.9857);
+        await repository.reverse(latitude: 40.7484, longitude: -73.9857);
 
-      expect(seen!.queryParameters['zoom'], '18');
-      expect(seen!.queryParameters['lat'], '40.7484');
-      expect(seen!.path, contains('/reverse'));
-    });
+        expect(seen!.queryParameters['zoom'], '18');
+        expect(seen!.queryParameters['lat'], '40.7484');
+        expect(seen!.path, contains('/reverse'));
+      },
+    );
 
     test('returns the place name for the point', () async {
       final repository = repositoryReturning({
@@ -162,7 +167,10 @@ void main() {
         'lon': '-73.9857',
       });
 
-      final place = await repository.reverse(latitude: 40.7484, longitude: -73.9857);
+      final place = await repository.reverse(
+        latitude: 40.7484,
+        longitude: -73.9857,
+      );
 
       expect(place?.title, 'Empire State Building');
     });
@@ -170,10 +178,7 @@ void main() {
     test('an unnamed point is null, not an exception', () async {
       final repository = repositoryReturning({'error': 'Unable to geocode'});
 
-      expect(
-        await repository.reverse(latitude: 0.5, longitude: 0.5),
-        isNull,
-      );
+      expect(await repository.reverse(latitude: 0.5, longitude: 0.5), isNull);
     });
   });
 

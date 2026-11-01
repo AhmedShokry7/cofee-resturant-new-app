@@ -98,32 +98,29 @@ void main() {
       addTearDown(SupabaseService.debugReset);
 
       final repository = SupabaseAddressRepository();
-      await expectLater(
-        repository.listAddresses(),
-        throwsA(isA<StateError>()),
-      );
+      await expectLater(repository.listAddresses(), throwsA(isA<StateError>()));
     });
 
-    test('deleting without a session fails instead of returning quietly', () async {
-      SupabaseService.debugReset();
-      addTearDown(SupabaseService.debugReset);
+    test(
+      'deleting without a session fails instead of returning quietly',
+      () async {
+        SupabaseService.debugReset();
+        addTearDown(SupabaseService.debugReset);
 
-      final repository = SupabaseAddressRepository();
-      await expectLater(
-        repository.removeAddress('some-address-id'),
-        throwsA(isA<StateError>()),
-      );
-    });
+        final repository = SupabaseAddressRepository();
+        await expectLater(
+          repository.removeAddress('some-address-id'),
+          throwsA(isA<StateError>()),
+        );
+      },
+    );
 
     test('deleting with an empty id is rejected', () async {
       SupabaseService.debugReset();
       addTearDown(SupabaseService.debugReset);
 
       final repository = SupabaseAddressRepository();
-      await expectLater(
-        repository.removeAddress(''),
-        throwsArgumentError,
-      );
+      await expectLater(repository.removeAddress(''), throwsArgumentError);
     });
   });
 }

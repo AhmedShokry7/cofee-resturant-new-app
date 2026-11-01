@@ -2,10 +2,7 @@ part of 'subscription_consume_cubit.dart';
 
 @immutable
 class SubscriptionConsumeState {
-  const SubscriptionConsumeState({
-    this.isSubmitting = false,
-    this.message,
-  });
+  const SubscriptionConsumeState({this.isSubmitting = false, this.message});
 
   final bool isSubmitting;
 

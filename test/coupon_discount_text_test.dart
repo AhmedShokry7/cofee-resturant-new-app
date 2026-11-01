@@ -14,11 +14,10 @@ void main() {
     double value = 20,
     double? cap,
   }) {
-    return const CouponModel(id: 'c1', code: 'WELCOME').copyWith(
-      discountType: type,
-      discountValue: value,
-      maxDiscount: cap,
-    );
+    return const CouponModel(
+      id: 'c1',
+      code: 'WELCOME',
+    ).copyWith(discountType: type, discountValue: value, maxDiscount: cap);
   }
 
   test('a percentage rule reads as a percentage', () {
@@ -26,10 +25,7 @@ void main() {
   });
 
   test('a capped percentage names the cap', () {
-    expect(
-      rule(cap: 25).discount,
-      '20% off up to ${Formatters.price(25)}',
-    );
+    expect(rule(cap: 25).discount, '20% off up to ${Formatters.price(25)}');
   });
 
   test('a fixed rule reads as an amount', () {

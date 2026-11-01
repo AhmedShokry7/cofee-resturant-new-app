@@ -33,7 +33,7 @@ abstract final class TapCheckoutConfig {
       },
       'customer': {
         'name': [
-          {'lang': 'en', 'first': '', 'last': ''}
+          {'lang': 'en', 'first': '', 'last': ''},
         ],
         'contact': {'email': ''},
         'editable': false,

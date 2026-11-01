@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The grab bar every bottom sheet opens with.
 ///
@@ -13,11 +13,11 @@ class SheetHandle extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Center(
     child: Container(
-      height: 4.h,
-      width: 100.w,
+      height: AppSpacing.xs,
+      width: AppDimensions.sheetHandleWidth,
       decoration: BoxDecoration(
         color: AppColor.borderColor,
-        borderRadius: BorderRadius.circular(100),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
     ),
   );

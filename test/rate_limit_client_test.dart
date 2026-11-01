@@ -44,24 +44,26 @@ void main() {
     );
   }
 
-  test('a decoded JSON body is read instead of being cast to a string',
-      () async {
-    SupabaseService.debugSetClient(
-      clientAnswering(
-        jsonEncode(<String, dynamic>{
-          'allowed': true,
-          'limit': 120,
-          'remaining': 119,
-        }),
-      ),
-    );
+  test(
+    'a decoded JSON body is read instead of being cast to a string',
+    () async {
+      SupabaseService.debugSetClient(
+        clientAnswering(
+          jsonEncode(<String, dynamic>{
+            'allowed': true,
+            'limit': 120,
+            'remaining': 119,
+          }),
+        ),
+      );
 
-    expect(
-      await RateLimitClient().check('search'),
-      isTrue,
-      reason: 'the edge function allowed the request',
-    );
-  });
+      expect(
+        await RateLimitClient().check('search'),
+        isTrue,
+        reason: 'the edge function allowed the request',
+      );
+    },
+  );
 
   test('a request over the limit is refused', () async {
     SupabaseService.debugSetClient(

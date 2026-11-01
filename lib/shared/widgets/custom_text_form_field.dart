@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CustomTextFormField extends StatefulWidget {
   final String hint;
@@ -55,7 +55,7 @@ class CustomTextFormField extends StatefulWidget {
 }
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
-  static const double _fieldRadius = 18;
+  static const double _fieldRadius = AppDimensions.fieldRadius;
 
   late bool _isObscure;
   bool _isFocused = false;
@@ -82,13 +82,17 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         : AppColor.greyColor.withValues(alpha: 0.35);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: widget.bottomPadding.h),
+      padding: EdgeInsets.only(bottom: widget.bottomPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (widget.label != null) ...[
             Padding(
-              padding: EdgeInsets.only(bottom: 8.h, left: 4.w, right: 4.w),
+              padding: EdgeInsets.only(
+                bottom: AppSpacing.sm,
+                left: AppSpacing.xs,
+                right: AppSpacing.xs,
+              ),
               child: Text(
                 widget.label!,
                 style: AppFonts.semiBold14(context)
@@ -101,18 +105,14 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             curve: Curves.easeOut,
             decoration: BoxDecoration(
               color: _isFocused
-                  ? AppColor.secondryColor.withValues(alpha: 0.035)
+                  ? AppColor.secondryColor.withValues(
+                      alpha: AppShadows.focusTint,
+                    )
                   : AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(_fieldRadius.r),
+              borderRadius: BorderRadius.circular(_fieldRadius),
               boxShadow: _isFocused
-                  ? [
-                      BoxShadow(
-                        color: AppColor.secondryColor.withValues(alpha: 0.07),
-                        blurRadius: 12.r,
-                        offset: Offset(0, 3.h),
-                      ),
-                    ]
-                  : [],
+                  ? AppShadows.focused(AppColor.secondryColor)
+                  : const [],
             ),
             child: Focus(
               onFocusChange: (focused) {
@@ -143,41 +143,41 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                       ? null
                       : Padding(
                           padding: EdgeInsetsDirectional.only(
-                            start: 14.w,
-                            end: 10.w,
+                            start: AppSizes.px14,
+                            end: AppSizes.px10,
                           ),
                           child: IconTheme(
                             data: IconThemeData(
                               color: _isFocused
                                   ? AppColor.secondryColor
                                   : AppColor.greyColor,
-                              size: 21.r,
+                              size: AppRadius.r20,
                             ),
                             child: widget.prefixIcon!,
                           ),
                         ),
                   prefixIconConstraints: BoxConstraints(
-                    minWidth: 48.w,
-                    minHeight: 48.h,
+                    minWidth: AppSpacing.xxxl,
+                    minHeight: AppSpacing.xxxl,
                   ),
                   suffixIcon: _buildSuffixIcon(),
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: 18.w,
-                    vertical: widget.padding ?? 16.h,
+                    horizontal: AppSizes.px18,
+                    vertical: widget.padding ?? AppSpacing.lg,
                   ),
                   filled: true,
-                  fillColor: Colors.transparent,
+                  fillColor: AppColor.transparent,
                   isDense: false,
                   border: _buildBorder(),
                   enabledBorder: _buildBorder(color: borderColor),
                   focusedBorder: _buildBorder(
                     color: AppColor.secondryColor,
-                    width: 1.5,
+                    width: AppDimensions.fieldBorderWidthActive,
                   ),
                   errorBorder: _buildBorder(color: AppColor.errorColor),
                   focusedErrorBorder: _buildBorder(
                     color: AppColor.errorColor,
-                    width: 1.5,
+                    width: AppDimensions.fieldBorderWidthActive,
                   ),
                   errorStyle: AppFonts.semiBold12(context)
                       .copyWith(color: AppColor.errorColor),
@@ -198,10 +198,8 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
           setState(() => _isObscure = !_isObscure);
         },
         icon: Icon(
-          _isObscure
-              ? HugeIcons.strokeRoundedViewOff
-              : HugeIcons.strokeRoundedView,
-          size: 21.r,
+          _isObscure ? AppIcons.viewOff : AppIcons.view,
+          size: AppRadius.r20,
           color: AppColor.greyColor,
         ),
       );
@@ -210,9 +208,12 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     return widget.suffixIcon;
   }
 
-  OutlineInputBorder _buildBorder({double width = 1, Color? color}) {
+  OutlineInputBorder _buildBorder({
+    double width = AppDimensions.fieldBorderWidth,
+    Color? color,
+  }) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(_fieldRadius.r),
+      borderRadius: BorderRadius.circular(_fieldRadius),
       borderSide: BorderSide(
         width: width,
         color: color ?? AppColor.greyColor.withValues(alpha: 0.35),

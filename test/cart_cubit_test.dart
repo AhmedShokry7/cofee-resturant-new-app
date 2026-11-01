@@ -7,6 +7,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+
 import 'support/mock_product_repository.dart';
 
 void main() {
@@ -116,29 +117,26 @@ void main() {
     },
   );
 
-  test(
-    'a failed guest-cart adoption preserves the guest slot',
-    () async {
-      SharedPreferences.setMockInitialValues({
-        'cart_v1_guest': jsonEncode([
-          {'productId': '1', 'quantity': 2},
-        ]),
-      });
+  test('a failed guest-cart adoption preserves the guest slot', () async {
+    SharedPreferences.setMockInitialValues({
+      'cart_v1_guest': jsonEncode([
+        {'productId': '1', 'quantity': 2},
+      ]),
+    });
 
-      final cubit = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: _ThrowingCatalog(),
-        userIdProvider: () => 'user-a',
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+    final cubit = CartCubit(
+      cartRepository: LocalCartRepository(),
+      catalogRepository: _ThrowingCatalog(),
+      userIdProvider: () => 'user-a',
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      final prefs = await SharedPreferences.getInstance();
-      final stored = jsonDecode(prefs.getString('cart_v1_guest')!) as List;
-      expect(stored, isNotEmpty);
+    final prefs = await SharedPreferences.getInstance();
+    final stored = jsonDecode(prefs.getString('cart_v1_guest')!) as List;
+    expect(stored, isNotEmpty);
 
     await cubit.close();
-  },
-  );
+  });
 
   test(
     'an unavailable product is preserved when loading under a branch',

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
@@ -16,7 +16,9 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
@@ -67,20 +69,17 @@ Future<void> _pumpDetailsPage(
   required BranchCubit branch,
 }) {
   return tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(
-        home: MultiBlocProvider(
-          providers: [
-            BlocProvider.value(value: branch),
-            BlocProvider.value(value: favorites),
-            BlocProvider.value(value: cart),
-            RepositoryProvider<CatalogRepository>.value(
-              value: MockProductRepository(),
-            ),
-          ],
-          child: ProductDetailsPage(product: product),
-        ),
+    MaterialApp(
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider.value(value: branch),
+          BlocProvider.value(value: favorites),
+          BlocProvider.value(value: cart),
+          RepositoryProvider<CatalogRepository>.value(
+            value: MockProductRepository(),
+          ),
+        ],
+        child: ProductDetailsPage(product: product),
       ),
     ),
   );
@@ -98,11 +97,7 @@ void main() {
     ) async {
       await _setSurface(tester);
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 800),
-          builder: (context, _) =>
-              const MaterialApp(home: Scaffold(body: ProductDetailsSkeleton())),
-        ),
+        const MaterialApp(home: Scaffold(body: ProductDetailsSkeleton())),
       );
       await tester.pump();
 
@@ -161,7 +156,9 @@ void main() {
             .first,
       );
       expect(imageBox.width, 360);
-      expect(imageBox.height, closeTo(300 * 800 / 690, 1));
+      // The hero is a fixed logical height now, not a fraction of the screen:
+      // a taller phone buys more content below it, not a taller image.
+      expect(imageBox.height, AppDimensions.productHeroHeight);
     });
 
     testWidgets('price and quantity live in the content', (tester) async {
@@ -208,7 +205,7 @@ void main() {
 
       // Incrementing updates the same cubit state Add to Cart will submit.
       await tester.tap(
-        find.descendant(of: stepper, matching: find.byIcon(Icons.add)),
+        find.descendant(of: stepper, matching: find.byIcon(AppIcons.add)),
       );
       await tester.pump();
       expect(_detailsOf(tester).state.quantity, 2);
@@ -219,11 +216,11 @@ void main() {
 
       // The minimum holds: decrementing at 1 stays at 1.
       await tester.tap(
-        find.descendant(of: stepper, matching: find.byIcon(Icons.remove)),
+        find.descendant(of: stepper, matching: find.byIcon(AppIcons.minus)),
       );
       await tester.pump();
       await tester.tap(
-        find.descendant(of: stepper, matching: find.byIcon(Icons.remove)),
+        find.descendant(of: stepper, matching: find.byIcon(AppIcons.minus)),
       );
       await tester.pump();
       expect(_detailsOf(tester).state.quantity, 1);
@@ -270,11 +267,11 @@ void main() {
         matching: find.byType(QuantityStepper),
       );
       await tester.tap(
-        find.descendant(of: stepper, matching: find.byIcon(Icons.add)),
+        find.descendant(of: stepper, matching: find.byIcon(AppIcons.add)),
       );
       await tester.pump();
       await tester.tap(
-        find.descendant(of: stepper, matching: find.byIcon(Icons.add)),
+        find.descendant(of: stepper, matching: find.byIcon(AppIcons.add)),
       );
       await tester.pump();
       expect(_detailsOf(tester).state.quantity, 3);
@@ -450,20 +447,17 @@ void main() {
       addTearDown(branch.close);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: MultiBlocProvider(
-              providers: [
-                BlocProvider.value(value: branch),
-                BlocProvider.value(value: favorites),
-                BlocProvider.value(value: cart),
-                RepositoryProvider<CatalogRepository>.value(
-                  value: MockProductRepository(),
-                ),
-              ],
-              child: BundleDetailsPage(bundle: bundle),
-            ),
+        MaterialApp(
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: branch),
+              BlocProvider.value(value: favorites),
+              BlocProvider.value(value: cart),
+              RepositoryProvider<CatalogRepository>.value(
+                value: MockProductRepository(),
+              ),
+            ],
+            child: BundleDetailsPage(bundle: bundle),
           ),
         ),
       );
@@ -525,14 +519,14 @@ void main() {
         matching: find.byWidgetPredicate(
           (widget) =>
               widget is Icon &&
-              (widget.icon == HugeIcons.strokeRoundedFavourite ||
-                  widget.icon == Icons.favorite),
+              (widget.icon == AppIcons.favourite ||
+                  widget.icon == AppIcons.favourite),
         ),
       );
       Icon headerHeart() => tester.widget<Icon>(headerHeartIcon());
 
       // Idle: outlined heart, existing grey styling.
-      expect(headerHeart().icon, HugeIcons.strokeRoundedFavourite);
+      expect(headerHeart().icon, AppIcons.favourite);
       expect(headerHeart().color, AppColor.greyColor);
 
       await tester.tap(
@@ -541,7 +535,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Saved: completely filled red heart, same persistence as cards.
-      expect(headerHeart().icon, Icons.favorite);
+      expect(headerHeart().icon, AppIcons.favourite);
       expect(headerHeart().color, AppColor.errorColor);
       expect(favorites.state.ids, contains(product.id));
     });

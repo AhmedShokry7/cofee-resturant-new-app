@@ -1,9 +1,8 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,12 +20,16 @@ import 'package:new_coffee/features/favorites/data/repositories/favorite_reposit
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
+
 import 'support/in_memory_profile_photo_repository.dart';
+
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 
 // ---------------------------------------------------------------- fakes ----
@@ -81,10 +84,8 @@ class _ScriptedLoyaltyRepository implements LoyaltyRepository {
   }
 
   @override
-  Future<int> redeemReward({
-    required String rewardId,
-    String? branchId,
-  }) => Future.value(0);
+  Future<int> redeemReward({required String rewardId, String? branchId}) =>
+      Future.value(0);
 }
 
 class _FakeAuthRepository implements AuthRepository {
@@ -109,10 +110,8 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthUser?> currentUser() async => null;
 
   @override
-  Future<AuthUser> signIn({
-    required String email,
-    required String password,
-  }) => throw UnimplementedError();
+  Future<AuthUser> signIn({required String email, required String password}) =>
+      throw UnimplementedError();
 
   @override
   Future<AuthUser> signUp({
@@ -149,18 +148,14 @@ class _FakeAuthRepository implements AuthRepository {
       throw UnimplementedError();
 
   @override
-  Future<AuthUser> updateProfile({
-    required String fullName,
-    String? phone,
-  }) =>
+  Future<AuthUser> updateProfile({required String fullName, String? phone}) =>
       throw UnimplementedError();
 
   @override
   Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 }
 
 class _FailingOnceFavorites implements FavoritesRepository {
@@ -189,10 +184,7 @@ class _FailingOnceFavorites implements FavoritesRepository {
   Future<Set<String>> synchronizedIds(
     Set<String> localIds, {
     required Set<String> validProductIds,
-  }) => _inner.synchronizedIds(
-    localIds,
-    validProductIds: validProductIds,
-  );
+  }) => _inner.synchronizedIds(localIds, validProductIds: validProductIds);
 
   @override
   Future<void> addFavorite(String productId) => _inner.addFavorite(productId);
@@ -222,32 +214,35 @@ void main() {
   });
 
   group('cart isolation', () {
-    test('an empty cart for the new identity never shows the old one', () async {
-      SharedPreferences.setMockInitialValues({
-        'cart_v1_user-a': jsonEncode([
-          {'productId': '1', 'quantity': 2},
-        ]),
-        // user-b simply has no cart.
-      });
-      String? current = 'user-a';
-      final cubit = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-        userIdProvider: () => current,
-      );
-      addTearDown(cubit.close);
-      await _settle();
-      expect(cubit.state.items.single.product.id, '1');
+    test(
+      'an empty cart for the new identity never shows the old one',
+      () async {
+        SharedPreferences.setMockInitialValues({
+          'cart_v1_user-a': jsonEncode([
+            {'productId': '1', 'quantity': 2},
+          ]),
+          // user-b simply has no cart.
+        });
+        String? current = 'user-a';
+        final cubit = CartCubit(
+          cartRepository: LocalCartRepository(),
+          catalogRepository: MockProductRepository(),
+          userIdProvider: () => current,
+        );
+        addTearDown(cubit.close);
+        await _settle();
+        expect(cubit.state.items.single.product.id, '1');
 
-      // The account switches; the previous customer's lines must not survive.
-      current = 'user-b';
-      expect(cubit.applyIdentityTransition('user-b'), isTrue);
-      expect(cubit.state.items, isEmpty);
+        // The account switches; the previous customer's lines must not survive.
+        current = 'user-b';
+        expect(cubit.applyIdentityTransition('user-b'), isTrue);
+        expect(cubit.state.items, isEmpty);
 
-      await cubit.load();
-      expect(cubit.state.items, isEmpty);
-      expect(cubit.state.total, 0);
-    });
+        await cubit.load();
+        expect(cubit.state.items, isEmpty);
+        expect(cubit.state.total, 0);
+      },
+    );
 
     test('the old identity storage slot is not deleted by the clear', () async {
       SharedPreferences.setMockInitialValues({
@@ -326,78 +321,88 @@ void main() {
       expect(cubit.state.error, isNotNull);
     });
 
-    test('an ordinary refresh that fails keeps the same customer rows', () async {
-      final repository = _FakeNotificationsRepository(rows: [_row('a1')]);
-      final cubit = NotificationsCubit(repository: repository);
-      addTearDown(cubit.close);
-      await _settle();
+    test(
+      'an ordinary refresh that fails keeps the same customer rows',
+      () async {
+        final repository = _FakeNotificationsRepository(rows: [_row('a1')]);
+        final cubit = NotificationsCubit(repository: repository);
+        addTearDown(cubit.close);
+        await _settle();
 
-      repository.failNext = StateError('network down');
-      await cubit.refresh();
+        repository.failNext = StateError('network down');
+        await cubit.refresh();
 
-      expect(
-        cubit.state.notifications.single.id,
-        'a1',
-        reason: 'a refresh failure for the same customer must not blank the list',
-      );
-      expect(cubit.state.error, isNotNull);
-    });
+        expect(
+          cubit.state.notifications.single.id,
+          'a1',
+          reason:
+              'a refresh failure for the same customer must not blank the list',
+        );
+        expect(cubit.state.error, isNotNull);
+      },
+    );
 
-    test('a read parked under the old identity cannot land afterwards', () async {
-      final repository = _FakeNotificationsRepository(rows: [_row('a1')]);
-      final cubit = NotificationsCubit(repository: repository);
-      addTearDown(cubit.close);
-      await _settle();
-      expect(cubit.state.notifications.single.id, 'a1');
+    test(
+      'a read parked under the old identity cannot land afterwards',
+      () async {
+        final repository = _FakeNotificationsRepository(rows: [_row('a1')]);
+        final cubit = NotificationsCubit(repository: repository);
+        addTearDown(cubit.close);
+        await _settle();
+        expect(cubit.state.notifications.single.id, 'a1');
 
-      // The next read is held open under customer A's session...
-      final gate = Completer<void>();
-      repository.gate = gate;
-      final stale = cubit.refresh();
+        // The next read is held open under customer A's session...
+        final gate = Completer<void>();
+        repository.gate = gate;
+        final stale = cubit.refresh();
 
-      // ...while customer B takes over and gets a read of their own.
-      cubit.applyIdentityTransition('user-b');
-      repository.rows = [_row('b1')];
-      final after = <List<String>>[];
-      final seen = cubit.stream.listen(
-        (state) => after.add(state.notifications.map((n) => n.id).toList()),
-      );
-      final fresh = cubit.refresh();
+        // ...while customer B takes over and gets a read of their own.
+        cubit.applyIdentityTransition('user-b');
+        repository.rows = [_row('b1')];
+        final after = <List<String>>[];
+        final seen = cubit.stream.listen(
+          (state) => after.add(state.notifications.map((n) => n.id).toList()),
+        );
+        final fresh = cubit.refresh();
 
-      // A's answer finally arrives, late.
-      gate.complete();
-      await stale;
-      await fresh;
-      await seen.cancel();
+        // A's answer finally arrives, late.
+        gate.complete();
+        await stale;
+        await fresh;
+        await seen.cancel();
 
-      expect(
-        after.any((ids) => ids.contains('a1')),
-        isFalse,
-        reason: 'a stale in-flight read must never restore the old customer',
-      );
-      expect(cubit.state.notifications.single.id, 'b1');
-    });
+        expect(
+          after.any((ids) => ids.contains('a1')),
+          isFalse,
+          reason: 'a stale in-flight read must never restore the old customer',
+        );
+        expect(cubit.state.notifications.single.id, 'b1');
+      },
+    );
   });
 
   group('loyalty isolation', () {
-    test('a failed read after a switch cannot expose the old balance', () async {
-      final repository = _ScriptedLoyaltyRepository();
-      final cubit = LoyaltyCubit(repository: repository);
-      addTearDown(cubit.close);
-      await _settle();
-      expect(cubit.state.balance, 99);
+    test(
+      'a failed read after a switch cannot expose the old balance',
+      () async {
+        final repository = _ScriptedLoyaltyRepository();
+        final cubit = LoyaltyCubit(repository: repository);
+        addTearDown(cubit.close);
+        await _settle();
+        expect(cubit.state.balance, 99);
 
-      expect(cubit.applyIdentityTransition('user-b'), isTrue);
-      expect(cubit.state.balance, 0);
-      expect(cubit.state.transactions, isEmpty);
+        expect(cubit.applyIdentityTransition('user-b'), isTrue);
+        expect(cubit.state.balance, 0);
+        expect(cubit.state.transactions, isEmpty);
 
-      repository.failNext = StateError('network down');
-      await cubit.load();
+        repository.failNext = StateError('network down');
+        await cubit.load();
 
-      expect(cubit.state.balance, 0);
-      expect(cubit.state.transactions, isEmpty);
-      expect(cubit.state.tier, 'guest');
-    });
+        expect(cubit.state.balance, 0);
+        expect(cubit.state.transactions, isEmpty);
+        expect(cubit.state.tier, 'guest');
+      },
+    );
 
     test('a failed ordinary refresh keeps the same customer balance', () async {
       final repository = _ScriptedLoyaltyRepository();
@@ -516,19 +521,17 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            routes: {
-              'authRoute': (_) =>
-                  const Scaffold(key: authScreenKey, body: Text('AUTH')),
-            },
-            home: RepositoryProvider<AuthRepository>.value(
-              value: auth,
-              child: BlocProvider(
-                create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()),
-                child: const SettingsPage(),
-              ),
+        MaterialApp(
+          routes: {
+            'authRoute': (_) =>
+                const Scaffold(key: authScreenKey, body: Text('AUTH')),
+          },
+          home: RepositoryProvider<AuthRepository>.value(
+            value: auth,
+            child: BlocProvider(
+              create: (_) =>
+                  ProfileCubit(repository: InMemoryProfilePhotoRepository()),
+              child: const SettingsPage(),
             ),
           ),
         ),
@@ -630,10 +633,7 @@ void main() {
 
         final repository = SupabaseAuthRepository();
 
-        await expectLater(
-          repository.signOut(),
-          throwsA(isA<AuthException>()),
-        );
+        await expectLater(repository.signOut(), throwsA(isA<AuthException>()));
       },
     );
   });

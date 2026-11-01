@@ -36,7 +36,6 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
-  flutter_screenutil: ^5.9.3
   flutter_bloc: ^9.1.1
   shared_preferences: ^2.5.6
   hugeicons: ^0.0.11
@@ -93,21 +92,20 @@ flutter:
     - assets/images/
     - assets/icons/
 
-  # Cairo renders the Arabic UI and Poppins the English one. Both are bundled
-  # locally so text renders offline from the first launch.
+  # One family for both languages: IBM Plex Sans Arabic carries the Latin glyphs
+  # too, so the theme never switches font per locale. Bundled locally so text
+  # renders offline from the first launch. The four weights here are the four
+  # AppFontWeights names - anything else would be drawn by a fallback.
   fonts:
-    - family: Cairo
+    - family: IBM Plex Sans Arabic
       fonts:
-        - asset: assets/fonts/Cairo-Variable.ttf
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
           weight: 400
-        - asset: assets/fonts/Poppins-Medium.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
           weight: 500
-        - asset: assets/fonts/Poppins-SemiBold.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/Poppins-Bold.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
           weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see

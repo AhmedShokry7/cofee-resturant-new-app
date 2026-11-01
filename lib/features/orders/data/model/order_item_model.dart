@@ -116,10 +116,10 @@ class OrderItemModel {
     final ar = deliveryZoneNameAr?.trim() ?? '';
     final en = deliveryZoneNameEn?.trim() ?? '';
     if (ar.isEmpty && en.isEmpty) return null;
-    final text = pickText(
-      (ar: ar, en: en),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: ar,
+      en: en,
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? null : text;
   }
 
@@ -153,9 +153,7 @@ class OrderItemModel {
   }) {
     final orderMap = Db.asMap(order);
     final itemMap = Db.asMap(item);
-    final status = OrderStatus.fromDatabase(
-      Db.textOrNull(orderMap['status']),
-    );
+    final status = OrderStatus.fromDatabase(Db.textOrNull(orderMap['status']));
     final lineId = Db.text(itemMap['id']);
     final productId = Db.textOrNull(itemMap['product_id']);
     final nameAr = Db.textOrNull(itemMap['product_name_ar']);
@@ -175,7 +173,8 @@ class OrderItemModel {
           ? 'line-${Db.text(orderMap['id'])}-${itemMap.hashCode}'
           : lineId,
       product: ProductModel(
-        id: productId ??
+        id:
+            productId ??
             'removed-product-${lineId.isEmpty ? itemMap.hashCode : lineId}',
         name: nameEn ?? nameAr ?? S.removedProduct,
         nameAr: nameAr,

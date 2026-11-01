@@ -15,7 +15,7 @@ part 'orders_state.dart';
 /// price or product change cannot rewrite an old receipt.
 class OrdersCubit extends Cubit<OrdersState> {
   OrdersCubit({required this._repository})
-      : super(const OrdersState(status: OrderStatus.active)) {
+    : super(const OrdersState(status: OrderStatus.active)) {
     load();
   }
 
@@ -31,35 +31,37 @@ class OrdersCubit extends Cubit<OrdersState> {
   }
 
   Future<void> _load({required OrderStatus status}) async {
-    emit(state.copyWith(
-      status: status,
-      isLoading: true,
-      clearError: true,
-      signedOut: false,
-    ));
+    emit(
+      state.copyWith(
+        status: status,
+        isLoading: true,
+        clearError: true,
+        signedOut: false,
+      ),
+    );
     try {
       final orders = await _repository.listOrders(status: status);
       if (isClosed) return;
-      emit(state.copyWith(
-        status: status,
-        orders: orders,
-        isLoading: false,
-      ));
+      emit(state.copyWith(status: status, orders: orders, isLoading: false));
     } on OrderSignInRequiredException {
       if (isClosed) return;
-      emit(state.copyWith(
-        status: status,
-        orders: const [],
-        isLoading: false,
-        signedOut: true,
-      ));
+      emit(
+        state.copyWith(
+          status: status,
+          orders: const [],
+          isLoading: false,
+          signedOut: true,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(state.copyWith(
-        status: status,
-        isLoading: false,
-        error: error.toString(),
-      ));
+      emit(
+        state.copyWith(
+          status: status,
+          isLoading: false,
+          error: error.toString(),
+        ),
+      );
       addError(error, stackTrace);
     }
   }

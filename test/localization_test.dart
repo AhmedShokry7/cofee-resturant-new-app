@@ -23,9 +23,12 @@ void main() {
     final source = File('lib/core/locale/app_strings.dart').readAsStringSync();
     final pairs = _translationPairs(source);
 
-    test('the file really was parsed (guards against a silent regex break)', () {
-      expect(pairs.length, greaterThan(150));
-    });
+    test(
+      'the file really was parsed (guards against a silent regex break)',
+      () {
+        expect(pairs.length, greaterThan(150));
+      },
+    );
 
     test('every Arabic value contains Arabic', () {
       // A value with no Arabic letter at all is an English string that was
@@ -53,7 +56,9 @@ void main() {
       final problems = [
         for (final pair in pairs)
           if (_hasArabic(pair.arabic) &&
-              _withoutInterpolation(pair.arabic).replaceAll(_arabicLetters, '').trim() ==
+              _withoutInterpolation(pair.arabic)
+                      .replaceAll(_arabicLetters, '')
+                      .trim() ==
                   _withoutInterpolation(pair.english).trim())
             pair.name,
       ];
@@ -66,7 +71,8 @@ void main() {
       final problems = <String>[];
       for (final pair in pairs) {
         if (!_hasArabic(_withoutInterpolation(pair.arabic))) continue;
-        final latin = _withoutInterpolation(pair.arabic).replaceAll(_arabicLetters, '');
+        final latin = _withoutInterpolation(pair.arabic)
+            .replaceAll(_arabicLetters, '');
         // Allow digits, punctuation and spaces; a run of letters is a leak.
         if (RegExp('[A-Za-z]{3,}').hasMatch(latin)) {
           problems.add('${pair.name}: "${pair.arabic}"');
@@ -79,7 +85,7 @@ void main() {
       final problems = [
         for (final pair in pairs)
           if (RegExp('[\uFFFD\u4E00-\u9FFF\uAC00-\uD7AF]')
-              .hasMatch(pair.arabic) ||
+                  .hasMatch(pair.arabic) ||
               RegExp('[\uFFFD\u4E00-\u9FFF\uAC00-\uD7AF]')
                   .hasMatch(pair.english))
             pair.name,
@@ -167,8 +173,7 @@ List<_Pair> _translationPairs(String source) {
 
 /// The identifier the pair belongs to, so a failure names the offending getter.
 String _lastGetterName(String before) {
-  final matches = RegExp(
-    r'String(?: get)? ([A-Za-z_][A-Za-z0-9_]*)',
-  ).allMatches(before);
+  final matches = RegExp(r'String(?: get)? ([A-Za-z_][A-Za-z0-9_]*)')
+      .allMatches(before);
   return matches.isEmpty ? '(unknown)' : matches.last.group(1)!;
 }

@@ -65,14 +65,15 @@ class CustomerSubscription {
 
   int get availableCups => cupsEntitled + cupsCarriedOver - cupsUsed;
 
-  bool get isActive => status == 'active' && (endsAt == null || endsAt!.isAfter(DateTime.now()));
+  bool get isActive =>
+      status == 'active' && (endsAt == null || endsAt!.isAfter(DateTime.now()));
 
   bool get isPendingPayment => status == 'pending_payment';
 
-  String get planName => pickText(
-    (ar: planNameAr, en: planNameEn),
-    isArabic: AppLocale.instance.isArabic,
-  );
+  String get planName => pickText((
+    ar: planNameAr,
+    en: planNameEn,
+  ), isArabic: AppLocale.instance.isArabic);
 
   /// The status in the language the customer reads the app in; a status the
   /// app has never seen is shown as it arrived rather than renamed wrongly.

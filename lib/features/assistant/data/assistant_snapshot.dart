@@ -22,9 +22,9 @@ class AssistantSnapshot {
   });
 
   const AssistantSnapshot.empty()
-      : products = const [],
-        orders = const [],
-        optionsByProductId = const {};
+    : products = const [],
+      orders = const [],
+      optionsByProductId = const {};
 
   final List<ProductModel> products;
   final List<OrderItemModel> orders;
@@ -87,8 +87,8 @@ class AssistantSnapshot {
   }
 
   Map<String, ProductModel> get productsById => {
-        for (final product in products) product.id: product,
-      };
+    for (final product in products) product.id: product,
+  };
 
   ProductModel? productById(String id) => productsById[id];
 
@@ -167,8 +167,7 @@ class AssistantSnapshot {
         quantity: item.quantity,
         note: variantNoteFor(item, arabic: arabic),
         optionValueIds: optionIdsFor(item),
-        unitPrice:
-            item.size == null ? null : estimatedUnitPriceFor(item),
+        unitPrice: item.size == null ? null : estimatedUnitPriceFor(item),
       );
 
   String variantNoteFor(OrderDraftItem item, {required bool arabic}) {

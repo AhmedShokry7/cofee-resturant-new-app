@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 
 /// Standard Saudi Riyal symbol used everywhere a currency icon is shown.
@@ -12,9 +12,9 @@ import 'package:new_coffee/core/theme/app_color.dart';
 /// monochrome [colorFilter] recolors the whole symbol without touching
 /// anything else. [BoxFit.contain] preserves its 16:18 aspect ratio.
 class CurrencyIcon extends StatelessWidget {
-  const CurrencyIcon({super.key, this.size = 16, this.color});
+  const CurrencyIcon({super.key, this.size = AppIconSize.md, this.color});
 
-  /// Icon box edge in design pixels; the glyph scales to fit inside it.
+  /// Icon box edge in logical pixels; the glyph scales to fit inside it.
   final double size;
 
   /// Tint for the symbol. Defaults to the theme's surface text color so the
@@ -32,8 +32,8 @@ class CurrencyIcon extends StatelessWidget {
             : AppColor.iconOnLight);
     return SvgPicture.asset(
       asset,
-      width: size.w,
-      height: size.w,
+      width: size,
+      height: size,
       fit: BoxFit.contain,
       colorFilter: ColorFilter.mode(resolved, BlendMode.srcIn),
       semanticsLabel: S.saudiRiyal,

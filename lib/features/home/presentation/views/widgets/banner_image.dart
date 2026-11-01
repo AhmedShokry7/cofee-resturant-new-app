@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
@@ -16,6 +15,6 @@ class BannerImage extends StatelessWidget {
     fit: BoxFit.cover,
     width: double.infinity,
     height: double.infinity,
-    borderRadius: BorderRadius.circular(borderRadius.r),
+    borderRadius: BorderRadius.circular(borderRadius),
   );
 }

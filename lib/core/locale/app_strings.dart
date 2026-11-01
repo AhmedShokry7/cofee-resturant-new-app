@@ -508,9 +508,8 @@ class S {
   static String get copyCode => _ar ? 'نسخ الكود' : 'Copy Code';
   static String get noCoupons =>
       _ar ? 'لا توجد كوبونات حاليًا' : 'No coupons right now';
-  static String get couldNotLoadCoupons => _ar
-      ? 'تعذر تحميل الكوبونات.'
-      : 'Could not load the coupons.';
+  static String get couldNotLoadCoupons =>
+      _ar ? 'تعذر تحميل الكوبونات.' : 'Could not load the coupons.';
   static String get couponCheckFailed => _ar
       ? 'لم يتم التحقق من الكوبون للطلب الحالي. حدّث وحاول مرة أخرى.'
       : "Couldn't verify the coupon for the current cart. Refresh and try again.";
@@ -1019,9 +1018,8 @@ class S {
   static String get subscriptionPlans =>
       _ar ? 'باقات اشتراك القهوة' : 'Coffee subscription plans';
   static String get mySubscription => _ar ? 'اشتراكي' : 'My subscription';
-  static String get noPlansAvailable => _ar
-      ? 'لا توجد باقات متاحة حالياً'
-      : 'No plans available';
+  static String get noPlansAvailable =>
+      _ar ? 'لا توجد باقات متاحة حالياً' : 'No plans available';
   static String get noSubscriptionYet =>
       _ar ? 'لا يوجد اشتراك حالياً' : 'No subscription yet';
   static String get browsePlans => _ar ? 'تصفح الباقات' : 'Browse plans';
@@ -1030,9 +1028,8 @@ class S {
   static String get subscribeNow => _ar ? 'اشترك الآن' : 'Subscribe now';
   static String get renew => _ar ? 'تجديد' : 'Renew';
   static String get subscriptionStatus => _ar ? 'الحالة' : 'Status';
-  static String get subscriptionPendingPayment => _ar
-      ? 'بانتظار تأكيد الدفع'
-      : 'Pending payment';
+  static String get subscriptionPendingPayment =>
+      _ar ? 'بانتظار تأكيد الدفع' : 'Pending payment';
   static String get subscriptionActive => _ar ? 'فعال' : 'Active';
   static String get subscriptionExpired => _ar ? 'منتهي' : 'Expired';
   static String get subscriptionCancelled => _ar ? 'ملغي' : 'Cancelled';
@@ -1056,9 +1053,8 @@ class S {
   static String get cupsLabel => _ar ? 'الأكواب' : 'Cups';
   static String get priceLabel => _ar ? 'السعر' : 'Price';
   static String get durationLabel => _ar ? 'المدة' : 'Duration';
-  static String get cupsPerCycle => _ar
-      ? 'الأكواب في كل دورة'
-      : 'Cups per cycle';
+  static String get cupsPerCycle =>
+      _ar ? 'الأكواب في كل دورة' : 'Cups per cycle';
   static String get rolloverCap => _ar ? 'حد ترحيل الأكواب' : 'Rollover cap';
   static String get renewalLabel => _ar ? 'التجديد' : 'Renewal';
   static String get renewalAutomatic => _ar ? 'تلقائي' : 'Automatic';
@@ -1074,9 +1070,8 @@ class S {
   static String get includedProducts =>
       _ar ? 'المنتجات المشمولة' : 'Included products';
 
-  static String get couldNotLoadSubscription => _ar
-      ? 'تعذر تحميل الاشتراك.'
-      : 'Could not load the subscription.';
+  static String get couldNotLoadSubscription =>
+      _ar ? 'تعذر تحميل الاشتراك.' : 'Could not load the subscription.';
   static String get couldNotLoadUsage =>
       _ar ? 'تعذر تحميل سجل الاستخدام.' : 'Could not load the usage history.';
   static String get couldNotLoadPlanProducts => _ar

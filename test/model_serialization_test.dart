@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
@@ -183,7 +184,7 @@ void main() {
         ...categoryRow,
         'icon_key': 'a_category_added_tomorrow',
       });
-      expect(c.icon, Icons.category_outlined);
+      expect(c.icon, AppIcons.grid);
     });
 
     test('a null icon_key does not break rendering', () {

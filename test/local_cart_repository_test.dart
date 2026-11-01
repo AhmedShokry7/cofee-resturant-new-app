@@ -20,9 +20,7 @@ void main() {
 
     await repository.saveLines(
       branchId: 'branch-1',
-      lines: const [
-        CartLine(productId: 'p1', quantity: 2),
-      ],
+      lines: const [CartLine(productId: 'p1', quantity: 2)],
     );
   });
 

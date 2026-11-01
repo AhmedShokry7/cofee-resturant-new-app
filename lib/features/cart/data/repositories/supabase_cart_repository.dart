@@ -21,12 +21,12 @@ class SupabaseCartRepository implements CartRepository {
   SupabaseCartRepository({
     SupabaseClient? client,
     Future<dynamic> Function(String name, Map<String, dynamic> params)? rpc,
-  })  : _clientOverride = client,
-        _rpcOverride = rpc;
+  }) : _clientOverride = client,
+       _rpcOverride = rpc;
 
   final SupabaseClient? _clientOverride;
   final Future<dynamic> Function(String name, Map<String, dynamic> params)?
-      _rpcOverride;
+  _rpcOverride;
 
   SupabaseClient get _client {
     final override = _clientOverride;
@@ -47,11 +47,13 @@ class SupabaseCartRepository implements CartRepository {
     final cartId = await _activeCartId(branch);
     if (cartId == null || cartId.isEmpty) return const <CartLine>[];
 
-    final itemRows = await _client
-        .from('cart_items')
-        .select('id, product_id, quantity, note, unit_price, bundle_id')
-        .eq('cart_id', cartId)
-        .order('created_at') as List;
+    final itemRows =
+        await _client
+                .from('cart_items')
+                .select('id, product_id, quantity, note, unit_price, bundle_id')
+                .eq('cart_id', cartId)
+                .order('created_at')
+            as List;
 
     if (itemRows.isEmpty) return const <CartLine>[];
 
@@ -89,13 +91,15 @@ class SupabaseCartRepository implements CartRepository {
   /// The read is scoped to the caller by the `carts_select_own` policy, so a
   /// cart belonging to somebody else is invisible here and cannot be selected.
   Future<String?> _activeCartId(String branchId) async {
-    final rows = await _client
-        .from('carts')
-        .select('id')
-        .eq('branch_id', branchId)
-        .eq('status', 'active')
-        .order('created_at', ascending: false)
-        .limit(1) as List;
+    final rows =
+        await _client
+                .from('carts')
+                .select('id')
+                .eq('branch_id', branchId)
+                .eq('status', 'active')
+                .order('created_at', ascending: false)
+                .limit(1)
+            as List;
     for (final row in rows) {
       if (row is Map) {
         final id = Db.text(row['id']);
@@ -110,12 +114,16 @@ class SupabaseCartRepository implements CartRepository {
   /// `public.cart_item_options` is the bridge view for the option rows the
   /// server writes next to every priced line. It is read separately because
   /// PostgREST cannot infer the relationship on a view.
-  Future<Map<String, List<String>>> _optionsByCartItem(List<String> itemIds) async {
+  Future<Map<String, List<String>>> _optionsByCartItem(
+    List<String> itemIds,
+  ) async {
     if (itemIds.isEmpty) return const {};
-    final rows = await _client
-        .from('cart_item_options')
-        .select('cart_item_id, option_value_id')
-        .inFilter('cart_item_id', itemIds) as List;
+    final rows =
+        await _client
+                .from('cart_item_options')
+                .select('cart_item_id, option_value_id')
+                .inFilter('cart_item_id', itemIds)
+            as List;
 
     final byItem = <String, List<String>>{};
     for (final row in rows) {

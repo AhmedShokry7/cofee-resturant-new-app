@@ -74,7 +74,9 @@ class SupabaseLlmClient implements LlmClient {
       final provider = data['provider'];
       return LlmReply(
         text: sanitizeLlmReply(text),
-        topic: topic is String && topic.trim().isNotEmpty ? topic.trim() : 'llm',
+        topic: topic is String && topic.trim().isNotEmpty
+            ? topic.trim()
+            : 'llm',
         provider: provider is String && provider.trim().isNotEmpty
             ? provider.trim()
             : null,
@@ -92,4 +94,3 @@ class SupabaseLlmClient implements LlmClient {
     }
   }
 }
-

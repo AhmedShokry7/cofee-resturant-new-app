@@ -24,15 +24,14 @@ class AddressModel {
     double? latitude,
     double? longitude,
     bool? isDefault,
-  }) =>
-      AddressModel(
-        id: id ?? this.id,
-        label: label ?? this.label,
-        details: details ?? this.details,
-        latitude: latitude ?? this.latitude,
-        longitude: longitude ?? this.longitude,
-        isDefault: isDefault ?? this.isDefault,
-      );
+  }) => AddressModel(
+    id: id ?? this.id,
+    label: label ?? this.label,
+    details: details ?? this.details,
+    latitude: latitude ?? this.latitude,
+    longitude: longitude ?? this.longitude,
+    isDefault: isDefault ?? this.isDefault,
+  );
 
   factory AddressModel.fromDatabase(Map<String, dynamic> json) {
     final map = Db.asMap(json);

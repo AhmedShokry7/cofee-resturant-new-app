@@ -27,10 +27,10 @@ class SupabaseProductRepository
   // the app or break a parser by surprise.
   static const _productColumns =
       'id, category_id, sku, slug, name_ar, name_en, description_ar, '
-          'description_en, base_price, compare_at_price, image_url, is_featured, ' +
+      'description_en, base_price, compare_at_price, image_url, is_featured, '
       'discount_percentage, discount_starts_at, discount_ends_at, '
-          'prep_minutes, calories, category_slug, category_name_ar, category_name_en, '
-          'related_product_ids';
+      'prep_minutes, calories, category_slug, category_name_ar, category_name_en, '
+      'related_product_ids';
 
   static const _productImageColumns =
       'id, product_id, image_url, alt_ar, alt_en, is_primary, sort_order, fit, alignment';
@@ -300,8 +300,10 @@ class SupabaseProductRepository
   ///
   /// The details screen needs both, and used to ask for the gallery a second
   /// time right after [getById] had already fetched it.
-  Future<({ProductModel product, List<ProductImage> images})?>
-  _loadWithImages(String id, {String? branchId}) async {
+  Future<({ProductModel product, List<ProductImage> images})?> _loadWithImages(
+    String id, {
+    String? branchId,
+  }) async {
     final rows = await _client
         .from('products')
         .select(_productColumns)
@@ -329,7 +331,7 @@ class SupabaseProductRepository
       'catalog_products_by_ids',
       params: <String, dynamic>{
         'p_product_ids': productIds,
-        if (branchId != null) 'p_branch_id': branchId,
+        'p_branch_id': ?branchId,
       },
       // The function is STABLE and performs no writes, so GET is safe on a
       // Supabase read replica endpoint as well as on the primary.
@@ -447,11 +449,7 @@ class SupabaseProductRepository
     }
     groups.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
 
-    return ProductWithOptions(
-      product: product,
-      groups: groups,
-      images: images,
-    );
+    return ProductWithOptions(product: product, groups: groups, images: images);
   }
 
   /// Option groups for many products, in three parallel queries instead of
@@ -736,7 +734,9 @@ class SupabaseProductRepository
   // --- Home page content ---------------------------------------------------
 
   @override
-  Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners}) async {
+  Future<List<BannerModel>> getBanners({
+    int limit = CatalogLimits.banners,
+  }) async {
     // Only eq/order/limit filters here: complex `or` date expressions are a
     // PostgREST version-sensitive failure point, and a 400 on this query
     // would empty the whole banner section. The publish window is enforced

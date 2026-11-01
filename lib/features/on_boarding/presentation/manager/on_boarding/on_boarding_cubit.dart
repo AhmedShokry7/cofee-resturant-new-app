@@ -16,7 +16,7 @@ part 'on_boarding_state.dart';
 class OnBoardingCubit extends Cubit<OnBoardingState> {
   OnBoardingCubit({this.session = const SessionRepository()})
     : pageController = PageController(initialPage: _firstPage),
-          super(const OnBoardingInitial());
+      super(const OnBoardingInitial());
 
   /// Where the "the onboarding is done" marker is written.
   final SessionRepository session;

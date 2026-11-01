@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
+
 import 'support/mock_product_repository.dart';
 
 Future<FavoritesCubit> _readyCubit() async {

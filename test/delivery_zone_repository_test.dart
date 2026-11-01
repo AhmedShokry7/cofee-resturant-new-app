@@ -21,7 +21,8 @@ void main() {
 
     test('matches Postgres undefined_function (42883)', () {
       final error = PostgrestException(
-        message: 'function public.delivery_zones_for_branch(uuid) does not exist',
+        message:
+            'function public.delivery_zones_for_branch(uuid) does not exist',
         code: '42883',
       );
 

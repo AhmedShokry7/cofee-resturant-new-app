@@ -39,8 +39,7 @@ class CardPaymentState {
       status == CardPaymentStatus.creatingCharge ||
       status == CardPaymentStatus.verifying;
 
-  bool get canSubmit =>
-      status == CardPaymentStatus.cardInputValid && !isBusy;
+  bool get canSubmit => status == CardPaymentStatus.cardInputValid && !isBusy;
 
   CardPaymentState copyWith({
     CardPaymentStatus? status,

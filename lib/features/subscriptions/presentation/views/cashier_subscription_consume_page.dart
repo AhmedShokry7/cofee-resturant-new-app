@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription_consume/subscription_consume_cubit.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The counter screen a cashier uses to spend cups from a subscription.
 class CashierSubscriptionConsumePage extends StatefulWidget {
@@ -65,7 +64,7 @@ class _ConsumeForm extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(S.consumeSubscription)),
       body: Padding(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
             TextField(
@@ -81,7 +80,7 @@ class _ConsumeForm extends StatelessWidget {
               keyboardType: TextInputType.number,
               decoration: InputDecoration(labelText: S.quantity),
             ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             BlocBuilder<SubscriptionConsumeCubit, SubscriptionConsumeState>(
               builder: (context, state) => Column(
                 children: [
@@ -90,18 +89,19 @@ class _ConsumeForm extends StatelessWidget {
                     child: FilledButton(
                       onPressed: state.isSubmitting
                           ? null
-                          : () => context.read<SubscriptionConsumeCubit>()
-                              .consume(
-                                token: tokenController.text,
-                                branchId: branchId,
-                                productId: productController.text,
-                                quantityText: quantityController.text,
-                              ),
+                          : () => context
+                                .read<SubscriptionConsumeCubit>()
+                                .consume(
+                                  token: tokenController.text,
+                                  branchId: branchId,
+                                  productId: productController.text,
+                                  quantityText: quantityController.text,
+                                ),
                       child: Text(S.deduct),
                     ),
                   ),
                   if (state.message != null) ...[
-                    SizedBox(height: SpacingTokens.md.h),
+                    SizedBox(height: AppSpacing.md),
                     Text(state.message!),
                   ],
                 ],

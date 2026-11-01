@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -17,12 +16,9 @@ Future<void> _pump(WidgetTester tester, Brightness brightness) async {
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
   await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(
-        theme: ThemeData(brightness: brightness),
-        home: const Scaffold(body: OrdersSkeleton()),
-      ),
+    MaterialApp(
+      theme: ThemeData(brightness: brightness),
+      home: const Scaffold(body: OrdersSkeleton()),
     ),
   );
   await tester.pump();

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/data/model/card_brand.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CardPreview extends StatelessWidget {
   const CardPreview({
@@ -26,14 +25,14 @@ class CardPreview extends StatelessWidget {
     return AspectRatio(
       aspectRatio: 1.586,
       child: Container(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [AppColor.primaryColor, AppColor.secondryColor],
           ),
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(AppRadius.r16),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -42,15 +41,17 @@ class CardPreview extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Icon(
-                  HugeIcons.strokeRoundedCreditCard,
+                  AppIcons.creditCard,
                   color: AppColor.whiteColor,
-                  size: 28.w,
+                  size: AppSizes.px28,
                 ),
                 if (brand != CardBrand.unknown)
                   Text(
                     brand.label,
-                    style: AppFonts.bold16(context)
-                        .copyWith(color: AppColor.whiteColor, letterSpacing: 1),
+                    style: AppFonts.bold16(context).copyWith(
+                      color: AppColor.whiteColor,
+                      letterSpacing: AppLetterSpacings.brand,
+                    ),
                   ),
               ],
             ),
@@ -59,10 +60,12 @@ class CardPreview extends StatelessWidget {
               number.isEmpty ? "#### #### #### ####" : number,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppFonts.semiBold18(context)
-                  .copyWith(color: AppColor.whiteColor, letterSpacing: 2),
+              style: AppFonts.semiBold18(context).copyWith(
+                color: AppColor.whiteColor,
+                letterSpacing: AppLetterSpacings.number,
+              ),
             ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -72,7 +75,7 @@ class CardPreview extends StatelessWidget {
                     value: name.isEmpty ? S.yourName : name.toUpperCase(),
                   ),
                 ),
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
                 _CardField(
                   label: S.expires,
                   value: expiry.isEmpty ? "MM/YY" : expiry,
@@ -102,7 +105,7 @@ class _CardField extends StatelessWidget {
           style: AppFonts.regular12(context)
               .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.7)),
         ),
-        SizedBox(height: 2.h),
+        SizedBox(height: AppSpacing.xxs),
         Text(
           value,
           maxLines: 1,

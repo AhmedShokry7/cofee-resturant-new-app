@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/navigation/notification_routes.dart';
@@ -79,24 +78,18 @@ Future<void> _pumpPage(
   );
   addTearDown(cubit.close);
   await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(
-        navigatorObservers: [recorder],
-        routes: {
-          OrdersPage.routeName: (_) => const Scaffold(body: Text('orders')),
-          LoyaltyPage.routeName: (_) => const Scaffold(body: Text('loyalty')),
-          CouponPage.routeName: (_) => const Scaffold(body: Text('coupon')),
-          NotificationsPage.routeName: (_) =>
-              const Scaffold(body: Text('notifications')),
-          SubscriptionDetailsPage.routeName: (_) =>
-              const Scaffold(body: Text('subscription')),
-        },
-        home: BlocProvider.value(
-          value: cubit,
-          child: const NotificationsPage(),
-        ),
-      ),
+    MaterialApp(
+      navigatorObservers: [recorder],
+      routes: {
+        OrdersPage.routeName: (_) => const Scaffold(body: Text('orders')),
+        LoyaltyPage.routeName: (_) => const Scaffold(body: Text('loyalty')),
+        CouponPage.routeName: (_) => const Scaffold(body: Text('coupon')),
+        NotificationsPage.routeName: (_) =>
+            const Scaffold(body: Text('notifications')),
+        SubscriptionDetailsPage.routeName: (_) =>
+            const Scaffold(body: Text('subscription')),
+      },
+      home: BlocProvider.value(value: cubit, child: const NotificationsPage()),
     ),
   );
   await tester.pumpAndSettle();

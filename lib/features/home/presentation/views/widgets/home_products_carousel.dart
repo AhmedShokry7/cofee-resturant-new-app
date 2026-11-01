@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeProductsCarousel extends StatelessWidget {
   const HomeProductsCarousel({
@@ -62,24 +61,24 @@ class HomeProductsCarousel extends StatelessWidget {
               : null,
         ),
         if (subtitle != null) ...[
-          SizedBox(height: 4.h),
+          SizedBox(height: AppSpacing.xs),
           Text(
             subtitle!,
             style: AppFonts.regular12(context)
                 .copyWith(color: AppColor.greyColor),
           ),
         ],
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         // The strip height is derived from the card width and aspect ratio
         // instead of a fixed value, so taller cards always fit exactly on
         // every screen size without clipping or dead space.
         SizedBox(
-          height: ProductCard.stripWidth.w / ProductCard.cardAspectRatio,
+          height: ProductCard.stripWidth / ProductCard.cardAspectRatio,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: displayed.length,
             separatorBuilder: (context, index) =>
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) =>
                 ProductCard(product: displayed[index]),
           ),

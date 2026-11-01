@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
@@ -14,6 +12,7 @@ import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class OtpPageBody extends StatefulWidget {
   const OtpPageBody({super.key, required this.phone});
@@ -83,17 +82,15 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   /// this only performs the handover: the customer who signed in by phone
   /// starts a fresh stack at the store.
   void _onAuthenticated() {
-    Navigator.of(context).pushNamedAndRemoveUntil(
-      MainPage.routeName,
-      (route) => false,
-    );
+    Navigator.of(context)
+        .pushNamedAndRemoveUntil(MainPage.routeName, (route) => false);
   }
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: SpacingTokens.xl.w),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         child: BlocConsumer<PhoneAuthCubit, PhoneAuthState>(
           listener: (context, state) {
             if (state is PhoneAuthFailure) {
@@ -117,26 +114,26 @@ class _OtpPageBodyState extends State<OtpPageBody> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: AuthSpacings.top.h),
+                SizedBox(height: AuthSpacings.top),
                 Text(
                   S.verificationCode,
                   textAlign: TextAlign.center,
                   style: AppFonts.semiBold24(context),
                 ),
-                SizedBox(height: AuthSpacings.titleGap.h),
+                SizedBox(height: AuthSpacings.titleGap),
                 Text(
                   S.otpSentTo(widget.phone),
                   textAlign: TextAlign.center,
                   style: AppFonts.regular14(context)
                       .copyWith(color: AppColor.greyColor),
                 ),
-                SizedBox(height: AuthSpacings.headerGap.h),
+                SizedBox(height: AuthSpacings.headerGap),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: List.generate(
                     _codeLength,
                     (index) => SizedBox(
-                      width: 46.w,
+                      width: AppSizes.px46,
                       child: TextFormField(
                         controller: _controllers[index],
                         focusNode: _focusNodes[index],
@@ -158,7 +155,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                         cursorColor: AppColor.primaryColor,
                         decoration: InputDecoration(
                           contentPadding: EdgeInsets.symmetric(
-                            vertical: SpacingTokens.md.h,
+                            vertical: AppSpacing.md,
                           ),
                           filled: true,
                           fillColor: AppColor.lightGreyColor,
@@ -170,19 +167,19 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                     ),
                   ),
                 ),
-                SizedBox(height: AuthSpacings.fieldsGap.h),
+                SizedBox(height: AuthSpacings.fieldsGap),
                 CustomBtn(
                   text: S.verify,
                   isLoading: isLoading,
                   onPressed: _submit,
                 ),
-                SizedBox(height: AuthSpacings.sectionGap.h),
+                SizedBox(height: AuthSpacings.sectionGap),
                 AuthSwitchPrompt(
                   question: S.didntReceiveCode,
                   actionText: S.resend,
                   onTap: _resend,
                 ),
-                SizedBox(height: AuthSpacings.bottom.h),
+                SizedBox(height: AuthSpacings.bottom),
               ],
             );
           },
@@ -193,8 +190,8 @@ class _OtpPageBodyState extends State<OtpPageBody> {
 
   OutlineInputBorder _border({Color? color}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(_cellRadius.r),
-      borderSide: BorderSide(color: color ?? Colors.transparent),
+      borderRadius: BorderRadius.circular(_cellRadius),
+      borderSide: BorderSide(color: color ?? AppColor.transparent),
     );
   }
 }

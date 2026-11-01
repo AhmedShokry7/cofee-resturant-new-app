@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
@@ -14,6 +11,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_section
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeBundlesSection extends StatelessWidget {
   const HomeBundlesSection({super.key});
@@ -26,14 +24,14 @@ class HomeBundlesSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         HomeSectionTitle(title: S.bundles),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 250.h,
+          height: AppDimensions.bundleSectionHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: bundles.length,
             separatorBuilder: (context, index) =>
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) =>
                 _BundleCard(bundle: bundles[index]),
           ),
@@ -62,11 +60,11 @@ class _BundleCard extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 180.w,
-            padding: EdgeInsets.all(SpacingTokens.md.w),
+            width: AppDimensions.bundleCardWidth,
+            padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(AppRadius.r16),
               border: Border.all(color: AppColor.borderColor),
             ),
             child: Column(
@@ -75,7 +73,7 @@ class _BundleCard extends StatelessWidget {
                 Expanded(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(
-                      LayoutTokens.cardRadius.r,
+                      AppDimensions.cardRadius,
                     ),
                     child: imageProduct == null
                         ? const SizedBox.shrink()
@@ -84,14 +82,14 @@ class _BundleCard extends StatelessWidget {
                           ),
                   ),
                 ),
-                SizedBox(height: SpacingTokens.sm.h),
+                SizedBox(height: AppSpacing.sm),
                 Text(
                   bundle.title,
                   style: AppFonts.semiBold14(context),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   bundle.subtitle,
                   style: AppFonts.regular12(context)
@@ -99,7 +97,7 @@ class _BundleCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
                     Flexible(
@@ -111,7 +109,7 @@ class _BundleCard extends StatelessWidget {
                         iconColor: AppColor.primaryColor,
                       ),
                     ),
-                    SizedBox(width: SpacingTokens.xs.w),
+                    SizedBox(width: AppSpacing.xs),
                     Flexible(
                       child: PriceLabel(
                         amount: cubit.originalTotalFor(bundle),

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class AddCardTile extends StatelessWidget {
   const AddCardTile({super.key, required this.onTap});
@@ -19,21 +18,21 @@ class AddCardTile extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md.w,
-          vertical: SpacingTokens.md.h,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
         ),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: BorderRadius.circular(AppRadius.r8),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: Row(
           children: [
             Icon(
-              HugeIcons.strokeRoundedCreditCard,
-              size: 24.w,
+              AppIcons.creditCard,
+              size: AppSpacing.xl,
               color: AppColor.greyColor,
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
                 S.addCard,
@@ -41,11 +40,7 @@ class AddCardTile extends StatelessWidget {
                     .copyWith(color: AppColor.greyColor),
               ),
             ),
-            Icon(
-              HugeIcons.strokeRoundedAdd01,
-              size: 20.w,
-              color: AppColor.greyColor,
-            ),
+            Icon(AppIcons.add, size: AppSizes.px20, color: AppColor.greyColor),
           ],
         ),
       ),

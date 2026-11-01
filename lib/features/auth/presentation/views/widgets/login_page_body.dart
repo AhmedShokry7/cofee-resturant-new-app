@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
@@ -19,6 +17,7 @@ import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class LoginPageBody extends StatefulWidget {
   const LoginPageBody({super.key});
@@ -77,7 +76,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: SpacingTokens.xl.w),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthFailure) {
@@ -101,20 +100,20 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(height: AuthSpacings.top.h),
+                      SizedBox(height: AuthSpacings.top),
                       Text(
                         S.signIn,
                         textAlign: TextAlign.center,
                         style: AppFonts.semiBold24(context),
                       ),
-                      SizedBox(height: AuthSpacings.titleGap.h),
+                      SizedBox(height: AuthSpacings.titleGap),
                       Text(
                         S.welcomeBackSubtitle,
                         textAlign: TextAlign.center,
                         style: AppFonts.regular14(context)
                             .copyWith(color: AppColor.greyColor),
                       ),
-                      SizedBox(height: AuthSpacings.headerGap.h),
+                      SizedBox(height: AuthSpacings.headerGap),
                       CustomTextFormField(
                         controller: _emailController,
                         hint: S.emailHint,
@@ -148,25 +147,25 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                           ),
                         ),
                       ),
-                      SizedBox(height: AuthSpacings.fieldsGap.h),
+                      SizedBox(height: AuthSpacings.fieldsGap),
                       CustomBtn(
                         text: S.signIn,
                         isLoading: isLoading,
                         onPressed: _submit,
                       ),
-                      SizedBox(height: AuthSpacings.buttonGap.h),
+                      SizedBox(height: AuthSpacings.buttonGap),
                       AuthSocialLogin(isLoading: isLoading),
-                      SizedBox(height: AuthSpacings.sectionGap.h),
+                      SizedBox(height: AuthSpacings.sectionGap),
                       Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 420),
                           child: Material(
                             color: AppColor.whiteColor,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(100.r),
-                              side: BorderSide(
-                                color: AppColor.primaryColor,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.pill,
                               ),
+                              side: BorderSide(color: AppColor.primaryColor),
                             ),
                             clipBehavior: Clip.antiAlias,
                             child: InkWell(
@@ -175,18 +174,18 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                                       .pushNamed(PhoneAuthPage.routeName),
                               child: Padding(
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: SpacingTokens.lg.w,
-                                  vertical: 14.h,
+                                  horizontal: AppSpacing.lg,
+                                  vertical: AppSizes.px14,
                                 ),
                                 child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      HugeIcons.strokeRoundedSmartPhone01,
-                                      size: 20.w,
+                                      AppIcons.smartphone,
+                                      size: AppSizes.px20,
                                       color: AppColor.primaryColor,
                                     ),
-                                    SizedBox(width: SpacingTokens.sm.w),
+                                    SizedBox(width: AppSpacing.sm),
                                     Flexible(
                                       child: Text(
                                         S.continueWithPhone,
@@ -196,7 +195,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                                         style: AppFonts.regular14(context)
                                             .copyWith(
                                               color: AppColor.primaryColor,
-                                              fontWeight: FontWeight.w500,
+                                              fontWeight: AppFontWeights.medium,
                                             ),
                                       ),
                                     ),
@@ -207,7 +206,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                           ),
                         ),
                       ),
-                      SizedBox(height: AuthSpacings.sectionGap.h),
+                      SizedBox(height: AuthSpacings.sectionGap),
                       AuthSwitchPrompt(
                         question: S.dontHaveAccount,
                         actionText: S.signUp,
@@ -215,7 +214,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                             Navigator.of(context)
                                 .pushReplacementNamed(SignUpPage.routeName),
                       ),
-                      SizedBox(height: AuthSpacings.bottom.h),
+                      SizedBox(height: AuthSpacings.bottom),
                     ],
                   ),
                 ),

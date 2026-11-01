@@ -12,12 +12,8 @@ part 'order_tracking_state.dart';
 /// and hand it to a `FutureBuilder`, which put a repository call inside a
 /// widget and left a failed read with no way to retry.
 class OrderTrackingCubit extends Cubit<OrderTrackingState> {
-  OrderTrackingCubit({
-    required OrdersRepository repository,
-    required String orderId,
-  })  : _repository = repository,
-        _orderId = orderId,
-        super(const OrderTrackingState());
+  OrderTrackingCubit({required this._repository, required this._orderId})
+    : super(const OrderTrackingState());
 
   final OrdersRepository _repository;
   final String _orderId;

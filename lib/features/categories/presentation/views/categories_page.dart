@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
@@ -15,6 +13,7 @@ import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key, this.initialCategoryId});
@@ -53,15 +52,15 @@ class CategoriesPage extends StatelessWidget {
                   if (state.error != null && state.categories.isEmpty) {
                     return Center(
                       child: Padding(
-                        padding: EdgeInsets.all(SpacingTokens.lg.w),
+                        padding: EdgeInsets.all(AppSpacing.lg),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             EmptyState(
-                              icon: Icons.cloud_off_outlined,
+                              icon: AppIcons.offline,
                               title: S.couldNotLoadCategories,
                             ),
-                            SizedBox(height: SpacingTokens.md.h),
+                            SizedBox(height: AppSpacing.md),
                             CustomBtn(
                               text: S.retry,
                               onPressed: () => cubit.load(),
@@ -73,7 +72,7 @@ class CategoriesPage extends StatelessWidget {
                   }
                   if (state.categories.isEmpty) {
                     return EmptyState(
-                      icon: Icons.category_outlined,
+                      icon: AppIcons.grid,
                       title: S.noCategories,
                       subtitle: S.categoriesSoon,
                     );
@@ -107,10 +106,10 @@ class CategoriesPage extends StatelessWidget {
                       subtitle: S.productsIn(category.label),
                     );
                   }
-                   return ProductsGridView(
-                     key: ValueKey(category.id),
-                     products: products,
-                   );
+                  return ProductsGridView(
+                    key: ValueKey(category.id),
+                    products: products,
+                  );
                 },
               ),
             ),
@@ -131,13 +130,13 @@ class _BundlesList extends StatelessWidget {
   Widget build(BuildContext context) {
     if (bundles.isEmpty) {
       return EmptyState(
-        icon: Icons.inventory_2_outlined,
+        icon: AppIcons.bundle,
         title: S.noBundles,
         subtitle: S.bundlesHint,
       );
     }
     return ListView.builder(
-      padding: LayoutTokens.pageBody(),
+      padding: AppLayout.pageBody,
       itemCount: bundles.length,
       itemBuilder: (context, index) =>
           BundleListTile(bundle: bundles[index], productsById: productsById),

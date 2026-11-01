@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/shared/widgets/search_pill.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/search_page.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({super.key});
@@ -26,7 +25,7 @@ class HomeSearchBar extends StatelessWidget {
         child: Row(
           children: [
             SearchPill.icon(),
-            SizedBox(width: SpacingTokens.sm.w),
+            SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 S.searchHint,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +12,8 @@ import 'package:new_coffee/features/welcome/presentation/views/widgets/wavy_cont
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_hero_image.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+
+import 'support/pump_harness.dart';
 
 /// The session with its writes counted, so a tap can be told apart from two.
 class _CountingSession extends SessionRepository {
@@ -97,7 +98,7 @@ void main() {
   group('the welcome screen itself', () {
     Future<void> pumpWelcome(
       WidgetTester tester, {
-      Size logicalSize = AppConstant.designSize,
+      Size logicalSize = phoneViewport,
     }) async {
       // The screen sizes the design was drawn for; the default 800x600 test
       // surface is not a phone this layout was made for.
@@ -106,18 +107,15 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: AppConstant.designSize,
-          builder: (context, _) => MaterialApp(
-            initialRoute: WelcomePage.routeName,
-            routes: {
-              WelcomePage.routeName: (context) => const WelcomePage(),
-              // The onboarding screen needs the whole provider tree; the flow
-              // only cares that this route took the screen.
-              OnBoardingView.routeName: (context) =>
-                  const Scaffold(body: Text('onboarding-stub')),
-            },
-          ),
+        MaterialApp(
+          initialRoute: WelcomePage.routeName,
+          routes: {
+            WelcomePage.routeName: (context) => const WelcomePage(),
+            // The onboarding screen needs the whole provider tree; the flow
+            // only cares that this route took the screen.
+            OnBoardingView.routeName: (context) =>
+                const Scaffold(body: Text('onboarding-stub')),
+          },
         ),
       );
       await tester.pumpAndSettle();
@@ -163,7 +161,7 @@ void main() {
 
       final buttonRect = tester.getRect(find.byType(CustomBtn));
       expect(buttonRect.top, greaterThanOrEqualTo(0));
-      expect(buttonRect.bottom, lessThanOrEqualTo(AppConstant.designSize.height));
+      expect(buttonRect.bottom, lessThanOrEqualTo(phoneViewport.height));
     });
   });
 }

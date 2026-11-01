@@ -35,9 +35,7 @@ class _FakeRepository implements SubscriptionRepository {
   Future<CustomerSubscription?> mySubscription() async => subscription;
 
   @override
-  Future<List<SubscriptionUsage>> usageHistory({
-    String? subscriptionId,
-  }) async {
+  Future<List<SubscriptionUsage>> usageHistory({String? subscriptionId}) async {
     usageReadFor.add(subscriptionId);
     final error = usageError;
     if (error != null) throw error;
@@ -54,7 +52,10 @@ class _FakeRepository implements SubscriptionRepository {
     if (_subscribeCalls == 1 && firstSubscribeError != null) {
       throw firstSubscribeError!;
     }
-    return subscription = CustomerSubscription(id: 'sub-$_subscribeCalls', planId: planId);
+    return subscription = CustomerSubscription(
+      id: 'sub-$_subscribeCalls',
+      planId: planId,
+    );
   }
 
   @override
@@ -78,7 +79,10 @@ void main() {
     test('load reads the history of the subscription it found', () async {
       final repository = _FakeRepository()
         ..plansToReturn = [_plan()]
-        ..subscription = const CustomerSubscription(id: 'sub-1', planId: 'plan-1')
+        ..subscription = const CustomerSubscription(
+          id: 'sub-1',
+          planId: 'plan-1',
+        )
         ..usageToReturn = const [
           SubscriptionUsage(id: 'u1', subscriptionId: 'sub-1', branchId: 'b1'),
         ];
@@ -110,34 +114,42 @@ void main() {
       await cubit.close();
     });
 
-    test('a failed load stops the spinner instead of spinning forever', () async {
-      final repository = _FakeRepository()
-        ..plansError = StateError('offline');
+    test(
+      'a failed load stops the spinner instead of spinning forever',
+      () async {
+        final repository = _FakeRepository()
+          ..plansError = StateError('offline');
 
-      final cubit = SubscriptionCubit(repository: repository);
-      await cubit.load();
+        final cubit = SubscriptionCubit(repository: repository);
+        await cubit.load();
 
-      expect(cubit.state.loading, isFalse);
-      expect(cubit.state.error, isNotNull);
-      await cubit.close();
-    });
+        expect(cubit.state.loading, isFalse);
+        expect(cubit.state.error, isNotNull);
+        await cubit.close();
+      },
+    );
 
-    test('a retry of a failed subscribe sends the same idempotency key', () async {
-      final repository = _FakeRepository()
-        ..firstSubscribeError = StateError('timeout after the row was written');
+    test(
+      'a retry of a failed subscribe sends the same idempotency key',
+      () async {
+        final repository = _FakeRepository()
+          ..firstSubscribeError = StateError(
+            'timeout after the row was written',
+          );
 
-      final cubit = SubscriptionCubit(repository: repository);
-      await cubit.subscribe(_plan());
-      await cubit.subscribe(_plan());
+        final cubit = SubscriptionCubit(repository: repository);
+        await cubit.subscribe(_plan());
+        await cubit.subscribe(_plan());
 
-      expect(repository.subscribeKeys, hasLength(2));
-      expect(
-        repository.subscribeKeys.first,
-        repository.subscribeKeys.last,
-        reason: 'one tap must not become two subscriptions',
-      );
-      await cubit.close();
-    });
+        expect(repository.subscribeKeys, hasLength(2));
+        expect(
+          repository.subscribeKeys.first,
+          repository.subscribeKeys.last,
+          reason: 'one tap must not become two subscriptions',
+        );
+        await cubit.close();
+      },
+    );
 
     test('a second intent gets its own idempotency key', () async {
       final repository = _FakeRepository();
@@ -156,10 +168,7 @@ void main() {
     test('the renewal plan is the plan the subscription belongs to', () async {
       final cubit = SubscriptionCubit(
         repository: _FakeRepository()
-          ..plansToReturn = [
-            _plan(id: 'plan-1'),
-            _plan(id: 'plan-2'),
-          ]
+          ..plansToReturn = [_plan(id: 'plan-1'), _plan(id: 'plan-2')]
           ..subscription = const CustomerSubscription(
             id: 'sub-1',
             planId: 'plan-2',

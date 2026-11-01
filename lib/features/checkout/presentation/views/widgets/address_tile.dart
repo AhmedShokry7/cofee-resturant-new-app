@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class AddressTile extends StatelessWidget {
   const AddressTile({
@@ -33,15 +32,15 @@ class AddressTile extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: SpacingTokens.md.h),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Row(
           children: [
             Icon(
-              HugeIcons.strokeRoundedLocation01,
-              size: 24.w,
+              AppIcons.location,
+              size: AppSpacing.xl,
               color: selected ? AppColor.primaryColor : AppColor.greyColor,
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +55,7 @@ class AddressTile extends StatelessWidget {
                         ),
                       ),
                       if (address.isDefault) ...[
-                        SizedBox(width: 8.w),
+                        SizedBox(width: AppSpacing.sm),
                         Flexible(
                           child: Text(
                             S.defaultAddress,
@@ -69,15 +68,14 @@ class AddressTile extends StatelessWidget {
                       ],
                     ],
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: AppSpacing.xs),
                   Text(
                     address.details,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                   if (!address.isDefault && onSetDefault != null) ...[
-                    SizedBox(height: 4.h),
+                    SizedBox(height: AppSpacing.xs),
                     GestureDetector(
                       onTap: onSetDefault,
                       child: Text(
@@ -90,15 +88,12 @@ class AddressTile extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             if (onEdit != null)
-              IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: onEdit,
-              ),
+              IconButton(icon: const Icon(AppIcons.edit), onPressed: onEdit),
             if (onDelete != null)
               IconButton(
-                icon: const Icon(Icons.delete_outline),
+                icon: const Icon(AppIcons.delete),
                 onPressed: onDelete,
               ),
             SelectionRadio(selected: selected),
@@ -108,4 +103,3 @@ class AddressTile extends StatelessWidget {
     );
   }
 }
-

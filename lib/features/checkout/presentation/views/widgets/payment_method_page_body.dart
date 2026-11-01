@@ -1,13 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:hugeicons/hugeicons.dart';
-
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
@@ -17,6 +13,7 @@ import 'package:new_coffee/features/payment/presentation/views/widgets/add_card_
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/payment_option_tile.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class PaymentMethodPageBody extends StatelessWidget {
   const PaymentMethodPageBody({super.key});
@@ -27,8 +24,9 @@ class PaymentMethodPageBody extends StatelessWidget {
       listenWhen: (previous, current) => previous.cards != current.cards,
       listener: (context, saved) {
         final checkout = context.read<CheckoutCubit>();
-        if (checkout.state.selectedSavedCard != null || saved.cards.isEmpty)
+        if (checkout.state.selectedSavedCard != null || saved.cards.isEmpty) {
           return;
+        }
         final card = saved.cards.firstWhere(
           (item) => item.isDefault,
           orElse: () => saved.cards.first,
@@ -38,12 +36,12 @@ class PaymentMethodPageBody extends StatelessWidget {
       child: BlocBuilder<CheckoutCubit, CheckoutState>(
         builder: (context, state) {
           return ListView(
-            padding: LayoutTokens.pageBody(),
+            padding: AppLayout.pageBody,
             children: [
               const _PayableTotal(),
-              SizedBox(height: SpacingTokens.lg.h),
+              SizedBox(height: AppSpacing.lg),
               Text(S.creditDebitCard, style: AppFonts.semiBold16(context)),
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               AddCardTile(
                 onTap: () =>
                     Navigator.of(context).pushNamed(AddCardPage.routeName),
@@ -57,12 +55,12 @@ class PaymentMethodPageBody extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(height: SpacingTokens.sm.h),
+                      SizedBox(height: AppSpacing.sm),
                       Text(
                         S.payWithSavedCard,
                         style: AppFonts.medium14(context),
                       ),
-                      SizedBox(height: SpacingTokens.sm.h),
+                      SizedBox(height: AppSpacing.sm),
                       for (final card in saved.cards)
                         _SavedCardRow(
                           card: card,
@@ -78,9 +76,9 @@ class PaymentMethodPageBody extends StatelessWidget {
                   );
                 },
               ),
-              SizedBox(height: SpacingTokens.xl.h),
+              SizedBox(height: AppSpacing.xl),
               Text(S.morePaymentOptions, style: AppFonts.semiBold16(context)),
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               ...state.paymentMethods.map(
                 (method) => PaymentOptionTile(
                   method: method,
@@ -115,17 +113,15 @@ class _SavedCardRow extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: SpacingTokens.xs.h),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
         child: Row(
           children: [
             Icon(
-              selected
-                  ? HugeIcons.strokeRoundedRadioButton
-                  : HugeIcons.strokeRoundedRadioButton,
-              size: 20.w,
+              selected ? AppIcons.radioButton : AppIcons.radioButton,
+              size: AppSizes.px20,
               color: accent,
             ),
-            SizedBox(width: SpacingTokens.sm.w),
+            SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 '${card.brand.label.isEmpty ? S.cardBrandFallback : card.brand.label}  ****${card.last4}',
@@ -134,7 +130,7 @@ class _SavedCardRow extends StatelessWidget {
                 style: AppFonts.medium14(context).copyWith(color: accent),
               ),
             ),
-            SizedBox(width: SpacingTokens.xs.w),
+            SizedBox(width: AppSpacing.xs),
             Text(
               '${S.cardExpires} ${card.expiry}',
               style: AppFonts.regular12(context)
@@ -158,19 +154,19 @@ class _PayableTotal extends StatelessWidget {
         final summary = checkout.summary(cart.total);
         if (checkout.state.quoteLoading) {
           return Container(
-            padding: EdgeInsets.all(SpacingTokens.md.w),
+            padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColor.lightGreyColor,
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
             ),
             child: const Center(child: CircularProgressIndicator()),
           );
         }
         return Container(
-          padding: EdgeInsets.all(SpacingTokens.md.w),
+          padding: EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColor.lightGreyColor,
-            borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

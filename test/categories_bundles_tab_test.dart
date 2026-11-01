@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
@@ -40,7 +40,7 @@ void main() {
     slug: slug,
     nameAr: nameAr,
     nameEn: nameEn,
-    icon: Icons.coffee,
+    icon: AppIcons.coffee,
   );
 
   test('a category with the bundles slug is the bundles tab', () async {

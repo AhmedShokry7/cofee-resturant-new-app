@@ -36,7 +36,8 @@ class FakePostgrestServer {
   final Map<String, String> tokens = <String, String>{};
 
   /// Server-side carts: cart id -> row.
-  final Map<String, Map<String, dynamic>> carts = <String, Map<String, dynamic>>{};
+  final Map<String, Map<String, dynamic>> carts =
+      <String, Map<String, dynamic>>{};
 
   /// Server-side cart lines: cart item id -> row.
   final Map<String, Map<String, dynamic>> cartItems =
@@ -94,7 +95,9 @@ class FakePostgrestServer {
     final path = request.uri.path;
     final query = request.uri.queryParameters;
     final body = await utf8.decoder.bind(request).join();
-    requestLog.add('${request.method} $path${request.uri.query.isEmpty ? '' : '?${request.uri.query}'}');
+    requestLog.add(
+      '${request.method} $path${request.uri.query.isEmpty ? '' : '?${request.uri.query}'}',
+    );
 
     if (path.startsWith('/auth/v1/token')) {
       _handleToken(request, body);
@@ -123,12 +126,15 @@ class FakePostgrestServer {
   }
 
   void _handleToken(HttpRequest request, String body) {
-    final payload = jsonDecode(body.isEmpty ? '{}' : body) as Map<String, dynamic>;
+    final payload =
+        jsonDecode(body.isEmpty ? '{}' : body) as Map<String, dynamic>;
     final email = payload['email']?.toString() ?? '';
     final userId = users[email];
     if (userId == null) {
       request.response.statusCode = HttpStatus.unauthorized;
-      request.response.write(jsonEncode({'message': 'invalid login credentials'}));
+      request.response.write(
+        jsonEncode({'message': 'invalid login credentials'}),
+      );
       request.response.close();
       return;
     }
@@ -175,20 +181,20 @@ class FakePostgrestServer {
         return;
       }
       final rows = switch (table) {
-        'carts' => carts.values
-            .where((row) => row['user_id'] == userId)
-            .where((row) => _matches(row, query))
-            .toList(),
-        'cart_items' => cartItems.values
-            .where((row) => _matches(row, query))
-            .toList(),
-        'cart_item_options' => cartItemOptions.values
-            .where((row) => _matches(row, query))
-            .toList(),
-        'customer_favorites' => favorites.values
-            .where((row) => row['user_id'] == userId)
-            .where((row) => _matches(row, query))
-            .toList(),
+        'carts' =>
+          carts.values
+              .where((row) => row['user_id'] == userId)
+              .where((row) => _matches(row, query))
+              .toList(),
+        'cart_items' =>
+          cartItems.values.where((row) => _matches(row, query)).toList(),
+        'cart_item_options' =>
+          cartItemOptions.values.where((row) => _matches(row, query)).toList(),
+        'customer_favorites' =>
+          favorites.values
+              .where((row) => row['user_id'] == userId)
+              .where((row) => _matches(row, query))
+              .toList(),
         _ => <Map<String, dynamic>>[],
       };
       _json(request, rows);
@@ -291,7 +297,8 @@ class FakePostgrestServer {
       await request.response.close();
       return;
     }
-    final params = jsonDecode(body.isEmpty ? '{}' : body) as Map<String, dynamic>;
+    final params =
+        jsonDecode(body.isEmpty ? '{}' : body) as Map<String, dynamic>;
     switch (function) {
       case 'replace_cart':
         final rows = _replaceCart(userId, params);
@@ -340,9 +347,7 @@ class FakePostgrestServer {
         .toList();
     for (final itemId in removed) {
       cartItems.remove(itemId);
-      cartItemOptions.removeWhere(
-        (_, row) => row['cart_item_id'] == itemId,
-      );
+      cartItemOptions.removeWhere((_, row) => row['cart_item_id'] == itemId);
     }
 
     var subtotal = 0.0;
@@ -384,11 +389,7 @@ class FakePostgrestServer {
     }
 
     return [
-      {
-        'cart_id': cartId,
-        'item_count': itemCount,
-        'subtotal': subtotal,
-      },
+      {'cart_id': cartId, 'item_count': itemCount, 'subtotal': subtotal},
     ];
   }
 

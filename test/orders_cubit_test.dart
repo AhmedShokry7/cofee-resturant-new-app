@@ -110,40 +110,43 @@ void main() {
       expect(cubit.state.isEmpty, isFalse);
     });
 
-    test('lines of one order group into a single card with real totals', () async {
-      final repository = _FakeOrdersRepository(
-        orders: [
-          _line(
-            id: 'l1',
-            orderId: 'o1',
-            orderNumber: 'ORD-1',
-            status: OrderStatus.active,
-            quantity: 2,
-            unitPrice: 25,
-            grandTotal: 56,
-          ),
-          _line(
-            id: 'l2',
-            orderId: 'o1',
-            orderNumber: 'ORD-1',
-            status: OrderStatus.active,
-            quantity: 1,
-            unitPrice: 10,
-            grandTotal: 56,
-          ),
-        ],
-      );
-      final cubit = OrdersCubit(repository: repository);
-      addTearDown(cubit.close);
+    test(
+      'lines of one order group into a single card with real totals',
+      () async {
+        final repository = _FakeOrdersRepository(
+          orders: [
+            _line(
+              id: 'l1',
+              orderId: 'o1',
+              orderNumber: 'ORD-1',
+              status: OrderStatus.active,
+              quantity: 2,
+              unitPrice: 25,
+              grandTotal: 56,
+            ),
+            _line(
+              id: 'l2',
+              orderId: 'o1',
+              orderNumber: 'ORD-1',
+              status: OrderStatus.active,
+              quantity: 1,
+              unitPrice: 10,
+              grandTotal: 56,
+            ),
+          ],
+        );
+        final cubit = OrdersCubit(repository: repository);
+        addTearDown(cubit.close);
 
-      await cubit.stream.firstWhere((state) => !state.isLoading);
+        await cubit.stream.firstWhere((state) => !state.isLoading);
 
-      final groups = cubit.state.grouped;
-      expect(groups, hasLength(1));
-      expect(groups.single.itemCount, 3);
-      expect(groups.single.displayNumber, 'ORD-1');
-      expect(groups.single.grandTotal, 56);
-    });
+        final groups = cubit.state.grouped;
+        expect(groups, hasLength(1));
+        expect(groups.single.itemCount, 3);
+        expect(groups.single.displayNumber, 'ORD-1');
+        expect(groups.single.grandTotal, 56);
+      },
+    );
 
     test('an empty history is an empty state, not an error', () async {
       final cubit = OrdersCubit(repository: _FakeOrdersRepository());
@@ -156,9 +159,7 @@ void main() {
     });
 
     test('a repository failure surfaces an error state', () async {
-      final cubit = OrdersCubit(
-        repository: _FakeOrdersRepository(fail: true),
-      );
+      final cubit = OrdersCubit(repository: _FakeOrdersRepository(fail: true));
       addTearDown(cubit.close);
 
       await cubit.stream.firstWhere((state) => state.error != null);
@@ -167,17 +168,20 @@ void main() {
       expect(cubit.state.orders, isEmpty);
     });
 
-    test('a signed-out repository reports signedOut instead of error', () async {
-      final repository = _SignedOutRepository();
-      final cubit = OrdersCubit(repository: repository);
-      addTearDown(cubit.close);
+    test(
+      'a signed-out repository reports signedOut instead of error',
+      () async {
+        final repository = _SignedOutRepository();
+        final cubit = OrdersCubit(repository: repository);
+        addTearDown(cubit.close);
 
-      await cubit.stream.firstWhere((state) => state.signedOut);
+        await cubit.stream.firstWhere((state) => state.signedOut);
 
-      expect(cubit.state.signedOut, isTrue);
-      expect(cubit.state.orders, isEmpty);
-      expect(cubit.state.error, isNull);
-    });
+        expect(cubit.state.signedOut, isTrue);
+        expect(cubit.state.orders, isEmpty);
+        expect(cubit.state.error, isNull);
+      },
+    );
 
     test('switching tabs re-queries with the new status', () async {
       final repository = _FakeOrdersRepository(

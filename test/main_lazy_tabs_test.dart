@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
@@ -24,7 +23,9 @@ import 'package:new_coffee/features/home/presentation/views/home_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/weather/data/model/weather_model.dart';
 import 'package:new_coffee/features/weather/data/repositories/weather_repository.dart';
 import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
@@ -60,7 +61,9 @@ Future<void> _setSurface(WidgetTester tester) async {
 class _CountingCatalog extends MockProductRepository {
   int categoryLoads = 0;
   @override
-  Future<List<CategoryModel>> getCategories({bool includeInactive = false}) async {
+  Future<List<CategoryModel>> getCategories({
+    bool includeInactive = false,
+  }) async {
     categoryLoads++;
     return super.getCategories(includeInactive: includeInactive);
   }
@@ -81,9 +84,7 @@ void main() {
     );
     final favorites = FavoritesCubit(
       repository: catalog,
-      favorites: FavoritesRepositoryImpl(
-        userIdProvider: () => null,
-      ),
+      favorites: FavoritesRepositoryImpl(userIdProvider: () => null),
     );
     final branch = BranchCubit(repository: _FakeBranchRepository());
 
@@ -95,22 +96,19 @@ void main() {
     addTearDown(branch.close);
 
     await tester.pumpWidget(
-      ScreenUtilInit(
-        designSize: const Size(360, 690),
-        builder: (context, _) => MaterialApp(
-          home: MultiBlocProvider(
-            providers: [
-              BlocProvider.value(value: branch),
-              BlocProvider.value(value: cart),
-              BlocProvider.value(value: favorites),
-              BlocProvider.value(value: weather),
-              BlocProvider.value(value: home),
-              BlocProvider.value(value: categories),
-            ],
-            child: RepositoryProvider<AuthRepository>.value(
-              value: _FakeAuthRepository(),
-              child: const MainPage(),
-            ),
+      MaterialApp(
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: branch),
+            BlocProvider.value(value: cart),
+            BlocProvider.value(value: favorites),
+            BlocProvider.value(value: weather),
+            BlocProvider.value(value: home),
+            BlocProvider.value(value: categories),
+          ],
+          child: RepositoryProvider<AuthRepository>.value(
+            value: _FakeAuthRepository(),
+            child: const MainPage(),
           ),
         ),
       ),
@@ -124,7 +122,7 @@ void main() {
     expect(find.byType(CartPage), findsNothing);
     expect(find.byType(FavoritesPage), findsNothing);
 
-    await tester.tap(find.byIcon(HugeIcons.strokeRoundedGridView).first);
+    await tester.tap(find.byIcon(AppIcons.grid).first);
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
@@ -144,13 +142,10 @@ void main() {
     addTearDown(cubit.close);
 
     await tester.pumpWidget(
-      ScreenUtilInit(
-        designSize: const Size(360, 690),
-        builder: (context, _) => MaterialApp(
-          home: MultiBlocProvider(
-            providers: [BlocProvider.value(value: cubit)],
-            child: const CategoriesPage(initialCategoryId: 'tea'),
-          ),
+      MaterialApp(
+        home: MultiBlocProvider(
+          providers: [BlocProvider.value(value: cubit)],
+          child: const CategoriesPage(initialCategoryId: 'tea'),
         ),
       ),
     );

@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plan_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_card.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class SubscriptionPlansPage extends StatelessWidget {
   const SubscriptionPlansPage({super.key});
@@ -18,9 +17,9 @@ class SubscriptionPlansPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SubscriptionCubit(
-        repository: context.read<SubscriptionRepository>(),
-      )..load(),
+      create: (context) =>
+          SubscriptionCubit(repository: context.read<SubscriptionRepository>())
+            ..load(),
       child: const _SubscriptionPlansView(),
     );
   }
@@ -44,7 +43,7 @@ class _SubscriptionPlansView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(state.error!, textAlign: TextAlign.center),
-                  SizedBox(height: SpacingTokens.md.h),
+                  SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
                     child: Text(S.retry),
@@ -57,11 +56,11 @@ class _SubscriptionPlansView extends StatelessWidget {
             return Center(child: Text(S.noPlansAvailable));
           }
           return GridView.builder(
-            padding: EdgeInsets.all(SpacingTokens.md.w),
+            padding: EdgeInsets.all(AppSpacing.md),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              crossAxisSpacing: SpacingTokens.md.w,
-              mainAxisSpacing: SpacingTokens.md.h,
+              crossAxisSpacing: AppSpacing.md,
+              mainAxisSpacing: AppSpacing.md,
               childAspectRatio: 0.6,
             ),
             itemCount: state.plans.length,

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
-import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProductsGridView extends StatefulWidget {
   const ProductsGridView({
@@ -72,7 +70,8 @@ class _ProductsGridViewState extends State<ProductsGridView> {
         position.maxScrollExtent <= 0) {
       return;
     }
-    if (position.pixels >= position.maxScrollExtent - 300) {
+    if (position.pixels >=
+        position.maxScrollExtent - AppDimensions.gridLoadMoreAhead) {
       setState(() {
         _shown = (_shown + widget.pageSize).clamp(0, _total);
       });
@@ -119,16 +118,18 @@ class _ProductsGridViewState extends State<ProductsGridView> {
           padding:
               widget.padding ??
               EdgeInsets.fromLTRB(
-                SpacingTokens.md.w,
-                SpacingTokens.md.h,
-                SpacingTokens.md.w,
-                SpacingTokens.lg.w,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.lg,
               ),
           sliver: SliverGrid(
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: SpacingTokens.md.w,
-              mainAxisSpacing: SpacingTokens.md.h,
+            // The row counts its own cards: a phone keeps two, a tablet gains
+            // a third, and a card stops widening at the product card ceiling.
+            gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: AppBreakpoints.productCardMaxWidth,
+              crossAxisSpacing: AppSpacing.md,
+              mainAxisSpacing: AppSpacing.md,
               childAspectRatio: ProductCard.cardAspectRatio,
             ),
             delegate: SliverChildBuilderDelegate(
@@ -141,17 +142,17 @@ class _ProductsGridViewState extends State<ProductsGridView> {
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
-                SpacingTokens.lg.w,
+                AppSpacing.lg,
                 0,
-                SpacingTokens.lg.w,
-                SpacingTokens.lg.h,
+                AppSpacing.lg,
+                AppSpacing.lg,
               ),
               child: Center(
                 child: SizedBox(
-                  height: 24.w,
-                  width: 24.w,
+                  height: AppSpacing.xl,
+                  width: AppSpacing.xl,
                   child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
+                    strokeWidth: AppDimensions.spinnerStroke,
                     color: AppColor.primaryColor,
                   ),
                 ),

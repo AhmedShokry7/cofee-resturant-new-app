@@ -13,15 +13,17 @@ lib/
   firebase_options.dart
   core/
     config/            # environment reading
-    constant/          # AppConstant (shared prefs keys, designSize), AppImages
+    constant/          # AppConstant (shared prefs keys), AppImages
     data/              # db_values helpers
     di/                # AppProviders: the whole dependency tree
     locale/            # AppLocale, AppStrings (S.*)
     navigation/        # route table, generator, observer, root keys, routeForNotification
     services/          # SharedPref, SessionRepository, SupabaseService, SupabaseReadService
     startup/           # bootstrapApp, runGuarded/logFailure, applyPreviewTheme
-    theme/             # AppColor, AppFonts, SpacingTokens, MotionTokens,
-                       # LayoutTokens, ThemeClass
+    theme/             # tokens.dart (every number), typography.dart (every text
+                       # style), app_icons.dart (every glyph), app_color.dart
+                       # (every colour), responsive.dart, motion_tokens.dart,
+                       # theme_class.dart
   features/<feature>/
     data/
       model/           # entities (+ .g.dart when generated)
@@ -72,22 +74,34 @@ Rules:
 
 | Token | Holds |
 | --- | --- |
-| `AppColor` | every colour, incl. the mutable brand colours |
+| `AppColor` | every colour, incl. the mutable brand pair and the shadow alphas |
+| `AppIcons` + `AppIcon` | every glyph; `hugeicons` is imported in `app_icons.dart` only, and a screen writes `Icon(AppIcons.x)` or `AppIcon(AppIcons.x)` |
 | `AppFonts` | text styles (`medium12(context)` and friends) |
-| `SpacingTokens` | `xs 4 / sm 8 / md 12 / lg 16 / xl 24 / xxl 32 / xxxl 48` |
+| `AppFontFamily` / `AppFontSizes` / `AppFontWeights` / `AppTextHeights` / `AppLetterSpacings` | the raw type numbers, all in `typography.dart` - IBM Plex Sans Arabic, fixed logical sizes |
+| `AppSpacing` | gaps and padding: `xs 4 / sm 8 / md 12 / lg 16 / xl 24 / xxl 32 / xxxl 48` |
+| `AppSizes` | box edges and icons on the 2pt grid (`px1`, `px1_5`, `px44` …) |
+| `AppRadius` | corner radii - the name is the value (`r12`, `r16`, `pill`) |
+| `AppDimensions` | the named size of one component (`buttonHeight`, `productCardWidth`, `skeletonLineLong` …) |
+| `AppShadows` | the five `BoxShadow` lists (`tile`, `floating`, `sheet`, `lifted`, `focused()`) + `focusTint`; a widget never builds its own `BoxShadow` |
+| `AppElevation` | `flat` / `raised` / `floating` |
+| `AppBreakpoints` + `context.responsive` | the Material 3 size classes (600/840/1200), content caps and grid counts |
+| `AppLayout.pageBody` | the `lg/md/lg/lg` scroll padding a page shares with its skeleton |
 | `MotionTokens` | `entrance` (300ms) + `entranceCurve` (easeOutCubic) |
-| `LayoutTokens` | `pageBody()` (the `lg/md/lg/lg` scroll padding a page shares with its skeleton) + `cardRadius` (12 design px) |
 | `AppImages` | asset paths; no raw `'assets/...'` string in a widget |
-| `AppConstant.designSize` | `Size(360, 690)` - the design size ScreenUtil scales from, also in test harnesses |
 | `AppConstant` prefs keys | the only place SharedPreferences keys are spelled |
 | `S.*` | every user-facing string, both languages together |
 
-Sizes that are geometry rather than spacing stay in the widget that owns them
-as named `static const` with a comment saying *why* that value - and tests read
-them from the class instead of repeating the number. When another file needs
-that number to line up with the drawing (the welcome panel overlaps the wave by
-`WavyContainer.designCurveDepth`), the owner exposes it publicly and the caller
-scales it; a value with no outside reader stays private.
+`flutter_screenutil` is gone: no `.w .h .r .sp`, no `designSize`, no global scale
+factor. Sizes are fixed logical pixels, extra window width buys content through
+`context.windowSize` / `context.gridColumns()`, and text keeps respecting
+`MediaQuery.textScaler`. A screen that changes shape reads
+`AppWindowSize`, never a width number.
+
+Sizes that are one shape's own math - a wave's control points, a card's aspect
+ratio - stay in the widget that owns them as named `static const` with a comment
+saying *why* that value, and tests read them from the class instead of repeating
+the number. Anything that is a box edge, a gap, a radius, a shadow or a colour
+belongs in the tables above.
 
 ## Verification
 
@@ -96,14 +110,18 @@ flutter analyze --no-pub   # compare with the baseline count
 flutter test               # full suite
 ```
 
-Baseline recorded on 2026-11-01 and re-recorded after the `content`, `welcome`
-and `on_boarding` sweeps: analyze 39 issues (all pre-existing, none in
-`lib/core/startup`, `lib/app.dart`, `lib/main.dart`, `features/main`,
-`features/splash`, `features/content`, `features/welcome`,
-`features/on_boarding`, `lib/core/theme/layout_tokens.dart`); `flutter test` 856
-passed, 45 skipped - the
-skips are the `test/integration/*` files marked `skip:` because they need a live
-Supabase.
+Baseline re-recorded on 2026-11-01, after the ScreenUtil removal and the design
+system rebuild: `flutter analyze --no-pub` = 12 issues, all
+`curly_braces_in_flow_control_structures` infos in `assistant`, `subscriptions`
+and `assistant_fab_cubit` - zero errors, zero warnings. `flutter test` = 867
+passed, 45 skipped - the skips are the `test/integration/*` files marked `skip:`
+because they need a live Supabase. The suite also fails loudly on a render
+overflow, so a clean run means no screen spills.
+
+Widget tests pump into `phoneViewport` (`Size(360, 690)`) from
+`test/support/pump_harness.dart`; `tabletViewport` is there for the wide-window
+case. To test a layout at another size, change `tester.view.physicalSize` - a
+`SizedBox` wider than the test window is clamped to it, so it proves nothing.
 
 Tests are flat in `test/` (one file per behaviour) with `test/support/` for
 fakes and `test/integration/` for the live-backend set. A new test goes next to
@@ -115,10 +133,29 @@ Fix these when the sweep reaches the feature, and delete the line after:
 
 - `presentation/widgets` instead of `presentation/views/widgets`: `assistant`,
   `location`. `presentation/formatters`: `payment`.
-- `LayoutTokens.pageBody()` / `cardRadius` now own the page scroll padding and
-  the card radius, but only `content` and `shimmer.dart` read them. 20 other
-  files still spell `lg.w / md.h / lg.w / lg.w` inline and about 20 more spell
-  `BorderRadius.circular(12.r)`; adopt the token as each feature is swept.
+- `AppLayout.pageBody` owns the page scroll padding and 22 files read it; the
+  rest of the catalog screens still spell their own `fromLTRB` inline.
+- 63 numeric geometry literals (`width:`/`height:`/`size:`/`radius:`/
+  `strokeWidth:`) remain outside `core/theme`, and 37 of them are the skeleton
+  line sizes in `shared/widgets/shimmer/` - those shapes mirror a real card, so
+  each one is settled while its screen is swept, not rounded onto the grid now.
+  The other 26 sit in `location_picker`, `custom_btn`, the spinners and the
+  hairline dividers.
+- `shared/widgets/app_icon.dart` exists and no screen uses it: all 59 icon sites
+  write `Icon(AppIcons.x)` with their own size and colour. Adopting `AppIcon`
+  per page is part of the page-by-page pass.
+- `features/auth/presentation/views/widgets/auth_spacings.dart` is a second,
+  feature-local spacing scale (`AuthSpacings`, 7 files) beside `AppSpacing`;
+  collapse it when the auth screens are swept.
+- 12 `Duration(milliseconds: …)` literals outside `MotionTokens` - mostly the
+  cart fly animation (`animated_add_to_cart_button`, 5) and per-screen delays.
+- `resolveCategoryIcon()` lives in `features/categories/data/model/` and returns
+  an `AppIcons` glyph: a presentation decision inside the data layer.
+- Two type systems run side by side: `buildTextTheme()` fills the Material 3
+  `TextTheme` from the same tokens, but 619 call sites still read
+  `AppFonts.semiBold16(context)` by size-name (304 call sites outside
+  `core/theme`). Moving a page to
+  `Theme.of(context).textTheme` is a page-by-page decision, not a rename.
 - `assistant/data/assistant_engine.dart` 1683 lines; `checkout_cubit` 1062;
   `cart_cubit` 945; `supabase_product_repository` 917; `location_picker` 670;
   `app_strings` 1112; `app_providers` 322.
@@ -132,9 +169,6 @@ Fix these when the sweep reaches the feature, and delete the line after:
   `flutter_launcher_icons.yaml` (4x); `flutter_native_splash.yaml` was deleted,
   so `flutter_native_splash:create` has no config file to read;
   `shared/widgets/currency_icon.dart` keeps its own svg path outside `AppImages`.
-- `shared/widgets/skip_btn.dart` is used by `on_boarding`, `auth` login and
-  `auth` sign-up, and spells `50.h / 2.h / 1 / 100.h` inline with an unscaled
-  divider. Sweeping it moves those to tokens and shifts three screens at once.
 - `ios/Runner` launch screen is still the Flutter template (placeholder
   `LaunchImage`, wrong dimensions).
 - The bottom bar's Settings tab renders `SettingsPage`, which lives in the

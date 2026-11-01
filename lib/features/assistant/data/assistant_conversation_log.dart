@@ -62,8 +62,7 @@ class LoggedMessage {
 /// id / role / text / timestamp / channel / detected intent+topic, ready
 /// to upload as future training/reference material.
 class ConversationLog {
-  ConversationLog([List<LoggedMessage>? messages])
-    : _messages = messages ?? [];
+  ConversationLog([List<LoggedMessage>? messages]) : _messages = messages ?? [];
 
   static const _storageKey = 'assistant_conversation_log_v1';
   static const _maxMessages = 200;

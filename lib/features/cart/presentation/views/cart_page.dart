@@ -2,13 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
@@ -19,6 +16,7 @@ import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CartPage extends StatelessWidget {
   const CartPage({super.key});
@@ -92,7 +90,7 @@ class CartPage extends StatelessWidget {
                   builder: (context, state) {
                     if (state.isEmpty) {
                       return EmptyState(
-                        icon: HugeIcons.strokeRoundedShoppingCart01,
+                        icon: AppIcons.cart,
                         title: S.cartEmpty,
                         subtitle: S.cartEmptyHint,
                       );
@@ -101,7 +99,7 @@ class CartPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: ListView.builder(
-                            padding: LayoutTokens.pageBody(),
+                            padding: AppLayout.pageBody,
                             itemCount: state.items.length,
                             itemBuilder: (context, index) {
                               final item = state.items[index];
@@ -166,23 +164,23 @@ class _CartSummaryState extends State<_CartSummary> {
       builder: (context, cart) {
         final total = cart.total;
         return Container(
-          padding: EdgeInsets.all(SpacingTokens.lg.w),
+          padding: EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
             color: AppColor.whiteColor,
             border: Border.all(color: AppColor.borderColor),
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16.r),
-              topRight: Radius.circular(16.r),
+              topLeft: Radius.circular(AppRadius.r16),
+              topRight: Radius.circular(AppRadius.r16),
             ),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               _SummaryRow(label: S.total, priceValue: total, total: true),
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               CustomBtn(
                 text: S.proceedToCheckout,
-                borderRadius: 32.r,
+                borderRadius: AppRadius.r32,
                 onPressed: () =>
                     Navigator.of(context).pushNamed(CheckoutPage.routeName),
               ),

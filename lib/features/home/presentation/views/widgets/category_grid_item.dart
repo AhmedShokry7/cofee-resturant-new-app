@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CategoryGridItem extends StatelessWidget {
   const CategoryGridItem({
@@ -27,30 +26,28 @@ class CategoryGridItem extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            height: 56.w,
-            width: 56.w,
+            height: AppSizes.px56,
+            width: AppSizes.px56,
             decoration: BoxDecoration(
               color: AppColor.lightGreyColor,
-              borderRadius: BorderRadius.circular(16.r),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.blackColor.withValues(alpha: 0.15),
-                  blurRadius: 4,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              borderRadius: BorderRadius.circular(AppRadius.r16),
+              boxShadow: AppShadows.tile,
             ),
             // The database picture when the row carries one, otherwise the
             // icon mapped from `icon_key`. Both live in the same tile so a
             // category without an image never renders an empty box.
             child: imageUrl.isEmpty
-                ? Icon(category.icon, size: 26.w, color: AppColor.primaryColor)
+                ? Icon(
+                    category.icon,
+                    size: AppSizes.px26,
+                    color: AppColor.primaryColor,
+                  )
                 : ClipRRect(
-                    borderRadius: BorderRadius.circular(16.r),
-                    child: DbImage(image: imageUrl, iconSize: 26.w),
+                    borderRadius: BorderRadius.circular(AppRadius.r16),
+                    child: DbImage(image: imageUrl, iconSize: AppSizes.px26),
                   ),
           ),
-          SizedBox(height: SpacingTokens.sm.h),
+          SizedBox(height: AppSpacing.sm),
           Text(
             category.label,
             textAlign: TextAlign.center,

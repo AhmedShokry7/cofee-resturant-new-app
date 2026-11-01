@@ -36,12 +36,11 @@ class OrdersState {
     String? error,
     bool clearError = false,
     bool? signedOut,
-  }) =>
-      OrdersState(
-        status: status ?? this.status,
-        orders: orders ?? this.orders,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-        signedOut: signedOut ?? this.signedOut,
-      );
+  }) => OrdersState(
+    status: status ?? this.status,
+    orders: orders ?? this.orders,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+    signedOut: signedOut ?? this.signedOut,
+  );
 }

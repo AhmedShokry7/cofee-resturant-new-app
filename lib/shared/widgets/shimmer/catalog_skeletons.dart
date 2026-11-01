@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Skeleton that mirrors [ProductCard] in its grid/carousel variant.
 ///
-/// Layout contract (product_card.dart): finite cell width (or 160.w when the
-/// horizontal parent is unbounded), AspectRatio 0.60, padding md.w, radius
-/// 16.r, image Expanded with radius 12.r plus a 28.w favorite badge, then
-/// title / description lines and a price + 36.w add-button row.
+/// Layout contract (product_card.dart): finite cell width (or
+/// [AppBreakpoints.productCardMinWidth] when the horizontal parent is
+/// unbounded), the card aspect ratio, `md` padding, [AppRadius.r16] corners, image
+/// Expanded with [AppRadius.r12] plus an [AppSizes.px28] favorite badge, then
+/// title / description lines and a price + [AppSizes.px36] add-button row.
 class ProductCardSkeleton extends StatelessWidget {
   const ProductCardSkeleton({super.key, this.width});
 
@@ -25,16 +26,21 @@ class ProductCardSkeleton extends StatelessWidget {
       builder: (context, constraints) {
         final resolved =
             width ??
-            (constraints.maxWidth.isFinite ? constraints.maxWidth : 168.w);
+            (constraints.maxWidth.isFinite
+                ? constraints.maxWidth
+                : AppDimensions.productCardWidth);
         return SizedBox(
           width: resolved,
           child: AspectRatio(
             // Mirrors ProductCard.cardAspectRatio (kept literal to avoid a
             // shared -> feature import).
-            aspectRatio: 0.60,
+            aspectRatio: ProductCard.cardAspectRatio,
             child: Container(
-              padding: EdgeInsets.all(SpacingTokens.md.w),
-              decoration: skeletonCardDecoration(context, radius: 16),
+              padding: EdgeInsets.all(AppSpacing.md),
+              decoration: skeletonCardDecoration(
+                context,
+                radius: AppRadius.r16,
+              ),
               child: Shimmer(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -45,30 +51,33 @@ class ProductCardSkeleton extends StatelessWidget {
                           Positioned.fill(
                             child: ShimmerBox(
                               borderRadius: BorderRadius.circular(
-                                LayoutTokens.cardRadius.r,
+                                AppDimensions.cardRadius,
                               ),
                             ),
                           ),
                           Positioned(
-                            top: 2.w,
-                            left: 4.w,
-                            child: ShimmerCircle(size: 28.w),
+                            top: AppSpacing.xxs,
+                            left: AppSpacing.xs,
+                            child: ShimmerCircle(size: AppSizes.px28),
                           ),
                         ],
                       ),
                     ),
-                    SizedBox(height: SpacingTokens.sm.h),
-                    const ShimmerLine(widthFactor: 0.9, height: 15),
-                    SizedBox(height: 4.h),
-                    const ShimmerLine(widthFactor: 0.65, height: 11),
-                    SizedBox(height: 6.h),
+                    SizedBox(height: AppSpacing.sm),
+                    const ShimmerLine(widthFactor: 0.9, height: AppSizes.px15),
+                    SizedBox(height: AppSpacing.xs),
+                    const ShimmerLine(widthFactor: 0.65, height: AppSizes.px11),
+                    SizedBox(height: AppSizes.px6),
                     Row(
                       children: [
                         const Expanded(
-                          child: ShimmerLine(widthFactor: 0.8, height: 13),
+                          child: ShimmerLine(
+                            widthFactor: 0.8,
+                            height: AppSizes.px13,
+                          ),
                         ),
-                        SizedBox(width: SpacingTokens.xs.w),
-                        ShimmerCircle(size: 36.w),
+                        SizedBox(width: AppSpacing.xs),
+                        ShimmerCircle(size: AppSizes.px36),
                       ],
                     ),
                   ],
@@ -82,9 +91,9 @@ class ProductCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton grid mirroring [ProductsGridView]: same outer padding, 2 columns,
-/// same spacings and the same 0.60 child aspect ratio, so real cards replace
-/// skeleton cards without any layout shift.
+/// Skeleton grid mirroring [ProductsGridView]: same outer padding, the same
+/// self-counting row, the same spacings and the same child aspect ratio, so
+/// real cards replace skeleton cards without any layout shift.
 class ProductsGridSkeleton extends StatelessWidget {
   const ProductsGridSkeleton({super.key, this.itemCount = 6, this.padding});
 
@@ -99,16 +108,16 @@ class ProductsGridSkeleton extends StatelessWidget {
       padding:
           padding ??
           EdgeInsets.fromLTRB(
-            SpacingTokens.md.w,
-            SpacingTokens.md.h,
-            SpacingTokens.md.w,
-            SpacingTokens.lg.w,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.lg,
           ),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: SpacingTokens.md.w,
-        mainAxisSpacing: SpacingTokens.md.h,
-        childAspectRatio: 0.60,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: AppBreakpoints.productCardMaxWidth,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisSpacing: AppSpacing.md,
+        childAspectRatio: ProductCard.cardAspectRatio,
       ),
       itemCount: itemCount,
       itemBuilder: (context, index) => const ProductCardSkeleton(),
@@ -117,7 +126,7 @@ class ProductsGridSkeleton extends StatelessWidget {
 }
 
 /// Skeleton carousel mirroring [HomeProductsCarousel]: section title row plus
-/// a horizontal list of fixed 168.w product cards whose strip height is
+/// a horizontal list of fixed [AppDimensions.productCardWidth] product cards whose strip height is
 /// derived from the card aspect ratio, exactly like the real carousel.
 class ProductsCarouselSkeleton extends StatelessWidget {
   const ProductsCarouselSkeleton({
@@ -138,29 +147,34 @@ class ProductsCarouselSkeleton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ShimmerLine(width: 140, height: 16, radius: 8),
+              const ShimmerLine(
+                width: AppDimensions.skeletonLineLong,
+                height: AppDimensions.skeletonLineHeight,
+                radius: AppRadius.r8,
+              ),
               ShimmerBox(
-                width: 64.w,
-                height: 12.h,
-                borderRadius: BorderRadius.circular(6.r),
+                width: AppSizes.px64,
+                height: AppSpacing.md,
+                borderRadius: BorderRadius.circular(AppRadius.r6),
               ),
             ],
           ),
         ),
         if (showSubtitle) ...[
-          SizedBox(height: 4.h),
+          SizedBox(height: AppSpacing.xs),
           const Shimmer(child: ShimmerLine(widthFactor: 0.5, height: 11)),
         ],
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 168.w / 0.60,
+          height: AppDimensions.productCardWidth / ProductCard.cardAspectRatio,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: itemCount,
             separatorBuilder: (context, index) =>
-                SizedBox(width: SpacingTokens.md.w),
-            itemBuilder: (context, index) => ProductCardSkeleton(width: 168.w),
+                SizedBox(width: AppSpacing.md),
+            itemBuilder: (context, index) =>
+                ProductCardSkeleton(width: AppDimensions.productCardWidth),
           ),
         ),
       ],
@@ -169,7 +183,7 @@ class ProductsCarouselSkeleton extends StatelessWidget {
 }
 
 /// Skeleton bundle card mirroring the home bundles carousel card:
-/// 180.w wide, 250.h list height, radius 16.r, image radius 12.r, title /
+/// [AppDimensions.bundleCardWidth] wide, [AppDimensions.bundleSectionHeight] list height, radius [AppRadius.r16], image radius [AppRadius.r12], title /
 /// subtitle lines and a price row.
 class BundleCardSkeleton extends StatelessWidget {
   const BundleCardSkeleton({super.key});
@@ -177,27 +191,31 @@ class BundleCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 180.w,
-      padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: skeletonCardDecoration(context, radius: 16),
+      width: AppDimensions.bundleCardWidth,
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r16),
       child: Shimmer(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: ShimmerBox(
-                borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+                borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
               ),
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             const ShimmerLine(widthFactor: 0.9, height: 13),
-            SizedBox(height: 4.h),
+            SizedBox(height: AppSpacing.xs),
             const ShimmerLine(widthFactor: 0.6, height: 11),
-            SizedBox(height: 4.h),
+            SizedBox(height: AppSpacing.xs),
             Row(
               children: [
-                const ShimmerLine(width: 56, height: 13, radius: 6),
-                SizedBox(width: SpacingTokens.xs.w),
+                const ShimmerLine(
+                  width: AppDimensions.skeletonThumbLine,
+                  height: AppDimensions.skeletonCaptionHeight,
+                  radius: AppRadius.r6,
+                ),
+                SizedBox(width: AppSpacing.xs),
                 const Expanded(
                   child: ShimmerLine(widthFactor: 0.7, height: 11),
                 ),
@@ -210,8 +228,8 @@ class BundleCardSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton mirroring [HomeBundlesSection]: title plus a 250.h horizontal
-/// list of 180.w bundle cards.
+/// Skeleton mirroring [HomeBundlesSection]: title plus a [AppDimensions.bundleSectionHeight] horizontal
+/// list of [AppDimensions.bundleCardWidth] bundle cards.
 class BundlesCarouselSkeleton extends StatelessWidget {
   const BundlesCarouselSkeleton({super.key, this.itemCount = 3});
 
@@ -222,16 +240,22 @@ class BundlesCarouselSkeleton extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Shimmer(child: ShimmerLine(width: 110, height: 16, radius: 8)),
-        SizedBox(height: SpacingTokens.md.h),
+        const Shimmer(
+          child: ShimmerLine(
+            width: AppDimensions.skeletonLineMedium,
+            height: AppDimensions.skeletonLineHeight,
+            radius: AppRadius.r8,
+          ),
+        ),
+        SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 250.h,
+          height: AppDimensions.bundleSectionHeight,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: itemCount,
             separatorBuilder: (context, index) =>
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) => const BundleCardSkeleton(),
           ),
         ),
@@ -240,7 +264,7 @@ class BundlesCarouselSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton row mirroring [BundleListTile]: 78.w thumbnail radius 12.r,
+/// Skeleton row mirroring [BundleListTile]: [AppSizes.px78] thumbnail radius [AppRadius.r12],
 /// title / subtitle / price lines and a trailing arrow slot.
 class BundleListTileSkeleton extends StatelessWidget {
   const BundleListTileSkeleton({super.key});
@@ -248,31 +272,35 @@ class BundleListTileSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: skeletonCardDecoration(context, radius: 16),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r16),
       child: Shimmer(
         child: Row(
           children: [
             ShimmerBox(
-              width: 78.w,
-              height: 78.w,
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              width: AppSizes.px78,
+              height: AppSizes.px78,
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerLine(widthFactor: 0.85, height: 15),
-                  SizedBox(height: 4),
+                  SizedBox(height: AppSpacing.xs),
                   ShimmerLine(widthFactor: 0.6, height: 11),
-                  SizedBox(height: 4),
-                  ShimmerLine(width: 90, height: 13, radius: 6),
+                  SizedBox(height: AppSpacing.xs),
+                  ShimmerLine(
+                    width: AppDimensions.skeletonLineShort,
+                    height: AppDimensions.skeletonCaptionHeight,
+                    radius: AppRadius.r6,
+                  ),
                 ],
               ),
             ),
-            ShimmerCircle(size: 20.w),
+            ShimmerCircle(size: AppSizes.px20),
           ],
         ),
       ),
@@ -297,7 +325,7 @@ class BundleListSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton tabs mirroring [CategoryTabs]: a 50.h bar with a bottom border
+/// Skeleton tabs mirroring [CategoryTabs]: a [AppDimensions.tabBarHeight] bar with a bottom border
 /// and horizontally laid out tab pills.
 class CategoryTabsSkeleton extends StatelessWidget {
   const CategoryTabsSkeleton({super.key, this.tabCount = 4});
@@ -307,7 +335,7 @@ class CategoryTabsSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 50.h,
+      height: AppDimensions.tabBarHeight,
       decoration: const BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColor.borderColor)),
       ),
@@ -315,15 +343,16 @@ class CategoryTabsSkeleton extends StatelessWidget {
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           physics: const NeverScrollableScrollPhysics(),
-          padding: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
           itemCount: tabCount,
-          separatorBuilder: (context, index) =>
-              SizedBox(width: SpacingTokens.md.w),
+          separatorBuilder: (context, index) => SizedBox(width: AppSpacing.md),
           itemBuilder: (context, index) => Center(
             child: ShimmerBox(
-              width: (index == 0 ? 96 : 72).w,
-              height: 16.h,
-              borderRadius: BorderRadius.circular(8.r),
+              width: index == 0
+                  ? AppDimensions.skeletonTabWidth
+                  : AppDimensions.skeletonTabShortWidth,
+              height: AppSpacing.lg,
+              borderRadius: BorderRadius.circular(AppRadius.r8),
             ),
           ),
         ),
@@ -332,7 +361,7 @@ class CategoryTabsSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton cell mirroring [CategoryGridItem]: 56.w tile radius 16.r
+/// Single skeleton cell mirroring [CategoryGridItem]: [AppSizes.px56] tile radius [AppRadius.r16]
 /// plus a one-line label.
 class CategoryGridItemSkeleton extends StatelessWidget {
   const CategoryGridItemSkeleton({super.key});
@@ -344,15 +373,15 @@ class CategoryGridItemSkeleton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           ShimmerBox(
-            width: 56.w,
-            height: 56.w,
-            borderRadius: BorderRadius.circular(16.r),
+            width: AppSizes.px56,
+            height: AppSizes.px56,
+            borderRadius: BorderRadius.circular(AppRadius.r16),
           ),
-          SizedBox(height: SpacingTokens.sm.h),
+          SizedBox(height: AppSpacing.sm),
           ShimmerBox(
-            width: 44.w,
-            height: 11.h,
-            borderRadius: BorderRadius.circular(6.r),
+            width: AppSizes.px44,
+            height: AppSizes.px11,
+            borderRadius: BorderRadius.circular(AppRadius.r6),
           ),
         ],
       ),
@@ -365,9 +394,6 @@ class CategoryGridItemSkeleton extends StatelessWidget {
 class HomeCategoriesSkeleton extends StatelessWidget {
   const HomeCategoriesSkeleton({super.key});
 
-  static const int _columns = 4;
-  static const int _rows = 2;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -377,35 +403,38 @@ class HomeCategoriesSkeleton extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const ShimmerLine(width: 110, height: 18, radius: 8),
+              const ShimmerLine(
+                width: AppDimensions.skeletonLineMedium,
+                height: AppDimensions.skeletonTitleHeight,
+                radius: AppRadius.r8,
+              ),
               ShimmerBox(
-                width: 52.w,
-                height: 12.h,
-                borderRadius: BorderRadius.circular(6.r),
+                width: AppSizes.px52,
+                height: AppSpacing.md,
+                borderRadius: BorderRadius.circular(AppRadius.r6),
               ),
             ],
           ),
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         LayoutBuilder(
           builder: (context, constraints) {
-            final gap = SpacingTokens.sm.w;
-            final itemWidth =
-                (constraints.maxWidth - (_columns - 1) * gap) / _columns;
-            final itemHeight = itemWidth * 1.2;
+            final itemWidth = HomeCategoriesSection.tileExtent(constraints);
             return SizedBox(
-              height: itemHeight * _rows + SpacingTokens.md.h,
+              height: HomeCategoriesSection.gridHeight(constraints),
               child: GridView.builder(
                 scrollDirection: Axis.horizontal,
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _rows,
-                  mainAxisSpacing: gap,
-                  crossAxisSpacing: SpacingTokens.md.h,
+                  crossAxisCount: HomeCategoriesSection.gridRows,
+                  mainAxisSpacing: HomeCategoriesSection.gap,
+                  crossAxisSpacing: AppSpacing.md,
                   mainAxisExtent: itemWidth,
                 ),
-                itemCount: _columns * _rows,
+                itemCount:
+                    HomeCategoriesSection.gridColumns *
+                    HomeCategoriesSection.gridRows,
                 itemBuilder: (context, index) =>
                     const CategoryGridItemSkeleton(),
               ),
@@ -417,13 +446,13 @@ class HomeCategoriesSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton mirroring the home banner carousel: full-bleed 164.h image plus
+/// Skeleton mirroring the home banner carousel: full-bleed [AppDimensions.homeBannerHeight] image plus
 /// the dots indicator row below it.
 class BannerSkeleton extends StatelessWidget {
   const BannerSkeleton({
     super.key,
     this.borderRadius = 0,
-    this.height = 164,
+    this.height = AppDimensions.homeBannerHeight,
     this.showDots = true,
   });
 
@@ -438,19 +467,19 @@ class BannerSkeleton extends StatelessWidget {
         children: [
           ShimmerBox(
             width: double.infinity,
-            height: height.h,
+            height: height,
             borderRadius: BorderRadius.circular(borderRadius),
           ),
           if (showDots) ...[
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ShimmerCircle(size: 10.w),
-                SizedBox(width: SpacingTokens.xs.w),
-                ShimmerCircle(size: 8.w),
-                SizedBox(width: SpacingTokens.xs.w),
-                ShimmerCircle(size: 8.w),
+                ShimmerCircle(size: AppSizes.px10),
+                SizedBox(width: AppSpacing.xs),
+                ShimmerCircle(size: AppSpacing.sm),
+                SizedBox(width: AppSpacing.xs),
+                ShimmerCircle(size: AppSpacing.sm),
               ],
             ),
           ],

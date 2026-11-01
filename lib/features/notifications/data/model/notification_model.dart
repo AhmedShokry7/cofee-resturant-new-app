@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 
@@ -86,11 +86,11 @@ class NotificationModel {
   IconData get icon {
     if (_legacyIcon != null) return _legacyIcon;
     return switch (type) {
-      'order_status' => HugeIcons.strokeRoundedTruckDelivery,
-      'promo' => HugeIcons.strokeRoundedDiscountTag01,
-      'loyalty' => HugeIcons.strokeRoundedFavourite,
-      'subscription' => HugeIcons.strokeRoundedCalendar03,
-      _ => HugeIcons.strokeRoundedNotification01,
+      'order_status' => AppIcons.deliveryTruck,
+      'promo' => AppIcons.discountTag,
+      'loyalty' => AppIcons.favourite,
+      'subscription' => AppIcons.calendar,
+      _ => AppIcons.notification,
     };
   }
 

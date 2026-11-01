@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -170,7 +168,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         body: Form(
           key: _formKey,
           child: ListView(
-            padding: LayoutTokens.pageBody(),
+            padding: AppLayout.pageBody,
             children: [
               CustomTextFormField(
                 controller: _firstNameController,
@@ -195,9 +193,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 hint: S.phoneNumberHint,
                 keyboardType: TextInputType.phone,
               ),
-              SizedBox(height: SpacingTokens.lg.h),
+              SizedBox(height: AppSpacing.lg),
               CustomBtn(text: S.save, onPressed: _saving ? null : _save),
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               OutlinedButton(
                 onPressed: _showChangePasswordDialog,
                 child: Text(S.changePassword),

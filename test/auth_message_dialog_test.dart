@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -7,10 +6,7 @@ import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Widget _app(Widget child) {
-  return ScreenUtilInit(
-    designSize: const Size(360, 690),
-    builder: (context, _) => MaterialApp(home: child),
-  );
+  return MaterialApp(home: child);
 }
 
 void main() {
@@ -22,17 +18,21 @@ void main() {
   });
 
   testWidgets('error dialog renders and dismisses', (tester) async {
-    await tester.pumpWidget(_app(Builder(
-      builder: (context) => ElevatedButton(
-        onPressed: () => AuthMessageDialog.show(
-          context,
-          type: AuthMessageType.error,
-          message: 'boom',
-          title: 'Oops',
+    await tester.pumpWidget(
+      _app(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => AuthMessageDialog.show(
+              context,
+              type: AuthMessageType.error,
+              message: 'boom',
+              title: 'Oops',
+            ),
+            child: const Text('show'),
+          ),
         ),
-        child: const Text('show'),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('show'));
@@ -49,28 +49,32 @@ void main() {
   });
 
   testWidgets('success and info render', (tester) async {
-    await tester.pumpWidget(_app(Builder(
-      builder: (context) => Column(
-        children: [
-          ElevatedButton(
-            onPressed: () => AuthMessageDialog.show(
-              context,
-              type: AuthMessageType.success,
-              message: 'done',
-            ),
-            child: const Text('s'),
+    await tester.pumpWidget(
+      _app(
+        Builder(
+          builder: (context) => Column(
+            children: [
+              ElevatedButton(
+                onPressed: () => AuthMessageDialog.show(
+                  context,
+                  type: AuthMessageType.success,
+                  message: 'done',
+                ),
+                child: const Text('s'),
+              ),
+              ElevatedButton(
+                onPressed: () => AuthMessageDialog.show(
+                  context,
+                  type: AuthMessageType.info,
+                  message: 'info',
+                ),
+                child: const Text('i'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () => AuthMessageDialog.show(
-              context,
-              type: AuthMessageType.info,
-              message: 'info',
-            ),
-            child: const Text('i'),
-          ),
-        ],
+        ),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('s'));
@@ -86,16 +90,20 @@ void main() {
 
   testWidgets('arabic rtl renders without overflow', (tester) async {
     AppLocale.instance.debugSet(AppLanguage.arabic);
-    await tester.pumpWidget(_app(Builder(
-      builder: (context) => ElevatedButton(
-        onPressed: () => AuthMessageDialog.show(
-          context,
-          type: AuthMessageType.error,
-          message: 'رسالة خطأ طويلة جداً ' * 3,
+    await tester.pumpWidget(
+      _app(
+        Builder(
+          builder: (context) => ElevatedButton(
+            onPressed: () => AuthMessageDialog.show(
+              context,
+              type: AuthMessageType.error,
+              message: 'رسالة خطأ طويلة جداً ' * 3,
+            ),
+            child: const Text('show'),
+          ),
         ),
-        child: const Text('show'),
       ),
-    )));
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('show'));
     await tester.pumpAndSettle();

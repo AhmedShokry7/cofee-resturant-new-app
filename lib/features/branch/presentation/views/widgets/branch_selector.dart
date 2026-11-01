@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Branch picker shown in the home header.
 ///
@@ -34,22 +34,22 @@ class BranchSelector extends StatelessWidget {
           behavior: HitTestBehavior.opaque,
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: SpacingTokens.md.w,
-              vertical: SpacingTokens.xs.h,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.xs,
             ),
             decoration: BoxDecoration(
               color: AppColor.lightGreyColor,
-              borderRadius: BorderRadius.circular(100.r),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(
-                  Icons.storefront_outlined,
-                  size: 16.w,
+                  AppIcons.store,
+                  size: AppSpacing.lg,
                   color: AppColor.primaryColor,
                 ),
-                SizedBox(width: 4.w),
+                SizedBox(width: AppSpacing.xs),
                 Flexible(
                   child: Text(
                     state.isLoading ? '…' : selected?.name ?? S.chooseBranch,
@@ -63,8 +63,8 @@ class BranchSelector extends StatelessWidget {
                   ),
                 ),
                 Icon(
-                  Icons.keyboard_arrow_down,
-                  size: 16.w,
+                  AppIcons.arrowDown,
+                  size: AppSpacing.lg,
                   color: AppColor.greyColor,
                 ),
               ],
@@ -88,7 +88,7 @@ class BranchSelector extends StatelessWidget {
                 title: Text(branch.name),
                 subtitle: branch.address == null ? null : Text(branch.address!),
                 trailing: branch.id == state.selected?.id
-                    ? Icon(Icons.check, color: AppColor.primaryColor)
+                    ? Icon(AppIcons.checkmark, color: AppColor.primaryColor)
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(branch),
               ),

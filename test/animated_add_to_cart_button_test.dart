@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,7 +6,9 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 
 Future<ProductModel> _product() async =>
@@ -18,11 +19,8 @@ CartCubit _cart() => CartCubit(
   catalogRepository: MockProductRepository(),
 );
 
-Widget _wrap(Widget child) => ScreenUtilInit(
-  designSize: const Size(360, 690),
-  builder: (context, _) => MaterialApp(
-    home: Scaffold(body: Center(child: child)),
-  ),
+Widget _wrap(Widget child) => MaterialApp(
+  home: Scaffold(body: Center(child: child)),
 );
 
 void main() {

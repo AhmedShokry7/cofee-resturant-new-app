@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/sheet_handle.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 Future<void> showLogoutSheet(
   BuildContext context, {
@@ -16,7 +15,7 @@ Future<void> showLogoutSheet(
     context: context,
     backgroundColor: AppColor.whiteColor,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),
     builder: (context) => _LogoutSheet(onConfirm: onConfirm),
   );
@@ -31,23 +30,23 @@ class _LogoutSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SheetHandle(),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(S.logOut, style: AppFonts.semiBold18(context)),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Text(
               S.logoutConfirm,
               textAlign: TextAlign.center,
               style: AppFonts.regular16(context)
                   .copyWith(color: AppColor.greyColor),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             const Divider(),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 Expanded(
@@ -58,7 +57,7 @@ class _LogoutSheet extends StatelessWidget {
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                 ),
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: CustomBtn(
                     text: S.confirmLogout,

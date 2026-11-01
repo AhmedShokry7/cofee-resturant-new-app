@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
@@ -17,6 +15,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_product
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class BannerDetailsPage extends StatefulWidget {
   const BannerDetailsPage({super.key, required this.banner});
@@ -90,11 +89,11 @@ class _BannerDetailsView extends StatelessWidget {
       body: ListView(
         children: [
           SizedBox(
-            height: 220.h,
+            height: AppDimensions.bannerHeroHeight,
             child: BannerImage(banner: banner, borderRadius: 0),
           ),
           Padding(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            padding: EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -103,20 +102,20 @@ class _BannerDetailsView extends StatelessWidget {
                   style: AppFonts.regular14(context)
                       .copyWith(color: AppColor.greyColor),
                 ),
-                SizedBox(height: SpacingTokens.sm.h),
+                SizedBox(height: AppSpacing.sm),
                 Text(banner.title, style: AppFonts.semiBold24(context)),
-                SizedBox(height: SpacingTokens.sm.h),
+                SizedBox(height: AppSpacing.sm),
                 Text(
                   banner.description,
                   style: AppFonts.regular14(context)
                       .copyWith(color: AppColor.greyColor),
                 ),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 CustomBtn(
                   text: banner.ctaLabel,
                   onPressed: () => _onCta(context, banner),
                 ),
-                SizedBox(height: SpacingTokens.xl.h),
+                SizedBox(height: AppSpacing.xl),
                 HomeProductsCarousel(title: S.youMayLike, products: related),
               ],
             ),

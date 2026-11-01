@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/manager/product_details/product_details_cubit.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProductDetailsBottomBar extends StatelessWidget {
   const ProductDetailsBottomBar({super.key});
@@ -25,7 +24,7 @@ class ProductDetailsBottomBar extends StatelessWidget {
 
         final total = unit * state.quantity;
         return Container(
-          padding: EdgeInsets.all(SpacingTokens.lg.w),
+          padding: EdgeInsets.all(AppSpacing.lg),
           decoration: const BoxDecoration(
             color: AppColor.whiteColor,
             border: Border(top: BorderSide(color: AppColor.borderColor)),
@@ -35,7 +34,7 @@ class ProductDetailsBottomBar extends StatelessWidget {
             children: [
               if (blocked != null)
                 Padding(
-                  padding: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+                  padding: EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Text(
                     blocked,
                     style: AppFonts.regular12(context)
@@ -54,7 +53,7 @@ class ProductDetailsBottomBar extends StatelessWidget {
                     iconSize: 16,
                     iconColor: AppColor.primaryColor,
                   ),
-                  SizedBox(width: SpacingTokens.md.w),
+                  SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: AnimatedAddToCartButton(
                       label: state.isAvailable ? S.addToCart : S.unavailable,

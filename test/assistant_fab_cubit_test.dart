@@ -23,8 +23,10 @@ AssistantFabCubit _cubit({
 
 /// A cubit that only has to answer the welcome question, so the rotation that
 /// would otherwise replace it is parked far in the future.
-AssistantFabCubit _oneShot() =>
-    _cubit(cycle: const Duration(minutes: 5), visible: const Duration(seconds: 30));
+AssistantFabCubit _oneShot() => _cubit(
+  cycle: const Duration(minutes: 5),
+  visible: const Duration(seconds: 30),
+);
 
 void main() {
   setUp(() {

@@ -72,7 +72,7 @@ abstract class TapPaymentRepository {
 
 class SupabaseTapPaymentRepository implements TapPaymentRepository {
   SupabaseTapPaymentRepository({SupabaseClient? client})
-      : _client = client ?? SupabaseService.client;
+    : _client = client ?? SupabaseService.client;
 
   final SupabaseClient _client;
 

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/di/app_providers.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -48,53 +46,46 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: AppConstant.designSize,
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (context, child) {
-        return AppProviders(
-          child: AnimatedBuilder(
-            animation: AppLocale.instance,
-            builder: (context, _) => MaterialApp(
-              title: S.appName,
-              locale: AppLocale.instance.locale,
-              supportedLocales: const [Locale('ar'), Locale('en')],
-              localizationsDelegates: const [
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              debugShowCheckedModeBanner: false,
-              theme: ThemeClass.light(isArabic: AppLocale.instance.isArabic),
-              builder: (context, child) => Directionality(
-                textDirection: AppLocale.instance.textDirection,
-                child: child ?? const SizedBox.shrink(),
-              ),
-              navigatorKey: rootNavigatorKey,
-              scaffoldMessengerKey: rootScaffoldMessengerKey,
-              // The assistant FAB is owned by the Home page scaffold, not by
-              // a global overlay, so it can never duplicate or leak onto
-              // other screens.
-              navigatorObservers: [AppRouteObserver.instance],
-              // The splash owns the brand mark because the Android 12+ system
-              // splash clamps its icon to a fixed circle. It hands over to the
-              // saved entry route once it is done.
-              initialRoute: SplashView.routeName,
-              onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-              routes: {
-                SplashView.routeName: (context) => SplashView(
-                  targetRoute: AppRoutes.initialRouteName(
-                    widget.currentRoute,
-                    onboardingDone: widget.onboardingDone,
-                  ),
-                ),
-                ...AppRoutes.routes,
-              },
-            ),
+    return AppProviders(
+      child: AnimatedBuilder(
+        animation: AppLocale.instance,
+        builder: (context, _) => MaterialApp(
+          title: S.appName,
+          locale: AppLocale.instance.locale,
+          supportedLocales: const [Locale('ar'), Locale('en')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          debugShowCheckedModeBanner: false,
+          theme: ThemeClass.light(),
+          builder: (context, child) => Directionality(
+            textDirection: AppLocale.instance.textDirection,
+            child: child ?? const SizedBox.shrink(),
           ),
-        );
-      },
+          navigatorKey: rootNavigatorKey,
+          scaffoldMessengerKey: rootScaffoldMessengerKey,
+          // The assistant FAB is owned by the Home page scaffold, not by
+          // a global overlay, so it can never duplicate or leak onto
+          // other screens.
+          navigatorObservers: [AppRouteObserver.instance],
+          // The splash owns the brand mark because the Android 12+ system
+          // splash clamps its icon to a fixed circle. It hands over to the
+          // saved entry route once it is done.
+          initialRoute: SplashView.routeName,
+          onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+          routes: {
+            SplashView.routeName: (context) => SplashView(
+              targetRoute: AppRoutes.initialRouteName(
+                widget.currentRoute,
+                onboardingDone: widget.onboardingDone,
+              ),
+            ),
+            ...AppRoutes.routes,
+          },
+        ),
+      ),
     );
   }
 }

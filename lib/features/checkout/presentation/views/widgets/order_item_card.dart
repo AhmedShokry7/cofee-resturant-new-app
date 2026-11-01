@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_price.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class OrderItemCard extends StatelessWidget {
   const OrderItemCard({
@@ -30,24 +28,24 @@ class OrderItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveUnit = unitPrice ?? product.price;
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
       ),
       child: Row(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
             child: SizedBox(
-              height: 64.w,
-              width: 64.w,
+              height: AppSizes.px64,
+              width: AppSizes.px64,
               child: ProductImageView(product: product),
             ),
           ),
-          SizedBox(width: SpacingTokens.md.w),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +57,7 @@ class OrderItemCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 if (note.isNotEmpty) ...[
-                  SizedBox(height: 2.h),
+                  SizedBox(height: AppSpacing.xxs),
                   Text(
                     note,
                     maxLines: 1,
@@ -68,7 +66,7 @@ class OrderItemCard extends StatelessWidget {
                         .copyWith(color: AppColor.greyColor),
                   ),
                 ],
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
                     Text(

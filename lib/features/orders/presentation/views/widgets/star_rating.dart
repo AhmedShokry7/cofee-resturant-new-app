@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class StarRating extends StatelessWidget {
   const StarRating({
@@ -25,10 +26,10 @@ class StarRating extends StatelessWidget {
         return GestureDetector(
           onTap: () => onChanged(value),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5.w),
+            padding: EdgeInsets.symmetric(horizontal: AppSizes.px5),
             child: Icon(
-              isActive ? Icons.star_rounded : Icons.star_outline_rounded,
-              size: 36.w,
+              isActive ? AppIcons.star : AppIcons.starOff,
+              size: AppSizes.px36,
               color: isActive ? AppColor.primaryColor : AppColor.borderColor,
             ),
           ),

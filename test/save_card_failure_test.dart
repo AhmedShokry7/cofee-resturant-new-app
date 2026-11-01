@@ -24,10 +24,13 @@ void main() {
   group('a function that is not deployed', () {
     test('is never reported as a retryable failure', () {
       final error = SupabaseSavedCardsRepository.classifyHttpError(
-        http(404, details: {
-          'code': 'NOT_FOUND',
-          'message': 'Requested function was not found',
-        }),
+        http(
+          404,
+          details: {
+            'code': 'NOT_FOUND',
+            'message': 'Requested function was not found',
+          },
+        ),
       );
 
       expect(error.failure, SaveCardFailure.notConfigured);
@@ -124,7 +127,10 @@ void main() {
 
     test('the unavailable message is real Arabic, and real English', () {
       AppLocale.instance.debugSet(AppLanguage.arabic);
-      expect(RegExp('[\u0600-\u06FF]').hasMatch(S.cardSavingNotConfigured), isTrue);
+      expect(
+        RegExp('[\u0600-\u06FF]').hasMatch(S.cardSavingNotConfigured),
+        isTrue,
+      );
       AppLocale.instance.debugSet(AppLanguage.english);
       expect(
         RegExp('[\u0600-\u06FF]').hasMatch(S.cardSavingNotConfigured),

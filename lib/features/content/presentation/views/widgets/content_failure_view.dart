@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The one failure state a content screen shows when the CMS could not be read.
 ///
@@ -25,7 +24,7 @@ class ContentFailureView extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(message, textAlign: TextAlign.center),
-          SizedBox(height: SpacingTokens.md.h),
+          SizedBox(height: AppSpacing.md),
           TextButton(onPressed: onRetry, child: Text(S.retry)),
         ],
       ),

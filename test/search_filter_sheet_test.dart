@@ -2,13 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/widgets/search_filter_sheet.dart';
 
@@ -39,13 +41,10 @@ void main() {
     addTearDown(cubit.close);
 
     await tester.pumpWidget(
-      ScreenUtilInit(
-        designSize: const Size(360, 800),
-        builder: (context, _) => MaterialApp(
-          home: BlocProvider<SearchCubit>.value(
-            value: cubit,
-            child: const Scaffold(body: SearchFilterSheet()),
-          ),
+      MaterialApp(
+        home: BlocProvider<SearchCubit>.value(
+          value: cubit,
+          child: const Scaffold(body: SearchFilterSheet()),
         ),
       ),
     );
@@ -56,11 +55,7 @@ void main() {
     expect(find.text('عصائر'), findsNothing);
 
     catalog.release(const [
-      CategoryModel(
-        label: 'عصائر',
-        icon: Icons.local_drink_outlined,
-        id: 'c-1',
-      ),
+      CategoryModel(label: 'عصائر', icon: AppIcons.softDrink, id: 'c-1'),
     ]);
     await tester.pump();
     await tester.pump();

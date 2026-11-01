@@ -5,11 +5,11 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
 ProductModel _product(String id, double price) => ProductModel(
-      id: id,
-      name: id,
-      price: price,
-      image: 'assets/images/product.png',
-    );
+  id: id,
+  name: id,
+  price: price,
+  image: 'assets/images/product.png',
+);
 
 void main() {
   test('bundle math honors quantities and always balances', () {

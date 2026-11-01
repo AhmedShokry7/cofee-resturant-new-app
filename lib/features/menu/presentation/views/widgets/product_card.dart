@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_favorite_button.dart';
@@ -17,6 +14,7 @@ import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Shared reusable product card used across the entire application.
 ///
@@ -30,12 +28,12 @@ class ProductCard extends StatelessWidget {
   /// [Expanded], so growing the card height flows entirely into a larger
   /// product image while title, description, price and actions keep their
   /// fixed slots.
-  static const double cardAspectRatio = 0.60;
+  static const double cardAspectRatio = AppDimensions.productCardAspect;
 
-  /// Width of a card inside a horizontal strip (home carousel), in design
+  /// Width of a card inside a horizontal strip (home carousel), in logical
   /// pixels. Wide enough for the price and the struck-through old price to
   /// sit side by side without either of them being cut.
-  static const double stripWidth = 168;
+  static const double stripWidth = AppDimensions.productCardWidth;
 
   const ProductCard({
     super.key,
@@ -85,7 +83,7 @@ class ProductCard extends StatelessWidget {
       builder: (context, constraints) {
         final width = constraints.maxWidth.isFinite
             ? constraints.maxWidth
-            : stripWidth.w;
+            : stripWidth;
         return SizedBox(
           width: width,
           child: AspectRatio(
@@ -96,7 +94,7 @@ class ProductCard extends StatelessWidget {
                 GestureDetector(
                   onTap: () => _openDetails(context),
                   child: Container(
-                    padding: EdgeInsets.all(SpacingTokens.md.w),
+                    padding: EdgeInsets.all(AppSpacing.md),
                     decoration: _decoration,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -107,31 +105,31 @@ class ProductCard extends StatelessWidget {
                               Positioned.fill(
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(
-                                    LayoutTokens.cardRadius.r,
+                                    AppDimensions.cardRadius,
                                   ),
                                   child: _buildProductImage(),
                                 ),
                               ),
                               if (showFavorite)
                                 Positioned(
-                                  top: 2.w,
-                                  left: 4.w,
+                                  top: AppSpacing.xxs,
+                                  left: AppSpacing.xs,
                                   child: ProductFavoriteButton(
                                     product: product,
-                                    size: 28,
+                                    size: AppDimensions.favoriteButtonCard,
                                   ),
                                 ),
                             ],
                           ),
                         ),
-                        SizedBox(height: SpacingTokens.sm.h),
+                        SizedBox(height: AppSpacing.sm),
                         Text(
                           product.name,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: AppFonts.semiBold16(context),
                         ),
-                        SizedBox(height: 4.h),
+                        SizedBox(height: AppSpacing.xs),
                         Text(
                           product.category.trim().isEmpty
                               ? product.description
@@ -141,13 +139,13 @@ class ProductCard extends StatelessWidget {
                           style: AppFonts.regular12(context)
                               .copyWith(color: AppColor.greyColor),
                         ),
-                        SizedBox(height: 6.h),
+                        SizedBox(height: AppSizes.px6),
                         Row(
                           children: [
                             Expanded(child: ProductPrice(product: product)),
-                            SizedBox(width: SpacingTokens.xs.w),
+                            SizedBox(width: AppSpacing.xs),
                             AnimatedAddToCartIconButton(
-                              size: 36,
+                              size: AppDimensions.addToCartButtonCard,
                               onAdd: () async =>
                                   context.read<CartCubit>().add(product),
                             ),
@@ -179,7 +177,7 @@ class ProductCard extends StatelessWidget {
 
   BoxDecoration get _decoration => BoxDecoration(
     color: AppColor.whiteColor,
-    borderRadius: BorderRadius.circular(16.r),
+    borderRadius: BorderRadius.circular(AppRadius.r16),
     border: Border.all(color: AppColor.borderColor),
   );
 
@@ -198,20 +196,20 @@ class ProductCard extends StatelessWidget {
   Widget _buildCartCard(BuildContext context) => GestureDetector(
     onTap: () => _openDetails(context),
     child: Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: _decoration,
       child: Row(
         children: [
           SizedBox(
-            width: 76.w,
-            height: 76.w,
+            width: AppSizes.px76,
+            height: AppSizes.px76,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
               child: _buildProductImage(),
             ),
           ),
-          SizedBox(width: SpacingTokens.md.w),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,7 +222,7 @@ class ProductCard extends StatelessWidget {
                   style: AppFonts.semiBold16(context),
                 ),
                 if (note.isNotEmpty) ...[
-                  SizedBox(height: 2.h),
+                  SizedBox(height: AppSpacing.xxs),
                   Text(
                     note,
                     maxLines: 1,
@@ -233,7 +231,7 @@ class ProductCard extends StatelessWidget {
                         .copyWith(color: AppColor.greyColor),
                   ),
                 ],
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs),
                 Row(
                   children: [
                     PriceLabel(
@@ -246,10 +244,10 @@ class ProductCard extends StatelessWidget {
                     // The discount the server applied, so the line says why
                     // the price is lower.
                     if (product.hasDiscount) ...[
-                      SizedBox(width: 4.w),
+                      SizedBox(width: AppSpacing.xs),
                       DiscountBadge(
                         percent: product.appliedDiscountPercentage!.round(),
-                        size: 26,
+                        size: AppDimensions.discountBadgeInline,
                       ),
                     ],
                   ],
@@ -257,7 +255,7 @@ class ProductCard extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: SpacingTokens.sm.w),
+          SizedBox(width: AppSpacing.sm),
           // The price of one piece sits right above the add button, so the
           // customer can see what a single piece costs while they raise the
           // quantity. The line total stays where it is, under the name.
@@ -278,7 +276,7 @@ class ProductCard extends StatelessWidget {
                   // The price before the discount, so the line explains
                   // itself.
                   if (_oldUnitPrice != null) ...[
-                    SizedBox(width: 4.w),
+                    SizedBox(width: AppSpacing.xs),
                     Text(
                       Formatters.amount(_oldUnitPrice!),
                       style: AppFonts.regular12(context).copyWith(
@@ -289,7 +287,7 @@ class ProductCard extends StatelessWidget {
                   ],
                 ],
               ),
-              SizedBox(height: 6.h),
+              SizedBox(height: AppSizes.px6),
               _QuantityStepper(
                 quantity: quantity!,
                 onIncrement: onIncrement,
@@ -319,12 +317,12 @@ class _QuantityStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _StepButton(icon: HugeIcons.strokeRoundedRemove01, onTap: onDecrement),
+        _StepButton(icon: AppIcons.remove, onTap: onDecrement),
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: SpacingTokens.sm.w),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           child: Text('$quantity', style: AppFonts.semiBold16(context)),
         ),
-        _StepButton(icon: HugeIcons.strokeRoundedAdd01, onTap: onIncrement),
+        _StepButton(icon: AppIcons.add, onTap: onIncrement),
       ],
     );
   }
@@ -341,13 +339,13 @@ class _StepButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 30.w,
-        width: 30.w,
+        height: AppSizes.px30,
+        width: AppSizes.px30,
         decoration: const BoxDecoration(
           color: AppColor.lightGreyColor,
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 16.w, color: AppColor.primaryColor),
+        child: Icon(icon, size: AppSpacing.lg, color: AppColor.primaryColor),
       ),
     );
   }

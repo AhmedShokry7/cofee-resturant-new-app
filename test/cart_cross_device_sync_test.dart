@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:new_coffee/features/cart/data/repositories/supabase_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
 
 import 'support/fake_postgrest_server.dart';
@@ -324,68 +325,74 @@ void main() {
     expect(first.state.items.single.bundleId, 'bundle-1');
   });
 
-  test('a standalone line is never absorbed into a bundle of the same product',
-      () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final first = await device('customer.a@test.local');
+  test(
+    'a standalone line is never absorbed into a bundle of the same product',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final first = await device('customer.a@test.local');
 
-    // Standalone first, then the bundle, so the standalone row comes first in
-    // the server cart and a merge that ignores the bundle would take it.
-    first.add(latte, quantity: 3);
-    await first.flushServerSync();
-    first.addBundle(
-      bundleId: 'bundle-1',
-      title: 'Morning Duo',
-      image: 'x',
-      price: 48,
-      components: const [
-        CartBundleComponent(productId: '3', quantity: 1, unitPrice: 35),
-      ],
-    );
-    await first.flushServerSync();
+      // Standalone first, then the bundle, so the standalone row comes first in
+      // the server cart and a merge that ignores the bundle would take it.
+      first.add(latte, quantity: 3);
+      await first.flushServerSync();
+      first.addBundle(
+        bundleId: 'bundle-1',
+        title: 'Morning Duo',
+        image: 'x',
+        price: 48,
+        components: const [
+          CartBundleComponent(productId: '3', quantity: 1, unitPrice: 35),
+        ],
+      );
+      await first.flushServerSync();
 
-    final second = await device('customer.a@test.local');
-    final bundle = second.state.items.firstWhere((item) => item.isBundle);
-    final standalone = second.state.items.firstWhere((item) => !item.isBundle);
+      final second = await device('customer.a@test.local');
+      final bundle = second.state.items.firstWhere((item) => item.isBundle);
+      final standalone = second.state.items.firstWhere(
+        (item) => !item.isBundle,
+      );
 
-    expect(bundle.bundleId, 'bundle-1');
-    expect(bundle.quantity, 1);
-    expect(standalone.product.id, '3');
-    expect(standalone.quantity, 3);
-    expect(standalone.bundleId, isNull);
-  });
+      expect(bundle.bundleId, 'bundle-1');
+      expect(bundle.quantity, 1);
+      expect(standalone.product.id, '3');
+      expect(standalone.quantity, 3);
+      expect(standalone.bundleId, isNull);
+    },
+  );
 
-  test('component lines without a cached wrapper keep their bundle identity',
-      () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final first = await device('customer.a@test.local');
-    first.addBundle(
-      bundleId: 'bundle-1',
-      title: 'Morning Duo',
-      image: 'x',
-      price: 48,
-      components: const [
-        CartBundleComponent(productId: '1', quantity: 1, unitPrice: 25),
-        CartBundleComponent(productId: '12', quantity: 1, unitPrice: 23),
-      ],
-    );
-    await first.flushServerSync();
+  test(
+    'component lines without a cached wrapper keep their bundle identity',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final first = await device('customer.a@test.local');
+      first.addBundle(
+        bundleId: 'bundle-1',
+        title: 'Morning Duo',
+        image: 'x',
+        price: 48,
+        components: const [
+          CartBundleComponent(productId: '1', quantity: 1, unitPrice: 25),
+          CartBundleComponent(productId: '12', quantity: 1, unitPrice: 23),
+        ],
+      );
+      await first.flushServerSync();
 
-    // A fresh device has no bundle wrapper cached, so the two server lines
-    // show separately; their bundle identity must survive the next write.
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final second = await device('customer.a@test.local');
-    expect(second.state.items, hasLength(2));
-    expect(
-      second.state.items.map((item) => item.bundleId),
-      everyElement('bundle-1'),
-    );
+      // A fresh device has no bundle wrapper cached, so the two server lines
+      // show separately; their bundle identity must survive the next write.
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final second = await device('customer.a@test.local');
+      expect(second.state.items, hasLength(2));
+      expect(
+        second.state.items.map((item) => item.bundleId),
+        everyElement('bundle-1'),
+      );
 
-    second.incrementLine(second.state.items.first.lineId);
-    await second.flushServerSync();
+      second.incrementLine(second.state.items.first.lineId);
+      await second.flushServerSync();
 
-    final rows = server.cartItems.values.toList();
-    expect(rows, hasLength(2));
-    expect(rows.map((row) => row['bundle_id']), everyElement('bundle-1'));
-  });
+      final rows = server.cartItems.values.toList();
+      expect(rows, hasLength(2));
+      expect(rows.map((row) => row['bundle_id']), everyElement('bundle-1'));
+    },
+  );
 }

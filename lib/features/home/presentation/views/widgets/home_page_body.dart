@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
@@ -17,6 +16,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_single_
 import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomePageBody extends StatelessWidget {
   const HomePageBody({super.key});
@@ -53,16 +53,16 @@ class HomePageBody extends StatelessWidget {
           if (!state.isLoading && state.error != null && _isEmpty(state)) {
             return Center(
               child: Padding(
-                padding: EdgeInsets.all(SpacingTokens.lg.w),
+                padding: EdgeInsets.all(AppSpacing.lg),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     EmptyState(
-                      icon: Icons.cloud_off_outlined,
+                      icon: AppIcons.offline,
                       title: S.homeLoadError,
                       subtitle: state.error!,
                     ),
-                    SizedBox(height: SpacingTokens.md.h),
+                    SizedBox(height: AppSpacing.md),
                     CustomBtn(
                       text: S.retry,
                       onPressed: () => context.read<HomeCubit>().load(),
@@ -78,24 +78,24 @@ class HomePageBody extends StatelessWidget {
               // Pull-to-refresh must work even when the content is short.
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.only(
-                top: SpacingTokens.md.h,
-                bottom: SpacingTokens.lg.h,
+                top: AppSpacing.md,
+                bottom: AppSpacing.lg,
               ),
               children: [
                 const _HomeSection(child: HomeHeader()),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const _HomeSection(child: HomeSearchBar()),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const HomeBannerSection(),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const _HomeSection(child: HomeCategoriesSection()),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const _HomeSection(child: HomePopularSection()),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const _HomeSection(child: HomeSingleBannerSection()),
-                SizedBox(height: SpacingTokens.xl.h),
+                SizedBox(height: AppSpacing.xl),
                 const _HomeSection(child: HomeRecommendationsSection()),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const _HomeSection(child: HomeBundlesSection()),
               ],
             ),
@@ -114,7 +114,7 @@ class _HomeSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: SpacingTokens.lg.w),
+      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: child,
     );
   }

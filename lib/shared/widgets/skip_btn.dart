@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -32,19 +31,18 @@ class SkipBtn extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: _maxWidth.h),
+          constraints: BoxConstraints(maxWidth: _maxWidth),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
                 S.skip,
-                style: AppFonts.regular14(context).copyWith(
-                  color: AppColor.greyColor,
-                ),
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
-              SizedBox(height: _underlineGap.h),
+              SizedBox(height: _underlineGap),
               Container(
-                height: _underlineThickness.h,
+                height: _underlineThickness,
                 width: double.infinity,
                 color: AppColor.greyColor,
               ),

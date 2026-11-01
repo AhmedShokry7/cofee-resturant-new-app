@@ -35,10 +35,8 @@ class _ScriptedLoyaltyRepository implements LoyaltyRepository {
   }
 
   @override
-  Future<int> redeemReward({
-    required String rewardId,
-    String? branchId,
-  }) => Future.value(0);
+  Future<int> redeemReward({required String rewardId, String? branchId}) =>
+      Future.value(0);
 }
 
 void main() {
@@ -64,29 +62,32 @@ void main() {
     expect(repository.walletCalls, 2);
   });
 
-  test('an overlapping slower load never overwrites the newer answer', () async {
-    final repository = _ScriptedLoyaltyRepository();
+  test(
+    'an overlapping slower load never overwrites the newer answer',
+    () async {
+      final repository = _ScriptedLoyaltyRepository();
 
-    // Load #1 is parked inside loadWallet and will answer with the stale
-    // balance 10.
-    final cubit = LoyaltyCubit(repository: repository);
-    addTearDown(cubit.close);
-    await Future<void>.delayed(Duration.zero);
-    expect(repository.walletCalls, 1);
+      // Load #1 is parked inside loadWallet and will answer with the stale
+      // balance 10.
+      final cubit = LoyaltyCubit(repository: repository);
+      addTearDown(cubit.close);
+      await Future<void>.delayed(Duration.zero);
+      expect(repository.walletCalls, 1);
 
-    // Load #2 answers immediately with the fresh balance 99.
-    await cubit.load();
-    expect(cubit.state.balance, 99);
-    expect(cubit.state.tier, 'fresh');
+      // Load #2 answers immediately with the fresh balance 99.
+      await cubit.load();
+      expect(cubit.state.balance, 99);
+      expect(cubit.state.tier, 'fresh');
 
-    // Now the stale answer finally lands. It must be discarded.
-    repository.pending.single.complete();
-    await Future<void>.delayed(const Duration(milliseconds: 50));
+      // Now the stale answer finally lands. It must be discarded.
+      repository.pending.single.complete();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
 
-    expect(cubit.state.balance, 99, reason: 'a stale answer must not win');
-    expect(cubit.state.tier, 'fresh');
-    expect(cubit.state.lifetimePoints, 500);
-  });
+      expect(cubit.state.balance, 99, reason: 'a stale answer must not win');
+      expect(cubit.state.tier, 'fresh');
+      expect(cubit.state.lifetimePoints, 500);
+    },
+  );
 
   test('three overlapping loads settle on the newest one', () async {
     final repository = _ScriptedLoyaltyRepository();
@@ -105,16 +106,19 @@ void main() {
     expect(cubit.state.isLoading, isFalse);
   });
 
-  test('a guest wallet is still read and never mixed with a server one', () async {
-    final repository = _ScriptedLoyaltyRepository();
-    final cubit = LoyaltyCubit(repository: repository);
-    addTearDown(cubit.close);
-    await Future<void>.delayed(Duration.zero);
-    repository.pending.single.complete();
-    await cubit.load();
+  test(
+    'a guest wallet is still read and never mixed with a server one',
+    () async {
+      final repository = _ScriptedLoyaltyRepository();
+      final cubit = LoyaltyCubit(repository: repository);
+      addTearDown(cubit.close);
+      await Future<void>.delayed(Duration.zero);
+      repository.pending.single.complete();
+      await cubit.load();
 
-    expect(cubit.state.isGuest, isFalse);
-    expect(cubit.state.balance, 99);
-    expect(cubit.state.transactions, isEmpty);
-  });
+      expect(cubit.state.isGuest, isFalse);
+      expect(cubit.state.balance, 99);
+      expect(cubit.state.transactions, isEmpty);
+    },
+  );
 }

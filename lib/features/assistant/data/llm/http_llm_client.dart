@@ -51,7 +51,8 @@ class HttpLlmClient implements LlmClient {
       final message = choices?.isNotEmpty == true
           ? choices!.first as Map<String, dynamic>?
           : null;
-      final content = (message?['message'] as Map<String, dynamic>?)?['content'];
+      final content =
+          (message?['message'] as Map<String, dynamic>?)?['content'];
       final text = content is String ? content.trim() : '';
       if (text.isEmpty) return null;
       return LlmReply(text: sanitizeLlmReply(text));

@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class PaymentSuccessPage extends StatelessWidget {
   const PaymentSuccessPage({super.key});
@@ -28,26 +27,26 @@ class PaymentSuccessPage extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    height: 124.w,
-                    width: 124.w,
+                    height: AppDimensions.paymentSuccessMark,
+                    width: AppDimensions.paymentSuccessMark,
                     decoration: BoxDecoration(
                       color: AppColor.primaryColor,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
-                      HugeIcons.strokeRoundedTick02,
-                      size: 56.w,
+                      AppIcons.checkmark,
+                      size: AppSizes.px56,
                       color: AppColor.whiteColor,
                     ),
                   ),
-                  SizedBox(height: SpacingTokens.xl.h),
+                  SizedBox(height: AppSpacing.xl),
                   Text(
                     S.paymentSuccess,
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context)
                         .copyWith(color: AppColor.secondryColor),
                   ),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: AppSpacing.sm),
                   Text(
                     S.thankYouPurchase,
                     textAlign: TextAlign.center,
@@ -60,7 +59,7 @@ class PaymentSuccessPage extends StatelessWidget {
                         return const SizedBox.shrink();
                       }
                       return Padding(
-                        padding: EdgeInsets.only(top: SpacingTokens.sm.h),
+                        padding: EdgeInsets.only(top: AppSpacing.sm),
                         child: Text(
                           S.loyaltyPointsEarned(state.lastEarned),
                           textAlign: TextAlign.center,
@@ -75,7 +74,7 @@ class PaymentSuccessPage extends StatelessWidget {
             ),
           ),
           Container(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            padding: EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
               color: AppColor.whiteColor,
               border: Border(top: BorderSide(color: AppColor.borderColor)),
@@ -87,7 +86,7 @@ class PaymentSuccessPage extends StatelessWidget {
                   onPressed: () =>
                       Navigator.of(context).popUntil((route) => route.isFirst),
                 ),
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 GestureDetector(
                   onTap: () =>
                       Navigator.of(context).pushNamed(EReceiptPage.routeName),

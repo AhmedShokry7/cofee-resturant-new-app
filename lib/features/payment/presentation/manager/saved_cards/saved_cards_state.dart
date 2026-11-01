@@ -28,8 +28,7 @@ class SavedCardsState {
   final SaveCardFailure? saveFailure;
 
   /// True when saving is impossible for a reason retrying will not fix.
-  bool get isSavingUnavailable =>
-      saveFailure == SaveCardFailure.notConfigured;
+  bool get isSavingUnavailable => saveFailure == SaveCardFailure.notConfigured;
 
   SavedCardsState copyWith({
     List<SavedCardModel>? cards,

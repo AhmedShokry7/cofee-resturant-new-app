@@ -11,7 +11,9 @@ import 'package:new_coffee/features/assistant/data/assistant_catalog.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
 void main() {
@@ -34,10 +36,7 @@ void main() {
         .id;
   });
 
-  AssistantAnswer ask(
-    String query, {
-    Set<String> cart = const {},
-  }) =>
+  AssistantAnswer ask(String query, {Set<String> cart = const {}}) =>
       AssistantEngine.answer(
         query,
         snapshot: snapshot,
@@ -48,10 +47,7 @@ void main() {
 
   group('taking something out of the cart', () {
     test('is a removal, not an order', () {
-      final answer = ask(
-        'شيل اللاتيه من السلة',
-        cart: {latteId},
-      );
+      final answer = ask('شيل اللاتيه من السلة', cart: {latteId});
 
       expect(answer.topic, 'cart');
       expect(answer.actions, hasLength(1));

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,6 +15,8 @@ import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_a
 import 'package:new_coffee/features/auth/presentation/views/widgets/login_page_body.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
+
+import 'support/pump_harness.dart';
 
 const _user = AuthUser(id: 'u-1', name: 'Ahmed', email: 'a@b.com');
 
@@ -34,10 +35,8 @@ class _ScriptedAuthRepository implements AuthRepository {
   bool get lastSignUpNeedsEmailConfirmation => verificationPending;
 
   @override
-  Future<AuthUser> signIn({
-    required String email,
-    required String password,
-  }) => _answer();
+  Future<AuthUser> signIn({required String email, required String password}) =>
+      _answer();
 
   @override
   Future<AuthUser> signUp({
@@ -80,10 +79,8 @@ class _ScriptedAuthRepository implements AuthRepository {
   @override
   Future<AuthUser?> currentUser() async => _user;
   @override
-  Future<AuthUser> updateProfile({
-    required String fullName,
-    String? phone,
-  }) => _answer();
+  Future<AuthUser> updateProfile({required String fullName, String? phone}) =>
+      _answer();
   @override
   Future<void> changePassword({
     required String oldPassword,
@@ -116,8 +113,10 @@ void main() {
       await cubit.signIn(email: 'a@b.com', password: 'secret');
 
       expect(cubit.state, isA<AuthSuccess>());
-      expect(await const SessionRepository().currentRoute(),
-          AppConstant.homeRoute);
+      expect(
+        await const SessionRepository().currentRoute(),
+        AppConstant.homeRoute,
+      );
       expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
     });
 
@@ -128,8 +127,10 @@ void main() {
       await cubit.verifyCode(phone: '+201000000000', code: '123456');
 
       expect(cubit.state, isA<PhoneAuthSuccess>());
-      expect(await const SessionRepository().currentRoute(),
-          AppConstant.homeRoute);
+      expect(
+        await const SessionRepository().currentRoute(),
+        AppConstant.homeRoute,
+      );
     });
 
     test('skipping writes the same marker as signing in', () async {
@@ -139,8 +140,10 @@ void main() {
       await cubit.skipAuthentication();
 
       expect(cubit.state, isA<AuthSkipped>());
-      expect(await const SessionRepository().currentRoute(),
-          AppConstant.homeRoute);
+      expect(
+        await const SessionRepository().currentRoute(),
+        AppConstant.homeRoute,
+      );
       expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
     });
 
@@ -172,7 +175,8 @@ void main() {
       expect(
         cubit.state,
         isA<AuthSuccess>(),
-        reason: 'the provider signed the customer in; a storage failure is '
+        reason:
+            'the provider signed the customer in; a storage failure is '
             'not their mistake and must not strand them outside the store',
       );
     });
@@ -207,7 +211,8 @@ void main() {
       expect(
         (cubit.state as AuthFailure).message,
         S.logoutFailed,
-        reason: 'the customer is still signed in, so the screen must not '
+        reason:
+            'the customer is still signed in, so the screen must not '
             'claim a sign-out',
       );
       expect(
@@ -243,23 +248,20 @@ void main() {
       // A phone-sized viewport: the sign-in body scrolls, and the default test
       // window stretches it wide enough that the skip control lands where the
       // hit test cannot reach it.
-      tester.view.physicalSize = AppConstant.designSize * 3.0;
+      tester.view.physicalSize = phoneViewport * 3.0;
       tester.view.devicePixelRatio = 3.0;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: AppConstant.designSize,
-          builder: (context, _) => BlocProvider<AuthCubit>.value(
-            value: cubit,
-            child: MaterialApp(
-              routes: {
-                MainPage.routeName: (context) =>
-                    const Scaffold(body: Text('home-stub')),
-              },
-              home: const Scaffold(body: LoginPageBody()),
-            ),
+        BlocProvider<AuthCubit>.value(
+          value: cubit,
+          child: MaterialApp(
+            routes: {
+              MainPage.routeName: (context) =>
+                  const Scaffold(body: Text('home-stub')),
+            },
+            home: const Scaffold(body: LoginPageBody()),
           ),
         ),
       );
@@ -283,7 +285,8 @@ void main() {
           AppConstant.routesKey,
         ),
         AppConstant.homeRoute,
-        reason: 'the write belongs to the cubit, but the screen the customer '
+        reason:
+            'the write belongs to the cubit, but the screen the customer '
             'ends up on is the proof it happened',
       );
     });

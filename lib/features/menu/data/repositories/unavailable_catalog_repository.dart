@@ -80,8 +80,9 @@ class UnavailableCatalogRepository implements CatalogRepository {
   Future<BundleModel?> getBundleById(String id) async => null;
 
   @override
-  Future<List<CategoryModel>> getCategories({bool includeInactive = false}) async =>
-      const [];
+  Future<List<CategoryModel>> getCategories({
+    bool includeInactive = false,
+  }) async => const [];
 
   @override
   Future<CategoryModel?> getCategoryById(String id) async => null;

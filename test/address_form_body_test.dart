@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
@@ -61,23 +60,16 @@ void main() {
 
     search = _FakePlaceSearch();
     await tester.pumpWidget(
-      ScreenUtilInit(
-        designSize: const Size(360, 690),
-        minTextAdapt: true,
-        builder: (context, _) => MaterialApp(
-          home: const Scaffold(body: Text('ROOT')),
-          routes: {
-            'form': (_) => RepositoryProvider<PlaceSearchRepository>.value(
-              value: search,
-              child: Scaffold(
-                body: AddressFormBody(
-                  address: address,
-                  onSave: onSave ?? (_) {},
-                ),
-              ),
+      MaterialApp(
+        home: const Scaffold(body: Text('ROOT')),
+        routes: {
+          'form': (_) => RepositoryProvider<PlaceSearchRepository>.value(
+            value: search,
+            child: Scaffold(
+              body: AddressFormBody(address: address, onSave: onSave ?? (_) {}),
             ),
-          },
-        ),
+          ),
+        },
       ),
     );
     tester.state<NavigatorState>(find.byType(Navigator)).pushNamed('form');

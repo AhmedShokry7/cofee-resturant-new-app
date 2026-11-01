@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
@@ -13,6 +11,7 @@ import 'package:new_coffee/features/subscriptions/presentation/manager/subscript
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
   const SubscriptionDetailsPage({super.key});
@@ -22,9 +21,9 @@ class SubscriptionDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SubscriptionCubit(
-        repository: context.read<SubscriptionRepository>(),
-      )..load(),
+      create: (context) =>
+          SubscriptionCubit(repository: context.read<SubscriptionRepository>())
+            ..load(),
       child: const _SubscriptionDetailsView(),
     );
   }
@@ -48,7 +47,7 @@ class _SubscriptionDetailsView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(S.couldNotLoadSubscription),
-                  SizedBox(height: SpacingTokens.md.h),
+                  SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
                     child: Text(S.retry),
@@ -64,11 +63,11 @@ class _SubscriptionDetailsView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(S.noSubscriptionYet),
-                  SizedBox(height: SpacingTokens.md.h),
+                  SizedBox(height: AppSpacing.md),
                   FilledButton(
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).pushNamed(SubscriptionPlansPage.routeName),
+                    onPressed: () =>
+                        Navigator.of(context)
+                            .pushNamed(SubscriptionPlansPage.routeName),
                     child: Text(S.browsePlans),
                   ),
                 ],
@@ -100,10 +99,10 @@ class _SubscriptionBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.all(SpacingTokens.lg.w),
+      padding: EdgeInsets.all(AppSpacing.lg),
       children: [
         Text(subscription.planName, style: AppFonts.semiBold20(context)),
-        SizedBox(height: SpacingTokens.sm.h),
+        SizedBox(height: AppSpacing.sm),
         SubscriptionDetailRow(
           label: S.subscriptionStatus,
           value: subscription.statusLabel,
@@ -148,8 +147,8 @@ class _SubscriptionBody extends StatelessWidget {
               : null,
         ),
         Wrap(
-          spacing: SpacingTokens.sm.w,
-          runSpacing: SpacingTokens.sm.h,
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
           children: [
             if (subscription.isPendingPayment)
               FilledButton(
@@ -166,22 +165,20 @@ class _SubscriptionBody extends StatelessWidget {
               child: Text(S.renew),
             ),
             OutlinedButton(
-              onPressed: subscription.isActive
-                  ? () => _cancel(context)
-                  : null,
+              onPressed: subscription.isActive ? () => _cancel(context) : null,
               child: Text(S.cancel),
             ),
           ],
         ),
         if (state.qrToken != null) ...[
-          SizedBox(height: SpacingTokens.md.h),
+          SizedBox(height: AppSpacing.md),
           Text(S.qrSingleUseHint, style: AppFonts.regular14(context)),
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
           SelectableText(state.qrToken!),
         ],
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         Text(S.usageHistory, style: AppFonts.semiBold16(context)),
-        SizedBox(height: SpacingTokens.xs.h),
+        SizedBox(height: AppSpacing.xs),
         _UsageHistory(
           state: state,
           onRetry: () => cubit.loadUsage(subscription.id),
@@ -249,7 +246,7 @@ class _UsageHistory extends StatelessWidget {
     final usage = state.usage;
     if (usage == null) {
       return Padding(
-        padding: EdgeInsets.all(SpacingTokens.sm.w),
+        padding: EdgeInsets.all(AppSpacing.sm),
         child: const Center(child: CircularProgressIndicator()),
       );
     }

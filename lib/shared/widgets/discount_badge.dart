@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class DiscountBadge extends StatelessWidget {
   const DiscountBadge({
     super.key,
     required this.percent,
-    this.size = 40,
+    this.size = AppDimensions.discountBadgeDefault,
     this.textAlignment = AlignmentDirectional.bottomStart,
     this.textPadding = const EdgeInsetsDirectional.only(start: 3, bottom: 4),
   });
@@ -25,7 +25,7 @@ class DiscountBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badgeSize = size.w;
+    final badgeSize = size;
 
     return SizedBox(
       width: badgeSize,
@@ -40,7 +40,10 @@ class DiscountBadge extends StatelessWidget {
         ),
         alignment: textAlignment,
         child: Padding(
-          padding: EdgeInsetsDirectional.only(start: 12.w, bottom: 4.h),
+          padding: EdgeInsetsDirectional.only(
+            start: AppSpacing.md,
+            bottom: AppSpacing.xs,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -50,9 +53,9 @@ class DiscountBadge extends StatelessWidget {
                 maxLines: 1,
                 style: AppFonts.bold12(context).copyWith(
                   color: AppColor.whiteColor,
-                  fontSize: (size * 0.30).sp,
-                  fontWeight: FontWeight.w800,
-                  height: 0.85,
+                  fontSize: size * AppDimensions.discountBadgeTextRatio,
+                  fontWeight: AppFontWeights.bold,
+                  height: AppTextHeights.mark,
                 ),
               ),
               Text(
@@ -60,9 +63,9 @@ class DiscountBadge extends StatelessWidget {
                 maxLines: 1,
                 style: AppFonts.bold12(context).copyWith(
                   color: AppColor.whiteColor,
-                  fontSize: (size * 0.30).sp,
-                  fontWeight: FontWeight.w900,
-                  height: 0.75,
+                  fontSize: size * AppDimensions.discountBadgeTextRatio,
+                  fontWeight: AppFontWeights.bold,
+                  height: AppTextHeights.markCaption,
                 ),
               ),
             ],

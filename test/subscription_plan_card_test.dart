@@ -2,7 +2,6 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -52,27 +51,28 @@ void main() {
   setUp(() => AppLocale.instance.debugSet(AppLanguage.arabic));
 
   group('SubscriptionPlanCard', () {
-    Widget host(SubscriptionPlan plan, {VoidCallback? onTap, VoidCallback? onSubscribe}) {
-      return ScreenUtilInit(
-        designSize: const Size(360, 690),
-        builder: (context, _) => MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 360,
-              height: 800,
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.6,
-                ),
-                itemCount: 1,
-                itemBuilder: (context, _) => SubscriptionPlanCard(
-                  plan: plan,
-                  onTap: onTap ?? () {},
-                  onSubscribe: onSubscribe ?? () {},
-                ),
+    Widget host(
+      SubscriptionPlan plan, {
+      VoidCallback? onTap,
+      VoidCallback? onSubscribe,
+    }) {
+      return MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 360,
+            height: 800,
+            child: GridView.builder(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.6,
+              ),
+              itemCount: 1,
+              itemBuilder: (context, _) => SubscriptionPlanCard(
+                plan: plan,
+                onTap: onTap ?? () {},
+                onSubscribe: onSubscribe ?? () {},
               ),
             ),
           ),
@@ -120,7 +120,9 @@ void main() {
   });
 
   group('SubscriptionPlanImage', () {
-    testWidgets('shows the whole picture, keeping its own ratio', (tester) async {
+    testWidgets('shows the whole picture, keeping its own ratio', (
+      tester,
+    ) async {
       const asset = 'assets/images/product.png';
       final ratio = (await tester.runAsync(() => _assetRatio(asset)))!;
 

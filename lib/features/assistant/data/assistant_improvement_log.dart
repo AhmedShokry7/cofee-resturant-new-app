@@ -7,7 +7,7 @@ import 'package:new_coffee/core/services/shared_pref.dart';
 /// automatic instruction or model changes are made from this data.
 class AssistantImprovementLog {
   AssistantImprovementLog([List<Map<String, dynamic>>? entries])
-      : _entries = entries ?? <Map<String, dynamic>>[];
+    : _entries = entries ?? <Map<String, dynamic>>[];
 
   static const _storageKey = 'assistant_improvement_log_v1';
   static const _maxEntries = 100;
@@ -15,8 +15,7 @@ class AssistantImprovementLog {
 
   final List<Map<String, dynamic>> _entries;
 
-  List<Map<String, dynamic>> get entries =>
-      List.unmodifiable(_entries);
+  List<Map<String, dynamic>> get entries => List.unmodifiable(_entries);
 
   static Future<AssistantImprovementLog> load() async {
     try {
@@ -36,10 +35,7 @@ class AssistantImprovementLog {
 
   Future<void> _persist() async {
     try {
-      await SharedPref.setValue(
-        key: _storageKey,
-        value: jsonEncode(_entries),
-      );
+      await SharedPref.setValue(key: _storageKey, value: jsonEncode(_entries));
     } catch (_) {
       // Best-effort only.
     }

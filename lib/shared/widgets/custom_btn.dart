@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 enum BtnVariant { primary, secondary, outlined, destructive }
 
@@ -67,7 +67,7 @@ class CustomBtn extends StatelessWidget {
         bgColor = backgroundColor ?? AppColor.lightGreyColor;
         fgColor = textColor ?? AppColor.greyColor;
       case BtnVariant.outlined:
-        bgColor = backgroundColor ?? Colors.transparent;
+        bgColor = backgroundColor ?? AppColor.transparent;
         fgColor = textColor ?? AppColor.primaryColor;
       case BtnVariant.destructive:
         bgColor = backgroundColor ?? AppColor.errorColor;
@@ -79,9 +79,10 @@ class CustomBtn extends StatelessWidget {
         (variant == BtnVariant.primary && backgroundColor == null
             ? primaryGradient
             : null);
-    final radius = borderRadius ?? 14.r;
-    final btnHeight = height ?? 52.h;
-    final effectivePadding = padding ?? EdgeInsets.symmetric(horizontal: 16.w);
+    final radius = borderRadius ?? AppRadius.r14;
+    final btnHeight = height ?? AppDimensions.buttonHeight;
+    final effectivePadding =
+        padding ?? EdgeInsets.symmetric(horizontal: AppSpacing.lg);
 
     if (effectiveGradient != null) {
       return SizedBox(
@@ -133,7 +134,7 @@ class CustomBtn extends StatelessWidget {
               borderRadius: BorderRadius.circular(radius),
             ),
             padding: effectivePadding,
-            elevation: 0,
+            elevation: AppElevation.flat,
           ),
           onPressed: effectiveOnPressed,
           child: _buildContent(context, fgColor),
@@ -162,7 +163,7 @@ class CustomBtn extends StatelessWidget {
                 color: fgColor,
               ),
             ),
-            SizedBox(width: 10.w),
+            SizedBox(width: AppSizes.px10),
             Text(loadingText!, style: ts),
           ],
         );
@@ -189,11 +190,11 @@ class CustomBtn extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (hasLeading) ...[leadingIcon!, SizedBox(width: 8.w)],
+        if (hasLeading) ...[leadingIcon!, SizedBox(width: AppSpacing.sm)],
         Flexible(
           child: Text(text, style: ts, textAlign: TextAlign.center),
         ),
-        if (hasTrailing) ...[SizedBox(width: 8.w), trailingIcon!],
+        if (hasTrailing) ...[SizedBox(width: AppSpacing.sm), trailingIcon!],
       ],
     );
   }

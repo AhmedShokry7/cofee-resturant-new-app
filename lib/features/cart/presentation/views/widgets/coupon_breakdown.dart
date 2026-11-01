@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Why the discount is smaller than the percentage on the coupon.
 ///
@@ -42,11 +40,11 @@ class _CouponBreakdownState extends State<CouponBreakdown> {
     final discounted = coupon.discountedLines;
 
     return Container(
-      margin: EdgeInsets.only(top: SpacingTokens.sm.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
+      margin: EdgeInsets.only(top: AppSpacing.sm),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColor.surfaceColor,
-        borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,39 +55,36 @@ class _CouponBreakdownState extends State<CouponBreakdown> {
             child: Row(
               children: [
                 Icon(
-                  HugeIcons.strokeRoundedDiscount01,
-                  size: 16.w,
+                  AppIcons.discount,
+                  size: AppSpacing.lg,
                   color: AppColor.primaryColor,
                 ),
-                SizedBox(width: SpacingTokens.xs.w),
+                SizedBox(width: AppSpacing.xs),
                 Expanded(
                   child: Text(
                     coupon.isPartial
                         ? '${S.couponEligibleInCart} (${discounted.length}/${lines.length})'
                         : S.couponDiscountBreakdown,
-                    style: AppFonts.medium12(context).copyWith(
-                      color: AppColor.primaryColor,
-                    ),
+                    style: AppFonts.medium12(context)
+                        .copyWith(color: AppColor.primaryColor),
                   ),
                 ),
                 Icon(
-                  _expanded
-                      ? HugeIcons.strokeRoundedArrowUp01
-                      : HugeIcons.strokeRoundedArrowDown01,
-                  size: 16.w,
+                  _expanded ? AppIcons.arrowUp : AppIcons.arrowDown,
+                  size: AppSpacing.lg,
                   color: AppColor.primaryColor,
                 ),
               ],
             ),
           ),
           if (_expanded) ...[
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             for (final line in lines)
               Padding(
-                padding: EdgeInsets.only(bottom: SpacingTokens.xs.h),
+                padding: EdgeInsets.only(bottom: AppSpacing.xs),
                 child: _LineRow(line: line),
               ),
-            Divider(height: SpacingTokens.md.h, color: AppColor.borderColor),
+            Divider(height: AppSpacing.md, color: AppColor.borderColor),
             Row(
               children: [
                 Expanded(
@@ -101,9 +96,8 @@ class _CouponBreakdownState extends State<CouponBreakdown> {
                 PriceLabel(
                   amount: coupon.discount,
                   prefix: '-',
-                  style: AppFonts.medium12(context).copyWith(
-                    color: AppColor.primaryColor,
-                  ),
+                  style: AppFonts.medium12(context)
+                      .copyWith(color: AppColor.primaryColor),
                   iconSize: 12,
                   iconColor: AppColor.primaryColor,
                 ),
@@ -127,13 +121,11 @@ class _LineRow extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          touched
-              ? HugeIcons.strokeRoundedCheckmarkCircle01
-              : HugeIcons.strokeRoundedMinusSign,
-          size: 14.w,
+          touched ? AppIcons.checkmarkCircle : AppIcons.minus,
+          size: AppSizes.px14,
           color: touched ? AppColor.primaryColor : AppColor.greyColor,
         ),
-        SizedBox(width: SpacingTokens.xs.w),
+        SizedBox(width: AppSpacing.xs),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,9 +134,8 @@ class _LineRow extends StatelessWidget {
                 line.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: AppFonts.regular12(context).copyWith(
-                  color: touched ? null : AppColor.greyColor,
-                ),
+                style: AppFonts.regular12(context)
+                    .copyWith(color: touched ? null : AppColor.greyColor),
               ),
               // Why an untouched line has no discount. Without it the greyed row
               // reads as a mistake.
@@ -153,29 +144,27 @@ class _LineRow extends StatelessWidget {
                   S.couponLineNotIncluded,
                   style: AppFonts.regular12(context).copyWith(
                     color: AppColor.greyColor,
-                    fontSize: 10,
+                    fontSize: AppFontSizes.size10,
                   ),
                 ),
             ],
           ),
         ),
-        SizedBox(width: SpacingTokens.xs.w),
+        SizedBox(width: AppSpacing.xs),
         if (touched)
           PriceLabel(
             amount: line.discount,
             prefix: '-',
-            style: AppFonts.regular12(context).copyWith(
-              color: AppColor.primaryColor,
-            ),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.primaryColor),
             iconSize: 11,
             iconColor: AppColor.primaryColor,
           )
         else
           Text(
             Formatters.price(line.lineTotal),
-            style: AppFonts.regular12(context).copyWith(
-              color: AppColor.greyColor,
-            ),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.greyColor),
           ),
       ],
     );

@@ -5,7 +5,6 @@
 // لحد بليل") and a delivery policy until the shop's own knowledge reached it.
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/llm/rag_context.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_reply_sanitizer.dart';
@@ -52,7 +51,9 @@ void main() {
 
   group('the system prompt', () {
     test('shows the model the tone and the length', () {
-      final prompt = buildSystemPrompt(memory: AssistantMemory(replyArabic: true));
+      final prompt = buildSystemPrompt(
+        memory: AssistantMemory(replyArabic: true),
+      );
 
       expect(prompt, contains('Egyptian Arabic'));
       expect(prompt, contains('two or three short sentences'));
@@ -64,7 +65,9 @@ void main() {
     });
 
     test('forbids the markdown a model writes for documents', () {
-      final prompt = buildSystemPrompt(memory: AssistantMemory(replyArabic: true));
+      final prompt = buildSystemPrompt(
+        memory: AssistantMemory(replyArabic: true),
+      );
 
       // A single Markdown table in an example is enough to make the model
       // answer every comparison with a table, and a table in a chat bubble is
@@ -75,7 +78,9 @@ void main() {
     });
 
     test('the examples are plain chat messages', () {
-      final prompt = buildSystemPrompt(memory: AssistantMemory(replyArabic: true));
+      final prompt = buildSystemPrompt(
+        memory: AssistantMemory(replyArabic: true),
+      );
 
       expect(prompt, contains('plain chat messages'));
       expect(prompt, isNot(contains('**')));

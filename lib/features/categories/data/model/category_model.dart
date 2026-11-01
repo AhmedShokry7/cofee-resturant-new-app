@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 
@@ -134,26 +135,26 @@ class CategoryModel {
 IconData resolveCategoryIcon(String? key) {
   switch (key) {
     case 'hot_coffee':
-      return Icons.local_cafe_outlined;
+      return AppIcons.coffeeHot;
     case 'cold_coffee':
-      return Icons.ac_unit;
+      return AppIcons.coffeeIced;
     case 'tea':
-      return Icons.emoji_food_beverage_outlined;
+      return AppIcons.tea;
     case 'desserts':
-      return Icons.icecream_outlined;
+      return AppIcons.dessert;
     case 'snacks':
-      return Icons.fastfood_outlined;
+      return AppIcons.snack;
     case 'milkshakes':
-      return Icons.local_drink_outlined;
+      return AppIcons.milkshake;
     case 'soft_drinks':
-      return Icons.local_drink_outlined;
+      return AppIcons.softDrink;
     case 'bakery':
-      return Icons.bakery_dining_outlined;
+      return AppIcons.bakery;
     case 'donuts':
-      return Icons.donut_small_outlined;
+      return AppIcons.donut;
     case 'bundles':
-      return Icons.inventory_2_outlined;
+      return AppIcons.bundle;
     default:
-      return Icons.category_outlined;
+      return AppIcons.grid;
   }
 }

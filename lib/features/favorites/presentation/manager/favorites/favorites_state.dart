@@ -19,9 +19,9 @@ class FavoritesState {
   final String? error;
 
   List<ProductModel> get favoriteProducts => [
-        for (final id in ids)
-          if (products[id] != null) products[id]!,
-      ];
+    for (final id in ids)
+      if (products[id] != null) products[id]!,
+  ];
 
   bool get isEmpty => !isLoading && favoriteProducts.isEmpty;
 
@@ -31,11 +31,10 @@ class FavoritesState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      FavoritesState(
-        ids: ids ?? this.ids,
-        products: products ?? this.products,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => FavoritesState(
+    ids: ids ?? this.ids,
+    products: products ?? this.products,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }

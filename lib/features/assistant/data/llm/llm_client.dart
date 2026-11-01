@@ -1,9 +1,5 @@
 class LlmReply {
-  const LlmReply({
-    required this.text,
-    this.topic = 'llm',
-    this.provider,
-  });
+  const LlmReply({required this.text, this.topic = 'llm', this.provider});
 
   final String text;
   final String topic;

@@ -15,8 +15,9 @@ void main() {
       'Needs --dart-define SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and '
       'SCHEMAS_EXPOSED=true';
 
-  final String? skip =
-      (!AppConfig.isSupabaseConfigured || !schemasExposed) ? needsSetup : null;
+  final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
+      ? needsSetup
+      : null;
 
   setUpAll(() async {
     if (skip != null) return;
@@ -29,10 +30,7 @@ void main() {
     const repository = CouponRepositoryImpl();
     final coupons = await repository.activeCoupons();
 
-    expect(
-      coupons.map((coupon) => coupon.code),
-      containsAll(['DEMO10']),
-    );
+    expect(coupons.map((coupon) => coupon.code), containsAll(['DEMO10']));
     expect(
       coupons.every((coupon) => coupon.discountValue > 0),
       isTrue,

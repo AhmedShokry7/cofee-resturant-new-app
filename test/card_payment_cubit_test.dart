@@ -96,11 +96,12 @@ Tree tree({
     chargeError: chargeError,
     verifyError: verifyError,
   );
-  final cubit = CardPaymentCubit(repository: tap)..start(
-    orderId: orderId,
-    subscriptionId: subscriptionId,
-    savedCardId: savedCardId,
-  );
+  final cubit = CardPaymentCubit(repository: tap)
+    ..start(
+      orderId: orderId,
+      subscriptionId: subscriptionId,
+      savedCardId: savedCardId,
+    );
   return (cubit: cubit, tap: tap);
 }
 
@@ -200,10 +201,7 @@ void main() {
       await built.cubit.onHostedFormResult(tokenJson);
       expect(built.cubit.state.status, CardPaymentStatus.chargeCreated);
       expect(built.cubit.state.chargeId, chargeId);
-      expect(
-        built.cubit.state.transactionUrl,
-        'https://tap.company/3ds',
-      );
+      expect(built.cubit.state.transactionUrl, 'https://tap.company/3ds');
     });
 
     test('a result that carries no token fails the tokenization', () async {
@@ -281,10 +279,7 @@ void main() {
 
     test('a verified charge is succeeded', () async {
       final built = await charged();
-      expect(
-        await built.cubit.verifyCharge(),
-        PaymentOutcome.succeeded,
-      );
+      expect(await built.cubit.verifyCharge(), PaymentOutcome.succeeded);
       expect(built.cubit.state.status, CardPaymentStatus.paymentSucceeded);
     });
 

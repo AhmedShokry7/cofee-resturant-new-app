@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
@@ -23,7 +22,7 @@ class CupIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = selected ? AppColor.primaryColor : AppColor.greyColor;
     return CustomPaint(
-      size: Size((_height * 0.72).w, _height.h),
+      size: Size((_height * 0.72), _height),
       painter: _CupPainter(color: color),
     );
   }

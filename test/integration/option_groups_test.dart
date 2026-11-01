@@ -4,7 +4,9 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
+
 import '../support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -21,8 +23,9 @@ void main() {
       'Needs --dart-define SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and '
       'SCHEMAS_EXPOSED=true';
 
-  final String? skip =
-      (!AppConfig.isSupabaseConfigured || !schemasExposed) ? needsSetup : null;
+  final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
+      ? needsSetup
+      : null;
 
   const mainBranch = '00000000-0000-4000-8000-000000000101';
 
@@ -45,19 +48,18 @@ void main() {
       List<OptionValue> values = const [],
       String code = 'size',
       int sortOrder = 0,
-    }) =>
-        OptionGroup(
-          id: 'g1',
-          code: code,
-          nameAr: 'مجموعة',
-          nameEn: 'Group',
-          isSingleSelect: single,
-          minSelect: min,
-          maxSelect: max,
-          isRequired: min > 0,
-          values: values,
-          sortOrder: sortOrder,
-        );
+    }) => OptionGroup(
+      id: 'g1',
+      code: code,
+      nameAr: 'مجموعة',
+      nameEn: 'Group',
+      isSingleSelect: single,
+      minSelect: min,
+      maxSelect: max,
+      isRequired: min > 0,
+      values: values,
+      sortOrder: sortOrder,
+    );
 
     OptionValue value(String id, {double delta = 0, bool isDefault = false}) =>
         OptionValue(
@@ -88,8 +90,9 @@ void main() {
       final g = group(single: true, min: 1, values: [value('a')]);
       var sel = const OptionSelection.empty().toggle([g], g.id, 'a');
       sel = sel.toggle([g], g.id, 'a');
-      expect(sel.inGroup(g.id), {'a'},
-          reason: 'clearing would violate min_select');
+      expect(sel.inGroup(g.id), {
+        'a',
+      }, reason: 'clearing would violate min_select');
       expect(sel.validationError([g]), isNull);
     });
 
@@ -104,20 +107,30 @@ void main() {
       sel = sel.toggle([g], g.id, 'a');
       sel = sel.toggle([g], g.id, 'b');
       sel = sel.toggle([g], g.id, 'c');
-      expect(sel.inGroup(g.id), {'a', 'b'},
-          reason: 'the third tap must be rejected at max_select of 2');
+      expect(sel.inGroup(g.id), {
+        'a',
+        'b',
+      }, reason: 'the third tap must be rejected at max_select of 2');
     });
 
     test('an unmet min_select is reported', () {
-      final g = group(single: false, min: 1, code: 'extras', values: [value('a')]);
+      final g = group(
+        single: false,
+        min: 1,
+        code: 'extras',
+        values: [value('a')],
+      );
       final sel = const OptionSelection.empty();
       expect(sel.validationError([g]), isNotNull);
     });
 
     test('price deltas sum across groups', () {
       final sizes = group(single: true, values: [value('l', delta: 10)]);
-      final extras =
-          group(single: false, code: 'extras', values: [value('s', delta: 8)]);
+      final extras = group(
+        single: false,
+        code: 'extras',
+        values: [value('s', delta: 8)],
+      );
       var sel = const OptionSelection.empty();
       sel = sel.toggle([sizes], sizes.id, 'l');
       sel = sel.toggle([extras], extras.id, 's');
@@ -144,11 +157,7 @@ void main() {
     });
 
     test('binding cannot make a required group optional', () {
-      final required = group(
-        single: true,
-        min: 1,
-        values: [value('a')],
-      );
+      final required = group(single: true, min: 1, values: [value('a')]);
       final effective = effectiveProductOptionGroup(
         group: required,
         bindingIsRequired: false,
@@ -264,7 +273,12 @@ void main() {
     });
 
     test('required single group rejects an empty selection', () {
-      final size = namedGroup(code: 'size', single: true, min: 1, values: [value('a')]);
+      final size = namedGroup(
+        code: 'size',
+        single: true,
+        min: 1,
+        values: [value('a')],
+      );
       var selected = const OptionSelection.empty();
       expect(selected.validationError([size]), isNotNull);
       selected = selected.toggle([size], size.id, 'a');
@@ -282,7 +296,10 @@ void main() {
       final selected = OptionSelection.defaultsFor([size]);
       final chosen = selected.inGroup(size.id);
       expect(chosen.length, 1);
-      expect(size.values.firstWhere((v) => v.id == chosen.first).isDefault, isTrue);
+      expect(
+        size.values.firstWhere((v) => v.id == chosen.first).isDefault,
+        isTrue,
+      );
     });
 
     test('maximum selection is enforced for multi option groups', () {
@@ -336,14 +353,28 @@ void main() {
       final loaded = await mock.getWithOptions('3');
       final extras = loaded!.groups.firstWhere((g) => g.code == 'extras');
       expect(extras.values.length, 7);
-      expect(extras.values.map((v) => v.code), containsAll(['shot', 'cream', 'vanilla', 'caramel', 'mint', 'honey', 'scoop']));
+      expect(
+        extras.values.map((v) => v.code),
+        containsAll([
+          'shot',
+          'cream',
+          'vanilla',
+          'caramel',
+          'mint',
+          'honey',
+          'scoop',
+        ]),
+      );
     });
 
-    test('offline soft-drink mock exposes size and sugar, not extras', () async {
-      final loaded = await mock.getWithOptions('14');
-      final codes = loaded!.groups.map((g) => g.code).toList();
-      expect(codes, ['size', 'sugar']);
-    });
+    test(
+      'offline soft-drink mock exposes size and sugar, not extras',
+      () async {
+        final loaded = await mock.getWithOptions('14');
+        final codes = loaded!.groups.map((g) => g.code).toList();
+        expect(codes, ['size', 'sugar']);
+      },
+    );
   });
 
   group('option groups live against Supabase', () {
@@ -358,13 +389,18 @@ void main() {
       final loaded = await live.getWithOptions(latte!.id, branchId: mainBranch);
       expect(loaded, isNotNull);
       final codes = loaded!.groups.map((g) => g.code).toList();
-      expect(codes, ['size', 'sugar', 'extras'],
-          reason: 'groups must come back in sort_order, not alphabetically');
+      expect(codes, [
+        'size',
+        'sugar',
+        'extras',
+      ], reason: 'groups must come back in sort_order, not alphabetically');
 
       final size = loaded.groups.firstWhere((g) => g.code == 'size');
-      expect(size.values.map((v) => v.code).toList(),
-          ['small', 'medium', 'large'],
-          reason: 'sizes must not render Large before Small');
+      expect(size.values.map((v) => v.code).toList(), [
+        'small',
+        'medium',
+        'large',
+      ], reason: 'sizes must not render Large before Small');
       expect(size.isSingleSelect, isTrue);
     }, skip: skip);
 
@@ -372,9 +408,14 @@ void main() {
       final products = await live.getProducts();
       final latte = products.firstWhere((p) => p.nameEn == 'Latte');
       final cappuccino = products.firstWhere((p) => p.nameEn == 'Cappuccino');
-      final latteLoaded = await live.getWithOptions(latte.id, branchId: mainBranch);
-      final cappuccinoLoaded =
-          await live.getWithOptions(cappuccino.id, branchId: mainBranch);
+      final latteLoaded = await live.getWithOptions(
+        latte.id,
+        branchId: mainBranch,
+      );
+      final cappuccinoLoaded = await live.getWithOptions(
+        cappuccino.id,
+        branchId: mainBranch,
+      );
 
       expect(latteLoaded, isNotNull);
       expect(cappuccinoLoaded, isNotNull);
@@ -390,11 +431,20 @@ void main() {
       final products = await live.getProducts();
       final latte = products.firstWhere((p) => p.nameEn == 'Latte');
       final cheesecake = products.firstWhere((p) => p.nameEn == 'Cheesecake');
-      final latteLoaded = await live.getWithOptions(latte.id, branchId: mainBranch);
-      final cheesecakeLoaded =
-          await live.getWithOptions(cheesecake.id, branchId: mainBranch);
+      final latteLoaded = await live.getWithOptions(
+        latte.id,
+        branchId: mainBranch,
+      );
+      final cheesecakeLoaded = await live.getWithOptions(
+        cheesecake.id,
+        branchId: mainBranch,
+      );
 
-      expect(latteLoaded!.groups.map((g) => g.code), ['size', 'sugar', 'extras']);
+      expect(latteLoaded!.groups.map((g) => g.code), [
+        'size',
+        'sugar',
+        'extras',
+      ]);
       expect(cheesecakeLoaded!.groups, isEmpty);
     }, skip: skip);
 
@@ -405,25 +455,39 @@ void main() {
       expect(loaded!.groups.map((g) => g.code).toList(), ['size', 'sugar']);
     }, skip: skip);
 
-    test('every option value carries both languages and a price delta',
-        () async {
-      final products = await live.getProducts();
-      final latte = products.firstWhere((p) => p.nameEn == 'Latte');
-      final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
+    test(
+      'every option value carries both languages and a price delta',
+      () async {
+        final products = await live.getProducts();
+        final latte = products.firstWhere((p) => p.nameEn == 'Latte');
+        final loaded = await live.getWithOptions(
+          latte.id,
+          branchId: mainBranch,
+        );
 
-      for (final group in loaded!.groups) {
-        expect(group.values, isNotEmpty, reason: '${group.code} has no values');
-        for (final value in group.values) {
-          expect(value.nameEn, isNotEmpty);
-          expect(value.nameAr, isNotEmpty,
-              reason: 'the details screen renders Arabic labels');
+        for (final group in loaded!.groups) {
+          expect(
+            group.values,
+            isNotEmpty,
+            reason: '${group.code} has no values',
+          );
+          for (final value in group.values) {
+            expect(value.nameEn, isNotEmpty);
+            expect(
+              value.nameAr,
+              isNotEmpty,
+              reason: 'the details screen renders Arabic labels',
+            );
+          }
         }
-      }
-    }, skip: skip);
+      },
+      skip: skip,
+    );
 
     test('defaults are preselected', () async {
-      final latte =
-          (await live.getProducts()).firstWhere((p) => p.nameEn == 'Latte');
+      final latte = (await live.getProducts()).firstWhere(
+        (p) => p.nameEn == 'Latte',
+      );
       final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
       final selection = OptionSelection.defaultsFor(loaded!.groups);
 
@@ -435,8 +499,9 @@ void main() {
     }, skip: skip);
 
     test('resolvePrice returns the same total the client estimates', () async {
-      final latte =
-          (await live.getProducts()).firstWhere((p) => p.nameEn == 'Latte');
+      final latte = (await live.getProducts()).firstWhere(
+        (p) => p.nameEn == 'Latte',
+      );
       final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
 
       final size = loaded!.groups.firstWhere((g) => g.code == 'size');
@@ -444,7 +509,11 @@ void main() {
       var selection = const OptionSelection.empty();
       selection = selection.toggle(loaded.groups, size.id, large.id);
 
-      final estimate = estimateUnitPrice(loaded.product, loaded.groups, selection);
+      final estimate = estimateUnitPrice(
+        loaded.product,
+        loaded.groups,
+        selection,
+      );
       final resolved = await live.resolvePrice(
         latte.id,
         branchId: mainBranch,
@@ -452,24 +521,35 @@ void main() {
       );
 
       expect(resolved, isNotNull);
-      expect(resolved!.unitPrice, estimate,
-          reason: 'the local estimate must not drift from the server price');
+      expect(
+        resolved!.unitPrice,
+        estimate,
+        reason: 'the local estimate must not drift from the server price',
+      );
       expect(resolved.isAvailable, isTrue);
     }, skip: skip);
 
     test('a product with no options loads cleanly', () async {
-      final cheesecake =
-          (await live.getProducts()).firstWhere((p) => p.nameEn == 'Cheesecake');
-      final loaded =
-          await live.getWithOptions(cheesecake.id, branchId: mainBranch);
+      final cheesecake = (await live.getProducts()).firstWhere(
+        (p) => p.nameEn == 'Cheesecake',
+      );
+      final loaded = await live.getWithOptions(
+        cheesecake.id,
+        branchId: mainBranch,
+      );
       expect(loaded, isNotNull);
-      expect(loaded!.groups, isEmpty,
-          reason: 'food has no size or extras, and must not show those sections');
+      expect(
+        loaded!.groups,
+        isEmpty,
+        reason: 'food has no size or extras, and must not show those sections',
+      );
 
       final selection = OptionSelection.defaultsFor(loaded.groups);
       expect(selection.validationError(loaded.groups), isNull);
-      expect(estimateUnitPrice(loaded.product, loaded.groups, selection),
-          loaded.product.price);
+      expect(
+        estimateUnitPrice(loaded.product, loaded.groups, selection),
+        loaded.product.price,
+      );
     }, skip: skip);
 
     test('the offline fallback also exposes option groups', () async {

@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/model/chat_message.dart';
@@ -21,6 +18,7 @@ import 'package:new_coffee/features/menu/presentation/views/product_details_page
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class AssistantSheet extends StatefulWidget {
   const AssistantSheet({super.key});
@@ -125,18 +123,18 @@ class _AssistantSheetState extends State<AssistantSheet> {
           child: SizedBox(
             height: MediaQuery.sizeOf(context).height * 0.72,
             child: Padding(
-              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              padding: EdgeInsets.all(AppSpacing.lg),
               child: Column(
                 children: [
                   Row(
                     children: [
                       Image.asset(
                         AppImages.aiBot,
-                        height: 40.w,
-                        width: 40.w,
+                        height: AppSizes.px40,
+                        width: AppSizes.px40,
                         fit: BoxFit.contain,
                       ),
-                      SizedBox(width: SpacingTokens.sm.w),
+                      SizedBox(width: AppSpacing.sm),
                       Expanded(
                         child: Text(
                           S.assistantTitle,
@@ -147,12 +145,12 @@ class _AssistantSheetState extends State<AssistantSheet> {
                       ),
                       IconButton(
                         onPressed: () => Navigator.of(context).pop(),
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(AppIcons.close),
                         color: AppColor.greyColor,
                       ),
                     ],
                   ),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: AppSpacing.sm),
                   Expanded(
                     child: BlocConsumer<AssistantCubit, AssistantState>(
                       listener: (context, state) {
@@ -196,7 +194,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
                     ),
                   ),
                   _quickReplies(context),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: AppSpacing.sm),
                   _inputBar(context),
                 ],
               ),
@@ -212,15 +210,17 @@ class _AssistantSheetState extends State<AssistantSheet> {
     return Align(
       alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        constraints: BoxConstraints(maxWidth: 270.w),
-        margin: EdgeInsets.only(bottom: SpacingTokens.xs.h),
+        constraints: BoxConstraints(
+          maxWidth: AppDimensions.assistantPanelMaxWidth,
+        ),
+        margin: EdgeInsets.only(bottom: AppSpacing.xs),
         padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md.w,
-          vertical: SpacingTokens.sm.h,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: isUser ? AppColor.primaryColor : AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: isUser ? null : Border.all(color: AppColor.borderColor),
         ),
         child: Text(
@@ -237,14 +237,14 @@ class _AssistantSheetState extends State<AssistantSheet> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        margin: EdgeInsets.only(bottom: SpacingTokens.xs.h),
+        margin: EdgeInsets.only(bottom: AppSpacing.xs),
         padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md.w,
-          vertical: SpacingTokens.sm.h,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: child,
@@ -254,7 +254,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
 
   Widget _feedbackRow(BuildContext context, ChatMessage message) {
     return Padding(
-      padding: EdgeInsets.only(bottom: SpacingTokens.xs.h),
+      padding: EdgeInsets.only(bottom: AppSpacing.xs),
       child: Row(
         children: [
           IconButton(
@@ -265,8 +265,8 @@ class _AssistantSheetState extends State<AssistantSheet> {
                   )
                 : null,
             icon: Icon(
-              HugeIcons.strokeRoundedThumbsUp,
-              size: 18.w,
+              AppIcons.thumbsUp,
+              size: AppSizes.px18,
               color: message.feedback == 1
                   ? AppColor.primaryColor
                   : AppColor.greyColor,
@@ -280,8 +280,8 @@ class _AssistantSheetState extends State<AssistantSheet> {
                   )
                 : null,
             icon: Icon(
-              HugeIcons.strokeRoundedThumbsDown,
-              size: 18.w,
+              AppIcons.thumbsDown,
+              size: AppSizes.px18,
               color: message.feedback == -1
                   ? AppColor.primaryColor
                   : AppColor.greyColor,
@@ -300,24 +300,24 @@ class _AssistantSheetState extends State<AssistantSheet> {
           GestureDetector(
             onTap: () => _openProduct(product),
             child: Container(
-              margin: EdgeInsets.only(bottom: SpacingTokens.xs.h),
-              padding: EdgeInsets.all(SpacingTokens.sm.w),
+              margin: EdgeInsets.only(bottom: AppSpacing.xs),
+              padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
                 color: AppColor.whiteColor,
-                borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+                borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
                 border: Border.all(color: AppColor.borderColor),
               ),
               child: Row(
                 children: [
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(8.r),
+                    borderRadius: BorderRadius.circular(AppRadius.r8),
                     child: SizedBox(
-                      height: 40.w,
-                      width: 40.w,
+                      height: AppSizes.px40,
+                      width: AppSizes.px40,
                       child: ProductImageView(product: product),
                     ),
                   ),
-                  SizedBox(width: SpacingTokens.sm.w),
+                  SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -339,7 +339,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
                     ),
                   ),
                   AnimatedAddToCartIconButton(
-                    size: 32,
+                    size: AppDimensions.addToCartButtonAssistant,
                     onAdd: () async {
                       context.read<AssistantCubit>().recordProductInterest(
                         product,
@@ -347,10 +347,10 @@ class _AssistantSheetState extends State<AssistantSheet> {
                       context.read<CartCubit>().add(product);
                     },
                   ),
-                  SizedBox(width: SpacingTokens.xs.w),
+                  SizedBox(width: AppSpacing.xs),
                   Icon(
                     DirectionAwareIcons.forward(context),
-                    size: 18.w,
+                    size: AppSizes.px18,
                     color: AppColor.greyColor,
                   ),
                 ],
@@ -364,7 +364,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
   Widget _actionButton(BuildContext context, AssistantState state) {
     if (state.navigateRoute == null) return const SizedBox.shrink();
     return Padding(
-      padding: EdgeInsets.only(bottom: SpacingTokens.xs.h),
+      padding: EdgeInsets.only(bottom: AppSpacing.xs),
       child: GestureDetector(
         onTap: () {
           final route = state.navigateRoute;
@@ -375,11 +375,11 @@ class _AssistantSheetState extends State<AssistantSheet> {
         },
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: SpacingTokens.md.w,
-            vertical: SpacingTokens.sm.h,
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(100.r),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
             border: Border.all(color: AppColor.primaryColor),
           ),
           child: Text(
@@ -398,22 +398,22 @@ class _AssistantSheetState extends State<AssistantSheet> {
       builder: (context, state) {
         if (state.quickReplies.isEmpty) return const SizedBox.shrink();
         return SizedBox(
-          height: 40.h,
+          height: AppSizes.px40,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: state.quickReplies.length,
             separatorBuilder: (context, index) =>
-                SizedBox(width: SpacingTokens.xs.w),
+                SizedBox(width: AppSpacing.xs),
             itemBuilder: (context, index) {
               final reply = state.quickReplies[index];
               return GestureDetector(
                 onTap: () => _send(reply),
                 child: Container(
                   alignment: Alignment.center,
-                  padding: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
+                  padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
                   decoration: BoxDecoration(
                     color: AppColor.lightGreyColor,
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(reply, style: AppFonts.regular12(context)),
                 ),
@@ -436,31 +436,31 @@ class _AssistantSheetState extends State<AssistantSheet> {
             decoration: InputDecoration(
               hintText: S.askAnything,
               contentPadding: EdgeInsets.symmetric(
-                horizontal: SpacingTokens.md.w,
-                vertical: SpacingTokens.sm.h,
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
               ),
               filled: true,
               fillColor: AppColor.lightGreyColor,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(100.r),
+                borderRadius: BorderRadius.circular(AppRadius.pill),
                 borderSide: BorderSide.none,
               ),
             ),
           ),
         ),
-        SizedBox(width: SpacingTokens.sm.w),
+        SizedBox(width: AppSpacing.sm),
         GestureDetector(
           onTap: _send,
           child: Container(
-            height: 48.w,
-            width: 48.w,
+            height: AppSpacing.xxxl,
+            width: AppSpacing.xxxl,
             decoration: BoxDecoration(
               color: AppColor.primaryColor,
               shape: BoxShape.circle,
             ),
             child: Icon(
-              HugeIcons.strokeRoundedSent,
-              size: 22.w,
+              AppIcons.sent,
+              size: AppSizes.px22,
               color: AppColor.whiteColor,
             ),
           ),

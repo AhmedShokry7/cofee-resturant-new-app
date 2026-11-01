@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_buttons_and_slider_dots.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_page_view_data.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The slide, its art, and the row that steps through them.
 ///
@@ -26,17 +25,12 @@ class OnBoardingViewBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: SpacingTokens.lg.w),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         child: Column(
           children: [
-            SkipBtn(
-              onTap: () => context.read<OnBoardingCubit>().complete(),
-            ),
-            SizedBox(height: _skipGap.h),
-            const Expanded(
-              flex: _slidesFlex,
-              child: OnBoardingPageViewData(),
-            ),
+            SkipBtn(onTap: () => context.read<OnBoardingCubit>().complete()),
+            SizedBox(height: _skipGap),
+            const Expanded(flex: _slidesFlex, child: OnBoardingPageViewData()),
             const Expanded(
               flex: _stepsFlex,
               child: OnBoardingButtonsAndSliderDots(),

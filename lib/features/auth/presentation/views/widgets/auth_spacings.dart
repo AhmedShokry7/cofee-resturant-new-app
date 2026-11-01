@@ -1,4 +1,4 @@
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Single source of truth for spacing across all auth pages.
 ///
@@ -9,24 +9,23 @@ class AuthSpacings {
   const AuthSpacings._();
 
   /// Above the page title.
-  static const double top = SpacingTokens.lg;
+  static const double top = AppSpacing.lg;
 
   /// Between the title and its subtitle.
-  static const double titleGap = SpacingTokens.xs;
+  static const double titleGap = AppSpacing.xs;
 
   /// Between the subtitle and the first input.
-  static const double headerGap = SpacingTokens.lg;
+  static const double headerGap = AppSpacing.lg;
 
   /// Between the inputs and the primary button.
-  static const double fieldsGap = SpacingTokens.sm;
+  static const double fieldsGap = AppSpacing.sm;
 
   /// Between the primary button and the section below it.
-  static const double buttonGap = SpacingTokens.lg;
+  static const double buttonGap = AppSpacing.lg;
 
   /// Between stacked lower sections (social / phone / prompts).
-  static const double sectionGap = SpacingTokens.lg;
+  static const double sectionGap = AppSpacing.lg;
 
   /// Below the last element.
-  static const double bottom = SpacingTokens.lg;
+  static const double bottom = AppSpacing.lg;
 }
-

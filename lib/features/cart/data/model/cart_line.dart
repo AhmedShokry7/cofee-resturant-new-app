@@ -47,13 +47,13 @@ class CartLine {
   /// The payload the server expects. It never carries a price: `replace_cart`
   /// re-prices every line from the catalogue.
   Map<String, dynamic> toServerPayload() => <String, dynamic>{
-        'product_id': productId,
-        'quantity': quantity,
-        'note': note,
-        'option_value_ids': optionValueIds,
-        if (bundleId != null && bundleId!.trim().isNotEmpty)
-          'bundle_id': bundleId!.trim(),
-      };
+    'product_id': productId,
+    'quantity': quantity,
+    'note': note,
+    'option_value_ids': optionValueIds,
+    if (bundleId != null && bundleId!.trim().isNotEmpty)
+      'bundle_id': bundleId!.trim(),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -67,13 +67,13 @@ class CartLine {
 
   @override
   int get hashCode => Object.hash(
-        productId,
-        quantity,
-        note,
-        bundleId,
-        unitPrice,
-        Object.hashAll(optionValueIds),
-      );
+    productId,
+    quantity,
+    note,
+    bundleId,
+    unitPrice,
+    Object.hashAll(optionValueIds),
+  );
 
   @override
   String toString() =>

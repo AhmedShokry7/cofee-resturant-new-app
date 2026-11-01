@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
@@ -99,22 +97,19 @@ void main() {
     Future<void> signUp(WidgetTester tester, {required bool needs}) async {
       final repository = _FakeAuthRepository(needsEmailConfirmation: needs);
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: AppConstant.designSize,
-          builder: (context, _) => RepositoryProvider<AuthRepository>(
-            create: (_) => repository,
-            child: BlocProvider(
-              create: (_) => AuthCubit(repository),
-              child: MaterialApp(
-                routes: {
-                  // The handover target. The real home page needs the whole
-                  // provider tree, which is irrelevant to the question this
-                  // group asks.
-                  MainPage.routeName: (context) =>
-                      const Scaffold(body: Text('home-stub')),
-                },
-                home: const Scaffold(body: SignUpPageBody()),
-              ),
+        RepositoryProvider<AuthRepository>(
+          create: (_) => repository,
+          child: BlocProvider(
+            create: (_) => AuthCubit(repository),
+            child: MaterialApp(
+              routes: {
+                // The handover target. The real home page needs the whole
+                // provider tree, which is irrelevant to the question this
+                // group asks.
+                MainPage.routeName: (context) =>
+                    const Scaffold(body: Text('home-stub')),
+              },
+              home: const Scaffold(body: SignUpPageBody()),
             ),
           ),
         ),
@@ -159,7 +154,8 @@ void main() {
         expect(
           repository.lastSignUpNeedsEmailConfirmation,
           needs,
-          reason: 'a decorator in front of the real repository must not turn '
+          reason:
+              'a decorator in front of the real repository must not turn '
               'the question into its own answer',
         );
       }

@@ -3,25 +3,23 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/utils/profile_image_picker.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/shared/widgets/sheet_handle.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 Future<void> showProfileImagePicker(BuildContext context) async {
   final source = await showModalBottomSheet<ImageSource>(
     context: context,
     backgroundColor: AppColor.whiteColor,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),
     builder: (context) => const _ImageSourceSheet(),
   );
@@ -47,26 +45,26 @@ class _ImageSourceSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SheetHandle(),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(
               S.profilePicture,
               textAlign: TextAlign.center,
               style: AppFonts.semiBold18(context),
             ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             _SourceTile(
-              icon: HugeIcons.strokeRoundedCamera01,
+              icon: AppIcons.camera,
               label: S.takePhoto,
               onTap: () => Navigator.of(context).pop(ImageSource.camera),
             ),
             _SourceTile(
-              icon: HugeIcons.strokeRoundedImage01,
+              icon: AppIcons.image,
               label: S.chooseFromGallery,
               onTap: () => Navigator.of(context).pop(ImageSource.gallery),
             ),
@@ -92,15 +90,15 @@ class _SourceTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      contentPadding: EdgeInsets.symmetric(horizontal: SpacingTokens.sm.w),
+      contentPadding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
       leading: Container(
-        height: 44.w,
-        width: 44.w,
+        height: AppSizes.px44,
+        width: AppSizes.px44,
         decoration: BoxDecoration(
           color: AppColor.primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
         ),
-        child: Icon(icon, size: 22.w, color: AppColor.primaryColor),
+        child: Icon(icon, size: AppSizes.px22, color: AppColor.primaryColor),
       ),
       title: Text(label, style: AppFonts.medium16(context)),
     );

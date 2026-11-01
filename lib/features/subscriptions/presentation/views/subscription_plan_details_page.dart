@@ -1,10 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
@@ -14,6 +12,7 @@ import 'package:new_coffee/features/subscriptions/presentation/manager/subscript
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_image.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class SubscriptionPlanDetailsPage extends StatelessWidget {
   const SubscriptionPlanDetailsPage({super.key, required this.plan});
@@ -25,9 +24,9 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => SubscriptionCubit(
-        repository: context.read<SubscriptionRepository>(),
-      )..loadPlanProducts(plan.id),
+      create: (context) =>
+          SubscriptionCubit(repository: context.read<SubscriptionRepository>())
+            ..loadPlanProducts(plan.id),
       child: _PlanDetailsView(plan: plan),
     );
   }
@@ -61,23 +60,25 @@ class _PlanDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(plan.name.isEmpty ? S.planDetails : plan.name)),
+      appBar: AppBar(
+        title: Text(plan.name.isEmpty ? S.planDetails : plan.name),
+      ),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           return ListView(
-            padding: EdgeInsets.all(SpacingTokens.lg.w),
+            padding: EdgeInsets.all(AppSpacing.lg),
             children: [
               if (plan.imageUrl != null && plan.imageUrl!.isNotEmpty)
                 Padding(
-                  padding: EdgeInsets.only(bottom: SpacingTokens.md.h),
+                  padding: EdgeInsets.only(bottom: AppSpacing.md),
                   child: SubscriptionPlanImage(imageUrl: plan.imageUrl!),
                 ),
               Text(plan.name, style: AppFonts.semiBold20(context)),
               if (plan.description.isNotEmpty) ...[
-                SizedBox(height: SpacingTokens.sm.h),
+                SizedBox(height: AppSpacing.sm),
                 Text(plan.description, style: AppFonts.regular14(context)),
               ],
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               SubscriptionDetailRow(
                 label: S.priceLabel,
                 value: Formatters.price(plan.price, plan.currencyCode),
@@ -116,17 +117,18 @@ class _PlanDetailsView extends StatelessWidget {
                     : S.selectedProducts,
               ),
               if (plan.productScope == 'selected') ...[
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 Text(S.includedProducts, style: AppFonts.semiBold16(context)),
-                SizedBox(height: SpacingTokens.xs.h),
+                SizedBox(height: AppSpacing.xs),
                 _IncludedProducts(
                   state: state,
                   currencyCode: plan.currencyCode,
-                  onRetry: () => context.read<SubscriptionCubit>()
+                  onRetry: () => context
+                      .read<SubscriptionCubit>()
                       .loadPlanProducts(plan.id),
                 ),
               ],
-              SizedBox(height: SpacingTokens.lg.h),
+              SizedBox(height: AppSpacing.lg),
               FilledButton(
                 onPressed: state.loading ? null : () => _subscribe(context),
                 child: Text(S.subscribeNow),
@@ -168,7 +170,7 @@ class _IncludedProducts extends StatelessWidget {
     final products = state.planProducts;
     if (products == null) {
       return Padding(
-        padding: EdgeInsets.all(SpacingTokens.sm.w),
+        padding: EdgeInsets.all(AppSpacing.sm),
         child: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -195,7 +197,8 @@ class _ProductImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = product.imageUrl;
-    if (url == null || url.isEmpty) return const SizedBox(width: 40, height: 40);
+    if (url == null || url.isEmpty)
+      return const SizedBox(width: AppSizes.px40, height: AppSizes.px40);
     if (url.startsWith('assets/')) {
       return Image.asset(url, width: 40, height: 40, fit: BoxFit.cover);
     }

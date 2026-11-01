@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/content/data/model/faq_model.dart';
@@ -40,12 +38,9 @@ Future<void> _pumpPolicy(
   ContentRepository repository,
 ) async {
   await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: AppConstant.designSize,
-      builder: (context, _) => RepositoryProvider<ContentRepository>.value(
-        value: repository,
-        child: const MaterialApp(home: PrivacyPolicyPage()),
-      ),
+    RepositoryProvider<ContentRepository>.value(
+      value: repository,
+      child: const MaterialApp(home: PrivacyPolicyPage()),
     ),
   );
   await tester.pumpAndSettle();
@@ -59,9 +54,7 @@ void main() {
   });
 
   group('published legal document', () {
-    testWidgets('asks for the document the page is named for', (
-      tester,
-    ) async {
+    testWidgets('asks for the document the page is named for', (tester) async {
       final repository = _FakeContentRepository(
         document: const LegalDocumentModel(
           id: 'doc-1',
@@ -112,13 +105,9 @@ void main() {
         ),
       );
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: AppConstant.designSize,
-          builder: (context, _) =>
-              RepositoryProvider<ContentRepository>.value(
-                value: repository,
-                child: const MaterialApp(home: PrivacyPolicyPage()),
-              ),
+        RepositoryProvider<ContentRepository>.value(
+          value: repository,
+          child: const MaterialApp(home: PrivacyPolicyPage()),
         ),
       );
 

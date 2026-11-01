@@ -2,19 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/location/data/model/location_failure.dart';
 import 'package:new_coffee/features/location/data/model/place_suggestion.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// A picked location: the pin, and the place name it resolves to.
 class PickedLocation {
@@ -339,9 +338,7 @@ class _LocationPickerState extends State<LocationPicker> {
     final label = await _resolveLabel(point);
     // Another pick, a pan or a new search may have landed while this one was
     // in flight; only the latest result may write to the screen.
-    if (!mounted ||
-        generation != _positionGeneration ||
-        _point != point) {
+    if (!mounted || generation != _positionGeneration || _point != point) {
       return;
     }
     setState(() => _isLocating = false);
@@ -459,10 +456,7 @@ class _LocationPickerState extends State<LocationPicker> {
           controller: _searchController,
           focusNode: _searchFocus,
           hint: S.searchLocation,
-          prefixIcon: const Icon(
-            HugeIcons.strokeRoundedSearch01,
-            color: AppColor.greyColor,
-          ),
+          prefixIcon: const Icon(AppIcons.search, color: AppColor.greyColor),
           // A picked place is a complete answer; the map below stays usable
           // for fine-tuning.
           textInputAction: TextInputAction.search,
@@ -473,7 +467,7 @@ class _LocationPickerState extends State<LocationPicker> {
         _useCurrentLocationRow(),
         if (_locationFailure != null)
           Padding(
-            padding: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+            padding: EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
               _locationFailure!.userMessage,
               style: AppFonts.regular12(context)
@@ -496,7 +490,7 @@ class _LocationPickerState extends State<LocationPicker> {
             ),
           ),
         const Divider(height: 1),
-        SizedBox(height: SpacingTokens.sm.h),
+        SizedBox(height: AppSpacing.sm),
         Expanded(child: _mapSlot()),
       ],
     );
@@ -505,7 +499,7 @@ class _LocationPickerState extends State<LocationPicker> {
   Widget? _searchSuffix() {
     if (_isSearching) {
       return const Padding(
-        padding: EdgeInsets.all(14),
+        padding: EdgeInsets.all(AppSizes.px14),
         child: SizedBox(
           height: 20,
           width: 20,
@@ -517,8 +511,8 @@ class _LocationPickerState extends State<LocationPicker> {
     return IconButton(
       onPressed: _clearSearch,
       icon: Icon(
-        HugeIcons.strokeRoundedCancel01,
-        size: 20.r,
+        AppIcons.close,
+        size: AppRadius.r20,
         color: AppColor.greyColor,
       ),
     );
@@ -528,15 +522,15 @@ class _LocationPickerState extends State<LocationPicker> {
     onTap: _useCurrentLocation,
     behavior: HitTestBehavior.opaque,
     child: Padding(
-      padding: EdgeInsets.symmetric(vertical: SpacingTokens.xs.h),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
           Icon(
-            HugeIcons.strokeRoundedLocation01,
-            size: 24.w,
+            AppIcons.location,
+            size: AppSpacing.xl,
             color: AppColor.primaryColor,
           ),
-          SizedBox(width: SpacingTokens.sm.w),
+          SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               S.useCurrentLocation,
@@ -587,8 +581,8 @@ class _LocationPickerState extends State<LocationPicker> {
                     width: 40,
                     height: 40,
                     child: Icon(
-                      HugeIcons.strokeRoundedLocation01,
-                      size: 36.w,
+                      AppIcons.location,
+                      size: AppSizes.px36,
                       color: AppColor.primaryColor,
                     ),
                   ),
@@ -604,25 +598,22 @@ class _LocationPickerState extends State<LocationPicker> {
 
   Widget _suggestionList() => Container(
     constraints: const BoxConstraints(maxHeight: 220),
-    margin: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
+    margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
     decoration: BoxDecoration(
       color: AppColor.whiteColor,
-      borderRadius: BorderRadius.circular(16.r),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.12),
-          blurRadius: 16.r,
-          offset: Offset(0, 4.h),
-        ),
-      ],
+      borderRadius: BorderRadius.circular(AppRadius.r16),
+      boxShadow: AppShadows.sheet,
     ),
     clipBehavior: Clip.antiAlias,
     child: ListView.separated(
       shrinkWrap: true,
-      padding: EdgeInsets.symmetric(vertical: SpacingTokens.xs.h),
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
       itemCount: _suggestions.length,
-      separatorBuilder: (_, _) =>
-          Divider(height: 1, indent: 52.w, color: AppColor.borderColor),
+      separatorBuilder: (_, _) => Divider(
+        height: 1,
+        indent: AppSizes.px52,
+        color: AppColor.borderColor,
+      ),
       itemBuilder: (context, index) => _suggestionRow(_suggestions[index]),
     ),
   );
@@ -631,17 +622,13 @@ class _LocationPickerState extends State<LocationPicker> {
     onTap: () => _selectSuggestion(place),
     child: Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md.w,
-        vertical: SpacingTokens.sm.h,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       child: Row(
         children: [
-          Icon(
-            HugeIcons.strokeRoundedSearch01,
-            size: 20.w,
-            color: AppColor.greyColor,
-          ),
-          SizedBox(width: SpacingTokens.md.w),
+          Icon(AppIcons.search, size: AppSizes.px20, color: AppColor.greyColor),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

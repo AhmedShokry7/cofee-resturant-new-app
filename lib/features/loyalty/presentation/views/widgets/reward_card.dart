@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class RewardCard extends StatelessWidget {
   const RewardCard({
@@ -27,24 +26,24 @@ class RewardCard extends StatelessWidget {
     return Opacity(
       opacity: locked ? 0.55 : 1,
       child: Container(
-        margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-        padding: EdgeInsets.all(SpacingTokens.md.w),
+        margin: EdgeInsets.only(bottom: AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(AppRadius.r16),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
               child: SizedBox(
-                height: 56.w,
-                width: 56.w,
+                height: AppSizes.px56,
+                width: AppSizes.px56,
                 child: _RewardThumb(reward: reward),
               ),
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,12 +54,12 @@ class RewardCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: AppSpacing.xs),
                   Row(
                     children: [
                       if (reward.type != RewardTargetType.product) ...[
                         _RewardTypeBadge(type: reward.type),
-                        SizedBox(width: SpacingTokens.xs.w),
+                        SizedBox(width: AppSpacing.xs),
                       ],
                       Flexible(
                         child: Text(
@@ -74,7 +73,7 @@ class RewardCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: SpacingTokens.sm.w),
+            SizedBox(width: AppSpacing.sm),
             if (locked)
               Text(
                 S.locked,
@@ -86,12 +85,12 @@ class RewardCard extends StatelessWidget {
                 onTap: onRedeem,
                 child: Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.lg.w,
-                    vertical: SpacingTokens.sm.h,
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
                   ),
                   decoration: BoxDecoration(
                     color: AppColor.primaryColor,
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     S.redeem,
@@ -124,7 +123,7 @@ class _RewardThumb extends StatelessWidget {
         child: Icon(
           _rewardTypeIcon(reward.type),
           color: AppColor.primaryColor,
-          size: 24.w,
+          size: AppSpacing.xl,
         ),
       ),
     );
@@ -140,12 +139,12 @@ class _RewardTypeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: SpacingTokens.xs.w + 2.w,
-        vertical: 1.h,
+        horizontal: AppSpacing.xs + AppSpacing.xxs,
+        vertical: AppSizes.px1,
       ),
       decoration: BoxDecoration(
         color: AppColor.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(6.r),
+        borderRadius: BorderRadius.circular(AppRadius.r6),
       ),
       child: Text(
         switch (type) {
@@ -153,16 +152,17 @@ class _RewardTypeBadge extends StatelessWidget {
           RewardTargetType.plan => S.subscriptionLabel,
           RewardTargetType.product => '',
         },
-        style: AppFonts.regular12(
-          context,
-        ).copyWith(color: AppColor.primaryColor, fontWeight: FontWeight.w600),
+        style: AppFonts.regular12(context).copyWith(
+          color: AppColor.primaryColor,
+          fontWeight: AppFontWeights.semiBold,
+        ),
       ),
     );
   }
 }
 
 IconData _rewardTypeIcon(RewardTargetType type) => switch (type) {
-  RewardTargetType.product => Icons.local_cafe_rounded,
-  RewardTargetType.bundle => Icons.card_giftcard_rounded,
-  RewardTargetType.plan => Icons.autorenew_rounded,
+  RewardTargetType.product => AppIcons.coffee,
+  RewardTargetType.bundle => AppIcons.gift,
+  RewardTargetType.plan => AppIcons.refresh,
 };

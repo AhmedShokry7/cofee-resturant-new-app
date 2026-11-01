@@ -6,7 +6,9 @@ import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/shared/utils/cache_manager.dart';
 
@@ -24,12 +26,8 @@ void main() {
   setUp(() => CacheManager().clear());
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
 
-  Future<List<ProductModel>> popularFrom(
-    List<FeaturedProduct> featured,
-  ) async {
-    final cubit = HomeCubit(
-      repository: _FeaturedCatalog(featured),
-    );
+  Future<List<ProductModel>> popularFrom(List<FeaturedProduct> featured) async {
+    final cubit = HomeCubit(repository: _FeaturedCatalog(featured));
     final state = await cubit.stream.firstWhere((s) => !s.isLoading);
     await cubit.close();
     return state.popular;
@@ -80,23 +78,26 @@ void main() {
     expect(popular.map((p) => p.category), ['Hot drinks', 'Cold drinks']);
   });
 
-  test('an uncategorised product still appears, just without a label', () async {
-    // The RPC uses a left join on purpose: an inner join would hide featured
-    // products instead of showing them unlabelled.
-    final popular = await popularFrom([
-      const FeaturedProduct(
-        productId: 'p1',
-        nameAr: 'منتج',
-        nameEn: 'Mystery',
-        effectivePrice: 9,
-        source: 'manual',
-      ),
-    ]);
+  test(
+    'an uncategorised product still appears, just without a label',
+    () async {
+      // The RPC uses a left join on purpose: an inner join would hide featured
+      // products instead of showing them unlabelled.
+      final popular = await popularFrom([
+        const FeaturedProduct(
+          productId: 'p1',
+          nameAr: 'منتج',
+          nameEn: 'Mystery',
+          effectivePrice: 9,
+          source: 'manual',
+        ),
+      ]);
 
-    expect(popular, hasLength(1));
-    expect(popular.single.nameEn, 'Mystery');
-    expect(popular.single.category.trim(), isEmpty);
-  });
+      expect(popular, hasLength(1));
+      expect(popular.single.nameEn, 'Mystery');
+      expect(popular.single.category.trim(), isEmpty);
+    },
+  );
 
   test('a row missing its Arabic name still shows the English one', () async {
     final popular = await popularFrom([
@@ -145,7 +146,8 @@ class _FeaturedCatalog implements CatalogRepository {
       _inner.getCategories(includeInactive: includeInactive);
 
   @override
-  Future<CategoryModel?> getCategoryById(String id) => _inner.getCategoryById(id);
+  Future<CategoryModel?> getCategoryById(String id) =>
+      _inner.getCategoryById(id);
 
   @override
   Future<CategoryModel?> getCategoryBySlug(String slug) =>
@@ -160,10 +162,8 @@ class _FeaturedCatalog implements CatalogRepository {
       _inner.getById(id, branchId: branchId);
 
   @override
-  Future<ProductWithOptions?> getWithOptions(
-    String id, {
-    String? branchId,
-  }) => _inner.getWithOptions(id, branchId: branchId);
+  Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) =>
+      _inner.getWithOptions(id, branchId: branchId);
 
   @override
   Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
@@ -205,11 +205,7 @@ class _FeaturedCatalog implements CatalogRepository {
     String? branchId,
     Duration period = const Duration(days: 30),
     int limit = 10,
-  }) => _inner.getBestSellers(
-    branchId: branchId,
-    period: period,
-    limit: limit,
-  );
+  }) => _inner.getBestSellers(branchId: branchId, period: period, limit: limit);
 
   @override
   Future<ResolvedPrice?> resolvePrice(

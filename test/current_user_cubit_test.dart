@@ -59,20 +59,23 @@ void main() {
       expect(cubit.state.isLoading, isFalse);
     });
 
-    test('a signed-out customer clears the name a previous read left', () async {
-      final repository = _FakeAuthRepository(
-        user: const AuthUser(id: 'u1', name: 'Ahmed'),
-      );
-      final cubit = CurrentUserCubit(repository: repository);
-      addTearDown(cubit.close);
-      await cubit.load();
-      expect(cubit.state.name, 'Ahmed');
+    test(
+      'a signed-out customer clears the name a previous read left',
+      () async {
+        final repository = _FakeAuthRepository(
+          user: const AuthUser(id: 'u1', name: 'Ahmed'),
+        );
+        final cubit = CurrentUserCubit(repository: repository);
+        addTearDown(cubit.close);
+        await cubit.load();
+        expect(cubit.state.name, 'Ahmed');
 
-      repository.user = null;
-      await cubit.load();
-      expect(cubit.state.user, isNull);
-      expect(cubit.state.name, isEmpty);
-    });
+        repository.user = null;
+        await cubit.load();
+        expect(cubit.state.user, isNull);
+        expect(cubit.state.name, isEmpty);
+      },
+    );
 
     test('a read that lands after the tab closed is dropped', () async {
       final gate = Completer<AuthUser?>();

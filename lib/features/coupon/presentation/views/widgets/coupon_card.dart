@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CouponCard extends StatelessWidget {
   const CouponCard({super.key, required this.coupon, this.isApplied = false});
@@ -44,11 +43,11 @@ class CouponCard extends StatelessWidget {
     final accent = exhausted ? AppColor.greyColor : AppColor.primaryColor;
 
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.lg.h),
+      margin: EdgeInsets.only(bottom: AppSpacing.lg),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(
           color: isApplied ? AppColor.primaryColor : AppColor.borderColor,
           width: isApplied ? 1.5 : 1,
@@ -57,24 +56,24 @@ class CouponCard extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: EdgeInsets.all(SpacingTokens.md.w),
+            padding: EdgeInsets.all(AppSpacing.md),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  height: 44.w,
-                  width: 44.w,
+                  height: AppSizes.px44,
+                  width: AppSizes.px44,
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
-                    HugeIcons.strokeRoundedDiscountTag01,
+                    AppIcons.discountTag,
                     color: accent,
-                    size: 22.w,
+                    size: AppSizes.px22,
                   ),
                 ),
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,21 +84,21 @@ class CouponCard extends StatelessWidget {
                           color: exhausted ? AppColor.greyColor : null,
                         ),
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(height: AppSpacing.xs),
                       Text(
                         coupon.description,
                         style: AppFonts.regular12(context)
                             .copyWith(color: AppColor.greyColor),
                       ),
-                      SizedBox(height: SpacingTokens.sm.h),
+                      SizedBox(height: AppSpacing.sm),
                       Row(
                         children: [
                           Icon(
-                            HugeIcons.strokeRoundedDiscount01,
-                            size: 18.w,
+                            AppIcons.discount,
+                            size: AppSizes.px18,
                             color: AppColor.blackColor,
                           ),
-                          SizedBox(width: SpacingTokens.xs.w),
+                          SizedBox(width: AppSpacing.xs),
                           Text(
                             coupon.discount,
                             style: AppFonts.medium14(context).copyWith(
@@ -109,7 +108,7 @@ class CouponCard extends StatelessWidget {
                         ],
                       ),
                       if (isApplied || status != null) ...[
-                        SizedBox(height: SpacingTokens.sm.h),
+                        SizedBox(height: AppSpacing.sm),
                         _StatusChip(
                           label: isApplied ? S.couponAppliedBadge : status!,
                           color: isApplied ? AppColor.primaryColor : accent,
@@ -120,20 +119,19 @@ class CouponCard extends StatelessWidget {
                       // coupon is indistinguishable from an unscoped one until
                       // it is refused.
                       if (coupon.isScoped) ...[
-                        SizedBox(height: SpacingTokens.xs.h),
+                        SizedBox(height: AppSpacing.xs),
                         Text(
                           '${S.couponAppliesTo} ${coupon.scopeLabel}',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: AppFonts.regular12(context).copyWith(
-                            color: AppColor.greyColor,
-                          ),
+                          style: AppFonts.regular12(context)
+                              .copyWith(color: AppColor.greyColor),
                         ),
                         // The server discounts only these lines, so the figure
                         // above is a share of *these* items and not of the whole
                         // basket. Saying it prevents "why is the discount so
                         // small" tickets.
-                        SizedBox(height: 2.h),
+                        SizedBox(height: AppSpacing.xxs),
                         Text(
                           S.couponScopeDiscountNote,
                           style: AppFonts.regular12(context).copyWith(
@@ -155,13 +153,17 @@ class CouponCard extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             child: Container(
               width: double.infinity,
-              color: exhausted ? AppColor.surfaceColor : AppColor.lightGreyColor,
-              padding: EdgeInsets.symmetric(vertical: SpacingTokens.md.h),
+              color: exhausted
+                  ? AppColor.surfaceColor
+                  : AppColor.lightGreyColor,
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Center(
                 child: Text(
                   exhausted ? S.couponNoUsesLeft : S.copyCode,
                   style: AppFonts.medium16(context).copyWith(
-                    color: exhausted ? AppColor.greyColor : AppColor.primaryColor,
+                    color: exhausted
+                        ? AppColor.greyColor
+                        : AppColor.primaryColor,
                   ),
                 ),
               ),
@@ -182,10 +184,13 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSizes.px3,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(AppRadius.r20),
       ),
       child: Text(
         label,

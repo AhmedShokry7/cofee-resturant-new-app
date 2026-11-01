@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class PageTitle extends StatelessWidget {
   const PageTitle({super.key, required this.title});
@@ -13,10 +12,10 @@ class PageTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.md,
       ),
       child: Text(
         title,
@@ -26,4 +25,3 @@ class PageTitle extends StatelessWidget {
     );
   }
 }
-

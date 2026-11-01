@@ -36,9 +36,7 @@ part 'profile_state.dart';
 /// or switching accounts drops all of it, so one customer's photo can never be
 /// rendered for another.
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit({required ProfilePhotoRepository repository})
-    : _repository = repository,
-      super(const ProfileState()) {
+  ProfileCubit({required this._repository}) : super(const ProfileState()) {
     // Seeded from the same source the repository reads, so restoring the
     // session that is already present is not mistaken for a switch to it.
     _identity = SupabaseService.isReady
@@ -109,8 +107,9 @@ class ProfileCubit extends Cubit<ProfileState> {
       final path = (await _repository.loadAvatarPath())?.trim();
       if (isClosed || generation != _generation) return;
       if (path == null || path.isEmpty) {
-        if (cacheKey != null)
+        if (cacheKey != null) {
           await SharedPref.setValue(key: cacheKey, value: '');
+        }
         emit(state.copyWith(clearAvatar: true, isLoading: false));
         return;
       }

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
@@ -32,6 +29,7 @@ import 'package:new_coffee/features/content/presentation/views/privacy_policy_pa
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bottom_sheet.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The account tab.
 ///
@@ -46,9 +44,9 @@ class SettingsPage extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => CurrentUserCubit(
-            repository: context.read<AuthRepository>(),
-          )..load(),
+          create: (context) =>
+              CurrentUserCubit(repository: context.read<AuthRepository>())
+                ..load(),
         ),
         // Signing out is an auth decision with a session marker behind it, so
         // it goes through AuthCubit instead of a second sign-out written here
@@ -89,14 +87,12 @@ class _LanguageOption extends StatelessWidget {
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
-        padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
         child: Row(
           children: [
             SelectionRadio(selected: selected),
-            SizedBox(width: SpacingTokens.md.w),
-            Expanded(
-              child: Text(label, style: AppFonts.regular16(context)),
-            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(child: Text(label, style: AppFonts.regular16(context))),
           ],
         ),
       ),
@@ -156,163 +152,175 @@ class _SettingsViewState extends State<_SettingsView> {
         child: BlocListener<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthSignedOut) {
-              Navigator.of(context).pushNamedAndRemoveUntil(
-                AuthPage.routeName,
-                (route) => false,
-              );
+              Navigator.of(
+                context,
+              ).pushNamedAndRemoveUntil(AuthPage.routeName, (route) => false);
             } else if (state is AuthFailure) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message)),
-              );
+              ScaffoldMessenger.of(context)
+                  .showSnackBar(SnackBar(content: Text(state.message)));
             }
           },
           child: BlocListener<ProfileCubit, ProfileState>(
-          listenWhen: (previous, current) =>
-              current.error != null && current.error != previous.error,
-          listener: (context, state) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(_photoErrorMessage(state.error!))),
-            );
-          },
-          child: ListView(
-          children: [
-            Padding(
-              padding: LayoutTokens.pageBody(),
-              child: Column(
-                children: [
-                  BlocBuilder<ProfileCubit, ProfileState>(
-                    builder: (context, state) {
-                      return GestureDetector(
-                        onTap: () => _pickImage(context),
-                        child: Stack(
-                          children: [
-                            ProfileAvatar(state: state, radius: 52.w),
-                            Positioned(
-                              bottom: 2,
-                              right: 2,
-                              child: GestureDetector(
-                                onTap: () => _pickImage(context),
-                                child: Container(
-                                  height: 36.w,
-                                  width: 36.w,
-                                  decoration: BoxDecoration(
-                                    color: AppColor.primaryColor,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: AppColor.whiteColor,
-                                      width: 3,
+            listenWhen: (previous, current) =>
+                current.error != null && current.error != previous.error,
+            listener: (context, state) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(_photoErrorMessage(state.error!))),
+              );
+            },
+            child: ListView(
+              children: [
+                Padding(
+                  padding: AppLayout.pageBody,
+                  child: Column(
+                    children: [
+                      BlocBuilder<ProfileCubit, ProfileState>(
+                        builder: (context, state) {
+                          return GestureDetector(
+                            onTap: () => _pickImage(context),
+                            child: Stack(
+                              children: [
+                                ProfileAvatar(
+                                  state: state,
+                                  radius: AppSizes.px52,
+                                ),
+                                Positioned(
+                                  bottom: 2,
+                                  right: 2,
+                                  child: GestureDetector(
+                                    onTap: () => _pickImage(context),
+                                    child: Container(
+                                      height: AppSizes.px36,
+                                      width: AppSizes.px36,
+                                      decoration: BoxDecoration(
+                                        color: AppColor.primaryColor,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: AppColor.whiteColor,
+                                          width: 3,
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        AppIcons.camera,
+                                        size: AppSizes.px18,
+                                        color: AppColor.whiteColor,
+                                      ),
                                     ),
                                   ),
-                                  child: Icon(
-                                    HugeIcons.strokeRoundedCamera01,
-                                    size: 18.w,
-                                    color: AppColor.whiteColor,
-                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      );
-                    },
+                          );
+                        },
+                      ),
+                      SizedBox(height: AppSpacing.md),
+                      BlocBuilder<CurrentUserCubit, CurrentUserState>(
+                        builder: (context, state) {
+                          final name = state.name;
+                          if (name.isEmpty) return const SizedBox.shrink();
+                          return Text(
+                            name,
+                            style: AppFonts.semiBold24(context),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                  SizedBox(height: SpacingTokens.md.h),
-                  BlocBuilder<CurrentUserCubit, CurrentUserState>(
-                    builder: (context, state) {
-                      final name = state.name;
-                      if (name.isEmpty) return const SizedBox.shrink();
-                      return Text(name, style: AppFonts.semiBold24(context));
-                    },
+                ),
+                SizedBox(height: AppSpacing.md),
+                ProfileMenuTile(
+                  icon: AppIcons.profile,
+                  label: S.yourProfile,
+                  onTap: () async {
+                    final cubit = context.read<CurrentUserCubit>();
+                    await Navigator.of(context)
+                        .pushNamed(EditProfilePage.routeName);
+                    // The edit page writes the name through the same session, so
+                    // the tab re-reads it instead of guessing what was typed.
+                    cubit.load();
+                  },
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.location,
+                  label: S.myAddresses,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AddressesPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.creditCard,
+                  label: S.paymentMethod,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(SavedCardsPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.package,
+                  label: S.myOrders,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(OrdersPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.package,
+                  label: S.subscriptionPlans,
+                  onTap: () =>
+                      Navigator.of(context)
+                          .pushNamed(SubscriptionPlansPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.creditCard,
+                  label: S.mySubscription,
+                  onTap: () =>
+                      Navigator.of(context)
+                          .pushNamed(SubscriptionDetailsPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.coupon,
+                  label: S.coupon,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(CouponPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.star,
+                  label: S.loyaltyPoints,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(LoyaltyPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.notification,
+                  label: S.notifications,
+                  onTap: () =>
+                      Navigator.of(context)
+                          .pushNamed(NotificationsPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.language,
+                  label: S.language,
+                  subtitle: S.languageValue(AppLocale.instance.isArabic),
+                  onTap: () => _showLanguageDialog(context),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.help,
+                  label: S.help,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(HelpPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.shield,
+                  label: S.privacyPolicy,
+                  onTap: () =>
+                      Navigator.of(context)
+                          .pushNamed(PrivacyPolicyPage.routeName),
+                ),
+                ProfileMenuTile(
+                  icon: AppIcons.logout,
+                  label: S.logOut,
+                  onTap: () => showLogoutSheet(
+                    context,
+                    onConfirm: () => _logout(context),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            SizedBox(height: SpacingTokens.md.h),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedUserCircle,
-              label: S.yourProfile,
-              onTap: () async {
-                final cubit = context.read<CurrentUserCubit>();
-                await Navigator.of(context).pushNamed(EditProfilePage.routeName);
-                // The edit page writes the name through the same session, so
-                // the tab re-reads it instead of guessing what was typed.
-                cubit.load();
-              },
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedLocation01,
-              label: S.myAddresses,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AddressesPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedCreditCard,
-              label: S.paymentMethod,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(SavedCardsPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedPackage,
-              label: S.myOrders,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(OrdersPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedPackage,
-              label: S.subscriptionPlans,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(SubscriptionPlansPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedCreditCard,
-              label: S.mySubscription,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(SubscriptionDetailsPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedCoupon01,
-              label: S.coupon,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(CouponPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedStar,
-              label: S.loyaltyPoints,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(LoyaltyPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedNotification01,
-              label: S.notifications,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(NotificationsPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedLanguageCircle,
-              label: S.language,
-              subtitle: S.languageValue(AppLocale.instance.isArabic),
-              onTap: () => _showLanguageDialog(context),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedHelpCircle,
-              label: S.help,
-              onTap: () => Navigator.of(context).pushNamed(HelpPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedShieldKey,
-              label: S.privacyPolicy,
-              onTap: () =>
-                  Navigator.of(context).pushNamed(PrivacyPolicyPage.routeName),
-            ),
-            ProfileMenuTile(
-              icon: HugeIcons.strokeRoundedLogout01,
-              label: S.logOut,
-              onTap: () =>
-                  showLogoutSheet(context, onConfirm: () => _logout(context)),
-            ),
-          ],
           ),
-        ),
         ),
       ),
     );

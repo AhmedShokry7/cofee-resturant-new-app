@@ -11,10 +11,7 @@ import 'package:new_coffee/core/navigation/app_routes.dart';
 void main() {
   test('App boots to the saved entry route (default)', () {
     SharedPreferences.setMockInitialValues({});
-    expect(
-      AppRoutes.initialRouteName(null),
-      AppRoutes.initialRouteName(''),
-    );
+    expect(AppRoutes.initialRouteName(null), AppRoutes.initialRouteName(''));
   });
 
   test('saved home route maps to main page', () {
@@ -30,8 +27,10 @@ void main() {
   test('default when nothing saved', () {
     expect(
       AppRoutes.initialRouteName(null),
-      AppRoutes.routes.keys.firstWhere((key) => key.contains('welcome'),
-          orElse: () => '/welcome'),
+      AppRoutes.routes.keys.firstWhere(
+        (key) => key.contains('welcome'),
+        orElse: () => '/welcome',
+      ),
     );
   });
 }

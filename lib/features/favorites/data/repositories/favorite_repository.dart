@@ -32,11 +32,8 @@ abstract class FavoritesRepository {
 }
 
 class FavoritesRepositoryImpl implements FavoritesRepository {
-  const FavoritesRepositoryImpl({
-    SupabaseClient? client,
-    String? Function()? userIdProvider,
-  }) : _clientOverride = client,
-       _userIdProvider = userIdProvider;
+  const FavoritesRepositoryImpl({SupabaseClient? client, this._userIdProvider})
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
   final String? Function()? _userIdProvider;

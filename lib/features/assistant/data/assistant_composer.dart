@@ -8,8 +8,7 @@
 class AssistantComposer {
   const AssistantComposer._();
 
-  static String pick(List<String> pool, int seed) =>
-      pool[seed % pool.length];
+  static String pick(List<String> pool, int seed) => pool[seed % pool.length];
 
   static String fill(String template, Map<String, String> slots) {
     var result = template;

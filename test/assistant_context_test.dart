@@ -12,7 +12,9 @@ import 'package:new_coffee/features/assistant/data/assistant_catalog.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
 void main() {
@@ -57,7 +59,11 @@ void main() {
       final log = converse(['عايز اشرب ايه', 'كام سعره؟']);
 
       expect(log.first.topic, 'suggest');
-      expect(log.last.topic, 'prices', reason: 'a price question stays a price question');
+      expect(
+        log.last.topic,
+        'prices',
+        reason: 'a price question stays a price question',
+      );
       expect(
         log.last.text,
         isNot(contains('عروض')),
@@ -104,7 +110,11 @@ void main() {
     });
 
     test('the price after an options question is still that product', () {
-      final log = converse(['عايز اعرف عن اللاتيه', 'فيه سكر اقل؟', 'وكم سعره؟']);
+      final log = converse([
+        'عايز اعرف عن اللاتيه',
+        'فيه سكر اقل؟',
+        'وكم سعره؟',
+      ]);
 
       expect(log.last.topic, 'prices');
       expect(log.last.text, contains('Latte'));
@@ -126,7 +136,11 @@ void main() {
       final log = converse(['عايز اطلب لاتيه كبير', 'ايوه', 'ادفع دلوقتي']);
 
       expect(log[0].topic, 'order');
-      expect(log[0].text, contains('أكد'), reason: 'the order asks to be confirmed');
+      expect(
+        log[0].text,
+        contains('أكد'),
+        reason: 'the order asks to be confirmed',
+      );
       expect(log[1].text, contains('السلة'), reason: 'the yes fills the cart');
       expect(log[2].topic, 'order');
     });

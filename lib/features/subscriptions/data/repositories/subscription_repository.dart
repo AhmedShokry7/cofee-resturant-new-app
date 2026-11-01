@@ -43,17 +43,20 @@ abstract class SubscriptionRepository {
 }
 
 class SubscriptionRepositoryImpl implements SubscriptionRepository {
-  SubscriptionRepositoryImpl({SupabaseClient? client}) : _clientOverride = client;
+  SubscriptionRepositoryImpl({SupabaseClient? client})
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
   SupabaseClient? get _client =>
-      _clientOverride ?? (SupabaseService.isReady ? SupabaseService.client : null);
+      _clientOverride ??
+      (SupabaseService.isReady ? SupabaseService.client : null);
 
   @override
   Future<List<SubscriptionPlan>> plans({String? branchId}) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
     final rows = await client.rpc(
       'list_subscription_plans',
       params: {
@@ -61,16 +64,26 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       },
     );
     if (rows is! List) return const [];
-    return [for (final row in rows) if (row is Map<String, dynamic>) SubscriptionPlan.fromDatabase(row)];
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>) SubscriptionPlan.fromDatabase(row),
+    ];
   }
 
   @override
   Future<List<SubscriptionPlanProduct>> planProducts(String planId) async {
     final client = _client;
     if (client == null) return const [];
-    final rows = await client.rpc('subscription_plan_products', params: {'p_plan_id': planId});
+    final rows = await client.rpc(
+      'subscription_plan_products',
+      params: {'p_plan_id': planId},
+    );
     if (rows is! List) return const [];
-    return [for (final row in rows) if (row is Map<String, dynamic>) SubscriptionPlanProduct.fromDatabase(row)];
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>)
+          SubscriptionPlanProduct.fromDatabase(row),
+    ];
   }
 
   @override
@@ -81,7 +94,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     if (rows is! List || rows.isEmpty || rows.first is! Map<String, dynamic>) {
       return null;
     }
-    return CustomerSubscription.fromDatabase(rows.first as Map<String, dynamic>);
+    return CustomerSubscription.fromDatabase(
+      rows.first as Map<String, dynamic>,
+    );
   }
 
   @override
@@ -90,13 +105,11 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
     await client.rpc(
       'create_pending_subscription',
-      params: {
-        'p_plan_id': planId,
-        'p_idempotency_key': idempotencyKey,
-      },
+      params: {'p_plan_id': planId, 'p_idempotency_key': idempotencyKey},
     );
     final subscription = await mySubscription();
     if (subscription == null) throw StateError('Subscription was not created.');
@@ -112,7 +125,8 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
     final result = await client.rpc(
       'reserve_subscription_for_order',
       params: {
@@ -133,7 +147,8 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
     final current = await mySubscription();
     if (current == null || current.id != subscriptionId) {
       throw StateError('Subscription not found.');
@@ -156,7 +171,8 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required bool enabled,
   }) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
     await client.rpc(
       'set_subscription_auto_renew',
       params: {'p_subscription_id': subscriptionId, 'p_enabled': enabled},
@@ -166,8 +182,12 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   @override
   Future<void> cancel({required String subscriptionId}) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
-    await client.rpc('cancel_subscription', params: {'p_subscription_id': subscriptionId});
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
+    await client.rpc(
+      'cancel_subscription',
+      params: {'p_subscription_id': subscriptionId},
+    );
   }
 
   @override
@@ -182,14 +202,21 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
       },
     );
     if (rows is! List) return const [];
-    return [for (final row in rows) if (row is Map<String, dynamic>) SubscriptionUsage.fromDatabase(row)];
+    return [
+      for (final row in rows)
+        if (row is Map<String, dynamic>) SubscriptionUsage.fromDatabase(row),
+    ];
   }
 
   @override
   Future<String> generateQrToken({required String subscriptionId}) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
-    final result = await client.rpc('generate_subscription_qr', params: {'p_subscription_id': subscriptionId});
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
+    final result = await client.rpc(
+      'generate_subscription_qr',
+      params: {'p_subscription_id': subscriptionId},
+    );
     return result.toString();
   }
 
@@ -202,7 +229,8 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null) throw StateError('Subscriptions need a configured Supabase backend.');
+    if (client == null)
+      throw StateError('Subscriptions need a configured Supabase backend.');
     final result = await client.rpc(
       'consume_subscription_qr',
       params: {

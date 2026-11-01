@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/features/location/presentation/widgets/location_picker.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The address editor: a label, a pin or a typed place, and the rules that
 /// decide whether the result may be saved.
@@ -18,11 +17,7 @@ import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 /// form, so every rule written here had to be written twice — including the
 /// guard below that rejects a coordinate-only label.
 class AddressFormBody extends StatefulWidget {
-  const AddressFormBody({
-    super.key,
-    this.address,
-    required this.onSave,
-  });
+  const AddressFormBody({super.key, this.address, required this.onSave});
 
   /// The saved address being edited, null when adding a new one.
   final AddressModel? address;
@@ -84,9 +79,10 @@ class _AddressFormBodyState extends State<AddressFormBody> {
     if (picked != null && typed == picked.label) return picked;
 
     try {
-      final places = await context
-          .read<PlaceSearchRepository>()
-          .search(typed, limit: 1);
+      final places = await context.read<PlaceSearchRepository>().search(
+        typed,
+        limit: 1,
+      );
       if (!mounted || places.isEmpty) return picked;
       final resolved = PickedLocation(places.first.latLng, places.first.label);
       setState(() => _picked = resolved);
@@ -107,9 +103,9 @@ class _AddressFormBodyState extends State<AddressFormBody> {
     return compact.isNotEmpty && RegExp(r'^\d+$').hasMatch(compact);
   }
 
-  void _warn(String message) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message)),
-  );
+  void _warn(String message) =>
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(message)));
 
   Future<void> _confirm() async {
     final label = _nameController.text.trim();
@@ -155,10 +151,10 @@ class _AddressFormBodyState extends State<AddressFormBody> {
         children: [
           Padding(
             padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.md.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.sm.h,
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.sm,
             ),
             child: CustomTextFormField(
               controller: _nameController,
@@ -169,7 +165,7 @@ class _AddressFormBodyState extends State<AddressFormBody> {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: SpacingTokens.lg.w),
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               child: LocationPicker(
                 repository: context.read<PlaceSearchRepository>(),
                 controller: _searchController,
@@ -181,10 +177,10 @@ class _AddressFormBodyState extends State<AddressFormBody> {
           ),
           Padding(
             padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.sm.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.md.h,
+              AppSpacing.lg,
+              AppSpacing.sm,
+              AppSpacing.lg,
+              AppSpacing.md,
             ),
             child: CustomBtn(text: S.confirm, onPressed: _confirm),
           ),

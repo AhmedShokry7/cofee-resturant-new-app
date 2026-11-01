@@ -13,7 +13,9 @@ import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
 void main() {
@@ -155,9 +157,10 @@ void main() {
         final body = article.bodyAr ?? '';
         // A stray Latin word reads as broken to a customer. Product and menu
         // names are allowed; ordinary English words are not.
-        final latinWords = RegExp(
-          r'[A-Za-z]{3,}',
-        ).allMatches(body).map((m) => m.group(0)!).toSet();
+        final latinWords = RegExp(r'[A-Za-z]{3,}')
+            .allMatches(body)
+            .map((m) => m.group(0)!)
+            .toSet();
         final allowed = {
           'Cappuccino',
           'Latte',
@@ -182,7 +185,8 @@ void main() {
           expect(
             allowed.contains(word),
             isTrue,
-            reason: '${article.id} has the English word "$word" in its Arabic body',
+            reason:
+                '${article.id} has the English word "$word" in its Arabic body',
           );
         }
       }

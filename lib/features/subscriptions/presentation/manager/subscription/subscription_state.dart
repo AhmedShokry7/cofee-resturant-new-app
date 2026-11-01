@@ -60,9 +60,7 @@ class SubscriptionState {
       error: clearError ? null : (error ?? this.error),
       qrToken: clearQr ? null : (qrToken ?? this.qrToken),
       usage: usage ?? this.usage,
-      usageError: clearUsageError
-          ? null
-          : (usageError ?? this.usageError),
+      usageError: clearUsageError ? null : (usageError ?? this.usageError),
       planProducts: planProducts ?? this.planProducts,
       planProductsError: clearPlanProductsError
           ? null

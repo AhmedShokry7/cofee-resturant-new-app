@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
@@ -77,14 +76,8 @@ Future<void> _setSurface(WidgetTester tester) async {
 
 Future<void> _pumpPage(WidgetTester tester, NotificationsCubit cubit) {
   return tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(
-        home: BlocProvider.value(
-          value: cubit,
-          child: const NotificationsPage(),
-        ),
-      ),
+    MaterialApp(
+      home: BlocProvider.value(value: cubit, child: const NotificationsPage()),
     ),
   );
 }
@@ -205,12 +198,9 @@ void main() {
     Future<void> pumpTile(WidgetTester tester, NotificationModel row) async {
       await _setSurface(tester);
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: Scaffold(
-              body: NotificationTile(notification: row, onTap: () {}),
-            ),
+        MaterialApp(
+          home: Scaffold(
+            body: NotificationTile(notification: row, onTap: () {}),
           ),
         ),
       );
@@ -221,7 +211,7 @@ void main() {
       await pumpTile(tester, _row('n1'));
 
       expect(find.byType(DbImage), findsNothing);
-      expect(find.byIcon(HugeIcons.strokeRoundedTruckDelivery), findsOneWidget);
+      expect(find.byIcon(AppIcons.deliveryTruck), findsOneWidget);
     });
 
     testWidgets('a campaign picture replaces the icon', (tester) async {

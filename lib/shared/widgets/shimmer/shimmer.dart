@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Central configuration for every skeleton/shimmer loading widget.
 ///
@@ -205,19 +204,19 @@ class ShimmerCircle extends StatelessWidget {
 /// surface, so a loading screen in dark mode kept painting white cards.
 BoxDecoration skeletonCardDecoration(
   BuildContext context, {
-  double radius = LayoutTokens.cardRadius,
+  double radius = AppDimensions.cardRadius,
 }) {
   final dark = Theme.of(context).brightness == Brightness.dark;
   return BoxDecoration(
     color: dark ? AppColor.darkCard : AppColor.whiteColor,
-    borderRadius: BorderRadius.circular(radius.r),
+    borderRadius: BorderRadius.circular(radius),
     border: Border.all(
       color: dark ? AppColor.darkBorder : AppColor.borderColor,
     ),
   );
 }
 
-/// The padding around a list of skeleton cards - the same [LayoutTokens.pageBody]
+/// The padding around a list of skeleton cards - the same [AppLayout.pageBody]
 /// the loaded page uses, so the two cannot drift.
 EdgeInsetsGeometry skeletonListPadding(BuildContext context) =>
-    LayoutTokens.pageBody();
+    AppLayout.pageBody;

@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
@@ -14,6 +12,7 @@ import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class ForgetPasswordPageBody extends StatefulWidget {
   const ForgetPasswordPageBody({super.key});
@@ -45,7 +44,7 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: SpacingTokens.xl.w),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         child: BlocConsumer<PasswordResetCubit, PasswordResetState>(
           listener: (context, state) {
             if (state is PasswordResetFailure) {
@@ -59,9 +58,9 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                 context,
                 type: AuthMessageType.info,
                 message: S.passwordResetEmailSent,
-                onAction: () => Navigator.of(context).pushNamed(
-                  ResetPasswordPage.routeName,
-                ),
+                onAction: () =>
+                    Navigator.of(context)
+                        .pushNamed(ResetPasswordPage.routeName),
               );
             }
           },
@@ -72,20 +71,20 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: AuthSpacings.top.h),
+                  SizedBox(height: AuthSpacings.top),
                   Text(
                     S.forgetPassword,
                     textAlign: TextAlign.center,
                     style: AppFonts.semiBold24(context),
                   ),
-                  SizedBox(height: AuthSpacings.titleGap.h),
+                  SizedBox(height: AuthSpacings.titleGap),
                   Text(
                     S.forgotPasswordSubtitle,
                     textAlign: TextAlign.center,
                     style: AppFonts.regular14(context)
                         .copyWith(color: AppColor.greyColor),
                   ),
-                  SizedBox(height: AuthSpacings.headerGap.h),
+                  SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
                     controller: _emailController,
                     hint: S.emailHint,
@@ -95,13 +94,13 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                         ? S.emailRequired
                         : null,
                   ),
-                  SizedBox(height: AuthSpacings.fieldsGap.h),
+                  SizedBox(height: AuthSpacings.fieldsGap),
                   CustomBtn(
                     text: S.sendResetLink,
                     isLoading: isLoading,
                     onPressed: _submit,
                   ),
-                  SizedBox(height: AuthSpacings.buttonGap.h),
+                  SizedBox(height: AuthSpacings.buttonGap),
                   AuthSwitchPrompt(
                     question: S.rememberPasswordQ,
                     actionText: S.signIn,
@@ -110,7 +109,7 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                       (route) => false,
                     ),
                   ),
-                  SizedBox(height: AuthSpacings.bottom.h),
+                  SizedBox(height: AuthSpacings.bottom),
                 ],
               ),
             );

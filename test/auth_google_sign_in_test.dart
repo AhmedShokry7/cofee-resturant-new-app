@@ -52,16 +52,13 @@ class _FakeAuthRepository implements AuthRepository {
     required String name,
     required String email,
     required String password,
-  }) async =>
-      AuthUser(id: email, name: name, email: email);
+  }) async => AuthUser(id: email, name: name, email: email);
 
   @override
-  Future<AuthUser> signInWithFacebook() =>
-      Future.error(UnimplementedError());
+  Future<AuthUser> signInWithFacebook() => Future.error(UnimplementedError());
 
   @override
-  Future<AuthUser> signInWithApple() =>
-      Future.error(UnimplementedError());
+  Future<AuthUser> signInWithApple() => Future.error(UnimplementedError());
 
   @override
   Future<void> sendPhoneCode({required String phone}) async {}
@@ -70,8 +67,7 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthUser> verifyPhoneCode({
     required String phone,
     required String code,
-  }) async =>
-      AuthUser(id: phone);
+  }) async => AuthUser(id: phone);
 
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {}
@@ -89,8 +85,7 @@ class _FakeAuthRepository implements AuthRepository {
   Future<AuthUser> updateProfile({
     required String fullName,
     String? phone,
-  }) async =>
-      AuthUser(id: 'x', name: fullName, phone: phone);
+  }) async => AuthUser(id: 'x', name: fullName, phone: phone);
 
   @override
   Future<void> changePassword({
@@ -141,24 +136,22 @@ void main() {
       expect(cubit.state, isA<AuthFailure>());
     });
 
-    test('a misconfigured OAuth client reports the configuration problem',
-        () async {
+    test('a misconfigured OAuth client reports the configuration problem', () async {
       // A release build is signed with a different certificate than a debug
       // build, and Google only accepts a certificate whose SHA-1 is registered
       // with the Android OAuth client. When that entry is missing the failure
       // has to say so instead of showing the generic "something went wrong".
       final repo = _FakeAuthRepository()
-        ..googleError = const AuthException('google_client_configuration_error');
+        ..googleError = const AuthException(
+          'google_client_configuration_error',
+        );
       final cubit = AuthCubit(repo);
       addTearDown(cubit.close);
 
       await cubit.signInWithGoogle();
 
       expect(cubit.state, isA<AuthFailure>());
-      expect(
-        (cubit.state as AuthFailure).message,
-        S.authGoogleUnavailable,
-      );
+      expect((cubit.state as AuthFailure).message, S.authGoogleUnavailable);
     });
 
     test('repeated taps while loading do not call repository twice', () async {

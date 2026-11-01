@@ -40,9 +40,8 @@ void main() {
     });
 
     test('a hot day promotes cold categories', () {
-      final picked = stateWith(pool).recommendations(
-        weather: const WeatherModel(temperature: 30),
-      );
+      final picked = stateWith(pool)
+          .recommendations(weather: const WeatherModel(temperature: 30));
       expect(picked.map((p) => p.id).toList(), ['b', 'a', 'c', 'd']);
     });
 
@@ -55,9 +54,8 @@ void main() {
     });
 
     test('rows the weather does not suggest keep menu order', () {
-      final picked = stateWith(pool).recommendations(
-        weather: const WeatherModel(temperature: 5),
-      );
+      final picked = stateWith(pool)
+          .recommendations(weather: const WeatherModel(temperature: 5));
       expect(picked.map((p) => p.id).toList(), ['c', 'e', 'a', 'b']);
     });
 
@@ -76,10 +74,9 @@ void main() {
         targetId: 'a',
         targetProduct: product('a'),
       );
-      expect(
-        HomeState().productsForBanner(banner).map((p) => p.id).toList(),
-        ['a'],
-      );
+      expect(HomeState().productsForBanner(banner).map((p) => p.id).toList(), [
+        'a',
+      ]);
     });
 
     test('an unresolved product banner falls back to the pool', () {
@@ -90,10 +87,7 @@ void main() {
         targetId: 'c',
       );
       final state = HomeState(recommendationPool: [product('c')]);
-      expect(
-        state.productsForBanner(banner).map((p) => p.id).toList(),
-        ['c'],
-      );
+      expect(state.productsForBanner(banner).map((p) => p.id).toList(), ['c']);
     });
 
     test('a category banner matches on the category id, not the label', () {
@@ -109,10 +103,7 @@ void main() {
           product('b', categoryId: 'cat-2'),
         ],
       );
-      expect(
-        state.productsForBanner(banner).map((p) => p.id).toList(),
-        ['a'],
-      );
+      expect(state.productsForBanner(banner).map((p) => p.id).toList(), ['a']);
     });
 
     test('a bundle banner lists its loaded components', () {
@@ -131,14 +122,10 @@ void main() {
           ],
         ),
       );
-      final state = HomeState(
-        bundleProducts: {'a': product('a')},
-      );
-      expect(
-        state.productsForBanner(banner).map((p) => p.id).toList(),
-        ['a'],
-        reason: 'a component the bundle query did not resolve is skipped',
-      );
+      final state = HomeState(bundleProducts: {'a': product('a')});
+      expect(state.productsForBanner(banner).map((p) => p.id).toList(), [
+        'a',
+      ], reason: 'a component the bundle query did not resolve is skipped');
     });
 
     test('a url or unset banner points at nothing', () {

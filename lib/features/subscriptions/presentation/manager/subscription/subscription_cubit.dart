@@ -13,9 +13,8 @@ part 'subscription_state.dart';
 /// The customer's coffee subscription: the plans on sale, the active one and
 /// the QR pass that spends it.
 class SubscriptionCubit extends Cubit<SubscriptionState> {
-  SubscriptionCubit({required SubscriptionRepository repository})
-      : _repository = repository,
-        super(const SubscriptionState());
+  SubscriptionCubit({required this._repository})
+    : super(const SubscriptionState());
 
   final SubscriptionRepository _repository;
 
@@ -26,10 +25,8 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   /// with two subscriptions.
   final Map<String, String> _idempotencyKeys = {};
 
-  String _keyFor(String intent) => _idempotencyKeys.putIfAbsent(
-    intent,
-    IdempotencyKey.create,
-  );
+  String _keyFor(String intent) =>
+      _idempotencyKeys.putIfAbsent(intent, IdempotencyKey.create);
 
   /// The plan the customer's subscription belongs to, null while the plans are
   /// not in this state.

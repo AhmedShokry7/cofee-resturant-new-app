@@ -25,10 +25,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'قافلا',
       'باقص',
     ],
-    body:
-        'We are open every day from 7:00 AM to 11:00 PM. The kitchen closes 30 minutes before closing time.',
-    bodyAr:
-        'بنفتح كل يوم من 7:00 الصبح لحد 11:00 بالليل، والمطبخ بيقفل نص ساعة قبل ما نقفل.',
+    body: 'We are open every day from 7:00 AM to 11:00 PM. The kitchen closes 30 minutes before closing time.',
+    bodyAr: 'بنفتح كل يوم من 7:00 الصبح لحد 11:00 بالليل، والمطبخ بيقفل نص ساعة قبل ما نقفل.',
     topic: 'faq',
   ),
   KnowledgeArticle(
@@ -56,10 +54,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'هتوصل امتي',
       'بيوصل امتي',
     ],
-    body:
-        'Delivery usually takes 25 to 45 minutes depending on your area. You can follow every step from the Track Order screen.',
-    bodyAr:
-        'التوصيل بياخد من 25 لـ 45 دقيقة حسب منطقتك، وتقدر تتابع كل خطوة من صفحة تتبع الطلب.',
+    body: 'Delivery usually takes 25 to 45 minutes depending on your area. You can follow every step from the Track Order screen.',
+    bodyAr: 'التوصيل بياخد من 25 لـ 45 دقيقة حسب منطقتك، وتقدر تتابع كل خطوة من صفحة تتبع الطلب.',
     topic: 'faq',
   ),
   KnowledgeArticle(
@@ -84,10 +80,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'عند الاستلام',
       'ادفع امتي',
     ],
-    body:
-        'We accept credit and debit cards, Apple Pay, Google Pay and cash on delivery. You can manage your saved cards anytime from Payment Method.',
-    bodyAr:
-        'بنقبل الكروت الدائنة والمدفوعة، وApple Pay وGoogle Pay، والدفع كاش عند الاستلام. وتقدر تدير بطاقاتك المحفوظة من صفحة وسيلة الدفع في أي وقت.',
+    body: 'We accept credit and debit cards, Apple Pay, Google Pay and cash on delivery. You can manage your saved cards anytime from Payment Method.',
+    bodyAr: 'بنقبل الكروت الدائنة والمدفوعة، وApple Pay وGoogle Pay، والدفع كاش عند الاستلام. وتقدر تدير بطاقاتك المحفوظة من صفحة وسيلة الدفع في أي وقت.',
     topic: 'faq',
   ),
   KnowledgeArticle(
@@ -103,10 +97,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'فين الطلب',
       'الطلب فين',
     ],
-    body:
-        'Open My Orders, pick the active order and tap Track Order to see exactly where it is right now.',
-    bodyAr:
-        'افتح صفحة طلباتي، اختار الطلب النشط، ودوس على «تتبع الطلب» عشان تشوف مكانه بالظبط في الوقت الحالي.',
+    body: 'Open My Orders, pick the active order and tap Track Order to see exactly where it is right now.',
+    bodyAr: 'افتح صفحة طلباتي، اختار الطلب النشط، ودوس على «تتبع الطلب» عشان تشوف مكانه بالظبط في الوقت الحالي.',
     topic: 'faq',
   ),
   KnowledgeArticle(
@@ -126,17 +118,22 @@ const List<KnowledgeArticle> faqKnowledge = [
       'بتنزل',
       'عرض ايه',
     ],
-    body:
-        'Open the Coupon page from the home header to see active offers. Tap Copy Code and apply it at checkout to get your discount.',
-    bodyAr:
-        'افتح صفحة العروض من هيدر الصفحة الرئيسية عشان تشوف العروض النشطة. دوس «نسخ الكود» واستخدمه عند الدفع عشان الخصم يطبّق.',
+    body: 'Open the Coupon page from the home header to see active offers. Tap Copy Code and apply it at checkout to get your discount.',
+    bodyAr: 'افتح صفحة العروض من هيدر الصفحة الرئيسية عشان تشوف العروض النشطة. دوس «نسخ الكود» واستخدمه عند الدفع عشان الخصم يطبّق.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-account',
     title: 'Account and password',
     titleAr: 'الحساب وكلمة المرور',
-    keywords: ['account', 'sign up', 'login', 'password', 'register', 'profile'],
+    keywords: [
+      'account',
+      'sign up',
+      'login',
+      'password',
+      'register',
+      'profile',
+    ],
     keywordsAr: [
       'حساب',
       'تسجيل',
@@ -147,17 +144,23 @@ const List<KnowledgeArticle> faqKnowledge = [
       'اعاده تعيين',
       'بروفايل',
     ],
-    body:
-        'Create an account from the Sign Up page, and if you forget your password use Forget Password on the Sign In page to reset it by email.',
-    bodyAr:
-        'اعمل حساب من صفحة إنشاء حساب، ولو نسيت كلمة المرور استخدم «نسيت كلمة المرور» في صفحة الدخول لتعيد تعيينها من إيميلك.',
+    body: 'Create an account from the Sign Up page, and if you forget your password use Forget Password on the Sign In page to reset it by email.',
+    bodyAr: 'اعمل حساب من صفحة إنشاء حساب، ولو نسيت كلمة المرور استخدم «نسيت كلمة المرور» في صفحة الدخول لتعيد تعيينها من إيميلك.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-refund',
     title: 'Refunds and complaints',
     titleAr: 'الاسترجاع والشكاوى',
-    keywords: ['refund', 'return', 'wrong', 'complaint', 'problem', 'cold', 'late'],
+    keywords: [
+      'refund',
+      'return',
+      'wrong',
+      'complaint',
+      'problem',
+      'cold',
+      'late',
+    ],
     keywordsAr: [
       'استرجاع',
       'استرداد',
@@ -172,10 +175,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'غلط',
       'بارد',
     ],
-    body:
-        'If anything arrives wrong, cold or late, tell us from the Help page and we will make it right with a remake or a refund.',
-    bodyAr:
-        'لو أي حاجة وصلتك غلط أو باردة أو متأخرة، قولها لنا من صفحة المساعدة وهنعملها كويس: إعادة تحضير أو استرجاع الفلوس.',
+    body: 'If anything arrives wrong, cold or late, tell us from the Help page and we will make it right with a remake or a refund.',
+    bodyAr: 'لو أي حاجة وصلتك غلط أو باردة أو متأخرة، قولها لنا من صفحة المساعدة وهنعملها كويس: إعادة تحضير أو استرجاع الفلوس.',
     topic: 'faq',
   ),
   KnowledgeArticle(
@@ -192,17 +193,23 @@ const List<KnowledgeArticle> faqKnowledge = [
       'غالي',
       'الاسعار كام',
     ],
-    body:
-        'Most drinks are between 15 and 55. Items on sale show the old price struck through next to the new price on every product card.',
-    bodyAr:
-        'معظم المشروبات بين 15 و 55 ريال. وأي حاجة عليها عرض بتعرض السعر القديم مشطوب جنب السعر الجديد على كارت المنتج.',
+    body: 'Most drinks are between 15 and 55. Items on sale show the old price struck through next to the new price on every product card.',
+    bodyAr: 'معظم المشروبات بين 15 و 55 ريال. وأي حاجة عليها عرض بتعرض السعر القديم مشطوب جنب السعر الجديد على كارت المنتج.',
     topic: 'faq',
   ),
   KnowledgeArticle(
     id: 'faq-contact',
     title: 'Contact support',
     titleAr: 'تواصل مع الدعم',
-    keywords: ['help', 'support', 'contact', 'call', 'human', 'someone', 'phone'],
+    keywords: [
+      'help',
+      'support',
+      'contact',
+      'call',
+      'human',
+      'someone',
+      'phone',
+    ],
     keywordsAr: [
       'مساعده',
       'مساعدة',
@@ -216,10 +223,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'مشكلة',
       'في حد',
     ],
-    body:
-        'You can reach our support team from the Help page. We reply as fast as we can, usually within a few hours.',
-    bodyAr:
-        'تقدر توصل لفريق الدعم من صفحة المساعدة. بنرد في أسرع وقت ممكن، غالبًا خلال ساعات قليلة.',
+    body: 'You can reach our support team from the Help page. We reply as fast as we can, usually within a few hours.',
+    bodyAr: 'تقدر توصل لفريق الدعم من صفحة المساعدة. بنرد في أسرع وقت ممكن، غالبًا خلال ساعات قليلة.',
     topic: 'faq',
   ),
   KnowledgeArticle(
@@ -236,10 +241,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'حفظها',
       'عايز اجربها بعدين',
     ],
-    body:
-        'Tap the heart on any product card to save it. Everything you save waits for you on the Favorites tab.',
-    bodyAr:
-        'دوس على القلب في أي كارت منتج علشان تحفظه. كل اللي حفظته بيفضل مستنيك في تبويب «المفضلة».',
+    body: 'Tap the heart on any product card to save it. Everything you save waits for you on the Favorites tab.',
+    bodyAr: 'دوس على القلب في أي كارت منتج علشان تحفظه. كل اللي حفظته بيفضل مستنيك في تبويب «المفضلة».',
     topic: 'faq',
   ),
 ];

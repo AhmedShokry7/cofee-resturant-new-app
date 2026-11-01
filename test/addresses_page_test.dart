@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -63,11 +63,7 @@ class _FakeAddressRepository implements AddressRepository {
     double? latitude,
     double? longitude,
   }) async {
-    final updated = AddressModel(
-      id: id,
-      label: label,
-      details: details,
-    );
+    final updated = AddressModel(id: id, label: label, details: details);
     _addresses = [
       for (final address in _addresses)
         if (address.id == id) updated else address,
@@ -142,32 +138,26 @@ Future<void> _pumpPage(
   PlaceSearchRepository? places,
 }) {
   return tester.pumpWidget(
-    ScreenUtilInit(
-      // Match the app's own configuration (main.dart) so text metrics in the
-      // test match the real layout.
-      designSize: const Size(360, 690),
-      minTextAdapt: true,
-      builder: (context, _) => MultiRepositoryProvider(
-        providers: [
-          RepositoryProvider<AddressRepository>.value(value: repository),
-          // Mirrors AppProviders: the geocoder sits above the Navigator so the
-          // pushed form can resolve a typed place name on confirm.
-          RepositoryProvider<PlaceSearchRepository>.value(
-            value: places ?? _FakePlaceSearch(),
-          ),
-        ],
-        // Mirrors AppProviders: both providers sit above the Navigator, so a
-        // pushed route (the add/edit form) can read the same cubit instance.
-        child: BlocProvider(
-          create: (_) => AddressesCubit(repository: repository),
-          child: MaterialApp(
-            // Mirrors AppRoutes: the add/edit form is pushed by name, so the
-            // test app must register it too.
-            routes: {
-              AddressFormPage.routeName: (context) => const AddressFormPage(),
-            },
-            home: const AddressesPage(),
-          ),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AddressRepository>.value(value: repository),
+        // Mirrors AppProviders: the geocoder sits above the Navigator so the
+        // pushed form can resolve a typed place name on confirm.
+        RepositoryProvider<PlaceSearchRepository>.value(
+          value: places ?? _FakePlaceSearch(),
+        ),
+      ],
+      // Mirrors AppProviders: both providers sit above the Navigator, so a
+      // pushed route (the add/edit form) can read the same cubit instance.
+      child: BlocProvider(
+        create: (_) => AddressesCubit(repository: repository),
+        child: MaterialApp(
+          // Mirrors AppRoutes: the add/edit form is pushed by name, so the
+          // test app must register it too.
+          routes: {
+            AddressFormPage.routeName: (context) => const AddressFormPage(),
+          },
+          home: const AddressesPage(),
         ),
       ),
     ),
@@ -203,7 +193,7 @@ void main() {
     await _pumpPage(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.tap(find.byIcon(AppIcons.delete));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.delete));
     await tester.pumpAndSettle();
@@ -216,31 +206,32 @@ void main() {
     await _expireSnackBar(tester);
   });
 
-  testWidgets('a failed set-default shows an error snackbar when addresses exist', (
-    tester,
-  ) async {
-    await _setSurface(tester);
-    // No address is pre-defaulted: the AddressTile label row (label +
-    // "Default" badge) overflows the 360px test surface with a badge present,
-    // a pre-existing layout tightness unrelated to this fix. With no badge,
-    // the failure path under test renders cleanly.
-    final repository = _FakeAddressRepository(
-      addresses: [_address('a1'), _address('a2')],
-      failSetDefault: true,
-    );
+  testWidgets(
+    'a failed set-default shows an error snackbar when addresses exist',
+    (tester) async {
+      await _setSurface(tester);
+      // No address is pre-defaulted: the AddressTile label row (label +
+      // "Default" badge) overflows the 360px test surface with a badge present,
+      // a pre-existing layout tightness unrelated to this fix. With no badge,
+      // the failure path under test renders cleanly.
+      final repository = _FakeAddressRepository(
+        addresses: [_address('a1'), _address('a2')],
+        failSetDefault: true,
+      );
 
-    await _pumpPage(tester, repository);
-    await tester.pumpAndSettle();
+      await _pumpPage(tester, repository);
+      await tester.pumpAndSettle();
 
-    // Both addresses are non-default, so both offer "Set default".
-    await tester.tap(find.text(S.setDefaultAddress).first);
-    await tester.pumpAndSettle();
+      // Both addresses are non-default, so both offer "Set default".
+      await tester.tap(find.text(S.setDefaultAddress).first);
+      await tester.pumpAndSettle();
 
-    expect(repository.setDefaultCalls, 1);
-    expect(find.text(S.addressSaveFailed), findsOneWidget);
+      expect(repository.setDefaultCalls, 1);
+      expect(find.text(S.addressSaveFailed), findsOneWidget);
 
-    await _expireSnackBar(tester);
-  });
+      await _expireSnackBar(tester);
+    },
+  );
 
   testWidgets('a successful delete shows no error snackbar', (tester) async {
     await _setSurface(tester);
@@ -249,7 +240,7 @@ void main() {
     await _pumpPage(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.tap(find.byIcon(AppIcons.delete));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.delete));
     await tester.pumpAndSettle();
@@ -277,17 +268,18 @@ void main() {
     expect(find.text('+ ${S.enterLocation}'), findsOneWidget);
   });
 
-  testWidgets('a customer with no addresses sees the empty state and an add button', (
-    tester,
-  ) async {
-    await _setSurface(tester);
-    await _pumpPage(tester, _FakeAddressRepository());
-    await tester.pumpAndSettle();
+  testWidgets(
+    'a customer with no addresses sees the empty state and an add button',
+    (tester) async {
+      await _setSurface(tester);
+      await _pumpPage(tester, _FakeAddressRepository());
+      await tester.pumpAndSettle();
 
-    expect(find.text(S.noAddresses), findsOneWidget);
-    expect(find.text(S.addressesHint), findsOneWidget);
-    expect(find.text('+ ${S.enterLocation}'), findsOneWidget);
-  });
+      expect(find.text(S.noAddresses), findsOneWidget);
+      expect(find.text(S.addressesHint), findsOneWidget);
+      expect(find.text('+ ${S.enterLocation}'), findsOneWidget);
+    },
+  );
 
   testWidgets('a load failure shows the error and retry re-fetches', (
     tester,
@@ -318,8 +310,7 @@ void main() {
       addresses: [
         AddressModel(
           id: 'a1',
-          label:
-              'A very long address label that would overflow the row without ellipsis',
+          label: 'A very long address label that would overflow the row without ellipsis',
           details: 'Street 1',
           isDefault: true,
         ),
@@ -358,7 +349,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Typed once for the debounced suggestion search and once on confirm: the
-// customer never tapped a suggestion, so the pick itself is still unset.
+    // customer never tapped a suggestion, so the pick itself is still unset.
     expect(places.queries, contains('Office tower'));
     expect(find.text('Work'), findsOneWidget);
     expect(find.text('Office Tower, New York, United States'), findsOneWidget);
@@ -366,38 +357,39 @@ void main() {
     expect(find.text('Home a1'), findsOneWidget);
   });
 
-  testWidgets('a pin alone is a complete answer, not "please enter your location"', (
-    tester,
-  ) async {
-    await _setSurface(tester);
-    final repository = _FakeAddressRepository();
-    // Nothing to resolve: the pick itself carries the label.
-    final places = _FakePlaceSearch(
-      results: [_place('Empire State Building', 'New York')],
-    );
+  testWidgets(
+    'a pin alone is a complete answer, not "please enter your location"',
+    (tester) async {
+      await _setSurface(tester);
+      final repository = _FakeAddressRepository();
+      // Nothing to resolve: the pick itself carries the label.
+      final places = _FakePlaceSearch(
+        results: [_place('Empire State Building', 'New York')],
+      );
 
-    await _pumpPage(tester, repository, places: places);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('+ ${S.enterLocation}'));
-    await tester.pumpAndSettle();
+      await _pumpPage(tester, repository, places: places);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('+ ${S.enterLocation}'));
+      await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField).first, 'Work');
-    // Search, then pick a suggestion the way a customer does.
-    await tester.enterText(find.byType(TextField).last, 'Empire');
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.pump();
-    await tester.tap(find.text('Empire State Building'));
-    await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).first, 'Work');
+      // Search, then pick a suggestion the way a customer does.
+      await tester.enterText(find.byType(TextField).last, 'Empire');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pump();
+      await tester.tap(find.text('Empire State Building'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text(S.confirm));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text(S.confirm));
+      await tester.pumpAndSettle();
 
-    // The picker wrote the resolved place name into the field, so confirming
-    // must not warn about a missing location.
-    expect(find.text(S.addAddressLocation), findsNothing);
-    expect(find.byType(SnackBar), findsNothing);
-    expect(find.text('Work'), findsOneWidget);
-  });
+      // The picker wrote the resolved place name into the field, so confirming
+      // must not warn about a missing location.
+      expect(find.text(S.addAddressLocation), findsNothing);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.text('Work'), findsOneWidget);
+    },
+  );
 
   testWidgets('confirming with no name and no place warns about the name', (
     tester,
@@ -427,7 +419,7 @@ void main() {
     await _pumpPage(tester, repository, places: places);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.tap(find.byIcon(AppIcons.edit));
     await tester.pumpAndSettle();
 
     // The form opens pre-filled; replacing the name and confirming routes the
@@ -452,7 +444,7 @@ void main() {
     await _pumpPage(tester, repository);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.tap(find.byIcon(AppIcons.delete));
     await tester.pumpAndSettle();
     await tester.tap(find.text(S.delete));
     await tester.pumpAndSettle();

@@ -29,8 +29,9 @@ class AddressesCubit extends Cubit<AddressesState> {
         ? SupabaseService.client.auth.currentUser?.id
         : null;
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange
-          .listen(_onAuthStateChanged);
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
     }
     load();
   }
@@ -65,11 +66,7 @@ class AddressesCubit extends Cubit<AddressesState> {
     _identity = identity;
     _loadGeneration++;
     emit(
-      state.copyWith(
-        addresses: const [],
-        isLoading: true,
-        clearError: true,
-      ),
+      state.copyWith(addresses: const [], isLoading: true, clearError: true),
     );
     return true;
   }

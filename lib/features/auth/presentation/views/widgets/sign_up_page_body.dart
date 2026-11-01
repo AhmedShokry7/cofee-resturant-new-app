@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
@@ -16,6 +14,7 @@ import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class SignUpPageBody extends StatefulWidget {
   const SignUpPageBody({super.key});
@@ -77,7 +76,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: SpacingTokens.xl.w),
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: (context, state) {
             if (state is AuthFailure) {
@@ -107,20 +106,20 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(height: AuthSpacings.top.h),
+                      SizedBox(height: AuthSpacings.top),
                       Text(
                         S.signUp,
                         textAlign: TextAlign.center,
                         style: AppFonts.semiBold24(context),
                       ),
-                      SizedBox(height: AuthSpacings.titleGap.h),
+                      SizedBox(height: AuthSpacings.titleGap),
                       Text(
                         S.createAccountSubtitle,
                         textAlign: TextAlign.center,
                         style: AppFonts.regular14(context)
                             .copyWith(color: AppColor.greyColor),
                       ),
-                      SizedBox(height: AuthSpacings.headerGap.h),
+                      SizedBox(height: AuthSpacings.headerGap),
                       CustomTextFormField(
                         controller: _nameController,
                         hint: S.nameHint,
@@ -158,15 +157,18 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                             ? S.passwordsNoMatch
                             : null,
                       ),
-                      SizedBox(height: AuthSpacings.fieldsGap.h),
+                      SizedBox(height: AuthSpacings.fieldsGap),
                       CustomBtn(
                         text: S.signUp,
                         isLoading: isLoading,
                         onPressed: _submit,
                       ),
-                      SizedBox(height: AuthSpacings.buttonGap.h),
-                      AuthSocialLogin(label: S.orSignUpWith, isLoading: isLoading),
-                      SizedBox(height: AuthSpacings.sectionGap.h),
+                      SizedBox(height: AuthSpacings.buttonGap),
+                      AuthSocialLogin(
+                        label: S.orSignUpWith,
+                        isLoading: isLoading,
+                      ),
+                      SizedBox(height: AuthSpacings.sectionGap),
                       AuthSwitchPrompt(
                         question: S.alreadyHaveAccount,
                         actionText: S.signIn,
@@ -174,7 +176,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                             Navigator.of(context)
                                 .pushReplacementNamed(AuthPage.routeName),
                       ),
-                      SizedBox(height: AuthSpacings.bottom.h),
+                      SizedBox(height: AuthSpacings.bottom),
                     ],
                   ),
                 ),

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant_fab/assistant_fab_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/widgets/assistant_launcher.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Smart assistant entry point, owned by the Home page.
 ///
@@ -63,10 +62,7 @@ class _AssistantFabView extends StatelessWidget {
   /// Bot artwork size inside the standard 56dp FAB.
   static const double _fabIconSize = 44;
 
-  Future<void> _openSheet(
-    BuildContext context,
-    AssistantFabCubit cubit,
-  ) async {
+  Future<void> _openSheet(BuildContext context, AssistantFabCubit cubit) async {
     cubit.sheetOpened();
     await openAssistantSheet(
       context,
@@ -99,13 +95,13 @@ class _AssistantFabView extends StatelessWidget {
             FloatingActionButton(
               onPressed: () => _openSheet(context, cubit),
               backgroundColor: AppColor.whiteColor,
-              elevation: 6,
+              elevation: AppElevation.floating,
               shape: const CircleBorder(),
               child: Image.asset(
                 AppImages.aiBot,
                 key: const ValueKey('assistant_fab_image'),
-                width: _fabIconSize.w,
-                height: _fabIconSize.w,
+                width: _fabIconSize,
+                height: _fabIconSize,
               ),
             ),
           ],
@@ -123,37 +119,33 @@ class _HintBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxWidth: 230.w),
-      margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+      constraints: BoxConstraints(
+        maxWidth: AppDimensions.assistantBubbleMaxWidth,
+      ),
+      margin: EdgeInsets.only(bottom: AppSpacing.sm),
       padding: EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md.w,
-        vertical: SpacingTokens.sm.h,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
-        boxShadow: [
-          BoxShadow(
-            color: AppColor.blackColor.withValues(alpha: 0.12),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: AppShadows.floating,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: EdgeInsets.only(top: 2.h),
+            padding: EdgeInsets.only(top: AppSpacing.xxs),
             child: Icon(
-              HugeIcons.strokeRoundedSparkles,
-              size: 14.w,
+              AppIcons.sparkles,
+              size: AppSizes.px14,
               color: AppColor.primaryColor,
             ),
           ),
-          SizedBox(width: SpacingTokens.xs.w),
+          SizedBox(width: AppSpacing.xs),
           Flexible(
             child: Text(
               text,

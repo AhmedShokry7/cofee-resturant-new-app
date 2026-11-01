@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/card_preview.dart';
@@ -16,6 +13,7 @@ import 'package:new_coffee/features/payment/presentation/formatters/card_input_f
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Adds one card to the saved list.
 ///
@@ -134,7 +132,7 @@ class _AddCardPageState extends State<AddCardPage> {
             bottomNavigationBar: state.isSavingUnavailable
                 ? null
                 : Container(
-                    padding: EdgeInsets.all(SpacingTokens.lg.w),
+                    padding: EdgeInsets.all(AppSpacing.lg),
                     decoration: const BoxDecoration(
                       color: AppColor.whiteColor,
                       border: Border(
@@ -153,14 +151,14 @@ class _AddCardPageState extends State<AddCardPage> {
   }
 
   Widget _formBody() => ListView(
-    padding: LayoutTokens.pageBody(),
+    padding: AppLayout.pageBody,
     children: [
       CardPreview(
         number: _numberController.text,
         name: _nameController.text,
         expiry: _expiryController.text,
       ),
-      SizedBox(height: SpacingTokens.xl.h),
+      SizedBox(height: AppSpacing.xl),
       CustomTextFormField(
         controller: _nameController,
         hint: S.cardHolderName,
@@ -203,7 +201,7 @@ class _AddCardPageState extends State<AddCardPage> {
               },
             ),
           ),
-          SizedBox(width: SpacingTokens.md.w),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: CustomTextFormField(
               controller: _cvvController,
@@ -237,23 +235,23 @@ class _UnavailableNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(SpacingTokens.xl.w),
+        padding: EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              HugeIcons.strokeRoundedCreditCardNotAccept,
-              size: 48.w,
+              AppIcons.cardNotAccepted,
+              size: AppSpacing.xxxl,
               color: AppColor.greyColor,
             ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Text(
               message ?? S.cardSavingNotConfigured,
               textAlign: TextAlign.center,
               style: AppFonts.regular14(context)
                   .copyWith(color: AppColor.greyColor),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             CustomBtn(
               text: S.back,
               variant: BtnVariant.outlined,

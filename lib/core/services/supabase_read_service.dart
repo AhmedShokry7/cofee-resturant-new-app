@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+
 /// عميل مخصص للقراءة فقط، يتصل بـ Read Replica إذا كان مفعّلاً.
 ///
 /// إذا لم يُوفر رابط Read Replica عبر [AppConfig.supabaseReadUrl]،

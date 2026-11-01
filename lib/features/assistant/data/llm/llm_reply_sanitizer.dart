@@ -80,7 +80,9 @@ String _flattenTables(String text) {
           parts.add(name.isEmpty ? value : '$name: $value');
         }
         if (parts.isEmpty) continue;
-        out.add(label.isEmpty ? parts.join('، ') : '$label: ${parts.join('، ')}');
+        out.add(
+          label.isEmpty ? parts.join('، ') : '$label: ${parts.join('، ')}',
+        );
       }
       continue;
     }

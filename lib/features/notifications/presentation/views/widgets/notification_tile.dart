@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class NotificationTile extends StatelessWidget {
   const NotificationTile({
@@ -24,20 +22,20 @@ class NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16.r),
+      borderRadius: BorderRadius.circular(AppRadius.r16),
       child: Container(
-        margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-        padding: EdgeInsets.all(SpacingTokens.md.w),
+        margin: EdgeInsets.only(bottom: AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(16.r),
+          borderRadius: BorderRadius.circular(AppRadius.r16),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _Lead(notification: notification),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,15 +50,15 @@ class NotificationTile extends StatelessWidget {
                       ),
                       if (!isRead)
                         Container(
-                          height: 10.w,
-                          width: 10.w,
-                          margin: EdgeInsets.only(left: SpacingTokens.xs.w),
+                          height: AppSizes.px10,
+                          width: AppSizes.px10,
+                          margin: EdgeInsets.only(left: AppSpacing.xs),
                           decoration: BoxDecoration(
                             color: AppColor.primaryColor,
                             shape: BoxShape.circle,
                           ),
                         ),
-                      SizedBox(width: SpacingTokens.sm.w),
+                      SizedBox(width: AppSpacing.sm),
                       Text(
                         notification.time,
                         style: AppFonts.regular12(context)
@@ -68,7 +66,7 @@ class NotificationTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: AppSpacing.xs),
                   Text(
                     notification.body,
                     style: AppFonts.regular14(context)
@@ -98,18 +96,18 @@ class _Lead extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final image = notification.imageUrl;
-    final size = 44.w;
+    final size = AppSizes.px44;
     if (image == null) {
       return Container(
         height: size,
         width: size,
         decoration: BoxDecoration(
           color: AppColor.primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
         ),
         child: Icon(
           notification.icon,
-          size: 22.w,
+          size: AppSizes.px22,
           color: AppColor.primaryColor,
         ),
       );
@@ -120,8 +118,8 @@ class _Lead extends StatelessWidget {
       width: size,
       height: size,
       fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
-      iconSize: 20.w,
+      borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+      iconSize: AppSizes.px20,
     );
   }
 }

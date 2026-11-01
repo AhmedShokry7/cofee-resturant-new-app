@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
@@ -20,6 +18,7 @@ import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Premium collapsing product page.
 ///
@@ -56,7 +55,7 @@ class ProductDetailsBody extends StatelessWidget {
         final surface = Theme.of(context).brightness == Brightness.dark
             ? AppColor.darkSurface
             : AppColor.whiteColor;
-        final heroHeight = 300.h;
+        final heroHeight = AppDimensions.productHeroHeight;
 
         return Stack(
           children: [
@@ -169,20 +168,16 @@ class _DetailsSheet extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
-          ),
-        ],
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.r24),
+        ),
+        boxShadow: AppShadows.lifted,
       ),
       padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.xxl.h,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xxl,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -193,14 +188,14 @@ class _DetailsSheet extends StatelessWidget {
             style: AppFonts.regular14(context)
                 .copyWith(color: AppColor.greyColor),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: AppSpacing.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Text(product.name, style: AppFonts.semiBold20(context)),
               ),
-              SizedBox(width: SpacingTokens.sm.w),
+              SizedBox(width: AppSpacing.sm),
               // The price the customer pays, the discount the server applied
               // and the price before it.
               Column(
@@ -217,10 +212,10 @@ class _DetailsSheet extends StatelessWidget {
                         iconColor: AppColor.primaryColor,
                       ),
                       if (cubit.hasDiscount) ...[
-                        SizedBox(width: 4.w),
+                        SizedBox(width: AppSpacing.xs),
                         DiscountBadge(
                           percent: cubit.discountPercentage.round(),
-                          size: 30,
+                          size: AppDimensions.discountBadgeDetails,
                         ),
                       ],
                     ],
@@ -238,10 +233,10 @@ class _DetailsSheet extends StatelessWidget {
             ],
           ),
           if (!state.isAvailable) ...[
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             _UnavailableBanner(reason: state.unavailableReason),
           ],
-          SizedBox(height: SpacingTokens.lg.h),
+          SizedBox(height: AppSpacing.lg),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -262,21 +257,21 @@ class _DetailsSheet extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: SpacingTokens.lg.h),
+          SizedBox(height: AppSpacing.lg),
           Text(S.productDetails, style: AppFonts.semiBold16(context)),
-          SizedBox(height: SpacingTokens.sm.h),
+          SizedBox(height: AppSpacing.sm),
           ProductDescription(description: product.description),
 
           ...[
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Icon(
-                  Icons.local_fire_department_outlined,
-                  size: 18.w,
+                  AppIcons.hot,
+                  size: AppSizes.px18,
                   color: AppColor.greyColor,
                 ),
-                SizedBox(width: SpacingTokens.xs.w),
+                SizedBox(width: AppSpacing.xs),
                 // الجملة العربية أطول من المتاح، وبلا Flexible يفرز هذا السطر
                 // RenderFlex overflowed على كل شاشة تفاصيل.
                 Flexible(
@@ -293,7 +288,7 @@ class _DetailsSheet extends StatelessWidget {
           ],
 
           for (final group in groups) ...[
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             _OptionGroupSection(
               group: group,
               selection: state.selection,
@@ -303,7 +298,7 @@ class _DetailsSheet extends StatelessWidget {
           ],
 
           if (state.pairs.isNotEmpty) ...[
-            SizedBox(height: SpacingTokens.xl.h),
+            SizedBox(height: AppSpacing.xl),
             HomeProductsCarousel(
               title: S.goesWellWith,
               products: state.pairs,
@@ -324,15 +319,19 @@ class _UnavailableBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(SpacingTokens.md.w),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColor.errorColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10.r),
+        borderRadius: BorderRadius.circular(AppRadius.r10),
       ),
       child: Row(
         children: [
-          Icon(Icons.info_outline, size: 18.w, color: AppColor.errorColor),
-          SizedBox(width: SpacingTokens.sm.w),
+          Icon(
+            AppIcons.information,
+            size: AppSizes.px18,
+            color: AppColor.errorColor,
+          ),
+          SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               reason ?? S.unavailableNow,
@@ -369,7 +368,10 @@ class _OptionGroupSection extends StatelessWidget {
         Text(name, style: AppFonts.semiBold16(context)),
         if (group.minSelect > 0)
           Padding(
-            padding: EdgeInsets.only(top: 2.h, bottom: SpacingTokens.xs.h),
+            padding: EdgeInsets.only(
+              top: AppSpacing.xxs,
+              bottom: AppSpacing.xs,
+            ),
             child: Text(
               S.required,
               style: AppFonts.regular12(context)
@@ -377,12 +379,12 @@ class _OptionGroupSection extends StatelessWidget {
             ),
           )
         else
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
         if (group.isSingleSelect)
           Row(
             children: [
               for (var i = 0; i < group.values.length; i++) ...[
-                if (i > 0) SizedBox(width: SpacingTokens.sm.w),
+                if (i > 0) SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: _ValueChip(
                     label: _label(group.values[i]),
@@ -449,14 +451,14 @@ class _ValueChip extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md.w,
-          vertical: SpacingTokens.sm.h,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: selected
               ? AppColor.primaryColor.withValues(alpha: 0.1)
               : AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: Border.all(
             color: selected ? AppColor.primaryColor : AppColor.borderColor,
             width: selected ? 1.5 : 1,
@@ -465,7 +467,7 @@ class _ValueChip extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (icon != null) ...[icon!, SizedBox(height: 4.h)],
+            if (icon != null) ...[icon!, SizedBox(height: AppSpacing.xs)],
             Text(
               label,
               textAlign: TextAlign.center,
@@ -510,14 +512,14 @@ class _ValueTile extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+        margin: EdgeInsets.only(bottom: AppSpacing.sm),
         padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md.w,
-          vertical: SpacingTokens.sm.h,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: Border.all(
             color: selected ? AppColor.primaryColor : AppColor.borderColor,
             width: selected ? 1.5 : 1,
@@ -526,20 +528,24 @@ class _ValueTile extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              height: 22.w,
-              width: 22.w,
+              height: AppSizes.px22,
+              width: AppSizes.px22,
               decoration: BoxDecoration(
-                color: selected ? AppColor.primaryColor : Colors.transparent,
-                borderRadius: BorderRadius.circular(6.r),
+                color: selected ? AppColor.primaryColor : AppColor.transparent,
+                borderRadius: BorderRadius.circular(AppRadius.r6),
                 border: Border.all(
                   color: selected ? AppColor.primaryColor : AppColor.greyColor,
                 ),
               ),
               child: selected
-                  ? Icon(Icons.check, size: 16.w, color: AppColor.whiteColor)
+                  ? Icon(
+                      AppIcons.checkmark,
+                      size: AppSpacing.lg,
+                      color: AppColor.whiteColor,
+                    )
                   : null,
             ),
-            SizedBox(width: SpacingTokens.sm.w),
+            SizedBox(width: AppSpacing.sm),
             Expanded(child: Text(label, style: AppFonts.medium14(context))),
             if (hint != null)
               PriceLabel(

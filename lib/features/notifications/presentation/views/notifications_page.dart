@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/navigation/notification_routes.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_preferences_sheet.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
@@ -85,7 +85,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               if (!state.signedOut)
                 IconButton(
                   tooltip: S.notificationPreferences,
-                  icon: const Icon(HugeIcons.strokeRoundedSettings01),
+                  icon: const Icon(AppIcons.settings),
                   onPressed: () => showNotificationPreferencesSheet(context),
                 ),
               BlocBuilder<NotificationsCubit, NotificationsState>(
@@ -101,8 +101,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                         : S.turnOnNotifications,
                     icon: Icon(
                       enabled
-                          ? Icons.notifications_active_outlined
-                          : Icons.notifications_off_outlined,
+                          ? AppIcons.notification
+                          : AppIcons.notificationOff,
                     ),
                     onPressed: () => _togglePush(context, enabled),
                   );
@@ -117,20 +117,20 @@ class _NotificationsPageState extends State<NotificationsPage> {
               }
               if (state.error != null && state.notifications.isEmpty) {
                 return EmptyState(
-                  icon: Icons.notifications_outlined,
+                  icon: AppIcons.notification,
                   title: S.couldNotLoadNotifications,
                   subtitle: state.error,
                 );
               }
               if (state.notifications.isEmpty) {
                 return EmptyState(
-                  icon: Icons.notifications_outlined,
+                  icon: AppIcons.notification,
                   title: S.noNotifications,
                   subtitle: S.notificationsHint,
                 );
               }
               return ListView(
-                padding: LayoutTokens.pageBody(),
+                padding: AppLayout.pageBody,
                 children: state.notifications
                     .map(
                       (notification) => NotificationTile(

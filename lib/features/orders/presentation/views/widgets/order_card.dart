@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/features/orders/data/model/order_group.dart';
@@ -14,6 +11,7 @@ import 'package:new_coffee/features/orders/presentation/views/order_details_page
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// One order in the history list: number, date, status, item count and the
 /// header's real grand total, all frozen snapshots from the invoice.
@@ -23,10 +21,8 @@ class OrderCard extends StatelessWidget {
   final OrderGroup order;
 
   void _openDetails(BuildContext context) {
-    Navigator.of(context).pushNamed(
-      OrderDetailsPage.routeName,
-      arguments: order,
-    );
+    Navigator.of(context)
+        .pushNamed(OrderDetailsPage.routeName, arguments: order);
   }
 
   @override
@@ -36,11 +32,11 @@ class OrderCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => _openDetails(context),
       child: Container(
-        margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-        padding: EdgeInsets.all(SpacingTokens.md.w),
+        margin: EdgeInsets.only(bottom: AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: Column(
@@ -58,43 +54,39 @@ class OrderCard extends StatelessWidget {
                 ),
                 Container(
                   padding: EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.sm.w,
-                    vertical: SpacingTokens.xs.h,
+                    horizontal: AppSpacing.sm,
+                    vertical: AppSpacing.xs,
                   ),
                   decoration: BoxDecoration(
                     color: AppColor.primaryColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     order.status.label,
-                    style: AppFonts.regular12(
-                      context,
-                    ).copyWith(color: AppColor.primaryColor),
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.primaryColor),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: SpacingTokens.xs.h),
+            SizedBox(height: AppSpacing.xs),
             Text(
-              order.placedAt != null
-                  ? Formatters.date(order.placedAt!)
-                  : '',
-              style: AppFonts.regular12(context).copyWith(
-                color: AppColor.greyColor,
-              ),
+              order.placedAt != null ? Formatters.date(order.placedAt!) : '',
+              style: AppFonts.regular12(context)
+                  .copyWith(color: AppColor.greyColor),
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(8.r),
+                  borderRadius: BorderRadius.circular(AppRadius.r8),
                   child: SizedBox(
-                    height: 56.w,
-                    width: 56.w,
+                    height: AppSizes.px56,
+                    width: AppSizes.px56,
                     child: ProductImageView(product: firstLine.product),
                   ),
                 ),
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,33 +97,30 @@ class OrderCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 2.h),
+                      SizedBox(height: AppSpacing.xxs),
                       Text(
                         '${S.itemsCount}: ${order.itemCount}',
-                        style: AppFonts.regular12(
-                          context,
-                        ).copyWith(color: AppColor.greyColor),
+                        style: AppFonts.regular12(context)
+                            .copyWith(color: AppColor.greyColor),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             Row(
               children: [
                 Text(
                   S.total,
-                  style: AppFonts.regular12(
-                    context,
-                  ).copyWith(color: AppColor.greyColor),
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
                 ),
-                SizedBox(width: SpacingTokens.xs.w),
+                SizedBox(width: AppSpacing.xs),
                 PriceLabel(
                   amount: total,
-                  style: AppFonts.semiBold16(
-                    context,
-                  ).copyWith(color: AppColor.primaryColor),
+                  style: AppFonts.semiBold16(context)
+                      .copyWith(color: AppColor.primaryColor),
                   iconSize: 16,
                   iconColor: AppColor.primaryColor,
                 ),
@@ -171,25 +160,24 @@ class _ActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Flexible(
       child: Padding(
-        padding: EdgeInsets.only(left: SpacingTokens.sm.w),
+        padding: EdgeInsets.only(left: AppSpacing.sm),
         child: GestureDetector(
           onTap: onTap,
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: SpacingTokens.md.w,
-              vertical: SpacingTokens.sm.h,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
               color: AppColor.primaryColor,
-              borderRadius: BorderRadius.circular(100.r),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Text(
               label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppFonts.regular12(context).copyWith(
-                color: AppColor.whiteColor,
-              ),
+              style: AppFonts.regular12(context)
+                  .copyWith(color: AppColor.whiteColor),
             ),
           ),
         ),

@@ -89,11 +89,13 @@ class AssistantFabCubit extends Cubit<AssistantFabState> {
     showHint();
   }
 
-  List<String> _hints() => state.replyArabic ? assistantHintsAr : assistantHints;
+  List<String> _hints() =>
+      state.replyArabic ? assistantHintsAr : assistantHints;
 
   /// The text the bubble shows right now.
   String get bubbleText {
-    if (!state.hasCycled && state.welcomeText != null) return state.welcomeText!;
+    if (!state.hasCycled && state.welcomeText != null)
+      return state.welcomeText!;
     final hints = _hints();
     if (hints.isEmpty) return '';
     return hints[state.hintIndex % hints.length];

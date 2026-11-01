@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,7 +11,9 @@ import 'package:new_coffee/features/favorites/data/repositories/favorite_reposit
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/loyalty/data/repositories/loyalty_repository.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/repositories/notification_repository.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
@@ -40,10 +42,8 @@ class _NeverFiresLoyaltyRepository implements LoyaltyRepository {
   Future<LoyaltyWallet?> loadWallet() async => null;
 
   @override
-  Future<int> redeemReward({
-    required String rewardId,
-    String? branchId,
-  }) => Future.value(0);
+  Future<int> redeemReward({required String rewardId, String? branchId}) =>
+      Future.value(0);
 }
 
 /// Auth-event policy tests.
@@ -188,7 +188,7 @@ void main() {
       expect(cart.shouldReloadOnAuthEvent(recovery), isTrue);
       expect(favorites.shouldReloadOnAuthEvent(recovery), isTrue);
       expect(notifications.shouldReloadOnAuthEvent(recovery), isTrue);
-expect(loyalty.shouldReloadOnAuthEvent(recovery), isTrue);
+      expect(loyalty.shouldReloadOnAuthEvent(recovery), isTrue);
       expect(profile.shouldReloadOnAuthEvent(recovery), isTrue);
     });
 
@@ -240,9 +240,7 @@ expect(loyalty.shouldReloadOnAuthEvent(recovery), isTrue);
     });
 
     test('signed-out clears the previous customer notifications', () async {
-      final cubit = NotificationsCubit(
-        repository: _SignedOutNotifications(),
-      );
+      final cubit = NotificationsCubit(repository: _SignedOutNotifications());
       addTearDown(cubit.close);
 
       await cubit.load();

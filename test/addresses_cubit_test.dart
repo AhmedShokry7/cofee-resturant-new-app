@@ -198,9 +198,7 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.stream.firstWhere((state) => !state.isLoading);
-      await cubit.updateAddress(
-        _address('a2').copyWith(label: 'Updated'),
-      );
+      await cubit.updateAddress(_address('a2').copyWith(label: 'Updated'));
 
       expect(cubit.state.addresses[1].label, 'Updated');
       expect(cubit.state.addresses[1].id, 'a2');
@@ -290,118 +288,125 @@ void main() {
       await cubit.setDefaultAddress('a2');
 
       expect(cubit.state.error, isNotNull);
-      expect(
-        cubit.state.addresses.where((a) => a.isDefault),
-        isEmpty,
-      );
+      expect(cubit.state.addresses.where((a) => a.isDefault), isEmpty);
     });
   });
 
   group('account isolation', () {
-    test('an identity transition drops the previous customer addresses at once', () async {
-      final repository = _FakeAddressRepository()
-        ..seedUser('user-a', [_address('a1')])
-        ..seedUser('user-b', [_address('b1')]);
-      repository.sessionUserId = 'user-a';
+    test(
+      'an identity transition drops the previous customer addresses at once',
+      () async {
+        final repository = _FakeAddressRepository()
+          ..seedUser('user-a', [_address('a1')])
+          ..seedUser('user-b', [_address('b1')]);
+        repository.sessionUserId = 'user-a';
 
-      final cubit = AddressesCubit(repository: repository);
-      addTearDown(cubit.close);
+        final cubit = AddressesCubit(repository: repository);
+        addTearDown(cubit.close);
 
-      await cubit.stream.firstWhere((state) => !state.isLoading);
-      expect(cubit.state.addresses.single.id, 'a1');
+        await cubit.stream.firstWhere((state) => !state.isLoading);
+        expect(cubit.state.addresses.single.id, 'a1');
 
-      expect(cubit.applyIdentityTransition('user-b'), isTrue);
-      expect(
-        cubit.state.addresses,
-        isEmpty,
-        reason: 'the previous customer rows must not survive the transition',
-      );
-      expect(cubit.state.isLoading, isTrue);
+        expect(cubit.applyIdentityTransition('user-b'), isTrue);
+        expect(
+          cubit.state.addresses,
+          isEmpty,
+          reason: 'the previous customer rows must not survive the transition',
+        );
+        expect(cubit.state.isLoading, isTrue);
 
-      // The auth listener does applyIdentityTransition + load; mirror that.
-      repository.sessionUserId = 'user-b';
-      final settled = cubit.stream.firstWhere((state) => !state.isLoading);
-      await cubit.load();
-      await settled;
-      expect(repository.listCalls, 2);
-      expect(cubit.state.addresses.single.id, 'b1');
-      expect(
-        cubit.state.addresses.where((a) => a.id == 'a1'),
-        isEmpty,
-        reason: 'the list belongs to the new session only',
-      );
-    });
+        // The auth listener does applyIdentityTransition + load; mirror that.
+        repository.sessionUserId = 'user-b';
+        final settled = cubit.stream.firstWhere((state) => !state.isLoading);
+        await cubit.load();
+        await settled;
+        expect(repository.listCalls, 2);
+        expect(cubit.state.addresses.single.id, 'b1');
+        expect(
+          cubit.state.addresses.where((a) => a.id == 'a1'),
+          isEmpty,
+          reason: 'the list belongs to the new session only',
+        );
+      },
+    );
 
-    test('a transition to the same customer keeps the list untouched', () async {
-      final repository = _FakeAddressRepository()
-        ..seedUser('user-a', [_address('a1')]);
-      repository.sessionUserId = 'user-a';
+    test(
+      'a transition to the same customer keeps the list untouched',
+      () async {
+        final repository = _FakeAddressRepository()
+          ..seedUser('user-a', [_address('a1')]);
+        repository.sessionUserId = 'user-a';
 
-      final cubit = AddressesCubit(repository: repository);
-      addTearDown(cubit.close);
+        final cubit = AddressesCubit(repository: repository);
+        addTearDown(cubit.close);
 
-      await cubit.stream.firstWhere((state) => !state.isLoading);
-      // Establish the identity first (the cubit seeds null locally).
-      expect(cubit.applyIdentityTransition('user-a'), isTrue);
-      final settled = cubit.stream.firstWhere((state) => !state.isLoading);
-      await cubit.load();
-      await settled;
-      expect(cubit.state.addresses.single.id, 'a1');
-      final listCalls = repository.listCalls;
+        await cubit.stream.firstWhere((state) => !state.isLoading);
+        // Establish the identity first (the cubit seeds null locally).
+        expect(cubit.applyIdentityTransition('user-a'), isTrue);
+        final settled = cubit.stream.firstWhere((state) => !state.isLoading);
+        await cubit.load();
+        await settled;
+        expect(cubit.state.addresses.single.id, 'a1');
+        final listCalls = repository.listCalls;
 
-      expect(cubit.applyIdentityTransition('user-a'), isFalse);
-      expect(
-        repository.listCalls,
-        listCalls,
-        reason: 'the same identity must not trigger a reload',
-      );
-      expect(
-        cubit.state.addresses.single.id,
-        'a1',
-        reason: 'the same identity must not clear the list',
-      );
-    });
+        expect(cubit.applyIdentityTransition('user-a'), isFalse);
+        expect(
+          repository.listCalls,
+          listCalls,
+          reason: 'the same identity must not trigger a reload',
+        );
+        expect(
+          cubit.state.addresses.single.id,
+          'a1',
+          reason: 'the same identity must not clear the list',
+        );
+      },
+    );
 
-    test('a read parked under the previous identity cannot land afterwards', () async {
-      final repository = _FakeAddressRepository()
-        ..seedUser('user-a', [_address('a1')])
-        ..seedUser('user-b', [_address('b1')]);
-      repository.sessionUserId = 'user-a';
+    test(
+      'a read parked under the previous identity cannot land afterwards',
+      () async {
+        final repository = _FakeAddressRepository()
+          ..seedUser('user-a', [_address('a1')])
+          ..seedUser('user-b', [_address('b1')]);
+        repository.sessionUserId = 'user-a';
 
-      final cubit = AddressesCubit(repository: repository);
-      addTearDown(cubit.close);
+        final cubit = AddressesCubit(repository: repository);
+        addTearDown(cubit.close);
 
-      await cubit.stream.firstWhere((state) => !state.isLoading);
-      expect(cubit.state.addresses.single.id, 'a1');
+        await cubit.stream.firstWhere((state) => !state.isLoading);
+        expect(cubit.state.addresses.single.id, 'a1');
 
-      // A read is in flight under user-a's session...
-      final gate = Completer<void>();
-      repository.gate = gate;
-      final stale = cubit.load();
+        // A read is in flight under user-a's session...
+        final gate = Completer<void>();
+        repository.gate = gate;
+        final stale = cubit.load();
 
-      // ...while user-b takes over and gets a read of their own.
-      expect(cubit.applyIdentityTransition('user-b'), isTrue);
-      repository.sessionUserId = 'user-b';
-      repository.gate = null;
-      final seen = <List<String>>[];
-      final sub = cubit.stream.listen(
-        (state) => seen.add(state.addresses.map((a) => a.id).toList()),
-      );
-      final fresh = cubit.load();
-      await fresh;
+        // ...while user-b takes over and gets a read of their own.
+        expect(cubit.applyIdentityTransition('user-b'), isTrue);
+        repository.sessionUserId = 'user-b';
+        repository.gate = null;
+        final seen = <List<String>>[];
+        final sub = cubit.stream.listen(
+          (state) => seen.add(state.addresses.map((a) => a.id).toList()),
+        );
+        final fresh = cubit.load();
+        await fresh;
 
-      // user-a's answer finally arrives, late.
-      gate.complete();
-      await stale;
-      await sub.cancel();
+        // user-a's answer finally arrives, late.
+        gate.complete();
+        await stale;
+        await sub.cancel();
 
-      expect(
-        seen.any((ids) => ids.contains('a1')),
-        isFalse,
-        reason: 'a stale in-flight read must never restore the previous customer',
-      );
-      expect(cubit.state.addresses.single.id, 'b1');
-    });
+        expect(
+          seen.any((ids) => ids.contains('a1')),
+          isFalse,
+          reason:
+              'a stale in-flight read must never restore the previous customer',
+        );
+        expect(cubit.state.addresses.single.id, 'b1');
+      },
+    );
 
     test('signing out clears the list before any new session loads', () async {
       final repository = _FakeAddressRepository()

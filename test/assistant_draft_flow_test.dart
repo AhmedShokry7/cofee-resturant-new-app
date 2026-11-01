@@ -15,6 +15,7 @@ import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_order.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
+
 import 'support/mock_product_repository.dart';
 
 late AssistantSnapshot _snapshot;
@@ -118,9 +119,8 @@ void main() {
     });
 
     test('confirming fills the cart actions and empties the draft', () {
-      final memory = AssistantMemory()..draft.add(
-        _item('3', quantity: 2, size: 'large'),
-      );
+      final memory = AssistantMemory()
+        ..draft.add(_item('3', quantity: 2, size: 'large'));
 
       final answer = _withCatalog(
         () => AssistantDraftFlow.executeConfirm(memory, arabic: true),

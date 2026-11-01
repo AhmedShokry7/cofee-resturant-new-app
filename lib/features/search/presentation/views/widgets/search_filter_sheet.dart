@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/search/data/model/search_sort.dart';
@@ -13,6 +11,7 @@ import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/sheet_handle.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 Future<void> showSearchFilterSheet(BuildContext context) {
   return showModalBottomSheet<void>(
@@ -20,7 +19,7 @@ Future<void> showSearchFilterSheet(BuildContext context) {
     backgroundColor: AppColor.whiteColor,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),
     builder: (context) => const SearchFilterSheet(),
   );
@@ -83,20 +82,20 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SheetHandle(),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(S.filters, style: AppFonts.semiBold18(context)),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(S.sortBy, style: AppFonts.medium16(context)),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             Wrap(
-              spacing: SpacingTokens.sm.w,
-              runSpacing: SpacingTokens.sm.h,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: SearchSort.values
                   .map(
                     (sort) => _ChoiceChip(
@@ -107,9 +106,9 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                   )
                   .toList(),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(S.category, style: AppFonts.medium16(context)),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             // The categories arrive on their own request, so the chips rebuild
             // from the cubit instead of being read once: a plain context.read
             // here kept the section on whatever the first frame held, which was
@@ -118,8 +117,8 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
               buildWhen: (previous, current) =>
                   previous.categories != current.categories,
               builder: (context, state) => Wrap(
-                spacing: SpacingTokens.sm.w,
-                runSpacing: SpacingTokens.sm.h,
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
                 children: [
                   _ChoiceChip(
                     label: S.all,
@@ -143,7 +142,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 ],
               ),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(S.priceRange, style: AppFonts.medium16(context)),
             RangeSlider(
               values: _prices,
@@ -175,7 +174,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 ),
               ],
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 Expanded(
@@ -186,7 +185,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     onPressed: _reset,
                   ),
                 ),
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: CustomBtn(text: S.apply, onPressed: _apply),
                 ),
@@ -216,12 +215,12 @@ class _ChoiceChip extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: SpacingTokens.md.w,
-          vertical: SpacingTokens.sm.h,
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
           color: selected ? AppColor.primaryColor : AppColor.lightGreyColor,
-          borderRadius: BorderRadius.circular(100.r),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
         ),
         child: Text(
           label,

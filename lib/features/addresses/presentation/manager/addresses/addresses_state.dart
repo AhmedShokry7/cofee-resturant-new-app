@@ -19,10 +19,9 @@ class AddressesState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      AddressesState(
-        addresses: addresses ?? this.addresses,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => AddressesState(
+    addresses: addresses ?? this.addresses,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }

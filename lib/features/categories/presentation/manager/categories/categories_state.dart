@@ -34,13 +34,12 @@ class CategoriesState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-  }) =>
-      CategoriesState(
-        categories: categories ?? this.categories,
-        products: products ?? this.products,
-        bundles: bundles ?? this.bundles,
-        index: index ?? this.index,
-        isLoading: isLoading ?? this.isLoading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => CategoriesState(
+    categories: categories ?? this.categories,
+    products: products ?? this.products,
+    bundles: bundles ?? this.bundles,
+    index: index ?? this.index,
+    isLoading: isLoading ?? this.isLoading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }

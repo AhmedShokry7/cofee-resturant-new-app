@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -31,20 +30,16 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: AppConstant.designSize,
-          builder: (context, child) => MaterialApp(
-            routes: {
-              SplashView.routeName: (context) => const SplashView(
-                targetRoute: MainPage.routeName,
-              ),
-              // A stub for the real home page: the real one needs the whole
-              // provider tree, which is irrelevant to the handover.
-              MainPage.routeName: (context) =>
-                  const Scaffold(body: Text('home-stub')),
-            },
-            initialRoute: SplashView.routeName,
-          ),
+        MaterialApp(
+          routes: {
+            SplashView.routeName: (context) =>
+                const SplashView(targetRoute: MainPage.routeName),
+            // A stub for the real home page: the real one needs the whole
+            // provider tree, which is irrelevant to the handover.
+            MainPage.routeName: (context) =>
+                const Scaffold(body: Text('home-stub')),
+          },
+          initialRoute: SplashView.routeName,
         ),
       );
 
@@ -72,8 +67,10 @@ void main() {
       // A new repository stands in for the next launch: the marker has to come
       // from storage, not from anything held in memory.
       expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
-      expect(await const SessionRepository().currentRoute(),
-          AppConstant.authRoute);
+      expect(
+        await const SessionRepository().currentRoute(),
+        AppConstant.authRoute,
+      );
     });
 
     test('a confirmed write reports failure instead of pretending', () async {
@@ -83,8 +80,10 @@ void main() {
     });
 
     test('signing in also marks the onboarding as done', () async {
-      expect(await const SessionRepository().markAuthenticatedConfirmed(),
-          isTrue);
+      expect(
+        await const SessionRepository().markAuthenticatedConfirmed(),
+        isTrue,
+      );
 
       expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
       expect(
@@ -121,10 +120,7 @@ void main() {
     });
 
     test('a missing route still skips the onboarding for a returning user', () {
-      expect(
-        AppRoutes.initialRouteName(null),
-        WelcomePage.routeName,
-      );
+      expect(AppRoutes.initialRouteName(null), WelcomePage.routeName);
       expect(
         AppRoutes.initialRouteName(null, onboardingDone: true),
         AuthPage.routeName,

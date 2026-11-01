@@ -9,10 +9,8 @@ import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.da
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
 
 class PhoneAuthCubit extends Cubit<PhoneAuthState> {
-  PhoneAuthCubit(
-    this._repository, {
-    this.session = const SessionRepository(),
-  }) : super(const PhoneAuthInitial());
+  PhoneAuthCubit(this._repository, {this.session = const SessionRepository()})
+    : super(const PhoneAuthInitial());
 
   final AuthRepository _repository;
 
@@ -34,17 +32,11 @@ class PhoneAuthCubit extends Cubit<PhoneAuthState> {
     }
   }
 
-  Future<void> verifyCode({
-    required String phone,
-    required String code,
-  }) async {
+  Future<void> verifyCode({required String phone, required String code}) async {
     if (state is PhoneAuthLoading) return;
     emit(const PhoneAuthLoading());
     try {
-      final user = await _repository.verifyPhoneCode(
-        phone: phone,
-        code: code,
-      );
+      final user = await _repository.verifyPhoneCode(phone: phone, code: code);
       // Same rule as the email flow: the marker is written and confirmed here,
       // so the screen only has to decide where in the stack to land. A marker
       // that will not land is reported, not acted on — the customer is verified

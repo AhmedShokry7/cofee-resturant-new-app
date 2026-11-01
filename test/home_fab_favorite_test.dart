@@ -2,11 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/assistant/presentation/widgets/assistant_fab.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
@@ -19,7 +19,10 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/home/presentation/views/home_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
+import 'support/pump_harness.dart';
+
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_favorite_button.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
@@ -51,12 +54,7 @@ Future<void> _setSurface(WidgetTester tester) async {
 }
 
 Future<void> _pump(WidgetTester tester, Widget child) {
-  return tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(home: Scaffold(body: child)),
-    ),
-  );
+  return tester.pumpWidget(MaterialApp(home: Scaffold(body: child)));
 }
 
 /// Lets the assistant FAB's one-shot hint timers fire, then disposes the
@@ -121,19 +119,16 @@ void main() {
       addTearDown(favorites.close);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: MultiBlocProvider(
-              providers: [
-                BlocProvider.value(value: home),
-                BlocProvider.value(value: weather),
-                BlocProvider.value(value: favorites),
-              ],
-              child: RepositoryProvider<AuthRepository>.value(
-                value: _FakeAuthRepository(),
-                child: const HomePage(),
-              ),
+        MaterialApp(
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: home),
+              BlocProvider.value(value: weather),
+              BlocProvider.value(value: favorites),
+            ],
+            child: RepositoryProvider<AuthRepository>.value(
+              value: _FakeAuthRepository(),
+              child: const HomePage(),
             ),
           ),
         ),
@@ -158,16 +153,13 @@ void main() {
       addTearDown(favorites.close);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: MultiBlocProvider(
-              providers: [
-                BlocProvider.value(value: categories),
-                BlocProvider.value(value: favorites),
-              ],
-              child: const CategoriesPage(),
-            ),
+        MaterialApp(
+          home: MultiBlocProvider(
+            providers: [
+              BlocProvider.value(value: categories),
+              BlocProvider.value(value: favorites),
+            ],
+            child: const CategoriesPage(),
           ),
         ),
       );
@@ -188,17 +180,11 @@ void main() {
       addTearDown(favorites.close);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: Scaffold(
-              body: BlocProvider.value(
-                value: favorites,
-                child: SizedBox(
-                  width: 170,
-                  child: ProductCard(product: product),
-                ),
-              ),
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: favorites,
+              child: SizedBox(width: 170, child: ProductCard(product: product)),
             ),
           ),
         ),
@@ -216,7 +202,7 @@ void main() {
       expect(find.text('Hot Coffee'), findsOneWidget);
       // Taller than the previous 0.75 card at the same width.
       final size = tester.getSize(find.byType(ProductCard));
-      expect(size.height, closeTo(170 / 0.60, 1));
+      expect(size.height, closeTo(170 / ProductCard.cardAspectRatio, 1));
       expect(size.height, greaterThan(170 / 0.75));
     });
 
@@ -229,18 +215,11 @@ void main() {
       addTearDown(favorites.close);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: Scaffold(
-              body: BlocProvider.value(
-                value: favorites,
-                child: SizedBox(
-                  width: 360,
-                  height: 800,
-                  child: ProductsGridView(products: products),
-                ),
-              ),
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: favorites,
+              child: ProductsGridView(products: products),
             ),
           ),
         ),
@@ -249,9 +228,19 @@ void main() {
 
       final sliver = tester.widget<SliverGrid>(find.byType(SliverGrid));
       final delegate =
-          sliver.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
-      expect(delegate.crossAxisCount, 2);
+          sliver.gridDelegate as SliverGridDelegateWithMaxCrossAxisExtent;
+      expect(delegate.maxCrossAxisExtent, AppBreakpoints.productCardMaxWidth);
       expect(delegate.childAspectRatio, ProductCard.cardAspectRatio);
+
+      // Two cards share a phone row...
+      expect(columnCount(find.byType(ProductCard)), 2);
+
+      // ...and a wide window gains columns instead of fat cards. The window
+      // itself has to grow: a child wider than the surface is clamped to it,
+      // so the grid would still see a phone.
+      tester.view.physicalSize = tabletViewport * phoneDevicePixelRatio;
+      await tester.pump();
+      expect(columnCount(find.byType(ProductCard)), greaterThan(2));
     });
 
     testWidgets('carousel strip fits the taller cards exactly', (tester) async {
@@ -263,19 +252,16 @@ void main() {
       addTearDown(favorites.close);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: Scaffold(
-              body: BlocProvider.value(
-                value: favorites,
-                child: SizedBox(
-                  width: 360,
-                  height: 500,
-                  child: HomeProductsCarousel(
-                    title: 'Popular',
-                    products: products,
-                  ),
+        MaterialApp(
+          home: Scaffold(
+            body: BlocProvider.value(
+              value: favorites,
+              child: SizedBox(
+                width: 360,
+                height: 500,
+                child: HomeProductsCarousel(
+                  title: 'Popular',
+                  products: products,
                 ),
               ),
             ),
@@ -285,7 +271,7 @@ void main() {
       await tester.pump();
 
       final strip = tester.getSize(find.byType(ListView));
-      expect(strip.height, closeTo(168 / 0.60, 1));
+      expect(strip.height, closeTo(168 / ProductCard.cardAspectRatio, 1));
       expect(find.byType(ProductCard), findsWidgets);
     });
   });
@@ -312,14 +298,14 @@ void main() {
       Icon icon() => tester.widget<Icon>(find.byType(Icon));
 
       // Inactive: outlined heart in grey, existing styling untouched.
-      expect(icon().icon, HugeIcons.strokeRoundedFavourite);
+      expect(icon().icon, AppIcons.favourite);
       expect(icon().color, AppColor.greyColor);
 
       await tester.tap(find.byType(ProductFavoriteButton));
       await tester.pumpAndSettle();
 
       // Active: unmistakable filled red heart.
-      expect(icon().icon, Icons.favorite);
+      expect(icon().icon, AppIcons.favourite);
       expect(icon().color, AppColor.errorColor);
 
       // Persisted to the same guest store the app already uses.
@@ -329,7 +315,7 @@ void main() {
       await tester.tap(find.byType(ProductFavoriteButton));
       await tester.pumpAndSettle();
 
-      expect(icon().icon, HugeIcons.strokeRoundedFavourite);
+      expect(icon().icon, AppIcons.favourite);
       expect(icon().color, AppColor.greyColor);
       expect(jsonDecode(prefs.getString('favorites_v1_guest')!), isEmpty);
     });

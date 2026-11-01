@@ -1,6 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -8,7 +7,9 @@ import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
+
 import 'support/in_memory_profile_photo_repository.dart';
+
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -61,18 +62,14 @@ class _FakeAuthRepository implements AuthRepository {
   Future<void> signOut() => throw UnimplementedError();
 
   @override
-  Future<AuthUser> updateProfile({
-    required String fullName,
-    String? phone,
-  }) =>
+  Future<AuthUser> updateProfile({required String fullName, String? phone}) =>
       throw UnimplementedError();
 
   @override
   Future<void> changePassword({
     required String oldPassword,
     required String newPassword,
-  }) =>
-      throw UnimplementedError();
+  }) => throw UnimplementedError();
 }
 
 Future<void> _setSurface(WidgetTester tester) async {
@@ -83,13 +80,10 @@ Future<void> _setSurface(WidgetTester tester) async {
 }
 
 Widget _settingsApp({Widget? child}) {
-  return ScreenUtilInit(
-    designSize: const Size(360, 690),
-    builder: (context, _) => MaterialApp(
-      // Mirrors main.dart: the whole app listens to AppLocale so a language
-      // selection rebuilds every screen.
-      home: child,
-    ),
+  return MaterialApp(
+    // Mirrors main.dart: the whole app listens to AppLocale so a language
+    // selection rebuilds every screen.
+    home: child,
   );
 }
 
@@ -108,7 +102,12 @@ void main() {
     await tester.pumpWidget(
       _settingsApp(
         child: MultiBlocProvider(
-          providers: [BlocProvider(create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()))],
+          providers: [
+            BlocProvider(
+              create: (_) =>
+                  ProfileCubit(repository: InMemoryProfilePhotoRepository()),
+            ),
+          ],
           child: RepositoryProvider<AuthRepository>(
             create: (_) => _FakeAuthRepository(),
             child: const SettingsPage(),
@@ -133,7 +132,12 @@ void main() {
         child: AnimatedBuilder(
           animation: AppLocale.instance,
           builder: (context, _) => MultiBlocProvider(
-            providers: [BlocProvider(create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()))],
+            providers: [
+              BlocProvider(
+                create: (_) =>
+                    ProfileCubit(repository: InMemoryProfilePhotoRepository()),
+              ),
+            ],
             child: RepositoryProvider<AuthRepository>(
               create: (_) => _FakeAuthRepository(),
               // Not const: a const instance is canonicalized, so Flutter would
@@ -173,7 +177,12 @@ void main() {
     await tester.pumpWidget(
       _settingsApp(
         child: MultiBlocProvider(
-          providers: [BlocProvider(create: (_) => ProfileCubit(repository: InMemoryProfilePhotoRepository()))],
+          providers: [
+            BlocProvider(
+              create: (_) =>
+                  ProfileCubit(repository: InMemoryProfilePhotoRepository()),
+            ),
+          ],
           child: RepositoryProvider<AuthRepository>(
             create: (_) => _FakeAuthRepository(),
             child: const SettingsPage(),

@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/add_address_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/address_tile.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class ShippingAddressesPageBody extends StatelessWidget {
   const ShippingAddressesPageBody({super.key});
@@ -25,14 +23,13 @@ class ShippingAddressesPageBody extends StatelessWidget {
           current.error != null && previous.error != current.error,
       listener: (context, state) {
         if (state.error == null) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(S.addressSaveFailed)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(S.addressSaveFailed)));
         context.read<CheckoutCubit>().clearError();
       },
       builder: (context, state) {
         return ListView(
-          padding: LayoutTokens.pageBody(),
+          padding: AppLayout.pageBody,
           children: [
             for (var index = 0; index < state.addresses.length; index++) ...[
               AddressTile(
@@ -49,17 +46,16 @@ class ShippingAddressesPageBody extends StatelessWidget {
                   AddAddressPage.routeName,
                   arguments: state.addresses[index],
                 ),
-                onDelete: () => context
-                    .read<CheckoutCubit>()
-                    .removeAddress(state.addresses[index].id),
+                onDelete: () => context.read<CheckoutCubit>().removeAddress(
+                  state.addresses[index].id,
+                ),
               ),
               if (index != state.addresses.length - 1) const Divider(),
             ],
-            SizedBox(height: SpacingTokens.xl.h),
+            SizedBox(height: AppSpacing.xl),
             _AddAddressButton(
-              onTap: () => Navigator.of(
-                context,
-              ).pushNamed(AddAddressPage.routeName),
+              onTap: () =>
+                  Navigator.of(context).pushNamed(AddAddressPage.routeName),
             ),
           ],
         );
@@ -78,20 +74,18 @@ class _AddAddressButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 52.h,
+        height: AppDimensions.buttonHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border.all(color: AppColor.primaryColor),
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: BorderRadius.circular(AppRadius.r8),
         ),
         child: Text(
           S.addNewShippingAddress,
-          style: AppFonts.medium12(
-            context,
-          ).copyWith(color: AppColor.primaryColor),
+          style: AppFonts.medium12(context)
+              .copyWith(color: AppColor.primaryColor),
         ),
       ),
     );
   }
 }
-

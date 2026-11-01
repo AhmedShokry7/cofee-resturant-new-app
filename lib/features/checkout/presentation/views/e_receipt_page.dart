@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class EReceiptPage extends StatelessWidget {
   const EReceiptPage({super.key});
@@ -29,34 +27,34 @@ class EReceiptPage extends StatelessWidget {
       appBar: AppBar(title: Text(S.eReceipt)),
       body: order == null
           ? EmptyState(
-              icon: HugeIcons.strokeRoundedReceiptDollar,
+              icon: AppIcons.receipt,
               title: S.noReceipt,
               subtitle: S.receiptHint,
             )
           : ListView(
-              padding: LayoutTokens.pageBody(),
+              padding: AppLayout.pageBody,
               children: [
                 _ReceiptCard(order: order),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 _InfoCard(
                   label: S.fulfillmentMethod,
                   value: order.isDelivery ? S.deliveryMethod : S.pickupMethod,
                 ),
                 if (order.isDelivery && order.deliveryZoneName != null) ...[
-                  SizedBox(height: SpacingTokens.md.h),
+                  SizedBox(height: AppSpacing.md),
                   _InfoCard(
                     label: S.deliveryZone,
                     value: order.deliveryZoneName!,
                   ),
                 ],
                 if (order.isDelivery && order.deliveryAddress != null) ...[
-                  SizedBox(height: SpacingTokens.md.h),
+                  SizedBox(height: AppSpacing.md),
                   _InfoCard(
                     label: S.shippingAddress,
                     value: order.deliveryAddress!,
                   ),
                 ],
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 _InfoCard(
                   label: S.paymentMethod,
                   value: state.selectedPaymentMethod?.label ?? '—',
@@ -75,13 +73,15 @@ class _ReceiptCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // The price of the items before the promotion, so the receipt adds up.
-    final itemsTotal =
-        order.items.fold<double>(0, (sum, item) => sum + item.total);
+    final itemsTotal = order.items.fold<double>(
+      0,
+      (sum, item) => sum + item.total,
+    );
     return Container(
-      padding: EdgeInsets.all(SpacingTokens.lg.w),
+      padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
       ),
       child: Column(
@@ -90,11 +90,11 @@ class _ReceiptCard extends StatelessWidget {
           Row(
             children: [
               Icon(
-                HugeIcons.strokeRoundedReceiptDollar,
-                size: 24.w,
+                AppIcons.receipt,
+                size: AppSpacing.xl,
                 color: AppColor.primaryColor,
               ),
-              SizedBox(width: SpacingTokens.sm.w),
+              SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   S.eReceipt,
@@ -103,7 +103,7 @@ class _ReceiptCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              SizedBox(width: SpacingTokens.sm.w),
+              SizedBox(width: AppSpacing.sm),
               Text(
                 order.id,
                 style: AppFonts.medium14(context)
@@ -111,17 +111,17 @@ class _ReceiptCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
           Text(
             Formatters.date(order.date),
             style: AppFonts.regular14(context)
                 .copyWith(color: AppColor.greyColor),
           ),
-          SizedBox(height: SpacingTokens.md.h),
+          SizedBox(height: AppSpacing.md),
           const Divider(),
           ...order.items.map(
             (item) => Padding(
-              padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -149,17 +149,17 @@ class _ReceiptCard extends StatelessWidget {
                           line.discount > 0)
                         Padding(
                           padding: EdgeInsets.only(
-                            top: 2.h,
-                            left: SpacingTokens.md.w,
+                            top: AppSpacing.xxs,
+                            left: AppSpacing.md,
                           ),
                           child: Row(
                             children: [
                               Icon(
-                                HugeIcons.strokeRoundedDiscount01,
-                                size: 12.w,
+                                AppIcons.discount,
+                                size: AppSpacing.md,
                                 color: AppColor.primaryColor,
                               ),
-                              SizedBox(width: SpacingTokens.xs.w),
+                              SizedBox(width: AppSpacing.xs),
                               Expanded(
                                 child: Text(
                                   S.lineDiscount,
@@ -184,7 +184,7 @@ class _ReceiptCard extends StatelessWidget {
             ),
           ),
           const Divider(),
-          SizedBox(height: SpacingTokens.sm.h),
+          SizedBox(height: AppSpacing.sm),
           if (order.productDiscount > 0) ...[
             // The price before the promotion and the promotion itself, so the
             // rows add up to the total the customer paid.
@@ -199,7 +199,7 @@ class _ReceiptCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: SpacingTokens.xs.h),
+            SizedBox(height: AppSpacing.xs),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -218,7 +218,7 @@ class _ReceiptCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
           ],
           if (order.deliveryFee > 0) ...[
             Row(
@@ -232,7 +232,7 @@ class _ReceiptCard extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
           ],
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -262,10 +262,10 @@ class _InfoCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(SpacingTokens.md.w),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
       ),
       child: Column(
@@ -276,7 +276,7 @@ class _InfoCard extends StatelessWidget {
             style: AppFonts.regular12(context)
                 .copyWith(color: AppColor.greyColor),
           ),
-          SizedBox(height: 4.h),
+          SizedBox(height: AppSpacing.xs),
           Text(value, style: AppFonts.medium14(context)),
         ],
       ),

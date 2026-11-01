@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'dart:async';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/views/widgets/branch_selector.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
@@ -18,6 +16,7 @@ import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping
 import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
 import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class CheckoutPageBody extends StatefulWidget {
   const CheckoutPageBody({super.key});
@@ -64,27 +63,27 @@ class _CheckoutPageBodyState extends State<CheckoutPageBody> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: LayoutTokens.pageBody(),
+      padding: AppLayout.pageBody,
       children: [
         Text(S.pickupBranch, style: AppFonts.semiBold16(context)),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         const Align(
           alignment: AlignmentDirectional.centerStart,
           child: BranchSelector(),
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const Divider(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const DeliveryFulfillmentSection(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const Divider(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const ShippingAddressSection(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const Divider(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         Text(S.orderList, style: AppFonts.semiBold16(context)),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         BlocBuilder<CartCubit, CartState>(
           builder: (context, state) {
             return Column(
@@ -101,9 +100,9 @@ class _CheckoutPageBodyState extends State<CheckoutPageBody> {
             );
           },
         ),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         const _CouponSection(),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         const _OrderSummary(),
       ],
     );
@@ -188,12 +187,12 @@ class _AppliedCouponRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md.w,
-        vertical: SpacingTokens.sm.h,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: AppColor.primaryColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(100.r),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
         children: [
@@ -206,7 +205,11 @@ class _AppliedCouponRow extends StatelessWidget {
           ),
           GestureDetector(
             onTap: onRemove,
-            child: Icon(Icons.close, size: 20.w, color: AppColor.primaryColor),
+            child: Icon(
+              AppIcons.close,
+              size: AppSizes.px20,
+              color: AppColor.primaryColor,
+            ),
           ),
         ],
       ),
@@ -247,7 +250,7 @@ class _OrderSummary extends StatelessWidget {
                       Align(
                         alignment: AlignmentDirectional.centerEnd,
                         child: Padding(
-                          padding: EdgeInsets.only(top: SpacingTokens.xs.h),
+                          padding: EdgeInsets.only(top: AppSpacing.xs),
                           child: Text(
                             S.vatIncluded,
                             style: AppFonts.regular12(context)
@@ -260,7 +263,7 @@ class _OrderSummary extends StatelessWidget {
               }
               return TextButton.icon(
                 onPressed: () => cubit.refreshCheckoutQuote(cart.items),
-                icon: const Icon(Icons.refresh),
+                icon: const Icon(AppIcons.refresh),
                 label: Text(S.retry),
               );
             }
@@ -303,7 +306,7 @@ class _OrderSummary extends StatelessWidget {
                   Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: Padding(
-                      padding: EdgeInsets.only(top: SpacingTokens.xs.h),
+                      padding: EdgeInsets.only(top: AppSpacing.xs),
                       child: Text(
                         S.vatIncluded,
                         style: AppFonts.regular12(context)

@@ -82,5 +82,4 @@ void main() {
     expect(cubit.state.selected, isNull);
     await cubit.close();
   });
-
 }

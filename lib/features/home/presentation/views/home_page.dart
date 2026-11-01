@@ -14,9 +14,8 @@ class HomePage extends StatelessWidget {
     // on the Home tab and floats above the bottom navigation without
     // covering content.
     return BlocProvider(
-      create: (context) => CurrentUserCubit(
-        repository: context.read<AuthRepository>(),
-      )..load(),
+      create: (context) =>
+          CurrentUserCubit(repository: context.read<AuthRepository>())..load(),
       child: const Scaffold(
         body: HomePageBody(),
         floatingActionButton: AssistantFab(),

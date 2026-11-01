@@ -21,18 +21,18 @@ part 'favorites_state.dart';
 class FavoritesCubit extends Cubit<FavoritesState> {
   FavoritesCubit({
     required this._repository,
-    required FavoritesRepository favorites,
+    required this._favorites,
     this.branchId,
-  }) : _favorites = favorites,
-       super(const FavoritesState(ids: {})) {
+  }) : super(const FavoritesState(ids: {})) {
     // Seeded from the same source the repositories read, so restoring the
     // session that is already present is not mistaken for a switch to it.
     _identity = SupabaseService.isReady
         ? SupabaseService.client.auth.currentUser?.id
         : null;
     if (SupabaseService.isReady) {
-      _authSubscription = SupabaseService.client.auth.onAuthStateChange
-          .listen(_onAuthStateChanged);
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
     }
     load();
   }

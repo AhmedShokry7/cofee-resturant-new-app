@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_hero_image.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_panel_content.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/wavy_container.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The photograph and the panel that overlaps its bottom edge.
 ///
@@ -25,7 +24,7 @@ class WelcomePageBody extends StatelessWidget {
 
   /// The panel overlaps the photo by exactly the depth of the curve, so the
   /// wave always meets the bottom edge of the photo.
-  static double get _curveDepth => WavyContainer.designCurveDepth.h;
+  static double get _curveDepth => WavyContainer.designCurveDepth;
 
   /// Gap between the curve and the copy, so the first line never touches it.
   static const double _clearance = 20;
@@ -54,10 +53,10 @@ class WelcomePageBody extends StatelessWidget {
           child: WavyContainer(
             curveHeight: _curveDepth,
             padding: EdgeInsets.fromLTRB(
-              SpacingTokens.xl.w,
-              _clearance.h,
-              SpacingTokens.xl.w,
-              SpacingTokens.lg.h,
+              AppSpacing.xl,
+              _clearance,
+              AppSpacing.xl,
+              AppSpacing.lg,
             ),
             child: const SafeArea(top: false, child: WelcomePanelContent()),
           ),

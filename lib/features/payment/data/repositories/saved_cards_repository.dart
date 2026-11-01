@@ -31,7 +31,10 @@ enum SaveCardFailure {
 /// language, so the UI shows it as-is and no provider error text ever reaches
 /// the customer.
 class SaveCardException implements Exception {
-  const SaveCardException(this.message, {this.failure = SaveCardFailure.temporary});
+  const SaveCardException(
+    this.message, {
+    this.failure = SaveCardFailure.temporary,
+  });
 
   final String message;
   final SaveCardFailure failure;
@@ -225,18 +228,12 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
   @override
   Future<void> deleteSavedCard(String id) async {
     _requireSignedIn();
-    await _client.functions.invoke(
-      'tap-delete-card',
-      body: {'cardId': id},
-    );
+    await _client.functions.invoke('tap-delete-card', body: {'cardId': id});
   }
 
   @override
   Future<void> setDefaultCard(String id) async {
     _requireSignedIn();
-    await _client.functions.invoke(
-      'set_default_card',
-      body: {'cardId': id},
-    );
+    await _client.functions.invoke('set_default_card', body: {'cardId': id});
   }
 }

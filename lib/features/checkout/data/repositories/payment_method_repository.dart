@@ -37,8 +37,7 @@ class SupabasePaymentMethodRepository implements PaymentMethodRepository {
             as List;
     return [
       for (final row in rows)
-        if (row is Map<String, dynamic>)
-          PaymentMethodModel.fromDatabase(row),
+        if (row is Map<String, dynamic>) PaymentMethodModel.fromDatabase(row),
     ].where((method) => method.isAvailableOnThisDevice).toList();
   }
 }

@@ -73,6 +73,7 @@ class AssistantDraftFlow {
           : AssistantEngine.defaultQuickReplies,
     );
   }
+
   static AssistantAnswer draftTotal(
     AssistantMemory memory, {
     required bool arabic,
@@ -138,9 +139,7 @@ class AssistantDraftFlow {
     }
     if (parsed.items.isEmpty && !parsed.unclearDessert) {
       return AssistantAnswer(
-        text: arabic
-            ? 'عيني! عايز تطلب إيه بالظبط؟ قولي مثلا "2 لاتيه كبير".'
-            : 'With pleasure! What exactly would you like? Say e.g. "2 large lattes".',
+        text: arabic ? 'عيني! عايز تطلب إيه بالظبط؟ قولي مثلا "2 لاتيه كبير".' : 'With pleasure! What exactly would you like? Say e.g. "2 large lattes".',
         topic: 'order',
         sourceId: 'order-empty',
         quickReplies: arabic
@@ -166,9 +165,7 @@ class AssistantDraftFlow {
         topic: 'order',
         sourceId: 'order-clarify',
         products: draftProducts(memory),
-        quickReplies: dessertOptions()
-            .map((product) => product.name)
-            .toList(),
+        quickReplies: dessertOptions().map((product) => product.name).toList(),
       );
     }
     return confirmDraftMessage(memory, arabic: arabic);
@@ -199,14 +196,10 @@ class AssistantDraftFlow {
           .map((product) => product.name)
           .join('، ');
       return AssistantAnswer(
-        text: arabic
-            ? 'محددتش — تحب $options؟'
-            : 'Pick one for me — $options?',
+        text: arabic ? 'محددتش — تحب $options؟' : 'Pick one for me — $options?',
         topic: 'order',
         sourceId: 'order-clarify',
-        quickReplies: dessertOptions()
-            .map((product) => product.name)
-            .toList(),
+        quickReplies: dessertOptions().map((product) => product.name).toList(),
       );
     }
     if (parsed.unclearDessert) {
@@ -272,10 +265,8 @@ class AssistantDraftFlow {
     }
     final actions = memory.draft.items
         .map(
-          (item) => AssistantSnapshot.current.cartActionFor(
-            item,
-            arabic: arabic,
-          ),
+          (item) =>
+              AssistantSnapshot.current.cartActionFor(item, arabic: arabic),
         )
         .toList();
     final summary = memory.draft.describe(arabic: arabic);
@@ -322,8 +313,10 @@ class AssistantDraftFlow {
     for (final item in parsed.items) {
       for (final product in AssistantSnapshot.current.products) {
         if (product.id == item.productId) {
-          final note =
-              AssistantSnapshot.current.variantNoteFor(item, arabic: arabic);
+          final note = AssistantSnapshot.current.variantNoteFor(
+            item,
+            arabic: arabic,
+          );
           names.add(
             '${item.quantity}x ${product.name}${note.isEmpty ? '' : ' ($note)'}',
           );

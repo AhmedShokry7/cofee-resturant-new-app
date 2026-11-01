@@ -14,8 +14,9 @@ void main() {
       'Needs --dart-define SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and '
       'SCHEMAS_EXPOSED=true';
 
-  final String? skip =
-      (!AppConfig.isSupabaseConfigured || !schemasExposed) ? needsSetup : null;
+  final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
+      ? needsSetup
+      : null;
 
   setUpAll(() async {
     if (skip != null) return;

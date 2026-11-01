@@ -21,9 +21,7 @@ class FaqsView extends StatelessWidget {
           loadingView: const FaqLoadingView(),
           failureMessage: state.hasError ? S.couldNotLoadFaqs : null,
           onRetry: () => context.read<FaqsCubit>().load(),
-          contentBuilder: (
-            context,
-          ) => state.faqs.isEmpty
+          contentBuilder: (context) => state.faqs.isEmpty
               ? Center(child: Text(S.noFaqs))
               : FaqsList(faqs: state.faqs),
         );

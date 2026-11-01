@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
@@ -43,32 +42,32 @@ class HomeHeader extends StatelessWidget {
                               .copyWith(color: AppColor.greyColor),
                         ),
                       ),
-                      SizedBox(width: 4.w),
+                      SizedBox(width: AppSpacing.xs),
                       Image.asset(
                         isDaytime(now) ? AppImages.sun : AppImages.moon,
-                        width: 30.w,
-                        height: 30.w,
+                        width: AppSizes.px30,
+                        height: AppSizes.px30,
                       ),
                     ],
                   );
                 },
               ),
-              SizedBox(height: 4.h),
+              SizedBox(height: AppSpacing.xs),
               Text(S.homeQuestion, style: AppFonts.semiBold20(context)),
             ],
           ),
         ),
-        SizedBox(width: SpacingTokens.sm.w),
+        SizedBox(width: AppSpacing.sm),
         GestureDetector(
           onTap: () =>
               Navigator.of(context).pushNamed(NotificationsPage.routeName),
           child: Container(
-            height: 44.w,
-            width: 44.w,
+            height: AppSizes.px44,
+            width: AppSizes.px44,
             decoration: BoxDecoration(
               border: Border.all(
                 color: AppColor.primaryColor.withAlpha(75),
-                width: 1.w,
+                width: AppSizes.px1,
               ),
               shape: BoxShape.circle,
             ),
@@ -95,8 +94,8 @@ class _NotificationBell extends StatelessWidget {
       cubit = null;
     }
     final bell = Icon(
-      HugeIcons.strokeRoundedNotification01,
-      size: 22.w,
+      AppIcons.notification,
+      size: AppSizes.px22,
       color: AppColor.primaryColor,
     );
     if (cubit == null) return bell;
@@ -110,21 +109,29 @@ class _NotificationBell extends StatelessWidget {
           children: [
             bell,
             Positioned(
-              top: -4.h,
-              right: -6.w,
+              top: -AppSpacing.xs,
+              right: -AppSizes.px6,
               child: Container(
-                constraints: BoxConstraints(minWidth: 18.w, minHeight: 18.w),
-                padding: EdgeInsets.symmetric(horizontal: 4.w),
+                constraints: BoxConstraints(
+                  minWidth: AppSizes.px18,
+                  minHeight: AppSizes.px18,
+                ),
+                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: AppColor.unreadBadgeColor,
-                  borderRadius: BorderRadius.circular(100.r),
-                  border: Border.all(color: AppColor.whiteColor, width: 1.5.w),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  border: Border.all(
+                    color: AppColor.whiteColor,
+                    width: AppSizes.px1_5,
+                  ),
                 ),
                 child: Text(
                   count > 99 ? '99+' : '$count',
-                  style: AppFonts.medium12(context)
-                      .copyWith(color: AppColor.whiteColor, height: 1),
+                  style: AppFonts.medium12(context).copyWith(
+                    color: AppColor.whiteColor,
+                    height: AppTextHeights.inset,
+                  ),
                 ),
               ),
             ),

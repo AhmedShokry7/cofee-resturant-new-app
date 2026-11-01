@@ -21,30 +21,30 @@ void main() {
   setUp(() => AppLocale.instance.debugSet(AppLanguage.english));
 
   ProductModel fullProduct() => const ProductModel(
-        id: 'p1',
-        name: 'Latte',
-        category: 'Hot Coffee',
-        description: 'Espresso with steamed milk',
-        price: 20,
-        image: 'https://img.test/p1.png',
-        nameAr: 'لاتيه',
-        nameEn: 'Latte',
-        categoryAr: 'قهوة ساخنة',
-        categoryEn: 'Hot Coffee',
-        categoryId: 'c1',
-        categorySlug: 'hot-coffee',
-        slug: 'latte',
-        sku: 'CF-001',
-        descriptionAr: 'وصف',
-        descriptionEn: 'Description',
-        oldPrice: 25,
-        isFeatured: true,
-        prepMinutes: 4,
-        imageUrls: <String>['https://img.test/p1-a.png'],
-        isPrimaryImageAvailable: true,
-        primaryImageUrl: 'https://img.test/p1-a.png',
-        relatedProductIds: <String>['p2', 'p3'],
-      );
+    id: 'p1',
+    name: 'Latte',
+    category: 'Hot Coffee',
+    description: 'Espresso with steamed milk',
+    price: 20,
+    image: 'https://img.test/p1.png',
+    nameAr: 'لاتيه',
+    nameEn: 'Latte',
+    categoryAr: 'قهوة ساخنة',
+    categoryEn: 'Hot Coffee',
+    categoryId: 'c1',
+    categorySlug: 'hot-coffee',
+    slug: 'latte',
+    sku: 'CF-001',
+    descriptionAr: 'وصف',
+    descriptionEn: 'Description',
+    oldPrice: 25,
+    isFeatured: true,
+    prepMinutes: 4,
+    imageUrls: <String>['https://img.test/p1-a.png'],
+    isPrimaryImageAvailable: true,
+    primaryImageUrl: 'https://img.test/p1-a.png',
+    relatedProductIds: <String>['p2', 'p3'],
+  );
 
   group('the four fields copyWith used to drop', () {
     test('categorySlug survives a copy that changes something else', () {
@@ -117,7 +117,9 @@ void main() {
     });
 
     test('an empty list is a value, not a missing argument', () {
-      final copied = fullProduct().copyWith(relatedProductIds: const <String>[]);
+      final copied = fullProduct().copyWith(
+        relatedProductIds: const <String>[],
+      );
       expect(copied.relatedProductIds, isEmpty);
     });
 
@@ -129,17 +131,15 @@ void main() {
     test('a list is carried over by reference, like imageUrls already is', () {
       final original = fullProduct();
       final copied = original.copyWith(price: 15);
-      expect(identical(copied.relatedProductIds, original.relatedProductIds),
-          isTrue,
-          reason: 'copyWith must not start copying lists it never copied');
+      expect(
+        identical(copied.relatedProductIds, original.relatedProductIds),
+        isTrue,
+        reason: 'copyWith must not start copying lists it never copied',
+      );
     });
 
     test('a product without the optional values keeps them absent', () {
-      const bare = ProductModel(
-        id: 'p2',
-        price: 10,
-        image: '',
-      );
+      const bare = ProductModel(id: 'p2', price: 10, image: '');
       final copied = bare.copyWith(price: 12);
       expect(copied.categorySlug, isEmpty);
       expect(copied.prepMinutes, isNull);
@@ -186,23 +186,25 @@ void main() {
       expect(copied.isFeatured, isFalse);
     });
 
-    test('the legacy name is only a fallback, so it never overrides the pair',
-        () {
-      // `name` feeds the single-language fallback. A product that carries
-      // both name_ar and name_en always shows those, which is why passing
-      // `name` to copyWith does not rename it. That is the existing
-      // behaviour of the model and this test pins it down.
-      final copied = fullProduct().copyWith(name: 'Iced Latte');
-      expect(copied.name, 'Latte');
-      expect(copied.nameEn, 'Latte');
+    test(
+      'the legacy name is only a fallback, so it never overrides the pair',
+      () {
+        // `name` feeds the single-language fallback. A product that carries
+        // both name_ar and name_en always shows those, which is why passing
+        // `name` to copyWith does not rename it. That is the existing
+        // behaviour of the model and this test pins it down.
+        final copied = fullProduct().copyWith(name: 'Iced Latte');
+        expect(copied.name, 'Latte');
+        expect(copied.nameEn, 'Latte');
 
-      const monolingual = ProductModel(
-        id: 'p3',
-        name: 'Latte',
-        price: 20,
-        image: '',
-      );
-      expect(monolingual.copyWith(name: 'Iced Latte').name, 'Iced Latte');
-    });
+        const monolingual = ProductModel(
+          id: 'p3',
+          name: 'Latte',
+          price: 20,
+          image: '',
+        );
+        expect(monolingual.copyWith(name: 'Iced Latte').name, 'Iced Latte');
+      },
+    );
   });
 }

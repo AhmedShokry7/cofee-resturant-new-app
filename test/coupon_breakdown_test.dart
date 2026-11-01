@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
@@ -37,10 +36,7 @@ void main() {
     });
 
     test('an untouched line still costs its full amount', () {
-      expect(
-        line(name: 'Cookie', total: 5, discount: 0).payableTotal,
-        5,
-      );
+      expect(line(name: 'Cookie', total: 5, discount: 0).payableTotal, 5);
     });
 
     test('a zero discount on an eligible line differs from an excluded one', () {
@@ -139,11 +135,9 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          minTextAdapt: true,
-          builder: (context, _) => MaterialApp(
-            home: Scaffold(body: SingleChildScrollView(child: CouponBreakdown(coupon: coupon))),
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(child: CouponBreakdown(coupon: coupon)),
           ),
         ),
       );
@@ -196,7 +190,9 @@ void main() {
       expect(find.text(S.subTotalDiscounted), findsOneWidget);
     });
 
-    testWidgets('a fully covered discount uses the plain label', (tester) async {
+    testWidgets('a fully covered discount uses the plain label', (
+      tester,
+    ) async {
       await pumpBreakdown(
         tester,
         ValidatedCoupon(

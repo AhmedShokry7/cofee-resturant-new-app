@@ -15,8 +15,8 @@ class AssistantGreetings {
     final day = now.hour < 12
         ? 'Good Morning'
         : now.hour < 17
-            ? 'Good Afternoon'
-            : 'Good Evening';
+        ? 'Good Afternoon'
+        : 'Good Evening';
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' $name';
     final base = isReturning
@@ -38,8 +38,8 @@ class AssistantGreetings {
     final day = now.hour < 12
         ? 'Good Morning'
         : now.hour < 17
-            ? 'Good Afternoon'
-            : 'Good Evening';
+        ? 'Good Afternoon'
+        : 'Good Evening';
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' $name';
     if (isReturning) {

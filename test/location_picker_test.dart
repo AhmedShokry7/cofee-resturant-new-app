@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/location/data/model/place_suggestion.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
@@ -59,17 +58,13 @@ Future<void> _pumpPicker(
   LatLng? initialPoint = const LatLng(40.712776, -74.005974),
 }) async {
   await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      minTextAdapt: true,
-      builder: (context, _) => MaterialApp(
-        home: Scaffold(
-          body: LocationPicker(
-            repository: repository,
-            controller: controller,
-            initialPoint: initialPoint,
-            onPicked: onPicked ?? (_) {},
-          ),
+    MaterialApp(
+      home: Scaffold(
+        body: LocationPicker(
+          repository: repository,
+          controller: controller,
+          initialPoint: initialPoint,
+          onPicked: onPicked ?? (_) {},
         ),
       ),
     ),
@@ -199,7 +194,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump();
 
-    await tester.tap(find.byIcon(HugeIcons.strokeRoundedCancel01));
+    await tester.tap(find.byIcon(AppIcons.close));
     await tester.pump();
 
     expect(controller.text, isEmpty);

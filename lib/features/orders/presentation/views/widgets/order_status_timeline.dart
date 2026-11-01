@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/tracking_step_model.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class OrderStatusTimeline extends StatelessWidget {
   const OrderStatusTimeline({super.key, required this.steps});
@@ -41,17 +40,17 @@ class _StepRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 76.h,
+      height: AppSizes.px76,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 28.w,
+            width: AppSizes.px28,
             child: Column(
               children: [
                 Container(
-                  height: 28.w,
-                  width: 28.w,
+                  height: AppSizes.px28,
+                  width: AppSizes.px28,
                   decoration: BoxDecoration(
                     color: step.done
                         ? AppColor.primaryColor
@@ -60,8 +59,8 @@ class _StepRow extends StatelessWidget {
                   ),
                   child: step.done
                       ? Icon(
-                          HugeIcons.strokeRoundedTick02,
-                          size: 16.w,
+                          AppIcons.checkmark,
+                          size: AppSpacing.lg,
                           color: AppColor.whiteColor,
                         )
                       : null,
@@ -69,7 +68,7 @@ class _StepRow extends StatelessWidget {
                 if (!isLast)
                   Expanded(
                     child: Container(
-                      width: 6.w,
+                      width: AppSizes.px6,
                       color: nextDone
                           ? AppColor.primaryColor
                           : AppColor.borderColor,
@@ -78,20 +77,19 @@ class _StepRow extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: SpacingTokens.md.w),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.only(top: 4.h),
+              padding: EdgeInsets.only(top: AppSpacing.xs),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(step.title, style: AppFonts.medium16(context)),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: AppSpacing.xs),
                   Text(
                     step.date,
-                    style: AppFonts.regular12(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.greyColor),
                   ),
                 ],
               ),
@@ -102,4 +100,3 @@ class _StepRow extends StatelessWidget {
     );
   }
 }
-

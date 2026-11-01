@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
@@ -15,11 +14,16 @@ class _FakeAuthRepository implements AuthRepository {
   bool get lastSignUpNeedsEmailConfirmation => false;
 
   @override
-  Future<AuthUser> signIn({required String email, required String password}) async =>
-      throw const AuthException('invalid login credentials');
+  Future<AuthUser> signIn({
+    required String email,
+    required String password,
+  }) async => throw const AuthException('invalid login credentials');
   @override
-  Future<AuthUser> signUp({required String name, required String email, required String password}) async =>
-      throw UnimplementedError();
+  Future<AuthUser> signUp({
+    required String name,
+    required String email,
+    required String password,
+  }) async => throw UnimplementedError();
   @override
   Future<AuthUser> signInWithGoogle() => throw UnimplementedError();
   @override
@@ -29,8 +33,10 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<void> sendPhoneCode({required String phone}) async {}
   @override
-  Future<AuthUser> verifyPhoneCode({required String phone, required String code}) async =>
-      throw UnimplementedError();
+  Future<AuthUser> verifyPhoneCode({
+    required String phone,
+    required String code,
+  }) async => throw UnimplementedError();
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {}
   @override
@@ -40,10 +46,15 @@ class _FakeAuthRepository implements AuthRepository {
   @override
   Future<AuthUser?> currentUser() async => null;
   @override
-  Future<AuthUser> updateProfile({required String fullName, String? phone}) async =>
-      throw UnimplementedError();
+  Future<AuthUser> updateProfile({
+    required String fullName,
+    String? phone,
+  }) async => throw UnimplementedError();
   @override
-  Future<void> changePassword({required String oldPassword, required String newPassword}) async {}
+  Future<void> changePassword({
+    required String oldPassword,
+    required String newPassword,
+  }) async {}
 }
 
 void main() {
@@ -54,13 +65,12 @@ void main() {
   });
 
   testWidgets('login failure shows centered dialog', (tester) async {
-    await tester.pumpWidget(ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => RepositoryProvider<AuthRepository>(
+    await tester.pumpWidget(
+      RepositoryProvider<AuthRepository>(
         create: (_) => _FakeAuthRepository(),
         child: const MaterialApp(home: AuthPage()),
       ),
-    ));
+    );
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).first, 'a@b.com');
@@ -68,6 +78,9 @@ void main() {
     await tester.tap(find.byType(CustomBtn));
     await tester.pumpAndSettle();
 
-    expect(find.text('Wrong email or password. Please check and try again.'), findsOneWidget);
+    expect(
+      find.text('Wrong email or password. Please check and try again.'),
+      findsOneWidget,
+    );
   });
 }

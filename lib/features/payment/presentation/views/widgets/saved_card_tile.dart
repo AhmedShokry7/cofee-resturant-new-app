@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class SavedCardTile extends StatelessWidget {
   const SavedCardTile({
@@ -27,11 +25,11 @@ class SavedCardTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(16.r),
+        borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(
           color: card.isDefault ? AppColor.primaryColor : AppColor.borderColor,
           width: card.isDefault ? 1.5 : 1,
@@ -40,19 +38,19 @@ class SavedCardTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            height: 44.w,
-            width: 44.w,
+            height: AppSizes.px44,
+            width: AppSizes.px44,
             decoration: BoxDecoration(
               color: AppColor.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
             ),
             child: Icon(
-              HugeIcons.strokeRoundedCreditCard,
+              AppIcons.creditCard,
               color: AppColor.primaryColor,
-              size: 22.w,
+              size: AppSizes.px22,
             ),
           ),
-          SizedBox(width: SpacingTokens.md.w),
+          SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -66,12 +64,12 @@ class SavedCardTile extends StatelessWidget {
                       style: AppFonts.semiBold16(context),
                     ),
                     if (card.isDefault) ...[
-                      SizedBox(width: SpacingTokens.xs.w),
+                      SizedBox(width: AppSpacing.xs),
                       _DefaultBadge(),
                     ],
                   ],
                 ),
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs),
                 Text(
                   "**** **** **** ${card.last4}",
                   style: AppFonts.regular14(context)
@@ -80,15 +78,15 @@ class SavedCardTile extends StatelessWidget {
               ],
             ),
           ),
-          SizedBox(width: SpacingTokens.sm.w),
+          SizedBox(width: AppSpacing.sm),
           Text(card.expiry, style: AppFonts.medium14(context)),
-          SizedBox(width: SpacingTokens.md.w),
+          SizedBox(width: AppSpacing.md),
           if (onSetDefault != null && !card.isDefault)
             GestureDetector(
               onTap: onSetDefault,
               child: Icon(
-                HugeIcons.strokeRoundedStar,
-                size: 20.w,
+                AppIcons.star,
+                size: AppSizes.px20,
                 color: AppColor.greyColor,
               ),
             )
@@ -96,8 +94,8 @@ class SavedCardTile extends StatelessWidget {
             GestureDetector(
               onTap: onDelete,
               child: Icon(
-                HugeIcons.strokeRoundedDelete02,
-                size: 22.w,
+                AppIcons.delete,
+                size: AppSizes.px22,
                 color: AppColor.greyColor,
               ),
             ),
@@ -111,16 +109,18 @@ class _DefaultBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      padding: EdgeInsets.symmetric(
+        horizontal: AppSizes.px6,
+        vertical: AppSpacing.xxs,
+      ),
       decoration: BoxDecoration(
         color: AppColor.primaryColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(AppRadius.r20),
       ),
       child: Text(
         S.defaultCardBadge,
-        style: AppFonts.medium12(context).copyWith(
-          color: AppColor.primaryColor,
-        ),
+        style: AppFonts.medium12(context)
+            .copyWith(color: AppColor.primaryColor),
       ),
     );
   }

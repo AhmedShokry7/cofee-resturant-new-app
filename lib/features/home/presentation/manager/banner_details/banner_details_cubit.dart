@@ -9,10 +9,8 @@ import 'package:new_coffee/features/menu/data/repositories/product_repository.da
 /// page used to query the catalogue itself from inside its widget state. The
 /// lookup belongs here.
 class BannerDetailsCubit extends Cubit<BannerModel> {
-  BannerDetailsCubit({
-    required this.repository,
-    required BannerModel banner,
-  }) : super(banner) {
+  BannerDetailsCubit({required this.repository, required BannerModel banner})
+    : super(banner) {
     resolveTarget();
   }
 

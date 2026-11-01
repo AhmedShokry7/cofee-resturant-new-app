@@ -57,10 +57,10 @@ class SubscriptionPlan {
   String get name =>
       pickText((ar: nameAr, en: nameEn), isArabic: AppLocale.instance.isArabic);
 
-  String get description => pickText(
-    (ar: descriptionAr ?? '', en: descriptionEn ?? ''),
-    isArabic: AppLocale.instance.isArabic,
-  );
+  String get description => pickText((
+    ar: descriptionAr ?? '',
+    en: descriptionEn ?? '',
+  ), isArabic: AppLocale.instance.isArabic);
 
   factory SubscriptionPlan.fromDatabase(Map<String, dynamic> row) {
     final map = Db.asMap(row);
@@ -77,7 +77,10 @@ class SubscriptionPlan {
       cupsPerCycle: Db.asInt(map['cups_per_cycle']),
       bonusType: Db.text(map['bonus_type'], 'none'),
       bonusValue: Db.asDouble(map['bonus_value']),
-      bonusExpiresWithCycle: Db.asBool(map['bonus_expires_with_cycle'], fallback: true),
+      bonusExpiresWithCycle: Db.asBool(
+        map['bonus_expires_with_cycle'],
+        fallback: true,
+      ),
       rolloverCapCups: Db.asInt(map['rollover_cap_cups']),
       renewalPolicy: Db.text(map['renewal_policy'], 'manual'),
       autoRenewSupported: Db.asBool(map['auto_renew_supported']),

@@ -1,17 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/widgets/reward_card.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class LoyaltyPage extends StatelessWidget {
   const LoyaltyPage({super.key});
@@ -73,7 +71,7 @@ class LoyaltyPage extends StatelessWidget {
               .where((reward) => !reward.affordable(state.balance))
               .toList();
           return ListView(
-            padding: LayoutTokens.pageBody(),
+            padding: AppLayout.pageBody,
             children: [
               _BalanceCard(
                 balance: state.balance,
@@ -82,14 +80,14 @@ class LoyaltyPage extends StatelessWidget {
                     ? S.guestWalletDevice
                     : S.lifetimePoints(state.tier, state.lifetimePoints),
               ),
-              SizedBox(height: SpacingTokens.xl.h),
+              SizedBox(height: AppSpacing.xl),
               Text(
                 unlocked.isEmpty
                     ? S.keepCollectingToUnlock
                     : S.yourPointsUnlock,
                 style: AppFonts.semiBold18(context),
               ),
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               for (final reward in unlocked)
                 RewardCard(
                   reward: reward,
@@ -97,16 +95,16 @@ class LoyaltyPage extends StatelessWidget {
                   onRedeem: () => _redeem(context, reward),
                 ),
               if (locked.isNotEmpty) ...[
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 Text(S.keepCollecting, style: AppFonts.semiBold18(context)),
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 for (final reward in locked)
                   RewardCard(reward: reward, locked: true),
               ],
               if (state.transactions.isNotEmpty) ...[
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 Text(S.history, style: AppFonts.semiBold18(context)),
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 for (final transaction in state.transactions)
                   _HistoryTile(
                     title: transaction.title,
@@ -145,14 +143,14 @@ class _BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.all(SpacingTokens.xl.w),
+      padding: EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         // Not const: the brand colours are read from the CMS at start-up, so a
         // const gradient would freeze the values the app shipped with.
         gradient: LinearGradient(
           colors: [AppColor.primaryColor, AppColor.primaryColorEnd],
         ),
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(AppRadius.r20),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +160,7 @@ class _BalanceCard extends StatelessWidget {
             style: AppFonts.regular14(context)
                 .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
           ),
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -171,9 +169,9 @@ class _BalanceCard extends StatelessWidget {
                 style: AppFonts.semiBold32(context)
                     .copyWith(color: AppColor.whiteColor),
               ),
-              SizedBox(width: SpacingTokens.xs.w),
+              SizedBox(width: AppSpacing.xs),
               Padding(
-                padding: EdgeInsets.only(bottom: 4.h),
+                padding: EdgeInsets.only(bottom: AppSpacing.xs),
                 child: Text(
                   S.pointsWord,
                   style: AppFonts.medium16(context).copyWith(
@@ -183,13 +181,13 @@ class _BalanceCard extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
           Text(
             earnText,
             style: AppFonts.regular12(context)
                 .copyWith(color: AppColor.whiteColor.withValues(alpha: 0.85)),
           ),
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
           Text(
             accountText,
             style: AppFonts.regular12(context)
@@ -211,14 +209,14 @@ class _HistoryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final earned = points >= 0;
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
+      margin: EdgeInsets.only(bottom: AppSpacing.sm),
       padding: EdgeInsets.symmetric(
-        horizontal: SpacingTokens.md.w,
-        vertical: SpacingTokens.sm.h,
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
         border: Border.all(color: AppColor.borderColor),
       ),
       child: Row(

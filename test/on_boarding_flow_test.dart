@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -15,6 +14,8 @@ import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_bo
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_dots.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_next_btn.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_slide.dart';
+
+import 'support/pump_harness.dart';
 
 /// The session that cannot confirm a write, so the screen's reaction to a
 /// storage that will not answer can be proven.
@@ -34,24 +35,30 @@ void main() {
   });
 
   group('what the cubit decides', () {
-    test('the last slide completes the onboarding instead of stepping', () async {
-      final cubit = OnBoardingCubit();
-      addTearDown(cubit.close);
-      cubit.changePage(onBoardingSlides().length - 1);
+    test(
+      'the last slide completes the onboarding instead of stepping',
+      () async {
+        final cubit = OnBoardingCubit();
+        addTearDown(cubit.close);
+        cubit.changePage(onBoardingSlides().length - 1);
 
-      await cubit.next();
+        await cubit.next();
 
-      expect(cubit.state, isA<OnBoardingCompleted>());
-      expect(
-        (cubit.state as OnBoardingCompleted).nextRoute,
-        AuthPage.routeName,
-      );
-      expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
-      expect(
-        await const SessionRepository().currentRoute(),
-        AppConstant.authRoute,
-      );
-    });
+        expect(cubit.state, isA<OnBoardingCompleted>());
+        expect(
+          (cubit.state as OnBoardingCompleted).nextRoute,
+          AuthPage.routeName,
+        );
+        expect(
+          await const SessionRepository().hasCompletedOnboarding(),
+          isTrue,
+        );
+        expect(
+          await const SessionRepository().currentRoute(),
+          AppConstant.authRoute,
+        );
+      },
+    );
 
     test('skipping records the same marker and the same next screen', () async {
       final cubit = OnBoardingCubit();
@@ -120,23 +127,20 @@ void main() {
     Future<void> pumpOnBoarding(WidgetTester tester) async {
       // The design size is the shortest screen this layout was made for, so a
       // slide that fits here fits anywhere.
-      tester.view.physicalSize = AppConstant.designSize;
+      tester.view.physicalSize = phoneViewport;
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: AppConstant.designSize,
-          builder: (context, _) => MaterialApp(
-            initialRoute: OnBoardingView.routeName,
-            routes: {
-              OnBoardingView.routeName: (context) => const OnBoardingView(),
-              // Sign-in needs the whole provider tree; the flow only cares
-              // that this route took the screen.
-              AuthPage.routeName: (context) =>
-                  const Scaffold(body: Text('sign-in-stub')),
-            },
-          ),
+        MaterialApp(
+          initialRoute: OnBoardingView.routeName,
+          routes: {
+            OnBoardingView.routeName: (context) => const OnBoardingView(),
+            // Sign-in needs the whole provider tree; the flow only cares
+            // that this route took the screen.
+            AuthPage.routeName: (context) =>
+                const Scaffold(body: Text('sign-in-stub')),
+          },
         ),
       );
       await tester.pumpAndSettle();
@@ -174,7 +178,7 @@ void main() {
       expect(find.text(S.onBoardingCatalogTitle), findsOneWidget);
       expect(
         tester.getRect(find.byType(OnBoardingNextBtn)).bottom,
-        lessThanOrEqualTo(AppConstant.designSize.height),
+        lessThanOrEqualTo(phoneViewport.height),
       );
     });
 
@@ -201,9 +205,7 @@ void main() {
       expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
     });
 
-    testWidgets('skipping leaves at once and never comes back', (
-      tester,
-    ) async {
+    testWidgets('skipping leaves at once and never comes back', (tester) async {
       await pumpOnBoarding(tester);
 
       // The skip control is only as wide as its label.

@@ -9,9 +9,8 @@ part 'subscription_consume_state.dart';
 
 /// Spends cups from a customer's subscription at the counter.
 class SubscriptionConsumeCubit extends Cubit<SubscriptionConsumeState> {
-  SubscriptionConsumeCubit({required SubscriptionRepository repository})
-    : _repository = repository,
-      super(const SubscriptionConsumeState());
+  SubscriptionConsumeCubit({required this._repository})
+    : super(const SubscriptionConsumeState());
 
   final SubscriptionRepository _repository;
 
@@ -49,7 +48,12 @@ class SubscriptionConsumeCubit extends Cubit<SubscriptionConsumeState> {
       _intent = null;
       _idempotencyKey = null;
       if (isClosed) return;
-      emit(state.copyWith(isSubmitting: false, message: S.cupsRemaining(remaining)));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          message: S.cupsRemaining(remaining),
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isSubmitting: false, message: S.couldNotDeductCups));

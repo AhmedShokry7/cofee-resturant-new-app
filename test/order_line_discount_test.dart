@@ -1,6 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
@@ -65,12 +64,7 @@ void main() {
   test('a line with no discount has null, not zero', () {
     final item = OrderItemModel.fromDatabase(
       order: orderRow(),
-      item: itemRow(
-        id: 'line-2',
-        productId: 'p2',
-        unitPrice: 5,
-        quantity: 1,
-      ),
+      item: itemRow(id: 'line-2', productId: 'p2', unitPrice: 5, quantity: 1),
     );
     expect(item.lineDiscountTotal, isNull);
   });
@@ -92,10 +86,7 @@ void main() {
   test('an absent discount column does not throw', () {
     final row = itemRow(id: 'line-4', productId: 'p4', unitPrice: 8);
     row.remove('discount_total');
-    final item = OrderItemModel.fromDatabase(
-      order: orderRow(),
-      item: row,
-    );
+    final item = OrderItemModel.fromDatabase(order: orderRow(), item: row);
     expect(item.lineDiscountTotal, isNull);
   });
 

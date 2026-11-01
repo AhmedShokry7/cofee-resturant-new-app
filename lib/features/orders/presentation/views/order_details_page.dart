@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
@@ -17,6 +14,7 @@ import 'package:new_coffee/features/orders/presentation/views/track_order_page.d
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Full order data (big-app pattern): tapping an order opens its details,
 /// and tracking/review branch out from here.
@@ -83,7 +81,8 @@ class _DetailsScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allLines = lines ??
+    final allLines =
+        lines ??
         (() {
           try {
             final orders = context.read<OrdersCubit>().state.orders;
@@ -98,13 +97,17 @@ class _DetailsScaffold extends StatelessWidget {
           } catch (_) {}
           return <OrderItemModel>[order];
         })();
-    final totalItems = allLines.fold<int>(0, (sum, line) => sum + line.quantity);
-    final total = order.grandTotal ??
+    final totalItems = allLines.fold<int>(
+      0,
+      (sum, line) => sum + line.quantity,
+    );
+    final total =
+        order.grandTotal ??
         allLines.fold<double>(0.0, (sum, line) => sum + line.chargedTotal);
     return Scaffold(
       appBar: AppBar(title: Text(S.orderDetails)),
       body: ListView(
-        padding: LayoutTokens.pageBody(),
+        padding: AppLayout.pageBody,
         children: [
           Row(
             children: [
@@ -115,12 +118,12 @@ class _DetailsScaffold extends StatelessWidget {
               const Spacer(),
               Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.md.w,
-                  vertical: SpacingTokens.xs.h,
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
                   color: _statusColor(context).withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(100.r),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
                 child: Text(
                   order.status.label,
@@ -130,12 +133,12 @@ class _DetailsScaffold extends StatelessWidget {
               ),
             ],
           ),
-          SizedBox(height: SpacingTokens.lg.h),
+          SizedBox(height: AppSpacing.lg),
           Container(
-            padding: EdgeInsets.all(SpacingTokens.md.w),
+            padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(AppRadius.r16),
               border: Border.all(color: AppColor.borderColor),
             ),
             child: Column(
@@ -146,15 +149,15 @@ class _DetailsScaffold extends StatelessWidget {
                     children: [
                       ClipRRect(
                         borderRadius: BorderRadius.circular(
-                          LayoutTokens.cardRadius.r,
+                          AppDimensions.cardRadius,
                         ),
                         child: SizedBox(
-                          height: 72.w,
-                          width: 72.w,
+                          height: AppSizes.px72,
+                          width: AppSizes.px72,
                           child: ProductImageView(product: allLines[i].product),
                         ),
                       ),
-                      SizedBox(width: SpacingTokens.md.w),
+                      SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -164,12 +167,12 @@ class _DetailsScaffold extends StatelessWidget {
                               style: AppFonts.regular12(context)
                                   .copyWith(color: AppColor.greyColor),
                             ),
-                            SizedBox(height: 4.h),
+                            SizedBox(height: AppSpacing.xs),
                             Text(
                               allLines[i].product.name,
                               style: AppFonts.semiBold16(context),
                             ),
-                            SizedBox(height: 4.h),
+                            SizedBox(height: AppSpacing.xs),
                             Text(
                               S.quantityLabel(allLines[i].quantity),
                               style: AppFonts.regular14(context)
@@ -189,22 +192,22 @@ class _DetailsScaffold extends StatelessWidget {
                   ),
                   if (allLines[i].lineDiscountTotal != null &&
                       allLines[i].lineDiscountTotal! > 0) ...[
-                    SizedBox(height: SpacingTokens.xs.h),
+                    SizedBox(height: AppSpacing.xs),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Icon(
-                          HugeIcons.strokeRoundedDiscount01,
-                          size: 12.w,
+                          AppIcons.discount,
+                          size: AppSpacing.md,
                           color: AppColor.primaryColor,
                         ),
-                        SizedBox(width: SpacingTokens.xs.w),
+                        SizedBox(width: AppSpacing.xs),
                         Text(
                           S.lineDiscount,
                           style: AppFonts.regular12(context)
                               .copyWith(color: AppColor.primaryColor),
                         ),
-                        SizedBox(width: SpacingTokens.xs.w),
+                        SizedBox(width: AppSpacing.xs),
                         PriceLabel(
                           amount: allLines[i].lineDiscountTotal!,
                           prefix: '-',
@@ -218,22 +221,22 @@ class _DetailsScaffold extends StatelessWidget {
                   ],
                   if (allLines[i].lineProductDiscountTotal != null &&
                       allLines[i].lineProductDiscountTotal! > 0) ...[
-                    SizedBox(height: SpacingTokens.xs.h),
+                    SizedBox(height: AppSpacing.xs),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Icon(
-                          HugeIcons.strokeRoundedDiscount01,
-                          size: 12.w,
+                          AppIcons.discount,
+                          size: AppSpacing.md,
                           color: AppColor.primaryColor,
                         ),
-                        SizedBox(width: SpacingTokens.xs.w),
+                        SizedBox(width: AppSpacing.xs),
                         Text(
                           S.productDiscount,
                           style: AppFonts.regular12(context)
                               .copyWith(color: AppColor.primaryColor),
                         ),
-                        SizedBox(width: SpacingTokens.xs.w),
+                        SizedBox(width: AppSpacing.xs),
                         PriceLabel(
                           amount: allLines[i].lineProductDiscountTotal!,
                           prefix: '-',
@@ -247,14 +250,14 @@ class _DetailsScaffold extends StatelessWidget {
                   ],
                   if (i != allLines.length - 1)
                     Padding(
-                      padding: EdgeInsets.symmetric(vertical: SpacingTokens.sm.h),
+                      padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
                       child: Divider(color: AppColor.borderColor),
                     ),
                 ],
               ],
             ),
           ),
-          SizedBox(height: SpacingTokens.lg.h),
+          SizedBox(height: AppSpacing.lg),
           if (order.isDelivery) ...[
             LabeledValueRow(
               label: S.fulfillmentMethod,
@@ -263,7 +266,7 @@ class _DetailsScaffold extends StatelessWidget {
               labelExpanded: true,
             ),
             if (order.deliveryZoneName != null) ...[
-              SizedBox(height: SpacingTokens.sm.h),
+              SizedBox(height: AppSpacing.sm),
               LabeledValueRow(
                 label: S.deliveryZone,
                 value: order.deliveryZoneName!,
@@ -272,7 +275,7 @@ class _DetailsScaffold extends StatelessWidget {
               ),
             ],
             if (order.deliveryAddress != null) ...[
-              SizedBox(height: SpacingTokens.sm.h),
+              SizedBox(height: AppSpacing.sm),
               LabeledValueRow(
                 label: S.shippingAddress,
                 value: order.deliveryAddress!,
@@ -281,14 +284,14 @@ class _DetailsScaffold extends StatelessWidget {
               ),
             ],
             if (order.deliveryFee > 0) ...[
-              SizedBox(height: SpacingTokens.sm.h),
+              SizedBox(height: AppSpacing.sm),
               LabeledValueRow(
                 label: S.deliveryFee,
                 priceValue: order.deliveryFee,
                 valueSize: 16,
               ),
             ],
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
           ],
           LabeledValueRow(
             label: S.itemsCount,
@@ -298,7 +301,7 @@ class _DetailsScaffold extends StatelessWidget {
           ),
           if (order.productDiscountTotal != null &&
               order.productDiscountTotal! > 0) ...[
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             LabeledValueRow(
               label: S.productDiscount,
               priceValue: order.productDiscountTotal!,
@@ -307,7 +310,7 @@ class _DetailsScaffold extends StatelessWidget {
             ),
           ],
           if (order.discountTotal != null && order.discountTotal! > 0) ...[
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             LabeledValueRow(
               label: S.couponDiscount,
               priceValue: order.discountTotal!,
@@ -315,7 +318,7 @@ class _DetailsScaffold extends StatelessWidget {
               valueSize: 16,
             ),
           ],
-          SizedBox(height: SpacingTokens.sm.h),
+          SizedBox(height: AppSpacing.sm),
           LabeledValueRow(
             label: S.total,
             priceValue: total,
@@ -327,7 +330,7 @@ class _DetailsScaffold extends StatelessWidget {
       bottomNavigationBar: order.status == OrderStatus.cancelled
           ? null
           : Container(
-              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              padding: EdgeInsets.all(AppSpacing.lg),
               decoration: const BoxDecoration(
                 color: AppColor.whiteColor,
                 border: Border(top: BorderSide(color: AppColor.borderColor)),

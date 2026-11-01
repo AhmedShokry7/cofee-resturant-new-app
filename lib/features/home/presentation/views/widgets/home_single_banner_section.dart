@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// A single promo banner below the carousel.
 ///
@@ -19,12 +19,11 @@ class HomeSingleBannerSection extends StatelessWidget {
     final banner = context.watch<HomeCubit>().state.promoBanner;
     if (banner == null) return const SizedBox.shrink();
     return SizedBox(
-      height: 164.h,
+      height: AppDimensions.homeBannerHeight,
       child: GestureDetector(
-        onTap: () => Navigator.of(context).pushNamed(
-          BannerDetailsPage.routeName,
-          arguments: banner,
-        ),
+        onTap: () =>
+            Navigator.of(context)
+                .pushNamed(BannerDetailsPage.routeName, arguments: banner),
         child: BannerImage(banner: banner),
       ),
     );

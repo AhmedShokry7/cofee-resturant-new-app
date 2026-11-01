@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Label on the left, value on the right — the standard breakdown row
 /// (Sub-Total / Delivery / Discount / Total / order details).
@@ -77,7 +76,7 @@ class LabeledValueRow extends StatelessWidget {
       children: [
         if (labelExpanded) ...[
           Expanded(child: labelWidget),
-          SizedBox(width: SpacingTokens.sm.w),
+          SizedBox(width: AppSpacing.sm),
         ] else
           labelWidget,
         valueWidget,

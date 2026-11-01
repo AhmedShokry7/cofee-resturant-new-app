@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// One dot per slide, the current one larger and in the brand colour.
 class OnBoardingDots extends StatelessWidget {
@@ -26,25 +25,22 @@ class OnBoardingDots extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        ...List.generate(
-          slideCount,
-          (index) {
-            final isActive = index == currentPage;
-            return AnimatedContainer(
-              margin: EdgeInsets.only(right: SpacingTokens.sm.w),
-              height: (isActive ? _activeSize : _idleSize).h,
-              width: (isActive ? _activeSize : _idleSize).h,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive
-                    ? AppColor.primaryColor
-                    : AppColor.greyColor.withValues(alpha: .5),
-              ),
-              duration: MotionTokens.dotMorph,
-              curve: MotionTokens.entranceCurve,
-            );
-          },
-        ),
+        ...List.generate(slideCount, (index) {
+          final isActive = index == currentPage;
+          return AnimatedContainer(
+            margin: EdgeInsets.only(right: AppSpacing.sm),
+            height: (isActive ? _activeSize : _idleSize),
+            width: (isActive ? _activeSize : _idleSize),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isActive
+                  ? AppColor.primaryColor
+                  : AppColor.greyColor.withValues(alpha: .5),
+            ),
+            duration: MotionTokens.dotMorph,
+            curve: MotionTokens.entranceCurve,
+          );
+        }),
       ],
     );
   }

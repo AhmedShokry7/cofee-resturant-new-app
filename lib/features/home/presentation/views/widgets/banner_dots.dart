@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class BannerDots extends StatelessWidget {
   const BannerDots({super.key, required this.count, required this.current});
@@ -24,9 +23,9 @@ class BannerDots extends StatelessWidget {
         return AnimatedContainer(
           duration: MotionTokens.dotMorph,
           curve: MotionTokens.entranceCurve,
-          margin: EdgeInsets.symmetric(horizontal: SpacingTokens.xs.w),
-          height: (isActive ? _activeSize : _idleSize).w,
-          width: (isActive ? _activeSize : _idleSize).w,
+          margin: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+          height: (isActive ? _activeSize : _idleSize),
+          width: (isActive ? _activeSize : _idleSize),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isActive ? AppColor.primaryColor : AppColor.borderColor,
@@ -36,4 +35,3 @@ class BannerDots extends StatelessWidget {
     );
   }
 }
-

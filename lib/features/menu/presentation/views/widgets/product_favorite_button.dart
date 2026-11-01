@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -11,7 +11,7 @@ class ProductFavoriteButton extends StatelessWidget {
   const ProductFavoriteButton({
     super.key,
     required this.product,
-    this.size = 28,
+    this.size = AppDimensions.favoriteButtonCard,
   });
 
   final ProductModel product;
@@ -26,8 +26,8 @@ class ProductFavoriteButton extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.read<FavoritesCubit>().toggle(product.id),
       child: Container(
-        height: size.w,
-        width: size.w,
+        height: size,
+        width: size,
         decoration: BoxDecoration(
           color: AppColor.whiteColor.withValues(alpha: 0.7),
           shape: BoxShape.circle,
@@ -36,8 +36,8 @@ class ProductFavoriteButton extends StatelessWidget {
         // saved state is obvious at a glance against the same background.
         // hugeicons ships no filled heart, hence the Material filled icon.
         child: Icon(
-          isFavorite ? Icons.favorite : HugeIcons.strokeRoundedFavourite,
-          size: (size * 0.55).w,
+          isFavorite ? AppIcons.favourite : AppIcons.favourite,
+          size: (size * 0.55),
           color: isFavorite ? AppColor.errorColor : AppColor.greyColor,
         ),
       ),

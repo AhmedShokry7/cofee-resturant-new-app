@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/currency_icon.dart';
@@ -32,7 +31,7 @@ class PriceLabel extends StatelessWidget {
   final double? iconSize;
   final Color? iconColor;
 
-  /// Gap between amount and icon in design pixels.
+  /// Gap between amount and icon in logical pixels.
   final double gap;
   final MainAxisSize mainAxisSize;
 
@@ -51,7 +50,7 @@ class PriceLabel extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        SizedBox(width: gap.w),
+        SizedBox(width: gap),
         CurrencyIcon(
           size: iconSize ?? textStyle?.fontSize ?? 14,
           color: iconColor ?? textStyle?.color,

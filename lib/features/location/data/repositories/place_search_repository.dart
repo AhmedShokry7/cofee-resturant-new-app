@@ -84,8 +84,7 @@ class NominatimPlaceSearchRepository implements PlaceSearchRepository {
     if (body is! List) return const [];
     return [
       for (final row in body)
-        if (row is Map<String, dynamic>)
-          PlaceSuggestion.fromJson(row),
+        if (row is Map<String, dynamic>) PlaceSuggestion.fromJson(row),
     ].where((place) => place.hasUsableCoordinates).toList();
   }
 
@@ -115,12 +114,14 @@ class NominatimPlaceSearchRepository implements PlaceSearchRepository {
     required String path,
   }) async {
     await _throttle();
-    final uri = Uri.parse('$host$path').replace(queryParameters: {
-      ...query,
-      // Results come back in the app's language, so an Arabic UI never shows
-      // Latin street names.
-      'accept-language': AppLocale.instance.isArabic ? 'ar' : 'en',
-    });
+    final uri = Uri.parse('$host$path').replace(
+      queryParameters: {
+        ...query,
+        // Results come back in the app's language, so an Arabic UI never shows
+        // Latin street names.
+        'accept-language': AppLocale.instance.isArabic ? 'ar' : 'en',
+      },
+    );
 
     try {
       // A stalled connection used to hang the caller forever — with no HTTP

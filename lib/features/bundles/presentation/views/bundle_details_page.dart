@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
@@ -18,6 +15,7 @@ import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class BundleDetailsPage extends StatelessWidget {
   const BundleDetailsPage({super.key, required this.bundle});
@@ -44,7 +42,7 @@ class BundleDetailsPage extends StatelessWidget {
             appBar: AppBar(title: Text(bundle.title)),
             body: const _BundleDetailsBody(),
             bottomNavigationBar: Container(
-              padding: EdgeInsets.all(SpacingTokens.lg.w),
+              padding: EdgeInsets.all(AppSpacing.lg),
               decoration: const BoxDecoration(
                 color: AppColor.whiteColor,
                 border: Border(top: BorderSide(color: AppColor.borderColor)),
@@ -125,7 +123,7 @@ class _BundleDetailsBody extends StatelessWidget {
             ? null
             : state.products.first;
         return ListView(
-          padding: LayoutTokens.pageBody(),
+          padding: AppLayout.pageBody,
           children: [
             if (imageProduct != null)
               Center(
@@ -133,9 +131,9 @@ class _BundleDetailsBody extends StatelessWidget {
                   clipBehavior: Clip.none,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(16.r),
+                      borderRadius: BorderRadius.circular(AppRadius.r16),
                       child: SizedBox(
-                        height: 200.h,
+                        height: AppDimensions.bundleHeroHeight,
                         width: double.infinity,
                         child: ProductImageView(product: imageProduct),
                       ),
@@ -146,45 +144,43 @@ class _BundleDetailsBody extends StatelessWidget {
                         end: 8,
                         child: DiscountBadge(
                           percent: savingPercent,
-                          size: 52,
+                          size: AppDimensions.discountBadgeLarge,
                         ),
                       ),
                   ],
                 ),
               ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(state.bundle.title, style: AppFonts.semiBold20(context)),
-            SizedBox(height: 4.h),
+            SizedBox(height: AppSpacing.xs),
             Text(
               state.bundle.subtitle,
               style: AppFonts.regular14(context)
                   .copyWith(color: AppColor.greyColor),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(S.whatsInside, style: AppFonts.semiBold16(context)),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             for (final product in state.products)
               Container(
-                margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
-                padding: EdgeInsets.all(SpacingTokens.sm.w),
+                margin: EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
                   color: AppColor.whiteColor,
-                  borderRadius: BorderRadius.circular(
-                    LayoutTokens.cardRadius.r,
-                  ),
+                  borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
                   border: Border.all(color: AppColor.borderColor),
                 ),
                 child: Row(
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(8.r),
+                      borderRadius: BorderRadius.circular(AppRadius.r8),
                       child: SizedBox(
-                        height: 48.w,
-                        width: 48.w,
+                        height: AppSpacing.xxxl,
+                        width: AppSpacing.xxxl,
                         child: ProductImageView(product: product),
                       ),
                     ),
-                    SizedBox(width: SpacingTokens.sm.w),
+                    SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         product.name,
@@ -203,19 +199,19 @@ class _BundleDetailsBody extends StatelessWidget {
                   ],
                 ),
               ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             _PriceRow(
               label: S.originalTotal,
               amount: cubit.originalTotalFor(),
               struck: true,
             ),
-            SizedBox(height: SpacingTokens.xs.h),
+            SizedBox(height: AppSpacing.xs),
             _PriceRow(
               label: S.bundlePrice,
               amount: state.bundle.price,
               highlighted: true,
             ),
-            SizedBox(height: SpacingTokens.xs.h),
+            SizedBox(height: AppSpacing.xs),
             _PriceRow(
               label: S.youSave,
               amount: cubit.savingsFor(),

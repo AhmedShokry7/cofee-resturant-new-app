@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
@@ -22,9 +22,8 @@ class FavoritesPage extends StatelessWidget {
           listenWhen: (previous, current) =>
               current.error != null && current.error != previous.error,
           listener: (context, state) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.error!)),
-            );
+            ScaffoldMessenger.of(context)
+                .showSnackBar(SnackBar(content: Text(state.error!)));
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -39,7 +38,7 @@ class FavoritesPage extends StatelessWidget {
                     final items = state.favoriteProducts;
                     if (items.isEmpty) {
                       return EmptyState(
-                        icon: HugeIcons.strokeRoundedFavourite,
+                        icon: AppIcons.favourite,
                         title: S.noFavorites,
                         subtitle: S.favoritesHint,
                       );

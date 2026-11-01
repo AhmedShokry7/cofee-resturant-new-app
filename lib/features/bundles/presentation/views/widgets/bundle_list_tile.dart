@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/bundles/data/bundle_pricing.dart'
     as pricing;
@@ -13,6 +10,7 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_imag
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Full-width bundle row for vertical lists (e.g. the Bundles tab).
 class BundleListTile extends StatelessWidget {
@@ -46,11 +44,11 @@ class BundleListTile extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
-            margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-            padding: EdgeInsets.all(SpacingTokens.md.w),
+            margin: EdgeInsets.only(bottom: AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(16.r),
+              borderRadius: BorderRadius.circular(AppRadius.r16),
               border: Border.all(color: AppColor.borderColor),
             ),
             child: Row(
@@ -60,19 +58,22 @@ class BundleListTile extends StatelessWidget {
                   children: [
                     ClipRRect(
                       borderRadius: BorderRadius.circular(
-                        LayoutTokens.cardRadius.r,
+                        AppDimensions.cardRadius,
                       ),
                       child: imageProduct == null
-                          ? SizedBox(width: 78.w, height: 78.w)
+                          ? SizedBox(
+                              width: AppSizes.px78,
+                              height: AppSizes.px78,
+                            )
                           : SizedBox(
-                              height: 78.w,
-                              width: 78.w,
+                              height: AppSizes.px78,
+                              width: AppSizes.px78,
                               child: ProductImageView(product: imageProduct),
                             ),
                     ),
                   ],
                 ),
-                SizedBox(width: SpacingTokens.md.w),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +84,7 @@ class BundleListTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(height: AppSpacing.xs),
                       Text(
                         bundle.subtitle,
                         style: AppFonts.regular12(context)
@@ -91,7 +92,7 @@ class BundleListTile extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      SizedBox(height: 4.h),
+                      SizedBox(height: AppSpacing.xs),
                       Row(
                         children: [
                           Flexible(
@@ -103,7 +104,7 @@ class BundleListTile extends StatelessWidget {
                               iconColor: AppColor.primaryColor,
                             ),
                           ),
-                          SizedBox(width: SpacingTokens.xs.w),
+                          SizedBox(width: AppSpacing.xs),
                           Flexible(
                             child: PriceLabel(
                               amount: original,
@@ -122,7 +123,7 @@ class BundleListTile extends StatelessWidget {
                 ),
                 Icon(
                   DirectionAwareIcons.forward(context),
-                  size: 20.w,
+                  size: AppSizes.px20,
                   color: AppColor.greyColor,
                 ),
               ],

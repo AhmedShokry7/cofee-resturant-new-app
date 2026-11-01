@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Promo-code entry with an "apply" button and a clear button.
 ///
@@ -84,12 +83,11 @@ class _PromoCodeFieldState extends State<PromoCodeField> {
                 style: AppFonts.regular14(context),
                 decoration: InputDecoration(
                   hintText: S.promoCode,
-                  hintStyle: AppFonts.regular14(context).copyWith(
-                    color: AppColor.greyColor,
-                  ),
+                  hintStyle: AppFonts.regular14(context)
+                      .copyWith(color: AppColor.greyColor),
                   contentPadding: EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.lg.w,
-                    vertical: SpacingTokens.sm.h,
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
                   ),
                   suffixIcon: widget.controller.text.isEmpty
                       ? null
@@ -97,17 +95,17 @@ class _PromoCodeFieldState extends State<PromoCodeField> {
                           onPressed: _clear,
                           tooltip: S.clearPromoCode,
                           icon: Icon(
-                            HugeIcons.strokeRoundedCancel01,
-                            size: 18.w,
+                            AppIcons.close,
+                            size: AppSizes.px18,
                             color: AppColor.greyColor,
                           ),
                         ),
                   suffixIconConstraints: BoxConstraints(
-                    minWidth: 40.w,
-                    minHeight: 40.h,
+                    minWidth: AppSizes.px40,
+                    minHeight: AppSizes.px40,
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     borderSide: BorderSide(
                       color: widget.error == null
                           ? AppColor.borderColor
@@ -115,7 +113,7 @@ class _PromoCodeFieldState extends State<PromoCodeField> {
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(100.r),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                     borderSide: BorderSide(
                       color: widget.error == null
                           ? AppColor.primaryColor
@@ -125,45 +123,43 @@ class _PromoCodeFieldState extends State<PromoCodeField> {
                 ),
               ),
             ),
-            SizedBox(width: SpacingTokens.sm.w),
+            SizedBox(width: AppSpacing.sm),
             GestureDetector(
               onTap: widget.onApply,
               child: Container(
                 padding: EdgeInsets.symmetric(
-                  horizontal: SpacingTokens.xl.w,
-                  vertical: SpacingTokens.sm.h,
+                  horizontal: AppSpacing.xl,
+                  vertical: AppSpacing.sm,
                 ),
                 decoration: BoxDecoration(
                   color: AppColor.primaryColor,
-                  borderRadius: BorderRadius.circular(100.r),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
                 child: Text(
                   S.apply,
-                  style: AppFonts.medium14(context).copyWith(
-                    color: AppColor.whiteColor,
-                  ),
+                  style: AppFonts.medium14(context)
+                      .copyWith(color: AppColor.whiteColor),
                 ),
               ),
             ),
           ],
         ),
         if (widget.error != null) ...[
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(
-                HugeIcons.strokeRoundedAlert02,
-                size: 14.w,
+                AppIcons.alert,
+                size: AppSizes.px14,
                 color: AppColor.errorColor,
               ),
-              SizedBox(width: SpacingTokens.xs.w),
+              SizedBox(width: AppSpacing.xs),
               Expanded(
                 child: Text(
                   widget.error!,
-                  style: AppFonts.regular12(context).copyWith(
-                    color: AppColor.errorColor,
-                  ),
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.errorColor),
                 ),
               ),
             ],

@@ -20,7 +20,9 @@ void main() {
     });
 
     test('cardInputInvalid does not allow submit', () {
-      const state = CardPaymentState(status: CardPaymentStatus.cardInputInvalid);
+      const state = CardPaymentState(
+        status: CardPaymentStatus.cardInputInvalid,
+      );
       expect(state.canSubmit, isFalse);
     });
 
@@ -117,13 +119,17 @@ void main() {
 
     test('tokenizing -> creatingCharge on valid token', () {
       const tokenizing = CardPaymentState(status: CardPaymentStatus.tokenizing);
-      final creating = tokenizing.copyWith(status: CardPaymentStatus.creatingCharge);
+      final creating = tokenizing.copyWith(
+        status: CardPaymentStatus.creatingCharge,
+      );
       expect(creating.status, CardPaymentStatus.creatingCharge);
       expect(creating.isBusy, isTrue);
     });
 
     test('creatingCharge -> chargeCreated on success', () {
-      const creating = CardPaymentState(status: CardPaymentStatus.creatingCharge);
+      const creating = CardPaymentState(
+        status: CardPaymentStatus.creatingCharge,
+      );
       final created = creating.copyWith(
         status: CardPaymentStatus.chargeCreated,
         chargeId: 'ch_123',
@@ -145,14 +151,18 @@ void main() {
 
     test('verifying -> paymentSucceeded on verified', () {
       const verifying = CardPaymentState(status: CardPaymentStatus.verifying);
-      final succeeded = verifying.copyWith(status: CardPaymentStatus.paymentSucceeded);
+      final succeeded = verifying.copyWith(
+        status: CardPaymentStatus.paymentSucceeded,
+      );
       expect(succeeded.status, CardPaymentStatus.paymentSucceeded);
       expect(succeeded.isBusy, isFalse);
     });
 
     test('verifying -> paymentPending on pending', () {
       const verifying = CardPaymentState(status: CardPaymentStatus.verifying);
-      final pending = verifying.copyWith(status: CardPaymentStatus.paymentPending);
+      final pending = verifying.copyWith(
+        status: CardPaymentStatus.paymentPending,
+      );
       expect(pending.status, CardPaymentStatus.paymentPending);
     });
 

@@ -192,7 +192,9 @@ bool containsWholeWord(String text, String phrase) {
 /// counts as a word.
 bool mentionsWord(String query, Iterable<String> phrases) {
   final normalized = normalizeText(query);
-  return phrases.any((phrase) => containsWholeWord(normalized, normalizeText(phrase)));
+  return phrases.any(
+    (phrase) => containsWholeWord(normalized, normalizeText(phrase)),
+  );
 }
 
 /// True when any of [markers] occurs anywhere in [query], including inside a

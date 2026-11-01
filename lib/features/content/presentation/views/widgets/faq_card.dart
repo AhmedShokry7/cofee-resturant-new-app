@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/content/data/model/faq_model.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// One published question with its answer folded behind the chevron.
 class FaqCard extends StatelessWidget {
@@ -20,11 +18,11 @@ class FaqCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
         border: Border.all(color: AppColor.borderColor),
       ),
       child: ExpansionTile(
@@ -34,17 +32,16 @@ class FaqCard extends StatelessWidget {
         collapsedIconColor: AppColor.greyColor,
         title: Text(faq.question, style: AppFonts.medium16(context)),
         childrenPadding: EdgeInsets.fromLTRB(
-          SpacingTokens.lg.w,
+          AppSpacing.lg,
           0,
-          SpacingTokens.lg.w,
-          SpacingTokens.lg.h,
+          AppSpacing.lg,
+          AppSpacing.lg,
         ),
         children: [
           Text(
             faq.answer,
-            style: AppFonts.regular14(
-              context,
-            ).copyWith(color: AppColor.greyColor, height: answerLineHeight),
+            style: AppFonts.regular14(context)
+                .copyWith(color: AppColor.greyColor, height: answerLineHeight),
           ),
         ],
       ),

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
 
@@ -111,7 +112,9 @@ class _SubscriptionPlanImageState extends State<SubscriptionPlanImage> {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite ? constraints.maxWidth : 0.0;
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth
+            : 0.0;
         if (width <= 0) return const SizedBox.shrink();
 
         final ratio = _ratio;
@@ -128,7 +131,9 @@ class _SubscriptionPlanImageState extends State<SubscriptionPlanImage> {
                     width: width,
                     height: height,
                   )
-                : Shimmer(child: ShimmerBox(width: width, height: height)),
+                : Shimmer(
+                    child: ShimmerBox(width: width, height: height),
+                  ),
           );
         }
 
@@ -146,9 +151,8 @@ class _SubscriptionPlanImageState extends State<SubscriptionPlanImage> {
     );
   }
 
-  Widget _frame({required double height, required Widget child}) =>
-      ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: SizedBox(width: double.infinity, height: height, child: child),
-      );
+  Widget _frame({required double height, required Widget child}) => ClipRRect(
+    borderRadius: BorderRadius.circular(AppRadius.r16),
+    child: SizedBox(width: double.infinity, height: height, child: child),
+  );
 }

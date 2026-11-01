@@ -23,10 +23,13 @@ void main() {
     cubit.changeTab(1);
 
     expect(cubit.state.index, 1);
-    expect(
-      [0, 1, 2, 3, 4].map(cubit.state.isBuilt),
-      [true, true, true, false, true],
-    );
+    expect([0, 1, 2, 3, 4].map(cubit.state.isBuilt), [
+      true,
+      true,
+      true,
+      false,
+      true,
+    ]);
   });
 
   test('re-selecting the current tab changes nothing', () {

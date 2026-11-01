@@ -43,14 +43,13 @@ void main() {
       contains('Latin digits'),
       reason: 'the model writes Arabic-Indic digits unless it is told not to',
     );
-    expect(
-      context,
-      contains('Never name another currency'),
-    );
+    expect(context, contains('Never name another currency'));
   });
 
   test('the system prompt keeps the model on the shop currency', () {
-    final prompt = buildSystemPrompt(memory: AssistantMemory(replyArabic: true));
+    final prompt = buildSystemPrompt(
+      memory: AssistantMemory(replyArabic: true),
+    );
 
     expect(prompt, contains('SAR'));
     expect(prompt, contains('Latin digits'));

@@ -7,7 +7,6 @@
 //   2. Everyday Arabic is answered by the local engine. A question that
 //      reaches the language model is a question the app could have answered
 //      on its own.
-import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +22,9 @@ import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -97,11 +98,7 @@ class _SlowCatalog implements CatalogRepository {
     String? branchId,
     Duration period = const Duration(days: 30),
     int limit = 10,
-  }) => _inner.getBestSellers(
-    branchId: branchId,
-    period: period,
-    limit: limit,
-  );
+  }) => _inner.getBestSellers(branchId: branchId, period: period, limit: limit);
 
   @override
   Future<ResolvedPrice?> resolvePrice(
@@ -197,10 +194,7 @@ void main() {
         isNotEmpty,
         reason: 'the customer must see the assistant right away',
       );
-      expect(
-        cubit.state.messages.first.role,
-        MessageRole.assistant,
-      );
+      expect(cubit.state.messages.first.role, MessageRole.assistant);
       expect(
         stopwatch.elapsed,
         lessThan(const Duration(seconds: 1)),
@@ -213,28 +207,30 @@ void main() {
       );
     });
 
-    test('the catalogue is still ready when the first question arrives',
-        () async {
-      final catalog = _SlowCatalog(
-        const MockProductRepository(),
-        delay: const Duration(milliseconds: 10),
-      );
-      final cubit = AssistantCubit(catalog: catalog, orders: _NoOrders());
-      addTearDown(cubit.close);
-      await cubit.start();
-      await Future<void>.delayed(const Duration(milliseconds: 50));
+    test(
+      'the catalogue is still ready when the first question arrives',
+      () async {
+        final catalog = _SlowCatalog(
+          const MockProductRepository(),
+          delay: const Duration(milliseconds: 10),
+        );
+        final cubit = AssistantCubit(catalog: catalog, orders: _NoOrders());
+        addTearDown(cubit.close);
+        await cubit.start();
+        await Future<void>.delayed(const Duration(milliseconds: 50));
 
-      await cubit.sendMessage('عايز اشرب ايه');
+        await cubit.sendMessage('عايز اشرب ايه');
 
-      final answer = cubit.state.messages.last;
-      expect(answer.role, MessageRole.assistant);
-      expect(answer.text, isNotEmpty);
-      expect(
-        cubit.state.products,
-        isNotEmpty,
-        reason: 'the local engine must be able to suggest real products',
-      );
-    });
+        final answer = cubit.state.messages.last;
+        expect(answer.role, MessageRole.assistant);
+        expect(answer.text, isNotEmpty);
+        expect(
+          cubit.state.products,
+          isNotEmpty,
+          reason: 'the local engine must be able to suggest real products',
+        );
+      },
+    );
   });
 
   group('answering locally', () {

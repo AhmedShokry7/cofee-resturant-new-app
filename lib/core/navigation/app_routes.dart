@@ -45,8 +45,7 @@ class AppRoutes {
     PhoneAuthPage.routeName: (context) => const PhoneAuthPage(),
     MainPage.routeName: (context) => const MainPage(),
     CheckoutPage.routeName: (context) => const CheckoutPage(),
-    ShippingAddressesPage.routeName: (context) =>
-        const ShippingAddressesPage(),
+    ShippingAddressesPage.routeName: (context) => const ShippingAddressesPage(),
     AddAddressPage.routeName: (context) => const AddAddressPage(),
     PaymentMethodPage.routeName: (context) => const PaymentMethodPage(),
     AddCardPage.routeName: (context) => const AddCardPage(),
@@ -64,8 +63,10 @@ class AppRoutes {
     AddressesPage.routeName: (context) => const AddressesPage(),
     AddressFormPage.routeName: (context) => const AddressFormPage(),
     SubscriptionPlansPage.routeName: (context) => const SubscriptionPlansPage(),
-    SubscriptionDetailsPage.routeName: (context) => const SubscriptionDetailsPage(),
-    CashierSubscriptionConsumePage.routeName: (context) => const CashierSubscriptionConsumePage(),
+    SubscriptionDetailsPage.routeName: (context) =>
+        const SubscriptionDetailsPage(),
+    CashierSubscriptionConsumePage.routeName: (context) =>
+        const CashierSubscriptionConsumePage(),
   };
 
   /// Maps the persisted session flag to the first route to show.

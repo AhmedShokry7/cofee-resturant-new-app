@@ -142,7 +142,8 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     final category = categories[index.clamp(0, categories.length - 1)];
     if (category.slug == bundlesSlug) return true;
     return {category.nameAr, category.nameEn}.any(
-      (name) => name != null && bundlesNames.contains(name.trim().toLowerCase()),
+      (name) =>
+          name != null && bundlesNames.contains(name.trim().toLowerCase()),
     );
   }
 }

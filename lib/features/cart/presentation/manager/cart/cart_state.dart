@@ -13,10 +13,10 @@ class CartBundleComponent {
   final double unitPrice;
 
   Map<String, dynamic> toJson() => {
-        'productId': productId,
-        'quantity': quantity,
-        'unitPrice': unitPrice,
-      };
+    'productId': productId,
+    'quantity': quantity,
+    'unitPrice': unitPrice,
+  };
 
   factory CartBundleComponent.fromJson(Map<String, dynamic> json) =>
       CartBundleComponent(
@@ -68,8 +68,8 @@ class CartItem {
     final prefix = isBundle
         ? 'bundle:${bundleId ?? product.id}'
         : (bundleId == null || bundleId!.trim().isEmpty
-            ? product.id
-            : '${product.id}::bundle:$bundleId');
+              ? product.id
+              : '${product.id}::bundle:$bundleId');
     return '$prefix::$note::${optionValueIds.join(',')}';
   }
 
@@ -84,16 +84,15 @@ class CartItem {
     double? unitPrice,
     String? bundleId,
     List<CartBundleComponent>? bundleComponents,
-  }) =>
-      CartItem(
-        product: product,
-        quantity: quantity ?? this.quantity,
-        note: note ?? this.note,
-        optionValueIds: optionValueIds ?? this.optionValueIds,
-        unitPrice: unitPrice ?? this.unitPrice,
-        bundleId: bundleId ?? this.bundleId,
-        bundleComponents: bundleComponents ?? this.bundleComponents,
-      );
+  }) => CartItem(
+    product: product,
+    quantity: quantity ?? this.quantity,
+    note: note ?? this.note,
+    optionValueIds: optionValueIds ?? this.optionValueIds,
+    unitPrice: unitPrice ?? this.unitPrice,
+    bundleId: bundleId ?? this.bundleId,
+    bundleComponents: bundleComponents ?? this.bundleComponents,
+  );
 }
 
 @immutable

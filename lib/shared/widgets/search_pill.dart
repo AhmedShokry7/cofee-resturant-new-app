@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The grey pill every search entry is drawn with.
 ///
@@ -13,18 +12,13 @@ import 'package:new_coffee/core/theme/spacing_tokens.dart';
 class SearchPill {
   SearchPill._();
 
-  static double radius() => 100.r;
+  static double radius() => AppRadius.pill;
 
-  static EdgeInsetsGeometry padding() => EdgeInsets.symmetric(
-    horizontal: SpacingTokens.lg.w,
-    vertical: SpacingTokens.md.h,
-  );
+  static EdgeInsetsGeometry padding() =>
+      EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md);
 
-  static Widget icon() => Icon(
-    HugeIcons.strokeRoundedSearch01,
-    size: 20.w,
-    color: AppColor.greyColor,
-  );
+  static Widget icon() =>
+      Icon(AppIcons.search, size: AppSizes.px20, color: AppColor.greyColor);
 
   static BoxDecoration decoration() => BoxDecoration(
     color: AppColor.lightGreyColor,

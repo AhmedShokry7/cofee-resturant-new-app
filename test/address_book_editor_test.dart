@@ -97,18 +97,21 @@ void main() {
       expect(repository.lastIsDefault, isFalse);
     });
 
-    test('the saved address is shown first, ahead of the existing rows', () async {
-      final editor = AddressBookEditor(repository: _FakeAddresses());
+    test(
+      'the saved address is shown first, ahead of the existing rows',
+      () async {
+        final editor = AddressBookEditor(repository: _FakeAddresses());
 
-      final change = await editor.add(
-        [_address('a1')],
-        label: 'Work',
-        details: 'Street 2',
-        isDefault: true,
-      );
+        final change = await editor.add(
+          [_address('a1')],
+          label: 'Work',
+          details: 'Street 2',
+          isDefault: true,
+        );
 
-      expect(change.addresses.map((a) => a.id), ['a-new', 'a1']);
-    });
+        expect(change.addresses.map((a) => a.id), ['a-new', 'a1']);
+      },
+    );
 
     test('an update replaces the row it edited and keeps the others', () async {
       final editor = AddressBookEditor(repository: _FakeAddresses());
@@ -151,22 +154,25 @@ void main() {
       expect(change.addresses.first.id, 'a2');
     });
 
-    test('a failed write carries the localized copy and the real cause', () async {
-      final editor = AddressBookEditor(
-        repository: _FakeAddresses(failAdd: true),
-      );
+    test(
+      'a failed write carries the localized copy and the real cause',
+      () async {
+        final editor = AddressBookEditor(
+          repository: _FakeAddresses(failAdd: true),
+        );
 
-      Object? thrown;
-      try {
-        await editor.add(const [], label: 'Home', details: 'Street 1');
-      } catch (error) {
-        thrown = error;
-      }
+        Object? thrown;
+        try {
+          await editor.add(const [], label: 'Home', details: 'Street 1');
+        } catch (error) {
+          thrown = error;
+        }
 
-      expect(thrown, isA<AddressBookFailure>());
-      expect((thrown as AddressBookFailure).message, S.addressSaveFailed);
-      expect(thrown.cause, isA<StateError>());
-    });
+        expect(thrown, isA<AddressBookFailure>());
+        expect((thrown as AddressBookFailure).message, S.addressSaveFailed);
+        expect(thrown.cause, isA<StateError>());
+      },
+    );
 
     test('a failed delete uses the delete copy', () async {
       final editor = AddressBookEditor(

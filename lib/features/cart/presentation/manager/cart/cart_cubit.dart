@@ -34,13 +34,11 @@ part 'cart_line_mapper.dart';
 /// instead of being dropped.
 class CartCubit extends Cubit<CartState> {
   CartCubit({
-    required CartRepository cartRepository,
-    required CatalogRepository catalogRepository,
+    required this._cartRepository,
+    required this._catalogRepository,
     this.branchId,
     String? Function()? userIdProvider,
-  }) : _cartRepository = cartRepository,
-       _catalogRepository = catalogRepository,
-       _userIdProvider = userIdProvider ?? _defaultUserId,
+  }) : _userIdProvider = userIdProvider ?? _defaultUserId,
        super(const CartState(items: [])) {
     _identity = _userIdProvider();
     if (SupabaseService.isReady) {

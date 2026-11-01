@@ -3,11 +3,9 @@ import 'dart:async';
 import 'package:card_flutter/card_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
 import 'package:new_coffee/features/payment/data/tap_checkout_config.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_cubit.dart';
@@ -15,6 +13,7 @@ import 'package:new_coffee/features/payment/presentation/manager/card_payment/ca
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/shared/widgets/primary_bottom_bar.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The hosted card form, the 3DS redirect it opens, and what happens when the
 /// customer comes back from it.
@@ -115,9 +114,7 @@ class _CardPaymentPageState extends State<CardPaymentPage>
       // has to be followed from here.
       final url = cubit.state.transactionUrl;
       if (url != null && url.isNotEmpty) {
-        WidgetsBinding.instance.addPostFrameCallback(
-          (_) => _launch3DS(url),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) => _launch3DS(url));
       }
     }
   }
@@ -175,9 +172,8 @@ class _CardPaymentPageState extends State<CardPaymentPage>
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   /// Leaves the payment screen.
@@ -247,7 +243,7 @@ class _CardPaymentView extends StatelessWidget {
                 child: chargesSavedCard
                     ? _SavedCardPaymentNotice(state: state)
                     : SingleChildScrollView(
-                        padding: EdgeInsets.all(SpacingTokens.lg.w),
+                        padding: EdgeInsets.all(AppSpacing.lg),
                         child: TapCardViewWidget(
                           sdkConfiguration: sdkConfiguration,
                           generateToken:
@@ -268,8 +264,8 @@ class _CardPaymentView extends StatelessWidget {
               if (state.errorMessage != null)
                 Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: SpacingTokens.lg.w,
-                    vertical: SpacingTokens.sm.h,
+                    horizontal: AppSpacing.lg,
+                    vertical: AppSpacing.sm,
                   ),
                   child: Text(
                     state.errorMessage!,
@@ -281,9 +277,7 @@ class _CardPaymentView extends StatelessWidget {
                 PrimaryBottomBar(
                   text: S.confirmPayment,
                   isLoading: state.isBusy,
-                  onPressed: state.canSubmit
-                      ? cubit.requestCardToken
-                      : () {},
+                  onPressed: state.canSubmit ? cubit.requestCardToken : () {},
                 ),
             ],
           ),
@@ -301,12 +295,13 @@ class _SavedCardPaymentNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final waiting = state.isBusy ||
+    final waiting =
+        state.isBusy ||
         state.status == CardPaymentStatus.chargeCreated ||
         state.status == CardPaymentStatus.paymentPending;
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -314,11 +309,11 @@ class _SavedCardPaymentNotice extends StatelessWidget {
               const CircularProgressIndicator()
             else
               Icon(
-                HugeIcons.strokeRoundedCreditCard,
-                size: 48.w,
+                AppIcons.creditCard,
+                size: AppSpacing.xxxl,
                 color: AppColor.primaryColor,
               ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Text(
               waiting ? S.paymentProcessing : S.payment,
               style: TextStyle(color: AppColor.greyColor),

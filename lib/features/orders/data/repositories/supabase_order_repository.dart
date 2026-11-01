@@ -191,7 +191,7 @@ class SupabaseOrdersRepository
         'p_lines': _cartLinePayload(lines),
         'p_idempotency_key': idempotencyKey,
         'p_fulfillment_type': fulfillmentType,
-        if (expectedTotal != null) 'p_expected_total': expectedTotal,
+        'p_expected_total': ?expectedTotal,
         if (zoneId.isNotEmpty) 'p_delivery_zone_id': zoneId,
         if (addressIdValue.isNotEmpty) 'p_address_id': addressIdValue,
         if (coupon.isNotEmpty) 'p_coupon_code': coupon,

@@ -112,17 +112,14 @@ void main() {
       placedAt: DateTime.utc(2026, 10, 1, 10),
     );
 
-    expect(
-      steps.map((step) => step.title),
-      [
-        'Order placed',
-        'Order confirmed',
-        'Preparing',
-        'Ready for delivery',
-        'Out for delivery',
-        'Completed',
-      ],
-    );
+    expect(steps.map((step) => step.title), [
+      'Order placed',
+      'Order confirmed',
+      'Preparing',
+      'Ready for delivery',
+      'Out for delivery',
+      'Completed',
+    ]);
     expect(steps.take(3).every((step) => step.done), isTrue);
     expect(steps.skip(3).every((step) => !step.done), isTrue);
     expect(steps.first.date, isNotEmpty);
@@ -142,10 +139,10 @@ void main() {
       placedAt: DateTime.utc(2026, 10, 2, 10),
     );
 
-    expect(
-      steps.map((step) => step.title),
-      ['Order placed', 'Order cancelled'],
-    );
+    expect(steps.map((step) => step.title), [
+      'Order placed',
+      'Order cancelled',
+    ]);
     expect(steps.every((step) => step.done), isTrue);
   });
 }

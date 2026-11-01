@@ -31,9 +31,10 @@ void main() {
   final String? schemaSkip = schemasExposed ? null : needsSchemas;
   final String? primaryCredentialSkip =
       (primaryEmail.isNotEmpty && primaryPassword.isNotEmpty)
-          ? null
-          : needsPrimaryCredentials;
-  final String? mutationSkip = (schemaSkip ?? primaryCredentialSkip) ??
+      ? null
+      : needsPrimaryCredentials;
+  final String? mutationSkip =
+      (schemaSkip ?? primaryCredentialSkip) ??
       (allowMutations ? null : needsMutationOptIn);
 
   group('address default bridge', () {
@@ -58,8 +59,11 @@ void main() {
       } catch (e) {
         error = e;
       }
-      expect(error, isNotNull,
-          reason: 'anon must not be able to change a default address');
+      expect(
+        error,
+        isNotNull,
+        reason: 'anon must not be able to change a default address',
+      );
       expect(error, isA<PostgrestException>());
     }, skip: schemaSkip);
 
@@ -98,8 +102,11 @@ void main() {
       await secondaryRepo.removeAddress(secondaryAddress.id);
       await secondaryClient.auth.signOut();
 
-      expect(error, isNotNull,
-          reason: 'an address owned by user B must not be mutable by user A');
+      expect(
+        error,
+        isNotNull,
+        reason: 'an address owned by user B must not be mutable by user A',
+      );
     }, skip: mutationSkip);
 
     test('owner can set an address as default', () async {
@@ -115,11 +122,9 @@ void main() {
       final originalDefaultId = original
           .firstWhere(
             (address) => address.isDefault,
-            orElse: () => original.isEmpty ? const AddressModel(
-                  id: '',
-                  label: '',
-                  details: '',
-                ) : original.first,
+            orElse: () => original.isEmpty
+                ? const AddressModel(id: '', label: '', details: '')
+                : original.first,
           )
           .id;
 
@@ -135,8 +140,11 @@ void main() {
       expect(updated.isDefault, isTrue);
 
       final defaults = after.where((address) => address.isDefault).toList();
-      expect(defaults.length, lessThanOrEqualTo(1),
-          reason: 'at most one default address should remain');
+      expect(
+        defaults.length,
+        lessThanOrEqualTo(1),
+        reason: 'at most one default address should remain',
+      );
 
       // Best-effort restoration; failures here do not invalidate the assertion.
       if (originalDefaultId.isNotEmpty && originalDefaultId != created.id) {

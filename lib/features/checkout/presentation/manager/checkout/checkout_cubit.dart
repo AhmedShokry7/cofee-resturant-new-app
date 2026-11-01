@@ -567,8 +567,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
           // owns the row now: show the saved copy, not the draft.
           selectedAddress:
               change.saved != null && selected?.id == change.saved!.id
-                  ? change.saved
-                  : selected,
+              ? change.saved
+              : selected,
         ),
       );
       resolveZoneForSelectedAddress();

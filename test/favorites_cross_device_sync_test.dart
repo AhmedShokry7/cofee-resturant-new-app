@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
+
 import 'support/mock_product_repository.dart';
 
 import 'support/fake_postgrest_server.dart';
@@ -65,29 +66,31 @@ void main() {
     final second = await device('customer.a@test.local');
 
     expect(second.state.ids, contains('3'));
-    expect(
-      second.state.favoriteProducts.map((product) => product.name),
-      ['Latte'],
-    );
+    expect(second.state.favoriteProducts.map((product) => product.name), [
+      'Latte',
+    ]);
   });
 
-  test('a favourite removed on one device disappears on the other one', () async {
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final first = await device('customer.a@test.local');
-    await first.toggle('3');
-    expect(server.favorites, hasLength(1));
+  test(
+    'a favourite removed on one device disappears on the other one',
+    () async {
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final first = await device('customer.a@test.local');
+      await first.toggle('3');
+      expect(server.favorites, hasLength(1));
 
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final second = await device('customer.a@test.local');
-    expect(second.state.ids, contains('3'));
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final second = await device('customer.a@test.local');
+      expect(second.state.ids, contains('3'));
 
-    await first.toggle('3');
-    expect(server.favorites, isEmpty);
+      await first.toggle('3');
+      expect(server.favorites, isEmpty);
 
-    SharedPreferences.setMockInitialValues(<String, Object>{});
-    final third = await device('customer.a@test.local');
-    expect(third.state.ids, isNot(contains('3')));
-  });
+      SharedPreferences.setMockInitialValues(<String, Object>{});
+      final third = await device('customer.a@test.local');
+      expect(third.state.ids, isNot(contains('3')));
+    },
+  );
 
   test('one account never sees the favourites of another', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{});

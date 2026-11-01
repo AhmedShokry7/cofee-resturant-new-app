@@ -7,7 +7,8 @@ import 'package:new_coffee/features/payment/data/repositories/tap_payment_reposi
 import 'card_payment_state.dart';
 
 class CardPaymentCubit extends Cubit<CardPaymentState> {
-  CardPaymentCubit({required this.repository}) : super(const CardPaymentState());
+  CardPaymentCubit({required this.repository})
+    : super(const CardPaymentState());
 
   final TapPaymentRepository repository;
 
@@ -48,17 +49,21 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     if (state.isBusy) return;
     if (isValid) {
       if (state.status != CardPaymentStatus.cardInputValid) {
-        emit(state.copyWith(
-          status: CardPaymentStatus.cardInputValid,
-          clearError: true,
-        ));
+        emit(
+          state.copyWith(
+            status: CardPaymentStatus.cardInputValid,
+            clearError: true,
+          ),
+        );
       }
     } else {
       if (state.status != CardPaymentStatus.cardInputInvalid) {
-        emit(state.copyWith(
-          status: CardPaymentStatus.cardInputInvalid,
-          clearError: true,
-        ));
+        emit(
+          state.copyWith(
+            status: CardPaymentStatus.cardInputInvalid,
+            clearError: true,
+          ),
+        );
       }
     }
   }
@@ -70,16 +75,17 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   void requestCardToken() {
     if (state.isBusy) return;
     if (state.status != CardPaymentStatus.cardInputValid) {
-      emit(state.copyWith(
-        status: CardPaymentStatus.cardInputInvalid,
-        errorMessage: S.invalidCardDetails,
-      ));
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.cardInputInvalid,
+          errorMessage: S.invalidCardDetails,
+        ),
+      );
       return;
     }
-    emit(state.copyWith(
-      status: CardPaymentStatus.tokenizing,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(status: CardPaymentStatus.tokenizing, clearError: true),
+    );
   }
 
   /// Charges the order with the token the hosted form reported.
@@ -99,10 +105,12 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   /// The form could not tokenize the card, so the customer can try again.
   void onHostedFormError() {
     if (state.status != CardPaymentStatus.tokenizing) return;
-    emit(state.copyWith(
-      status: CardPaymentStatus.tokenizationFailed,
-      errorMessage: S.tokenizationFailed,
-    ));
+    emit(
+      state.copyWith(
+        status: CardPaymentStatus.tokenizationFailed,
+        errorMessage: S.tokenizationFailed,
+      ),
+    );
   }
 
   /// Charges the saved card [start] named, without the hosted form.
@@ -136,18 +144,22 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
         emit(state.copyWith(status: CardPaymentStatus.paymentPending));
         return PaymentOutcome.pending;
       } else {
-        emit(state.copyWith(
-          status: CardPaymentStatus.paymentFailed,
-          errorMessage: S.paymentNotCompleted,
-        ));
+        emit(
+          state.copyWith(
+            status: CardPaymentStatus.paymentFailed,
+            errorMessage: S.paymentNotCompleted,
+          ),
+        );
         return PaymentOutcome.failed;
       }
     } catch (error) {
       if (isClosed) return null;
-      emit(state.copyWith(
-        status: CardPaymentStatus.paymentFailed,
-        errorMessage: S.paymentVerificationFailed,
-      ));
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.paymentFailed,
+          errorMessage: S.paymentVerificationFailed,
+        ),
+      );
       return PaymentOutcome.failed;
     }
   }
@@ -158,10 +170,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
   /// saved card the server turns into a token. The order and its idempotency
   /// key are the same server id, so a retap reuses the charge instead of
   /// billing twice.
-  Future<void> _createCharge({
-    String? sourceToken,
-    String? savedCardId,
-  }) async {
+  Future<void> _createCharge({String? sourceToken, String? savedCardId}) async {
     if (_chargeStarted) return;
     final orderId = _orderId;
     final subscriptionId = _subscriptionId;
@@ -169,10 +178,12 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     if (targetId == null || targetId.isEmpty) return;
 
     _chargeStarted = true;
-    emit(state.copyWith(
-      status: CardPaymentStatus.creatingCharge,
-      clearError: true,
-    ));
+    emit(
+      state.copyWith(
+        status: CardPaymentStatus.creatingCharge,
+        clearError: true,
+      ),
+    );
 
     try {
       final result = subscriptionId != null
@@ -189,17 +200,21 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
               savedCardId: savedCardId,
             );
       if (isClosed) return;
-      emit(state.copyWith(
-        status: CardPaymentStatus.chargeCreated,
-        chargeId: result.chargeId,
-        transactionUrl: result.transactionUrl,
-      ));
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.chargeCreated,
+          chargeId: result.chargeId,
+          transactionUrl: result.transactionUrl,
+        ),
+      );
     } catch (error) {
       if (isClosed) return;
-      emit(state.copyWith(
-        status: CardPaymentStatus.paymentFailed,
-        errorMessage: S.paymentRetryLater,
-      ));
+      emit(
+        state.copyWith(
+          status: CardPaymentStatus.paymentFailed,
+          errorMessage: S.paymentRetryLater,
+        ),
+      );
     } finally {
       _chargeStarted = false;
     }

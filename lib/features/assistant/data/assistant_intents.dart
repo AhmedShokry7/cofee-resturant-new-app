@@ -80,8 +80,7 @@ AssistantIntent detectIntent(
   const weak = {AssistantIntent.affirm, AssistantIntent.deny};
   if (weak.contains(best) && bestScore > 0) {
     for (final entry in scores.entries) {
-      if (entry.key == AssistantIntent.unknown ||
-          weak.contains(entry.key)) {
+      if (entry.key == AssistantIntent.unknown || weak.contains(entry.key)) {
         continue;
       }
       if (entry.value >= bestScore) {
@@ -146,8 +145,8 @@ Map<AssistantIntent, double> scoreIntents(
     var score = 0.0;
     final effectiveTokens = _tokensFor(intent, tokens, normalizedQuery);
     final keywords = [
-      for (final raw in AssistantPhrases.intentKeywords[intent] ??
-          const <String>[])
+      for (final raw
+          in AssistantPhrases.intentKeywords[intent] ?? const <String>[])
         normalizeText(raw),
     ].where((keyword) => keyword.isNotEmpty).toList();
     // Pass 1 — exact hits claim their token (one token scores once, so
@@ -174,8 +173,8 @@ Map<AssistantIntent, double> scoreIntents(
         }
       }
     }
-    for (final rawPhrase in AssistantPhrases.intentPhrases[intent] ??
-        const <String>[]) {
+    for (final rawPhrase
+        in AssistantPhrases.intentPhrases[intent] ?? const <String>[]) {
       final phrase = normalizeText(rawPhrase);
       // Full phrases outrank single keywords: they are more specific.
       if (phrase.length > 3 && normalizedQuery.contains(phrase)) {
@@ -227,7 +226,10 @@ Map<AssistantIntent, double> scoreIntents(
   // be almost identical before they are allowed to pick an intent.
   final shortest = tokens
       .map((token) => token.length)
-      .fold<int>(99, (shortest, length) => length < shortest ? length : shortest);
+      .fold<int>(
+        99,
+        (shortest, length) => length < shortest ? length : shortest,
+      );
   final threshold = shortest <= 4 ? 0.8 : 0.6;
   return bestScore >= threshold ? (best, bestScore) : null;
 }
@@ -255,8 +257,20 @@ bool isFollowUpMessage(String query) {
 
 bool _mentionsDrink(String normalizedContext) {
   const drinkWords = [
-    'drink', 'coffee', 'suggest', 'recommend', 'tea', 'latte', 'mocha',
-    'espresso', 'cappuccino', 'مشروب', 'قهوه', 'شاي', 'اقترح', 'رشح',
+    'drink',
+    'coffee',
+    'suggest',
+    'recommend',
+    'tea',
+    'latte',
+    'mocha',
+    'espresso',
+    'cappuccino',
+    'مشروب',
+    'قهوه',
+    'شاي',
+    'اقترح',
+    'رشح',
   ];
   for (final word in drinkWords) {
     if (normalizedContext.contains(normalizeText(word))) return true;

@@ -10,7 +10,9 @@ import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_reply_sanitizer.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
@@ -96,25 +98,28 @@ void main() {
     expect(
       call.questionKey,
       'ايه رايك في طقس يوم',
-      reason: 'the key is the normalized question, the way the memory stores it',
+      reason:
+          'the key is the normalized question, the way the memory stores it',
     );
     expect(call.questionKey, isNot(contains('?')));
     expect(call.questionKey, isNot(contains('ال')));
   });
 
-  test('a question the customer already answered locally never reaches the model',
-      () async {
-    final opened = await open();
+  test(
+    'a question the customer already answered locally never reaches the model',
+    () async {
+      final opened = await open();
 
-    await opened.cubit.sendMessage('كام سعر اللاتيه؟');
-    await Future<void>.delayed(const Duration(milliseconds: 200));
+      await opened.cubit.sendMessage('كام سعر اللاتيه؟');
+      await Future<void>.delayed(const Duration(milliseconds: 200));
 
-    expect(
-      opened.llm.calls,
-      isEmpty,
-      reason: 'the local engine answered, so the model is not asked',
-    );
-  });
+      expect(
+        opened.llm.calls,
+        isEmpty,
+        reason: 'the local engine answered, so the model is not asked',
+      );
+    },
+  );
 
   test('an answer about the customer own order is never learned', () async {
     expect(
@@ -131,20 +136,11 @@ void main() {
   });
 
   test('the reply says where it came from', () {
-    expect(
-      const LlmReply(text: 'x', provider: 'memory').fromMemory,
-      isTrue,
-    );
-    expect(
-      const LlmReply(text: 'x', provider: 'groq').fromMemory,
-      isFalse,
-    );
+    expect(const LlmReply(text: 'x', provider: 'memory').fromMemory, isTrue);
+    expect(const LlmReply(text: 'x', provider: 'groq').fromMemory, isFalse);
   });
 
   test('the model reply loses its markdown', () {
-    expect(
-      sanitizeLlmReply('السعر **35 ريال**'),
-      'السعر 35 ريال',
-    );
+    expect(sanitizeLlmReply('السعر **35 ريال**'), 'السعر 35 ريال');
   });
 }

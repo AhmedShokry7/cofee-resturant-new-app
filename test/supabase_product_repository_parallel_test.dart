@@ -343,8 +343,9 @@ void main() {
       Future<void> waitForTheOther(String which) async {
         if (which == 'images') {
           imagesStarted = true;
-          if (pricingStarted && !bothStarted.isCompleted)
+          if (pricingStarted && !bothStarted.isCompleted) {
             bothStarted.complete();
+          }
         } else {
           pricingStarted = true;
           if (imagesStarted && !bothStarted.isCompleted) bothStarted.complete();
@@ -411,8 +412,7 @@ void main() {
       expect(
         catalog.imageRequests,
         1,
-        reason:
-            'the detail read reused a second gallery query for the same product',
+        reason: 'the detail read reused a second gallery query for the same product',
       );
       expect(loaded!.images, isNotEmpty);
     });

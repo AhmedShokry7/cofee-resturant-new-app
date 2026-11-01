@@ -13,9 +13,8 @@ part 'current_user_state.dart';
 /// same row was read twice per tab and a name the customer edited only reached
 /// the screen that happened to re-read it.
 class CurrentUserCubit extends Cubit<CurrentUserState> {
-  CurrentUserCubit({required AuthRepository repository})
-      : _repository = repository,
-        super(const CurrentUserState());
+  CurrentUserCubit({required this._repository})
+    : super(const CurrentUserState());
 
   final AuthRepository _repository;
 
@@ -34,12 +33,6 @@ class CurrentUserCubit extends Cubit<CurrentUserState> {
       user = null;
     }
     if (isClosed) return;
-    emit(
-      state.copyWith(
-        user: user,
-        isLoading: false,
-        clearUser: user == null,
-      ),
-    );
+    emit(state.copyWith(user: user, isLoading: false, clearUser: user == null));
   }
 }

@@ -31,13 +31,12 @@ part 'assistant_state.dart';
 class AssistantCubit extends Cubit<AssistantState> {
   AssistantCubit({
     required this._catalog,
-    required OrdersRepository orders,
+    required this._orders,
     this.branchId,
     LlmClient? llmClient,
     this.llmConfig = const LlmConfig(),
-  })  : _orders = orders,
-        _llmClient = llmClient ?? HttpLlmClient(llmConfig),
-        super(const AssistantState()) {
+  }) : _llmClient = llmClient ?? HttpLlmClient(llmConfig),
+       super(const AssistantState()) {
     _snapshot = const AssistantSnapshot.empty();
   }
 
@@ -54,6 +53,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     _snapshotFuture = null;
     _snapshot = await _ensureSnapshot();
   }
+
   final LlmClient _llmClient;
   final LlmConfig llmConfig;
   late AssistantSnapshot _snapshot;
@@ -79,13 +79,15 @@ class AssistantCubit extends Cubit<AssistantState> {
       branchId: branchId,
     );
     _snapshotFuture = future;
-    future.then((loaded) {
-      if (!isClosed) _snapshot = loaded;
-    }).catchError((_) {
-      // A catalogue that cannot be read leaves the assistant with an empty
-      // menu, which is a valid answer rather than a crash.
-      if (!isClosed) _snapshot = const AssistantSnapshot.empty();
-    });
+    future
+        .then((loaded) {
+          if (!isClosed) _snapshot = loaded;
+        })
+        .catchError((_) {
+          // A catalogue that cannot be read leaves the assistant with an empty
+          // menu, which is a valid answer rather than a crash.
+          if (!isClosed) _snapshot = const AssistantSnapshot.empty();
+        });
     return future;
   }
 
@@ -103,8 +105,7 @@ class AssistantCubit extends Cubit<AssistantState> {
   /// for the language model", and the local answer is instant.
   bool _answering = false;
 
-  String _nextId() =>
-      '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
+  String _nextId() => '${DateTime.now().microsecondsSinceEpoch}_${_counter++}';
 
   List<ChatMessage> _bounded(List<ChatMessage> messages) {
     if (messages.length <= 100) return messages;
@@ -273,8 +274,7 @@ class AssistantCubit extends Cubit<AssistantState> {
         cartActions: answer.actions,
       ),
     );
-    final llmAvailable =
-        llmConfig.enabled || SupabaseService.isConfigured;
+    final llmAvailable = llmConfig.enabled || SupabaseService.isConfigured;
     if (answer.topic == 'fallback' && llmAvailable) {
       unawaited(_tryLlmUpgrade(text));
     }
@@ -363,10 +363,7 @@ class AssistantCubit extends Cubit<AssistantState> {
   }
 
   Future<void> recordProductInterest(ProductModel product) async {
-    _memory.recordCategory(
-      AssistantSnapshot.categoryKey(product),
-      2,
-    );
+    _memory.recordCategory(AssistantSnapshot.categoryKey(product), 2);
     _memory.recordProduct(product.id, 2);
     await _memory.save();
   }

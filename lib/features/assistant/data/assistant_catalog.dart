@@ -17,7 +17,8 @@ class AssistantCatalog {
   static AssistantCatalog? _current;
 
   /// Cached catalog (empty until [load] runs once).
-  static AssistantCatalog get current => _current ?? AssistantCatalog._(const []);
+  static AssistantCatalog get current =>
+      _current ?? AssistantCatalog._(const []);
 
   /// Loads (or reloads) knowledge, e.g. after the database connects.
   /// Safe to call repeatedly; failures keep the previous catalog.
@@ -44,21 +45,18 @@ class AssistantCatalog {
   ProductKnowledge? knowledgeOfProduct(ProductModel product) {
     final slug = product.slug?.trim().toLowerCase();
     for (final row in _knowledge) {
-      if (slug != null &&
-          slug.isNotEmpty &&
-          row.productSlug == slug) {
+      if (slug != null && slug.isNotEmpty && row.productSlug == slug) {
         return row;
       }
       if (row.productId == product.id) return row;
     }
     // Compiled-menu rows carry no slug, but their English names match the
     // database slugs once spaces become hyphens.
-    final nameSlug = (product.nameEn?.isNotEmpty ?? false
-            ? product.nameEn!
-            : product.name)
-        .trim()
-        .toLowerCase()
-        .replaceAll(RegExp(r'\s+'), '-');
+    final nameSlug =
+        (product.nameEn?.isNotEmpty ?? false ? product.nameEn! : product.name)
+            .trim()
+            .toLowerCase()
+            .replaceAll(RegExp(r'\s+'), '-');
     for (final row in _knowledge) {
       if (row.productSlug == nameSlug) return row;
     }

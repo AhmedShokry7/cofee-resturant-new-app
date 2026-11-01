@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Pill quantity stepper shared by the product details content.
 ///
@@ -27,29 +27,29 @@ class QuantityStepper extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border.all(color: AppColor.borderColor),
-        borderRadius: BorderRadius.circular(100.r),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           IconButton(
             onPressed: onDecrement,
-            icon: const Icon(Icons.remove),
+            icon: const Icon(AppIcons.minus),
             color: AppColor.primaryColor,
-            iconSize: 18.w,
-            padding: EdgeInsets.all(SpacingTokens.xs.w),
+            iconSize: AppSizes.px18,
+            padding: EdgeInsets.all(AppSpacing.xs),
             constraints: const BoxConstraints(),
           ),
           Padding(
-            padding: EdgeInsets.symmetric(horizontal: SpacingTokens.xs.w),
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
             child: Text('$quantity', style: AppFonts.semiBold16(context)),
           ),
           IconButton(
             onPressed: onIncrement,
-            icon: const Icon(Icons.add),
+            icon: const Icon(AppIcons.add),
             color: AppColor.primaryColor,
-            iconSize: 18.w,
-            padding: EdgeInsets.all(SpacingTokens.xs.w),
+            iconSize: AppSizes.px18,
+            padding: EdgeInsets.all(AppSpacing.xs),
             constraints: const BoxConstraints(),
           ),
         ],

@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 
 /// Pumps a [Directionality] with the given [textDirection] and reports which
@@ -40,12 +40,12 @@ void main() {
         onResolved: (back, forward) {
           expect(
             back,
-            HugeIcons.strokeRoundedArrowLeft01,
+            AppIcons.back,
             reason: 'logical back must point left in LTR',
           );
           expect(
             forward,
-            HugeIcons.strokeRoundedArrowRight01,
+            AppIcons.forward,
             reason: 'logical forward must point right in LTR',
           );
         },
@@ -61,12 +61,12 @@ void main() {
         onResolved: (back, forward) {
           expect(
             back,
-            HugeIcons.strokeRoundedArrowRight01,
+            AppIcons.forward,
             reason: 'logical back must point right in RTL',
           );
           expect(
             forward,
-            HugeIcons.strokeRoundedArrowLeft01,
+            AppIcons.back,
             reason: 'logical forward must point left in RTL',
           );
         },

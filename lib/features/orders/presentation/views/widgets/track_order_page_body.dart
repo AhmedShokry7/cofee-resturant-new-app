@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -15,6 +12,7 @@ import 'package:new_coffee/features/orders/presentation/views/widgets/order_stat
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class TrackOrderPageBody extends StatelessWidget {
   const TrackOrderPageBody({super.key, required this.order});
@@ -45,7 +43,7 @@ class _TrackOrderView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: LayoutTokens.pageBody(),
+      padding: AppLayout.pageBody,
       children: [
         OrderItemCard(
           product: order.product,
@@ -53,9 +51,9 @@ class _TrackOrderView extends StatelessWidget {
           note: order.note,
           unitPrice: order.chargedUnit,
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         Text(S.orderDetails, style: AppFonts.semiBold16(context)),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         if (order.placedAt != null) ...[
           LabeledValueRow(
             label: S.placed,
@@ -63,7 +61,7 @@ class _TrackOrderView extends StatelessWidget {
             valueSize: 16,
             labelExpanded: true,
           ),
-          SizedBox(height: SpacingTokens.sm.h),
+          SizedBox(height: AppSpacing.sm),
         ],
         LabeledValueRow(
           label: S.trackingId,
@@ -71,11 +69,11 @@ class _TrackOrderView extends StatelessWidget {
           valueSize: 16,
           labelExpanded: true,
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const Divider(),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         Text(S.orderStatus, style: AppFonts.semiBold16(context)),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         BlocBuilder<OrderTrackingCubit, OrderTrackingState>(
           builder: (context, state) {
             if (state.isLoading) {
@@ -88,10 +86,9 @@ class _TrackOrderView extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(S.liveStatusFailed, style: AppFonts.regular14(context)),
-                  SizedBox(height: SpacingTokens.sm.h),
+                  SizedBox(height: AppSpacing.sm),
                   TextButton(
-                    onPressed: () =>
-                        context.read<OrderTrackingCubit>().load(),
+                    onPressed: () => context.read<OrderTrackingCubit>().load(),
                     child: Text(S.retry),
                   ),
                 ],

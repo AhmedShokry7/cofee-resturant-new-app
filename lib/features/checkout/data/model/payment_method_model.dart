@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 
@@ -59,11 +59,11 @@ class PaymentMethodModel {
     final legacy = _legacyIcon;
     if (legacy != null) return legacy;
     return switch (code) {
-      'cash' => HugeIcons.strokeRoundedTruckDelivery,
-      'card' => HugeIcons.strokeRoundedCreditCard,
-      'apple_pay' => HugeIcons.strokeRoundedApple,
-      'mada' => HugeIcons.strokeRoundedCreditCard,
-      _ => HugeIcons.strokeRoundedCreditCard,
+      'cash' => AppIcons.deliveryTruck,
+      'card' => AppIcons.creditCard,
+      'apple_pay' => AppIcons.apple,
+      'mada' => AppIcons.creditCard,
+      _ => AppIcons.creditCard,
     };
   }
 

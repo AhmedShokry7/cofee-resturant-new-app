@@ -16,7 +16,7 @@ class MockProductRepository implements CatalogRepository {
 
   /// Offline catalogue rows. These used to be a globally shared menu module;
   /// they now live inside the only implementation that reads them.
-  static List<ProductModel> _legacyMenu = [
+  static final List<ProductModel> _legacyMenu = [
     ProductModel(
       id: "1",
       name: "Espresso",

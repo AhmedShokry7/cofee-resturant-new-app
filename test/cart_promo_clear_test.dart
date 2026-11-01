@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
 
@@ -24,18 +23,14 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      ScreenUtilInit(
-        designSize: const Size(360, 690),
-        minTextAdapt: true,
-        builder: (context, _) => MaterialApp(
-          home: Scaffold(
-            body: Padding(
-              padding: const EdgeInsets.all(16),
-              child: PromoCodeField(
-                controller: controller,
-                onApply: onApply ?? () {},
-                onClear: onClear,
-              ),
+      MaterialApp(
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(16),
+            child: PromoCodeField(
+              controller: controller,
+              onApply: onApply ?? () {},
+              onClear: onClear,
             ),
           ),
         ),
@@ -51,15 +46,17 @@ void main() {
     addTearDown(controller.dispose);
     await pumpField(tester, controller: controller);
 
-    expect(find.byIcon(HugeIcons.strokeRoundedCancel01), findsNothing);
+    expect(find.byIcon(AppIcons.close), findsNothing);
 
     await tester.enterText(find.byType(TextField), 'WELCOME200');
     await tester.pump();
 
-    expect(find.byIcon(HugeIcons.strokeRoundedCancel01), findsOneWidget);
+    expect(find.byIcon(AppIcons.close), findsOneWidget);
   });
 
-  testWidgets('pressing clear empties the field and reports it', (tester) async {
+  testWidgets('pressing clear empties the field and reports it', (
+    tester,
+  ) async {
     final controller = TextEditingController(text: 'WELCOME200');
     addTearDown(controller.dispose);
     var cleared = false;
@@ -69,13 +66,13 @@ void main() {
       onClear: () => cleared = true,
     );
 
-    await tester.tap(find.byIcon(HugeIcons.strokeRoundedCancel01));
+    await tester.tap(find.byIcon(AppIcons.close));
     await tester.pump();
 
     expect(controller.text, isEmpty);
     expect(cleared, isTrue);
     // The button hides itself again, so the field matches its empty state.
-    expect(find.byIcon(HugeIcons.strokeRoundedCancel01), findsNothing);
+    expect(find.byIcon(AppIcons.close), findsNothing);
   });
 
   testWidgets('a pre-filled controller shows the button on first build', (
@@ -85,7 +82,7 @@ void main() {
     addTearDown(controller.dispose);
     await pumpField(tester, controller: controller);
 
-    expect(find.byIcon(HugeIcons.strokeRoundedCancel01), findsOneWidget);
+    expect(find.byIcon(AppIcons.close), findsOneWidget);
   });
 
   testWidgets('the keyboard done key applies without clearing first', (

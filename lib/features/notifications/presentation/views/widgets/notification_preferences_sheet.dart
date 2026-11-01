@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/shared/widgets/sheet_handle.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Opens the switches of the signed-in customer: the mail channel and the four
 /// kinds.
@@ -23,7 +22,7 @@ Future<void> showNotificationPreferencesSheet(BuildContext context) {
     backgroundColor: AppColor.whiteColor,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(32.r)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),
     builder: (sheetContext) =>
         BlocProvider.value(value: cubit, child: const _PreferencesSheet()),
@@ -37,24 +36,24 @@ class _PreferencesSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: SingleChildScrollView(
-        padding: EdgeInsets.all(SpacingTokens.lg.w),
+        padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SheetHandle(),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             Text(
               S.notificationPreferences,
               style: AppFonts.semiBold18(context),
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
             Text(
               S.notificationPreferencesHint,
               style: AppFonts.regular16(context)
                   .copyWith(color: AppColor.greyColor),
             ),
-            SizedBox(height: SpacingTokens.lg.h),
+            SizedBox(height: AppSpacing.lg),
             BlocBuilder<NotificationsCubit, NotificationsState>(
               buildWhen: (previous, current) =>
                   previous.preferences != current.preferences,
@@ -91,9 +90,9 @@ class _EmailSwitchRow extends StatelessWidget {
     return SwitchListTile(
       value: value,
       onChanged: (requested) async {
-        final saved = await context
-            .read<NotificationsCubit>()
-            .setEmailEnabled(requested);
+        final saved = await context.read<NotificationsCubit>().setEmailEnabled(
+          requested,
+        );
         if (saved || !context.mounted) return;
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(S.preferenceNotSaved)));

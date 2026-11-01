@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
@@ -238,7 +237,8 @@ void main() {
       expect(cubit.state.preferences.emailEnabled, isTrue);
     });
 
-    test('a refused mail write leaves the switch where the server left it',
+    test(
+      'a refused mail write leaves the switch where the server left it',
       () async {
         final push = _FakePushRepository()..refuseWrites = true;
         final cubit = _cubit(push);
@@ -324,27 +324,26 @@ void main() {
       },
     );
 
-    testWidgets(
-      'tapping the mail switch writes the mail column of the row',
-      (tester) async {
-        final push = _FakePushRepository();
-        final cubit = _cubit(push);
-        addTearDown(cubit.close);
-        await cubit.loadPushState();
+    testWidgets('tapping the mail switch writes the mail column of the row', (
+      tester,
+    ) async {
+      final push = _FakePushRepository();
+      final cubit = _cubit(push);
+      addTearDown(cubit.close);
+      await cubit.loadPushState();
 
-        await tester.pumpWidget(_harness(cubit));
-        await tester.tap(find.byKey(const Key('open-preferences')));
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(_harness(cubit));
+      await tester.tap(find.byKey(const Key('open-preferences')));
+      await tester.pumpAndSettle();
 
-        await tester.tap(find.byType(Switch).first);
-        await tester.pumpAndSettle();
+      await tester.tap(find.byType(Switch).first);
+      await tester.pumpAndSettle();
 
-        expect(push.writeCount, 1);
-        expect(push.emailEnabled, isTrue);
-        expect(push.pushEnabled, isFalse);
-        expect(find.byType(SnackBar), findsNothing);
-      },
-    );
+      expect(push.writeCount, 1);
+      expect(push.emailEnabled, isTrue);
+      expect(push.pushEnabled, isFalse);
+      expect(find.byType(SnackBar), findsNothing);
+    });
 
     testWidgets(
       'a switch the server refuses is drawn back where the server left it',
@@ -377,18 +376,15 @@ void main() {
 }
 
 /// The sheet needs a customer and a scaffold to open over.
-Widget _harness(NotificationsCubit cubit) => ScreenUtilInit(
-  designSize: const Size(360, 690),
-  builder: (context, _) => BlocProvider.value(
-    value: cubit,
-    child: MaterialApp(
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => TextButton(
-            key: const Key('open-preferences'),
-            onPressed: () => showNotificationPreferencesSheet(context),
-            child: const Text('open'),
-          ),
+Widget _harness(NotificationsCubit cubit) => BlocProvider.value(
+  value: cubit,
+  child: MaterialApp(
+    home: Scaffold(
+      body: Builder(
+        builder: (context) => TextButton(
+          key: const Key('open-preferences'),
+          onPressed: () => showNotificationPreferencesSheet(context),
+          child: const Text('open'),
         ),
       ),
     ),

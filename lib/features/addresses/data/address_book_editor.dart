@@ -11,8 +11,7 @@ import 'package:new_coffee/features/addresses/data/repositories/address_reposito
 /// this editor and keep only what is genuinely theirs: the checkout decides
 /// which address stays selected, the settings screen decides nothing.
 class AddressBookEditor {
-  const AddressBookEditor({required AddressRepository repository})
-    : _repository = repository;
+  const AddressBookEditor({required this._repository});
 
   final AddressRepository _repository;
 

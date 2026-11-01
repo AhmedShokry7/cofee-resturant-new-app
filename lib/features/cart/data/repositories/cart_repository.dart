@@ -25,8 +25,5 @@ abstract class CartRepository {
   /// The write is atomic: the server either stores the whole cart or keeps
   /// the previous one. A failure is reported, never swallowed, so the caller
   /// can tell the customer that the change did not reach the server.
-  Future<void> saveLines({
-    String? branchId,
-    required List<CartLine> lines,
-  });
+  Future<void> saveLines({String? branchId, required List<CartLine> lines});
 }

@@ -42,7 +42,8 @@ String buildSystemPrompt({required AssistantMemory memory}) {
   // and the grounding far better than a paragraph of instructions does. They are
   // plain text on purpose — a single Markdown table in an example is enough to
   // make the model answer every comparison with a table.
-  buffer.write('''
+  buffer.write(
+    '''
 Examples of the right answer, written as plain chat messages:
 
 Customer: مرحبا
@@ -61,7 +62,8 @@ Customer: عندكم حاجه بالمكسرات؟
 Assistant: لا، مفيش حاجة عندنا فيها مكسرات. بس التشيز كيك عندنا وآمن من المكسرات، تحبه؟
 
 Customer: ايه الفرق بين اللاتيه والكابتشينو؟
-Assistant: اللاتيه لبن أكتر ورغوة خفيفة، والكابتشينو رغوة أكتر وأقوى في الطعم. اللاتيه أنعم لو بتحب القهوة سهلة.''');
+Assistant: اللاتيه لبن أكتر ورغوة خفيفة، والكابتشينو رغوة أكتر وأقوى في الطعم. اللاتيه أنعم لو بتحب القهوة سهلة.''',
+  );
   return buffer.toString();
 }
 

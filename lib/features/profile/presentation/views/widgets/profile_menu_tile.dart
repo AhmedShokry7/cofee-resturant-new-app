@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProfileMenuTile extends StatelessWidget {
   const ProfileMenuTile({
@@ -29,13 +28,13 @@ class ProfileMenuTile extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: SpacingTokens.lg.w,
-              vertical: SpacingTokens.md.h,
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
             ),
             child: Row(
               children: [
-                Icon(icon, size: 24.w, color: AppColor.primaryColor),
-                SizedBox(width: SpacingTokens.md.w),
+                Icon(icon, size: AppSpacing.xl, color: AppColor.primaryColor),
+                SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -43,7 +42,7 @@ class ProfileMenuTile extends StatelessWidget {
                     children: [
                       Text(label, style: AppFonts.regular16(context)),
                       if (subtitle != null) ...[
-                        SizedBox(height: 2.h),
+                        SizedBox(height: AppSpacing.xxs),
                         Text(
                           subtitle!,
                           style: AppFonts.regular12(context)
@@ -55,7 +54,7 @@ class ProfileMenuTile extends StatelessWidget {
                 ),
                 Icon(
                   DirectionAwareIcons.forward(context),
-                  size: 20.w,
+                  size: AppSizes.px20,
                   color: AppColor.greyColor,
                 ),
               ],

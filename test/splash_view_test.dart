@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
@@ -12,18 +10,15 @@ import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 
-/// Mirrors app.dart: the entry route is the splash and ScreenUtil wraps the
-/// app, which the destination page needs.
-Widget _app(String targetRoute) => ScreenUtilInit(
-  designSize: AppConstant.designSize,
-  builder: (context, child) => MaterialApp(
-    onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-    routes: {
-      SplashView.routeName: (context) => SplashView(targetRoute: targetRoute),
-      ...AppRoutes.routes,
-    },
-    initialRoute: SplashView.routeName,
-  ),
+/// Mirrors app.dart: the entry route is the splash, and the destination pages
+/// render inside the same MaterialApp.
+Widget _app(String targetRoute) => MaterialApp(
+  onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+  routes: {
+    SplashView.routeName: (context) => SplashView(targetRoute: targetRoute),
+    ...AppRoutes.routes,
+  },
+  initialRoute: SplashView.routeName,
 );
 
 /// Renders the splash on a surface of the given logical size.
@@ -188,9 +183,14 @@ void main() {
 
     expect(find.byType(SplashView), findsOneWidget);
 
-    // Tear the splash down before its timer is due.
+    // Tear the splash down before its timer is due. The distinct key matters:
+    // both roots are MaterialApp, so without it the test would update the
+    // existing navigator instead of disposing the splash with it.
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: Text('replaced'))),
+      const MaterialApp(
+        key: ValueKey('replaced'),
+        home: Scaffold(body: Text('replaced')),
+      ),
     );
     expect(find.byType(SplashView), findsNothing);
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
@@ -96,13 +95,10 @@ Future<void> _setSurface(WidgetTester tester) async {
 
 Future<void> _pumpPage(WidgetTester tester, OrdersRepository repository) {
   return tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(
-        home: RepositoryProvider<OrdersRepository>.value(
-          value: repository,
-          child: const OrdersPage(),
-        ),
+    MaterialApp(
+      home: RepositoryProvider<OrdersRepository>.value(
+        value: repository,
+        child: const OrdersPage(),
       ),
     ),
   );

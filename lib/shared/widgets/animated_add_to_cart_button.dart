@@ -1,14 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Phase of one add-to-cart run, reflected inside the button itself.
 enum _AddToCartStatus { idle, adding, added, error }
@@ -159,7 +158,7 @@ class AnimatedAddToCartIconButton extends StatefulWidget {
   const AnimatedAddToCartIconButton({
     super.key,
     required this.onAdd,
-    this.size = 36,
+    this.size = AppDimensions.addToCartButtonCard,
     this.enabled = true,
     this.onSuccess,
     this.onError,
@@ -223,10 +222,8 @@ class _AddToCartButtonVisual extends StatelessWidget {
   Widget build(BuildContext context) {
     final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final duration = reduceMotion ? Duration.zero : _transitionDuration;
-    final iconSize = compact ? (size ?? 36.w) * 0.5 : 20.w;
-    final idleIcon = compact
-        ? HugeIcons.strokeRoundedAdd01
-        : HugeIcons.strokeRoundedShoppingCart01;
+    final iconSize = compact ? (size ?? AppSizes.px36) * 0.5 : AppSizes.px20;
+    final idleIcon = compact ? AppIcons.add : AppIcons.cart;
 
     final BoxDecoration decoration;
     if (!enabled) {
@@ -260,8 +257,8 @@ class _AddToCartButtonVisual extends StatelessWidget {
       child: AnimatedContainer(
         duration: duration,
         curve: Curves.easeOut,
-        width: compact ? (size ?? 36.w) : double.infinity,
-        height: compact ? (size ?? 36.w) : 52.h,
+        width: compact ? (size ?? AppSizes.px36) : double.infinity,
+        height: compact ? (size ?? AppSizes.px36) : AppDimensions.buttonHeight,
         decoration: decoration,
         child: Center(
           child: AnimatedSwitcher(
@@ -284,7 +281,7 @@ class _AddToCartButtonVisual extends StatelessWidget {
 
   BorderRadius get _radius => compact
       ? const BorderRadius.all(Radius.circular(999))
-      : BorderRadius.circular(14.r);
+      : BorderRadius.circular(AppRadius.r14);
 
   Widget _buildContent(
     BuildContext context,
@@ -304,12 +301,12 @@ class _AddToCartButtonVisual extends StatelessWidget {
       ),
       _AddToCartStatus.added => (
         key: 'added',
-        icon: HugeIcons.strokeRoundedCheckmarkCircle01,
+        icon: AppIcons.checkmarkCircle,
         text: S.added,
       ),
       _AddToCartStatus.error => (
         key: 'error',
-        icon: HugeIcons.strokeRoundedAlertCircle,
+        icon: AppIcons.alertCircle,
         text: label,
       ),
       _AddToCartStatus.idle => (key: 'idle', icon: idleIcon, text: label),
@@ -324,7 +321,7 @@ class _AddToCartButtonVisual extends StatelessWidget {
         else
           Icon(phase.icon, size: iconSize, color: color),
         if (!compact) ...[
-          SizedBox(width: SpacingTokens.sm.w),
+          SizedBox(width: AppSpacing.sm),
           Flexible(
             child: Text(
               phase.text,

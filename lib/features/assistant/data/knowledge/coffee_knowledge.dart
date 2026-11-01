@@ -32,8 +32,7 @@ class KnowledgeArticle {
   final List<String> keywordsAr;
 
   /// The article in the customer's language.
-  String bodyFor({required bool arabic}) =>
-      arabic ? (bodyAr ?? body) : body;
+  String bodyFor({required bool arabic}) => arabic ? (bodyAr ?? body) : body;
 
   /// The article title in the customer's language.
   String titleFor({required bool arabic}) =>
@@ -50,15 +49,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'Espresso basics',
     titleAr: 'أساسيات الإسبريسو',
     keywords: ['espresso', 'shot', 'strong', 'intense', 'crema', 'bold'],
-    keywordsAr: [
-      'اسبريسو',
-      'اسبرسو',
-      'شوت',
-      'جرعه',
-      'قوي',
-      'مركز',
-      'كرما',
-    ],
+    keywordsAr: ['اسبريسو', 'اسبرسو', 'شوت', 'جرعه', 'قوي', 'مركز', 'كرما'],
     body:
         'Espresso is a concentrated 25 to 30 ml shot brewed by forcing hot water through finely ground coffee. '
         'Look for a thick golden crema on top: that is the sign of a fresh, well-pulled shot.',
@@ -72,14 +63,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'What is a cappuccino?',
     titleAr: 'إيه الكابتشينو؟',
     keywords: ['cappuccino', 'foam', 'classic', 'milk foam'],
-    keywordsAr: [
-      'كابتشينو',
-      'كبشينو',
-      'رغوه',
-      'زبد',
-      'كلاسيك',
-      'فرق',
-    ],
+    keywordsAr: ['كابتشينو', 'كبشينو', 'رغوه', 'زبد', 'كلاسيك', 'فرق'],
     body:
         'A cappuccino is one part espresso, one part steamed milk and one part airy milk foam. '
         'It tastes stronger and drier than a latte, and it is best enjoyed fresh while the foam holds.',
@@ -93,15 +77,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'What is a latte?',
     titleAr: 'إيه اللاتيه؟',
     keywords: ['latte', 'milky', 'mild', 'smooth', 'creamy'],
-    keywordsAr: [
-      'لاتيه',
-      'لاتي',
-      'لبن',
-      'حلي',
-      'ناعم',
-      'سلس',
-      'فرق',
-    ],
+    keywordsAr: ['لاتيه', 'لاتي', 'لبن', 'حلي', 'ناعم', 'سلس', 'فرق'],
     body:
         'A latte is mostly steamed milk with a single or double espresso shot, finished with a thin layer of foam. '
         'Pick it when you want something smooth, mild and creamy.',
@@ -115,14 +91,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'What is a mocha?',
     titleAr: 'إيه الموكا؟',
     keywords: ['mocha', 'chocolate', 'sweet', 'cocoa', 'dessert'],
-    keywordsAr: [
-      'موكا',
-      'موكه',
-      'شوكولاتة',
-      'كاكاو',
-      'حلو',
-      'حلوا',
-    ],
+    keywordsAr: ['موكا', 'موكه', 'شوكولاتة', 'كاكاو', 'حلو', 'حلوا'],
     body:
         'A mocha is espresso mixed with chocolate and steamed milk, often topped with whipped cream. '
         'It is the sweetest espresso drink we make, great as an afternoon treat.',
@@ -135,17 +104,15 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     id: 'cold-coffee-guide',
     title: 'Cold coffee options',
     titleAr: 'خيارات القهوة الباردة',
-    keywords: ['cold', 'iced', 'summer', 'hot weather', 'refreshing', 'cold brew'],
-    keywordsAr: [
-      'بارد',
-      'بارده',
-      'مثلج',
-      'متلج',
-      'صيف',
-      'حر',
-      'منعش',
-      'اترطب',
+    keywords: [
+      'cold',
+      'iced',
+      'summer',
+      'hot weather',
+      'refreshing',
+      'cold brew',
     ],
+    keywordsAr: ['بارد', 'بارده', 'مثلج', 'متلج', 'صيف', 'حر', 'منعش', 'اترطب'],
     body:
         'For hot days, go for an Iced Latte for creamy refreshment, or a Chocolate Milkshake when you want '
         'something indulgent. Cold drinks keep their flavor best when served over plenty of ice.',
@@ -182,14 +149,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'Grind size guide',
     titleAr: 'دليل درجة الطحن',
     keywords: ['grind', 'grinder', 'fine', 'coarse', 'grounds'],
-    keywordsAr: [
-      'طحن',
-      'مطحنة',
-      'ناعم',
-      'خشن',
-      'مطحون',
-      'درجه الطحن',
-    ],
+    keywordsAr: ['طحن', 'مطحنة', 'ناعم', 'خشن', 'مطحون', 'درجه الطحن'],
     body:
         'Match the grind to the brew: fine like sugar for espresso, medium for drip, and coarse like sea salt '
         'for French press. Too fine tastes bitter, too coarse tastes sour and weak.',
@@ -203,12 +163,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'French press at home',
     titleAr: 'الـ French press في البيت',
     keywords: ['french press', 'press', 'home', 'brew at home', 'plunger'],
-    keywordsAr: [
-      'فرنش press',
-      'كبسه',
-      'في البيت',
-      'اغلي في البيت',
-    ],
+    keywordsAr: ['فرنش press', 'كبسه', 'في البيت', 'اغلي في البيت'],
     body:
         'Use coarse coffee, 1 part coffee to 15 parts water just off the boil. Steep 4 minutes, break the '
         'crust, skim the foam, then press slowly. Full-bodied and forgiving.',
@@ -222,13 +177,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'Pour over at home',
     titleAr: 'الـ Pour over في البيت',
     keywords: ['pour over', 'v60', 'drip', 'filter', 'pourover'],
-    keywordsAr: [
-      'pour over',
-      'فلتر',
-      'مقهى',
-      'في البيت',
-      'قمعه',
-    ],
+    keywordsAr: ['pour over', 'فلتر', 'مقهى', 'في البيت', 'قمعه'],
     body:
         'Use medium-fine coffee and water around 92 to 94 C. Bloom with a little water for 30 seconds, then '
         'pour in slow circles. Total brew time is about 2 and a half to 3 minutes for a clean, bright cup.',
@@ -265,7 +214,14 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     id: 'decaf-guide',
     title: 'Decaf options',
     titleAr: 'خيارات بدون كافيين',
-    keywords: ['decaf', 'decaffeinated', 'low caffeine', 'no caffeine', 'evening', 'night'],
+    keywords: [
+      'decaf',
+      'decaffeinated',
+      'low caffeine',
+      'no caffeine',
+      'evening',
+      'night',
+    ],
     keywordsAr: [
       'ديكاف',
       'بلا كافيين',
@@ -287,14 +243,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'Milk options',
     titleAr: 'خيارات اللبن',
     keywords: ['milk', 'oat', 'almond', 'soy', 'lactose', 'dairy', 'skim'],
-    keywordsAr: [
-      'لبن',
-      'حليب',
-      'شوفان',
-      'لوز',
-      'صويا',
-      'لاكتوز',
-    ],
+    keywordsAr: ['لبن', 'حليب', 'شوفان', 'لوز', 'صويا', 'لاكتوز'],
     body:
         'Whole milk gives the creamiest foam, while oat milk steams closest to dairy. Tell us if you are '
         'lactose intolerant and we will happily swap your milk at no fuss.',
@@ -319,8 +268,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     body:
         'Our Green Tea is light and calming with natural antioxidants. Masala Tea is warm and spiced with '
         'cardamom, ginger and cinnamon, blended with milk for comfort.',
-    bodyAr:
-        'الشاي الأخضر خفيف ومريح وفيه مضادات أكسدة طبيعية. ومالالا دافي بالهيل والزنجبيل والقرفة، مخلوط بلبن.',
+    bodyAr: 'الشاي الأخضر خفيف ومريح وفيه مضادات أكسدة طبيعية. ومالالا دافي بالهيل والزنجبيل والقرفة، مخلوط بلبن.',
     topic: 'drinks',
   ),
   KnowledgeArticle(
@@ -328,13 +276,7 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     title: 'Keeping beans fresh',
     titleAr: 'تخزين البن طازج',
     keywords: ['store', 'storage', 'fresh', 'keep', 'beans', 'stale'],
-    keywordsAr: [
-      'تخزين',
-      'احفظ',
-      'طازج',
-      'البن',
-      'يبوظ',
-    ],
+    keywordsAr: ['تخزين', 'احفظ', 'طازج', 'البن', 'يبوظ'],
     body:
         'Keep beans in an airtight container at room temperature, away from light and moisture. '
         'Buy small amounts often and grind right before brewing for the best flavor.',
@@ -347,7 +289,17 @@ const List<KnowledgeArticle> coffeeKnowledge = [
     id: 'snacks-pairing',
     title: 'What to eat with coffee',
     titleAr: 'إيه اللي يتاكل مع القهوة',
-    keywords: ['snack', 'eat', 'food', 'pair', 'cookie', 'croissant', 'cake', 'brownie', 'hungry'],
+    keywords: [
+      'snack',
+      'eat',
+      'food',
+      'pair',
+      'cookie',
+      'croissant',
+      'cake',
+      'brownie',
+      'hungry',
+    ],
     keywordsAr: [
       'اكل',
       'وجبه',

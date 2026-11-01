@@ -98,16 +98,19 @@ class SupabaseAddressRepository implements AddressRepository {
       throw StateError('Addresses need a signed-in account.');
     }
     final rows =
-        await client.from('customer_addresses').insert(
-              addressPayload(
-                userId: userId,
-                label: label,
-                details: details,
-                latitude: latitude,
-                longitude: longitude,
-                isDefault: isDefault,
-              ),
-            ).select()
+        await client
+                .from('customer_addresses')
+                .insert(
+                  addressPayload(
+                    userId: userId,
+                    label: label,
+                    details: details,
+                    latitude: latitude,
+                    longitude: longitude,
+                    isDefault: isDefault,
+                  ),
+                )
+                .select()
             as List;
     if (rows.isEmpty || rows.first is! Map<String, dynamic>) {
       throw StateError('Could not save the address.');
@@ -126,15 +129,15 @@ class SupabaseAddressRepository implements AddressRepository {
     final client = _requireClient();
     final rows =
         await client
-            .from('customer_addresses')
-            .update({
-              'label': label.trim(),
-              'details': details.trim(),
-              'latitude': ?latitude,
-              'longitude': ?longitude,
-            })
-            .eq('id', id)
-            .select()
+                .from('customer_addresses')
+                .update({
+                  'label': label.trim(),
+                  'details': details.trim(),
+                  'latitude': ?latitude,
+                  'longitude': ?longitude,
+                })
+                .eq('id', id)
+                .select()
             as List;
     if (rows.isEmpty || rows.first is! Map<String, dynamic>) {
       throw StateError('Could not update the address.');
@@ -160,12 +163,15 @@ class SupabaseAddressRepository implements AddressRepository {
     // nothing and the empty result is reported as a failure instead of a
     // silent success that would drop the address from the local list while
     // leaving it readable on the server.
-    final rows = await client
-        .from('customer_addresses')
-        .update({'archived_at': DateTime.now().toUtc().toIso8601String()})
-        .eq('id', id)
-        .select()
-        as List;
+    final rows =
+        await client
+                .from('customer_addresses')
+                .update({
+                  'archived_at': DateTime.now().toUtc().toIso8601String(),
+                })
+                .eq('id', id)
+                .select()
+            as List;
     if (rows.isEmpty) {
       throw StateError('Could not delete the address.');
     }

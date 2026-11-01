@@ -1,7 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
 
@@ -135,7 +135,7 @@ class _UnavailableDbImage extends StatelessWidget {
     color: AppColor.surfaceColor,
     child: Center(
       child: Icon(
-        HugeIcons.strokeRoundedImageNotFound01,
+        AppIcons.imageMissing,
         color: AppColor.greyColor,
         size: iconSize,
       ),

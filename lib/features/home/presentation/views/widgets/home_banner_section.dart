@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/banner/banner_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_dots.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeBannerSection extends StatelessWidget {
   const HomeBannerSection({super.key});
@@ -67,7 +66,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
       child: Column(
         children: [
           SizedBox(
-            height: 164.h,
+            height: AppDimensions.homeBannerHeight,
             child: PageView.builder(
               controller: _controller,
               itemCount: widget.banners.length,
@@ -85,16 +84,13 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               ),
             ),
           ),
-          SizedBox(height: SpacingTokens.md.h),
+          SizedBox(height: AppSpacing.md),
           BlocBuilder<BannerCubit, BannerState>(
-            builder: (context, state) => BannerDots(
-              count: widget.banners.length,
-              current: state.index,
-            ),
+            builder: (context, state) =>
+                BannerDots(count: widget.banners.length, current: state.index),
           ),
         ],
       ),
     );
   }
 }
-

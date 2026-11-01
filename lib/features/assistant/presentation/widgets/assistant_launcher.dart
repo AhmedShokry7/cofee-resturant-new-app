@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -13,6 +12,7 @@ import 'package:new_coffee/features/assistant/presentation/views/assistant_sheet
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Opens the assistant for anybody, signed in or not.
 ///
@@ -31,7 +31,7 @@ Future<void> openAssistantSheet(
     backgroundColor: AppColor.whiteColor,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r24)),
     ),
     builder: (_) => BlocProvider(
       create: (_) => AssistantCubit(

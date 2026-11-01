@@ -15,8 +15,9 @@ void main() {
       'Needs --dart-define SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and '
       'SCHEMAS_EXPOSED=true';
 
-  final String? skip =
-      (!AppConfig.isSupabaseConfigured || !schemasExposed) ? needsSetup : null;
+  final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
+      ? needsSetup
+      : null;
 
   setUpAll(() async {
     if (skip != null) return;
@@ -30,10 +31,10 @@ void main() {
     final branches = await repository.activeBranches();
 
     expect(branches.map((branch) => branch.code), ['MAIN', 'JEDDAH']);
-    expect(
-      branches.map((branch) => branch.nameEn),
-      ['Main Branch', 'Jeddah Branch'],
-    );
+    expect(branches.map((branch) => branch.nameEn), [
+      'Main Branch',
+      'Jeddah Branch',
+    ]);
     expect(branches.every((branch) => branch.id.isNotEmpty), isTrue);
   }, skip: skip);
 }

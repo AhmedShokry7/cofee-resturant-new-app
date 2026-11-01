@@ -21,15 +21,15 @@ class AssistantMemory {
     List<String>? lastSuggestedIds,
     List<String>? dismissedIds,
     OrderDraft? draft,
-  })  : categoryScores = categoryScores ?? {},
-        sourceScores = sourceScores ?? {},
-        topicCounts = topicCounts ?? {},
-        productScores = productScores ?? {},
-        recentQueries = recentQueries ?? [],
-        lastSuggestedIds = lastSuggestedIds ?? [],
-         dismissedIds = dismissedIds ?? [],
-         draft = draft ?? OrderDraft(),
-         replyArabic = replyArabic ?? AppLocale.instance.isArabic;
+  }) : categoryScores = categoryScores ?? {},
+       sourceScores = sourceScores ?? {},
+       topicCounts = topicCounts ?? {},
+       productScores = productScores ?? {},
+       recentQueries = recentQueries ?? [],
+       lastSuggestedIds = lastSuggestedIds ?? [],
+       dismissedIds = dismissedIds ?? [],
+       draft = draft ?? OrderDraft(),
+       replyArabic = replyArabic ?? AppLocale.instance.isArabic;
 
   static const _storageKey = 'assistant_memory_v1';
   static const _maxRecent = 10;
@@ -84,17 +84,21 @@ class AssistantMemory {
         totalChats: (json['totalChats'] as num?)?.toInt() ?? 0,
         lastTopic: json['lastTopic']?.toString(),
         pendingQuestion: json['pendingQuestion']?.toString(),
-        replyArabic: (json['replyArabic'] as bool?) ?? AppLocale.instance.isArabic,
+        replyArabic:
+            (json['replyArabic'] as bool?) ?? AppLocale.instance.isArabic,
         pendingDessertSize: json['pendingDessertSize']?.toString(),
-        recentQueries: (json['recentQueries'] as List?)
+        recentQueries:
+            (json['recentQueries'] as List?)
                 ?.map((dynamic item) => item.toString())
                 .toList() ??
             [],
-        lastSuggestedIds: (json['lastSuggestedIds'] as List?)
+        lastSuggestedIds:
+            (json['lastSuggestedIds'] as List?)
                 ?.map((dynamic item) => item.toString())
                 .toList() ??
             [],
-        dismissedIds: (json['dismissedIds'] as List?)
+        dismissedIds:
+            (json['dismissedIds'] as List?)
                 ?.map((dynamic item) => item.toString())
                 .toList() ??
             [],
@@ -150,16 +154,16 @@ class AssistantMemory {
     totalChats += 1;
     recentQueries = [...recentQueries, query];
     if (recentQueries.length > _maxRecent) {
-      recentQueries = recentQueries.sublist(
-        recentQueries.length - _maxRecent,
-      );
+      recentQueries = recentQueries.sublist(recentQueries.length - _maxRecent);
     }
   }
 
   /// Positive weights for liked categories, negative drift for disliked ones.
   void recordCategory(String category, [double weight = 1]) {
-    categoryScores[category] =
-        ((categoryScores[category] ?? 0) + weight).clamp(-5, 5);
+    categoryScores[category] = ((categoryScores[category] ?? 0) + weight).clamp(
+      -5,
+      5,
+    );
   }
 
   void recordTopic(String topic) {
@@ -170,8 +174,10 @@ class AssistantMemory {
   /// Remembers a specific product the user engaged with
   /// (viewed, tapped in chat, ordered).
   void recordProduct(String productId, [double weight = 1]) {
-    productScores[productId] =
-        ((productScores[productId] ?? 0) + weight).clamp(-5, 10);
+    productScores[productId] = ((productScores[productId] ?? 0) + weight).clamp(
+      -5,
+      10,
+    );
   }
 
   /// Rejects a product ("مش عايز لاتيه"). Kept small and persisted.
@@ -192,8 +198,10 @@ class AssistantMemory {
   /// Explicit feedback: +1 moves a source up, -1 moves it down.
   void recordFeedback(String sourceId, bool liked) {
     final delta = liked ? 1.0 : -1.5;
-    sourceScores[sourceId] =
-        ((sourceScores[sourceId] ?? 0) + delta).clamp(-5, 5);
+    sourceScores[sourceId] = ((sourceScores[sourceId] ?? 0) + delta).clamp(
+      -5,
+      5,
+    );
   }
 
   /// Boost multiplier learned for a source: 0.5x (disliked) .. 1.5x (loved).

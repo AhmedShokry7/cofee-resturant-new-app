@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -21,29 +20,28 @@ class EmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: EdgeInsets.all(SpacingTokens.xl.w),
+        padding: EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              size: 64.w,
+              size: AppSizes.px64,
               color: AppColor.greyColor.withValues(alpha: 0.5),
             ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Text(
               title,
               textAlign: TextAlign.center,
               style: AppFonts.semiBold16(context),
             ),
             if (subtitle != null) ...[
-              SizedBox(height: SpacingTokens.xs.h),
+              SizedBox(height: AppSpacing.xs),
               Text(
                 subtitle!,
                 textAlign: TextAlign.center,
-                style: AppFonts.regular14(
-                  context,
-                ).copyWith(color: AppColor.greyColor),
+                style: AppFonts.regular14(context)
+                    .copyWith(color: AppColor.greyColor),
               ),
             ],
           ],
@@ -52,4 +50,3 @@ class EmptyState extends StatelessWidget {
     );
   }
 }
-

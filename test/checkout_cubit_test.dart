@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -1164,28 +1163,25 @@ void main() {
     'a failed set-default shows a snackbar on the shipping addresses screen',
     (tester) async {
       await tester.pumpWidget(
-        ScreenUtilInit(
-          designSize: const Size(360, 690),
-          builder: (context, _) => MaterialApp(
-            home: BlocProvider<CheckoutCubit>(
-              create: (_) => _cubit(
-                _FakeOrders(result: _placed()),
-                addressesRepository: _FakeAddresses([
-                  const AddressModel(
-                    id: 'a1',
-                    label: 'Home',
-                    details: 'Street 1',
-                    isDefault: true,
-                  ),
-                  const AddressModel(
-                    id: 'a2',
-                    label: 'Work',
-                    details: 'Street 2',
-                  ),
-                ])..setDefaultError = StateError('rpc failed'),
-              ),
-              child: const Scaffold(body: ShippingAddressesPageBody()),
+        MaterialApp(
+          home: BlocProvider<CheckoutCubit>(
+            create: (_) => _cubit(
+              _FakeOrders(result: _placed()),
+              addressesRepository: _FakeAddresses([
+                const AddressModel(
+                  id: 'a1',
+                  label: 'Home',
+                  details: 'Street 1',
+                  isDefault: true,
+                ),
+                const AddressModel(
+                  id: 'a2',
+                  label: 'Work',
+                  details: 'Street 2',
+                ),
+              ])..setDefaultError = StateError('rpc failed'),
             ),
+            child: const Scaffold(body: ShippingAddressesPageBody()),
           ),
         ),
       );

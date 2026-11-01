@@ -16,10 +16,7 @@ void main() {
 
   test('active coupons require a configured backend', () async {
     const repository = CouponRepositoryImpl();
-    await expectLater(
-      repository.activeCoupons(),
-      throwsA(isA<StateError>()),
-    );
+    await expectLater(repository.activeCoupons(), throwsA(isA<StateError>()));
   });
 
   test('coupon validation requires a configured backend', () async {

@@ -64,11 +64,14 @@ void main() {
       expect(category, isNot(product));
     });
 
-    test('an unknown scope still reads as a scope problem, not "invalid code"', () {
-      final message = S.couponRejectedReason('scope_product_no_match', '');
-      expect(message.toLowerCase(), contains('cart'));
-      expect(message, isNot(S.invalidCouponCode));
-    });
+    test(
+      'an unknown scope still reads as a scope problem, not "invalid code"',
+      () {
+        final message = S.couponRejectedReason('scope_product_no_match', '');
+        expect(message.toLowerCase(), contains('cart'));
+        expect(message, isNot(S.invalidCouponCode));
+      },
+    );
 
     test('an empty reason falls back to the legacy message translation', () {
       expect(
@@ -141,11 +144,14 @@ void main() {
       expect(coupon.scopeLabel, 'Cold drinks, Desserts');
     });
 
-    test('a missing translation falls back instead of rendering an empty chip', () {
-      final coupon = scoped(ar: ['مشروبات باردة'], en: const []);
-      AppLocale.instance.debugSet(AppLanguage.english);
-      expect(coupon.scopeLabel, 'مشروبات باردة');
-    });
+    test(
+      'a missing translation falls back instead of rendering an empty chip',
+      () {
+        final coupon = scoped(ar: ['مشروبات باردة'], en: const []);
+        AppLocale.instance.debugSet(AppLanguage.english);
+        expect(coupon.scopeLabel, 'مشروبات باردة');
+      },
+    );
 
     test('blank names are not treated as content', () {
       final coupon = scoped(en: ['Espresso', '  ']);
@@ -156,11 +162,7 @@ void main() {
     test('withUsage carries the scope across', () {
       final base = CouponModel(id: 'c1', code: 'ESP', discountValue: 50);
       final merged = base.withUsage(
-        scoped(
-          appliesTo: 'product',
-          ar: ['إسبريسو'],
-          en: ['Espresso'],
-        ),
+        scoped(appliesTo: 'product', ar: ['إسبريسو'], en: ['Espresso']),
       );
       expect(merged.appliesTo, 'product');
       expect(merged.isScoped, isTrue);

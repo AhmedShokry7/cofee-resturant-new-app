@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 
@@ -40,11 +40,7 @@ class ProfileAvatar extends StatelessWidget {
         : CircleAvatar(
             radius: radius,
             backgroundColor: AppColor.lightGreyColor,
-            child: Icon(
-              HugeIcons.strokeRoundedUser,
-              size: radius,
-              color: AppColor.greyColor,
-            ),
+            child: Icon(AppIcons.user, size: radius, color: AppColor.greyColor),
           );
 
     if (!state.isUploading) return avatar;
@@ -54,7 +50,7 @@ class ProfileAvatar extends StatelessWidget {
         avatar,
         Positioned.fill(
           child: ColoredBox(
-            color: Colors.black.withValues(alpha: 0.35),
+            color: AppColor.photoScrim,
             child: Center(
               child: SizedBox(
                 width: radius * 0.6,

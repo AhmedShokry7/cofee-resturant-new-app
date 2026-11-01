@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
-/// Skeleton mirroring [ProductDetailsBody]: full-bleed 300.h image flush
+/// Skeleton mirroring [ProductDetailsBody]: full-bleed [AppDimensions.productHeroHeight] image flush
 /// under the AppBar, then the padded info column — category line, title +
 /// price row, quantity row, description block and two option-group blocks
 /// with chip rows. Same paddings, gaps and radii as the loaded page, so real
@@ -26,7 +24,10 @@ class ProductDetailsSkeleton extends StatelessWidget {
       children: [
         // Full-bleed hero, unchanged.
         Shimmer(
-          child: ShimmerBox(width: double.infinity, height: 300.h),
+          child: ShimmerBox(
+            width: double.infinity,
+            height: AppDimensions.productHeroHeight,
+          ),
         ),
         // Rounded sheet that overlaps the hero, mirroring the loaded page so
         // real content drops in without a layout shift.
@@ -35,20 +36,22 @@ class ProductDetailsSkeleton extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: surface,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(AppRadius.r24),
+              ),
             ),
             padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.lg.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.lg.h,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Shimmer(child: ShimmerLine(width: 100, height: 13)),
-                SizedBox(height: 4.h),
+                SizedBox(height: AppSpacing.xs),
                 Shimmer(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,61 +59,64 @@ class ProductDetailsSkeleton extends StatelessWidget {
                       const Expanded(
                         child: ShimmerLine(widthFactor: 0.9, height: 19),
                       ),
-                      SizedBox(width: SpacingTokens.sm.w),
+                      SizedBox(width: AppSpacing.sm),
                       ShimmerBox(
-                        width: 72.w,
-                        height: 18.h,
-                        borderRadius: BorderRadius.circular(8.r),
+                        width: AppSizes.px72,
+                        height: AppSizes.px18,
+                        borderRadius: BorderRadius.circular(AppRadius.r8),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 Shimmer(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const ShimmerLine(width: 90, height: 15),
                       ShimmerBox(
-                        width: 120.w,
-                        height: 36.h,
-                        borderRadius: BorderRadius.circular(100.r),
+                        width: AppDimensions.skeletonChipWidth,
+                        height: AppSizes.px36,
+                        borderRadius: BorderRadius.circular(AppRadius.pill),
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const Shimmer(child: ShimmerLine(width: 140, height: 15)),
-                SizedBox(height: SpacingTokens.sm.h),
+                SizedBox(height: AppSpacing.sm),
                 const Shimmer(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ShimmerLine(widthFactor: 1, height: 13),
-                      SizedBox(height: 6),
+                      SizedBox(height: AppDimensions.skeletonLineGap),
                       ShimmerLine(widthFactor: 1, height: 13),
-                      SizedBox(height: 6),
+                      SizedBox(height: AppDimensions.skeletonLineGap),
                       ShimmerLine(widthFactor: 0.6, height: 13),
                     ],
                   ),
                 ),
                 for (var group = 0; group < 2; group++) ...[
-                  SizedBox(height: SpacingTokens.lg.h),
+                  SizedBox(height: AppSpacing.lg),
                   Shimmer(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const ShimmerLine(width: 110, height: 15),
-                        SizedBox(height: SpacingTokens.xs.h),
+                        const ShimmerLine(
+                          width: AppDimensions.skeletonChipShortWidth,
+                          height: 15,
+                        ),
+                        SizedBox(height: AppSpacing.xs),
                         Row(
                           children: [
                             for (var i = 0; i < 3; i++) ...[
-                              if (i > 0) SizedBox(width: SpacingTokens.sm.w),
+                              if (i > 0) SizedBox(width: AppSpacing.sm),
                               Expanded(
                                 child: ShimmerBox(
-                                  height: 52.h,
+                                  height: AppDimensions.buttonHeight,
                                   borderRadius: BorderRadius.circular(
-                                    LayoutTokens.cardRadius.r,
+                                    AppDimensions.cardRadius,
                                   ),
                                 ),
                               ),
@@ -121,9 +127,9 @@ class ProductDetailsSkeleton extends StatelessWidget {
                     ),
                   ),
                 ],
-                SizedBox(height: SpacingTokens.xl.h),
+                SizedBox(height: AppSpacing.xl),
                 const ProductsCarouselSkeleton(itemCount: 3),
-                SizedBox(height: SpacingTokens.lg.h),
+                SizedBox(height: AppSpacing.lg),
                 const Divider(),
               ],
             ),
@@ -134,9 +140,9 @@ class ProductDetailsSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton mirroring the bundle details body: full-width 200.h hero radius
-/// 16.r, title / subtitle lines, "what's inside" rows (48.w thumbs radius
-/// 8.r) and three price rows.
+/// Skeleton mirroring the bundle details body: full-width [AppDimensions.bundleHeroHeight] hero radius
+/// [AppRadius.r16], title / subtitle lines, "what's inside" rows ([AppSpacing.xxxl] thumbs radius
+/// [AppRadius.r8]) and three price rows.
 class BundleDetailsSkeleton extends StatelessWidget {
   const BundleDetailsSkeleton({super.key});
 
@@ -149,68 +155,76 @@ class BundleDetailsSkeleton extends StatelessWidget {
         Shimmer(
           child: ShimmerBox(
             width: double.infinity,
-            height: 200.h,
-            borderRadius: BorderRadius.circular(16.r),
+            height: AppDimensions.bundleHeroHeight,
+            borderRadius: BorderRadius.circular(AppRadius.r16),
           ),
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         const Shimmer(child: ShimmerLine(width: 200, height: 19)),
-        SizedBox(height: 4.h),
+        SizedBox(height: AppSpacing.xs),
         const Shimmer(child: ShimmerLine(widthFactor: 0.7, height: 13)),
-        SizedBox(height: SpacingTokens.lg.h),
-        const Shimmer(child: ShimmerLine(width: 120, height: 15)),
-        SizedBox(height: SpacingTokens.sm.h),
+        SizedBox(height: AppSpacing.lg),
+        const Shimmer(
+          child: ShimmerLine(
+            width: AppDimensions.skeletonChipWidth,
+            height: 15,
+          ),
+        ),
+        SizedBox(height: AppSpacing.sm),
         for (var i = 0; i < 3; i++)
           Container(
-            margin: EdgeInsets.only(bottom: SpacingTokens.sm.h),
-            padding: EdgeInsets.all(SpacingTokens.sm.w),
-            decoration: skeletonCardDecoration(context, radius: 12),
+            margin: EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: EdgeInsets.all(AppSpacing.sm),
+            decoration: skeletonCardDecoration(context, radius: AppRadius.r12),
             child: Shimmer(
               child: Row(
                 children: [
                   ShimmerBox(
-                    width: 48.w,
-                    height: 48.w,
-                    borderRadius: BorderRadius.circular(8.r),
+                    width: AppSpacing.xxxl,
+                    height: AppSpacing.xxxl,
+                    borderRadius: BorderRadius.circular(AppRadius.r8),
                   ),
-                  SizedBox(width: SpacingTokens.sm.w),
+                  SizedBox(width: AppSpacing.sm),
                   const Expanded(
                     child: ShimmerLine(widthFactor: 0.8, height: 13),
                   ),
                   ShimmerBox(
-                    width: 52.w,
-                    height: 13.h,
-                    borderRadius: BorderRadius.circular(6.r),
+                    width: AppSizes.px52,
+                    height: AppSizes.px13,
+                    borderRadius: BorderRadius.circular(AppRadius.r6),
                   ),
                 ],
               ),
             ),
           ),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         for (var i = 0; i < 3; i++) ...[
           Shimmer(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const ShimmerLine(width: 110, height: 13),
+                const ShimmerLine(
+                  width: AppDimensions.skeletonChipShortWidth,
+                  height: 13,
+                ),
                 ShimmerBox(
-                  width: 70.w,
-                  height: 15.h,
-                  borderRadius: BorderRadius.circular(6.r),
+                  width: AppDimensions.skeletonTagWidth,
+                  height: AppSizes.px15,
+                  borderRadius: BorderRadius.circular(AppRadius.r6),
                 ),
               ],
             ),
           ),
-          SizedBox(height: SpacingTokens.xs.h),
+          SizedBox(height: AppSpacing.xs),
         ],
-        SizedBox(height: SpacingTokens.xl.h),
+        SizedBox(height: AppSpacing.xl),
         const ProductsCarouselSkeleton(itemCount: 3),
       ],
     );
   }
 }
 
-/// Single skeleton row mirroring [OrderCard]: 72.w thumbnail radius 8.r,
+/// Single skeleton row mirroring [OrderCard]: [AppSizes.px72] thumbnail radius [AppRadius.r8],
 /// order-number / name / price lines and the action pill slot.
 class OrderCardSkeleton extends StatelessWidget {
   const OrderCardSkeleton({super.key});
@@ -218,34 +232,38 @@ class OrderCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: skeletonCardDecoration(context, radius: 12),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r12),
       child: Shimmer(
         child: Row(
           children: [
             ShimmerBox(
-              width: 72.w,
-              height: 72.w,
-              borderRadius: BorderRadius.circular(8.r),
+              width: AppSizes.px72,
+              height: AppSizes.px72,
+              borderRadius: BorderRadius.circular(AppRadius.r8),
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerLine(width: 90, height: 11),
-                  SizedBox(height: 4),
+                  SizedBox(height: AppSpacing.xs),
                   ShimmerLine(widthFactor: 0.95, height: 15),
-                  SizedBox(height: 6),
-                  ShimmerLine(width: 80, height: 13, radius: 6),
+                  SizedBox(height: AppDimensions.skeletonLineGap),
+                  ShimmerLine(
+                    width: AppDimensions.skeletonLineBrief,
+                    height: AppDimensions.skeletonCaptionHeight,
+                    radius: AppRadius.r6,
+                  ),
                 ],
               ),
             ),
             ShimmerBox(
-              width: 84.w,
-              height: 30.h,
-              borderRadius: BorderRadius.circular(100.r),
+              width: AppDimensions.skeletonPillWidth,
+              height: AppSizes.px30,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ],
         ),
@@ -271,27 +289,27 @@ class OrdersSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton row mirroring [NotificationTile]: 44.w icon box radius
-/// 12.r, title + time row and body lines.
+/// Single skeleton row mirroring [NotificationTile]: [AppSizes.px44] icon box radius
+/// [AppRadius.r12], title + time row and body lines.
 class NotificationTileSkeleton extends StatelessWidget {
   const NotificationTileSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: skeletonCardDecoration(context, radius: 16),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r16),
       child: Shimmer(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ShimmerBox(
-              width: 44.w,
-              height: 44.w,
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              width: AppSizes.px44,
+              height: AppSizes.px44,
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,17 +319,17 @@ class NotificationTileSkeleton extends StatelessWidget {
                       const Expanded(
                         child: ShimmerLine(widthFactor: 0.9, height: 15),
                       ),
-                      SizedBox(width: SpacingTokens.sm.w),
+                      SizedBox(width: AppSpacing.sm),
                       ShimmerBox(
-                        width: 44.w,
-                        height: 11.h,
-                        borderRadius: BorderRadius.circular(6.r),
+                        width: AppSizes.px44,
+                        height: AppSizes.px11,
+                        borderRadius: BorderRadius.circular(AppRadius.r6),
                       ),
                     ],
                   ),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: AppSpacing.xs),
                   const ShimmerLine(widthFactor: 1, height: 13),
-                  SizedBox(height: 4.h),
+                  SizedBox(height: AppSpacing.xs),
                   const ShimmerLine(widthFactor: 0.7, height: 13),
                 ],
               ),
@@ -340,7 +358,7 @@ class NotificationsSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton card mirroring [CouponCard]: 44.w circle icon, title /
+/// Single skeleton card mirroring [CouponCard]: [AppSizes.px44] circle icon, title /
 /// description / discount lines and the copy-code footer strip.
 class CouponCardSkeleton extends StatelessWidget {
   const CouponCardSkeleton({super.key});
@@ -348,28 +366,32 @@ class CouponCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.lg.h),
+      margin: EdgeInsets.only(bottom: AppSpacing.lg),
       clipBehavior: Clip.antiAlias,
-      decoration: skeletonCardDecoration(context, radius: 16),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r16),
       child: Shimmer(
         child: Column(
           children: [
             Padding(
-              padding: EdgeInsets.all(SpacingTokens.md.w),
+              padding: EdgeInsets.all(AppSpacing.md),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShimmerCircle(size: 44.w),
-                  SizedBox(width: SpacingTokens.md.w),
+                  ShimmerCircle(size: AppSizes.px44),
+                  SizedBox(width: AppSpacing.md),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         ShimmerLine(widthFactor: 0.8, height: 15),
-                        SizedBox(height: 4),
+                        SizedBox(height: AppSpacing.xs),
                         ShimmerLine(widthFactor: 1, height: 11),
-                        SizedBox(height: 8),
-                        ShimmerLine(width: 100, height: 13, radius: 6),
+                        SizedBox(height: AppSpacing.sm),
+                        ShimmerLine(
+                          width: AppDimensions.skeletonLineTile,
+                          height: AppDimensions.skeletonCaptionHeight,
+                          radius: AppRadius.r6,
+                        ),
                       ],
                     ),
                   ),
@@ -379,12 +401,12 @@ class CouponCardSkeleton extends StatelessWidget {
             Container(
               width: double.infinity,
               color: AppColor.lightGreyColor,
-              padding: EdgeInsets.symmetric(vertical: SpacingTokens.md.h),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
               child: Center(
                 child: ShimmerBox(
-                  width: 110.w,
-                  height: 15.h,
-                  borderRadius: BorderRadius.circular(8.r),
+                  width: AppDimensions.skeletonChipShortWidth,
+                  height: AppSizes.px15,
+                  borderRadius: BorderRadius.circular(AppRadius.r8),
                 ),
               ),
             ),
@@ -409,14 +431,14 @@ class CouponsLoadingView extends StatelessWidget {
       padding: skeletonListPadding(context),
       children: [
         const Shimmer(child: ShimmerLine(width: 130, height: 17)),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         for (var i = 0; i < itemCount; i++) const CouponCardSkeleton(),
       ],
     );
   }
 }
 
-/// Single skeleton row mirroring [RewardCard]: 56.w thumbnail radius 12.r,
+/// Single skeleton row mirroring [RewardCard]: [AppSizes.px56] thumbnail radius [AppRadius.r12],
 /// name / cost lines and the redeem pill slot.
 class RewardCardSkeleton extends StatelessWidget {
   const RewardCardSkeleton({super.key});
@@ -424,33 +446,37 @@ class RewardCardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
-      padding: EdgeInsets.all(SpacingTokens.md.w),
-      decoration: skeletonCardDecoration(context, radius: 16),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r16),
       child: Shimmer(
         child: Row(
           children: [
             ShimmerBox(
-              width: 56.w,
-              height: 56.w,
-              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+              width: AppSizes.px56,
+              height: AppSizes.px56,
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
             ),
-            SizedBox(width: SpacingTokens.md.w),
+            SizedBox(width: AppSpacing.md),
             const Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   ShimmerLine(widthFactor: 0.85, height: 15),
-                  SizedBox(height: 4),
-                  ShimmerLine(width: 90, height: 13, radius: 6),
+                  SizedBox(height: AppSpacing.xs),
+                  ShimmerLine(
+                    width: AppDimensions.skeletonLineShort,
+                    height: AppDimensions.skeletonCaptionHeight,
+                    radius: AppRadius.r6,
+                  ),
                 ],
               ),
             ),
-            SizedBox(width: SpacingTokens.sm.w),
+            SizedBox(width: AppSpacing.sm),
             ShimmerBox(
-              width: 78.w,
-              height: 32.h,
-              borderRadius: BorderRadius.circular(100.r),
+              width: AppSizes.px78,
+              height: AppSpacing.xxl,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ],
         ),
@@ -460,7 +486,7 @@ class RewardCardSkeleton extends StatelessWidget {
 }
 
 /// Skeleton mirroring [LoyaltyPage]: gradient-shaped balance card (padding
-/// xl.w, radius 20.r), section headings and reward rows.
+/// xl, radius [AppRadius.r20]), section headings and reward rows.
 class LoyaltyLoadingView extends StatelessWidget {
   const LoyaltyLoadingView({super.key});
 
@@ -472,26 +498,33 @@ class LoyaltyLoadingView extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(SpacingTokens.xl.w),
-          decoration: skeletonCardDecoration(context, radius: 20),
+          padding: EdgeInsets.all(AppSpacing.xl),
+          decoration: skeletonCardDecoration(context, radius: AppRadius.r20),
           child: Shimmer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const ShimmerLine(width: 120, height: 13),
-                SizedBox(height: SpacingTokens.xs.h),
-                const ShimmerLine(width: 160, height: 30, radius: 8),
-                SizedBox(height: SpacingTokens.xs.h),
+                const ShimmerLine(
+                  width: AppDimensions.skeletonChipWidth,
+                  height: 13,
+                ),
+                SizedBox(height: AppSpacing.xs),
+                const ShimmerLine(
+                  width: AppDimensions.skeletonBlock,
+                  height: AppDimensions.skeletonBlockHeight,
+                  radius: AppRadius.r8,
+                ),
+                SizedBox(height: AppSpacing.xs),
                 const ShimmerLine(widthFactor: 0.8, height: 11),
-                SizedBox(height: SpacingTokens.xs.h),
+                SizedBox(height: AppSpacing.xs),
                 const ShimmerLine(widthFactor: 0.6, height: 11),
               ],
             ),
           ),
         ),
-        SizedBox(height: SpacingTokens.xl.h),
+        SizedBox(height: AppSpacing.xl),
         const Shimmer(child: ShimmerLine(width: 180, height: 17)),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         for (var i = 0; i < 3; i++) const RewardCardSkeleton(),
       ],
     );
@@ -512,26 +545,26 @@ class TrackTimelineSkeleton extends StatelessWidget {
       child: Column(
         children: [
           for (var i = 0; i < itemCount; i++) ...[
-            if (i > 0) SizedBox(height: SpacingTokens.md.h),
+            if (i > 0) SizedBox(height: AppSpacing.md),
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ShimmerCircle(size: 20.w),
-                SizedBox(width: SpacingTokens.md.w),
+                ShimmerCircle(size: AppSizes.px20),
+                SizedBox(width: AppSpacing.md),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       ShimmerLine(widthFactor: 0.7, height: 14),
-                      SizedBox(height: 4),
+                      SizedBox(height: AppSpacing.xs),
                       ShimmerLine(widthFactor: 0.45, height: 11),
                     ],
                   ),
                 ),
                 ShimmerBox(
-                  width: 52.w,
-                  height: 11.h,
-                  borderRadius: BorderRadius.circular(6.r),
+                  width: AppSizes.px52,
+                  height: AppSizes.px11,
+                  borderRadius: BorderRadius.circular(AppRadius.r6),
                 ),
               ],
             ),
@@ -543,7 +576,7 @@ class TrackTimelineSkeleton extends StatelessWidget {
 }
 
 /// Skeleton mirroring [HelpPage]: section heading plus FAQ tiles (radius
-/// 12.r, bottom margin md.h) with a title line and chevron slot.
+/// [AppRadius.r12], bottom margin md) with a title line and chevron slot.
 class FaqLoadingView extends StatelessWidget {
   const FaqLoadingView({super.key, this.itemCount = 4});
 
@@ -556,23 +589,23 @@ class FaqLoadingView extends StatelessWidget {
       padding: skeletonListPadding(context),
       children: [
         const Shimmer(child: ShimmerLine(width: 150, height: 15)),
-        SizedBox(height: SpacingTokens.md.h),
+        SizedBox(height: AppSpacing.md),
         for (var i = 0; i < itemCount; i++)
           Container(
-            margin: EdgeInsets.only(bottom: SpacingTokens.md.h),
+            margin: EdgeInsets.only(bottom: AppSpacing.md),
             padding: EdgeInsets.symmetric(
-              horizontal: SpacingTokens.lg.w,
-              vertical: SpacingTokens.md.h,
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.md,
             ),
-            decoration: skeletonCardDecoration(context, radius: 12),
+            decoration: skeletonCardDecoration(context, radius: AppRadius.r12),
             child: Shimmer(
               child: Row(
                 children: [
                   const Expanded(
                     child: ShimmerLine(widthFactor: 0.9, height: 14),
                   ),
-                  SizedBox(width: SpacingTokens.md.w),
-                  ShimmerCircle(size: 22.w),
+                  SizedBox(width: AppSpacing.md),
+                  ShimmerCircle(size: AppSizes.px22),
                 ],
               ),
             ),
@@ -598,7 +631,7 @@ class PolicyLoadingView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (var i = 0; i < 9; i++) ...[
-                if (i > 0) SizedBox(height: SpacingTokens.sm.h),
+                if (i > 0) SizedBox(height: AppSpacing.sm),
                 ShimmerLine(widthFactor: i == 8 ? 0.55 : 1, height: 13),
               ],
             ],

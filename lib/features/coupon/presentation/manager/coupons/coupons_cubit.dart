@@ -23,12 +23,7 @@ class CouponsCubit extends Cubit<CouponsState> {
       emit(state.copyWith(coupons: coupons, isLoading: false));
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(
-        state.copyWith(
-          isLoading: false,
-          errorMessage: error.toString(),
-        ),
-      );
+      emit(state.copyWith(isLoading: false, errorMessage: error.toString()));
       addError(error, stackTrace);
     }
   }

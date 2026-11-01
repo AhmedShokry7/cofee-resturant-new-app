@@ -27,7 +27,9 @@ class OrderVariants {
   };
 
   static const Map<String, String> sugarPhrases = {
-    'من غير سكر': 'none', 'لا سكر': 'none', 'بدون': 'none',
+    'من غير سكر': 'none',
+    'لا سكر': 'none',
+    'بدون': 'none',
     'بدون سكر': 'none',
     'منغير سكر': 'none',
     'no sugar': 'none',
@@ -304,9 +306,7 @@ ParsedOrder parseOrderMessage(String query) {
   final items = <OrderDraftItem>[];
   for (var i = 0; i < ordered.length; i++) {
     final start = i == 0 ? 0 : ordered[i - 1].key;
-    final end = i + 1 < ordered.length
-        ? ordered[i + 1].key
-        : normalized.length;
+    final end = i + 1 < ordered.length ? ordered[i + 1].key : normalized.length;
     final window = normalized.substring(start, end);
     items.add(
       OrderDraftItem(
@@ -374,7 +374,9 @@ bool _hasDessertCategory(Iterable<String> ids) {
       // treating them as different made the assistant ask "which dessert?" to
       // a customer who had just named one.
       if (product.id == id &&
-          sweetCats.contains(AssistantSnapshot.categoryKey(product).toLowerCase())) {
+          sweetCats.contains(
+            AssistantSnapshot.categoryKey(product).toLowerCase(),
+          )) {
         return true;
       }
     }
@@ -383,8 +385,19 @@ bool _hasDessertCategory(Iterable<String> ids) {
 }
 
 const List<String> _dessertGenerics = [
-  'حلو', 'حلا', 'حلويات', 'ديزيرت', 'كيك', 'cake', 'dessert', 'sweet dish',
-  'سناك', 'تسالي', 'طبق حلو', 'حاجه حلوه', 'حاجة حلوة',
+  'حلو',
+  'حلا',
+  'حلويات',
+  'ديزيرت',
+  'كيك',
+  'cake',
+  'dessert',
+  'sweet dish',
+  'سناك',
+  'تسالي',
+  'طبق حلو',
+  'حاجه حلوه',
+  'حاجة حلوة',
 ];
 
 int _quantityIn(String window, int mentionOffset) {

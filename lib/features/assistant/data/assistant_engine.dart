@@ -16,7 +16,6 @@ import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
-
 import 'package:new_coffee/shared/utils/formatters.dart';
 
 /// One synonym hit: [start]..[end] in normalized text, [kind] 0 = product
@@ -63,19 +62,18 @@ class AssistantEngine {
     Set<String> cartProductIds = const {},
     bool isReturning = false,
     String? firstName,
-  }) =>
-      AssistantSnapshot.run(
-        snapshot,
-        () => _answer(
-          query,
-          memory: memory,
-          now: now,
-          favoriteIds: favoriteIds,
-          cartProductIds: cartProductIds,
-          isReturning: isReturning,
-          firstName: firstName,
-        ),
-      );
+  }) => AssistantSnapshot.run(
+    snapshot,
+    () => _answer(
+      query,
+      memory: memory,
+      now: now,
+      favoriteIds: favoriteIds,
+      cartProductIds: cartProductIds,
+      isReturning: isReturning,
+      firstName: firstName,
+    ),
+  );
 
   static AssistantAnswer _answer(
     String query, {
@@ -99,8 +97,8 @@ class AssistantEngine {
     final arabic = hasArabicScript
         ? true
         : hasLatinScript
-            ? false
-            : AppLocale.instance.isArabic;
+        ? false
+        : AppLocale.instance.isArabic;
     memory.replyArabic = arabic;
     var leadPrefix = '';
     if (negatedIds.isNotEmpty) {
@@ -122,30 +120,35 @@ class AssistantEngine {
       final wanted = _expandAll(query, tokenize(query).toSet()).wanted;
       if (wanted.isEmpty) {
         final normalized = normalizeText(query);
-        final cold = normalized.contains('ساقع') ||
+        final cold =
+            normalized.contains('ساقع') ||
             normalized.contains('بارد') ||
             normalized.contains('متلج') ||
             normalized.contains('مثلج') ||
             normalized.contains('ثلج') ||
             normalized.contains('cold') ||
             normalized.contains('iced');
-        final hot = normalized.contains('سخن') ||
+        final hot =
+            normalized.contains('سخن') ||
             normalized.contains('دافي') ||
             normalized.contains('حار') ||
             normalized.contains('hot');
         if (cold || hot) {
           final last = memory.draft.items.last;
-          final lastProduct =
-              AssistantSnapshot.current.productById(last.productId);
+          final lastProduct = AssistantSnapshot.current.productById(
+            last.productId,
+          );
           if (lastProduct != null) {
             final lastName = AssistantSnapshot.canonicalName(lastProduct);
             final base = normalizeText(lastName).replaceAll('iced', '').trim();
             for (final product in AssistantSnapshot.current.products) {
               final candidate = AssistantSnapshot.canonicalName(product);
-              final candidateCold = normalizeText(candidate).contains('iced') ||
+              final candidateCold =
+                  normalizeText(candidate).contains('iced') ||
                   normalizeText(candidate).contains('cold');
-              final candidateBase =
-                  normalizeText(candidate).replaceAll('iced', '').trim();
+              final candidateBase = normalizeText(candidate)
+                  .replaceAll('iced', '')
+                  .trim();
               final match = cold
                   ? (candidateCold && candidateBase == base)
                   : (!candidateCold && candidateBase == base);
@@ -216,10 +219,18 @@ class AssistantEngine {
     // "Do you have anything with nuts?" - the shop's ingredients are known
     // exactly, so "we have none" is a fact the local engine can give. Letting
     // the language model answer it would be a guess.
-    final missingIngredient = _missingIngredientAnswer(query, memory, arabic: arabic);
+    final missingIngredient = _missingIngredientAnswer(
+      query,
+      memory,
+      arabic: arabic,
+    );
     if (missingIngredient != null) return missingIngredient;
     if (memory.pendingQuestion == 'order_clarify') {
-      final resolved = AssistantDraftFlow.resolveClarify(query, memory: memory, arabic: arabic);
+      final resolved = AssistantDraftFlow.resolveClarify(
+        query,
+        memory: memory,
+        arabic: arabic,
+      );
       if (resolved != null) return resolved;
     }
     var intent = detectIntent(
@@ -228,8 +239,7 @@ class AssistantEngine {
       lastTopic: memory.lastTopic,
     );
     if (negatedIds.isNotEmpty &&
-        (intent == AssistantIntent.deny ||
-            intent == AssistantIntent.unknown)) {
+        (intent == AssistantIntent.deny || intent == AssistantIntent.unknown)) {
       intent = AssistantIntent.suggestDrink;
     }
     // "وكمان هو؟" continues the conversation about what is on screen. Without
@@ -338,9 +348,7 @@ class AssistantEngine {
       case AssistantIntent.botIdentity:
         return AssistantAnswer(
           text: AssistantComposer.pick(
-            arabic
-                ? AssistantComposer.identityAr
-                : AssistantComposer.identity,
+            arabic ? AssistantComposer.identityAr : AssistantComposer.identity,
             memory.totalChats,
           ),
           topic: 'identity',
@@ -349,9 +357,7 @@ class AssistantEngine {
       case AssistantIntent.farewell:
         return AssistantAnswer(
           text: AssistantComposer.pick(
-            arabic
-                ? AssistantComposer.farewellAr
-                : AssistantComposer.farewell,
+            arabic ? AssistantComposer.farewellAr : AssistantComposer.farewell,
             memory.totalChats,
           ),
           topic: 'farewell',
@@ -367,21 +373,37 @@ class AssistantEngine {
           return AssistantDraftFlow.cancelDraft(memory, arabic: arabic);
         }
         if (memory.pendingQuestion == 'order_payment') {
-          return AssistantDraftFlow.cancelDraft(memory, arabic: arabic, keptInCart: true);
+          return AssistantDraftFlow.cancelDraft(
+            memory,
+            arabic: arabic,
+            keptInCart: true,
+          );
         }
         if (memory.pendingQuestion == 'order_clarify') {
           // Drops the unclear dessert; confirms whatever is already known.
           memory.pendingDessertSize = null;
           if (memory.draft.items.isNotEmpty) {
-            return AssistantDraftFlow.confirmDraftMessage(memory, arabic: arabic);
+            return AssistantDraftFlow.confirmDraftMessage(
+              memory,
+              arabic: arabic,
+            );
           }
           return AssistantDraftFlow.cancelDraft(memory, arabic: arabic);
         }
         return AssistantDraftFlow.deny(memory, arabic: arabic);
       case AssistantIntent.placeOrder:
-        return AssistantDraftFlow.takeOrder(query, memory: memory, now: now, arabic: arabic);
+        return AssistantDraftFlow.takeOrder(
+          query,
+          memory: memory,
+          now: now,
+          arabic: arabic,
+        );
       case AssistantIntent.addToCart:
-        return AssistantDraftFlow.addDirect(query, memory: memory, arabic: arabic);
+        return AssistantDraftFlow.addDirect(
+          query,
+          memory: memory,
+          arabic: arabic,
+        );
       case AssistantIntent.cancelOrder:
         return AssistantDraftFlow.cancelDraft(memory, arabic: arabic);
       case AssistantIntent.payNow:
@@ -399,7 +421,8 @@ class AssistantEngine {
         );
       case AssistantIntent.selectOrdinal:
         final picked = _pickOrdinal(query, memory);
-        if (picked != null) return _selectAnswer(picked, memory, arabic: arabic);
+        if (picked != null)
+          return _selectAnswer(picked, memory, arabic: arabic);
         return _suggest(
           query,
           memory: memory,
@@ -460,6 +483,7 @@ class AssistantEngine {
         index = normalized.indexOf(norm, index + 1);
       }
     }
+
     for (final product in AssistantSnapshot.current.products) {
       final canonical = AssistantSnapshot.canonicalName(product);
       addMention(canonical, product.id);
@@ -532,73 +556,85 @@ class AssistantEngine {
         historyBoost[key] = (historyBoost[key] ?? 0) + 0.4;
       }
     }
-    final scored = AssistantSnapshot.current.products
-        .where(
-          // Dismissed products stay out — unless explicitly requested
-          // again (and not re-rejected in this same message).
-          (product) =>
-              !memory.dismissedIds.contains(product.id) ||
-              (wantedProducts.contains(
-                    AssistantSnapshot.canonicalName(product),
-                  ) &&
-                  !negatedIds.contains(product.id)),
-        )
-        .map((product) {
-      final canonicalName = AssistantSnapshot.canonicalName(product);
-      final categoryKey = AssistantSnapshot.categoryKey(product);
-      var score = 1.0;
-      score += AssistantSnapshot.categoryScore(memory.categoryScores, product) * 0.6;
-      score += (memory.productScores[product.id] ?? 0) * 0.5;
-      score += historyBoost[categoryKey] ?? 0;
-      if (expanded.categories.contains(categoryKey)) score += 2;
-      // Ingredient overlap: "the one with chocolate" finds Mocha.
-      if (ingredientHits.isNotEmpty) {
-        final row = AssistantCatalog.current.knowledgeOfProduct(product);
-        if (row != null) {
-          var matched = 0;
-          for (final ingredient in ingredientHits) {
-            if (row.ingredients.contains(ingredient)) matched++;
-          }
-          score += matched * 1.5;
-        }
-      }
-      if (favoriteIds.contains(product.id)) score += 0.5;
-      if (wantedProducts.contains(canonicalName)) score += 3;
-      if (isDaytime(now) &&
-          (categoryKey == 'hot-coffee' || categoryKey == 'tea')) {
-        score += 0.4;
-      }
-      if (!isDaytime(now) && categoryKey == 'cold-coffee') score += 0.3;
-      if (tokens.contains('hot') &&
-          (categoryKey == 'hot-coffee' || categoryKey == 'tea')) {
-        score += 1;
-      }
-      if (tokens.contains('cold') &&
-          (categoryKey == 'cold-coffee' ||
-              categoryKey == 'milkshakes' ||
-              categoryKey == 'soft-drinks')) {
-        score += 1;
-      }
-      if (tokens.contains('strong')) {
-        if (canonicalName == 'Espresso' || canonicalName == 'Americano') {
-          score += 1.5;
-        }
-      }
-      if (tokens.contains('sweet') || tokens.contains('chocolate')) {
-        if (canonicalName == 'Mocha' || categoryKey == 'desserts') {
-          score += 1.5;
-        }
-      }
-      if (tokens.contains('cheap') || tokens.contains('light')) {
-        score += (60 - product.price) / 60;
-      }
-      if (product.hasDiscount) score += 0.3;
-      for (final token in tokens) {
-        if (normalizeText(canonicalName).contains(token)) score += 1;
-        if (normalizeText(product.category).contains(token)) score += 1.5;
-      }
-      return MapEntry(product, score);
-    }).toList()..sort((a, b) => b.value.compareTo(a.value));
+    final scored =
+        AssistantSnapshot.current.products
+            .where(
+              // Dismissed products stay out — unless explicitly requested
+              // again (and not re-rejected in this same message).
+              (product) =>
+                  !memory.dismissedIds.contains(product.id) ||
+                  (wantedProducts.contains(
+                        AssistantSnapshot.canonicalName(product),
+                      ) &&
+                      !negatedIds.contains(product.id)),
+            )
+            .map((product) {
+              final canonicalName = AssistantSnapshot.canonicalName(product);
+              final categoryKey = AssistantSnapshot.categoryKey(product);
+              var score = 1.0;
+              score +=
+                  AssistantSnapshot.categoryScore(
+                    memory.categoryScores,
+                    product,
+                  ) *
+                  0.6;
+              score += (memory.productScores[product.id] ?? 0) * 0.5;
+              score += historyBoost[categoryKey] ?? 0;
+              if (expanded.categories.contains(categoryKey)) score += 2;
+              // Ingredient overlap: "the one with chocolate" finds Mocha.
+              if (ingredientHits.isNotEmpty) {
+                final row = AssistantCatalog.current.knowledgeOfProduct(
+                  product,
+                );
+                if (row != null) {
+                  var matched = 0;
+                  for (final ingredient in ingredientHits) {
+                    if (row.ingredients.contains(ingredient)) matched++;
+                  }
+                  score += matched * 1.5;
+                }
+              }
+              if (favoriteIds.contains(product.id)) score += 0.5;
+              if (wantedProducts.contains(canonicalName)) score += 3;
+              if (isDaytime(now) &&
+                  (categoryKey == 'hot-coffee' || categoryKey == 'tea')) {
+                score += 0.4;
+              }
+              if (!isDaytime(now) && categoryKey == 'cold-coffee') score += 0.3;
+              if (tokens.contains('hot') &&
+                  (categoryKey == 'hot-coffee' || categoryKey == 'tea')) {
+                score += 1;
+              }
+              if (tokens.contains('cold') &&
+                  (categoryKey == 'cold-coffee' ||
+                      categoryKey == 'milkshakes' ||
+                      categoryKey == 'soft-drinks')) {
+                score += 1;
+              }
+              if (tokens.contains('strong')) {
+                if (canonicalName == 'Espresso' ||
+                    canonicalName == 'Americano') {
+                  score += 1.5;
+                }
+              }
+              if (tokens.contains('sweet') || tokens.contains('chocolate')) {
+                if (canonicalName == 'Mocha' || categoryKey == 'desserts') {
+                  score += 1.5;
+                }
+              }
+              if (tokens.contains('cheap') || tokens.contains('light')) {
+                score += (60 - product.price) / 60;
+              }
+              if (product.hasDiscount) score += 0.3;
+              for (final token in tokens) {
+                if (normalizeText(canonicalName).contains(token)) score += 1;
+                if (normalizeText(product.category).contains(token))
+                  score += 1.5;
+              }
+              return MapEntry(product, score);
+            })
+            .toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
 
     final picks = <ProductModel>[];
     for (final entry in scored) {
@@ -667,14 +703,26 @@ class AssistantEngine {
   ) {
     if (wantedProducts.isNotEmpty) return true;
     const signals = {
-      'sweet', 'strong', 'cheap', 'light', 'hot', 'cold', 'chocolate',
+      'sweet',
+      'strong',
+      'cheap',
+      'light',
+      'hot',
+      'cold',
+      'chocolate',
     };
     if (tokens.intersection(signals).isNotEmpty) return true;
     if (memory.preferenceSummary() != null) return true;
     // Generic words ("a drink", "coffee") are not constraints.
     const generic = {
-      'drink', 'drinks', 'coffee', 'menu', 'beverage',
-      'مشروب', 'مشروبات', 'قهوه',
+      'drink',
+      'drinks',
+      'coffee',
+      'menu',
+      'beverage',
+      'مشروب',
+      'مشروبات',
+      'قهوه',
     };
     for (final token in tokens) {
       if (token.length < 3 || generic.contains(token)) continue;
@@ -832,10 +880,7 @@ class AssistantEngine {
         topic: 'cart',
         sourceId: 'cart-clarify',
         products: inCart.take(3).toList(),
-        quickReplies: inCart
-            .take(3)
-            .map((product) => product.name)
-            .toList(),
+        quickReplies: inCart.take(3).map((product) => product.name).toList(),
       );
     }
     if (!cartProductIds.contains(target.id)) {
@@ -958,11 +1003,14 @@ class AssistantEngine {
         .toSet();
     if (cartCats.isEmpty) return null;
     const drinks = {
-      'hot-coffee', 'cold-coffee', 'tea', 'milkshakes', 'soft-drinks',
+      'hot-coffee',
+      'cold-coffee',
+      'tea',
+      'milkshakes',
+      'soft-drinks',
     };
     const foods = {'desserts', 'snacks', 'bakery', 'donuts'};
-    final pickCats =
-        picks.map(AssistantSnapshot.categoryKey).toSet();
+    final pickCats = picks.map(AssistantSnapshot.categoryKey).toSet();
     String? target;
     if (cartCats.intersection(drinks).isNotEmpty &&
         pickCats.intersection(foods).isEmpty) {
@@ -992,8 +1040,10 @@ class AssistantEngine {
   }) {
     final normalized = normalizeText(query);
     final priceTalk =
-        normalized.contains('غال') || normalized.contains('cheap') ||
-        normalized.contains('expensive') || normalized.contains('price');
+        normalized.contains('غال') ||
+        normalized.contains('cheap') ||
+        normalized.contains('expensive') ||
+        normalized.contains('price');
     return _suggest(
       priceTalk ? '$query cheap' : query,
       memory: memory,
@@ -1117,6 +1167,7 @@ class AssistantEngine {
       }
       return null;
     }
+
     bool available(String id) => !memory.dismissedIds.contains(id);
     final topId = memory.topProductId();
     if (topId != null && available(topId)) {
@@ -1144,7 +1195,6 @@ class AssistantEngine {
     return null;
   }
 
-
   /// Maps dialect taste words + product names onto the canonical English
   /// tokens the scorer understands (حلو -> sweet, لاتيه -> Latte...).
   /// Returns exact menu names ([wanted]) plus boosted menu [categories]
@@ -1169,9 +1219,12 @@ class AssistantEngine {
       var index = normalized.indexOf(synonym);
       while (index >= 0) {
         if (_isWholeWord(normalized, index, synonym.length)) {
-          spans.add(
-            (start: index, end: index + synonym.length, kind: kind, value: value),
-          );
+          spans.add((
+            start: index,
+            end: index + synonym.length,
+            kind: kind,
+            value: value,
+          ));
         }
         index = normalized.indexOf(synonym, index + 1);
       }
@@ -1225,8 +1278,9 @@ class AssistantEngine {
     // not match any exact span still resolves to the closest menu name.
     for (final token in tokens) {
       if (token.length < 4) continue;
-      final candidates = AssistantSnapshot.current.products
-          .map(AssistantSnapshot.canonicalName);
+      final candidates = AssistantSnapshot.current.products.map(
+        AssistantSnapshot.canonicalName,
+      );
       final match = closestMatch(token, candidates);
       if (match != null) wanted.add(match);
     }
@@ -1260,15 +1314,15 @@ class AssistantEngine {
 
   static AssistantAnswer _orderStatus({bool arabic = false}) {
     final orders = AssistantSnapshot.current.orders;
-    final active =
-        orders.where((order) => order.status.name == 'active').toList();
-    final delivered =
-        orders.where((order) => order.status.name == 'completed').toList();
+    final active = orders
+        .where((order) => order.status.name == 'active')
+        .toList();
+    final delivered = orders
+        .where((order) => order.status.name == 'completed')
+        .toList();
     if (active.isEmpty && delivered.isEmpty) {
       return AssistantAnswer(
-        text: arabic
-            ? 'لسه معندكش طلبات. قولي نفسك في إيه وأنا أرشحلك حاجة!'
-            : 'You have no orders yet. Tell me what you feel like and I will suggest something!',
+        text: arabic ? 'لسه معندكش طلبات. قولي نفسك في إيه وأنا أرشحلك حاجة!' : 'You have no orders yet. Tell me what you feel like and I will suggest something!',
         topic: 'orders',
         sourceId: 'orders-empty',
         quickReplies: arabic
@@ -1311,8 +1365,19 @@ class AssistantEngine {
     // Short markers need whole-word match ("كم" lives inside "كمان").
     if (normalized.split(' ').contains('كم')) return true;
     const markers = [
-      'بكام', 'بكم', 'سعر', 'اسعار', 'how much', 'total', 'الحساب',
-      'فاتوره', 'التوتال', 'يكلف', 'هيكلف', 'price', 'cost',
+      'بكام',
+      'بكم',
+      'سعر',
+      'اسعار',
+      'how much',
+      'total',
+      'الحساب',
+      'فاتوره',
+      'التوتال',
+      'يكلف',
+      'هيكلف',
+      'price',
+      'cost',
     ];
     for (final marker in markers) {
       if (normalized.contains(normalizeText(marker))) return true;
@@ -1328,8 +1393,17 @@ class AssistantEngine {
   static bool _mentionsCoupons(String query) {
     final normalized = normalizeText(query);
     const markers = [
-      'عروض', 'عرض', 'كوبون', 'كوبونات', 'خصم', 'تخفيض', 'برومو',
-      'discount', 'offer', 'promo', 'coupon',
+      'عروض',
+      'عرض',
+      'كوبون',
+      'كوبونات',
+      'خصم',
+      'تخفيض',
+      'برومو',
+      'discount',
+      'offer',
+      'promo',
+      'coupon',
     ];
     for (final marker in markers) {
       if (normalized.contains(normalizeText(marker))) return true;
@@ -1365,9 +1439,26 @@ class AssistantEngine {
   static bool _asksAboutOptions(String query) {
     final normalized = normalizeText(query);
     const markers = [
-      'سكر', 'حجم', 'مقاس', 'كبير', 'صغير', 'وسط', 'اضافه', 'اضافات',
-      'حليب', 'ثلج', 'مركز', 'sugar', 'size', 'large', 'small', 'medium',
-      'extra', 'shot', 'cream', 'ice',
+      'سكر',
+      'حجم',
+      'مقاس',
+      'كبير',
+      'صغير',
+      'وسط',
+      'اضافه',
+      'اضافات',
+      'حليب',
+      'ثلج',
+      'مركز',
+      'sugar',
+      'size',
+      'large',
+      'small',
+      'medium',
+      'extra',
+      'shot',
+      'cream',
+      'ice',
     ];
     for (final marker in markers) {
       if (normalized.contains(normalizeText(marker))) return true;
@@ -1383,10 +1474,30 @@ class AssistantEngine {
     final normalized = normalizeText(query);
     const byGroup = <String, List<String>>{
       'sugar': ['سكر', 'sugar', 'حلو', 'sweet'],
-      'size': ['حجم', 'مقاس', 'كبير', 'صغير', 'وسط', 'size', 'large', 'small', 'medium'],
+      'size': [
+        'حجم',
+        'مقاس',
+        'كبير',
+        'صغير',
+        'وسط',
+        'size',
+        'large',
+        'small',
+        'medium',
+      ],
       'extras': [
-        'اضافه', 'اضافات', 'شيبس', 'حليب', 'ثلج', 'كرميه', 'عسل',
-        'extra', 'shot', 'cream', 'ice', 'syrup',
+        'اضافه',
+        'اضافات',
+        'شيبس',
+        'حليب',
+        'ثلج',
+        'كرميه',
+        'عسل',
+        'extra',
+        'shot',
+        'cream',
+        'ice',
+        'syrup',
       ],
     };
     for (final entry in byGroup.entries) {
@@ -1455,9 +1566,16 @@ class AssistantEngine {
     if (context.isEmpty) return null;
     final normalized = normalizeText(query);
     const markers = [
-      'هو ده اللي رشحته', 'ده اللي رشحته', 'هو اللي رشحته', 'ده اللي قترحته',
-      'هو اللي قترحته', 'اللي رشحته', 'اللي قترحته', 'رشحته ده',
-      'is that what you suggested', 'did you suggest',
+      'هو ده اللي رشحته',
+      'ده اللي رشحته',
+      'هو اللي رشحته',
+      'ده اللي قترحته',
+      'هو اللي قترحته',
+      'اللي رشحته',
+      'اللي قترحته',
+      'رشحته ده',
+      'is that what you suggested',
+      'did you suggest',
     ];
     var asks = false;
     for (final marker in markers) {
@@ -1533,7 +1651,6 @@ class AssistantEngine {
           : const ['I want to order', 'Add to cart'],
     );
   }
-
 
   static List<(KnowledgeArticle, double)> rankArticles(
     String query,
@@ -1627,10 +1744,20 @@ class AssistantEngine {
       }
       // The shop carries nothing with that ingredient. Saying so is honest and
       // local; letting the language model guess would be neither.
-      return _noSuchIngredientAnswer(ingredientHits.first, memory, arabic: arabic);
+      return _noSuchIngredientAnswer(
+        ingredientHits.first,
+        memory,
+        arabic: arabic,
+      );
     }
     const tasteTokens = {
-      'sweet', 'strong', 'cheap', 'light', 'hot', 'cold', 'chocolate',
+      'sweet',
+      'strong',
+      'cheap',
+      'light',
+      'hot',
+      'cold',
+      'chocolate',
     };
     if (tokens.intersection(tasteTokens).isNotEmpty) {
       return _suggest(

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/presentation/manager/orders/orders_cubit.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class OrdersTabs extends StatelessWidget {
   const OrdersTabs({super.key});
@@ -23,15 +22,12 @@ class OrdersTabs extends StatelessWidget {
             .map(
               (status) => Expanded(
                 child: GestureDetector(
-                  onTap: () =>
-                      context.read<OrdersCubit>().selectStatus(status),
+                  onTap: () => context.read<OrdersCubit>().selectStatus(status),
                   behavior: HitTestBehavior.opaque,
                   child: Column(
                     children: [
                       Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: SpacingTokens.md.h,
-                        ),
+                        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
                         child: Text(
                           status.label,
                           textAlign: TextAlign.center,
@@ -43,13 +39,13 @@ class OrdersTabs extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        height: 4.h,
+                        height: AppSpacing.xs,
                         decoration: BoxDecoration(
                           color: current == status
                               ? AppColor.primaryColor
-                              : Colors.transparent,
+                              : AppColor.transparent,
                           borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(8.r),
+                            top: Radius.circular(AppRadius.r8),
                           ),
                         ),
                       ),
@@ -63,4 +59,3 @@ class OrdersTabs extends StatelessWidget {
     );
   }
 }
-

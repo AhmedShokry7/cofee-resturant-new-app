@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
@@ -34,14 +35,14 @@ class AuthRequiredView extends StatelessWidget {
     return Scaffold(
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(S.signInRequired),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(S.signInOrCreateAccount),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
                 onPressed: () =>
                     Navigator.of(context)

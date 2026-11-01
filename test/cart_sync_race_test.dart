@@ -7,6 +7,7 @@ import 'package:new_coffee/features/cart/data/model/cart_line.dart';
 import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
 
 /// A cart backend that records every write and can be held open, so the

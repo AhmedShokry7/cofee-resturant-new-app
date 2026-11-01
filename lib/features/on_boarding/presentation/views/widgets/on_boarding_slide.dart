@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/on_boarding/data/model/on_boarding_model.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// One slide: its art, its headline and its line of explanation.
 class OnBoardingSlide extends StatelessWidget {
@@ -24,30 +23,30 @@ class OnBoardingSlide extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         // The words come first: when a slide needs more height than the box
         // has, the art gives way instead of the copy being cut. At the design
         // size the art was drawn for, this shortfall is a single pixel.
         Flexible(
           child: Image.asset(
             slide.image,
-            height: _imageHeight.h,
+            height: _imageHeight,
             fit: BoxFit.fill,
           ),
         ),
-        SizedBox(height: _artGap.h),
+        SizedBox(height: _artGap),
         Text(
           slide.title,
           textAlign: TextAlign.center,
-          style: AppFonts.semiBold24(
-            context,
-          ).copyWith(color: AppColor.primaryColor),
+          style: AppFonts.semiBold24(context)
+              .copyWith(color: AppColor.primaryColor),
         ),
-        SizedBox(height: SpacingTokens.xs.h),
+        SizedBox(height: AppSpacing.xs),
         Text(
           slide.body,
           textAlign: TextAlign.center,
-          style: AppFonts.regular16(context).copyWith(color: AppColor.greyColor),
+          style: AppFonts.regular16(context)
+              .copyWith(color: AppColor.greyColor),
         ),
       ],
     );

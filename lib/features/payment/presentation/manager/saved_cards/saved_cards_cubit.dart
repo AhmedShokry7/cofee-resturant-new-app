@@ -13,9 +13,7 @@ part 'saved_cards_state.dart';
 /// the add-card form is tokenized by the backend and stored server-side; this
 /// cubit only mirrors the safe display fields returned by the backend.
 class SavedCardsCubit extends Cubit<SavedCardsState> {
-  SavedCardsCubit({SavedCardsRepository? repository})
-    : _repository = repository,
-      super(const SavedCardsState(cards: []));
+  SavedCardsCubit({this._repository}) : super(const SavedCardsState(cards: []));
 
   final SavedCardsRepository? _repository;
 
@@ -129,7 +127,9 @@ class SavedCardsCubit extends Cubit<SavedCardsState> {
       return true;
     } on SaveCardException catch (error) {
       if (isClosed) return false;
-      emit(state.copyWith(saveError: error.message, saveFailure: error.failure));
+      emit(
+        state.copyWith(saveError: error.message, saveFailure: error.failure),
+      );
       return false;
     } catch (error, stackTrace) {
       if (isClosed) return false;

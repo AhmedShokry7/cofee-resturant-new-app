@@ -38,9 +38,12 @@ void main() {
       'the platform, not from a role setting.';
 
   final String? credentialSkip =
-      (AppConfig.isSupabaseConfigured && email.isNotEmpty) ? null : needsCredentials;
+      (AppConfig.isSupabaseConfigured && email.isNotEmpty)
+      ? null
+      : needsCredentials;
 
-  final String? dbSkip = credentialSkip ?? (schemasExposed ? null : needsSchemas);
+  final String? dbSkip =
+      credentialSkip ?? (schemasExposed ? null : needsSchemas);
 
   group('Supabase live integration', () {
     late SupabaseClient client;
@@ -51,8 +54,11 @@ void main() {
       // has no platform implementation in a headless test.
       SharedPreferences.setMockInitialValues(<String, Object>{});
       final initialised = await SupabaseService.init();
-      expect(initialised, isNotNull,
-          reason: 'SupabaseService.init() must succeed when configured');
+      expect(
+        initialised,
+        isNotNull,
+        reason: 'SupabaseService.init() must succeed when configured',
+      );
       client = SupabaseService.client;
     });
 
@@ -61,17 +67,25 @@ void main() {
       expect(AppConfig.supabasePublishableKey.isNotEmpty, isTrue);
       // A publishable key is sb_publishable_*. A JWT here would mean a
       // service_role key leaked into the client.
-      expect(AppConfig.supabasePublishableKey.startsWith('eyJ'), isFalse,
-          reason: 'a publishable key is sb_publishable_*, not a JWT');
+      expect(
+        AppConfig.supabasePublishableKey.startsWith('eyJ'),
+        isFalse,
+        reason: 'a publishable key is sb_publishable_*, not a JWT',
+      );
     }, skip: credentialSkip);
 
     test('signs in with real credentials', () async {
-      final response =
-          await client.auth.signInWithPassword(email: email, password: password);
+      final response = await client.auth.signInWithPassword(
+        email: email,
+        password: password,
+      );
       expect(response.user, isNotNull);
       expect(response.user!.email, email);
-      expect(response.session, isNotNull,
-          reason: 'a real session is what makes RLS meaningful');
+      expect(
+        response.session,
+        isNotNull,
+        reason: 'a real session is what makes RLS meaningful',
+      );
     }, skip: credentialSkip);
 
     test('currentUser() reflects the real session', () async {
@@ -84,8 +98,11 @@ void main() {
 
     test('anon can read the public catalogue', () async {
       final rows = await client.from('catalog.categories').select('id, slug');
-      expect(rows.length, greaterThan(0),
-          reason: 'seed_02_catalog.sql should have loaded categories');
+      expect(
+        rows.length,
+        greaterThan(0),
+        reason: 'seed_02_catalog.sql should have loaded categories',
+      );
     }, skip: dbSkip);
 
     test('anon cannot read customer tables', () async {
@@ -95,8 +112,11 @@ void main() {
       } catch (e) {
         error = e;
       }
-      expect(error, isNotNull,
-          reason: 'reading identity.profiles as anon must be refused');
+      expect(
+        error,
+        isNotNull,
+        reason: 'reading identity.profiles as anon must be refused',
+      );
     }, skip: dbSkip);
 
     test('cannot reach the ai schema from a client role', () async {
@@ -106,31 +126,38 @@ void main() {
       } catch (e) {
         error = e;
       }
-      expect(error, isNotNull,
-          reason: 'ai must never be reachable from anon or authenticated');
+      expect(
+        error,
+        isNotNull,
+        reason: 'ai must never be reachable from anon or authenticated',
+      );
     }, skip: dbSkip);
 
     test('searches in Arabic through the RPC', () async {
       await client.auth.signInWithPassword(email: email, password: password);
-      final rows = await client.rpc('search_products', params: {
-        'p_query': 'لاتيه',
-        'p_page_size': 5,
-      });
+      final rows = await client.rpc(
+        'search_products',
+        params: {'p_query': 'لاتيه', 'p_page_size': 5},
+      );
       expect(rows, isA<List>());
       final names = (rows as List)
           .map((r) => (r as Map)['name_en'])
           .whereType<String>()
           .toList();
-      expect(names, isNotEmpty,
-          reason: 'the Arabic alias table should make "لاتيه" resolve to Latte');
+      expect(
+        names,
+        isNotEmpty,
+        reason: 'the Arabic alias table should make "لاتيه" resolve to Latte',
+      );
       expect(names.first, 'Latte');
     }, skip: dbSkip);
 
     test('reads the customer own profile, and only their own', () async {
       await client.auth.signInWithPassword(email: email, password: password);
       final me = client.auth.currentUser;
-      final rows =
-          await client.from('identity.profiles').select('id, full_name');
+      final rows = await client
+          .from('identity.profiles')
+          .select('id, full_name');
       expect(rows.length, 1, reason: 'RLS should return exactly the caller');
       expect(rows.first['id'], me!.id);
     }, skip: dbSkip);
@@ -147,8 +174,11 @@ void main() {
       } catch (e) {
         error = e;
       }
-      expect(error, isNotNull,
-          reason: 'a customer must not be able to grant themselves staff');
+      expect(
+        error,
+        isNotNull,
+        reason: 'a customer must not be able to grant themselves staff',
+      );
     }, skip: dbSkip);
   });
 }

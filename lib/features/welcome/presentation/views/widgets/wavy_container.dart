@@ -56,7 +56,7 @@ class WavyTopClipper extends CustomClipper<Path> {
   static const double _fallStart = 0.72;
   static const double _tailStart = 0.78;
 
-  /// The two heights the tail settles at, in design pixels.
+  /// The two heights the tail settles at, in logical pixels.
   static const double _tailHigh = 34;
   static const double _tailLow = 24;
 

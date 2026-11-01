@@ -7,7 +7,7 @@ import 'package:new_coffee/features/coupon/presentation/manager/coupons/coupons_
 /// The list the page shows: what the server answers, and nothing else.
 class _FakeCoupons implements CouponRepository {
   _FakeCoupons({List<CouponModel> coupons = const [], this.error})
-      : couponsToReturn = coupons;
+    : couponsToReturn = coupons;
 
   List<CouponModel> couponsToReturn;
   Object? error;
@@ -79,7 +79,5 @@ void main() {
 }
 
 Future<void> _settled(CouponsCubit cubit) async {
-  await cubit.stream.firstWhere(
-    (CouponsState state) => !state.isLoading,
-  );
+  await cubit.stream.firstWhere((CouponsState state) => !state.isLoading);
 }

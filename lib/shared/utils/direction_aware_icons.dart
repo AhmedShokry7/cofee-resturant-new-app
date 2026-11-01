@@ -1,11 +1,11 @@
 import 'package:flutter/widgets.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 
 /// Resolves logical navigation icons so they point toward the start (back) or
 /// end (forward) of the current reading direction.
 ///
 /// Back navigation points left in LTR and right in RTL; forward navigation
-/// points right in LTR and left in RTL. HugeIcons ships distinct left/right
+/// points right in LTR and left in RTL. The icon set ships distinct left/right
 /// glyphs rather than auto-mirroring, so this helper is the single place that
 /// maps logical intent to the right glyph for the active [Directionality].
 ///
@@ -20,8 +20,8 @@ class DirectionAwareIcons {
   /// `ArrowRight01` in RTL.
   static IconData back(BuildContext context) =>
       Directionality.of(context) == TextDirection.rtl
-      ? HugeIcons.strokeRoundedArrowRight01
-      : HugeIcons.strokeRoundedArrowLeft01;
+      ? AppIcons.forward
+      : AppIcons.back;
 
   /// The glyph for logical "forward / next" navigation.
   ///
@@ -29,6 +29,6 @@ class DirectionAwareIcons {
   /// `ArrowLeft01` in RTL.
   static IconData forward(BuildContext context) =>
       Directionality.of(context) == TextDirection.rtl
-      ? HugeIcons.strokeRoundedArrowLeft01
-      : HugeIcons.strokeRoundedArrowRight01;
+      ? AppIcons.back
+      : AppIcons.forward;
 }

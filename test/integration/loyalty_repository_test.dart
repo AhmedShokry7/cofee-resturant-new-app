@@ -16,8 +16,9 @@ void main() {
       'Needs --dart-define SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and '
       'SCHEMAS_EXPOSED=true';
 
-  final String? skip =
-      (!AppConfig.isSupabaseConfigured || !schemasExposed) ? needsSetup : null;
+  final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
+      ? needsSetup
+      : null;
 
   setUpAll(() async {
     if (skip != null) return;
@@ -34,14 +35,15 @@ void main() {
     final catalog = await repository.loadCatalog();
     expect(catalog.currencyCode, 'SAR');
     expect(catalog.rules, isNotEmpty);
-    expect(
-      catalog.rewards.map((reward) => reward.pointsCost),
-      [150, 180, 200, 250, 300, 400],
-    );
-    expect(
-      catalog.rewards.every((reward) => reward.name.isNotEmpty),
-      isTrue,
-    );
+    expect(catalog.rewards.map((reward) => reward.pointsCost), [
+      150,
+      180,
+      200,
+      250,
+      300,
+      400,
+    ]);
+    expect(catalog.rewards.every((reward) => reward.name.isNotEmpty), isTrue);
 
     expect(await repository.loadWallet(), isNull);
     await expectLater(

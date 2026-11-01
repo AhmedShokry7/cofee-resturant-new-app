@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/address_tile.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Standalone address book reachable from Settings.
 ///
@@ -76,97 +74,91 @@ class _AddressesView extends StatelessWidget {
       listener: (context, state) {
         final message = state.error;
         if (message == null) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(message)));
         context.read<AddressesCubit>().clearError();
       },
       child: BlocBuilder<AddressesCubit, AddressesState>(
         builder: (context, state) {
-        if (state.isLoading && state.addresses.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (state.error != null && state.addresses.isEmpty) {
-          return Center(
-            child: Padding(
-              padding: EdgeInsets.all(SpacingTokens.xl.w),
+          if (state.isLoading && state.addresses.isEmpty) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (state.error != null && state.addresses.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xl),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    EmptyState(icon: AppIcons.location, title: S.myAddresses),
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      state.error!,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.regular14(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
+                    SizedBox(height: AppSpacing.md),
+                    TextButton(
+                      onPressed: () => context.read<AddressesCubit>().load(),
+                      child: Text(S.retry),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+          if (state.addresses.isEmpty) {
+            return Padding(
+              padding: AppLayout.pageBody,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  EmptyState(
-                    icon: HugeIcons.strokeRoundedLocation01,
-                    title: S.myAddresses,
+                  Expanded(
+                    child: EmptyState(
+                      icon: AppIcons.location,
+                      title: S.noAddresses,
+                      subtitle: S.addressesHint,
+                    ),
                   ),
-                  SizedBox(height: SpacingTokens.sm.h),
-                  Text(
-                    state.error!,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.regular14(
-                      context,
-                    ).copyWith(color: AppColor.greyColor),
-                  ),
-                  SizedBox(height: SpacingTokens.md.h),
-                  TextButton(
-                    onPressed: () => context.read<AddressesCubit>().load(),
-                    child: Text(S.retry),
+                  _AddAddressButton(
+                    onTap: () =>
+                        Navigator.of(context)
+                            .pushNamed(AddressFormPage.routeName),
                   ),
                 ],
               ),
-            ),
-          );
-        }
-        if (state.addresses.isEmpty) {
-          return Padding(
-            padding: LayoutTokens.pageBody(),
-            child: Column(
-              children: [
-                Expanded(
-                  child: EmptyState(
-                    icon: HugeIcons.strokeRoundedLocation01,
-                    title: S.noAddresses,
-                    subtitle: S.addressesHint,
+            );
+          }
+          return ListView(
+            padding: AppLayout.pageBody,
+            children: [
+              for (var index = 0; index < state.addresses.length; index++) ...[
+                AddressTile(
+                  address: state.addresses[index],
+                  selected: state.addresses[index].isDefault,
+                  onTap: () => context.read<AddressesCubit>().setDefaultAddress(
+                    state.addresses[index].id,
+                  ),
+                  onSetDefault: () => context
+                      .read<AddressesCubit>()
+                      .setDefaultAddress(state.addresses[index].id),
+                  onEdit: () => Navigator.of(context).pushNamed(
+                    AddressFormPage.routeName,
+                    arguments: state.addresses[index],
+                  ),
+                  onDelete: () => _confirmDelete(
+                    context,
+                    addressId: state.addresses[index].id,
                   ),
                 ),
-                _AddAddressButton(
-                  onTap: () =>
-                      Navigator.of(context).pushNamed(
-                        AddressFormPage.routeName,
-                      ),
-                ),
+                if (index != state.addresses.length - 1) const Divider(),
               ],
-            ),
-          );
-        }
-        return ListView(
-          padding: LayoutTokens.pageBody(),
-          children: [
-            for (var index = 0; index < state.addresses.length; index++) ...[
-              AddressTile(
-                address: state.addresses[index],
-                selected: state.addresses[index].isDefault,
-                onTap: () => context
-                    .read<AddressesCubit>()
-                    .setDefaultAddress(state.addresses[index].id),
-                onSetDefault: () => context
-                    .read<AddressesCubit>()
-                    .setDefaultAddress(state.addresses[index].id),
-                onEdit: () => Navigator.of(context).pushNamed(
-                  AddressFormPage.routeName,
-                  arguments: state.addresses[index],
-                ),
-                onDelete: () => _confirmDelete(
-                  context,
-                  addressId: state.addresses[index].id,
-                ),
+              SizedBox(height: AppSpacing.xl),
+              _AddAddressButton(
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AddressFormPage.routeName),
               ),
-              if (index != state.addresses.length - 1) const Divider(),
             ],
-            SizedBox(height: SpacingTokens.xl.h),
-            _AddAddressButton(
-              onTap: () =>
-                  Navigator.of(context).pushNamed(AddressFormPage.routeName),
-            ),
-          ],
           );
         },
       ),
@@ -184,17 +176,16 @@ class _AddAddressButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 52.h,
+        height: AppDimensions.buttonHeight,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           border: Border.all(color: AppColor.primaryColor),
-          borderRadius: BorderRadius.circular(8.r),
+          borderRadius: BorderRadius.circular(AppRadius.r8),
         ),
         child: Text(
           '+ ${S.enterLocation}',
-          style: AppFonts.medium12(context).copyWith(
-            color: AppColor.primaryColor,
-          ),
+          style: AppFonts.medium12(context)
+              .copyWith(color: AppColor.primaryColor),
         ),
       ),
     );

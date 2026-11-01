@@ -1,10 +1,7 @@
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 
 abstract class AuthRepository {
-  Future<AuthUser> signIn({
-    required String email,
-    required String password,
-  });
+  Future<AuthUser> signIn({required String email, required String password});
 
   Future<AuthUser> signUp({
     required String name,
@@ -33,10 +30,7 @@ abstract class AuthRepository {
 
   Future<AuthUser?> currentUser();
 
-  Future<AuthUser> updateProfile({
-    required String fullName,
-    String? phone,
-  });
+  Future<AuthUser> updateProfile({required String fullName, String? phone});
 
   Future<void> changePassword({
     required String oldPassword,

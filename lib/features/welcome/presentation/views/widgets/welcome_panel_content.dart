@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/welcome/presentation/manager/welcome/welcome_cubit.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_view_text_body.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_view_text_title.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// What the customer reads and presses inside the wavy panel.
 ///
@@ -35,7 +34,7 @@ class WelcomePanelContent extends StatelessWidget {
                 onPressed: () => context.read<WelcomeCubit>().startOnboarding(),
               ),
             ),
-            SizedBox(height: SpacingTokens.sm.h),
+            SizedBox(height: AppSpacing.sm),
           ],
         );
       },
@@ -59,9 +58,9 @@ class _WelcomeCopy extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 const WelcomeViewTextTitle(),
-                SizedBox(height: SpacingTokens.md.h),
+                SizedBox(height: AppSpacing.md),
                 const WelcomeViewTextBody(),
-                SizedBox(height: SpacingTokens.xl.h),
+                SizedBox(height: AppSpacing.xl),
               ],
             ),
           ),

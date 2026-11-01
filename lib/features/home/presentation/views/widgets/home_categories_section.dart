@@ -1,20 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/category_grid_item.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeCategoriesSection extends StatelessWidget {
   const HomeCategoriesSection({super.key});
 
-  static const int _columns = 4;
-  static const int _rows = 2;
+  /// Tiles in one page of the grid and the rows it stacks. The skeleton that
+  /// mirrors this section reads the same numbers, so the two cannot drift.
+  static const int gridColumns = 4;
+  static const int gridRows = 2;
+
+  /// The gap between two tiles.
+  static const double gap = AppSpacing.sm;
+
+  /// The edge a tile gets inside [constraints]: the row shared between
+  /// [gridColumns], never wider than the category tile ceiling.
+  static double tileExtent(BoxConstraints constraints) {
+    final slot = (constraints.maxWidth - (gridColumns - 1) * gap) / gridColumns;
+    return slot > AppBreakpoints.categoryTileMaxWidth
+        ? AppBreakpoints.categoryTileMaxWidth
+        : slot;
+  }
+
+  /// The room the whole grid needs, so the page does not jump when it fills.
+  static double gridHeight(BoxConstraints constraints) =>
+      tileExtent(constraints) * AppDimensions.categoryTileAspect * gridRows +
+      AppSpacing.md;
 
   @override
   Widget build(BuildContext context) {
@@ -48,22 +66,19 @@ class HomeCategoriesSection extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         LayoutBuilder(
           builder: (context, constraints) {
-            final gap = SpacingTokens.sm.w;
-            final itemWidth =
-                (constraints.maxWidth - (_columns - 1) * gap) / _columns;
-            final itemHeight = itemWidth * 1.2;
+            final itemWidth = tileExtent(constraints);
             return SizedBox(
-              height: itemHeight * _rows + SpacingTokens.md.h,
+              height: gridHeight(constraints),
               child: GridView.builder(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.zero,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: _rows,
+                  crossAxisCount: gridRows,
                   mainAxisSpacing: gap,
-                  crossAxisSpacing: SpacingTokens.md.h,
+                  crossAxisSpacing: AppSpacing.md,
                   mainAxisExtent: itemWidth,
                 ),
                 itemCount: categories.length,

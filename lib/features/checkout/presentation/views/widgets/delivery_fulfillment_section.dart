@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/delivery_zone_status.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Pickup vs delivery, and the delivery zone when delivery is chosen.
 ///
@@ -41,7 +39,7 @@ class DeliveryFulfillmentSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(S.fulfillmentMethod, style: AppFonts.semiBold16(context)),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             Row(
               children: [
                 Expanded(
@@ -51,7 +49,7 @@ class DeliveryFulfillmentSection extends StatelessWidget {
                     onTap: () => cubit.setFulfillment(FulfillmentType.pickup),
                   ),
                 ),
-                SizedBox(width: SpacingTokens.sm.w),
+                SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: _FulfillmentOption(
                     label: S.deliveryMethod,
@@ -63,14 +61,14 @@ class DeliveryFulfillmentSection extends StatelessWidget {
               ],
             ),
             if (deliveryUnavailable) ...[
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               Text(
                 unavailableMessage,
                 style: AppFonts.regular14(context)
                     .copyWith(color: AppColor.greyColor),
               ),
             ] else if (state.fulfillment.isDelivery) ...[
-              SizedBox(height: SpacingTokens.md.h),
+              SizedBox(height: AppSpacing.md),
               // The address decides the zone. Three distinct answers, in the
               // order they can occur. Picking a zone by hand clears
               // addressOutOfZone in the cubit, which is what makes the manual
@@ -80,11 +78,8 @@ class DeliveryFulfillmentSection extends StatelessWidget {
               else if (state.addressOutOfZone)
                 OutOfZoneNotice(
                   canChooseManually: state.deliveryZones.length > 1,
-                  onChooseManually: () => _chooseZoneManually(
-                    context,
-                    cubit,
-                    state.deliveryZones,
-                  ),
+                  onChooseManually: () =>
+                      _chooseZoneManually(context, cubit, state.deliveryZones),
                 )
               else if (state.selectedDeliveryZone != null)
                 ResolvedZoneCard(zone: state.selectedDeliveryZone!),
@@ -93,7 +88,7 @@ class DeliveryFulfillmentSection extends StatelessWidget {
               // it instead of being told they cannot order.
               if (state.selectedAddress?.latitude != null &&
                   !state.addressOutOfZone) ...[
-                SizedBox(height: SpacingTokens.sm.h),
+                SizedBox(height: AppSpacing.sm),
                 _DeliveryZoneField(zones: state.deliveryZones),
               ],
             ],
@@ -134,26 +129,25 @@ class DeliveryFulfillmentSection extends StatelessWidget {
         child: ListView(
           shrinkWrap: true,
           padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
+            AppSpacing.lg,
             0,
-            SpacingTokens.lg.w,
-            SpacingTokens.lg.h,
+            AppSpacing.lg,
+            AppSpacing.lg,
           ),
           children: [
             Text(
               S.deliveryChooseZoneManually,
               style: AppFonts.semiBold16(context),
             ),
-            SizedBox(height: SpacingTokens.md.h),
+            SizedBox(height: AppSpacing.md),
             for (final zone in zones)
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: Text(zone.name, style: AppFonts.medium14(context)),
                 subtitle: Text(
                   '${deliveryFeeLabel(zone)}  •  ${Formatters.price(zone.deliveryFee)}',
-                  style: AppFonts.regular12(context).copyWith(
-                    color: AppColor.greyColor,
-                  ),
+                  style: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
                 ),
                 onTap: () => Navigator.of(sheetContext).pop(zone),
               ),
@@ -177,13 +171,12 @@ class _ZoneResolvingRow extends StatelessWidget {
           width: 16,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        SizedBox(width: SpacingTokens.sm.w),
+        SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
             S.deliveryZoneFromAddress,
-            style: AppFonts.regular12(context).copyWith(
-              color: AppColor.greyColor,
-            ),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.greyColor),
           ),
         ),
       ],
@@ -211,14 +204,14 @@ class _FulfillmentOption extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 10.h),
+          padding: EdgeInsets.symmetric(vertical: AppSizes.px10),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: selected ? AppColor.primaryColor : AppColor.whiteColor,
             border: Border.all(
               color: selected ? AppColor.primaryColor : AppColor.borderColor,
             ),
-            borderRadius: BorderRadius.circular(100.r),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
           ),
           child: Text(
             label,
@@ -248,12 +241,12 @@ class _DeliveryZoneField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(S.deliveryZone, style: AppFonts.regular14(context)),
-        SizedBox(height: SpacingTokens.xs.h),
+        SizedBox(height: AppSpacing.xs),
         Container(
-          padding: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
           decoration: BoxDecoration(
             border: Border.all(color: AppColor.borderColor),
-            borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           ),
           child: DropdownButton<DeliveryZone>(
             value: value,

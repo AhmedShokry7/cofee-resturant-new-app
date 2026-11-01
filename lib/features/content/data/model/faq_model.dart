@@ -9,8 +9,8 @@ class FaqModel {
     this.questionEn,
     this.answerAr,
     this.answerEn,
-  })  : _legacyQuestion = question ?? '',
-        _legacyAnswer = answer ?? '';
+  }) : _legacyQuestion = question ?? '',
+       _legacyAnswer = answer ?? '';
 
   final String? questionAr;
   final String? questionEn;
@@ -21,18 +21,18 @@ class FaqModel {
   final String _legacyAnswer;
 
   String get question {
-    final text = pickText(
-      (ar: questionAr ?? '', en: questionEn ?? ''),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: questionAr ?? '',
+      en: questionEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? _legacyQuestion : text;
   }
 
   String get answer {
-    final text = pickText(
-      (ar: answerAr ?? '', en: answerEn ?? ''),
-      isArabic: AppLocale.instance.isArabic,
-    );
+    final text = pickText((
+      ar: answerAr ?? '',
+      en: answerEn ?? '',
+    ), isArabic: AppLocale.instance.isArabic);
     return text.isEmpty ? _legacyAnswer : text;
   }
 

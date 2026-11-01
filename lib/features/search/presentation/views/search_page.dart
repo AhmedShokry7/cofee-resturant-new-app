@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/search/presentation/manager/search/search_cubit.dart';
 import 'package:new_coffee/features/search/presentation/views/widgets/search_filter_sheet.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -12,7 +11,7 @@ import 'package:new_coffee/shared/widgets/search_text_field.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
-import 'package:hugeicons/hugeicons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class SearchPage extends StatelessWidget {
   const SearchPage({super.key});
@@ -37,10 +36,10 @@ class _SearchView extends StatelessWidget {
       children: [
         Padding(
           padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
+            AppSpacing.lg,
+            AppSpacing.md,
+            AppSpacing.lg,
+            AppSpacing.md,
           ),
           child: Row(
             children: [
@@ -50,22 +49,19 @@ class _SearchView extends StatelessWidget {
                       context.read<SearchCubit>().search(value),
                 ),
               ),
-              SizedBox(width: SpacingTokens.sm.w),
+              SizedBox(width: AppSpacing.sm),
               BlocBuilder<SearchCubit, SearchState>(
                 builder: (context, state) {
                   return GestureDetector(
                     onTap: () => showSearchFilterSheet(context),
                     child: Container(
-                      height: 46.h,
-                      width: 46.h,
+                      height: AppSizes.px46,
+                      width: AppSizes.px46,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppColor.primaryColor,
                       ),
-                      child: Icon(
-                        HugeIcons.strokeRoundedFilterHorizontal,
-                        color: AppColor.whiteColor,
-                      ),
+                      child: Icon(AppIcons.filter, color: AppColor.whiteColor),
                     ),
                   );
                 },
@@ -78,7 +74,7 @@ class _SearchView extends StatelessWidget {
             builder: (context, state) {
               if (!state.hasSearched) {
                 return EmptyState(
-                  icon: HugeIcons.strokeRoundedSearch01,
+                  icon: AppIcons.search,
                   title: S.searchPromptTitle,
                   subtitle: S.searchPromptHint,
                 );
@@ -91,16 +87,16 @@ class _SearchView extends StatelessWidget {
               if (state.error != null) {
                 return Center(
                   child: Padding(
-                    padding: EdgeInsets.all(SpacingTokens.lg.w),
+                    padding: EdgeInsets.all(AppSpacing.lg),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         EmptyState(
-                          icon: Icons.cloud_off_outlined,
+                          icon: AppIcons.offline,
                           title: S.searchFailed,
                           subtitle: S.tryAgainLater,
                         ),
-                        SizedBox(height: SpacingTokens.md.h),
+                        SizedBox(height: AppSpacing.md),
                         CustomBtn(
                           text: S.retry,
                           onPressed: () =>
@@ -114,7 +110,7 @@ class _SearchView extends StatelessWidget {
 
               if (state.isEmptyResult) {
                 return EmptyState(
-                  icon: Icons.search,
+                  icon: AppIcons.search,
                   title: S.noResults,
                   subtitle: S.tryDifferentKeyword,
                 );

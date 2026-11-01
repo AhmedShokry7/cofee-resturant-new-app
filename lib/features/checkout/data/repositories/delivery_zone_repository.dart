@@ -37,7 +37,10 @@ class DeliveryZonesException implements Exception {
 /// Postgres uses `42883` (`undefined_function`); the message check covers
 /// older/self-hosted gateways that omit the code.
 @visibleForTesting
-bool isMissingDeliveryZonesRpc(PostgrestException error, {String name = 'delivery_zones_for_branch'}) {
+bool isMissingDeliveryZonesRpc(
+  PostgrestException error, {
+  String name = 'delivery_zones_for_branch',
+}) {
   final code = error.code;
   if (code == 'PGRST202' || code == '42883') return true;
   return error.message.contains('Could not find the function') &&

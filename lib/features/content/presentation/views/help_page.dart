@@ -14,9 +14,8 @@ class HelpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => FaqsCubit(
-        repository: context.read<ContentRepository>(),
-      ),
+      create: (context) =>
+          FaqsCubit(repository: context.read<ContentRepository>()),
       child: const FaqsView(),
     );
   }

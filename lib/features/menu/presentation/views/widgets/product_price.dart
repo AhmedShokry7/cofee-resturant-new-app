@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProductPrice extends StatelessWidget {
   const ProductPrice({super.key, required this.product});
@@ -32,7 +32,7 @@ class ProductPrice extends StatelessWidget {
         // that only carries a compare-at price. The badge is what says "this
         // is a promotion", so the old price alone does not claim one.
         if (product.hasOldPrice) ...[
-          SizedBox(width: 6.w),
+          SizedBox(width: AppSizes.px6),
           Flexible(
             child: Text(
               Formatters.amount(product.oldPrice!),

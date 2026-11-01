@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/order_action_bottom_bar.dart';
 import 'package:new_coffee/features/orders/presentation/views/widgets/star_rating.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class LeaveReviewPage extends StatefulWidget {
   const LeaveReviewPage({super.key, required this.order});
@@ -50,43 +48,43 @@ class _LeaveReviewPageState extends State<LeaveReviewPage> {
     return Scaffold(
       appBar: AppBar(title: Text(S.leaveReview)),
       body: ListView(
-        padding: LayoutTokens.pageBody(),
+        padding: AppLayout.pageBody,
         children: [
           OrderItemCard(
             product: widget.order.product,
             quantity: widget.order.quantity,
           ),
-          SizedBox(height: SpacingTokens.xl.h),
+          SizedBox(height: AppSpacing.xl),
           Text(
             S.howIsOrder,
             textAlign: TextAlign.center,
             style: AppFonts.semiBold24(context),
           ),
-          SizedBox(height: SpacingTokens.lg.h),
+          SizedBox(height: AppSpacing.lg),
           Text(
             S.overallRating,
             textAlign: TextAlign.center,
             style: AppFonts.regular16(context)
                 .copyWith(color: AppColor.greyColor),
           ),
-          SizedBox(height: SpacingTokens.md.h),
+          SizedBox(height: AppSpacing.md),
           StarRating(
             rating: _rating,
             onChanged: (value) => setState(() => _rating = value),
           ),
-          SizedBox(height: SpacingTokens.xl.h),
+          SizedBox(height: AppSpacing.xl),
           const Divider(),
-          SizedBox(height: SpacingTokens.lg.h),
+          SizedBox(height: AppSpacing.lg),
           Text(S.addReview, style: AppFonts.semiBold16(context)),
-          SizedBox(height: SpacingTokens.md.h),
+          SizedBox(height: AppSpacing.md),
           Container(
             decoration: BoxDecoration(
               border: Border.all(color: AppColor.borderColor),
-              borderRadius: BorderRadius.circular(8.r),
+              borderRadius: BorderRadius.circular(AppRadius.r8),
             ),
             padding: EdgeInsets.symmetric(
-              horizontal: SpacingTokens.md.w,
-              vertical: SpacingTokens.sm.h,
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.sm,
             ),
             child: TextField(
               controller: _reviewController,

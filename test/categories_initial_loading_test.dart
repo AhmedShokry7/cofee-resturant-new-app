@@ -11,9 +11,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
@@ -24,7 +24,9 @@ import 'package:new_coffee/features/categories/presentation/views/categories_pag
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
 import 'support/mock_product_repository.dart';
+
 import 'package:new_coffee/features/menu/presentation/views/widgets/products_grid_view.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -74,7 +76,10 @@ class _ControlledCatalog extends MockProductRepository {
   }
 
   @override
-  Future<List<BundleModel>> getBundles({String? branchId, int limit = 20}) async {
+  Future<List<BundleModel>> getBundles({
+    String? branchId,
+    int limit = 20,
+  }) async {
     bundleCalls++;
     if (failWith != null) throw failWith!;
     return bundlesGate.future.then((_) => const <BundleModel>[]);
@@ -86,7 +91,7 @@ const _coffee = CategoryModel(
   slug: 'coffee',
   nameEn: 'Coffee',
   nameAr: 'قهوة',
-  icon: Icons.local_cafe,
+  icon: AppIcons.coffeeHot,
 );
 
 const _latte = ProductModel(
@@ -122,17 +127,14 @@ Future<void> _pumpPage(
   addTearDown(favorites.close);
 
   await tester.pumpWidget(
-    ScreenUtilInit(
-      designSize: const Size(360, 690),
-      builder: (context, _) => MaterialApp(
-        home: MultiBlocProvider(
-          providers: [
-            BlocProvider<CategoriesCubit>.value(value: cubit),
-            BlocProvider<CartCubit>.value(value: cart),
-            BlocProvider<FavoritesCubit>.value(value: favorites),
-          ],
-          child: const CategoriesPage(),
-        ),
+    MaterialApp(
+      home: MultiBlocProvider(
+        providers: [
+          BlocProvider<CategoriesCubit>.value(value: cubit),
+          BlocProvider<CartCubit>.value(value: cart),
+          BlocProvider<FavoritesCubit>.value(value: favorites),
+        ],
+        child: const CategoriesPage(),
       ),
     ),
   );
@@ -208,28 +210,30 @@ void main() {
     expect(find.text(S.noCategories), findsOneWidget);
   });
 
-  testWidgets('a category with no products shows the empty state only after load',
-      (tester) async {
-    final catalog = _ControlledCatalog(
-      categoriesResult: const [_coffee],
-      productsResult: const [],
-    );
-    final cubit = CategoriesCubit(repository: catalog);
-    addTearDown(cubit.close);
+  testWidgets(
+    'a category with no products shows the empty state only after load',
+    (tester) async {
+      final catalog = _ControlledCatalog(
+        categoriesResult: const [_coffee],
+        productsResult: const [],
+      );
+      final cubit = CategoriesCubit(repository: catalog);
+      addTearDown(cubit.close);
 
-    await _pumpPage(tester, cubit, catalog);
-    await tester.pump();
+      await _pumpPage(tester, cubit, catalog);
+      await tester.pump();
 
-    catalog
-      ..categoriesGate.complete(catalog.categoriesResult)
-      ..productsGate.complete(catalog.productsResult)
-      ..bundlesGate.complete(const []);
-    await tester.pump();
-    await tester.pump();
+      catalog
+        ..categoriesGate.complete(catalog.categoriesResult)
+        ..productsGate.complete(catalog.productsResult)
+        ..bundlesGate.complete(const []);
+      await tester.pump();
+      await tester.pump();
 
-    expect(find.byType(ProductsGridView), findsNothing);
-    expect(find.text(S.noProductsYet), findsOneWidget);
-  });
+      expect(find.byType(ProductsGridView), findsNothing);
+      expect(find.text(S.noProductsYet), findsOneWidget);
+    },
+  );
 
   testWidgets('a successful non-empty response shows the products', (
     tester,

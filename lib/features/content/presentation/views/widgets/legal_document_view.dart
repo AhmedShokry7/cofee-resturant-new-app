@@ -3,11 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/content/presentation/manager/legal_document/legal_document_cubit.dart';
 import 'package:new_coffee/features/content/presentation/views/widgets/content_page_shell.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// A published legal document read as one column of plain text.
 class LegalDocumentView extends StatelessWidget {
@@ -27,7 +27,7 @@ class LegalDocumentView extends StatelessWidget {
           failureMessage: state.hasError ? S.couldNotLoadPolicy : null,
           onRetry: () => context.read<LegalDocumentCubit>().load(),
           contentBuilder: (context) => SingleChildScrollView(
-            padding: LayoutTokens.pageBody(),
+            padding: AppLayout.pageBody,
             child: Text(
               state.document?.content ?? S.policyUnavailable,
               style: AppFonts.regular14(

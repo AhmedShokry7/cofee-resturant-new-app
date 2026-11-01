@@ -23,7 +23,8 @@ class AuthSwitchPrompt extends StatelessWidget {
       children: [
         Text(
           question,
-          style: AppFonts.regular14(context).copyWith(color: AppColor.blackColor),
+          style: AppFonts.regular14(context)
+              .copyWith(color: AppColor.blackColor),
         ),
         GestureDetector(
           onTap: onTap,

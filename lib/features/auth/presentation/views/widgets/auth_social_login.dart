@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:hugeicons/hugeicons.dart';
 
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 class AuthSocialLogin extends StatelessWidget {
   const AuthSocialLogin({super.key, this.label, this.isLoading = false});
@@ -23,7 +22,7 @@ class AuthSocialLogin extends StatelessWidget {
           children: [
             const Expanded(child: Divider()),
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: SpacingTokens.sm.w),
+              padding: EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               child: Text(
                 label ?? S.orSignInWith,
                 style: AppFonts.regular14(context)
@@ -33,24 +32,24 @@ class AuthSocialLogin extends StatelessWidget {
             const Expanded(child: Divider()),
           ],
         ),
-        SizedBox(height: SpacingTokens.lg.h),
+        SizedBox(height: AppSpacing.lg),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _SocialButton(
-              icon: HugeIcons.strokeRoundedGoogle,
+              icon: AppIcons.google,
               isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithGoogle(),
             ),
-            SizedBox(width: SpacingTokens.lg.w),
+            SizedBox(width: AppSpacing.lg),
             _SocialButton(
-              icon: HugeIcons.strokeRoundedFacebook01,
+              icon: AppIcons.facebook,
               isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithFacebook(),
             ),
-            SizedBox(width: SpacingTokens.lg.w),
+            SizedBox(width: AppSpacing.lg),
             _SocialButton(
-              icon: HugeIcons.strokeRoundedApple,
+              icon: AppIcons.apple,
               isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithApple(),
             ),
@@ -74,7 +73,7 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final size = 56.w;
+    final size = AppSizes.px56;
     return GestureDetector(
       onTap: isLoading ? null : onTap,
       child: Container(
@@ -84,7 +83,7 @@ class _SocialButton extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: AppColor.borderColor),
         ),
-        child: Icon(icon, size: 26.w, color: AppColor.blackColor),
+        child: Icon(icon, size: AppSizes.px26, color: AppColor.blackColor),
       ),
     );
   }
