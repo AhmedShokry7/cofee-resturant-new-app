@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
@@ -44,12 +45,7 @@ class _TrackOrderView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: LayoutTokens.pageBody(),
       children: [
         OrderItemCard(
           product: order.product,

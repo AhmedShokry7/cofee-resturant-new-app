@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
@@ -104,7 +105,7 @@ class _Lead extends StatelessWidget {
         width: size,
         decoration: BoxDecoration(
           color: AppColor.primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
         ),
         child: Icon(
           notification.icon,
@@ -119,7 +120,7 @@ class _Lead extends StatelessWidget {
       width: size,
       height: size,
       fit: BoxFit.cover,
-      borderRadius: BorderRadius.circular(12.r),
+      borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
       iconSize: 20.w,
     );
   }

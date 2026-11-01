@@ -18,49 +18,38 @@ class SessionRepository {
   Future<bool> hasCompletedOnboarding() async =>
       await SharedPref.getValue(key: AppConstant.onBoardingDoneKey) == 'true';
 
-  Future<void> markOnboardingSeen() => SharedPref.setValue(
-    key: AppConstant.routesKey,
-    value: AppConstant.onBoardingRoute,
-  );
+  /// The customer left the welcome screen and is about to see the onboarding.
+  ///
+  /// Confirmed, because the whole point of the marker is to survive a restart:
+  /// an unconfirmed write would meet them with the welcome screen again.
+  Future<bool> markOnboardingSeenConfirmed() =>
+      _saveRouteConfirmed(AppConstant.onBoardingRoute);
 
-  Future<void> markAuthenticated() async {
-    await SharedPref.setValue(
-      key: AppConstant.routesKey,
-      value: AppConstant.homeRoute,
-    );
-    await _markOnboardingDone();
+  /// The customer holds an authenticated session and belongs in the store.
+  ///
+  /// Both writes are confirmed, because both decide what the *next* launch
+  /// looks like: the route key picks the screen, and the onboarding flag picks
+  /// whether a returning customer is walked through it again. An unconfirmed
+  /// write would meet them with the onboarding after a sign-in.
+  Future<bool> markAuthenticatedConfirmed() async {
+    if (!await _saveRouteConfirmed(AppConstant.homeRoute)) return false;
+    return _markOnboardingDoneConfirmed();
   }
 
-  /// Skipped onboarding: user has seen it but is not signed in yet.
-  Future<void> markOnboardingSkipped() async {
-    await SharedPref.setValue(
-      key: AppConstant.routesKey,
-      value: AppConstant.authRoute,
-    );
-    await _markOnboardingDone();
-  }
-
-  /// The onboarding marker is written with confirmation, because the whole
-  /// point of the flag is to survive a restart: an unconfirmed write would
-  /// send the customer back to the onboarding on the next launch.
+  /// The customer left the onboarding and is about to be asked for credentials.
   Future<bool> markOnboardingSkippedConfirmed() async {
-    final written = await SharedPref.setValueConfirmed(
-      key: AppConstant.routesKey,
-      value: AppConstant.authRoute,
-    );
-    if (!written) return false;
-    await _markOnboardingDone();
-    return true;
+    if (!await _saveRouteConfirmed(AppConstant.authRoute)) return false;
+    return _markOnboardingDoneConfirmed();
   }
 
-  Future<void> clear() async {
-    await SharedPref.setValue(
-      key: AppConstant.routesKey,
-      value: AppConstant.authRoute,
-    );
-  }
+  /// The customer signed out, so the next start asks for credentials again.
+  Future<bool> markSignedOutConfirmed() =>
+      _saveRouteConfirmed(AppConstant.authRoute);
 
-  Future<void> _markOnboardingDone() => SharedPref.setValue(
+  Future<bool> _saveRouteConfirmed(String route) =>
+      SharedPref.setValueConfirmed(key: AppConstant.routesKey, value: route);
+
+  Future<bool> _markOnboardingDoneConfirmed() => SharedPref.setValueConfirmed(
     key: AppConstant.onBoardingDoneKey,
     value: 'true',
   );

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
@@ -39,7 +40,7 @@ class OrderCard extends StatelessWidget {
         padding: EdgeInsets.all(SpacingTokens.md.w),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: Column(

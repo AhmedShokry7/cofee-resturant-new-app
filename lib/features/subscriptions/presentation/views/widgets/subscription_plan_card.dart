@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
@@ -42,7 +43,9 @@ class SubscriptionPlanCard extends StatelessWidget {
             children: [
               Expanded(
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(
+                    LayoutTokens.cardRadius.r,
+                  ),
                   child: SizedBox.expand(
                     child: DbImage(image: plan.imageUrl, fit: BoxFit.cover),
                   ),

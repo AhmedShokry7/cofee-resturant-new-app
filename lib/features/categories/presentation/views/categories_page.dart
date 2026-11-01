@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/widgets/bundle_list_tile.dart';
@@ -136,12 +137,7 @@ class _BundlesList extends StatelessWidget {
       );
     }
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: LayoutTokens.pageBody(),
       itemCount: bundles.length,
       itemBuilder: (context, index) =>
           BundleListTile(bundle: bundles[index], productsById: productsById),

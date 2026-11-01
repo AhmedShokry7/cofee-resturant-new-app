@@ -18,9 +18,21 @@ class OnBoardingCircleButton extends StatelessWidget {
   /// Filled marks the forward step, outlined the backward one.
   final bool filled;
 
+  /// A step is the row's button height minus this inset, so the circles do not
+  /// meet the edges of the screen.
+  static const double _inset = 10;
+
+  /// The outline the backward step is drawn with.
+  static const double _outlineWidth = 2;
+
+  /// The width a step occupies, so a screen holding a step on one side can
+  /// reserve exactly that much on the other.
+  static double stepSize(BuildContext context) =>
+      AppConstant.btnHeight(context) - _inset;
+
   @override
   Widget build(BuildContext context) {
-    final size = AppConstant.btnHeight(context) - 10;
+    final size = stepSize(context);
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -30,7 +42,10 @@ class OnBoardingCircleButton extends StatelessWidget {
           color: filled ? AppColor.primaryColor : null,
           border: filled
               ? null
-              : Border.all(color: AppColor.primaryColor, width: 2),
+              : Border.all(
+                  color: AppColor.primaryColor,
+                  width: _outlineWidth,
+                ),
           shape: BoxShape.circle,
         ),
         child: Icon(

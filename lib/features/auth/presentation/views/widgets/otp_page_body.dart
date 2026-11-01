@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -27,6 +26,7 @@ class OtpPageBody extends StatefulWidget {
 
 class _OtpPageBodyState extends State<OtpPageBody> {
   static const int _codeLength = 6;
+  static const double _cellRadius = 12;
 
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
@@ -79,9 +79,10 @@ class _OtpPageBodyState extends State<OtpPageBody> {
     context.read<PhoneAuthCubit>().sendCode(phone: widget.phone);
   }
 
-  Future<void> _onAuthenticated() async {
-    await const SessionRepository().markAuthenticated();
-    if (!mounted) return;
+  /// The [PhoneAuthCubit] already wrote and confirmed the session marker, so
+  /// this only performs the handover: the customer who signed in by phone
+  /// starts a fresh stack at the store.
+  void _onAuthenticated() {
     Navigator.of(context).pushNamedAndRemoveUntil(
       MainPage.routeName,
       (route) => false,
@@ -192,7 +193,7 @@ class _OtpPageBodyState extends State<OtpPageBody> {
 
   OutlineInputBorder _border({Color? color}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12.r),
+      borderRadius: BorderRadius.circular(_cellRadius.r),
       borderSide: BorderSide(color: color ?? Colors.transparent),
     );
   }

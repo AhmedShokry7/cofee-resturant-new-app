@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
@@ -108,7 +109,9 @@ class ProductDetailsSkeleton extends StatelessWidget {
                               Expanded(
                                 child: ShimmerBox(
                                   height: 52.h,
-                                  borderRadius: BorderRadius.circular(12.r),
+                                  borderRadius: BorderRadius.circular(
+                                    LayoutTokens.cardRadius.r,
+                                  ),
                                 ),
                               ),
                             ],
@@ -286,7 +289,7 @@ class NotificationTileSkeleton extends StatelessWidget {
             ShimmerBox(
               width: 44.w,
               height: 44.w,
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
             ),
             SizedBox(width: SpacingTokens.md.w),
             Expanded(
@@ -430,7 +433,7 @@ class RewardCardSkeleton extends StatelessWidget {
             ShimmerBox(
               width: 56.w,
               height: 56.w,
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
             ),
             SizedBox(width: SpacingTokens.md.w),
             const Expanded(

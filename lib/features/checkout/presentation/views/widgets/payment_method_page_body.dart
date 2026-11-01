@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
@@ -37,12 +38,7 @@ class PaymentMethodPageBody extends StatelessWidget {
       child: BlocBuilder<CheckoutCubit, CheckoutState>(
         builder: (context, state) {
           return ListView(
-            padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.md.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.lg.w,
-            ),
+            padding: LayoutTokens.pageBody(),
             children: [
               const _PayableTotal(),
               SizedBox(height: SpacingTokens.lg.h),
@@ -165,7 +161,7 @@ class _PayableTotal extends StatelessWidget {
             padding: EdgeInsets.all(SpacingTokens.md.w),
             decoration: BoxDecoration(
               color: AppColor.lightGreyColor,
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
             ),
             child: const Center(child: CircularProgressIndicator()),
           );
@@ -174,7 +170,7 @@ class _PayableTotal extends StatelessWidget {
           padding: EdgeInsets.all(SpacingTokens.md.w),
           decoration: BoxDecoration(
             color: AppColor.lightGreyColor,
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,

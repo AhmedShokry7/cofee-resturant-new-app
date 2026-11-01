@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
@@ -43,7 +44,7 @@ class SavedCardTile extends StatelessWidget {
             width: 44.w,
             decoration: BoxDecoration(
               color: AppColor.primaryColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12.r),
+              borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
             ),
             child: Icon(
               HugeIcons.strokeRoundedCreditCard,

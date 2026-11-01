@@ -4,7 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -50,9 +49,12 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     }
   }
 
-  Future<void> _onAuthenticated() async {
-    await const SessionRepository().markAuthenticated();
-    if (!mounted) return;
+  /// Hands the customer over to wherever they were going.
+  ///
+  /// The [AuthCubit] already decided this (and wrote the session marker); only
+  /// the *where* is resolved here, because it depends on the route this page
+  /// was pushed with, which lives in the widget tree.
+  void _onAuthenticated() {
     // Return to the page that asked for authentication when possible, instead
     // of always replacing it with the home page.
     final origin = ModalRoute.of(context)?.settings.arguments;
@@ -61,8 +63,14 @@ class _LoginPageBodyState extends State<LoginPageBody> {
     } else if (origin is String && origin.isNotEmpty) {
       Navigator.of(context).pushReplacementNamed(origin);
     } else {
-      Navigator.of(context).pushReplacementNamed(MainPage.routeName);
+      _goToStore();
     }
+  }
+
+  void _onSkipped() => _goToStore();
+
+  void _goToStore() {
+    Navigator.of(context).pushReplacementNamed(MainPage.routeName);
   }
 
   @override
@@ -80,21 +88,14 @@ class _LoginPageBodyState extends State<LoginPageBody> {
               );
             } else if (state is AuthSuccess) {
               _onAuthenticated();
+            } else if (state is AuthSkipped) {
+              _onSkipped();
             }
           },
           builder: (context, state) {
             final isLoading = state is AuthLoading;
             return Stack(
               children: [
-                SkipBtn(
-                  onTap: () async {
-                    await const SessionRepository().markAuthenticated();
-                    if (!context.mounted) return;
-                    Navigator.of(context).pushReplacementNamed(
-                      MainPage.routeName,
-                    );
-                  },
-                ),
                 Form(
                   key: _formKey,
                   child: Column(
@@ -217,6 +218,12 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       SizedBox(height: AuthSpacings.bottom.h),
                     ],
                   ),
+                ),
+                // Last, so it wins the overlap: the form's title box is
+                // stretched across the full width and reaches into the top-right
+                // corner, where skipping lives.
+                SkipBtn(
+                  onTap: () => context.read<AuthCubit>().skipAuthentication(),
                 ),
               ],
             );

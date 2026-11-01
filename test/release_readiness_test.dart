@@ -83,12 +83,23 @@ void main() {
     });
 
     test('signing in also marks the onboarding as done', () async {
-      await const SessionRepository().markAuthenticated();
+      expect(await const SessionRepository().markAuthenticatedConfirmed(),
+          isTrue);
 
       expect(await const SessionRepository().hasCompletedOnboarding(), isTrue);
       expect(
         await const SessionRepository().currentRoute(),
         AppConstant.homeRoute,
+      );
+    });
+
+    test('signing out sends the next launch back to the auth screen', () async {
+      await const SessionRepository().markAuthenticatedConfirmed();
+
+      expect(await const SessionRepository().markSignedOutConfirmed(), isTrue);
+      expect(
+        await const SessionRepository().currentRoute(),
+        AppConstant.authRoute,
       );
     });
   });

@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
@@ -24,12 +25,7 @@ class SavedCardsPage extends StatelessWidget {
         body: BlocBuilder<SavedCardsCubit, SavedCardsState>(
         builder: (context, state) {
           return ListView(
-            padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.md.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.lg.w,
-            ),
+            padding: LayoutTokens.pageBody(),
             children: [
               if (state.cards.isEmpty)
                 Padding(

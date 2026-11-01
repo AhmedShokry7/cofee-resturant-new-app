@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 
 enum BtnVariant { primary, secondary, outlined, destructive }
@@ -89,7 +90,7 @@ class CustomBtn extends StatelessWidget {
         child: GestureDetector(
           onTap: effectiveOnPressed,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: MotionTokens.stateChange,
             decoration: BoxDecoration(
               gradient: isDisabled ? null : effectiveGradient,
               color: isDisabled ? bgColor.withValues(alpha: 0.5) : null,

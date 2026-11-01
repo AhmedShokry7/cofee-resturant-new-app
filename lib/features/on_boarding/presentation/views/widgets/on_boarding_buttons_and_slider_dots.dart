@@ -1,31 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:new_coffee/core/constant/app_constant.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
+import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_back_btn.dart';
+import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_circle_button.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_dots.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_next_btn.dart';
 
-class OnBoardingButtonsAndSliderDotes extends StatelessWidget {
-  const OnBoardingButtonsAndSliderDotes({super.key});
+/// The step controls: back where there is somewhere to go back to, the dots,
+/// and forward.
+class OnBoardingButtonsAndSliderDots extends StatelessWidget {
+  const OnBoardingButtonsAndSliderDots({super.key});
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<OnBoardingCubit, OnBoardingState>(
       builder: (context, state) {
-        int currentPage = 0;
-        if (state is OnBoardingPageChanged) {
-          currentPage = state.currentPage;
-        }
+        final currentPage = state is OnBoardingPageChanged
+            ? state.currentPage
+            : 0;
+        final cubit = context.read<OnBoardingCubit>();
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          padding: EdgeInsets.symmetric(horizontal: SpacingTokens.sm.w),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              currentPage != 0
-                  ? const OnBoardingBackBtn()
-                  : SizedBox(width: AppConstant.btnHeight(context)),
-              OnBoardingDots(currentPage: currentPage),
+              // The first slide has no way back, so the space the back step
+              // would take is kept for the dots to stay where they are.
+              if (currentPage != 0)
+                const OnBoardingBackBtn()
+              else
+                SizedBox(width: OnBoardingCircleButton.stepSize(context)),
+              OnBoardingDots(
+                currentPage: currentPage,
+                slideCount: cubit.slideCount,
+              ),
               const OnBoardingNextBtn(),
             ],
           ),

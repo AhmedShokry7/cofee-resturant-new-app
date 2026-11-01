@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -103,12 +104,7 @@ class _DetailsScaffold extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(S.orderDetails)),
       body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          SpacingTokens.lg.w,
-          SpacingTokens.md.h,
-          SpacingTokens.lg.w,
-          SpacingTokens.lg.w,
-        ),
+        padding: LayoutTokens.pageBody(),
         children: [
           Row(
             children: [
@@ -149,7 +145,9 @@ class _DetailsScaffold extends StatelessWidget {
                   Row(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(12.r),
+                        borderRadius: BorderRadius.circular(
+                          LayoutTokens.cardRadius.r,
+                        ),
                         child: SizedBox(
                           height: 72.w,
                           width: 72.w,

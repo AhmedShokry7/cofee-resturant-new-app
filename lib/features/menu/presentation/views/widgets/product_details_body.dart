@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -455,7 +456,7 @@ class _ValueChip extends StatelessWidget {
           color: selected
               ? AppColor.primaryColor.withValues(alpha: 0.1)
               : AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           border: Border.all(
             color: selected ? AppColor.primaryColor : AppColor.borderColor,
             width: selected ? 1.5 : 1,
@@ -516,7 +517,7 @@ class _ValueTile extends StatelessWidget {
         ),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           border: Border.all(
             color: selected ? AppColor.primaryColor : AppColor.borderColor,
             width: selected ? 1.5 : 1,

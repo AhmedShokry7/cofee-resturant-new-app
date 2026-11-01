@@ -5,13 +5,14 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
@@ -42,10 +43,20 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CurrentUserCubit(
-        repository: context.read<AuthRepository>(),
-      )..load(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => CurrentUserCubit(
+            repository: context.read<AuthRepository>(),
+          )..load(),
+        ),
+        // Signing out is an auth decision with a session marker behind it, so
+        // it goes through AuthCubit instead of a second sign-out written here
+        // against the repository.
+        BlocProvider(
+          create: (context) => AuthCubit(context.read<AuthRepository>()),
+        ),
+      ],
       // Not const: a canonicalised instance would be handed to the same
       // element on every rebuild, so the screen would keep the labels of the
       // language it first started in after the customer switches.
@@ -94,38 +105,12 @@ class _LanguageOption extends StatelessWidget {
 }
 
 class _SettingsViewState extends State<_SettingsView> {
-  /// Guards a second sign-out while the first is still in flight, so a double
-  /// tap cannot run two sign-outs or navigate twice.
-  bool _loggingOut = false;
-
-  /// Signs the customer out for real, then returns to the auth screen.
+  /// Asks the auth cubit to sign the customer out.
   ///
-  /// [AuthRepository] is a global provider (`AppProviders`), so it is available
-  /// here; `AuthCubit` is not — it is only provided inside `AuthPage`, which is
-  /// the screen being navigated to. Going through the repository therefore adds
-  /// no second authentication implementation.
-  ///
-  /// The stored route key is only cleared after the client sign-out actually
-  /// succeeded. If it throws, the customer stays where they are with an
-  /// explanation rather than a screen that claims they are signed out while the
-  /// session is still live.
-  Future<void> _logout(BuildContext context) async {
-    if (_loggingOut) return;
-    setState(() => _loggingOut = true);
-    try {
-      await context.read<AuthRepository>().signOut();
-      await const SessionRepository().clear();
-      if (!context.mounted) return;
-      Navigator.of(context)
-          .pushNamedAndRemoveUntil(AuthPage.routeName, (route) => false);
-    } catch (error) {
-      if (!mounted) return;
-      setState(() => _loggingOut = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.logoutFailed)),
-      );
-    }
-  }
+  /// The cubit owns the whole decision — the in-flight guard, the provider call,
+  /// and clearing the stored route — and only after the sign-out succeeded. This
+  /// screen reacts to the answer it emits.
+  void _logout(BuildContext context) => context.read<AuthCubit>().signOut();
 
   Future<void> _pickImage(BuildContext context) =>
       showProfileImagePicker(context);
@@ -168,7 +153,20 @@ class _SettingsViewState extends State<_SettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: BlocListener<ProfileCubit, ProfileState>(
+        child: BlocListener<AuthCubit, AuthState>(
+          listener: (context, state) {
+            if (state is AuthSignedOut) {
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                AuthPage.routeName,
+                (route) => false,
+              );
+            } else if (state is AuthFailure) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(state.message)),
+              );
+            }
+          },
+          child: BlocListener<ProfileCubit, ProfileState>(
           listenWhen: (previous, current) =>
               current.error != null && current.error != previous.error,
           listener: (context, state) {
@@ -179,12 +177,7 @@ class _SettingsViewState extends State<_SettingsView> {
           child: ListView(
           children: [
             Padding(
-              padding: EdgeInsets.fromLTRB(
-                SpacingTokens.lg.w,
-                SpacingTokens.md.h,
-                SpacingTokens.lg.w,
-                SpacingTokens.lg.w,
-              ),
+              padding: LayoutTokens.pageBody(),
               child: Column(
                 children: [
                   BlocBuilder<ProfileCubit, ProfileState>(
@@ -319,6 +312,7 @@ class _SettingsViewState extends State<_SettingsView> {
             ),
           ],
           ),
+        ),
         ),
       ),
     );

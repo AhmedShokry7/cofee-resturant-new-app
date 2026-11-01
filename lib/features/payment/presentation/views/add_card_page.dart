@@ -6,6 +6,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
@@ -152,12 +153,7 @@ class _AddCardPageState extends State<AddCardPage> {
   }
 
   Widget _formBody() => ListView(
-    padding: EdgeInsets.fromLTRB(
-      SpacingTokens.lg.w,
-      SpacingTokens.md.h,
-      SpacingTokens.lg.w,
-      SpacingTokens.lg.w,
-    ),
+    padding: LayoutTokens.pageBody(),
     children: [
       CardPreview(
         number: _numberController.text,

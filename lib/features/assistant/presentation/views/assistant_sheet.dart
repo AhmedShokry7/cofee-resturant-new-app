@@ -7,6 +7,7 @@ import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
@@ -219,7 +220,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
         ),
         decoration: BoxDecoration(
           color: isUser ? AppColor.primaryColor : AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           border: isUser ? null : Border.all(color: AppColor.borderColor),
         ),
         child: Text(
@@ -243,7 +244,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
         ),
         decoration: BoxDecoration(
           color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           border: Border.all(color: AppColor.borderColor),
         ),
         child: child,
@@ -303,7 +304,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
               padding: EdgeInsets.all(SpacingTokens.sm.w),
               decoration: BoxDecoration(
                 color: AppColor.whiteColor,
-                borderRadius: BorderRadius.circular(12.r),
+                borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
                 border: Border.all(color: AppColor.borderColor),
               ),
               child: Row(

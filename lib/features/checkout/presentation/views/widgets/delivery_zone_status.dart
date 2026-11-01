@@ -4,6 +4,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
@@ -33,7 +34,7 @@ class ResolvedZoneCard extends StatelessWidget {
       padding: EdgeInsets.all(SpacingTokens.md.w),
       decoration: BoxDecoration(
         color: AppColor.primaryColor.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
         border: Border.all(color: AppColor.primaryColor.withValues(alpha: 0.3)),
       ),
       child: Column(
@@ -104,7 +105,7 @@ class OutOfZoneNotice extends StatelessWidget {
       padding: EdgeInsets.all(SpacingTokens.md.w),
       decoration: BoxDecoration(
         color: AppColor.errorColor.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
         border: Border.all(color: AppColor.errorColor.withValues(alpha: 0.35)),
       ),
       child: Column(

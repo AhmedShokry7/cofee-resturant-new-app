@@ -7,6 +7,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
@@ -100,12 +101,7 @@ class CartPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: ListView.builder(
-                            padding: EdgeInsets.fromLTRB(
-                              SpacingTokens.lg.w,
-                              SpacingTokens.md.h,
-                              SpacingTokens.lg.w,
-                              SpacingTokens.lg.w,
-                            ),
+                            padding: LayoutTokens.pageBody(),
                             itemCount: state.items.length,
                             itemBuilder: (context, index) {
                               final item = state.items[index];

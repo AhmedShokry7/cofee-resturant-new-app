@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
@@ -33,12 +34,7 @@ class EReceiptPage extends StatelessWidget {
               subtitle: S.receiptHint,
             )
           : ListView(
-              padding: EdgeInsets.fromLTRB(
-                SpacingTokens.lg.w,
-                SpacingTokens.md.h,
-                SpacingTokens.lg.w,
-                SpacingTokens.lg.w,
-              ),
+              padding: LayoutTokens.pageBody(),
               children: [
                 _ReceiptCard(order: order),
                 SizedBox(height: SpacingTokens.lg.h),

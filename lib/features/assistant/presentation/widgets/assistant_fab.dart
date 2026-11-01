@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant_fab/assistant_fab_cubit.dart';
@@ -90,7 +91,7 @@ class _AssistantFabView extends StatelessWidget {
           children: [
             AnimatedOpacity(
               opacity: state.showHint ? 1 : 0,
-              duration: const Duration(milliseconds: 300),
+              duration: MotionTokens.entrance,
               child: state.showHint
                   ? _HintBubble(text: cubit.bubbleText)
                   : const SizedBox.shrink(),

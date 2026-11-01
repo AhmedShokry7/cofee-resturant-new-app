@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
@@ -252,7 +253,7 @@ class _DeliveryZoneField extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: SpacingTokens.md.w),
           decoration: BoxDecoration(
             border: Border.all(color: AppColor.borderColor),
-            borderRadius: BorderRadius.circular(12.r),
+            borderRadius: BorderRadius.circular(LayoutTokens.cardRadius.r),
           ),
           child: DropdownButton<DeliveryZone>(
             value: value,

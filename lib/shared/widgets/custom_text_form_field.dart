@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 
@@ -54,6 +55,8 @@ class CustomTextFormField extends StatefulWidget {
 }
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
+  static const double _fieldRadius = 18;
+
   late bool _isObscure;
   bool _isFocused = false;
 
@@ -94,13 +97,13 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
             ),
           ],
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
+            duration: MotionTokens.stateChange,
             curve: Curves.easeOut,
             decoration: BoxDecoration(
               color: _isFocused
                   ? AppColor.secondryColor.withValues(alpha: 0.035)
                   : AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(18.r),
+              borderRadius: BorderRadius.circular(_fieldRadius.r),
               boxShadow: _isFocused
                   ? [
                       BoxShadow(
@@ -209,7 +212,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
 
   OutlineInputBorder _buildBorder({double width = 1, Color? color}) {
     return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(18.r),
+      borderRadius: BorderRadius.circular(_fieldRadius.r),
       borderSide: BorderSide(
         width: width,
         color: color ?? AppColor.greyColor.withValues(alpha: 0.35),

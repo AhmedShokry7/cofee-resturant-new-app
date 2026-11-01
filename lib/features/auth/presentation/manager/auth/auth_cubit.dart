@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
@@ -9,9 +10,13 @@ import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart'
 part 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
-  AuthCubit(this._repository) : super(AuthInitial());
+  AuthCubit(this._repository, {this.session = const SessionRepository()})
+    : super(const AuthInitial());
 
   final AuthRepository _repository;
+
+  /// The markers that decide where the next launch starts.
+  final SessionRepository session;
 
   Future<void> signIn({required String email, required String password}) async {
     if (state is AuthLoading) return;
@@ -28,19 +33,24 @@ class AuthCubit extends Cubit<AuthState> {
     if (state is AuthLoading) return;
     await _authenticate(
       () => _repository.signUp(name: name, email: email, password: password),
+      // The provider hands back a customer who still has to confirm the
+      // address, and an unconfirmed address is not a session worth recording.
+      verificationPending: () => _repository.lastSignUpNeedsEmailConfirmation,
     );
   }
 
   Future<void> signInWithGoogle() async {
     if (state is AuthLoading) return;
-    emit(AuthLoading());
+    emit(const AuthLoading());
     try {
       final user = await _repository.signInWithGoogle();
+      await _recordAuthenticatedSession();
+      if (isClosed) return;
       emit(AuthSuccess(user));
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
       if (error.message == 'google_sign_in_canceled') {
-        emit(AuthInitial());
+        emit(const AuthInitial());
         return;
       }
       emit(AuthFailure(messageFor(error.message)));
@@ -55,16 +65,56 @@ class AuthCubit extends Cubit<AuthState> {
 
   Future<void> signInWithApple() => _authenticate(_repository.signInWithApple);
 
-  Future<void> signOut() async {
-    await _repository.signOut();
-    emit(AuthInitial());
+  /// The customer chose to browse without an account.
+  ///
+  /// The same markers a sign-in writes are written here, because the point of
+  /// skipping is to never be asked again.
+  Future<void> skipAuthentication() async {
+    if (state is AuthLoading) return;
+    emit(const AuthLoading());
+    await _recordAuthenticatedSession();
+    if (isClosed) return;
+    emit(const AuthSkipped());
   }
 
-  Future<void> _authenticate(Future<AuthUser> Function() action) async {
+  /// Signs the customer out, then clears the stored route.
+  ///
+  /// The route is only cleared after the client sign-out actually succeeded. If
+  /// it throws, the customer stays where they are with an explanation rather
+  /// than on a screen that claims they are signed out while the session is
+  /// still live.
+  Future<void> signOut() async {
     if (state is AuthLoading) return;
-    emit(AuthLoading());
+    emit(const AuthLoading());
+    try {
+      await _repository.signOut();
+    } catch (error) {
+      debugPrint('Sign-out failed: $error');
+      emit(AuthFailure(S.logoutFailed));
+      return;
+    }
+    final cleared = await session.markSignedOutConfirmed();
+    if (!cleared) {
+      debugPrint('[Auth] signed-out marker could not be persisted.');
+    }
+    if (isClosed) return;
+    emit(const AuthSignedOut());
+  }
+
+  Future<void> _authenticate(
+    Future<AuthUser> Function() action, {
+    bool Function() verificationPending = _nobodyIsPendingVerification,
+  }) async {
+    if (state is AuthLoading) return;
+    emit(const AuthLoading());
     try {
       final user = await action();
+      if (verificationPending()) {
+        emit(const AuthEmailConfirmationRequired());
+        return;
+      }
+      await _recordAuthenticatedSession();
+      if (isClosed) return;
       emit(AuthSuccess(user));
     } on AuthException catch (error) {
       // The provider's English never reaches the customer; each known cause
@@ -74,6 +124,22 @@ class AuthCubit extends Cubit<AuthState> {
       emit(AuthFailure(S.authUnexpected));
     }
   }
+
+  /// Writes the markers that keep the customer out of the onboarding on the
+  /// next launch, and confirms they landed.
+  ///
+  /// A marker that will not land is reported, not acted on: the customer *is*
+  /// signed in (or chose to browse unsigned), so refusing to let them in would
+  /// punish them for a storage failure. The only cost is that the next launch
+  /// asks again.
+  Future<void> _recordAuthenticatedSession() async {
+    final saved = await session.markAuthenticatedConfirmed();
+    if (!saved) {
+      debugPrint('[Auth] session marker could not be persisted.');
+    }
+  }
+
+  static bool _nobodyIsPendingVerification() => false;
 
   /// Maps a provider error onto a customer-facing message.
   ///

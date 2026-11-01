@@ -46,7 +46,7 @@ class FakePostgrestServer {
   final Map<String, Map<String, dynamic>> cartItemOptions =
       <String, Map<String, dynamic>>{};
 
-  /// Server-side favourites: "<userId>|<productId>" -> row.
+  /// Server-side favourites: `"<userId>|<productId>"` -> row.
   final Map<String, Map<String, dynamic>> favorites =
       <String, Map<String, dynamic>>{};
 

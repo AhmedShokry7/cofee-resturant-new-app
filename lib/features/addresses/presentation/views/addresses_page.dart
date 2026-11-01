@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
@@ -116,12 +117,7 @@ class _AddressesView extends StatelessWidget {
         }
         if (state.addresses.isEmpty) {
           return Padding(
-            padding: EdgeInsets.fromLTRB(
-              SpacingTokens.lg.w,
-              SpacingTokens.md.h,
-              SpacingTokens.lg.w,
-              SpacingTokens.lg.w,
-            ),
+            padding: LayoutTokens.pageBody(),
             child: Column(
               children: [
                 Expanded(
@@ -142,12 +138,7 @@ class _AddressesView extends StatelessWidget {
           );
         }
         return ListView(
-          padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            SpacingTokens.lg.w,
-          ),
+          padding: LayoutTokens.pageBody(),
           children: [
             for (var index = 0; index < state.addresses.length; index++) ...[
               AddressTile(

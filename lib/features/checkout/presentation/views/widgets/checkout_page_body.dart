@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/views/widgets/branch_selector.dart';
@@ -63,12 +64,7 @@ class _CheckoutPageBodyState extends State<CheckoutPageBody> {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: EdgeInsets.fromLTRB(
-        SpacingTokens.lg.w,
-        SpacingTokens.md.h,
-        SpacingTokens.lg.w,
-        SpacingTokens.lg.w,
-      ),
+      padding: LayoutTokens.pageBody(),
       children: [
         Text(S.pickupBranch, style: AppFonts.semiBold16(context)),
         SizedBox(height: SpacingTokens.md.h),

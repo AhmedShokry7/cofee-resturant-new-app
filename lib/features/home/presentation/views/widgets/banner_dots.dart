@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 
 class BannerDots extends StatelessWidget {
@@ -10,9 +11,9 @@ class BannerDots extends StatelessWidget {
   final int count;
   final int current;
 
-  /// Must finish before the slide does, otherwise the dots are still moving
-  /// when the new banner has already arrived and the two look out of step.
-  static const _transition = Duration(milliseconds: 220);
+  /// The dot for the banner being shown, and for the others.
+  static const double _activeSize = 10;
+  static const double _idleSize = 8;
 
   @override
   Widget build(BuildContext context) {
@@ -21,11 +22,11 @@ class BannerDots extends StatelessWidget {
       children: List.generate(count, (index) {
         final isActive = index == current;
         return AnimatedContainer(
-          duration: _transition,
-          curve: Curves.easeOutCubic,
+          duration: MotionTokens.dotMorph,
+          curve: MotionTokens.entranceCurve,
           margin: EdgeInsets.symmetric(horizontal: SpacingTokens.xs.w),
-          height: isActive ? 10.w : 8.w,
-          width: isActive ? 10.w : 8.w,
+          height: (isActive ? _activeSize : _idleSize).w,
+          width: (isActive ? _activeSize : _idleSize).w,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             color: isActive ? AppColor.primaryColor : AppColor.borderColor,

@@ -5,6 +5,7 @@ import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
@@ -56,12 +57,7 @@ class OrdersPageBody extends StatelessWidget {
               return RefreshIndicator(
                 onRefresh: () => context.read<OrdersCubit>().refresh(),
                 child: ListView.builder(
-                  padding: EdgeInsets.fromLTRB(
-                    SpacingTokens.lg.w,
-                    SpacingTokens.md.h,
-                    SpacingTokens.lg.w,
-                    SpacingTokens.lg.w,
-                  ),
+                  padding: LayoutTokens.pageBody(),
                   itemCount: orders.length,
                   itemBuilder: (context, index) =>
                       OrderCard(order: orders[index]),

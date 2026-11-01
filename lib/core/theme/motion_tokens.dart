@@ -11,4 +11,15 @@ class MotionTokens {
 
   /// The curve that belongs with [entrance]: it arrives quickly and settles.
   static const Curve entranceCurve = Curves.easeOutCubic;
+
+  /// A control changing colour for its own state: focus, press, disabled.
+  ///
+  /// Shorter than [entrance] on purpose - it answers an action the customer
+  /// already took, so it must register rather than arrive.
+  static const Duration stateChange = Duration(milliseconds: 200);
+
+  /// How long a page indicator's dots take to change shape. It is shorter than
+  /// [entrance] on purpose: the row has to be settled before the page it
+  /// describes arrives, or the two look out of step.
+  static const Duration dotMorph = Duration(milliseconds: 220);
 }

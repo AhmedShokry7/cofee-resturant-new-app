@@ -174,11 +174,9 @@ void main() {
           'Apple',
           'Pay',
           'Google',
-          'Pay',
           'Shot',
           'French',
           'press',
-          'Cappuccino',
         };
         for (final word in latinWords) {
           expect(

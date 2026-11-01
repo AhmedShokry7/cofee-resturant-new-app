@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/core/theme/spacing_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
@@ -124,12 +125,7 @@ class _BundleDetailsBody extends StatelessWidget {
             ? null
             : state.products.first;
         return ListView(
-          padding: EdgeInsets.fromLTRB(
-            SpacingTokens.lg.w,
-            SpacingTokens.md.h,
-            SpacingTokens.lg.w,
-            SpacingTokens.lg.w,
-          ),
+          padding: LayoutTokens.pageBody(),
           children: [
             if (imageProduct != null)
               Center(
@@ -173,7 +169,9 @@ class _BundleDetailsBody extends StatelessWidget {
                 padding: EdgeInsets.all(SpacingTokens.sm.w),
                 decoration: BoxDecoration(
                   color: AppColor.whiteColor,
-                  borderRadius: BorderRadius.circular(12.r),
+                  borderRadius: BorderRadius.circular(
+                    LayoutTokens.cardRadius.r,
+                  ),
                   border: Border.all(color: AppColor.borderColor),
                 ),
                 child: Row(

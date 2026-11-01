@@ -46,8 +46,8 @@ abstract class AuthRepository {
   /// Whether the account that was just signed up still has to confirm its
   /// email.
   ///
-  /// The sign-up screen asks the repository it was given rather than testing
-  /// its class, so a decorator in front of the real repository cannot turn the
-  /// question into "no" and send an unconfirmed customer into the app.
+  /// [AuthCubit] asks the repository it was given rather than testing its class,
+  /// so a decorator in front of the real repository cannot turn the question
+  /// into "no" and send an unconfirmed customer into the app.
   bool get lastSignUpNeedsEmailConfirmation => false;
 }

@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:hugeicons/hugeicons.dart';
 
 import 'package:new_coffee/core/navigation/notification_routes.dart';
-import 'package:new_coffee/core/theme/spacing_tokens.dart';
+import 'package:new_coffee/core/theme/layout_tokens.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_preferences_sheet.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
@@ -131,12 +130,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 );
               }
               return ListView(
-                padding: EdgeInsets.fromLTRB(
-                  SpacingTokens.lg.w,
-                  SpacingTokens.md.h,
-                  SpacingTokens.lg.w,
-                  SpacingTokens.lg.w,
-                ),
+                padding: LayoutTokens.pageBody(),
                 children: state.notifications
                     .map(
                       (notification) => NotificationTile(

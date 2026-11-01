@@ -10,10 +10,12 @@ import 'supabase_public_config.dart';
 /// IDE and CLI runs work without extra arguments. Build-time defines override
 /// those defaults when a different project is needed:
 ///
-///   flutter run \
-///     --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
-///     --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key> \
-///     --dart-define=PASSWORD_RECOVERY_REDIRECT=<redirect-url>
+/// ```bash
+/// flutter run \
+///   --dart-define=SUPABASE_URL=https://<project-ref>.supabase.co \
+///   --dart-define=SUPABASE_PUBLISHABLE_KEY=<publishable-key> \
+///   --dart-define=PASSWORD_RECOVERY_REDIRECT=<redirect-url>
+/// ```
 ///
 /// `SUPABASE_PUBLISHABLE_KEY` is the public "anon" role and is safe to ship.
 /// The `service_role` key must never reach the client (DATABASE_SPEC.md 1.5).
@@ -55,7 +57,7 @@ class AppConfig {
   );
 
   /// Web OAuth client ID used as the Google Sign-In server client ID on
-  /// Android. Supplied via --dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>.
+  /// Android. Supplied via `--dart-define=GOOGLE_SERVER_CLIENT_ID=<web-client-id>`.
   /// Defaults to the project's confirmed Web OAuth client so the value is never
   /// empty at runtime, even when no dart-define is passed.
   static const String googleServerClientId = String.fromEnvironment(
