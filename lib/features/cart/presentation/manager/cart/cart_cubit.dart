@@ -16,6 +16,7 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 
 part 'cart_state.dart';
+part 'cart_line_mapper.dart';
 
 /// Owns the customer-facing cart.
 ///
@@ -222,7 +223,7 @@ class CartCubit extends Cubit<CartState> {
       // catalogue, so an empty cart still costs no request.
       final cachedEntries = (raw == null || raw.isEmpty)
           ? const <Map<String, dynamic>>[]
-          : _decodeEntries(raw);
+          : decodeCartEntries(raw);
 
       Object? serverError;
       List<CartLine>? serverLines;
@@ -240,7 +241,7 @@ class CartCubit extends Cubit<CartState> {
           await _writeChain;
           if (isClosed || generation != _loadGeneration) return;
           try {
-            await _saveLines(_linesFromEntries(cachedEntries));
+            await _saveLines(serverLinesForEntries(cachedEntries));
             await _setPendingSync(false);
           } catch (error) {
             serverError = error;
@@ -260,7 +261,7 @@ class CartCubit extends Cubit<CartState> {
 
       final entries = serverLines == null
           ? cachedEntries
-          : _mergeServerLines(serverLines, cachedEntries);
+          : mergeServerLines(serverLines, cachedEntries);
       final items = await _resolveItems(entries, catalog);
       if (isClosed) return;
       if (generation != _loadGeneration) return;
@@ -290,7 +291,7 @@ class CartCubit extends Cubit<CartState> {
           guestRaw = await SharedPref.getValue(key: storageKeyFor(null));
           guestEntries = guestRaw == null || guestRaw.isEmpty
               ? const <Map<String, dynamic>>[]
-              : _decodeEntries(guestRaw);
+              : decodeCartEntries(guestRaw);
           if (guestEntries.isNotEmpty) {
             // Claim the guest slot first so concurrent/retried loads cannot
             // adopt the same lines twice.
@@ -505,7 +506,7 @@ class CartCubit extends Cubit<CartState> {
       (item) =>
           item.product.id == product.id &&
           item.note == note &&
-          _sameOptions(item.optionValueIds, optionIds),
+          sameOptionIds(item.optionValueIds, optionIds),
     );
     if (index == -1) {
       items.add(
@@ -561,7 +562,7 @@ class CartCubit extends Cubit<CartState> {
           item.isBundle &&
           item.bundleId == bundleId &&
           item.note == note &&
-          _sameOptions(item.optionValueIds, optionIds),
+          sameOptionIds(item.optionValueIds, optionIds),
     );
     if (index == -1) {
       items.add(
@@ -676,7 +677,7 @@ class CartCubit extends Cubit<CartState> {
     if (isClosed) return;
     if (_userId != identity) return;
     if (!_canSyncToServer) return;
-    final lines = _linesFromState();
+    final lines = serverLinesForItems(state.items);
     try {
       await _saveLines(lines);
       if (isClosed || _userId != identity) return;
@@ -696,189 +697,6 @@ class CartCubit extends Cubit<CartState> {
 
   Future<void> _saveLines(List<CartLine> lines) =>
       _cartRepository.saveLines(branchId: branchId, lines: lines);
-
-  /// The server lines for the cart the customer is looking at.
-  ///
-  /// A bundle is one line on the device but its component lines on the
-  /// server, exactly like the checkout sends it, so the server keeps charging
-  /// the bundle share.
-  List<CartLine> _linesFromState() => [
-    for (final item in state.items)
-      ..._serverLines(
-        quantity: item.quantity,
-        note: item.note,
-        optionValueIds: item.optionValueIds,
-        bundleId: item.bundleId,
-        isBundle: item.isBundle,
-        productId: item.product.id,
-        components: item.bundleComponents,
-      ),
-  ];
-
-  /// The server lines for a stored cart.
-  ///
-  /// A bundle is one stored line but its component lines on the server, the
-  /// same way the checkout sends it.
-  List<CartLine> _linesFromEntries(List<Map<String, dynamic>> entries) => [
-    for (final entry in entries)
-      ..._serverLines(
-        quantity: (entry['quantity'] as num?)?.toInt() ?? 1,
-        note: entry['note']?.toString() ?? '',
-        optionValueIds: canonicalOptionIds(
-          (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
-              const <String>[],
-        ),
-        bundleId: entry['bundleId']?.toString(),
-        isBundle: entry['isBundle'] == true,
-        productId: entry['productId']?.toString(),
-        components: entry['isBundle'] == true
-            ? _bundleComponentsOf(entry)
-            : const [],
-      ),
-  ];
-
-  /// One cart line as the server stores it.
-  ///
-  /// A bundle line has no product of its own: it becomes one line per
-  /// component, each scaled by the quantity ordered, and every line carries the
-  /// bundle id so the bundle share keeps being charged. A line that reads as a
-  /// bundle but has no components names no product either, so it is not sent.
-  static List<CartLine> _serverLines({
-    required int quantity,
-    required String note,
-    required List<String> optionValueIds,
-    required String? bundleId,
-    required bool isBundle,
-    String? productId,
-    List<CartBundleComponent> components = const [],
-  }) {
-    if (components.isEmpty) {
-      return isBundle
-          ? const []
-          : [
-              CartLine(
-                productId: productId ?? '',
-                quantity: quantity,
-                note: note,
-                optionValueIds: optionValueIds,
-                bundleId: bundleId,
-              ),
-            ];
-    }
-    return [
-      for (final component in components)
-        CartLine(
-          productId: component.productId,
-          quantity: component.quantity * quantity,
-          note: note,
-          optionValueIds: optionValueIds,
-          bundleId: bundleId,
-        ),
-    ];
-  }
-
-  /// The components of a stored bundle line.
-  static List<CartBundleComponent> _bundleComponentsOf(
-    Map<String, dynamic> entry,
-  ) {
-    final components = <CartBundleComponent>[];
-    final rawComponents = entry['bundleComponents'];
-    if (rawComponents is List) {
-      for (final raw in rawComponents) {
-        if (raw is Map) {
-          components.add(
-            CartBundleComponent.fromJson(Map<String, dynamic>.from(raw)),
-          );
-        }
-      }
-    }
-    return components;
-  }
-
-  /// Combines the server cart with the device copy.
-  ///
-  /// The server owns the product lines. A bundle is a device-side wrapper
-  /// around component lines, so it is re-attached to the component lines the
-  /// server kept, matched by bundle id as well as product/note/options: a
-  /// standalone line of the same product must never be pulled into a bundle.
-  /// A bundle the server does not know any more is dropped, because the server
-  /// is the authority. Component lines the device has no bundle for stay
-  /// ordinary lines but keep their `bundleId`, so the next write still sends
-  /// the bundle identity instead of inventing a standalone price.
-  List<Map<String, dynamic>> _mergeServerLines(
-    List<CartLine> serverLines,
-    List<Map<String, dynamic>> cachedEntries,
-  ) {
-    final remaining = List<CartLine>.of(serverLines);
-    final merged = <Map<String, dynamic>>[];
-
-    for (final entry in cachedEntries) {
-      if (entry['isBundle'] != true) continue;
-      final components = _bundleComponentsOf(entry);
-      if (components.isEmpty) continue;
-
-      final bundleId =
-          entry['bundleId']?.toString() ?? entry['productId']?.toString() ?? '';
-      if (bundleId.isEmpty) continue;
-
-      final note = entry['note']?.toString() ?? '';
-      final optionIds = canonicalOptionIds(
-        (entry['optionValueIds'] as List?)?.map((e) => e.toString()) ??
-            const <String>[],
-      );
-      final matched = <CartLine>[];
-      var complete = true;
-      for (final component in components) {
-        final index = remaining.indexWhere(
-          (line) =>
-              line.productId == component.productId &&
-              line.bundleId == bundleId &&
-              line.note == note &&
-              _sameOptions(line.optionValueIds, optionIds),
-        );
-        if (index == -1) {
-          complete = false;
-          break;
-        }
-        matched.add(remaining.removeAt(index));
-      }
-      if (!complete) {
-        // The bundle is not on the server any more: put the lines that were
-        // taken back and let the server decide.
-        remaining.insertAll(0, matched);
-        continue;
-      }
-
-      var quantity = 1 << 30;
-      for (var i = 0; i < matched.length; i++) {
-        final perBundle = components[i].quantity;
-        final held = perBundle <= 0
-            ? matched[i].quantity
-            : matched[i].quantity ~/ perBundle;
-        if (held < quantity) quantity = held;
-      }
-      if (quantity < 1) {
-        // Never turn "not enough components" into a bundle by clamping.
-        remaining.insertAll(0, matched);
-        continue;
-      }
-      merged.add({...entry, 'quantity': quantity.clamp(1, 99)});
-    }
-
-    for (final line in remaining) {
-      merged.add({
-        'productId': line.productId,
-        'quantity': line.quantity,
-        if (line.note.isNotEmpty) 'note': line.note,
-        if (line.optionValueIds.isNotEmpty)
-          'optionValueIds': line.optionValueIds,
-        if (line.unitPrice != null) 'unitPrice': line.unitPrice,
-        if (line.bundleId != null && line.bundleId!.trim().isNotEmpty)
-          'bundleId': line.bundleId,
-      });
-    }
-    return merged;
-  }
 
   void _changeQuantityForProduct(String productId, int delta) {
     final items = [...state.items];
@@ -902,23 +720,6 @@ class CartCubit extends Cubit<CartState> {
     }
     emit(CartState(items: items));
     _onCartChanged();
-  }
-
-  static bool _sameOptions(List<String> a, List<String> b) {
-    if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i] != b[i]) return false;
-    }
-    return true;
-  }
-
-  static List<Map<String, dynamic>> _decodeEntries(String raw) {
-    final decoded = jsonDecode(raw);
-    if (decoded is! List) return const [];
-    return [
-      for (final entry in decoded)
-        if (entry is Map) Map<String, dynamic>.from(entry),
-    ];
   }
 
   Future<List<CartItem>> _resolveItems(

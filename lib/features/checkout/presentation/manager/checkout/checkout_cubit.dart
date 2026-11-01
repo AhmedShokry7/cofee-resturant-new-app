@@ -745,27 +745,19 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   /// Maps device cart lines to the price-free lines the server re-prices.
   ///
-  /// A bundle is sold as one device line but persists as its component lines,
-  /// each carrying the bundle id so the server keeps charging the bundle share.
+  /// The expansion itself — a bundle becomes its component lines, each scaled
+  /// by the ordered quantity and carrying the bundle id — is the cart's rule,
+  /// read from [serverLinesForItems], so an order is priced from the same lines
+  /// the cart synced.
   List<PlaceOrderLine> _lines(List<CartItem> items) => [
-    for (final item in items)
-      if (item.isBundle)
-        for (final component in item.bundleComponents)
-          PlaceOrderLine(
-            productId: component.productId,
-            quantity: component.quantity * item.quantity,
-            note: item.note,
-            optionValueIds: item.optionValueIds,
-            bundleId: item.bundleId,
-          )
-      else
-        PlaceOrderLine(
-          productId: item.product.id,
-          quantity: item.quantity,
-          note: item.note,
-          optionValueIds: item.optionValueIds,
-          bundleId: item.bundleId,
-        ),
+    for (final line in serverLinesForItems(items))
+      PlaceOrderLine(
+        productId: line.productId,
+        quantity: line.quantity,
+        note: line.note,
+        optionValueIds: line.optionValueIds,
+        bundleId: line.bundleId,
+      ),
   ];
 
   /// Places the order on the server. Returns true only when the server
