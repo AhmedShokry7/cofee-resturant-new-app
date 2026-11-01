@@ -7,6 +7,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/addresses/data/address_book_editor.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/checkout/data/model/delivery_zone_model.dart';
 import 'package:new_coffee/features/checkout/data/model/order_model.dart';
@@ -32,12 +33,14 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     this.currentUserIdProvider,
     this.branchId,
   }) : _addresses = addresses,
+       _addressBook = AddressBookEditor(repository: addresses),
        super(const CheckoutState()) {
     load();
   }
 
   final CouponRepository _coupons;
   final AddressRepository _addresses;
+  final AddressBookEditor _addressBook;
   final PaymentMethodRepository _paymentMethods;
   final DeliveryZoneRepository _deliveryZoneRepository;
   final OrdersRepository _orders;
@@ -497,63 +500,90 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   Future<void> addAddress(AddressModel address) async {
     try {
-      final saved = await _addresses.addAddress(
+      final change = await _addressBook.add(
+        state.addresses,
         label: address.label,
         details: address.details,
         latitude: address.latitude,
         longitude: address.longitude,
-        isDefault: state.addresses.isEmpty,
       );
       if (isClosed) return;
       emit(
         state.copyWith(
-          addresses: [...state.addresses, saved],
-          selectedAddress: saved,
+          addresses: change.addresses,
+          selectedAddress: change.saved,
         ),
       );
       resolveZoneForSelectedAddress();
-    } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: error.toString()));
-      addError(error, stackTrace);
+    } on AddressBookFailure catch (failure, stackTrace) {
+      _reportAddressFailure(failure, stackTrace);
     }
   }
 
   Future<void> removeAddress(String id) async {
     try {
-      await _addresses.removeAddress(id);
+      final change = await _addressBook.remove(state.addresses, id);
       if (isClosed) return;
-      final remaining = state.addresses.where((a) => a.id != id).toList();
+      // The address being paid for may be the one just deleted: fall back to the
+      // default, and clear the selection when the book is empty, or the
+      // checkout would submit an address the server no longer has.
+      final keep = state.selectedAddress;
+      final selected = change.addresses.any((a) => a.id == keep?.id)
+          ? keep
+          : _pickInitial(change.addresses);
       emit(
         state.copyWith(
-          addresses: remaining,
-          selectedAddress: _pickInitial(remaining),
-          // The last address is gone: the selection must go with it, or the
-          // checkout would submit an address the server no longer has.
-          clearSelectedAddress: remaining.isEmpty,
+          addresses: change.addresses,
+          selectedAddress: selected,
+          clearSelectedAddress: selected == null,
         ),
       );
       resolveZoneForSelectedAddress();
-    } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: error.toString()));
-      addError(error, stackTrace);
+    } on AddressBookFailure catch (failure, stackTrace) {
+      _reportAddressFailure(failure, stackTrace);
     }
   }
 
   Future<void> setDefaultAddress(String id) async {
     try {
-      await _addresses.setDefaultAddress(id);
+      final change = await _addressBook.setDefault(state.addresses, id);
       if (isClosed) return;
-      final updated = state.addresses
-          .map((address) => address.copyWith(isDefault: address.id == id))
-          .toList();
-      emit(state.copyWith(addresses: updated));
-    } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: error.toString()));
-      addError(error, stackTrace);
+      // Only the flags change: the checkout's own selection is untouched.
+      emit(state.copyWith(addresses: change.addresses));
+    } on AddressBookFailure catch (failure, stackTrace) {
+      _reportAddressFailure(failure, stackTrace);
     }
+  }
+
+  Future<void> updateAddress(AddressModel address) async {
+    try {
+      final change = await _addressBook.update(state.addresses, address);
+      if (isClosed) return;
+      final selected = state.selectedAddress;
+      emit(
+        state.copyWith(
+          addresses: change.addresses,
+          // The address on screen can be the one just edited, and the server
+          // owns the row now: show the saved copy, not the draft.
+          selectedAddress:
+              change.saved != null && selected?.id == change.saved!.id
+                  ? change.saved
+                  : selected,
+        ),
+      );
+      resolveZoneForSelectedAddress();
+    } on AddressBookFailure catch (failure, stackTrace) {
+      _reportAddressFailure(failure, stackTrace);
+    }
+  }
+
+  void _reportAddressFailure(
+    AddressBookFailure failure,
+    StackTrace stackTrace,
+  ) {
+    if (isClosed) return;
+    emit(state.copyWith(error: failure.message));
+    addError(failure.cause, stackTrace);
   }
 
   /// Clears a consumed error so a later rebuild cannot resurface it.
@@ -563,27 +593,6 @@ class CheckoutCubit extends Cubit<CheckoutState> {
   void clearError() {
     if (state.error == null) return;
     emit(state.copyWith(clearError: true));
-  }
-
-  Future<void> updateAddress(AddressModel address) async {
-    try {
-      final saved = await _addresses.updateAddress(
-        id: address.id,
-        label: address.label,
-        details: address.details,
-        latitude: address.latitude,
-        longitude: address.longitude,
-      );
-      if (isClosed) return;
-      final updated = state.addresses
-          .map((item) => item.id == saved.id ? saved : item)
-          .toList();
-      emit(state.copyWith(addresses: updated));
-    } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: error.toString()));
-      addError(error, stackTrace);
-    }
   }
 
   void selectPaymentMethod(PaymentMethodModel method) {

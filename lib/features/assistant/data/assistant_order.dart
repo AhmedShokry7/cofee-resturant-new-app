@@ -369,8 +369,12 @@ bool _hasDessertCategory(Iterable<String> ids) {
   final menu = AssistantSnapshot.current.products;
   for (final id in ids) {
     for (final product in menu) {
+      // Compared lower-cased: a category written as "Desserts" — which is what
+      // a row with no slug carries — names the same thing as the slug does, and
+      // treating them as different made the assistant ask "which dessert?" to
+      // a customer who had just named one.
       if (product.id == id &&
-          sweetCats.contains(AssistantSnapshot.categoryKey(product))) {
+          sweetCats.contains(AssistantSnapshot.categoryKey(product).toLowerCase())) {
         return true;
       }
     }
