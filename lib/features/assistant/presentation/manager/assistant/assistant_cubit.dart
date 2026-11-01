@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/navigation/assistant_routes.dart';
 import 'package:new_coffee/features/assistant/data/assistant_actions.dart';
 import 'package:new_coffee/features/assistant/data/assistant_catalog.dart';
 import 'package:new_coffee/features/assistant/data/assistant_composer.dart';
@@ -267,7 +268,7 @@ class AssistantCubit extends Cubit<AssistantState> {
         typing: false,
         quickReplies: answer.quickReplies,
         products: answer.products,
-        navigateRoute: answer.navigateRoute,
+        navigateRoute: routeForAssistantDestination(answer.destination),
         navigateLabel: answer.navigateLabel,
         cartActions: answer.actions,
       ),

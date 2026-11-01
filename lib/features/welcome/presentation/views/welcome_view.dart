@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:new_coffee/features/welcome/presentation/view/widgets/welcome_page_body.dart';
+import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_page_body.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({super.key});

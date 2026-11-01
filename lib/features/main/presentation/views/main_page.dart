@@ -30,26 +30,12 @@ class MainPage extends StatelessWidget {
 
 class _MainScaffold extends StatefulWidget {
   const _MainScaffold();
- 
+
   @override
   State<_MainScaffold> createState() => _MainScaffoldState();
 }
 
 class _MainScaffoldState extends State<_MainScaffold> {
-  // Pages are built only once their tab has actually been visited, so the
-  // Home tab no longer drags Categories/Cart/Favorites/Settings into the
-  // first frame. Slots that have never been visited stay in the stack as tiny
-  // placeholders; once a page has been built it stays built for state retention.
-  final List<bool> _built = <bool>[true, false, false, false, false];
-
-  static const List<Widget> _pages = <Widget>[
-    HomePage(),
-    CategoriesPage(),
-    CartPage(),
-    FavoritesPage(),
-    SettingsPage(),
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -64,24 +50,52 @@ class _MainScaffoldState extends State<_MainScaffold> {
     });
   }
 
+  /// The bottom bar and its pages, in one list: a tab that is only described
+  /// twice can drift between the icon and the screen behind it.
+  List<({Widget icon, String label, Widget page})> get _tabs => [
+    (
+      icon: const Icon(HugeIcons.strokeRoundedHome01),
+      label: S.navHome,
+      page: const HomePage(),
+    ),
+    (
+      icon: const Icon(HugeIcons.strokeRoundedGridView),
+      label: S.navCategories,
+      page: const CategoriesPage(),
+    ),
+    (
+      icon: const _CartTabIcon(),
+      label: S.navCart,
+      page: const CartPage(),
+    ),
+    (
+      icon: const Icon(HugeIcons.strokeRoundedFavourite),
+      label: S.navFavorites,
+      page: const FavoritesPage(),
+    ),
+    (
+      icon: const Icon(HugeIcons.strokeRoundedSettings01),
+      label: S.navSettings,
+      page: const SettingsPage(),
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final tabs = _tabs;
     return BlocBuilder<MainCubit, MainState>(
       builder: (context, state) {
         final index = state.index;
-        if (index >= 0 && index < _built.length) {
-          _built[index] = true;
-        }
         return Scaffold(
           body: IndexedStack(
             index: index,
             children: [
-              for (var i = 0; i < _pages.length; i++)
-                _built[i] ? _pages[i] : const SizedBox.shrink(),
+              for (var i = 0; i < tabs.length; i++)
+                state.isBuilt(i) ? tabs[i].page : const SizedBox.shrink(),
             ],
           ),
           bottomNavigationBar: BottomNavigationBar(
-            currentIndex: state.index,
+            currentIndex: index,
             onTap: (index) => context.read<MainCubit>().changeTab(index),
             type: BottomNavigationBarType.fixed,
             backgroundColor: AppColor.whiteColor,
@@ -90,40 +104,28 @@ class _MainScaffoldState extends State<_MainScaffold> {
             selectedLabelStyle: AppFonts.medium12(context),
             unselectedLabelStyle: AppFonts.medium12(context),
             items: [
-              BottomNavigationBarItem(
-                icon: const Icon(HugeIcons.strokeRoundedHome01),
-                label: S.navHome,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(HugeIcons.strokeRoundedGridView),
-                label: S.navCategories,
-              ),
-              BottomNavigationBarItem(
-                icon: BlocBuilder<CartCubit, CartState>(
-                  builder: (context, cartState) {
-                    final icon = Icon(HugeIcons.strokeRoundedShoppingCart01);
-                    if (cartState.count == 0) {
-                      return icon;
-                    }
-                    return Badge(
-                      label: Text('${cartState.count}'),
-                      child: icon,
-                    );
-                  },
-                ),
-                label: S.navCart,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(HugeIcons.strokeRoundedFavourite),
-                label: S.navFavorites,
-              ),
-              BottomNavigationBarItem(
-                icon: const Icon(HugeIcons.strokeRoundedSettings01),
-                label: S.navSettings,
-              ),
+              for (final tab in tabs)
+                BottomNavigationBarItem(icon: tab.icon, label: tab.label),
             ],
           ),
         );
+      },
+    );
+  }
+}
+
+/// The cart tab carries the item count, so it rebuilds with the cart alone
+/// rather than with every tab bar rebuild.
+class _CartTabIcon extends StatelessWidget {
+  const _CartTabIcon();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<CartCubit, CartState>(
+      builder: (context, cartState) {
+        const icon = Icon(HugeIcons.strokeRoundedShoppingCart01);
+        if (cartState.count == 0) return icon;
+        return Badge(label: Text('${cartState.count}'), child: icon);
       },
     );
   }

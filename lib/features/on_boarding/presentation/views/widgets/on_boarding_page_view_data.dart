@@ -12,7 +12,7 @@ class OnBoardingPageViewData extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cubit = BlocProvider.of<OnBoardingCubit>(context);
-    final onBoardingList = getOnBoardingList(context);
+    final onBoardingList = onBoardingSlides();
     final itemCount = onBoardingList.length;
     return PageView.builder(
       controller: cubit.pageController,

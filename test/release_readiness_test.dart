@@ -10,7 +10,7 @@ import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
-import 'package:new_coffee/features/welcome/presentation/view/welcome_view.dart';
+import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 
 /// Regression cover for the failures that only showed up in a release build on
 /// a real device:

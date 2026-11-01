@@ -6,7 +6,7 @@ import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
-import 'package:new_coffee/features/welcome/presentation/view/welcome_view.dart';
+import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 
 /// Mirrors main.dart: the entry route is the splash and ScreenUtil wraps the
 /// app, which the destination page needs.

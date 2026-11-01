@@ -29,7 +29,7 @@ class AssistantAnswer {
     this.topic = 'general',
     this.quickReplies = const [],
     this.products = const [],
-    this.navigateRoute,
+    this.destination,
     this.navigateLabel,
     this.actions = const [],
   });
@@ -39,7 +39,7 @@ class AssistantAnswer {
   final String topic;
   final List<String> quickReplies;
   final List<ProductModel> products;
-  final String? navigateRoute;
+  final AssistantDestination? destination;
   final String? navigateLabel;
 
   /// Tool calls for the UI layer to execute (e.g. add items to the cart).
@@ -331,7 +331,7 @@ class AssistantEngine {
           quickReplies: arabic
               ? const ['فين الاوردر؟', 'رشحلي مشروب']
               : const ['Track my order', 'Suggest a drink'],
-          navigateRoute: 'couponRoute',
+          destination: AssistantDestination.coupons,
           navigateLabel: arabic ? 'العروض' : 'Open Coupons',
         );
       case AssistantIntent.botIdentity:
@@ -1395,7 +1395,7 @@ class AssistantEngine {
       quickReplies: arabic
           ? const ['رشحلي مشروب', 'في عروض؟']
           : const ['Suggest a drink', 'Any coupons?'],
-      navigateRoute: 'ordersRoute',
+      destination: AssistantDestination.orders,
       navigateLabel: arabic ? 'طلباتي' : 'My Orders',
     );
   }
@@ -1966,7 +1966,7 @@ class AssistantEngine {
             : '${prefix}Opening payment — pick your card there.',
         topic: 'order',
         sourceId: 'order-pay-now',
-        navigateRoute: 'checkoutRoute',
+        destination: AssistantDestination.checkout,
         navigateLabel: arabic ? 'ادفع دلوقتي' : 'Pay now',
         actions: actions,
       );
@@ -1977,7 +1977,7 @@ class AssistantEngine {
           : '${prefix}Opening checkout — choose On Delivery there.',
       topic: 'order',
       sourceId: 'order-pay-cash',
-      navigateRoute: 'checkoutRoute',
+      destination: AssistantDestination.checkout,
       navigateLabel: arabic ? 'إتمام الاوردر' : 'Checkout',
       actions: actions,
     );

@@ -19,4 +19,8 @@ class AppConstant {
   static double horizontalPadding(BuildContext context) => SpacingTokens.lg.w;
 
   static double btnHeight(BuildContext context) => 52.h;
+
+  /// The glyph inside a round icon button sized by [btnHeight].
+  static double btnIconSize(BuildContext context) =>
+      MediaQuery.sizeOf(context).height * .03;
 }

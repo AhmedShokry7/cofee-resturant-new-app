@@ -30,7 +30,7 @@ import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
-import 'package:new_coffee/features/welcome/presentation/view/welcome_view.dart';
+import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 
 /// Static (argument-free) routes + saved-session entry point.
 class AppRoutes {

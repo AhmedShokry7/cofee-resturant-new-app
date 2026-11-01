@@ -8,6 +8,6 @@ class MainCubit extends Cubit<MainState> {
 
   void changeTab(int index) {
     if (index == state.index) return;
-    emit(MainState(index: index));
+    emit(state.withTab(index));
   }
 }

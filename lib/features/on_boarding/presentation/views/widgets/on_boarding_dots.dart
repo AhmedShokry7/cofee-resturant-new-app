@@ -13,7 +13,7 @@ class OnBoardingDots extends StatelessWidget {
     return Row(
       children: [
         ...List.generate(
-          getOnBoardingList(context).length,
+          onBoardingSlides().length,
           (index) => AnimatedContainer(
             margin: const EdgeInsets.only(right: 8),
             height: currentPage == index ? 10.h : 6.h,

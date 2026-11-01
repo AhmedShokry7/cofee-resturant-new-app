@@ -1,33 +1,20 @@
-import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/constant/app_constant.dart';
-import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
+import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_circle_button.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
 
+/// Steps to the next slide, and leaves the onboarding on the last one.
 class OnBoardingNextBtn extends StatelessWidget {
   const OnBoardingNextBtn({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final myHight = MediaQuery.of(context).size.height;
-    return GestureDetector(
-      onTap: () {
-        BlocProvider.of<OnBoardingCubit>(context).nextBtn(context);
-      },
-      child: Container(
-        height: AppConstant.btnHeight(context) - 10,
-        width: AppConstant.btnHeight(context) - 10,
-        decoration: BoxDecoration(
-          color: AppColor.primaryColor,
-          shape: BoxShape.circle,
-        ),
-        child: Icon(
-          DirectionAwareIcons.forward(context),
-          size: myHight * .03,
-          color: AppColor.whiteColor,
-        ),
-      ),
+    return OnBoardingCircleButton(
+      icon: DirectionAwareIcons.forward(context),
+      filled: true,
+      onTap: () => context.read<OnBoardingCubit>().next(),
     );
   }
 }

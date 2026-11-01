@@ -809,6 +809,26 @@ class S {
   static String get noSlides =>
       _ar ? 'لا توجد شرائح تعريفية' : 'No onboarding slides';
 
+  /// The three intro slides the first launch shows.
+  static String get onBoardingCatalogTitle => _ar
+      ? 'كل ما تحب في مكان واحد'
+      : 'Everything You Love, in One Place';
+  static String get onBoardingCatalogBody => _ar
+      ? 'اكتشف القهوة والمشروبات ومنتجاتك المفضلة بسهولة.'
+      : 'Explore coffee, drinks, and your favorite products with ease.';
+  static String get onBoardingPaymentTitle => _ar
+      ? 'ادفع بالطريقة التي تناسبك'
+      : 'Pay Your Way';
+  static String get onBoardingPaymentBody => _ar
+      ? 'استمتع بتجربة دفع سهلة وآمنة لإكمال طلبك بكل راحة.'
+      : 'Enjoy a smooth and secure payment experience every time you order.';
+  static String get onBoardingAssistantTitle => _ar
+      ? 'مساعدك الذكي معك دائمًا'
+      : 'Meet Your AI Assistant';
+  static String get onBoardingAssistantBody => _ar
+      ? 'احصل على اقتراحات ذكية واكتشف ما يناسب ذوقك بسهولة.'
+      : 'Get smart recommendations and discover what matches your taste.';
+
   // ---------- Auth screens ----------
   static String get welcomeBackSubtitle =>
       _ar ? 'أهلًا بعودتك، كنا ننتظرك' : "Hi welcome back, you've been missed";
