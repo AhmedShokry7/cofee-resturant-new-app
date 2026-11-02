@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -68,6 +69,15 @@ class _FakeAuthRepository implements AuthRepository {
     required String phone,
     required String code,
   }) async => AuthUser(id: phone);
+
+  @override
+  Future<void> sendEmailCode({required String email}) async {}
+
+  @override
+  Future<AuthUser> verifyEmailCode({
+    required String email,
+    required String code,
+  }) async => AuthUser(id: email);
 
   @override
   Future<void> sendPasswordResetEmail({required String email}) async {}
@@ -168,6 +178,52 @@ void main() {
     test('the Arabic sentence offers the door that works', () {
       AppLocale.instance.debugSet(AppLanguage.arabic);
       expect(S.authProviderNotEnabled, contains('البريد الإلكتروني'));
+    });
+
+    test('a token our backend refuses is not sold to the customer as retryable', () {
+      // Measured on emulator-5554 on 2026-11-02: GoTrue answered
+      // `nonces mismatch` for an ID token Google had just issued, and the
+      // screen said "Something went wrong signing in. Please try again." -
+      // advice that cannot work, for a failure the customer did not cause.
+      expect(AuthCubit.messageFor('nonces mismatch'), S.authProviderNotEnabled);
+      expect(
+        AuthCubit.messageFor('Invalid audience'),
+        S.authProviderNotEnabled,
+      );
+      expect(
+        AuthCubit.messageFor('nonces mismatch'),
+        isNot(S.authFailed),
+        reason: 'the generic sentence is the defect this guards',
+      );
+    });
+
+    test('the exchange sends no client nonce', () {
+      // The fix the record in tool/google_sign_in_setup.json explains: Google
+      // ignores a nonce handed to GoogleSignIn.initialize on this path, so any
+      // nonce the app sends makes GoTrue refuse the token. Re-adding one is a
+      // regression, and no test of Dart behaviour would notice until a device
+      // did.
+      final source = File(
+        'lib/features/auth/data/repositories/supabase_auth_repository.dart',
+      ).readAsStringSync();
+      final initialize = RegExp(
+        r'GoogleSignIn\.instance\.initialize\([\s\S]*?\);',
+      ).firstMatch(source);
+      expect(initialize, isNotNull, reason: 'the init call moved');
+      expect(
+        initialize!.group(0),
+        isNot(contains('nonce')),
+        reason: 'a client nonce here can never be satisfied',
+      );
+      final exchange = RegExp(
+        r'signInWithIdToken\([\s\S]*?\);',
+      ).firstMatch(source);
+      expect(exchange, isNotNull, reason: 'the exchange call moved');
+      expect(
+        exchange!.group(0),
+        isNot(contains('nonce')),
+        reason: 'and the exchange must not ask for one either',
+      );
     });
 
     test('a Google account that gives no ID token is not a mystery', () async {

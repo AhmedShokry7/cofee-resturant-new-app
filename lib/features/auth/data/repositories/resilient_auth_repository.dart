@@ -93,6 +93,21 @@ class ResilientAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<void> sendEmailCode({required String email}) async {
+    final repository = await _ready();
+    return repository.sendEmailCode(email: email);
+  }
+
+  @override
+  Future<AuthUser> verifyEmailCode({
+    required String email,
+    required String code,
+  }) async {
+    final repository = await _ready();
+    return repository.verifyEmailCode(email: email, code: code);
+  }
+
+  @override
   Future<void> sendPasswordResetEmail({required String email}) async {
     final repository = await _ready();
     return repository.sendPasswordResetEmail(email: email);

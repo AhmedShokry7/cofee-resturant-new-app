@@ -158,18 +158,46 @@ void main() {
       );
     }, skip: skip);
 
-    test('reads categories including sub-category support', () async {
+    // Live run 2026-11-02: production has five flat categories, no
+    // sub-categories and none of the demo slugs, so this asserts the mapping
+    // and the slug round-trip instead of the deleted seed's contents.
+    test('reads categories and resolves each one back by its own slug',
+        () async {
       final categories = await live.getCategories();
-      expect(categories.length, greaterThanOrEqualTo(10));
+      expect(
+        categories,
+        isNotEmpty,
+        reason: 'catalog.categories must be seeded for the menu to render',
+      );
       expect(
         categories.every((c) => c.slug != null),
         isTrue,
         reason: 'a stable slug replaces matching categories by name',
       );
+      expect(
+        categories.map((c) => c.slug).toSet().length,
+        categories.length,
+        reason: 'the menu opens a category by slug, so one slug is one shelf',
+      );
+      expect(
+        categories.every((c) => (c.nameAr ?? '').trim().isNotEmpty),
+        isTrue,
+        reason: 'D4 requires Arabic on every category',
+      );
+      expect(
+        categories.every((c) => (c.id ?? '').isNotEmpty),
+        isTrue,
+        reason: 'the shelf is opened by id, not by position',
+      );
 
-      final hotCoffee = await live.getCategoryBySlug('hot-coffee');
-      expect(hotCoffee, isNotNull);
-      expect(hotCoffee!.nameEn, 'Hot Coffee');
+      final resolved = await live.getCategoryBySlug(categories.first.slug!);
+      expect(resolved, isNotNull);
+      expect(resolved!.id, isNotNull);
+      expect(resolved.id, categories.first.id);
+      expect(
+        await live.getCategoryBySlug('no-such-category-for-this-test'),
+        isNull,
+      );
     }, skip: skip);
 
     test('reads option groups bound to a product', () async {

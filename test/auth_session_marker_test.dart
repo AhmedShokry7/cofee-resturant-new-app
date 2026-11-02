@@ -51,6 +51,15 @@ class _ScriptedAuthRepository implements AuthRepository {
     required String code,
   }) => _answer();
 
+  @override
+  Future<void> sendEmailCode({required String email}) async {}
+
+  @override
+  Future<AuthUser> verifyEmailCode({
+    required String email,
+    required String code,
+  }) => _answer();
+
   Future<AuthUser> _answer() async {
     final error = failure;
     if (error != null) throw error;

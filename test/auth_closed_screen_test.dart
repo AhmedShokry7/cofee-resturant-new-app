@@ -75,6 +75,15 @@ class _HangingRepository implements AuthRepository {
   }) => _wait().then((_) => _ahmed);
 
   @override
+  Future<void> sendEmailCode({required String email}) => _wait();
+
+  @override
+  Future<AuthUser> verifyEmailCode({
+    required String email,
+    required String code,
+  }) => _wait().then((_) => _ahmed);
+
+  @override
   Future<void> signOut() => _wait();
 
   @override

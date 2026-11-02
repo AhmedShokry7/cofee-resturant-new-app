@@ -34,6 +34,16 @@ class _FakeRepository implements SubscriptionRepository {
   @override
   Future<CustomerSubscription?> mySubscription() async => subscription;
 
+  List<SubscriptionPlanProduct> planProductsToReturn = const [];
+  Object? planProductsError;
+
+  @override
+  Future<List<SubscriptionPlanProduct>> planProducts(String planId) async {
+    final error = planProductsError;
+    if (error != null) throw error;
+    return planProductsToReturn;
+  }
+
   @override
   Future<List<SubscriptionUsage>> usageHistory({String? subscriptionId}) async {
     usageReadFor.add(subscriptionId);
@@ -95,6 +105,68 @@ void main() {
       expect(repository.usageReadFor, ['sub-1']);
       await cubit.close();
     });
+
+    test(
+      'a usage row is labelled with the product it spent, not the method',
+      () async {
+        final repository = _FakeRepository()
+          ..plansToReturn = [_plan()]
+          ..subscription = const CustomerSubscription(
+            id: 'sub-1',
+            planId: 'plan-1',
+          )
+          ..planProductsToReturn = const [
+            SubscriptionPlanProduct(
+              id: 'p1',
+              nameAr: 'لاتيه',
+              nameEn: 'Latte',
+            ),
+          ]
+          ..usageToReturn = const [
+            SubscriptionUsage(
+              id: 'u1',
+              subscriptionId: 'sub-1',
+              branchId: 'b1',
+              productId: 'p1',
+            ),
+          ];
+
+        final cubit = SubscriptionCubit(repository: repository);
+        await cubit.load();
+
+        expect(cubit.state.usage?.single.productName, 'Latte');
+        await cubit.close();
+      },
+    );
+
+    test(
+      'a failed product read still shows the history that arrived',
+      () async {
+        final repository = _FakeRepository()
+          ..plansToReturn = [_plan()]
+          ..subscription = const CustomerSubscription(
+            id: 'sub-1',
+            planId: 'plan-1',
+          )
+          ..planProductsError = StateError('offline')
+          ..usageToReturn = const [
+            SubscriptionUsage(
+              id: 'u1',
+              subscriptionId: 'sub-1',
+              branchId: 'b1',
+              productId: 'p1',
+            ),
+          ];
+
+        final cubit = SubscriptionCubit(repository: repository);
+        await cubit.load();
+
+        expect(cubit.state.usage?.single.productId, 'p1');
+        expect(cubit.state.usage?.single.productName, isNull);
+        expect(cubit.state.usageError, isNull);
+        await cubit.close();
+      },
+    );
 
     test('a failed history read keeps the subscription on screen', () async {
       final repository = _FakeRepository()

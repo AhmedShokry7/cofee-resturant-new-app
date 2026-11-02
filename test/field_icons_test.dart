@@ -53,19 +53,30 @@ void main() {
     return tester.widget<IconTheme>(found.first).data;
   }
 
+  /// A field's glyph, and only a field's. The doors under the sign-in form
+  /// ("with phone", "with e-mail code") draw the same glyphs as their labels,
+  /// so "one mail glyph on this screen" stopped being the rule - the rule is
+  /// one mail glyph *per field*, and the field is the thing under test.
+  Finder fieldGlyph(IconData icon) {
+    return find.descendant(
+      of: find.byType(CustomTextFormField),
+      matching: find.byIcon(icon),
+    );
+  }
+
   group('one glyph, one rule', () {
     testWidgets('the sign-in fields each say what they hold', (tester) async {
       await pumpScreen(tester, const LoginPageBody());
 
-      expect(find.byIcon(AppIcons.mail), findsOneWidget);
-      expect(find.byIcon(AppIcons.lock), findsOneWidget);
+      expect(fieldGlyph(AppIcons.mail), findsOneWidget);
+      expect(fieldGlyph(AppIcons.password), findsOneWidget);
     });
 
     testWidgets('the field, not the screen, sets the size', (tester) async {
       await pumpScreen(tester, const LoginPageBody());
 
       expect(glyphTheme(tester, AppIcons.mail).size, AppIconSize.field);
-      expect(glyphTheme(tester, AppIcons.lock).size, AppIconSize.field);
+      expect(glyphTheme(tester, AppIcons.password).size, AppIconSize.field);
     });
 
     testWidgets('and the resting glyph is the resting grey', (tester) async {
@@ -82,7 +93,7 @@ void main() {
 
       expect(glyphTheme(tester, AppIcons.mail).color, AppColor.secondryColor);
       expect(
-        glyphTheme(tester, AppIcons.lock).color,
+        glyphTheme(tester, AppIcons.password).color,
         AppColor.greyColor,
         reason: 'only the field under the finger lights up',
       );
@@ -97,8 +108,8 @@ void main() {
 
       expect(find.byIcon(AppIcons.user), findsOneWidget);
       expect(find.byIcon(AppIcons.mail), findsOneWidget);
-      expect(find.byIcon(AppIcons.lock), findsNWidgets(2));
-      for (final icon in [AppIcons.user, AppIcons.mail, AppIcons.lock]) {
+      expect(find.byIcon(AppIcons.password), findsNWidgets(2));
+      for (final icon in [AppIcons.user, AppIcons.mail, AppIcons.password]) {
         expect(glyphTheme(tester, icon).size, AppIconSize.field);
       }
     });
@@ -128,7 +139,7 @@ void main() {
     ) async {
       await pumpScreen(tester, const LoginPageBody());
 
-      final glyph = tester.getRect(find.byIcon(AppIcons.mail));
+      final glyph = tester.getRect(fieldGlyph(AppIcons.mail));
       final hint = tester.getRect(find.text(S.emailHint));
 
       final clear = hint.left >= glyph.right || glyph.left >= hint.right;

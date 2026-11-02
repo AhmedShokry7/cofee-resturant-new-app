@@ -7,6 +7,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
+import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
@@ -127,7 +128,7 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       CustomTextFormField(
                         controller: _passwordController,
                         hint: S.passwordHint,
-                        icon: AppIcons.lock,
+                        icon: AppIcons.password,
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                         validator: AuthFormRules.password,
@@ -156,55 +157,20 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       SizedBox(height: AuthSpacings.buttonGap),
                       AuthSocialLogin(isLoading: isLoading),
                       SizedBox(height: AuthSpacings.sectionGap),
-                      Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 420),
-                          child: Material(
-                            color: AppColor.whiteColor,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.pill,
-                              ),
-                              side: BorderSide(color: AppColor.primaryColor),
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: InkWell(
-                              onTap: () =>
-                                  Navigator.of(context)
-                                      .pushNamed(PhoneAuthPage.routeName),
-                              child: Padding(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: AppSpacing.lg,
-                                  vertical: AppSizes.px14,
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      AppIcons.smartphone,
-                                      size: AppSizes.px20,
-                                      color: AppColor.primaryColor,
-                                    ),
-                                    SizedBox(width: AppSpacing.sm),
-                                    Flexible(
-                                      child: Text(
-                                        S.continueWithPhone,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: AppFonts.regular14(context)
-                                            .copyWith(
-                                              color: AppColor.primaryColor,
-                                              fontWeight: AppFontWeights.medium,
-                                            ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                      _CodeDoorButton(
+                        icon: AppIcons.smartphone,
+                        label: S.continueWithPhone,
+                        route: PhoneAuthPage.routeName,
+                      ),
+                      SizedBox(height: AuthSpacings.fieldsGap),
+                      // A mailbox is the other credential the customer always
+                      // carries. It opens on its own, so a number that cannot
+                      // be reached — or a Google account that is not on the
+                      // device — never leaves the app with no way in.
+                      _CodeDoorButton(
+                        icon: AppIcons.mail,
+                        label: S.continueWithEmailCode,
+                        route: EmailAuthPage.routeName,
                       ),
                       SizedBox(height: AuthSpacings.sectionGap),
                       AuthSwitchPrompt(
@@ -231,6 +197,68 @@ class _LoginPageBodyState extends State<LoginPageBody> {
           // a way out.
           SkipBtn(onTap: () => context.read<AuthCubit>().skipAuthentication()),
         ],
+      ),
+    );
+  }
+}
+
+/// The outlined pill that opens a code door — a phone number, or a mailbox.
+///
+/// Both read the same way and go to the same kind of screen, so they share one
+/// control: a customer comparing two ways in should not have to wonder whether
+/// the second one is a lesser path.
+class _CodeDoorButton extends StatelessWidget {
+  const _CodeDoorButton({
+    required this.icon,
+    required this.label,
+    required this.route,
+  });
+
+  final IconData icon;
+  final String label;
+  final String route;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
+        child: Material(
+          color: AppColor.whiteColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            side: BorderSide(color: AppColor.primaryColor),
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: InkWell(
+            onTap: () => Navigator.of(context).pushNamed(route),
+            child: Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSizes.px14,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, size: AppSizes.px20, color: AppColor.primaryColor),
+                  SizedBox(width: AppSpacing.sm),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.regular14(context).copyWith(
+                        color: AppColor.primaryColor,
+                        fontWeight: AppFontWeights.medium,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -53,10 +53,10 @@ class WelcomePageBody extends StatelessWidget {
           child: WavyContainer(
             curveHeight: _curveDepth,
             padding: EdgeInsets.fromLTRB(
-              AppSpacing.xl,
+              AppSpacing.xxl,
               _clearance,
               AppSpacing.xl,
-              AppSpacing.xxxl,
+              AppSpacing.xxl,
             ),
             child: const SafeArea(top: false, child: WelcomePanelContent()),
           ),

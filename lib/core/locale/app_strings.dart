@@ -664,6 +664,17 @@ class S {
       _ar ? 'نسيت كلمة المرور' : 'Forget Password';
   static String get signInWithPhone =>
       _ar ? 'تسجيل الدخول بالهاتف' : 'Sign In with Phone';
+  static String get signInWithEmailCode =>
+      _ar ? 'تسجيل الدخول بكود على البريد' : 'Sign in with an e-mail code';
+  static String get emailAuthSubtitle => _ar
+      ? 'أدخل بريدك الإلكتروني وسنرسل إليه كود تحقق مكونًا من 6 أرقام.'
+      : 'Enter your e-mail address and we will send a 6-digit verification code to it.';
+  static String get continueWithEmailCode => _ar
+      ? 'المتابعة بكود على البريد الإلكتروني'
+      : 'Continue with an e-mail code';
+  static String emailOtpSentTo(String email) => _ar
+      ? 'أرسلنا كود التحقق إلى $email'
+      : 'We sent the verification code to $email';
   static String get rememberPasswordQ =>
       _ar ? 'تذكرت كلمة المرور؟ ' : 'Remember your password? ';
   static String get verificationCode =>
@@ -935,6 +946,22 @@ class S {
       ? 'لا يوجد حساب جوجل مسجّل الدخول على هذا الجهاز. أضِف حسابًا من إعدادات جوجل، أو ادخل بالبريد الإلكتروني وكلمة المرور.'
       : 'There is no Google account signed in on this device. Add one in your Google settings, or sign in with your email and password.';
 
+  /// Shown when the six-digit code no longer works: it went stale, or another
+  /// code replaced it. Typing the same digits again cannot help, so the answer
+  /// points at the button that can.
+  static String get authOtpInvalid => _ar
+      ? 'انتهت صلاحية هذا الكود أو كان غير صحيح. اطلب كودًا جديدًا.'
+      : 'This code has expired or is not correct. Request a new one.';
+
+  /// Shown when the message itself could not leave the backend — the provider
+  /// refused, or its key is missing. The customer did nothing wrong and the
+  /// number is not blocked, so the other door is named.
+  static String get authSmsSendFailed => _ar
+      ? 'تعذّر إرسال رسالة التحقق. حاول مرة أخرى بعد قليل '
+            'أو سجّل الدخول بالبريد الإلكتروني وكلمة المرور.'
+      : 'The verification message could not be sent. Try again in a moment, '
+            'or sign in with your email and password.';
+
   /// Shown when the backend could not be reached at all. Distinct from
   /// [authFailed], which means the request itself was rejected.
   static String get authServiceUnavailable => _ar
@@ -1107,6 +1134,8 @@ class S {
 
   static String get couldNotLoadSubscription =>
       _ar ? 'تعذر تحميل الاشتراك.' : 'Could not load the subscription.';
+  static String get couldNotLoadPlans =>
+      _ar ? 'تعذر تحميل الباقات.' : 'Could not load the plans.';
   static String get couldNotLoadUsage =>
       _ar ? 'تعذر تحميل سجل الاستخدام.' : 'Could not load the usage history.';
   static String get couldNotLoadPlanProducts => _ar

@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +9,7 @@ import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
@@ -112,7 +112,10 @@ class SupabaseAuthRepository implements AuthRepository {
       id: user.id,
       name: name,
       email: user.email,
-      phone: metadata?['phone']?.toString(),
+      // The account's own number first: for a phone sign-in it is the value the
+      // provider confirmed, while `user_metadata.phone` is only what a signup
+      // form chose to send.
+      phone: user.phone ?? metadata?['phone']?.toString(),
     );
   }
 
@@ -482,11 +485,10 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   // -------------------------------------------------------------------------
-  // Not implemented. Each says so plainly instead of faking a success.
+  // Social providers
   // -------------------------------------------------------------------------
 
   static bool _googleInitialized = false;
-  static String? _googleNonce;
 
   @override
   Future<AuthUser> signInWithGoogle() async {
@@ -547,11 +549,21 @@ class SupabaseAuthRepository implements AuthRepository {
       _logGoogleFailure('MissingIdToken', account.id, 'no id token issued');
       throw const AuthException('google_sign_in_missing_token');
     }
+    // No nonce is sent to Supabase here, and that is deliberate.
+    //
+    // Measured on emulator-5554 on 2026-11-02 with a correctly registered
+    // Android OAuth client: Credential Manager issues a fresh ID token
+    // (`iat` one second before the exchange) whose `nonce` claim is its own
+    // value, not SHA-256 of the nonce passed to `GoogleSignIn.initialize` -
+    // claim `6f4f02d1…` against local SHA-256 `7c7d8ba1…`. GoTrue compares the
+    // two and refuses the exchange with `nonces mismatch`, so a client nonce
+    // on this path can never be satisfied. Supabase's own native Flutter
+    // sample sends no nonce either; the token is still bound to this app by
+    // `aud` (the web client id) and verified by Google's signature.
     try {
       final response = await _client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
-        nonce: _googleNonce,
       );
       final user = response.user;
       if (user == null) {
@@ -608,22 +620,179 @@ class SupabaseAuthRepository implements AuthRepository {
 
   Future<void> _ensureGoogleInitialized() async {
     if (_googleInitialized) return;
-    _googleNonce = _generateNonce();
     await GoogleSignIn.instance.initialize(
       serverClientId: AppConfig.googleServerClientId.isEmpty
           ? null
           : AppConfig.googleServerClientId,
-      nonce: _googleNonce,
     );
     _googleInitialized = true;
   }
 
-  static String _generateNonce() {
-    final random = Random.secure();
-    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
-    return bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  // -------------------------------------------------------------------------
+  // Phone
+  //
+  // The number is the credential, the message is the proof of it. Two calls
+  // talk to the provider: one asks for a code, one trades the typed code for a
+  // session. Both normalise the number first, because the provider only reads
+  // E.164 and the customer types whatever they know by heart.
+  //
+  // Delivery of the message itself is server-side: Supabase calls the
+  // `send-sms` Edge Function (supabase/functions/send-sms) as its Send SMS
+  // hook, and the provider key never comes near this app.
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> sendPhoneCode({required String phone}) async {
+    _guard;
+    final e164 = AuthFormRules.e164Of(phone);
+    if (e164 == null) throw const AuthException('invalid phone number');
+    try {
+      // `create_user` is left at the SDK default: a code sent to a number that
+      // has never been seen is how a new customer is created, and the screen
+      // does not ask them to sign up separately.
+      await _client.auth.signInWithOtp(phone: e164);
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
   }
 
+  @override
+  Future<AuthUser> verifyPhoneCode({
+    required String phone,
+    required String code,
+  }) async {
+    _guard;
+    final e164 = AuthFormRules.e164Of(phone);
+    if (e164 == null) throw const AuthException('invalid phone number');
+    try {
+      final response = await _client.auth.verifyOTP(
+        phone: e164,
+        token: code.trim(),
+        type: OtpType.sms,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('No user returned for this code.');
+      }
+      // The same refusal the email and Google paths apply: a number that
+      // belongs to staff has no customer row, and letting it in produces a
+      // broken store instead of a clear answer.
+      await _requireCustomerAccount(user.id);
+      await _storeVerifiedPhone(user.id, e164);
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  /// The number the customer just proved, in the row the app reads.
+  ///
+  /// `identity.handle_new_user()` (003_identity_01_profiles.sql) copies the
+  /// email of a new account into identity.profiles and knows nothing about a
+  /// phone, so a customer who arrives by SMS has a session, a profile row, and
+  /// no number anywhere the profile screen or the admin panel looks. The
+  /// trigger is not rewritten for this: the session that was just issued *is*
+  /// the proof that the number belongs to them, and `profiles_update_own`
+  /// (019_rls_01_identity.sql) lets them write their own row.
+  ///
+  /// An existing number is never overwritten - a customer who added one from
+  /// their profile keeps what they typed.
+  Future<void> _storeVerifiedPhone(String uid, String phone) async {
+    try {
+      final row = await _client
+          .from('profiles')
+          .select('phone')
+          .eq('id', uid)
+          .maybeSingle();
+      final current = (row?['phone'] ?? '').toString().trim();
+      if (current.isNotEmpty) return;
+      await _client
+          .from('profiles')
+          .update(<String, dynamic>{
+            'phone': phone,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', uid);
+    } catch (error) {
+      // The session is real either way; this only fills a display value.
+      debugPrint('[Auth] verified phone could not be stored: $error');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // E-mail code
+  //
+  // The same two calls the phone path makes, with the mailbox as the delivery:
+  // one asks the provider for a code, one trades the typed code for a session.
+  //
+  // Whether the message carries a code or a link is decided by the server's
+  // template (`{{ .Token }}` sends the code, `{{ .ConfirmationURL }}` sends a
+  // link), and who delivers it is decided by the project's SMTP settings. The
+  // app only ever handles the code the customer reads out of the mail, so no
+  // provider key sits in this binary.
+  // -------------------------------------------------------------------------
+
+  @override
+  Future<void> sendEmailCode({required String email}) async {
+    _guard;
+    final address = email.trim();
+    if (AuthFormRules.email(address) != null) {
+      throw const AuthException('invalid email');
+    }
+    try {
+      // A code requested for an address the project has never seen creates the
+      // account, exactly like the phone path: `identity.handle_new_user()`
+      // copies it into identity.profiles, so the customer has a row to order
+      // under without going through the password form first.
+      await _client.auth.signInWithOtp(email: address);
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  @override
+  Future<AuthUser> verifyEmailCode({
+    required String email,
+    required String code,
+  }) async {
+    _guard;
+    final address = email.trim();
+    if (AuthFormRules.email(address) != null) {
+      throw const AuthException('invalid email');
+    }
+    try {
+      final response = await _client.auth.verifyOTP(
+        email: address,
+        token: code.trim(),
+        type: OtpType.email,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('No user returned for this code.');
+      }
+      // The same refusal the phone and Google paths apply: an address that
+      // belongs to staff has no customer row.
+      await _requireCustomerAccount(user.id);
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } on AuthException {
+      rethrow;
+    } catch (error) {
+      throw AuthException(_mapAuthError(error));
+    }
+  }
+
+  /// The two providers that still say they are missing, instead of faking a
+  /// success the screens would then have to unwind.
   @override
   Future<AuthUser> signInWithFacebook() =>
       Future.error(AuthException(_socialMessage('Facebook')));
@@ -636,18 +805,4 @@ class SupabaseAuthRepository implements AuthRepository {
       '$provider sign-in is not configured yet. Add the provider in the '
       'Supabase dashboard and the matching Flutter SDK before enabling the '
       'button.';
-
-  @override
-  Future<void> sendPhoneCode({required String phone}) =>
-      Future.error(AuthException(_phoneMessage));
-
-  @override
-  Future<AuthUser> verifyPhoneCode({
-    required String phone,
-    required String code,
-  }) => Future.error(AuthException(_phoneMessage));
-
-  static const String _phoneMessage =
-      'Phone sign-in is deferred (DATABASE_SPEC.md section 10.4). It needs an '
-      'Edge Function and an SMS provider before it can be enabled.';
 }

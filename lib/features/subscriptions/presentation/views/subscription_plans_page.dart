@@ -7,6 +7,7 @@ import 'package:new_coffee/features/subscriptions/data/repositories/subscription
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plan_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_card.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class SubscriptionPlansPage extends StatelessWidget {
@@ -16,11 +17,18 @@ class SubscriptionPlansPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          SubscriptionCubit(repository: context.read<SubscriptionRepository>())
-            ..load(),
-      child: const _SubscriptionPlansView(),
+    // The plans read only through `subscriptions.list_plans`, which the server
+    // grants to `authenticated` (083). A guest would get a permission error and
+    // a retry that can never work, so the shared prompt comes first and no
+    // request is made at all.
+    return AuthGuard(
+      child: BlocProvider(
+        create: (context) =>
+            SubscriptionCubit(
+              repository: context.read<SubscriptionRepository>(),
+            )..load(),
+        child: const _SubscriptionPlansView(),
+      ),
     );
   }
 }
@@ -42,7 +50,7 @@ class _SubscriptionPlansView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(state.error!, textAlign: TextAlign.center),
+                  Text(S.couldNotLoadPlans, textAlign: TextAlign.center),
                   SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),

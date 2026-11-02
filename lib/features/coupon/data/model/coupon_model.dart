@@ -216,10 +216,11 @@ class CouponModel {
       discountValue: Db.asDouble(map['discount_value']),
       maxDiscount: Db.asDoubleOrNull(map['max_discount']),
       minOrderAmount: Db.asDouble(map['min_order_amount']),
-      usedCount: Db.asInt(map['used_count']),
+      // `used_count`/`total_used` are not columns of the `coupons` view - the
+      // customer's counters arrive separately from `coupon_availability` and are
+      // merged by the repository, so the row read here starts at zero.
       perUserLimit: Db.asIntOrNull(map['per_user_limit']),
       usageLimit: Db.asIntOrNull(map['usage_limit']),
-      totalUsed: Db.asInt(map['total_used']),
       appliesTo: Db.text(map['applies_to'], 'all'),
     );
   }

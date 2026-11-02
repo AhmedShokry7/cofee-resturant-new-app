@@ -52,4 +52,49 @@ abstract final class AuthFormRules {
   /// provider receives the raw one.
   static String? confirmPassword(String? value, String password) =>
       value != password ? S.passwordsNoMatch : null;
+
+  /// The country the app sells in, so a local number can be completed without
+  /// asking the customer to remember a `+`.
+  static const String _countryCode = '966';
+
+  /// The only phone shape Supabase accepts: `+`, then 8 to 15 digits.
+  ///
+  /// The provider is not forgiving here — a number typed as `050 123 4567`
+  /// reaches it as an invalid string and the answer is a generic failure the
+  /// customer cannot act on. Completing the number locally costs nothing and is
+  /// the same rule the field validator and the sign-in call must share, so it
+  /// lives here instead of in either of them.
+  ///
+  /// Returns null when the text is not a number this app can send an SMS to.
+  static String? e164Of(String? raw) {
+    final text = (raw ?? '').trim();
+    if (text.isEmpty) return null;
+    final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return null;
+    // `00966…` is the international prefix written as plain digits.
+    final national = digits.startsWith('00') ? digits.substring(2) : digits;
+    if (text.startsWith('+') || digits.startsWith('00')) {
+      return _isLengthOk(national) ? '+$national' : null;
+    }
+    // A Saudi mobile typed the way it is read out: `05XXXXXXXX`, or the same
+    // number without the trunk `0`. Any other shape is left alone rather than
+    // given this country code — guessing a country from ten digits would turn a
+    // foreign number into a message sent to somebody else.
+    final local = national.startsWith('0') ? national.substring(1) : national;
+    if (local.startsWith('5')) {
+      final full = '$_countryCode$local';
+      return _isLengthOk(full) ? '+$full' : null;
+    }
+    return _isLengthOk(national) ? '+$national' : null;
+  }
+
+  static bool _isLengthOk(String digits) =>
+      RegExp(r'^[0-9]{8,15}$').hasMatch(digits);
+
+  /// The phone field: filled in, and in a shape a message can be sent to.
+  static String? phone(String? value) {
+    final text = (value ?? '').replaceAll(RegExp(r'\s'), '');
+    if (text.isEmpty) return S.phoneRequired;
+    return e164Of(text) == null ? S.validPhoneNumber : null;
+  }
 }

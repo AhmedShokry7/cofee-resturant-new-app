@@ -85,7 +85,7 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                   CustomTextFormField(
                     controller: _passwordController,
                     hint: S.newPasswordHint,
-                    icon: AppIcons.lock,
+                    icon: AppIcons.password,
                     obscureText: true,
                     textInputAction: TextInputAction.next,
                     validator: AuthFormRules.newPassword,
@@ -93,7 +93,7 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                   CustomTextFormField(
                     controller: _confirmPasswordController,
                     hint: S.confirmPasswordHint,
-                    icon: AppIcons.lock,
+                    icon: AppIcons.password,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
                     validator: (value) => AuthFormRules.confirmPassword(

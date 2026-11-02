@@ -63,7 +63,7 @@ abstract final class AppIcons {
   static const user = HugeIcons.strokeRoundedUser;
   static const profile = HugeIcons.strokeRoundedUserCircle;
   static const mail = HugeIcons.strokeRoundedMail01;
-  static const lock = HugeIcons.strokeRoundedLock;
+  static const password = HugeIcons.strokeRoundedCirclePassword;
   static const settings = HugeIcons.strokeRoundedSettings01;
   static const logout = HugeIcons.strokeRoundedLogout01;
   static const language = HugeIcons.strokeRoundedLanguageCircle;

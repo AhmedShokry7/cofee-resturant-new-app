@@ -16,10 +16,29 @@ class SubscriptionUsage {
   final String subscriptionId;
   final String branchId;
   final String? productId;
+
+  /// The product the cup was spent on.
+  ///
+  /// `subscription_usage_history` returns only `product_id`, so this is empty
+  /// until the cubit joins it with the plan's product list; the history row
+  /// falls back to the redemption method while it is null.
   final String? productName;
   final int quantity;
   final String method;
   final DateTime? createdAt;
+
+  SubscriptionUsage copyWith({String? productName}) {
+    return SubscriptionUsage(
+      id: id,
+      subscriptionId: subscriptionId,
+      branchId: branchId,
+      productId: productId,
+      productName: productName ?? this.productName,
+      quantity: quantity,
+      method: method,
+      createdAt: createdAt,
+    );
+  }
 
   factory SubscriptionUsage.fromDatabase(Map<String, dynamic> row) {
     final map = Db.asMap(row);

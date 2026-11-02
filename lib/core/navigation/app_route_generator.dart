@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/features/auth/presentation/views/email_otp_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
@@ -38,6 +39,9 @@ class AppRouteGenerator {
       SeeAllProductsPage.routeName when arguments is SeeAllProductsArgs =>
         SeeAllProductsPage(args: arguments),
       OtpPage.routeName when arguments is String => OtpPage(phone: arguments),
+      EmailOtpPage.routeName when arguments is String => EmailOtpPage(
+        email: arguments,
+      ),
       TrackOrderPage.routeName when arguments is OrderItemModel =>
         TrackOrderPage(order: arguments),
       LeaveReviewPage.routeName when arguments is OrderItemModel =>

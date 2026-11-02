@@ -22,6 +22,19 @@ abstract class AuthRepository {
     required String code,
   });
 
+  /// Asks the provider to put a sign-in code in the customer's mailbox.
+  ///
+  /// The mailbox is a door of its own, next to the phone number and Google: a
+  /// customer who has neither a reachable number nor a Google account on the
+  /// device still has an address. The message itself is sent by the server,
+  /// never by this app.
+  Future<void> sendEmailCode({required String email});
+
+  Future<AuthUser> verifyEmailCode({
+    required String email,
+    required String code,
+  });
+
   Future<void> sendPasswordResetEmail({required String email});
 
   Future<void> resetPassword({required String newPassword});

@@ -209,7 +209,7 @@ class _AddCardPageState extends State<AddCardPage> {
             child: CustomTextFormField(
               controller: _cvvController,
               hint: S.cvvHint(_cvvLength),
-              icon: AppIcons.lock,
+              icon: AppIcons.password,
               keyboardType: TextInputType.number,
               obscureText: true,
               inputFormatters: [

@@ -142,7 +142,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       CustomTextFormField(
                         controller: _passwordController,
                         hint: S.passwordHint,
-                        icon: AppIcons.lock,
+                        icon: AppIcons.password,
                         obscureText: true,
                         textInputAction: TextInputAction.next,
                         validator: AuthFormRules.newPassword,
@@ -150,7 +150,7 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       CustomTextFormField(
                         controller: _confirmPasswordController,
                         hint: S.confirmPasswordHint,
-                        icon: AppIcons.lock,
+                        icon: AppIcons.password,
                         obscureText: true,
                         textInputAction: TextInputAction.done,
                         validator: (value) => AuthFormRules.confirmPassword(

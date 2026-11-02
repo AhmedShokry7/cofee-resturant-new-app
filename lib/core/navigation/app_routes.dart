@@ -4,6 +4,7 @@ import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
@@ -43,6 +44,7 @@ class AppRoutes {
     ForgetPasswordPage.routeName: (context) => const ForgetPasswordPage(),
     ResetPasswordPage.routeName: (context) => const ResetPasswordPage(),
     PhoneAuthPage.routeName: (context) => const PhoneAuthPage(),
+    EmailAuthPage.routeName: (context) => const EmailAuthPage(),
     MainPage.routeName: (context) => const MainPage(),
     CheckoutPage.routeName: (context) => const CheckoutPage(),
     ShippingAddressesPage.routeName: (context) => const ShippingAddressesPage(),

@@ -14,6 +14,7 @@ import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 
 class PhoneAuthPageBody extends StatefulWidget {
   const PhoneAuthPageBody({super.key});
@@ -32,22 +33,21 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
     super.dispose();
   }
 
-  String? _validatePhone(String? value) {
-    final phone = (value ?? '').replaceAll(RegExp(r'\s'), '');
-    if (phone.isEmpty) return S.phoneRequired;
-    if (!RegExp(r'^\+?[0-9]{8,15}$').hasMatch(phone)) {
-      return S.validPhoneNumber;
-    }
-    return null;
-  }
+  /// The number in the shape the provider reads, or null while the field is not
+  /// a number yet. [AuthFormRules] owns the rule because the sign-in call has to
+  /// send exactly what this screen validated - two copies of a phone shape is how
+  /// a code ends up requested for one number and verified against another.
+  String? get _e164 => AuthFormRules.e164Of(_phoneController.text);
 
   void _submit() {
     FocusScope.of(context).unfocus();
-    if (_formKey.currentState?.validate() ?? false) {
-      context.read<PhoneAuthCubit>().sendCode(
-        phone: _phoneController.text.trim(),
-      );
-    }
+    // The validator runs first, and always: it owns the sentence that says why
+    // a number cannot be sent to, and short-circuiting on the normalised value
+    // would leave the field with no message under it.
+    final isValid = _formKey.currentState?.validate() ?? false;
+    final phone = _e164;
+    if (!isValid || phone == null) return;
+    context.read<PhoneAuthCubit>().sendCode(phone: phone);
   }
 
   @override
@@ -66,7 +66,9 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
             } else if (state is PhoneAuthCodeSent) {
               Navigator.of(context).pushNamed(
                 OtpPage.routeName,
-                arguments: _phoneController.text.trim(),
+                // The normalised number, so the OTP screen can say where the
+                // code went and the verify call repeats the same request body.
+                arguments: _e164 ?? _phoneController.text.trim(),
               );
               context.read<PhoneAuthCubit>().reset();
             }
@@ -101,7 +103,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9+\s]')),
                     ],
-                    validator: _validatePhone,
+                    validator: AuthFormRules.phone,
                   ),
                   SizedBox(height: AuthSpacings.fieldsGap),
                   CustomBtn(

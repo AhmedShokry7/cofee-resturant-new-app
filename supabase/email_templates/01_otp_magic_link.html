@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>رمز التحقق</title>
+  </head>
+  <!--
+    SUPABASE AUTH TEMPLATE: Magic Link / OTP  (Authentication -> Sign In / Up -> Email templates -> Magic link)
+
+    This template sends a CODE, not a link. GoTrue decides which one the mail
+    carries by what the template mentions: the .Token variable makes it a
+    one-time code, the .ConfirmationURL variable makes it a magic link. This
+    file deliberately mentions only .Token — adding the other would turn every
+    "enter the 6 digits" screen in the app into a dead link.
+
+    Note: the dashboard renders these comments too, so the variable names are
+    written here without their GoTrue braces. A live placeholder inside an
+    HTML comment would put a working sign-in link in the message source.
+
+    The code length and lifetime are the project's settings, not this file's:
+    Authentication -> Sign In / Up -> "One-time security code expiry" and the
+    OTP length. The app asks for 6 digits.
+  -->
+  <body style="margin:0;padding:0;background:#f4f5f7;font-family:'Segoe UI',Tahoma,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f5f7;padding:24px 12px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 1px 3px rgba(17,24,39,0.08);">
+            <!-- Wordmark -->
+            <tr>
+              <td style="background:#111827;padding:20px 28px;">
+                <span style="color:#ffffff;font-size:18px;font-weight:700;letter-spacing:0.3px;">New Coffee</span>
+                <span style="color:#9ca3af;font-size:12px;display:block;margin-top:2px;">نيو كوفي</span>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding:32px 28px 8px;">
+                <h1 style="margin:0 0 12px;font-size:20px;line-height:1.4;color:#111827;">رمز التحقق الخاص بك</h1>
+                <p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#4b5563;">
+                  استخدم الرمز المكوّن من 6 أرقام لتسجيل الدخول إلى تطبيق New Coffee.
+                  الرمز صالح لمدة ساعة ولا يحتاج إلى كلمة مرور.
+                </p>
+
+                <!-- The code. Centred and spaced so it reads at a glance from a
+                     phone notification, and selectable when pasted. -->
+                <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto 24px;">
+                  <tr>
+                    <td style="background:#eff6ff;border:1px dashed #1d4ed8;border-radius:12px;padding:18px 34px;">
+                      <span style="font-size:32px;font-weight:700;letter-spacing:10px;color:#1d4ed8;direction:ltr;display:inline-block;">{{ .Token }}</span>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.7;color:#6b7280;">
+                  لم تطلب هذا الرمز؟ يمكنك تجاهل هذه الرسالة بأمان، ولن يُفتح أي حساب.
+                </p>
+              </td>
+            </tr>
+
+            <!-- Footer: the transactional note, with no unsubscribe link. A
+                 sign-in code is not marketing, so it must not carry the
+                 one-click switch that turns a customer's messages off. -->
+            <tr>
+              <td style="padding:20px 28px 28px;border-top:1px solid #f0f1f3;">
+                <p style="margin:0;font-size:12px;line-height:1.7;color:#9ca3af;">
+                  رسالة أمنية من تطبيق New Coffee. لا ترسل هذا الرمز لأحد، موظفونا لا يطلبونه أبدًا.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

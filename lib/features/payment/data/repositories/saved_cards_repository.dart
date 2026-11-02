@@ -234,6 +234,11 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
   @override
   Future<void> setDefaultCard(String id) async {
     _requireSignedIn();
-    await _client.functions.invoke('set_default_card', body: {'cardId': id});
+    // The database owns this rule: `set_default_card` re-checks ownership,
+    // takes a per-customer lock, clears the previous default and sets this one
+    // in one transaction (073, bridged by proposals/223). The customer role has
+    // no write grant on `public.saved_cards`, so there is no client-side
+    // alternative that keeps the single-default invariant.
+    await _client.rpc('set_default_card', params: {'p_card_id': id});
   }
 }

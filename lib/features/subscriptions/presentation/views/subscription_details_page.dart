@@ -11,6 +11,7 @@ import 'package:new_coffee/features/subscriptions/presentation/manager/subscript
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class SubscriptionDetailsPage extends StatelessWidget {
@@ -20,11 +21,17 @@ class SubscriptionDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) =>
-          SubscriptionCubit(repository: context.read<SubscriptionRepository>())
-            ..load(),
-      child: const _SubscriptionDetailsView(),
+    // `my_subscription` is revoked from anon (074), so a guest cannot read a
+    // subscription that does not exist yet. The shared prompt replaces the
+    // request.
+    return AuthGuard(
+      child: BlocProvider(
+        create: (context) =>
+            SubscriptionCubit(
+              repository: context.read<SubscriptionRepository>(),
+            )..load(),
+        child: const _SubscriptionDetailsView(),
+      ),
     );
   }
 }

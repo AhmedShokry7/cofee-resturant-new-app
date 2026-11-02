@@ -171,6 +171,36 @@ class AuthCubit extends Cubit<AuthState> {
     if (lower.contains('staff_account') || lower.contains('staff account')) {
       return S.authStaffAccount;
     }
+    // Phone sign-in, and it has to be read here: three of its codes end in the
+    // word `disabled`, which the banned-account rule below matches on its own,
+    // and a customer would be told their number is blocked when the truth is
+    // that the door is not open or their code went stale.
+    // `phone_provider_disabled`, `otp_disabled` and `signup_disabled` were
+    // measured against this project on 2026-11-02; `otp_expired` and
+    // `over_sms_send_rate_limit` are the codes the provider documents for a
+    // stale code and an exhausted message quota.
+    // `email_provider_disabled` and `signups not allowed` are the same answer
+    // from the mail door: the dashboard has it closed, which no customer can
+    // fix by typing.
+    if (lower.contains('phone_provider_disabled') ||
+        lower.contains('email_provider_disabled') ||
+        lower.contains('signups not allowed') ||
+        lower.contains('otp_disabled') ||
+        lower.contains('signup_disabled')) {
+      return S.authProviderNotEnabled;
+    }
+    if (lower.contains('otp_expired') || lower.contains('invalid token')) {
+      return S.authOtpInvalid;
+    }
+    if (lower.contains('invalid_phone') || lower.contains('invalid phone')) {
+      return S.validPhoneNumber;
+    }
+    if (lower.contains('over_sms_send_rate_limit')) {
+      return S.authTooManyRequests;
+    }
+    if (lower.contains('sms_send_failed')) {
+      return S.authSmsSendFailed;
+    }
     if (lower.contains('user_banned') ||
         lower.contains('user disabled') ||
         lower.contains('disabled')) {
@@ -223,6 +253,16 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('provider_not_supported') ||
         lower.contains('provider not enabled') ||
         lower.contains('provider not supported')) {
+      return S.authProviderNotEnabled;
+    }
+    // Our own backend refusing a token Google actually issued. `nonces
+    // mismatch` is the one measured on emulator-5554 on 2026-11-02, when the
+    // app still sent a client nonce this path cannot satisfy; `invalid
+    // audience` is the same class of answer for a token minted by a client the
+    // project does not list. Neither is fixed by tapping again, and both used
+    // to land on the generic retry sentence.
+    if (lower.contains('nonces mismatch') ||
+        lower.contains('invalid audience')) {
       return S.authProviderNotEnabled;
     }
     return S.authFailed;

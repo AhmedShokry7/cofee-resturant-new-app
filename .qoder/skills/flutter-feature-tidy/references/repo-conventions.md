@@ -135,12 +135,34 @@ flutter test               # full suite
 ```
 
 Baseline re-recorded on 2026-11-02, after the subscriptions/style sweep and the
-database-contract audit: `flutter analyze --no-pub` = 3 issues, all
-`curly_braces_in_flow_control_structures` infos left inside `assistant` (the
-owner's in-progress area - fix them in the assistant round) - zero errors, zero
-warnings. `flutter test` = 925 passed, 45 skipped - the skips are the
+database-contract audit: `flutter analyze --no-pub` = 3 issues, one per site in
+`assistant` (`curly_braces_in_flow_control_structures`: `assistant_engine.dart:425`,
+`assistant_engine.dart:632`, `assistant_fab_cubit.dart:98`; a run on identical code
+reported each twice, so treat the count as "3 sites, up to 6 lines") - zero errors,
+zero warnings, and they are left for the assistant round the owner is working by hand.
+`flutter test` = 930 passed, 45 skipped - the skips are the
 `test/integration/*` files marked `skip:` because they need a live Supabase. The suite also fails loudly on a render
 overflow, so a clean run means no screen spills.
+
+The live half of that suite is not as locked as the `skip:` reason suggests. The
+project's public URL and publishable key are compiled defaults
+(`SupabasePublicConfig`), so `flutter test test/integration/<x>_test.dart
+--dart-define=SCHEMAS_EXPOSED=true` runs every read-only live test with no
+credentials at all - and it must stay read-only, because that run talks to
+production. Two rules follow from having actually done it:
+
+- A live test may name a *shape* (`every row has an id`, `the slug round-trips`),
+  never a demo row. `136_remove_demo_catalogue.sql` deleted `MAIN`/`JEDDAH`,
+  `DEMO10`, `hot-coffee` and the `size`/`sugar`/`extras` groups, and every test
+  that still spelled those failed on a correct database - a red suite that hid
+  the one failure that was real.
+- An empty list from a `security_invoker` bridge view is ambiguous: it means
+  either "no rows" or "RLS refuses this role". Resolve it from the chain before
+  calling it a data gap - 023 grants `select` to `anon` on the catalogue and 020
+  gives `option_groups`/`option_values`/`product_option_groups` a
+  `for select to anon, authenticated` policy, so the zero rows those names
+  return live are really zero rows, and production has no option groups at all
+  since 136 deleted them.
 
 A column name the database never emits is a silent defect, not a null: the row
 mapper fills its default and the widget shows an empty field. The audit that
@@ -149,6 +171,23 @@ embedded `rel(col)`) with the columns that relation really has - views included,
 `--` rollback sections excluded - and every `.rpc('f')` window with the
 `returns table(...)` / `json_build_object` shape of that function. Run it
 against `supabase/migrations`, never against a stale dump.
+
+A name that exists is not a name the app can call, and a correct-looking chain
+still needs both of these, in this order:
+
+- **Reachability by the role the app actually uses.** A `.rpc('f')` whose
+  definition sits only in a domain schema is a 404/PGRST202 for PostgREST, and a
+  bridge wrapper in `public` granted to nobody, or whose inner definer is granted
+  only to `authenticated`, is a 401/42501 for a signed-out customer. Grep the
+  `grant execute` lines *and* ask the live endpoint: `POST /rest/v1/rpc/<name>`
+  with the anon key answers 404 when the signature is absent and 401/42501 when
+  it exists but is refused - the two are different bugs, and only the second one
+  is fixed by an `AuthGuard`.
+- **Functions the code claims are deployed.** `_client.functions.invoke('x')`
+  must match a directory in `supabase/functions/`. One call in this app asked for
+  `set_default_card`, which has never existed as an Edge Function while the rule
+  itself sat unreachable in `payments` (073) - the column audits cannot see it,
+  because no column is wrong.
 
 Widget tests pump into `phoneViewport` (`Size(360, 690)`) from
 `test/support/pump_harness.dart`; `tabletViewport` is there for the wide-window
@@ -228,3 +267,35 @@ Fix these when the sweep reaches the feature, and delete the line after:
   reference in the app is made from a widget. They read the name from the page
   that declares it rather than spelling the string again, so the coupling is
   one import, not a second source of truth.
+
+## Backend findings still open (as of 2026-11-02)
+
+Found by the functional audit, not fixed in Dart, because each one is a data or
+owner decision rather than a code defect:
+
+- `public.banners` has zero rows in production, so the home carousel shows its
+  placeholder and no test can prove a real banner renders.
+- `option_groups`, `option_values` and `product_option_groups` have zero rows
+  live - `136_remove_demo_catalogue.sql` deleted them (136:105-110) and nothing
+  re-seeded them, and 020/023 let `anon` read them, so the emptiness is the data,
+  not a policy. The customer-facing consequence: no product can offer a size, a
+  sugar level or an extra, and the option sheet in the product page is always
+  empty. Fixing it is seeding, not code.
+- Production has bundle rows but no category whose slug is `bundles` (or the name
+  in `CategoriesCubit.bundlesNames`), so the dedicated bundles tab on the
+  categories screen never appears; the home row still shows the bundles, because
+  `HomeCubit` fetches them directly.
+- The assistant answers product questions from the 16 rows bundled in
+  `assistant/data/assistant_engine.dart`, while the menu itself is live. The
+  database has `ai.product_knowledge` (017) and deliberately does not expose it
+  to PostgREST - it is Edge-Function-only - so making that answer set real needs
+  a deploy decision, not a query change.
+- Searching `قهوة` returns `[]` against the live catalogue: 132/024 search ranks
+  by `pg_trgm` similarity and the threshold rejects it. The code is right, the
+  threshold is the open question.
+- `SubscriptionPlan.branchIds` / `.productIds` and `SavedCardModel`'s `expiry`
+  fallback key are read by nothing the RPCs emit; they were verified rather than
+  guessed and are left for the subscription sweep.
+- "Make this card my default" still fails on every device until
+  `supabase/proposals/223_public_bridge_set_default_card.PROPOSED.sql` is applied
+  by the owner; the Dart side and the draft are both finished.

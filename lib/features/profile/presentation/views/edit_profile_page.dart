@@ -77,7 +77,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: S.currentPasswordHint,
-                    prefixIcon: const Icon(AppIcons.lock),
+                    prefixIcon: const Icon(AppIcons.password),
                   ),
                   validator: AuthFormRules.password,
                 ),
@@ -86,7 +86,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: S.newPasswordHint,
-                    prefixIcon: const Icon(AppIcons.lock),
+                    prefixIcon: const Icon(AppIcons.password),
                   ),
                   validator: AuthFormRules.newPassword,
                 ),
@@ -95,7 +95,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: S.confirmPasswordHint,
-                    prefixIcon: const Icon(AppIcons.lock),
+                    prefixIcon: const Icon(AppIcons.password),
                   ),
                   validator: (value) => AuthFormRules.confirmPassword(
                     value,

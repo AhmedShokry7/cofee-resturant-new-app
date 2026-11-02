@@ -359,3 +359,41 @@ Still separate, and deliberately not bundled here: whether `authenticated` needs
 EXECUTE on a function it can only ever reach through a trigger at all. 188 granted it
 and nothing in that file explains why; narrowing it further has a real blast radius,
 and it belongs in its own decision.
+
+## K. "Make this card my default" calls a function that was never deployed (223)
+
+Draft: [`223_public_bridge_set_default_card.PROPOSED.sql`](223_public_bridge_set_default_card.PROPOSED.sql).
+**STATUS: created, not applied. Nothing here was rehearsed in the SQL Editor — this
+session has no authorized path to run SQL on the live project; the evidence below is
+from the migrations chain and from anonymous HTTPS requests against the live PostgREST
+endpoint.**
+
+`SupabaseSavedCardsRepository.setDefaultCard()` invoked an Edge Function named
+`set_default_card`. `supabase/functions/` has no such function — the Tap family is
+`tap-create-charge`, `tap-tokenize-card`, `tap-verify-charge`, `tap-refund`,
+`tap-delete-card`, `tap-webhook` — so the only possible answer is 404, and the rule
+could never run on any device. The app's own data is not the problem: the rule exists
+and is correct, in `payments.set_default_card(p_card_id uuid)` (073), which takes a
+per-customer advisory lock, re-checks ownership and keeps the one-default invariant in
+one transaction. It is simply unreachable, because PostgREST does not expose the
+`payments` schema.
+
+The client has no legal way to do it itself, and both layers were checked rather than
+assumed: `public.saved_cards` is SELECT-only for `authenticated` (063 + 105) and an
+anon read of it answers live `401 {"code":"42501","message":"permission denied for
+view saved_cards"}` (`GET /rest/v1/saved_cards?select=id&limit=1`), and
+`payments.saved_cards` has the single `saved_cards_select_own` policy (062). So the
+fix is the bridge wrapper this repo already uses for every other domain RPC (035, 063,
+074, 078) — `security invoker`, so `auth.uid()` inside 073 still sees the customer,
+`usage on schema payments` already granted by 023 — with EXECUTE for `authenticated`
+and an explicit revoke from `anon` and `public`, the same shape 216 restores elsewhere.
+
+The Dart side now calls `_client.rpc('set_default_card', …)` and the doc-comment names
+073 as the owner of the rule. Until this draft is applied, that RPC answers 404 live —
+verified with the exact signature, `POST /rest/v1/rpc/set_default_card` with
+`{"p_card_id": …}` gives `PGRST202 Could not find the function
+public.set_default_card(p_card_id) in the schema cache`, whereas a name that exists but
+is refused for the role answers 401/42501 (`my_subscription` does, on the same key) —
+so the button keeps failing, with a different and more accurate error than the 404 it
+used to get from the missing Edge Function. Applying 223 is what closes it; the app
+needs no further change.

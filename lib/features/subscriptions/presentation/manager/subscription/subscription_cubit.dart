@@ -78,11 +78,45 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         subscriptionId: subscriptionId,
       );
       if (isClosed) return;
-      emit(state.copyWith(usage: usage, clearUsageError: true));
+      emit(
+        state.copyWith(
+          usage: await _namedUsage(usage),
+          clearUsageError: true,
+        ),
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(usageError: error.toString()));
       addError(error, stackTrace);
+    }
+  }
+
+  /// Names the usage rows using the products the plan covers.
+  ///
+  /// The history RPC answers with `product_id` only, so a row would otherwise
+  /// be labelled with its redemption method. A failed or partial product read
+  /// must not lose the history that did arrive, so the rows are returned as
+  /// they are.
+  Future<List<SubscriptionUsage>> _namedUsage(
+    List<SubscriptionUsage> usage,
+  ) async {
+    if (!usage.any((entry) => entry.productId != null)) {
+      return usage;
+    }
+    final planId = state.subscription?.planId;
+    if (planId == null || planId.isEmpty) return usage;
+    try {
+      final products = await _repository.planProducts(planId);
+      final names = {for (final p in products) p.id: p.name};
+      return [
+        for (final entry in usage)
+          if (names[entry.productId] != null)
+            entry.copyWith(productName: names[entry.productId])
+          else
+            entry,
+      ];
+    } catch (_) {
+      return usage;
     }
   }
 

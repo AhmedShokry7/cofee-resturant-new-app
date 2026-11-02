@@ -178,7 +178,9 @@ PRIMARY KEY (branch_id, product_id, variant_key)
 
 ### 3.2 قائمة صريحة لما لا يفعله
 
-- ❌ لا تسجيل/دخول بالهاتف (الشاشات موجودة لكنها محاكاة حاليًا — تُؤجل).
+- ⚠️ تسجيل/دخول بالهاتف: **الكود كامل** (الشاشتان + الريبوزيتوري + وظيفة إرسال
+  الرسالة) لكنه **غير مفعَّل في لوحة Supabase** — لا provider ولا hook ولا أسرار.
+  راجع §6.3. لا يدّعي التطبيق أنه يعمل قبل هذه الخطوات.
 - ❌ لا بوابة دفع حقيقية ولا webhooks.
 - ❌ لا Push عبر مزود خارجي (FCM/OneSignal). جدول الإشعارات جاهز للربط لاحقًا.
 - ❌ لا ذكاء اصطناعي **خارجي** (لا LLM، لا API خارجي).
@@ -247,7 +249,37 @@ PRIMARY KEY (branch_id, product_id, variant_key)
 راجع **§2.2 (D2)** — هذا هو التنفيذ.
 
 ### 6.3 تسجيل الهاتف
-مؤجل. عند التنفيذ: **Edge Function موثوقة + مزود SMS**. لا يُنفَّذ في v1.
+
+**منفَّذ في الكود** (لا migration): `SupabaseAuthRepository.sendPhoneCode` /
+`verifyPhoneCode` عبر `signInWithOtp` و`verifyOTP` الأصليين، والرقم يمر بحارس
+واحد (`AuthFormRules.e164Of`) في الشاشة والريبوزيتوري معًا، فيُطلب الكود ويُتحقَّق
+بنفس سلسلة `+966…`. المسار يطبّق `_requireCustomerAccount` كالبريد وجوجل، ثم يكتب
+الرقم المُثبَت في `identity.profiles.phone` عبر `profiles_update_own` (019) فقط إذا
+كان العمود فارغًا — لا يُستبدل رقم كتبه العميل.
+
+الرسالة نفسها تُرسل من **Edge Function** (`supabase/functions/send-sms`) كـ Send SMS
+Hook عند Supabase، والمزوّد منفصل في `_shared/infobip.ts` حتى يظل التبديل تغيير سر
+لا تغيير كود. التوقيع محقَّق بـ`standardwebhooks`؛ ولا يُسجَّل رقم ولا كود في
+الإخراج.
+
+**المتبقِّي عند المالك (لا يُنفَّذ من هذه البيئة):**
+1. Authentication → Sign In / Method → **Phone** مفعَّل، و`Confirm phone` مفتوح.
+2. Same page → **Test Phone numbers**: أرقام اختبار مع أكواد ثابتة — مع هذا الوضع
+   لا تُرسَل رسالة أصلًا، فيُقرأ الكود من سجلات Supabase ويُختبر المسار بلا مفتاح
+   مزوّد. عطِّله قبل الإنتاج.
+3. Authentication → Hooks → **Send SMS**: URL
+   `https://<project-ref>.functions.supabase.co/send-sms` ومفتاح توقيع
+   (`whsec_…`) — والوظيفة تُنشر بـ`--no-verify-jwt` لأنها hook لا طلب عميل:
+   `supabase functions deploy send-sms --no-verify-jwt`.
+4. `supabase secrets set SEND_SMS_HOOK_SECRET=… INFOBIP_API_KEY=… INFOBIP_BASE_URL=…
+   INFOBIP_SENDER=…` — الأسرار إلى Supabase مباشرة، لا في محادثة ولا في مستودع.
+5. حساب Infobip تجاري (النسخة التجريبية تسمح بمرسل مسجَّل واحد فقط).
+
+أكواد المزوّد المرصودة لهذا المشروع عاملةً: `phone_provider_disabled`،
+`otp_disabled`، `otp_expired`؛ والموثَّق: `over_sms_send_rate_limit`،
+`sms_send_failed`، `signup_disabled`، `phone_exists`، `phone_not_confirmed`. كلٌّ
+منها له جملة عربية خاصة (`AuthCubit.messageFor`) — وأهمها أن `disabled` لا تُحوَّل
+إلى «حساب محظور».
 
 ---
 
@@ -1287,7 +1319,9 @@ is_active   boolean NOT NULL DEFAULT true
 
 ### 10.4 المؤجَّل (القائمة المُقفلة)
 
-1. تسجيل/دخول الهاتف (Edge Function + SMS).
+1. تسجيل/دخول الهاتف — **خرج من التأجيل في الكود ولم يخرج من الحاجة إلى اللوحة**:
+   الخطوة المتبقية تفعيل Phone + Test Phones + نشر `send-sms` مع `--no-verify-jwt`
+   وأسرار المزوّد (§6.3). لا migration ولا كود Dart/TypeScript ناقص.
 2. بوابة دفع حقيقية + webhooks.
 3. Push عبر FCM/OneSignal (الجداول جاهزة).
 4. ذكاء اصطناعي خارجي (LLM).
