@@ -48,63 +48,90 @@ void main() {
       reason: 'products must survive a banners failure',
     );
     expect(state.categories, isNotEmpty);
-    expect(state.error, contains('banners'));
+    expect(
+      state.degradedSections,
+      contains('banners'),
+      reason: 'the machine name stays in the state; the screen localises it',
+    );
+    expect(state.error, isNot(contains('banners')));
     await cubit.close();
   });
+
+  test(
+    'pull-to-refresh reads past the cache, a plain reload does not',
+    () async {
+      final catalog = _CountingBannersCatalog();
+      final cubit = HomeCubit(repository: catalog);
+      await loadFinished(cubit);
+      expect(catalog.bannerReads, 1, reason: 'the cold start fills the cache');
+
+      await cubit.load();
+      expect(
+        catalog.bannerReads,
+        1,
+        reason: 'a reload inside the TTL is answered from the cache',
+      );
+
+      await cubit.load(forceRefresh: true);
+      expect(
+        catalog.bannerReads,
+        2,
+        reason: 'the refresh gesture must reach the database it just cached',
+      );
+      await cubit.close();
+    },
+  );
 }
 
-/// Same catalogue, but the banner query throws.
-class _FailingBannersCatalog implements CatalogRepository {
-  _FailingBannersCatalog([CatalogRepository? inner])
-    : _inner = inner ?? MockProductRepository();
+/// The mock catalogue, counting how often the banner query ran.
+class _CountingBannersCatalog extends _ForwardingCatalog {
+  int bannerReads = 0;
+
+  @override
+  Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners}) {
+    bannerReads++;
+    return _inner.getBanners(limit: limit);
+  }
+}
+
+/// The mock catalogue, listing only the reads a home load performs.
+///
+/// Anything else answers loudly, so a new section on home cannot start reading a
+/// source this file had not accounted for.
+class _ForwardingCatalog implements CatalogRepository {
+  _ForwardingCatalog() : _inner = MockProductRepository();
 
   final CatalogRepository _inner;
 
   @override
-  Future<List<BannerModel>> getBanners({int limit = 20}) =>
-      throw StateError('banner source down');
-
-  @override
-  Future<List<BundleModel>> getBundles({String? branchId, int limit = 20}) =>
-      _inner.getBundles(branchId: branchId, limit: limit);
-
-  @override
-  Future<BundleModel?> getBundleById(String id) => _inner.getBundleById(id);
+  Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners}) =>
+      _inner.getBanners(limit: limit);
 
   @override
   Future<List<CategoryModel>> getCategories({bool includeInactive = false}) =>
       _inner.getCategories(includeInactive: includeInactive);
 
   @override
-  Future<CategoryModel?> getCategoryById(String id) =>
-      _inner.getCategoryById(id);
+  Future<List<BundleModel>> getBundles({
+    String? branchId,
+    int limit = CatalogLimits.bundles,
+  }) => _inner.getBundles(branchId: branchId, limit: limit);
 
   @override
-  Future<CategoryModel?> getCategoryBySlug(String slug) =>
-      _inner.getCategoryBySlug(slug);
-
-  @override
-  Future<List<CategoryModel>> getCategoryChildren(String parentId) =>
-      _inner.getCategoryChildren(parentId);
+  Future<List<FeaturedProduct>> getFeatured({
+    String? branchId,
+    int limit = CatalogLimits.featured,
+  }) => _inner.getFeatured(branchId: branchId, limit: limit);
 
   @override
   Future<ProductModel?> getById(String id, {String? branchId}) =>
       _inner.getById(id, branchId: branchId);
 
   @override
-  Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) =>
-      _inner.getWithOptions(id, branchId: branchId);
-
-  @override
-  Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
-    List<String> productIds,
-  ) => _inner.getOptionsByProduct(productIds);
-
-  @override
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
-    int limit = 100,
+    int limit = CatalogLimits.products,
     int offset = 0,
   }) => _inner.getProducts(
     branchId: branchId,
@@ -114,43 +141,13 @@ class _FailingBannersCatalog implements CatalogRepository {
   );
 
   @override
-  Future<List<ProductModel>> search(
-    String query, {
-    String? branchId,
-    String? categoryId,
-    String sort = 'relevance',
-    int limit = 20,
-    int offset = 0,
-  }) => _inner.search(
-    query,
-    branchId: branchId,
-    categoryId: categoryId,
-    sort: sort,
-    limit: limit,
-    offset: offset,
-  );
+  dynamic noSuchMethod(Invocation invocation) =>
+      throw UnsupportedError('home does not read ${invocation.memberName}');
+}
 
+/// Same catalogue, but the banner query throws.
+class _FailingBannersCatalog extends _ForwardingCatalog {
   @override
-  Future<List<FeaturedProduct>> getFeatured({
-    String? branchId,
-    int limit = 10,
-  }) => _inner.getFeatured(branchId: branchId, limit: limit);
-
-  @override
-  Future<List<BestSeller>> getBestSellers({
-    String? branchId,
-    Duration period = const Duration(days: 30),
-    int limit = 10,
-  }) => _inner.getBestSellers(branchId: branchId, period: period, limit: limit);
-
-  @override
-  Future<ResolvedPrice?> resolvePrice(
-    String productId, {
-    String? branchId,
-    List<String> optionValueIds = const [],
-  }) => _inner.resolvePrice(
-    productId,
-    branchId: branchId,
-    optionValueIds: optionValueIds,
-  );
+  Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners}) =>
+      throw StateError('banner source down');
 }

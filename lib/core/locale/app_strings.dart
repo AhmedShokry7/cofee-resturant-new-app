@@ -78,6 +78,13 @@ class S {
   static String get goodEvening => _ar ? 'مساء الخير' : 'Good Evening';
   static String get homeLoadError =>
       _ar ? 'تعذر تحميل الصفحة الرئيسية' : 'Could not load the home page';
+
+  /// What the home page says when some of its sections did not load. The
+  /// section names stay in the cubit for the logs; the customer is told the
+  /// outcome and how to act on it.
+  static String get homeDegradedNotice => _ar
+      ? 'بعض الأقسام لم تصل هذا المرة. اسحب لتحميلها مجددًا.'
+      : 'Some sections did not load this time. Pull down to try again.';
   static String get noProductsFound =>
       _ar ? 'لا توجد منتجات' : 'No products found';
   static String get tryAgainLater => _ar ? 'حاول لاحقًا' : 'Try again later';

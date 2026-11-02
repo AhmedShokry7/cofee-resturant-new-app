@@ -20,8 +20,11 @@ class SearchPill {
   static Widget icon() =>
       Icon(AppIcons.search, size: AppSizes.px20, color: AppColor.greyColor);
 
-  static BoxDecoration decoration() => BoxDecoration(
-    color: AppColor.lightGreyColor,
-    borderRadius: BorderRadius.circular(radius()),
-  );
+  /// The pill's fill, so a tap target and a real field are the same grey.
+  static Color fill() => AppColor.lightGreyColor;
+
+  /// The pill's corner as a border: a `Material` paints through it and an
+  /// `InkWell` clips its splash to it, which a `Container` decoration could not.
+  static ShapeBorder shape() =>
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius()));
 }

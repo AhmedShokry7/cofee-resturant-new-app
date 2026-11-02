@@ -90,8 +90,10 @@ abstract class ProductRepository {
 
   /// Published home banners, already inside their display window.
   ///
-  /// The window filter runs on the server so an expired banner never reaches
-  /// the client at all.
+  /// The window is applied by the reader, never by the caller, so an expired or
+  /// not-yet-started banner never reaches a screen. The database reader filters
+  /// it in Dart rather than in a PostgREST `or` date expression, which is
+  /// version-sensitive and would empty the section on a 400.
   Future<List<BannerModel>> getBanners({int limit = CatalogLimits.banners});
 
   /// Active bundles with their components and quantities resolved.

@@ -19,7 +19,7 @@ class UnavailableCatalogRepository implements CatalogRepository {
   Future<List<ProductModel>> getProducts({
     String? branchId,
     String? categoryId,
-    int limit = 100,
+    int limit = CatalogLimits.products,
     int offset = 0,
   }) async => const [];
 
@@ -43,21 +43,21 @@ class UnavailableCatalogRepository implements CatalogRepository {
     String? branchId,
     String? categoryId,
     String sort = 'relevance',
-    int limit = 20,
+    int limit = CatalogLimits.search,
     int offset = 0,
   }) async => const [];
 
   @override
   Future<List<FeaturedProduct>> getFeatured({
     String? branchId,
-    int limit = 10,
+    int limit = CatalogLimits.featured,
   }) async => const [];
 
   @override
   Future<List<BestSeller>> getBestSellers({
     String? branchId,
     Duration period = const Duration(days: 30),
-    int limit = 10,
+    int limit = CatalogLimits.bestSellers,
   }) async => const [];
 
   @override
@@ -68,12 +68,14 @@ class UnavailableCatalogRepository implements CatalogRepository {
   }) async => null;
 
   @override
-  Future<List<BannerModel>> getBanners({int limit = 20}) async => const [];
+  Future<List<BannerModel>> getBanners({
+    int limit = CatalogLimits.banners,
+  }) async => const [];
 
   @override
   Future<List<BundleModel>> getBundles({
     String? branchId,
-    int limit = 20,
+    int limit = CatalogLimits.bundles,
   }) async => const [];
 
   @override

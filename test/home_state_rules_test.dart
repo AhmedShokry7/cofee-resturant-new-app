@@ -1,25 +1,21 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/weather/data/model/weather_model.dart';
 
-/// The two rules the home screen used to run inside its widgets: which rows a
-/// banner points at, and how the recommendations strip is ordered.
+/// The rule the home screen used to run inside its widgets: how the
+/// recommendations strip is ordered. Which rows a banner points at moved to the
+/// banner page's own cubit, because it is now read from the catalogue rather
+/// than picked out of the ten rows home loaded.
 void main() {
-  ProductModel product(
-    String id, {
-    String categorySlug = '',
-    String? categoryId,
-  }) => ProductModel(
+  ProductModel product(String id, {String categorySlug = ''}) => ProductModel(
     id: id,
     name: 'P$id',
     price: 10,
     image: '',
     categorySlug: categorySlug,
-    categoryId: categoryId,
   );
 
   HomeState stateWith(List<ProductModel> pool) =>
@@ -62,80 +58,6 @@ void main() {
     test('the strip is capped', () {
       final picked = stateWith(pool).recommendations();
       expect(picked.length, HomeState.maxRecommendations);
-    });
-  });
-
-  group('productsForBanner', () {
-    test('a product banner uses the resolved product', () {
-      final banner = BannerModel(
-        id: 'b1',
-        image: '',
-        target: BannerTarget.product,
-        targetId: 'a',
-        targetProduct: product('a'),
-      );
-      expect(HomeState().productsForBanner(banner).map((p) => p.id).toList(), [
-        'a',
-      ]);
-    });
-
-    test('an unresolved product banner falls back to the pool', () {
-      final banner = BannerModel(
-        id: 'b1',
-        image: '',
-        target: BannerTarget.product,
-        targetId: 'c',
-      );
-      final state = HomeState(recommendationPool: [product('c')]);
-      expect(state.productsForBanner(banner).map((p) => p.id).toList(), ['c']);
-    });
-
-    test('a category banner matches on the category id, not the label', () {
-      final banner = BannerModel(
-        id: 'b1',
-        image: '',
-        target: BannerTarget.category,
-        targetId: 'cat-1',
-      );
-      final state = HomeState(
-        recommendationPool: [
-          product('a', categoryId: 'cat-1'),
-          product('b', categoryId: 'cat-2'),
-        ],
-      );
-      expect(state.productsForBanner(banner).map((p) => p.id).toList(), ['a']);
-    });
-
-    test('a bundle banner lists its loaded components', () {
-      final banner = BannerModel(
-        id: 'b1',
-        image: '',
-        target: BannerTarget.bundle,
-        targetId: 'bundle-1',
-        targetBundle: BundleModel(
-          id: 'bundle-1',
-          productIds: const ['a', 'z'],
-          price: 20,
-          components: const [
-            BundleComponent(productId: 'a', quantity: 1),
-            BundleComponent(productId: 'z', quantity: 1),
-          ],
-        ),
-      );
-      final state = HomeState(bundleProducts: {'a': product('a')});
-      expect(state.productsForBanner(banner).map((p) => p.id).toList(), [
-        'a',
-      ], reason: 'a component the bundle query did not resolve is skipped');
-    });
-
-    test('a url or unset banner points at nothing', () {
-      final banner = BannerModel(
-        id: 'b1',
-        image: '',
-        target: BannerTarget.url,
-        targetUrl: 'https://example.com',
-      );
-      expect(HomeState().productsForBanner(banner), isEmpty);
     });
   });
 

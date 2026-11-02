@@ -6,6 +6,8 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/category_grid_item.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_section_link.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
@@ -34,6 +36,16 @@ class HomeCategoriesSection extends StatelessWidget {
       tileExtent(constraints) * AppDimensions.categoryTileAspect * gridRows +
       AppSpacing.md;
 
+  /// Opens the catalogue tab on the tile the customer was looking at.
+  ///
+  /// Matched by stable id, not by position: the home grid and the categories tab
+  /// load independently, so equal indices do not guarantee equal categories.
+  void _openCategory(BuildContext context, String? categoryId) {
+    if (categoryId == null) return;
+    context.read<CategoriesCubit>().selectCategoryById(categoryId);
+    context.read<MainCubit>().changeTab(MainTab.categories.index);
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = context.watch<HomeCubit>().state.categories;
@@ -41,30 +53,14 @@ class HomeCategoriesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Text(
-                S.categories,
-                style: AppFonts.semiBold18(context),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Flexible(
-              child: GestureDetector(
-                onTap: () => context.read<MainCubit>().changeTab(1),
-                child: Text(
-                  S.seeAll,
-                  style: AppFonts.medium12(context)
-                      .copyWith(decoration: TextDecoration.underline),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ),
-          ],
+        HomeSectionTitle(
+          title: S.categories,
+          titleStyle: AppFonts.semiBold18(context),
+          trailing: HomeSectionLink(
+            label: S.seeAll,
+            onTap: () =>
+                context.read<MainCubit>().changeTab(MainTab.categories.index),
+          ),
         ),
         SizedBox(height: AppSpacing.lg),
         LayoutBuilder(
@@ -84,15 +80,7 @@ class HomeCategoriesSection extends StatelessWidget {
                 itemCount: categories.length,
                 itemBuilder: (context, index) => CategoryGridItem(
                   category: categories[index],
-                  onTap: () {
-                    // Match by stable id, not by position: the home grid and
-                    // the categories tab load independently, so equal indices
-                    // do not guarantee equal categories.
-                    context.read<CategoriesCubit>().selectCategoryById(
-                      categories[index].id,
-                    );
-                    context.read<MainCubit>().changeTab(1);
-                  },
+                  onTap: () => _openCategory(context, categories[index].id),
                 ),
               ),
             );

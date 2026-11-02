@@ -1,11 +1,12 @@
-/// تخزين مؤقت في ذاكرة الجهاز للبيانات التي لا تتغير كثيراً أثناء جلسة
-/// واحدة (المنتجات، الفئات، البانرات، الكوبونات).
+/// In-memory cache for data that barely moves during a session: products,
+/// categories, banners, coupons.
 ///
-/// الغرض تجنب إعادة طلب نفس البيانات من Supabase في كل مرة يفتح المستخدم
-/// فيها شاشة، ما يقلل عدد الجولات (round trips) والحمل على قاعدة البيانات
-/// عندما يتزايد عدد المستخدمين المتزامنين.
+/// Its purpose is to avoid asking Supabase for the same rows every time a
+/// screen opens, which cuts the round trips and the load on the database as
+/// concurrent customers grow.
 ///
-/// كل إدخال يحمل وقت انتهاء (ttl) ताकि البيانات لا تبقى قديمة إلى الأبد.
+/// Every entry carries an expiry ([defaultTtl]) so nothing stays served after
+/// the admin changed it.
 class CacheManager {
   CacheManager._();
 
@@ -15,10 +16,11 @@ class CacheManager {
 
   final Map<String, _CacheEntry<dynamic>> _cache = {};
 
-  /// مدة الصلاحية الافتراضية لكل إدخال (5 دقائق).
+  /// How long an entry is served to everyone (5 minutes).
   static const Duration defaultTtl = Duration(minutes: 5);
 
-  /// traz البيانات من الكاش إذا كانت موجودة ولم تنتهِ صلاحيتها.
+  /// The cached value for [key], or null when it was never stored or has
+  /// expired.
   T? get<T>(String key, {Duration? ttl}) {
     final entry = _cache[key];
     if (entry == null) return null;
@@ -30,7 +32,7 @@ class CacheManager {
     return entry.value as T?;
   }
 
-  /// يخزن البيانات في الكاش مع مدة صلاحية محددة.
+  /// Stores [value] under [key] with the expiry it is served for.
   void set<T>(String key, T value, {Duration? ttl}) {
     _cache[key] = _CacheEntry(
       value: value,
@@ -38,17 +40,18 @@ class CacheManager {
     );
   }
 
-  /// يزيل إدخالاً معيناً من الكاش.
+  /// Drops one entry.
   void remove(String key) {
     _cache.remove(key);
   }
 
-  /// يزيل جميع البيانات من الكاش (يُستخدم عند تسجيل الخروج أو تغيير اللغة).
+  /// Drops everything (used on sign-out and on a language change, because both
+  /// invalidate what the customer was shown).
   void clear() {
     _cache.clear();
   }
 
-  /// يزيل كل المدخلات التي تبدأ بمفتاح معين (مثل `categories_products_*`).
+  /// Drops every key starting with [prefix], such as `categories_products_*`.
   void removeWhereStartingWith(String prefix) {
     final keys = _cache.keys.where((k) => k.startsWith(prefix)).toList();
     for (final key in keys) {
@@ -56,10 +59,10 @@ class CacheManager {
     }
   }
 
-  /// عدد العناصر المخزنة حالياً (لغرض المراقبة/التصحيح).
+  /// How many entries are held right now (for diagnostics).
   int get size => _cache.length;
 
-  ///chéck إذا كان المفتاح موجوداً وساري الصلاحية.
+  /// Whether [key] holds a value that has not expired.
   bool contains(String key) {
     final entry = _cache[key];
     if (entry == null) return false;
@@ -71,7 +74,7 @@ class CacheManager {
   }
 }
 
-/// إدخال واحد في الكاش مع تاريخ انتهاء الصلاحية.
+/// One cached value and the moment it stops being served.
 class _CacheEntry<T> {
   const _CacheEntry({required this.value, required this.expiry});
 

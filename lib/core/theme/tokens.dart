@@ -239,7 +239,12 @@ abstract final class AppDimensions {
   static const double bannerHeroHeight = 220.0;
 
   /// The home carousel slide, single banner included.
-  static const double homeBannerHeight = 164.0;
+  ///
+  /// The pictures the dashboard uploads are 16:9 and both slots are wider than
+  /// that, so the number is the closest the two shapes get: the inset promo
+  /// banner (screen - 2x AppSpacing.lg = 328 on a phone) is exactly 16:9 here,
+  /// and the full-bleed carousel is 1.96 instead of the 2.20 it was at 164.
+  static const double homeBannerHeight = 184.0;
 
   /// The success ring on the payment-success page, mark included.
   static const double paymentSuccessMark = 124.0;

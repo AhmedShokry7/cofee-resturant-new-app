@@ -7,6 +7,8 @@ import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.da
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_dots.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeBannerSection extends StatelessWidget {
@@ -39,10 +41,9 @@ class _BannerCarouselState extends State<_BannerCarousel> {
   ///
   /// This is the perceived "transition time" of the carousel, so it is kept
   /// short: past roughly a third of a second the slide starts to feel like a
-  /// wait rather than a cut. The curve is `easeOutCubic` rather than
-  /// `easeInOut` because it moves the moment it starts instead of easing in,
-  /// which reads as noticeably snappier at the same duration.
-  static const _transition = Duration(milliseconds: 280);
+  /// wait rather than a cut. The curve arrives quickly and settles, which reads
+  /// as noticeably snappier at the same duration.
+  static const _transition = MotionTokens.pageSlide;
 
   @override
   void dispose() {
@@ -60,7 +61,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
         _controller.animateToPage(
           state.index,
           duration: _transition,
-          curve: Curves.easeOutCubic,
+          curve: MotionTokens.entranceCurve,
         );
       },
       child: Column(
@@ -72,16 +73,26 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               itemCount: widget.banners.length,
               onPageChanged: (index) =>
                   context.read<BannerCubit>().jumpTo(index),
-              itemBuilder: (context, index) => GestureDetector(
-                onTap: () => Navigator.of(context).pushNamed(
-                  BannerDetailsPage.routeName,
-                  arguments: widget.banners[index],
-                ),
-                child: BannerImage(
-                  banner: widget.banners[index],
-                  borderRadius: 0,
-                ),
-              ),
+              itemBuilder: (context, index) {
+                final banner = widget.banners[index];
+                return Semantics(
+                  link: true,
+                  label: banner.title,
+                  child: Material(
+                    color: AppColor.transparent,
+                    child: InkWell(
+                      onTap: () => Navigator.of(context).pushNamed(
+                        BannerDetailsPage.routeName,
+                        arguments: banner,
+                      ),
+                      child: BannerImage(
+                        banner: banner,
+                        borderRadius: AppRadius.none,
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           SizedBox(height: AppSpacing.md),

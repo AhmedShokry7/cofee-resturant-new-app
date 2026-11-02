@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_section_link.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section_title.dart';
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -22,6 +23,11 @@ class HomeProductsCarousel extends StatelessWidget {
   final String title;
   final String? subtitle;
   final List<ProductModel> products;
+
+  /// How many cards the strip shows before the title's link takes over.
+  ///
+  /// One screen of cards: past that the row stops being something a thumb
+  /// sweeps, and the full page exists for exactly that case.
   final int maxItems;
   final bool showViewMore;
 
@@ -50,13 +56,9 @@ class HomeProductsCarousel extends StatelessWidget {
         HomeSectionTitle(
           title: title,
           trailing: showViewMore
-              ? GestureDetector(
+              ? HomeSectionLink(
+                  label: S.viewMore,
                   onTap: () => _openAll(context),
-                  child: Text(
-                    S.viewMore,
-                    style: AppFonts.medium12(context)
-                        .copyWith(decoration: TextDecoration.underline),
-                  ),
                 )
               : null,
         ),

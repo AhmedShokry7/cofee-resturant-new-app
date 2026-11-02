@@ -398,6 +398,81 @@ void main() {
     );
   });
 
+  group('sort_order reads', () {
+    test('asks PostgREST for the banner order the dashboard sets', () async {
+      // `sort_order` counts up from 0, but the query builder defaults to
+      // DESCENDING, so a banner row left at its default arrived last and the
+      // carousel opened on the wrong picture. The request has to say `asc`.
+      final catalog = _Catalog();
+
+      await catalog.repository().getBanners();
+
+      final banners = catalog.requestEndingWith('/banners');
+      expect(banners, isNotNull);
+      expect(
+        banners!.queryParameters['order'],
+        startsWith('sort_order.asc'),
+        reason: 'the carousel follows the admin order, lowest first',
+      );
+    });
+
+    test('asks for the same order for categories and bundles', () async {
+      final catalog = _Catalog();
+
+      await catalog.repository().getCategories();
+      await catalog.repository().getBundles(branchId: branch);
+
+      for (final path in <String>['/categories', '/bundles']) {
+        final request = catalog.requestEndingWith(path);
+        expect(request, isNotNull, reason: '$path was queried');
+        expect(
+          request!.queryParameters['order'],
+          startsWith('sort_order.asc'),
+          reason: '$path must not inherit the descending default',
+        );
+      }
+    });
+  });
+
+  group('banner links', () {
+    test('reads both link tables for the banner it was given', () async {
+      final catalog = _Catalog(
+        bannerProducts: <Map<String, dynamic>>[
+          <String, dynamic>{'product_id': 'p9', 'sort_order': 0},
+        ],
+        bannerCategories: <Map<String, dynamic>>[
+          <String, dynamic>{'category_id': 'c2', 'sort_order': 0},
+        ],
+      );
+
+      final links = await catalog.repository().getBannerLinks('b1');
+
+      expect(links.productIds, <String>['p9']);
+      expect(links.categoryIds, <String>['c2']);
+      for (final path in <String>['/banner_products', '/banner_categories']) {
+        final request = catalog.requestEndingWith(path);
+        expect(request, isNotNull, reason: '$path was read');
+        expect(request!.queryParameters['banner_id'], 'eq.b1');
+        expect(
+          request.queryParameters['order'],
+          startsWith('sort_order.asc'),
+          reason: '$path keeps the order the admin set',
+        );
+      }
+    });
+
+    test('a database without the link tables answers no links', () async {
+      // Migration 222 may not be applied to the database this build talks to.
+      // The banner page then shows the row behind target_id, which is the whole
+      // behaviour it had before, instead of failing.
+      final catalog = _Catalog(bannerLinksMissing: true);
+
+      final links = await catalog.repository().getBannerLinks('b1');
+
+      expect(links.isEmpty, isTrue);
+    });
+  });
+
   group('getWithOptions', () {
     test('reads the gallery once for the product it already loaded', () async {
       final catalog = _Catalog(
@@ -430,6 +505,9 @@ class _Catalog {
     this.failPricing = false,
     this.onImages,
     this.onPricing,
+    this.bannerProducts = const <Map<String, dynamic>>[],
+    this.bannerCategories = const <Map<String, dynamic>>[],
+    this.bannerLinksMissing = false,
   });
 
   final List<Map<String, dynamic>> products;
@@ -439,6 +517,9 @@ class _Catalog {
   final bool failPricing;
   final Future<void> Function()? onImages;
   final Future<void> Function()? onPricing;
+  final List<Map<String, dynamic>> bannerProducts;
+  final List<Map<String, dynamic>> bannerCategories;
+  final bool bannerLinksMissing;
 
   final List<Uri> requests = <Uri>[];
 
@@ -485,6 +566,24 @@ class _Catalog {
     }
     if (url.path.endsWith('/products')) {
       return _response(request, jsonEncode(products), 200);
+    }
+    if (url.path.endsWith('/banner_products') ||
+        url.path.endsWith('/banner_categories')) {
+      if (bannerLinksMissing) {
+        // What PostgREST answers for a table the API does not know: the
+        // database where migration 222 has not been applied yet.
+        return _response(
+          request,
+          '{"code":"PGRST205","details":null,"hint":null,'
+          '"message":"Could not find the \'${url.pathSegments.last}\' table '
+          'or view in the schema cache"}',
+          404,
+        );
+      }
+      final rows = url.path.endsWith('/banner_products')
+          ? bannerProducts
+          : bannerCategories;
+      return _response(request, jsonEncode(rows), 200);
     }
     return _response(request, '[]', 200);
   }

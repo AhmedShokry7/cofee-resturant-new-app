@@ -22,4 +22,17 @@ class MotionTokens {
   /// [entrance] on purpose: the row has to be settled before the page it
   /// describes arrives, or the two look out of step.
   static const Duration dotMorph = Duration(milliseconds: 220);
+
+  /// A page moving under the customer's finger, or under the app's own timer.
+  ///
+  /// Roughly a third of a second is the ceiling before a slide reads as a wait
+  /// rather than a cut, and it pairs with [entranceCurve] so the movement starts
+  /// the moment it is asked for instead of easing in.
+  static const Duration pageSlide = Duration(milliseconds: 280);
+
+  /// How long an auto-advancing carousel holds one page before moving on.
+  ///
+  /// Long enough to read a banner's picture and its headline, short enough that
+  /// a customer who is not interested is back at the content within a beat.
+  static const Duration carouselHold = Duration(seconds: 5);
 }

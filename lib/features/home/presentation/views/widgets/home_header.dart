@@ -10,6 +10,7 @@ import 'package:new_coffee/features/auth/presentation/manager/current_user/curre
 import 'package:new_coffee/features/home/data/greeting.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/shared/utils/optional_provider.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeHeader extends StatelessWidget {
@@ -58,20 +59,27 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
         SizedBox(width: AppSpacing.sm),
-        GestureDetector(
-          onTap: () =>
-              Navigator.of(context).pushNamed(NotificationsPage.routeName),
-          child: Container(
-            height: AppSizes.px44,
-            width: AppSizes.px44,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: AppColor.primaryColor.withAlpha(75),
+        Semantics(
+          button: true,
+          label: S.notifications,
+          child: Material(
+            color: AppColor.transparent,
+            shape: CircleBorder(
+              side: BorderSide(
+                color: AppColor.primaryRing,
                 width: AppSizes.px1,
               ),
-              shape: BoxShape.circle,
             ),
-            child: const _NotificationBell(),
+            child: InkWell(
+              onTap: () =>
+                  Navigator.of(context).pushNamed(NotificationsPage.routeName),
+              customBorder: const CircleBorder(),
+              child: SizedBox(
+                height: AppSizes.px44,
+                width: AppSizes.px44,
+                child: const _NotificationBell(),
+              ),
+            ),
           ),
         ),
       ],
@@ -87,57 +95,49 @@ class _NotificationBell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    NotificationsCubit? cubit;
-    try {
-      cubit = context.read<NotificationsCubit>();
-    } catch (_) {
-      cubit = null;
-    }
     final bell = Icon(
       AppIcons.notification,
       size: AppSizes.px22,
       color: AppColor.primaryColor,
     );
-    if (cubit == null) return bell;
-    return BlocBuilder<NotificationsCubit, NotificationsState>(
-      builder: (context, state) {
-        final count = cubit!.unreadCount;
-        if (count == 0) return bell;
-        return Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            bell,
-            Positioned(
-              top: -AppSpacing.xs,
-              right: -AppSizes.px6,
-              child: Container(
-                constraints: BoxConstraints(
-                  minWidth: AppSizes.px18,
-                  minHeight: AppSizes.px18,
-                ),
-                padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: AppColor.unreadBadgeColor,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  border: Border.all(
-                    color: AppColor.whiteColor,
-                    width: AppSizes.px1_5,
-                  ),
-                ),
-                child: Text(
-                  count > 99 ? '99+' : '$count',
-                  style: AppFonts.medium12(context).copyWith(
-                    color: AppColor.whiteColor,
-                    height: AppTextHeights.inset,
-                  ),
-                ),
+    if (context.maybeRead<NotificationsCubit>() == null) return bell;
+    final count = context.select<NotificationsCubit, int>(
+      (cubit) => cubit.unreadCount,
+    );
+    if (count == 0) return bell;
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
+      children: [
+        bell,
+        Positioned(
+          top: -AppSpacing.xs,
+          right: -AppSizes.px6,
+          child: Container(
+            constraints: BoxConstraints(
+              minWidth: AppSizes.px18,
+              minHeight: AppSizes.px18,
+            ),
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColor.unreadBadgeColor,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              border: Border.all(
+                color: AppColor.whiteColor,
+                width: AppSizes.px1_5,
               ),
             ),
-          ],
-        );
-      },
+            child: Text(
+              count > 99 ? '99+' : '$count',
+              style: AppFonts.medium12(context).copyWith(
+                color: AppColor.whiteColor,
+                height: AppTextHeights.inset,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

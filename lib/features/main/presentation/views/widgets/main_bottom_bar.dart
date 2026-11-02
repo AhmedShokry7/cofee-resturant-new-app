@@ -13,7 +13,7 @@ class MainBottomBar extends StatelessWidget {
     required this.onTap,
   });
 
-  final List<MainTab> tabs;
+  final List<MainTabView> tabs;
   final int currentIndex;
   final ValueChanged<int> onTap;
 

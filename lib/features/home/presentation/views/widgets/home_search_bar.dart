@@ -14,28 +14,36 @@ class HomeSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        context.read<SearchCubit>().search('');
-        Navigator.of(context).pushNamed(SearchPage.routeName);
-      },
-      child: Container(
-        padding: SearchPill.padding(),
-        decoration: SearchPill.decoration(),
-        child: Row(
-          children: [
-            SearchPill.icon(),
-            SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                S.searchHint,
-                style: AppFonts.regular14(context)
-                    .copyWith(color: AppColor.greyColor),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+    return Semantics(
+      button: true,
+      label: S.searchHint,
+      child: Material(
+        color: SearchPill.fill(),
+        shape: SearchPill.shape(),
+        child: InkWell(
+          onTap: () {
+            context.read<SearchCubit>().search('');
+            Navigator.of(context).pushNamed(SearchPage.routeName);
+          },
+          customBorder: SearchPill.shape(),
+          child: Padding(
+            padding: SearchPill.padding(),
+            child: Row(
+              children: [
+                SearchPill.icon(),
+                SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(
+                    S.searchHint,
+                    style: AppFonts.regular14(context)
+                        .copyWith(color: AppColor.greyColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );

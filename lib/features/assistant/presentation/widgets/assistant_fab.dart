@@ -10,6 +10,7 @@ import 'package:new_coffee/features/assistant/presentation/manager/assistant_fab
 import 'package:new_coffee/features/assistant/presentation/widgets/assistant_launcher.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/shared/utils/optional_provider.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Smart assistant entry point, owned by the Home page.
@@ -34,22 +35,14 @@ class AssistantFab extends StatelessWidget {
   /// The FAB lives on Home, where both repositories are registered, but the
   /// widget is also pumped in isolation by tests and by any future host that
   /// has no auth or order layer yet.
-  static T? _readOrNull<T extends Object>(BuildContext context) {
-    try {
-      return context.read<T>();
-    } catch (_) {
-      return null;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => AssistantFabCubit(
         hintCycle: hintCycle,
         hintVisible: hintVisible,
-        orders: _readOrNull<OrdersRepository>(context),
-        auth: _readOrNull<AuthRepository>(context),
+        orders: context.maybeRead<OrdersRepository>(),
+        auth: context.maybeRead<AuthRepository>(),
       )..start(),
       child: const _AssistantFabView(),
     );

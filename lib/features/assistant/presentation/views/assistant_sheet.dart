@@ -7,6 +7,7 @@ import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
+import 'package:new_coffee/shared/utils/optional_provider.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/assistant/data/model/chat_message.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
@@ -38,26 +39,17 @@ class _AssistantSheetState extends State<AssistantSheet> {
     super.dispose();
   }
 
-  Set<String> _favoriteIds() {
-    try {
-      return context.read<FavoritesCubit>().state.ids;
-    } catch (_) {
-      return const {};
-    }
-  }
+  Set<String> _favoriteIds() =>
+      context.maybeRead<FavoritesCubit>()?.state.ids ?? const {};
 
-  Set<String> _cartProductIds() {
-    try {
-      return context
-          .read<CartCubit>()
-          .state
+  Set<String> _cartProductIds() =>
+      context
+          .maybeRead<CartCubit>()
+          ?.state
           .items
           .map((item) => item.product.id)
-          .toSet();
-    } catch (_) {
-      return const {};
-    }
-  }
+          .toSet() ??
+      const {};
 
   void _send([String? text]) {
     final value = text ?? _controller.text;
@@ -73,12 +65,7 @@ class _AssistantSheetState extends State<AssistantSheet> {
   /// real app cart, then marks them done.
   void _executeCartActions(BuildContext context, AssistantState state) {
     if (state.cartActions.isEmpty) return;
-    CartCubit? cart;
-    try {
-      cart = context.read<CartCubit>();
-    } catch (_) {
-      cart = null;
-    }
+    final cart = context.maybeRead<CartCubit>();
     if (cart == null) return;
     final snapshot = context.read<AssistantCubit>().snapshot;
     for (final action in state.cartActions) {

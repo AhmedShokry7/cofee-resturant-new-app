@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/bundles/data/bundle_pricing.dart'
     as pricing;
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
@@ -21,9 +22,11 @@ part 'home_state.dart';
 /// without a release. One cubit loads it once and every widget reads the same
 /// snapshot, which is also one round trip instead of seven.
 ///
-/// بيانات الصفحة الرئيسية تُخزّن مؤقتاً في ذاكرة الجهاز ([CacheManager]) لمدة
-/// 5 دقائق لتجنب إعادة طلب نفس البيانات من Supabase في كل opening للصفحة،
-/// مما يخفف الحمل على قاعدة البيانات عند ازدياد عدد المستخدمين المتزامنين.
+/// Sections that rarely move (banners, categories, bundles, featured rows) are
+/// kept in [CacheManager] for its TTL, so reopening the page costs no queries.
+/// A pull-to-refresh is the exception: it passes [load.forceRefresh] and goes
+/// to the database, because a refresh gesture that hands back the cache it just
+/// read is a gesture that does nothing.
 class HomeCubit extends Cubit<HomeState> {
   HomeCubit({required this._repository, this.branchId})
     : super(const HomeState()) {
@@ -39,9 +42,16 @@ class HomeCubit extends Cubit<HomeState> {
   String? branchId;
   int _loadGeneration = 0;
 
-  Future<void> load() async {
+  /// Candidate rows behind the recommendations strip.
+  ///
+  /// The strip itself shows [HomeState.maxRecommendations]; the pool is wider so
+  /// the weather rule and the favourites have something to promote, and narrow
+  /// enough that home never pulls the whole menu.
+  static const int recommendationPoolSize = 10;
+
+  Future<void> load({bool forceRefresh = false}) async {
     final generation = ++_loadGeneration;
-    emit(state.copyWith(isLoading: true, error: null));
+    emit(state.copyWith(isLoading: true, degradedSections: const []));
 
     // Each section loads independently so one failing source does not blank the
     // whole page. A section that fails keeps its previous value and the page
@@ -62,58 +72,66 @@ class HomeCubit extends Cubit<HomeState> {
       }
     }
 
-    //cache key includes branchId so different branches don't share stale data.
+    /// One section of the page: cache, then repository, then what was already
+    /// on screen. Branch-dependent sections carry the branch in their key so two
+    /// branches never share a snapshot.
+    Future<T> section<T>(
+      String name,
+      String key,
+      Future<T> Function() fetch,
+      T fallback,
+    ) => guard(name, () async {
+      if (!forceRefresh) {
+        final cached = CacheManager().get<T>(key);
+        if (cached != null) return cached;
+      }
+      final fetched = await fetch();
+      CacheManager().set(key, fetched);
+      return fetched;
+    }, fallback);
+
     final cacheBranch = branchId ?? 'base';
 
-    // البانرات تتغير rarement — تُجلب من الكاش إذا كانت متوفرة.
-    final bannersFuture = guard('banners', () async {
-      final key = 'home_banners';
-      final cached = CacheManager().get<List<BannerModel>>(key);
-      if (cached != null) return cached;
-      final fetched = await _repository.getBanners();
-      CacheManager().set(key, fetched);
-      return fetched;
-    }, state.banners);
-    final bundlesFuture = guard('bundles', () async {
-      final key = 'home_bundles_$cacheBranch';
-      final cached = CacheManager().get<List<BundleModel>>(key);
-      if (cached != null) return cached;
-      final fetched = await _repository.getBundles(branchId: branchId);
-      CacheManager().set(key, fetched);
-      return fetched;
-    }, state.bundles);
-    final categoriesFuture = guard('categories', () async {
-      final key = 'home_categories';
-      final cached = CacheManager().get<List<CategoryModel>>(key);
-      if (cached != null) return cached;
-      final fetched = await _repository.getCategories();
-      CacheManager().set(key, fetched);
-      return fetched;
-    }, state.categories);
-    final featuredFuture = guard('featured', () async {
-      final key = 'home_featured_$cacheBranch';
-      final cached = CacheManager().get<List<FeaturedProduct>>(key);
-      if (cached != null) return cached;
-      final fetched = await _repository.getFeatured(
+    final featuredFuture = section(
+      'featured',
+      'home_featured_$cacheBranch',
+      () => _repository.getFeatured(
         branchId: branchId,
-        limit: 10,
-      );
-      CacheManager().set(key, fetched);
-      return fetched;
-    }, const <FeaturedProduct>[]);
-    // Candidate pool for recommendations. Loaded once here so the weather
-    // rule can filter it without a query per temperature change.
-    final productsFuture = guard('products', () async {
-      final key = 'home_products_$cacheBranch';
-      final cached = CacheManager().get<List<ProductModel>>(key);
-      if (cached != null) return cached;
-      final fetched = await _repository.getProducts(
+        limit: CatalogLimits.featured,
+      ),
+      const <FeaturedProduct>[],
+    );
+    // Also the candidate pool recommendations are ranked from, and the first
+    // place bundle components are looked up in, so one query serves three
+    // sections instead of three.
+    final productsFuture = section(
+      'products',
+      'home_products_$cacheBranch',
+      () => _repository.getProducts(
         branchId: branchId,
-        limit: 10,
-      );
-      CacheManager().set(key, fetched);
-      return fetched;
-    }, state.recommendationPool);
+        limit: recommendationPoolSize,
+      ),
+      state.recommendationPool,
+    );
+    // Banners and categories belong to no branch, so their key stays unscoped.
+    final bannersFuture = section(
+      'banners',
+      'home_banners',
+      _repository.getBanners,
+      state.banners,
+    );
+    final categoriesFuture = section(
+      'categories',
+      'home_categories',
+      _repository.getCategories,
+      state.categories,
+    );
+    final bundlesFuture = section(
+      'bundles',
+      'home_bundles_$cacheBranch',
+      () => _repository.getBundles(branchId: branchId),
+      state.bundles,
+    );
 
     // Start every section before waiting. Sequential awaits on cache misses
     // turned independent requests into a network waterfall.
@@ -127,15 +145,14 @@ class HomeCubit extends Cubit<HomeState> {
     // products finish loading. A slow bundle request should not hold the whole
     // home page behind a full-screen skeleton.
     emit(
-      HomeState(
+      state.copyWith(
         banners: banners,
         categories: categories,
         popular: _toProducts(featured),
         recommendationPool: products,
-        bundles: state.bundles,
-        bundleProducts: state.bundleProducts,
-        isLoading: true,
-        error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
+        // A copy: the list is still being filled by the bundle reads below, and
+        // a state must not change after it was emitted.
+        degradedSections: List.of(failures),
       ),
     );
 
@@ -183,7 +200,7 @@ class HomeCubit extends Cubit<HomeState> {
 
     if (isClosed || generation != _loadGeneration) return;
     emit(
-      HomeState(
+      state.copyWith(
         banners: banners,
         bundles: bundles,
         categories: categories,
@@ -191,7 +208,7 @@ class HomeCubit extends Cubit<HomeState> {
         recommendationPool: products,
         bundleProducts: bundleProducts,
         isLoading: false,
-        error: failures.isEmpty ? null : 'Degraded: ${failures.join(', ')}',
+        degradedSections: List.of(failures),
       ),
     );
   }
@@ -219,10 +236,13 @@ class HomeCubit extends Cubit<HomeState> {
   ///
   /// Skips the reload when the branch is unchanged, so tapping the active
   /// branch chip does not refire five queries.
+  ///
+  /// The sections already on screen stay there while the new branch loads,
+  /// which is what the catalogue cubits beside this one do. Clearing them first
+  /// sent the page back behind a full skeleton on every branch switch.
   Future<void> setBranch(String? branchId) {
     if (branchId == this.branchId) return Future.value();
     this.branchId = branchId;
-    emit(const HomeState());
     return load();
   }
 

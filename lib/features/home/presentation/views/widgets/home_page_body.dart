@@ -12,6 +12,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_loading
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_recommendations_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_single_banner_section.dart';
 import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -21,19 +22,15 @@ import 'package:new_coffee/core/theme/tokens.dart';
 class HomePageBody extends StatelessWidget {
   const HomePageBody({super.key});
 
-  /// Pull-to-refresh reloads the catalogue snapshot and the weather rule
-  /// behind the recommendations in one gesture, like other food apps.
+  /// Pull-to-refresh reload the catalogue snapshot and the weather rule behind
+  /// the recommendations in one gesture, like other food apps.
+  ///
+  /// It forces the read past the cache: a refresh gesture that answered from the
+  /// cache it had just read would refresh nothing.
   Future<void> _refresh(BuildContext context) => Future.wait([
-    context.read<HomeCubit>().load(),
+    context.read<HomeCubit>().load(forceRefresh: true),
     context.read<WeatherCubit>().load(),
   ]);
-
-  static bool _isEmpty(HomeState state) =>
-      state.banners.isEmpty &&
-      state.bundles.isEmpty &&
-      state.categories.isEmpty &&
-      state.popular.isEmpty &&
-      state.recommendationPool.isEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +47,7 @@ class HomePageBody extends StatelessWidget {
           }
           // Total failure: nothing to show and no silent blank page. The
           // message names the degraded sections and offers a retry.
-          if (!state.isLoading && state.error != null && _isEmpty(state)) {
+          if (!state.isLoading && state.error != null && state.hasNoContent) {
             return Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.lg),
@@ -65,7 +62,8 @@ class HomePageBody extends StatelessWidget {
                     SizedBox(height: AppSpacing.md),
                     CustomBtn(
                       text: S.retry,
-                      onPressed: () => context.read<HomeCubit>().load(),
+                      onPressed: () =>
+                          context.read<HomeCubit>().load(forceRefresh: true),
                     ),
                   ],
                 ),
@@ -77,45 +75,27 @@ class HomePageBody extends StatelessWidget {
             child: ListView(
               // Pull-to-refresh must work even when the content is short.
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.only(
-                top: AppSpacing.md,
-                bottom: AppSpacing.lg,
-              ),
+              padding: HomeSection.bodyPadding,
               children: [
-                const _HomeSection(child: HomeHeader()),
-                SizedBox(height: AppSpacing.lg),
-                const _HomeSection(child: HomeSearchBar()),
-                SizedBox(height: AppSpacing.lg),
+                const HomeSection(child: HomeHeader()),
+                SizedBox(height: AppSpacing.md),
+                const HomeSection(child: HomeSearchBar()),
+                SizedBox(height: AppSpacing.md),
                 const HomeBannerSection(),
-                SizedBox(height: AppSpacing.lg),
-                const _HomeSection(child: HomeCategoriesSection()),
-                SizedBox(height: AppSpacing.lg),
-                const _HomeSection(child: HomePopularSection()),
-                SizedBox(height: AppSpacing.lg),
-                const _HomeSection(child: HomeSingleBannerSection()),
-                SizedBox(height: AppSpacing.xl),
-                const _HomeSection(child: HomeRecommendationsSection()),
-                SizedBox(height: AppSpacing.lg),
-                const _HomeSection(child: HomeBundlesSection()),
+                const HomeSection(child: HomeCategoriesSection()),
+                SizedBox(height: AppSpacing.md),
+                const HomeSection(child: HomePopularSection()),
+                SizedBox(height: AppSpacing.md),
+                const HomeSection(child: HomeSingleBannerSection()),
+                SizedBox(height: AppSpacing.md),
+                const HomeSection(child: HomeRecommendationsSection()),
+                SizedBox(height: AppSpacing.md),
+                const HomeSection(child: HomeBundlesSection()),
               ],
             ),
           );
         },
       ),
-    );
-  }
-}
-
-class _HomeSection extends StatelessWidget {
-  const _HomeSection({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: child,
     );
   }
 }

@@ -144,7 +144,9 @@ void main() {
         const SizedBox(width: 375, height: 260, child: BannerSkeleton()),
       );
       final box = tester.getSize(find.byType(ShimmerBox).first);
-      expect(box.height, 164);
+      // The skeleton mirrors the real slide, so it follows the token rather
+      // than repeating its number.
+      expect(box.height, AppDimensions.homeBannerHeight);
       expect(box.width, 375);
     });
 

@@ -3,6 +3,8 @@ import 'package:new_coffee/core/services/supabase_read_service.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
+import 'package:new_coffee/features/home/data/model/banner_links.dart';
+import 'package:new_coffee/features/home/data/repositories/banner_link_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -16,7 +18,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// rows. Nothing here needs a privileged key, and the service_role key is never
 /// referenced.
 class SupabaseProductRepository
-    implements CatalogRepository, BatchProductRepository {
+    implements CatalogRepository, BatchProductRepository, BannerLinkRepository {
   SupabaseProductRepository([SupabaseClient? client])
     : _client = client ?? SupabaseReadService.read;
 
@@ -729,6 +731,12 @@ class SupabaseProductRepository
 
   // --- Home page content ---------------------------------------------------
 
+  /// `sort_order` is an ascending display column - the dashboard puts the banner
+  /// the customer should see first at 0 - but the PostgREST builder defaults to
+  /// DESCENDING, so every `sort_order` order in this file says `ascending:
+  /// true` explicitly. Without it the carousel opened on the last banner and
+  /// the promo slot below it repeated the first one.
+
   @override
   Future<List<BannerModel>> getBanners({
     int limit = CatalogLimits.banners,
@@ -745,7 +753,7 @@ class SupabaseProductRepository
           'target_id,target_url,sort_order,is_published,starts_at,ends_at',
         )
         .eq('is_published', true)
-        .order('sort_order')
+        .order('sort_order', ascending: true)
         .limit(limit);
 
     final now = DateTime.now().toUtc();
@@ -761,6 +769,36 @@ class SupabaseProductRepository
   }
 
   @override
+  Future<BannerLinks> getBannerLinks(String bannerId) async {
+    // The two link tables are read together: neither answer feeds the other,
+    // and a banner page that waited for one after the other would pay for two
+    // round trips to draw one strip.
+    Future<List<Map<String, dynamic>>> links(String table, String column) =>
+        _client
+            .from(table)
+            .select('$column,sort_order')
+            .eq('banner_id', bannerId)
+            .order('sort_order', ascending: true);
+
+    try {
+      final both = await Future.wait([
+        links('banner_products', 'product_id'),
+        links('banner_categories', 'category_id'),
+      ]);
+      return BannerLinks.fromRows(
+        productRows: both[0],
+        categoryRows: both[1],
+      );
+    } on PostgrestException catch (error) {
+      // PGRST205 is "no such table or view", which is what a database where
+      // migration 222 has not been applied yet answers. The banner keeps the
+      // single row behind its own target_id instead of opening on an error.
+      if (error.code == 'PGRST205') return BannerLinks.none;
+      rethrow;
+    }
+  }
+
+  @override
   Future<List<BundleModel>> getBundles({
     String? branchId,
     int limit = CatalogLimits.bundles,
@@ -769,7 +807,7 @@ class SupabaseProductRepository
         .from('bundles')
         .select(_bundleColumns)
         .eq('is_active', true)
-        .order('sort_order')
+        .order('sort_order', ascending: true)
         .limit(limit);
     if (rows.isEmpty) return [];
 
@@ -778,7 +816,7 @@ class SupabaseProductRepository
         .from('bundle_items')
         .select(_bundleItemColumns)
         .inFilter('bundle_id', bundleIds)
-        .order('sort_order');
+        .order('sort_order', ascending: true);
 
     final byBundle = _componentsByBundle(items);
 
@@ -832,7 +870,7 @@ class SupabaseProductRepository
         .from('bundle_items')
         .select(_bundleItemColumns)
         .eq('bundle_id', bundleId)
-        .order('sort_order');
+        .order('sort_order', ascending: true);
 
     return BundleModel.fromJson(
       bundle,
@@ -852,12 +890,12 @@ class SupabaseProductRepository
         ? _client
               .from('categories')
               .select(_categoryColumns)
-              .order('sort_order')
+              .order('sort_order', ascending: true)
         : _client
               .from('categories')
               .select(_categoryColumns)
               .eq('is_active', true)
-              .order('sort_order'));
+              .order('sort_order', ascending: true));
     return rows.map(CategoryModel.fromJson).toList();
   }
 
@@ -887,7 +925,7 @@ class SupabaseProductRepository
         .from('categories')
         .select(_categoryColumns)
         .eq('parent_id', parentId)
-        .order('sort_order');
+        .order('sort_order', ascending: true);
     return rows.map(CategoryModel.fromJson).toList();
   }
 }

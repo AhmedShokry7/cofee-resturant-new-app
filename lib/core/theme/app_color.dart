@@ -19,6 +19,11 @@ class AppColor {
   /// The brand at 6% strength: a selected row, a soft chip, a tinted header.
   static const Color primarySoft = Color(0xffEFF6FF);
 
+  /// The brand drawn as a ring around a tappable control, such as the bell in
+  /// the home header. A getter rather than a swatch: [primaryColor] is the
+  /// mutable pair, so the ring has to repaint with the runtime theme.
+  static Color get primaryRing => primaryColor.withAlpha(75);
+
   static Color secondryColor = const Color(0xff033A58);
 
   // Neutrals

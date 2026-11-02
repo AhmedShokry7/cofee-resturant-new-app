@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
@@ -20,60 +21,29 @@ class HomeLoadingView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       physics: physics ?? const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.only(top: AppSpacing.md, bottom: AppSpacing.lg),
+      padding: HomeSection.bodyPadding,
       children: [
-        const _HomeSection(child: HomeHeader()),
+        const HomeSection(child: HomeHeader()),
         SizedBox(height: AppSpacing.lg),
-        const _HomeSection(child: HomeSearchBar()),
+        const HomeSection(child: HomeSearchBar()),
         SizedBox(height: AppSpacing.lg),
         const BannerSkeleton(),
         SizedBox(height: AppSpacing.lg),
-        const _HomeSection(child: HomeCategoriesSkeleton()),
+        const HomeSection(child: HomeCategoriesSkeleton()),
         SizedBox(height: AppSpacing.lg),
-        const _HomeSection(child: ProductsCarouselSkeleton()),
+        const HomeSection(child: ProductsCarouselSkeleton()),
         SizedBox(height: AppSpacing.lg),
-        _HomeSection(child: ShimmerBannerBox(height: 164, borderRadius: 8)),
+        // The single promo slot: [HomeSingleBannerSection]'s own radius and no
+        // dots row. The height comes from the shared default, which is the
+        // height that section renders at.
+        const HomeSection(
+          child: BannerSkeleton(borderRadius: AppRadius.r8, showDots: false),
+        ),
         SizedBox(height: AppSpacing.xl),
-        const _HomeSection(child: ProductsCarouselSkeleton(showSubtitle: true)),
+        const HomeSection(child: ProductsCarouselSkeleton(showSubtitle: true)),
         SizedBox(height: AppSpacing.lg),
-        const _HomeSection(child: BundlesCarouselSkeleton()),
+        const HomeSection(child: BundlesCarouselSkeleton()),
       ],
-    );
-  }
-}
-
-/// Single full-width promo banner skeleton mirroring
-/// [HomeSingleBannerSection]: [AppDimensions.homeBannerHeight] tall with radius [AppRadius.r8] and no dots row.
-class ShimmerBannerBox extends StatelessWidget {
-  const ShimmerBannerBox({
-    super.key,
-    required this.height,
-    required this.borderRadius,
-  });
-
-  final double height;
-  final double borderRadius;
-
-  @override
-  Widget build(BuildContext context) {
-    return BannerSkeleton(
-      height: height,
-      borderRadius: borderRadius,
-      showDots: false,
-    );
-  }
-}
-
-class _HomeSection extends StatelessWidget {
-  const _HomeSection({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: child,
     );
   }
 }

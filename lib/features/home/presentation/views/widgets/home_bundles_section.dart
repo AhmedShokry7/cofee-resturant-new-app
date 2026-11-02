@@ -52,90 +52,99 @@ class _BundleCard extends StatelessWidget {
     final products = cubit.productsIn(bundle);
     final imageProduct = products.isEmpty ? null : products.first;
     final savingPercent = cubit.savingPercentFor(bundle);
-    return GestureDetector(
-      onTap: () =>
-          Navigator.of(context)
-              .pushNamed(BundleDetailsPage.routeName, arguments: bundle),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            width: AppDimensions.bundleCardWidth,
-            padding: EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(AppRadius.r16),
-              border: Border.all(color: AppColor.borderColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(
-                      AppDimensions.cardRadius,
-                    ),
-                    child: imageProduct == null
-                        ? const SizedBox.shrink()
-                        : SizedBox.expand(
-                            child: ProductImageView(product: imageProduct),
-                          ),
-                  ),
+    return Semantics(
+      link: true,
+      label: bundle.title,
+      child: Material(
+        color: AppColor.transparent,
+        borderRadius: BorderRadius.circular(AppRadius.r16),
+        child: InkWell(
+          onTap: () =>
+              Navigator.of(context)
+                  .pushNamed(BundleDetailsPage.routeName, arguments: bundle),
+          borderRadius: BorderRadius.circular(AppRadius.r16),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: AppDimensions.bundleCardWidth,
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: AppColor.whiteColor,
+                  borderRadius: BorderRadius.circular(AppRadius.r16),
+                  border: Border.all(color: AppColor.borderColor),
                 ),
-                SizedBox(height: AppSpacing.sm),
-                Text(
-                  bundle.title,
-                  style: AppFonts.semiBold14(context),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: AppSpacing.xs),
-                Text(
-                  bundle.subtitle,
-                  style: AppFonts.regular12(context)
-                      .copyWith(color: AppColor.greyColor),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                SizedBox(height: AppSpacing.xs),
-                Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: PriceLabel(
-                        amount: bundle.price,
-                        style: AppFonts.semiBold14(context)
-                            .copyWith(color: AppColor.primaryColor),
-                        iconSize: 14,
-                        iconColor: AppColor.primaryColor,
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                          AppDimensions.cardRadius,
+                        ),
+                        child: imageProduct == null
+                            ? const SizedBox.shrink()
+                            : SizedBox.expand(
+                                child: ProductImageView(product: imageProduct),
+                              ),
                       ),
                     ),
-                    SizedBox(width: AppSpacing.xs),
-                    Flexible(
-                      child: PriceLabel(
-                        amount: cubit.originalTotalFor(bundle),
-                        style: AppFonts.regular12(context).copyWith(
-                          color: AppColor.greyColor,
-                          decoration: TextDecoration.lineThrough,
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      bundle.title,
+                      style: AppFonts.semiBold14(context),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      bundle.subtitle,
+                      style: AppFonts.regular12(context)
+                          .copyWith(color: AppColor.greyColor),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: PriceLabel(
+                            amount: bundle.price,
+                            style: AppFonts.semiBold14(context)
+                                .copyWith(color: AppColor.primaryColor),
+                            iconSize: AppSizes.px14,
+                            iconColor: AppColor.primaryColor,
+                          ),
                         ),
-                        iconSize: 12,
-                        iconColor: AppColor.greyColor,
-                      ),
+                        SizedBox(width: AppSpacing.xs),
+                        Flexible(
+                          child: PriceLabel(
+                            amount: cubit.originalTotalFor(bundle),
+                            style: AppFonts.regular12(context).copyWith(
+                              color: AppColor.greyColor,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                            iconSize: AppSizes.px12,
+                            iconColor: AppColor.greyColor,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          if (savingPercent > 0)
-            PositionedDirectional(
-              top: DiscountBadge.cardTop,
-              end: DiscountBadge.cardRight,
-              child: DiscountBadge(
-                percent: savingPercent,
-                size: DiscountBadge.cardSize,
               ),
-            ),
-        ],
+              if (savingPercent > 0)
+                PositionedDirectional(
+                  top: DiscountBadge.cardTop,
+                  end: DiscountBadge.cardRight,
+                  child: DiscountBadge(
+                    percent: savingPercent,
+                    size: DiscountBadge.cardSize,
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
