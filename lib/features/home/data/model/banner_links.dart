@@ -8,10 +8,7 @@ import 'package:flutter/foundation.dart';
 /// had nowhere to be stored and never reached the banner page.
 @immutable
 class BannerLinks {
-  const BannerLinks({
-    this.productIds = const [],
-    this.categoryIds = const [],
-  });
+  const BannerLinks({this.productIds = const [], this.categoryIds = const []});
 
   /// Products chosen for this banner, in the order the admin set.
   final List<String> productIds;
@@ -38,6 +35,9 @@ class BannerLinks {
   );
 
   static List<String> _ids(List<Map<String, dynamic>> rows, String column) =>
-      rows.map((r) => r[column]).whereType<Object>().map((v) => v.toString())
+      rows
+          .map((r) => r[column])
+          .whereType<Object>()
+          .map((v) => v.toString())
           .toList(growable: false);
 }

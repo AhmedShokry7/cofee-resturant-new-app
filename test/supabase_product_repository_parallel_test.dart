@@ -491,7 +491,192 @@ void main() {
       );
       expect(loaded!.images, isNotEmpty);
     });
+
+    test('holds the row, the gallery, the branch price and the bindings open '
+        'at the same time', () async {
+      // Each of the four waits until all four have started. Read one after
+      // another and the first would time out into a StateError instead of
+      // quietly passing.
+      final stage = _InFlightBarrier(4);
+      final catalog = _Catalog(
+        products: productRows(),
+        images: imageRows(),
+        pricing: pricingRows(),
+        hooks: <String, Future<void> Function()>{
+          'products': stage.hookFor('products'),
+          'product_images': stage.hookFor('product_images'),
+          'branch_product_pricing': stage.hookFor('branch_product_pricing'),
+          'product_option_groups': stage.hookFor('product_option_groups'),
+        },
+      );
+
+      final loaded = await catalog.repository().getWithOptions(
+        'p1',
+        branchId: branch,
+      );
+
+      expect(loaded, isNotNull);
+      expect(loaded!.product.price, 15, reason: 'the branch override applied');
+      expect(
+        catalog.totalRequests,
+        4,
+        reason:
+            'a product with no options '
+            'stops after the first stage',
+      );
+    });
+
+    test(
+      'asks for the option groups and their values in one round trip',
+      () async {
+        final firstStage = _InFlightBarrier(4);
+        final secondStage = _InFlightBarrier(2);
+        final catalog = _Catalog(
+          products: productRows(),
+          images: imageRows(),
+          pricing: pricingRows(),
+          links: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'group_id': 'g1',
+              'sort_order': 0,
+              'is_required': true,
+            },
+          ],
+          optionGroups: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'g1',
+              'code': 'size',
+              'name_ar': 'الحجم',
+              'name_en': 'Size',
+              'selection_type': 'single',
+              'min_select': 1,
+              'max_select': 1,
+              'is_required': true,
+              'sort_order': 0,
+              'is_active': true,
+            },
+          ],
+          optionValues: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'id': 'v1',
+              'group_id': 'g1',
+              'code': 'medium',
+              'name_ar': 'وسط',
+              'name_en': 'Medium',
+              'price_delta': 0,
+              'short_label': null,
+              'is_default': true,
+              'sort_order': 0,
+              'is_active': true,
+            },
+            <String, dynamic>{
+              'id': 'v2',
+              'group_id': 'g1',
+              'code': 'large',
+              'name_ar': 'كبير',
+              'name_en': 'Large',
+              'price_delta': 4,
+              'short_label': null,
+              'is_default': false,
+              'sort_order': 1,
+              'is_active': true,
+            },
+          ],
+          hooks: <String, Future<void> Function()>{
+            'products': firstStage.hookFor('products'),
+            'product_images': firstStage.hookFor('product_images'),
+            'branch_product_pricing': firstStage.hookFor(
+              'branch_product_pricing',
+            ),
+            'product_option_groups': firstStage.hookFor(
+              'product_option_groups',
+            ),
+            'option_groups': secondStage.hookFor('option_groups'),
+            'option_values': secondStage.hookFor('option_values'),
+          },
+        );
+
+        final loaded = await catalog.repository().getWithOptions(
+          'p1',
+          branchId: branch,
+        );
+
+        expect(catalog.optionGroupRequests, 1);
+        expect(catalog.optionValueRequests, 1);
+        expect(
+          catalog.totalRequests,
+          6,
+          reason: 'two stages, not six round trips',
+        );
+        final group = loaded!.groups.single;
+        expect(group.values.map((v) => v.id).toList(), <String>['v1', 'v2']);
+      },
+    );
+
+    test(
+      'answers nothing when the product row is gone, having already sent the '
+      'reads it cannot use',
+      () async {
+        // The gallery and the branch price are keyed by the id we hold, so they
+        // go out with the product query. An empty product row discards them and
+        // reports the product as missing.
+        final catalog = _Catalog(images: imageRows(), pricing: pricingRows());
+
+        final loaded = await catalog.repository().getWithOptions(
+          'p1',
+          branchId: branch,
+        );
+
+        expect(loaded, isNull);
+        expect(catalog.imageRequests, 1);
+        expect(catalog.pricingRequests, 1);
+        expect(catalog.totalRequests, 4);
+      },
+    );
+
+    test(
+      'reports the gallery failure once when the product row is also missing',
+      () async {
+        // Both rejections land while nothing is listening yet. Attaching the
+        // three reads to one Future.wait is what stops the gallery error from
+        // surfacing as a stray unhandled asynchronous error beside the call.
+        final catalog = _Catalog(
+          images: imageRows(),
+          pricing: pricingRows(),
+          failImages: true,
+        );
+
+        await expectLater(
+          catalog.repository().getWithOptions('p1', branchId: branch),
+          throwsA(isA<Object>()),
+        );
+      },
+    );
   });
+}
+
+/// Lets a test prove several requests are in flight at once: every participant
+/// waits here until all of them have arrived, so a serial implementation
+/// produces a [StateError] rather than a silent pass.
+class _InFlightBarrier {
+  _InFlightBarrier(this.expected);
+
+  final int expected;
+  final Set<String> _started = <String>{};
+  final Completer<void> _gate = Completer<void>();
+
+  Future<void> Function() hookFor(String name) => () async {
+    _started.add(name);
+    if (_started.length == expected && !_gate.isCompleted) {
+      _gate.complete();
+    }
+    await _gate.future.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => throw StateError(
+        'only $_started of $expected started: the reads ran one after another',
+      ),
+    );
+  };
 }
 
 /// A fake PostgREST endpoint: records what was asked for and answers with
@@ -501,10 +686,14 @@ class _Catalog {
     this.products = const <Map<String, dynamic>>[],
     this.images = const <Map<String, dynamic>>[],
     this.pricing = const <Map<String, dynamic>>[],
+    this.links = const <Map<String, dynamic>>[],
+    this.optionGroups = const <Map<String, dynamic>>[],
+    this.optionValues = const <Map<String, dynamic>>[],
     this.failImages = false,
     this.failPricing = false,
     this.onImages,
     this.onPricing,
+    this.hooks = const <String, Future<void> Function()>{},
     this.bannerProducts = const <Map<String, dynamic>>[],
     this.bannerCategories = const <Map<String, dynamic>>[],
     this.bannerLinksMissing = false,
@@ -513,10 +702,18 @@ class _Catalog {
   final List<Map<String, dynamic>> products;
   final List<Map<String, dynamic>> images;
   final List<Map<String, dynamic>> pricing;
+  final List<Map<String, dynamic>> links;
+  final List<Map<String, dynamic>> optionGroups;
+  final List<Map<String, dynamic>> optionValues;
   final bool failImages;
   final bool failPricing;
   final Future<void> Function()? onImages;
   final Future<void> Function()? onPricing;
+
+  /// Waits run before the answer is sent, keyed by the last path segment. Used
+  /// to prove several reads are in flight at once.
+  final Map<String, Future<void> Function()> hooks;
+
   final List<Map<String, dynamic>> bannerProducts;
   final List<Map<String, dynamic>> bannerCategories;
   final bool bannerLinksMissing;
@@ -529,6 +726,12 @@ class _Catalog {
       requests.where((u) => u.path.endsWith('/product_images')).length;
   int get pricingRequests =>
       requests.where((u) => u.path.endsWith('/branch_product_pricing')).length;
+  int get linkRequests =>
+      requests.where((u) => u.path.endsWith('/product_option_groups')).length;
+  int get optionGroupRequests =>
+      requests.where((u) => u.path.endsWith('/option_groups')).length;
+  int get optionValueRequests =>
+      requests.where((u) => u.path.endsWith('/option_values')).length;
   int get totalRequests => requests.length;
 
   Uri? requestEndingWith(String suffix) {
@@ -550,15 +753,22 @@ class _Catalog {
     final url = request.url;
     requests.add(url);
 
+    final name = url.pathSegments.last;
+    if (name == 'product_images' && onImages != null) {
+      await onImages!();
+    } else if (name == 'branch_product_pricing' && onPricing != null) {
+      await onPricing!();
+    } else if (hooks.containsKey(name)) {
+      await hooks[name]!();
+    }
+
     if (url.path.endsWith('/product_images')) {
-      if (onImages != null) await onImages!();
       if (failImages) {
         return _response(request, 'image query failed', 500);
       }
       return _response(request, jsonEncode(images), 200);
     }
     if (url.path.endsWith('/branch_product_pricing')) {
-      if (onPricing != null) await onPricing!();
       if (failPricing) {
         return _response(request, 'pricing query failed', 500);
       }
@@ -566,6 +776,15 @@ class _Catalog {
     }
     if (url.path.endsWith('/products')) {
       return _response(request, jsonEncode(products), 200);
+    }
+    if (url.path.endsWith('/product_option_groups')) {
+      return _response(request, jsonEncode(links), 200);
+    }
+    if (url.path.endsWith('/option_groups')) {
+      return _response(request, jsonEncode(optionGroups), 200);
+    }
+    if (url.path.endsWith('/option_values')) {
+      return _response(request, jsonEncode(optionValues), 200);
     }
     if (url.path.endsWith('/banner_products') ||
         url.path.endsWith('/banner_categories')) {

@@ -341,7 +341,6 @@ class ResolvedPrice {
     required this.isAvailable,
     this.unavailableReason,
     this.regularPrice,
-    this.discountPercentage = 0,
   });
 
   final double unitPrice;
@@ -349,18 +348,15 @@ class ResolvedPrice {
   /// The price before the discount, when one applies.
   final double? regularPrice;
 
-  /// The discount the server applied, in percent. Zero when there is none.
-  final double discountPercentage;
-
   final String currencyCode;
   final bool isAvailable;
   final String? unavailableReason;
 
-  /// Whether a discount really applies to this price.
-  bool get hasDiscount =>
-      discountPercentage > 0 &&
-      regularPrice != null &&
-      regularPrice! > unitPrice;
+  /// Whether the customer is being charged less than the price before the
+  /// discount. The two numbers are the whole answer - the screen that shows
+  /// them asks nothing else, so a discount the server priced but did not
+  /// report a rate for still shows both prices.
+  bool get hasDiscount => regularPrice != null && regularPrice! > unitPrice;
 }
 
 /// Category reads, kept separate so a category listing never has to pull the

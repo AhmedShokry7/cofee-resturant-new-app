@@ -175,8 +175,8 @@ class SupabaseProductRepository
   /// Builds a product from a search row.
   ///
   /// The row carries the price the server applied, the regular price it came
-  /// from and the discount that produced it, so the badge shows the discount
-  /// that is really on this product.
+  /// from and the discount that produced it, so the product knows it really is
+  /// discounted instead of guessing from two prices.
   ProductModel _fromRpcRow(Map<String, dynamic> row) {
     final effective = Db.asDouble(row['effective_price'] ?? row['base_price']);
     final regular = Db.asDoubleOrNull(row['regular_price']);
@@ -306,18 +306,37 @@ class SupabaseProductRepository
     String id, {
     String? branchId,
   }) async {
-    final rows = await _client
+    // None of the three reads needs another's payload: the gallery and the
+    // branch row are both keyed by the product id we already hold. Running them
+    // one after another made the details page wait for three round trips before
+    // it could draw a single price.
+    final rowsFuture = _client
         .from('products')
         .select(_productColumns)
         .eq('id', id)
         .limit(1);
+    final imagesFuture = _productImages(id);
+    final pricesFuture = _branchPrices([id], branchId);
+
+    // One `Future.wait` rather than three awaits: it subscribes to all three
+    // here, so a rejection that lands while the product row is still on its way
+    // is reported to the caller instead of surfacing as an unobserved error.
+    // eagerError keeps the first failure and absorbs its siblings.
+    final results = await Future.wait<Object>(<Future<Object>>[
+      rowsFuture,
+      imagesFuture,
+      pricesFuture,
+    ], eagerError: true);
+
+    final rows = results[0] as List<Map<String, dynamic>>;
     if (rows.isEmpty) return null;
-    final images = await _productImages(id);
+    final images = results[1] as List<ProductImage>;
+    final prices = results[2] as Map<String, _BranchPrice>;
+
     final product = _withPrimaryImage(
       ProductModel.fromJson(rows.first),
       images,
     );
-    final prices = await _branchPrices([product.id], branchId);
     return (product: _withBranch(product, prices), images: images);
   }
 
@@ -363,8 +382,8 @@ class SupabaseProductRepository
               primary?.url ??
               (product.image.trim().isEmpty ? null : product.image.trim());
           // The server states the price it applied and the discount that
-          // produced it, so the badge carries the real percentage instead of
-          // one guessed from two prices.
+          // produced it, so the product knows it is discounted rather than
+          // inferring it from two prices that may be a compare-at pair.
           final effective = Db.asDouble(
             row['effective_price'],
             fallback: product.price,
@@ -395,10 +414,7 @@ class SupabaseProductRepository
     // The product row and its option bindings do not depend on each other, so
     // they are fetched together rather than one round trip after another.
     final loadedFuture = _loadWithImages(id, branchId: branchId);
-    final linksFuture = _client
-        .from('product_option_groups')
-        .select('group_id, sort_order, is_required')
-        .eq('product_id', id);
+    final linksFuture = _productOptionLinks(id);
 
     final loaded = await loadedFuture;
     final links = await linksFuture;
@@ -414,16 +430,25 @@ class SupabaseProductRepository
       return ProductWithOptions(product: product, images: images);
     }
 
-    final groupRows = await _client
+    // Both reads are keyed by the same group ids, so neither waits for the
+    // other: one round trip fetches the groups and their values together.
+    final groupRowsFuture = _client
         .from('option_groups')
         .select(_optionGroupColumns)
         .eq('is_active', true)
         .inFilter('id', groupIds);
-    final valueRows = await _client
+    final valueRowsFuture = _client
         .from('option_values')
         .select(_optionValueColumns)
         .eq('is_active', true)
         .inFilter('group_id', groupIds);
+
+    final optionResults = await Future.wait<Object>(<Future<Object>>[
+      groupRowsFuture,
+      valueRowsFuture,
+    ], eagerError: true);
+    final groupRows = optionResults[0] as List<Map<String, dynamic>>;
+    final valueRows = optionResults[1] as List<Map<String, dynamic>>;
 
     final valuesByGroup = <String, List<OptionValue>>{};
     for (final v in valueRows) {
@@ -583,6 +608,20 @@ class SupabaseProductRepository
     return rows.map(ProductImage.fromJson).toList();
   }
 
+  /// The option groups bound to one product, with the per-product overrides the
+  /// binding row carries.
+  ///
+  /// A method rather than the query builder at the call site: a PostgREST
+  /// builder only sends its request when something listens to it, so holding it
+  /// in a variable beside an `await` would have run this read after the product
+  /// read instead of next to it.
+  Future<List<Map<String, dynamic>>> _productOptionLinks(
+    String productId,
+  ) async => _client
+      .from('product_option_groups')
+      .select('group_id, sort_order, is_required')
+      .eq('product_id', productId);
+
   /// The picture the product is shown with, and the way it is shown.
   ///
   /// The picture is the one marked as primary, or the one with the lowest
@@ -725,7 +764,6 @@ class SupabaseProductRepository
       isAvailable: m['is_available'] == true,
       unavailableReason: Db.textOrNull(m['unavailable_reason']),
       regularPrice: Db.asDoubleOrNull(m['regular_price']),
-      discountPercentage: Db.asDoubleOrNull(m['discount_percentage']) ?? 0,
     );
   }
 
@@ -785,10 +823,7 @@ class SupabaseProductRepository
         links('banner_products', 'product_id'),
         links('banner_categories', 'category_id'),
       ]);
-      return BannerLinks.fromRows(
-        productRows: both[0],
-        categoryRows: both[1],
-      );
+      return BannerLinks.fromRows(productRows: both[0], categoryRows: both[1]);
     } on PostgrestException catch (error) {
       // PGRST205 is "no such table or view", which is what a database where
       // migration 222 has not been applied yet answers. The banner keeps the

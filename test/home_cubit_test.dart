@@ -81,6 +81,80 @@ void main() {
       await cubit.close();
     },
   );
+
+  test(
+    'a product banner is given its product when a tap asks for it',
+    () async {
+      final cubit = HomeCubit(repository: _CountingBannersCatalog());
+      await loadFinished(cubit);
+
+      const banner = BannerModel(
+        id: 'pb',
+        image: '',
+        target: BannerTarget.product,
+        targetId: '2',
+      );
+      expect(
+        banner.targetProduct,
+        isNull,
+        reason: 'the home row carries the id, not the product',
+      );
+
+      final resolved = await cubit.resolveTarget(banner);
+      expect(resolved.targetProduct?.id, '2');
+
+      // Once the banner carries the row, pressing it again reads nothing.
+      expect(identical(await cubit.resolveTarget(resolved), resolved), isTrue);
+      await cubit.close();
+    },
+  );
+
+  test('a bundle banner is given its bundle', () async {
+    final cubit = HomeCubit(repository: _CountingBannersCatalog());
+    await loadFinished(cubit);
+
+    const banner = BannerModel(
+      id: 'bb',
+      image: '',
+      target: BannerTarget.bundle,
+      targetId: 'morning-duo',
+    );
+    expect((await cubit.resolveTarget(banner)).targetBundle?.id, 'morning-duo');
+    await cubit.close();
+  });
+
+  test(
+    'a category banner reads nothing, and a row that is gone reads nothing',
+    () async {
+      final cubit = HomeCubit(repository: _CountingBannersCatalog());
+      await loadFinished(cubit);
+
+      const category = BannerModel(
+        id: 'cb',
+        image: '',
+        target: BannerTarget.category,
+        targetId: 'cat-1',
+      );
+      expect(
+        identical(await cubit.resolveTarget(category), category),
+        isTrue,
+        reason: 'the category page takes the id the banner already carries',
+      );
+
+      const gone = BannerModel(
+        id: 'gb',
+        image: '',
+        target: BannerTarget.product,
+        targetId: 'no-such-product',
+      );
+      expect(
+        (await cubit.resolveTarget(gone)).targetProduct,
+        isNull,
+        reason: 'a row unpublished between the list and the tap leaves the banner as it came',
+      );
+      await cubit.close();
+    },
+  );
 }
 
 /// The mock catalogue, counting how often the banner query ran.
@@ -126,6 +200,9 @@ class _ForwardingCatalog implements CatalogRepository {
   @override
   Future<ProductModel?> getById(String id, {String? branchId}) =>
       _inner.getById(id, branchId: branchId);
+
+  @override
+  Future<BundleModel?> getBundleById(String id) => _inner.getBundleById(id);
 
   @override
   Future<List<ProductModel>> getProducts({

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
+import 'package:new_coffee/features/home/presentation/views/banner_opener.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -28,9 +29,14 @@ class HomeSingleBannerSection extends StatelessWidget {
           color: AppColor.transparent,
           borderRadius: BorderRadius.circular(AppRadius.r8),
           child: InkWell(
-            onTap: () =>
-                Navigator.of(context)
-                    .pushNamed(BannerDetailsPage.routeName, arguments: banner),
+            // The same rule as the carousel above it: the banner's own target,
+            // and the banner page only when there is nothing to open.
+            onTap: () => openBanner(
+              context,
+              banner,
+              fallback: () => Navigator.of(context)
+                  .pushNamed(BannerDetailsPage.routeName, arguments: banner),
+            ),
             borderRadius: BorderRadius.circular(AppRadius.r8),
             child: BannerImage(banner: banner),
           ),

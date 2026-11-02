@@ -103,14 +103,25 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     emit(state.copyWith(index: index));
   }
 
+  /// The tab whose row carries [categoryId], or null when no row does.
+  ///
+  /// The id is tried before the slug: a banner stores the id, and the legacy rows
+  /// carry only a slug. Reading the answer instead of moving the selection is
+  /// what lets a page opened for one category ignore the shared tab index:
+  /// selecting there would also change what the catalogue tab shows when the
+  /// customer goes back to it, for a category nobody tapped.
+  int? indexOf(String? categoryId) {
+    if (categoryId == null || categoryId.isEmpty) return null;
+    final byId = state.categories.indexWhere((c) => c.id == categoryId);
+    if (byId >= 0) return byId;
+    final bySlug = state.categories.indexWhere((c) => c.slug == categoryId);
+    return bySlug >= 0 ? bySlug : null;
+  }
+
   /// Selects the category tab matching [categoryId], if it exists.
   void selectCategoryById(String? categoryId) {
-    if (categoryId == null || categoryId.isEmpty) return;
-    var index = state.categories.indexWhere((c) => c.id == categoryId);
-    if (index < 0) {
-      index = state.categories.indexWhere((c) => c.slug == categoryId);
-    }
-    if (index >= 0) select(index);
+    final index = indexOf(categoryId);
+    if (index != null) select(index);
   }
 
   /// Products in the tab at [index].

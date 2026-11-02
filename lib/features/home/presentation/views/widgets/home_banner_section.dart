@@ -5,6 +5,7 @@ import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/manager/banner/banner_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
+import 'package:new_coffee/features/home/presentation/views/banner_opener.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_dots.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/banner_image.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
@@ -81,9 +82,16 @@ class _BannerCarouselState extends State<_BannerCarousel> {
                   child: Material(
                     color: AppColor.transparent,
                     child: InkWell(
-                      onTap: () => Navigator.of(context).pushNamed(
-                        BannerDetailsPage.routeName,
-                        arguments: banner,
+                      // The banner's own target - category, product, bundle,
+                      // address - and the banner page for a row that points at
+                      // nothing the app can open.
+                      onTap: () => openBanner(
+                        context,
+                        banner,
+                        fallback: () => Navigator.of(context).pushNamed(
+                          BannerDetailsPage.routeName,
+                          arguments: banner,
+                        ),
                       ),
                       child: BannerImage(
                         banner: banner,

@@ -16,6 +16,8 @@ import 'package:new_coffee/features/cart/data/repositories/local_cart_repository
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
+import 'package:new_coffee/features/categories/presentation/views/widgets/category_scoped_header.dart';
+import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
@@ -133,7 +135,7 @@ void main() {
     await tester.pump();
   });
 
-  testWidgets('initialCategoryId applies after load', (tester) async {
+  testWidgets('initialCategoryId shows that category alone', (tester) async {
     SharedPreferences.setMockInitialValues({});
     await _setSurface(tester);
 
@@ -153,8 +155,23 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
 
     expect(cubit.state.categories, isNotEmpty);
-    final index = cubit.state.index;
-    expect(cubit.state.categories[index].slug, 'tea');
+    expect(
+      find.byType(CategoryTabs),
+      findsNothing,
+      reason: 'a page asked for one category has no other categories to pick',
+    );
+    expect(
+      find.descendant(
+        of: find.byType(CategoryScopedHeader),
+        matching: find.text('Tea'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      cubit.state.index,
+      0,
+      reason: 'the catalogue tab keeps whatever the customer had open',
+    );
   });
 
   test('ensureLoaded does not reload on repeated calls', () async {

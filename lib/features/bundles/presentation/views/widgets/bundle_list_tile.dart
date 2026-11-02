@@ -8,7 +8,6 @@ import 'package:new_coffee/features/bundles/presentation/views/bundle_details_pa
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
-import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
@@ -28,10 +27,7 @@ class BundleListTile extends StatelessWidget {
     final products = pricing.bundleProducts(bundle, byId);
     final imageProduct = products.isEmpty ? null : products.first;
     // Without the loaded catalogue there is nothing to compare the bundle
-    // price against, so the tile shows its own price and no saving badge.
-    final savingPercent = productsById == null
-        ? 0
-        : pricing.bundleSavingPercent(bundle, byId);
+    // price against, so the tile shows its own price as the pre-discount one.
     final original = productsById == null
         ? bundle.price
         : pricing.bundleOriginalTotal(bundle, byId);
@@ -40,105 +36,83 @@ class BundleListTile extends StatelessWidget {
           Navigator.of(context)
               .pushNamed(BundleDetailsPage.routeName, arguments: bundle),
       behavior: HitTestBehavior.opaque,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            margin: EdgeInsets.only(bottom: AppSpacing.md),
-            padding: EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColor.whiteColor,
-              borderRadius: BorderRadius.circular(AppRadius.r16),
-              border: Border.all(color: AppColor.borderColor),
-            ),
-            child: Row(
-              children: [
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        AppDimensions.cardRadius,
-                      ),
-                      child: imageProduct == null
-                          ? SizedBox(
-                              width: AppSizes.px78,
-                              height: AppSizes.px78,
-                            )
-                          : SizedBox(
-                              height: AppSizes.px78,
-                              width: AppSizes.px78,
-                              child: ProductImageView(product: imageProduct),
-                            ),
+      child: Container(
+        margin: EdgeInsets.only(bottom: AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColor.whiteColor,
+          borderRadius: BorderRadius.circular(AppRadius.r16),
+          border: Border.all(color: AppColor.borderColor),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+              child: imageProduct == null
+                  ? SizedBox(width: AppSizes.px78, height: AppSizes.px78)
+                  : SizedBox(
+                      height: AppSizes.px78,
+                      width: AppSizes.px78,
+                      child: ProductImageView(product: imageProduct),
                     ),
-                  ],
-                ),
-                SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+            SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    bundle.title,
+                    style: AppFonts.semiBold16(context),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: AppSpacing.xs),
+                  Text(
+                    bundle.subtitle,
+                    style: AppFonts.regular12(context)
+                        .copyWith(color: AppColor.greyColor),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  SizedBox(height: AppSpacing.xs),
+                  Row(
                     children: [
-                      Text(
-                        bundle.title,
-                        style: AppFonts.semiBold16(context),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Flexible(
+                        child: PriceLabel(
+                          amount: bundle.price,
+                          style: AppFonts.semiBold14(context)
+                              .copyWith(color: AppColor.primaryColor),
+                          iconSize: AppSizes.px14,
+                          iconColor: AppColor.primaryColor,
+                        ),
                       ),
-                      SizedBox(height: AppSpacing.xs),
-                      Text(
-                        bundle.subtitle,
-                        style: AppFonts.regular12(context)
-                            .copyWith(color: AppColor.greyColor),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      SizedBox(height: AppSpacing.xs),
-                      Row(
-                        children: [
-                          Flexible(
-                            child: PriceLabel(
-                              amount: bundle.price,
-                              style: AppFonts.semiBold14(context)
-                                  .copyWith(color: AppColor.primaryColor),
-                              iconSize: 14,
-                              iconColor: AppColor.primaryColor,
+                      if (original > bundle.price) ...[
+                        SizedBox(width: AppSpacing.xs),
+                        Flexible(
+                          child: PriceLabel(
+                            amount: original,
+                            style: AppFonts.regular12(context).copyWith(
+                              color: AppColor.greyColor,
+                              decoration: TextDecoration.lineThrough,
                             ),
+                            iconSize: AppSizes.px12,
+                            iconColor: AppColor.greyColor,
                           ),
-                          SizedBox(width: AppSpacing.xs),
-                          Flexible(
-                            child: PriceLabel(
-                              amount: original,
-                              style: AppFonts.regular12(context).copyWith(
-                                color: AppColor.greyColor,
-                                decoration: TextDecoration.lineThrough,
-                              ),
-                              iconSize: 12,
-                              iconColor: AppColor.greyColor,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ],
                   ),
-                ),
-                Icon(
-                  DirectionAwareIcons.forward(context),
-                  size: AppSizes.px20,
-                  color: AppColor.greyColor,
-                ),
-              ],
-            ),
-          ),
-          if (savingPercent > 0)
-            PositionedDirectional(
-              top: DiscountBadge.cardTop,
-              end: DiscountBadge.cardRight,
-              child: DiscountBadge(
-                percent: savingPercent,
-                size: DiscountBadge.cardSize,
+                ],
               ),
             ),
-        ],
+            Icon(
+              DirectionAwareIcons.forward(context),
+              size: AppSizes.px20,
+              color: AppColor.greyColor,
+            ),
+          ],
+        ),
       ),
     );
   }

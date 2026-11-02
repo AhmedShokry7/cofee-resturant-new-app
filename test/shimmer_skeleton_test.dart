@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/category_circle_item.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/shared/widgets/shimmer/catalog_skeletons.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -122,19 +123,30 @@ void main() {
       expect(box.height, 50);
     });
 
-    testWidgets('HomeCategoriesSkeleton renders eight category cells', (
-      tester,
-    ) async {
-      await pumpSkeleton(
-        tester,
-        const SizedBox(
-          width: 375,
-          height: 400,
-          child: HomeCategoriesSkeleton(),
-        ),
-      );
-      expect(find.byType(CategoryGridItemSkeleton), findsNWidgets(8));
-    });
+    testWidgets(
+      'HomeCategoriesSkeleton mirrors the single walking category row',
+      (tester) async {
+        await pumpSkeleton(
+          tester,
+          const SizedBox(
+            width: 375,
+            height: 400,
+            child: HomeCategoriesSkeleton(),
+          ),
+        );
+        expect(
+          find.byType(CategoryCircleItemSkeleton),
+          findsNWidgets(HomeCategoriesSkeleton.chipCount),
+        );
+        // One row of chips, and as tall as the row it stands in for: the page
+        // must not jump when the real categories land.
+        final strip = find.byType(ListView);
+        expect(
+          tester.getSize(strip).height,
+          CategoryCircleItem.height(tester.element(strip)),
+        );
+      },
+    );
 
     testWidgets('BannerSkeleton defaults to the full-bleed carousel size', (
       tester,

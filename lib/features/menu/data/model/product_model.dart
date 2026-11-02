@@ -89,8 +89,10 @@ class ProductModel {
 
   /// The discount that is applied to [price] right now, in percent.
   ///
-  /// Null when the product is not discounted. This is the number the badge
-  /// shows, so the badge can never announce a discount that does not exist.
+  /// Null when the product is not discounted. Nothing displays this number —
+  /// the pages show the price before and after the discount — but it is the
+  /// server's own word on the matter, so a discount can never be invented from
+  /// two prices that happen to differ.
   ///
   /// It is set by the repository, which is the only place that knows whether
   /// the discount of the product, the discount of the branch, or the window of
@@ -173,7 +175,7 @@ class ProductModel {
   ///
   /// True for a discounted product (the price before the discount) and for a
   /// product that only carries a compare-at price. The second case shows the
-  /// old price without a badge: it is a reference price, not a promotion.
+  /// old price as a reference, not as a promotion.
   bool get hasOldPrice => oldPrice != null && oldPrice! > price;
 
   /// Convenience for the search ranking UI.

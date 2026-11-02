@@ -25,12 +25,12 @@ class ProductPrice extends StatelessWidget {
           amount: product.price,
           style: AppFonts.semiBold14(context)
               .copyWith(color: AppColor.primaryColor),
-          iconSize: 14,
+          iconSize: AppSizes.px14,
           iconColor: AppColor.primaryColor,
         ),
-        // The old price is shown for a discounted product and for a product
-        // that only carries a compare-at price. The badge is what says "this
-        // is a promotion", so the old price alone does not claim one.
+        // The struck number is the price before the discount (or the admin's
+        // compare-at price). Nothing else marks a promotion — the percentage
+        // badge is gone, so this row is the whole story.
         if (product.hasOldPrice) ...[
           SizedBox(width: AppSizes.px6),
           Flexible(

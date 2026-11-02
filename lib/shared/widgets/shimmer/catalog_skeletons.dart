@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_card.dart';
-import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/category_circle_item.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -361,25 +361,20 @@ class CategoryTabsSkeleton extends StatelessWidget {
   }
 }
 
-/// Single skeleton cell mirroring [CategoryGridItem]: [AppSizes.px56] tile radius [AppRadius.r16]
-/// plus a one-line label.
-class CategoryGridItemSkeleton extends StatelessWidget {
-  const CategoryGridItemSkeleton({super.key});
+/// Single skeleton chip mirroring [CategoryCircleItem]: the same circle, the
+/// same air under it and a one-line name as wide as the chip's own slot.
+class CategoryCircleItemSkeleton extends StatelessWidget {
+  const CategoryCircleItemSkeleton({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Shimmer(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          ShimmerCircle(size: CategoryCircleItem.diameter),
+          SizedBox(height: CategoryCircleItem.gap),
           ShimmerBox(
-            width: AppSizes.px56,
-            height: AppSizes.px56,
-            borderRadius: BorderRadius.circular(AppRadius.r16),
-          ),
-          SizedBox(height: AppSpacing.sm),
-          ShimmerBox(
-            width: AppSizes.px44,
+            width: CategoryCircleItem.slot,
             height: AppSizes.px11,
             borderRadius: BorderRadius.circular(AppRadius.r6),
           ),
@@ -389,10 +384,15 @@ class CategoryGridItemSkeleton extends StatelessWidget {
   }
 }
 
-/// Skeleton mirroring [HomeCategoriesSection]: header row plus the 4x2
-/// horizontal category grid with identical gaps and extents.
+/// Skeleton mirroring [HomeCategoriesSection]: header row plus the single
+/// category row, laid out by the same chip width and the same height.
 class HomeCategoriesSkeleton extends StatelessWidget {
   const HomeCategoriesSkeleton({super.key});
+
+  /// The chips the skeleton draws. It has no way of knowing how many categories
+  /// the shop keeps, so this is enough to fill the narrowest screen the app
+  /// ships to; the height, not the count, is what the loaded page must match.
+  static const int chipCount = 6;
 
   @override
   Widget build(BuildContext context) {
@@ -417,29 +417,18 @@ class HomeCategoriesSkeleton extends StatelessWidget {
           ),
         ),
         SizedBox(height: AppSpacing.lg),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            final itemWidth = HomeCategoriesSection.tileExtent(constraints);
-            return SizedBox(
-              height: HomeCategoriesSection.gridHeight(constraints),
-              child: GridView.builder(
-                scrollDirection: Axis.horizontal,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: EdgeInsets.zero,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: HomeCategoriesSection.gridRows,
-                  mainAxisSpacing: HomeCategoriesSection.gap,
-                  crossAxisSpacing: AppSpacing.md,
-                  mainAxisExtent: itemWidth,
-                ),
-                itemCount:
-                    HomeCategoriesSection.gridColumns *
-                    HomeCategoriesSection.gridRows,
-                itemBuilder: (context, index) =>
-                    const CategoryGridItemSkeleton(),
-              ),
-            );
-          },
+        SizedBox(
+          height: CategoryCircleItem.height(context),
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            // The real row walks on its own; a skeleton that moved under a
+            // loading screen would read as content arriving.
+            physics: const NeverScrollableScrollPhysics(),
+            padding: EdgeInsets.zero,
+            itemExtent: CategoryCircleItem.slot,
+            itemCount: chipCount,
+            itemBuilder: (context, index) => const CategoryCircleItemSkeleton(),
+          ),
         ),
       ],
     );

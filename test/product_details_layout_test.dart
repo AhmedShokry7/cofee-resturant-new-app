@@ -26,6 +26,7 @@ import 'package:new_coffee/features/menu/presentation/views/product_details_page
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_body.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_bottom_bar.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
+import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -57,18 +58,29 @@ Future<FavoritesCubit> _readyFavorites() async {
   return cubit;
 }
 
-/// Pumps the full details page: header (title + favorite), content, and the
-/// bottom Add to Cart bar, all on the real cubits with mock repositories.
-/// The page creates its own [ProductDetailsCubit]; tests read it back from
-/// the tree so assertions observe the exact state the UI submits.
-Future<void> _pumpDetailsPage(
+/// Pumps the full details page - header (title + favourite), content, and the
+/// bottom Add to Cart bar - on fresh cubits, and returns them so a test can
+/// assert against the same cart/favourites the UI writes to. The page creates
+/// its own [ProductDetailsCubit]; [_detailsOf] reads it back from the tree, so
+/// assertions observe the exact state the UI submits.
+Future<_Page> _pumpReadyDetails(
   WidgetTester tester,
   ProductModel product, {
-  required FavoritesCubit favorites,
-  required CartCubit cart,
-  required BranchCubit branch,
-}) {
-  return tester.pumpWidget(
+  CatalogRepository? catalog,
+}) async {
+  SharedPreferences.setMockInitialValues({});
+  await _setSurface(tester);
+  final favorites = await _readyFavorites();
+  final cart = CartCubit(
+    cartRepository: LocalCartRepository(),
+    catalogRepository: MockProductRepository(),
+  );
+  final branch = BranchCubit(repository: _FakeBranchRepository());
+  addTearDown(favorites.close);
+  addTearDown(cart.close);
+  addTearDown(branch.close);
+
+  await tester.pumpWidget(
     MaterialApp(
       home: MultiBlocProvider(
         providers: [
@@ -76,19 +88,59 @@ Future<void> _pumpDetailsPage(
           BlocProvider.value(value: favorites),
           BlocProvider.value(value: cart),
           RepositoryProvider<CatalogRepository>.value(
-            value: MockProductRepository(),
+            value: catalog ?? MockProductRepository(),
           ),
         ],
         child: ProductDetailsPage(product: product),
       ),
     ),
   );
+  await tester.pump();
+  await tester.pump(const Duration(seconds: 1));
+  return _Page(favorites: favorites, cart: cart, branch: branch);
+}
+
+/// The cubits a pumped details page is wired to.
+class _Page {
+  const _Page({
+    required this.favorites,
+    required this.cart,
+    required this.branch,
+  });
+
+  final FavoritesCubit favorites;
+  final CartCubit cart;
+  final BranchCubit branch;
 }
 
 ProductDetailsCubit _detailsOf(WidgetTester tester) =>
     BlocProvider.of<ProductDetailsCubit>(
       tester.element(find.byType(ProductDetailsBody)),
     );
+
+/// The offline catalogue answering the price the way a branch-pricing server
+/// does: with its own pre-discount number, so a test can tell the two apart.
+class _PricedCatalog extends MockProductRepository {
+  /// How far the server's pre-discount price is put above the catalogue's, so
+  /// an assertion on it cannot be satisfied by the catalogue value.
+  static const double step = 10;
+
+  @override
+  Future<ResolvedPrice?> resolvePrice(
+    String productId, {
+    String? branchId,
+    List<String> optionValueIds = const [],
+  }) async {
+    final product = await getById(productId, branchId: branchId);
+    if (product == null) return null;
+    return ResolvedPrice(
+      unitPrice: product.price,
+      regularPrice: product.oldPrice == null ? null : product.oldPrice! + step,
+      currencyCode: 'SAR',
+      isAvailable: true,
+    );
+  }
+}
 
 void main() {
   group('product details skeleton', () {
@@ -113,28 +165,8 @@ void main() {
 
   group('product details layout', () {
     testWidgets('image spans the full width below the header', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
       final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
-
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await _pumpReadyDetails(tester, product);
 
       // Header overlays the hero with two round controls: back + favourite.
       expect(find.byType(AppBar), findsOneWidget);
@@ -161,29 +193,77 @@ void main() {
       expect(imageBox.height, AppDimensions.productHeroHeight);
     });
 
-    testWidgets('price and quantity live in the content', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
-      final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
+    testWidgets('a discounted product states the two prices and no percent', (
+      tester,
+    ) async {
+      // The badge with the percentage used to hang off this page. What is left
+      // is the pair of numbers: the price the customer pays and, struck
+      // through, the price before the discount.
+      final discounted = (await MockProductRepository().getProducts())
+          .firstWhere((p) => p.hasDiscount);
+      await _pumpReadyDetails(tester, discounted);
 
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
+      final cubit = _detailsOf(tester);
+      expect(cubit.hasDiscount, isTrue);
+      expect(
+        find.text(Formatters.amount(cubit.unitPrice)),
+        findsWidgets,
+        reason: 'the price the customer pays is on screen',
       );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      expect(
+        find.text(Formatters.amount(cubit.regularPrice!)),
+        findsOneWidget,
+        reason: 'the price before the discount is on screen',
+      );
+      expect(
+        find.textContaining('%'),
+        findsNothing,
+        reason: 'no percentage mark survives on the page',
+      );
+    });
+
+    testWidgets(
+      'the price the server reports replaces the catalogue discount',
+      (tester) async {
+        // A branch that charges differently is the case the card cannot know:
+        // the server figure wins for both numbers, not only the live price.
+        final discounted = (await MockProductRepository().getProducts())
+            .firstWhere((p) => p.hasDiscount);
+        await _pumpReadyDetails(tester, discounted, catalog: _PricedCatalog());
+
+        final cubit = _detailsOf(tester);
+        expect(cubit.regularPrice, discounted.oldPrice! + _PricedCatalog.step);
+        expect(
+          find.text(
+            Formatters.amount(discounted.oldPrice! + _PricedCatalog.step),
+          ),
+          findsOneWidget,
+          reason: 'the page prints what the server said, not the catalogue',
+        );
+      },
+    );
+
+    testWidgets('an undiscounted product gets no struck row', (tester) async {
+      // A product with nothing to compare against must not grow a second
+      // number just because the page can compare two prices.
+      final plain = (await MockProductRepository().getProducts()).firstWhere(
+        (p) => p.oldPrice == null,
+      );
+      await _pumpReadyDetails(tester, plain);
+
+      final cubit = _detailsOf(tester);
+      expect(cubit.regularPrice, isNull);
+      expect(cubit.hasDiscount, isFalse);
+      expect(
+        find.text(Formatters.amount(cubit.unitPrice)),
+        findsWidgets,
+        reason: 'the one price the customer pays is still on screen',
+      );
+    });
+
+    testWidgets('price and quantity live in the content', (tester) async {
+      final product = await _firstProduct();
+      await _pumpReadyDetails(tester, product);
 
       // Price with the SAR icon sits in the content next to the title...
       final contentPrices = find.descendant(
@@ -229,28 +309,8 @@ void main() {
     testWidgets('bottom bar is Add to Cart only and submits quantity', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
       final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
-
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      final page = await _pumpReadyDetails(tester, product);
 
       // No stepper beside the button anymore.
       expect(
@@ -276,38 +336,18 @@ void main() {
       await tester.pump();
       expect(_detailsOf(tester).state.quantity, 3);
 
-      expect(cart.state.count, 0);
+      expect(page.cart.state.count, 0);
       await tester.tap(find.byType(AnimatedAddToCartButton));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
-      expect(cart.state.count, 3);
+      expect(page.cart.state.count, 3);
     });
 
     testWidgets('header fades the product name in once the hero is covered', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
       final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
-
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await _pumpReadyDetails(tester, product);
 
       final name = _detailsOf(tester).state.product!.name;
 
@@ -348,28 +388,8 @@ void main() {
     testWidgets('header back and favourite keep the same edge gap', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
       final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
-
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await _pumpReadyDetails(tester, product);
 
       final appBar = tester.getRect(find.byType(AppBar));
       final buttons = find.descendant(
@@ -393,28 +413,8 @@ void main() {
     testWidgets('details shows same-category pairs, never itself', (
       tester,
     ) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
       final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
-
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      await _pumpReadyDetails(tester, product);
 
       final pairs = _detailsOf(tester).state.pairs;
       expect(pairs, isNotEmpty);
@@ -489,28 +489,8 @@ void main() {
 
   group('favorite buttons everywhere', () {
     testWidgets('details header heart fills red when saved', (tester) async {
-      SharedPreferences.setMockInitialValues({});
-      await _setSurface(tester);
       final product = await _firstProduct();
-      final favorites = await _readyFavorites();
-      final cart = CartCubit(
-        cartRepository: LocalCartRepository(),
-        catalogRepository: MockProductRepository(),
-      );
-      final branch = BranchCubit(repository: _FakeBranchRepository());
-      addTearDown(favorites.close);
-      addTearDown(cart.close);
-      addTearDown(branch.close);
-
-      await _pumpDetailsPage(
-        tester,
-        product,
-        favorites: favorites,
-        cart: cart,
-        branch: branch,
-      );
-      await tester.pump();
-      await tester.pump(const Duration(seconds: 1));
+      final page = await _pumpReadyDetails(tester, product);
 
       // The header now also holds a back arrow, so target the heart icon
       // specifically instead of assuming the bar contains a single icon.
@@ -537,7 +517,7 @@ void main() {
       // Saved: completely filled red heart, same persistence as cards.
       expect(headerHeart().icon, AppIcons.favourite);
       expect(headerHeart().color, AppColor.errorColor);
-      expect(favorites.state.ids, contains(product.id));
+      expect(page.favorites.state.ids, contains(product.id));
     });
   });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/shared/utils/cache_manager.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -57,10 +58,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
     // sticky and keep the Add button disabled after a successful reload.
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      final loaded = await _repository.getWithOptions(
-        productId,
-        branchId: branchId,
-      );
+      final loaded = await _readProductWithOptions();
       if (isClosed) return;
       if (loaded == null) {
         emit(
@@ -93,8 +91,15 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         ),
       );
 
-      await _confirmPrice(selection);
-      await _loadPairs(loaded.product);
+      // The authoritative price and the companion carousel are two independent
+      // reads, and the page is already drawn by the emit above, so neither one
+      // waits for the other. Both swallow their own failures: a price that
+      // cannot be confirmed keeps the estimate, and a missing carousel never
+      // touches page state.
+      await Future.wait<void>([
+        _confirmPrice(selection),
+        _loadPairs(loaded.product),
+      ]);
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
@@ -106,6 +111,28 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
     if (branchId == this.branchId) return Future.value();
     this.branchId = branchId;
     return load();
+  }
+
+  /// The heaviest read on this page: the product row, its gallery, its branch
+  /// pricing and its option groups - four round trips the repository runs two
+  /// by two. They barely move during a session, so a second visit to the same
+  /// product in the same branch reuses the snapshot for
+  /// [CacheManager.defaultTtl], exactly like the home sections and the
+  /// categories tab.
+  ///
+  /// The price is never taken from here: [_confirmPrice] asks the server again
+  /// on every open and on every chip tap, so a customer is always shown the
+  /// figure the branch is charging now.
+  Future<ProductWithOptions?> _readProductWithOptions() async {
+    final key = 'product_options_${branchId ?? 'base'}_$productId';
+    final cached = CacheManager().get<ProductWithOptions>(key);
+    if (cached != null) return cached;
+    final fetched = await _repository.getWithOptions(
+      productId,
+      branchId: branchId,
+    );
+    if (fetched != null) CacheManager().set(key, fetched);
+    return fetched;
   }
 
   /// Taps a chip. Updates the estimate on the same frame, then reconciles with
@@ -157,7 +184,6 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
           clearUnavailableReason: resolved.isAvailable,
           resolvedRegularPrice: resolved.regularPrice,
           clearResolvedRegularPrice: !resolved.hasDiscount,
-          resolvedDiscountPercentage: resolved.discountPercentage,
         ),
       );
     } catch (error, stackTrace) {
@@ -220,17 +246,19 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
   /// otherwise.
   double get unitPrice => state.resolvedPrice ?? state.estimatedUnitPrice;
 
-  /// The price before the discount, when the server reported one.
-  double? get regularPrice => state.resolvedRegularPrice;
+  /// The price before the discount.
+  ///
+  /// The server figure when it reported one, the catalogue's otherwise: a card
+  /// in the menu already strikes that number through, so the page must not show
+  /// a single price for the same product just because the price call answered
+  /// without a pre-discount number.
+  double? get regularPrice =>
+      state.resolvedRegularPrice ?? state.product?.oldPrice;
 
-  /// The discount the server applied, in percent. Zero when there is none.
-  double get discountPercentage => state.resolvedDiscountPercentage;
-
-  /// Whether the price on screen carries a real discount.
+  /// Whether the price on screen carries a real discount: the server gave a
+  /// pre-discount price and the price to charge is below it.
   bool get hasDiscount {
     final regular = regularPrice;
-    if (regular == null) return false;
-    if (discountPercentage <= 0) return false;
-    return regular > unitPrice;
+    return regular != null && regular > unitPrice;
   }
 }

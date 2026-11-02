@@ -70,7 +70,8 @@ class BannerDetailsCubit extends Cubit<BannerDetailsState> {
     // `target_id` holds one row, so a banner picked for three products and a
     // category could only ever show the one that was saved last.
     final links =
-        (await _read(() => readBannerLinks(repository, id))) ?? BannerLinks.none;
+        (await _read(() => readBannerLinks(repository, id))) ??
+        BannerLinks.none;
     if (isClosed || links.isEmpty) return;
     final extra = await _read(() => _linkedProducts(links));
     if (isClosed) return;
@@ -146,10 +147,7 @@ class BannerDetailsCubit extends Cubit<BannerDetailsState> {
         ),
       ),
     );
-    return [
-      ...chosen,
-      for (final rows in perCategory) ...rows,
-    ];
+    return [...chosen, for (final rows in perCategory) ...rows];
   }
 
   /// The rows already on screen, then [extra] with anything shown twice

@@ -100,10 +100,6 @@ class BundleDetailsCubit extends Cubit<BundleDetailsState> {
 
   double savingsFor() => pricing.bundleSavings(bundle, state.productsById);
 
-  /// Whole percent the customer keeps, zero when the bundle saves nothing.
-  int savingPercentFor() =>
-      pricing.bundleSavingPercent(bundle, state.productsById);
-
   Map<String, double> sharesFor() =>
       pricing.bundleShares(bundle, state.productsById);
 }

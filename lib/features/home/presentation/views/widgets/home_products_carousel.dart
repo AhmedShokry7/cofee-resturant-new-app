@@ -63,7 +63,6 @@ class HomeProductsCarousel extends StatelessWidget {
               : null,
         ),
         if (subtitle != null) ...[
-          SizedBox(height: AppSpacing.xs),
           Text(
             subtitle!,
             style: AppFonts.regular12(context)
@@ -74,6 +73,8 @@ class HomeProductsCarousel extends StatelessWidget {
         // The strip height is derived from the card width and aspect ratio
         // instead of a fixed value, so taller cards always fit exactly on
         // every screen size without clipping or dead space.
+           SizedBox(height: AppSpacing.xs),
+
         SizedBox(
           height: ProductCard.stripWidth / ProductCard.cardAspectRatio,
           child: ListView.separated(

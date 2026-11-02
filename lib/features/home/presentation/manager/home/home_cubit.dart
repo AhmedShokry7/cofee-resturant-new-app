@@ -172,8 +172,8 @@ class HomeCubit extends Cubit<HomeState> {
     };
 
     // Resolve every bundle component, fetching any that the recommendation
-    // pool did not already include so prices (and the discount badge) stay
-    // accurate instead of silently dropping bundles with a discount.
+    // pool did not already include so the before/after prices stay accurate
+    // instead of silently dropping bundles with a discount.
     final missingComponentIds = componentIds
         .where((id) => !productsById.containsKey(id))
         .toList(growable: false);
@@ -224,14 +224,6 @@ class HomeCubit extends Cubit<HomeState> {
   double originalTotalFor(BundleModel bundle) =>
       pricing.bundleOriginalTotal(bundle, state.bundleProducts);
 
-  /// Never negative: a bundle can be priced above its contents.
-  double savingFor(BundleModel bundle) =>
-      pricing.bundleSavings(bundle, state.bundleProducts);
-
-  /// Whole percent the customer keeps, zero when the bundle saves nothing.
-  int savingPercentFor(BundleModel bundle) =>
-      pricing.bundleSavingPercent(bundle, state.bundleProducts);
-
   /// Reloads after the customer picks a different branch.
   ///
   /// Skips the reload when the branch is unchanged, so tapping the active
@@ -244,6 +236,37 @@ class HomeCubit extends Cubit<HomeState> {
     if (branchId == this.branchId) return Future.value();
     this.branchId = branchId;
     return load();
+  }
+
+  /// The banner with the row its target points at, ready to be opened.
+  ///
+  /// A banner row carries the *id* of the product or bundle it is about, while
+  /// the page behind that id takes the row itself, so the row is read here for
+  /// the banners pressed on home. Category and url banners carry everything
+  /// their target needs and cost no query.
+  ///
+  /// A row that cannot be read - unpublished between the list and the tap, or
+  /// the network down - leaves the banner exactly as it came in, and the caller
+  /// opens the banner page instead of an empty one.
+  Future<BannerModel> resolveTarget(BannerModel banner) async {
+    final id = banner.targetId;
+    if (id == null) return banner;
+    try {
+      if (banner.target == BannerTarget.product &&
+          banner.targetProduct == null) {
+        return banner.copyWith(
+          targetProduct: await _repository.getById(id, branchId: branchId),
+        );
+      }
+      if (banner.target == BannerTarget.bundle && banner.targetBundle == null) {
+        return banner.copyWith(
+          targetBundle: await _repository.getBundleById(id),
+        );
+      }
+    } catch (error, stackTrace) {
+      addError(error, stackTrace);
+    }
+    return banner;
   }
 
   /// Featured rows carry the fields a card needs, so no second query is needed
@@ -264,8 +287,9 @@ class HomeCubit extends Cubit<HomeState> {
               categoryEn: f.categoryEn,
               description: '',
               price: f.effectivePrice,
-              // The discount the server applied, so the badge on a "Popular"
-              // card states the real percentage.
+              // The discount the server applied: it is what tells the card
+              // there is a real promotion, so it can show the pre-discount
+              // price beside the price.
               oldPrice: f.hasDiscount ? f.regularPrice : null,
               appliedDiscountPercentage: f.hasDiscount
                   ? f.discountPercentage

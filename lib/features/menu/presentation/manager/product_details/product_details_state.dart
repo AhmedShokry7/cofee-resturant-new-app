@@ -9,7 +9,6 @@ class ProductDetailsState {
     this.estimatedUnitPrice = 0,
     this.resolvedPrice,
     this.resolvedRegularPrice,
-    this.resolvedDiscountPercentage = 0,
     this.quantity = 1,
     this.showFullDescription = false,
     this.isAvailable = true,
@@ -39,9 +38,6 @@ class ProductDetailsState {
   /// The price before the discount, from the same answer. Null when there is
   /// no discount.
   final double? resolvedRegularPrice;
-
-  /// The discount the server applied, in percent.
-  final double resolvedDiscountPercentage;
 
   final int quantity;
 
@@ -79,7 +75,6 @@ class ProductDetailsState {
     bool clearResolvedPrice = false,
     double? resolvedRegularPrice,
     bool clearResolvedRegularPrice = false,
-    double? resolvedDiscountPercentage,
     int? quantity,
     bool? showFullDescription,
     bool? isAvailable,
@@ -100,8 +95,6 @@ class ProductDetailsState {
     resolvedRegularPrice: clearResolvedRegularPrice
         ? null
         : (resolvedRegularPrice ?? this.resolvedRegularPrice),
-    resolvedDiscountPercentage:
-        resolvedDiscountPercentage ?? this.resolvedDiscountPercentage,
     quantity: quantity ?? this.quantity,
     showFullDescription: showFullDescription ?? this.showFullDescription,
     isAvailable: isAvailable ?? this.isAvailable,

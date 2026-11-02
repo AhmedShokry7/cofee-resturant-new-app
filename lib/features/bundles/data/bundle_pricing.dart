@@ -38,19 +38,6 @@ double bundleSavings(
   return saving > 0 ? saving : 0;
 }
 
-/// Whole percent the customer keeps, or zero when the bundle is not cheaper.
-///
-/// The home strip, the details page and the list tile all show this number, and
-/// each used to redo the division in its own widget.
-int bundleSavingPercent(
-  BundleModel bundle,
-  Map<String, ProductModel> productsById,
-) {
-  final original = bundleOriginalTotal(bundle, productsById);
-  if (original <= bundle.price) return 0;
-  return (((original - bundle.price) / original) * 100).round();
-}
-
 /// Splits the bundle price across its components proportionally to their
 /// extended prices (rounded to cents, remainder fixed on the last item), so
 /// cart lines always add up to exactly the bundle price.

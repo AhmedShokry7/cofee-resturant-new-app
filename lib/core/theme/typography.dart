@@ -66,12 +66,6 @@ abstract final class AppTextHeights {
   /// Long passages - the privacy policy and help articles.
   static const double article = 1.75;
 
-  /// The number in a stacked mark (the discount badge), pulled up to its sign.
-  static const double mark = 0.85;
-
-  /// The sign under the number of a stacked mark.
-  static const double markCaption = 0.75;
-
   /// A glyph that fills a fixed pill or badge, where any leading at all would
   /// push the pill open.
   static const double inset = 1.0;

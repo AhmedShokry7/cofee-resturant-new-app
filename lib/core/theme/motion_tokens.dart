@@ -35,4 +35,12 @@ class MotionTokens {
   /// Long enough to read a banner's picture and its headline, short enough that
   /// a customer who is not interested is back at the content within a beat.
   static const Duration carouselHold = Duration(seconds: 5);
+
+  /// How long a row that walks on its own stays where the customer left it
+  /// before it starts again.
+  ///
+  /// They stopped it to read something, so the pause has to outlast that look -
+  /// a row that slid off while their finger was still on the glass would move
+  /// out from under them.
+  static const Duration marqueeResumeHold = Duration(milliseconds: 2500);
 }

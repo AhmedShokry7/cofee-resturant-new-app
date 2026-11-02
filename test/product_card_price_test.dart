@@ -71,6 +71,26 @@ void main() {
     expect(_isTruncated(tester, discounted.price.toStringAsFixed(2)), isFalse);
   });
 
+  testWidgets('a discounted card shows two prices and no percentage', (
+    tester,
+  ) async {
+    // The corner badge used to repeat this pair as a percentage. The card
+    // keeps the money: what the customer pays and, struck through, what the
+    // product cost before the discount.
+    final products = await MockProductRepository().getProducts();
+    final discounted = products.firstWhere((p) => p.hasDiscount);
+
+    await _pumpCard(tester, ProductCard(product: discounted));
+
+    expect(find.text(discounted.price.toStringAsFixed(2)), findsOneWidget);
+    expect(find.text(discounted.oldPrice!.toStringAsFixed(2)), findsOneWidget);
+    expect(
+      find.textContaining('%'),
+      findsNothing,
+      reason: 'no percentage mark is left on a card',
+    );
+  });
+
   testWidgets('a plain card shows the price in full', (tester) async {
     final products = await MockProductRepository().getProducts();
     final plain = products.firstWhere((p) => !p.hasDiscount);

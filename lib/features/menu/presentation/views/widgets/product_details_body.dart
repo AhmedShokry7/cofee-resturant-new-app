@@ -15,7 +15,6 @@ import 'package:new_coffee/features/menu/presentation/views/widgets/product_imag
 import 'package:new_coffee/features/home/presentation/views/widgets/home_products_carousel.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/quantity_stepper.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
-import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -196,31 +195,21 @@ class _DetailsSheet extends StatelessWidget {
                 child: Text(product.name, style: AppFonts.semiBold20(context)),
               ),
               SizedBox(width: AppSpacing.sm),
-              // The price the customer pays, the discount the server applied
-              // and the price before it.
+              // The price the customer pays and, under it, the price before the
+              // discount the server applied. The percentage is not shown: the
+              // two numbers say the same thing in the money actually charged.
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      PriceLabel(
-                        amount: cubit.unitPrice,
-                        style: AppFonts.semiBold18(context)
-                            .copyWith(color: AppColor.primaryColor),
-                        iconSize: 18,
-                        iconColor: AppColor.primaryColor,
-                      ),
-                      if (cubit.hasDiscount) ...[
-                        SizedBox(width: AppSpacing.xs),
-                        DiscountBadge(
-                          percent: cubit.discountPercentage.round(),
-                          size: AppDimensions.discountBadgeDetails,
-                        ),
-                      ],
-                    ],
+                  PriceLabel(
+                    amount: cubit.unitPrice,
+                    style: AppFonts.semiBold18(context)
+                        .copyWith(color: AppColor.primaryColor),
+                    iconSize: AppSizes.px18,
+                    iconColor: AppColor.primaryColor,
                   ),
-                  if (cubit.hasDiscount)
+                  if (cubit.hasDiscount) ...[
+                    SizedBox(height: AppSpacing.xxs),
                     Text(
                       Formatters.amount(cubit.regularPrice!),
                       style: AppFonts.regular12(context).copyWith(
@@ -228,6 +217,7 @@ class _DetailsSheet extends StatelessWidget {
                         decoration: TextDecoration.lineThrough,
                       ),
                     ),
+                  ],
                 ],
               ),
             ],

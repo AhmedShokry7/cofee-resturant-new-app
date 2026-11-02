@@ -210,7 +210,7 @@ abstract final class AppDimensions {
   /// The image of a bundle row in a list.
   static const double bundleTileImage = AppSizes.px78;
 
-  /// The tile of a category on the home grid.
+  /// The circle of a category on the home row.
   static const double categoryTile = AppSizes.px56;
 
   /// The width of a product card in a horizontal strip.
@@ -234,9 +234,6 @@ abstract final class AppDimensions {
 
   /// The banner of a bundle's own page.
   static const double bundleHeroHeight = 200.0;
-
-  /// The image of the banner details page.
-  static const double bannerHeroHeight = 220.0;
 
   /// The home carousel slide, single banner included.
   ///
@@ -299,9 +296,6 @@ abstract final class AppDimensions {
   /// How far before the bottom a product grid asks for its next page.
   static const double gridLoadMoreAhead = 300.0;
 
-  /// How much taller a home category tile is than it is wide.
-  static const double categoryTileAspect = 1.2;
-
   // Control sizes a page passes to a shared widget
   /// The favourite heart in the corner of a product card image.
   static const double favoriteButtonCard = AppSizes.px28;
@@ -311,22 +305,6 @@ abstract final class AppDimensions {
 
   /// The smaller add-to-cart circle inside an assistant answer.
   static const double addToCartButtonAssistant = AppSizes.px32;
-
-  /// A discount badge set inline beside a price.
-  static const double discountBadgeInline = AppSizes.px26;
-
-  /// The same badge at the size the product details header draws.
-  static const double discountBadgeDetails = AppSizes.px30;
-
-  /// The badge a bundle details header can afford.
-  static const double discountBadgeLarge = AppSizes.px52;
-
-  /// The default badge diameter when a page does not pick one.
-  static const double discountBadgeDefault = AppSizes.px40;
-
-  /// The number of a discount badge is this fraction of the badge, so the two
-  /// stacked lines always fill the circle whatever size the page asked for.
-  static const double discountBadgeTextRatio = 0.30;
 
   // Skeleton line lengths, each named after the real element it mirrors
   /// The long line under a skeleton card title.
@@ -477,9 +455,6 @@ abstract final class AppBreakpoints {
   /// The widest a product card gets: past it the row takes another card
   /// instead of stretching the one it has.
   static const double productCardMaxWidth = 240.0;
-
-  /// The widest a category tile gets in the home grid before it stops growing.
-  static const double categoryTileMaxWidth = 96.0;
 }
 
 /// The padding every scrolling page shares with the skeleton that mirrors it.

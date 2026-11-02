@@ -12,7 +12,6 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
-import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
@@ -88,86 +87,69 @@ class ProductCard extends StatelessWidget {
           width: width,
           child: AspectRatio(
             aspectRatio: cardAspectRatio,
-            child: Stack(
-              clipBehavior: Clip.hardEdge,
-              children: [
-                GestureDetector(
-                  onTap: () => _openDetails(context),
-                  child: Container(
-                    padding: EdgeInsets.all(AppSpacing.md),
-                    decoration: _decoration,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Expanded(
-                          child: Stack(
-                            children: [
-                              Positioned.fill(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(
-                                    AppDimensions.cardRadius,
-                                  ),
-                                  child: _buildProductImage(),
-                                ),
+            child: GestureDetector(
+              onTap: () => _openDetails(context),
+              child: Container(
+                padding: EdgeInsets.all(AppSpacing.md),
+                decoration: _decoration,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                AppDimensions.cardRadius,
                               ),
-                              if (showFavorite)
-                                Positioned(
-                                  top: AppSpacing.xxs,
-                                  left: AppSpacing.xs,
-                                  child: ProductFavoriteButton(
-                                    product: product,
-                                    size: AppDimensions.favoriteButtonCard,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: AppSpacing.sm),
-                        Text(
-                          product.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.semiBold16(context),
-                        ),
-                        SizedBox(height: AppSpacing.xs),
-                        Text(
-                          product.category.trim().isEmpty
-                              ? product.description
-                              : product.category,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppFonts.regular12(context)
-                              .copyWith(color: AppColor.greyColor),
-                        ),
-                        SizedBox(height: AppSizes.px6),
-                        Row(
-                          children: [
-                            Expanded(child: ProductPrice(product: product)),
-                            SizedBox(width: AppSpacing.xs),
-                            AnimatedAddToCartIconButton(
-                              size: AppDimensions.addToCartButtonCard,
-                              onAdd: () async =>
-                                  context.read<CartCubit>().add(product),
+                              child: _buildProductImage(),
                             ),
-                          ],
+                          ),
+                          if (showFavorite)
+                            Positioned(
+                              top: AppSpacing.xxs,
+                              left: AppSpacing.xs,
+                              child: ProductFavoriteButton(
+                                product: product,
+                                size: AppDimensions.favoriteButtonCard,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: AppSpacing.sm),
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.semiBold16(context),
+                    ),
+                    SizedBox(height: AppSpacing.xs),
+                    Text(
+                      product.category.trim().isEmpty
+                          ? product.description
+                          : product.category,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppFonts.regular12(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
+                    SizedBox(height: AppSizes.px6),
+                    Row(
+                      children: [
+                        Expanded(child: ProductPrice(product: product)),
+                        SizedBox(width: AppSpacing.xs),
+                        AnimatedAddToCartIconButton(
+                          size: AppDimensions.addToCartButtonCard,
+                          onAdd: () async =>
+                              context.read<CartCubit>().add(product),
                         ),
                       ],
                     ),
-                  ),
+                  ],
                 ),
-                if (product.hasDiscount)
-                  PositionedDirectional(
-                    top: DiscountBadge.cardTop,
-                    end: DiscountBadge.cardRight,
-                    child: DiscountBadge(
-                      // The percentage the server applied, not one derived
-                      // from two prices: a compare-at price is a reference
-                      // price and is not a discount.
-                      percent: product.appliedDiscountPercentage!.round(),
-                      size: DiscountBadge.cardSize,
-                    ),
-                  ),
-              ],
+              ),
             ),
           ),
         );
@@ -241,15 +223,6 @@ class ProductCard extends StatelessWidget {
                       iconSize: 14,
                       iconColor: AppColor.primaryColor,
                     ),
-                    // The discount the server applied, so the line says why
-                    // the price is lower.
-                    if (product.hasDiscount) ...[
-                      SizedBox(width: AppSpacing.xs),
-                      DiscountBadge(
-                        percent: product.appliedDiscountPercentage!.round(),
-                        size: AppDimensions.discountBadgeInline,
-                      ),
-                    ],
                   ],
                 ),
               ],

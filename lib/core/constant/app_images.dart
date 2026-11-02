@@ -7,7 +7,6 @@ class AppImages {
   static const String product = "assets/images/product.png";
 
   static const String aiBot = "assets/icons/ai_bot.png";
-  static const String discount = "assets/icons/discount.png";
 
   static const String sun = "assets/images/sun.png";
   static const String moon = "assets/images/moon.png";

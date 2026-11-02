@@ -11,7 +11,6 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_image.dart';
-import 'package:new_coffee/shared/widgets/discount_badge.dart';
 import 'package:new_coffee/shared/widgets/animated_add_to_cart_button.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
@@ -118,7 +117,8 @@ class _BundleDetailsBody extends StatelessWidget {
         }
 
         final cubit = context.read<BundleDetailsCubit>();
-        final savingPercent = cubit.savingPercentFor();
+        final original = cubit.originalTotalFor();
+        final savings = cubit.savingsFor();
         final imageProduct = state.products.isEmpty
             ? null
             : state.products.first;
@@ -127,27 +127,13 @@ class _BundleDetailsBody extends StatelessWidget {
           children: [
             if (imageProduct != null)
               Center(
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(AppRadius.r16),
-                      child: SizedBox(
-                        height: AppDimensions.bundleHeroHeight,
-                        width: double.infinity,
-                        child: ProductImageView(product: imageProduct),
-                      ),
-                    ),
-                    if (savingPercent > 0)
-                      PositionedDirectional(
-                        top: -12,
-                        end: 8,
-                        child: DiscountBadge(
-                          percent: savingPercent,
-                          size: AppDimensions.discountBadgeLarge,
-                        ),
-                      ),
-                  ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadius.r16),
+                  child: SizedBox(
+                    height: AppDimensions.bundleHeroHeight,
+                    width: double.infinity,
+                    child: ProductImageView(product: imageProduct),
+                  ),
                 ),
               ),
             SizedBox(height: AppSpacing.lg),
@@ -200,23 +186,21 @@ class _BundleDetailsBody extends StatelessWidget {
                 ),
               ),
             SizedBox(height: AppSpacing.md),
-            _PriceRow(
-              label: S.originalTotal,
-              amount: cubit.originalTotalFor(),
-              struck: true,
-            ),
-            SizedBox(height: AppSpacing.xs),
+            // The before/after rows only mean something when the bundle really
+            // costs less than buying its products apart.
+            if (original > state.bundle.price) ...[
+              _PriceRow(label: S.originalTotal, amount: original, struck: true),
+              SizedBox(height: AppSpacing.xs),
+            ],
             _PriceRow(
               label: S.bundlePrice,
               amount: state.bundle.price,
               highlighted: true,
             ),
-            SizedBox(height: AppSpacing.xs),
-            _PriceRow(
-              label: S.youSave,
-              amount: cubit.savingsFor(),
-              highlighted: true,
-            ),
+            if (savings > 0) ...[
+              SizedBox(height: AppSpacing.xs),
+              _PriceRow(label: S.youSave, amount: savings, highlighted: true),
+            ],
           ],
         );
       },

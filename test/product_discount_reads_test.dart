@@ -7,11 +7,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 
-/// The badge must state a discount that really exists.
+/// A discount is only reported when the server really applied one.
 ///
-/// The percentage used to be derived from two prices, and the old price came
-/// from the admin's compare-at price. A product with a compare-at price and no
-/// discount announced a percentage that nobody was ever charged.
+/// The percentage used to be shown in a badge and the old price came from the
+/// admin's compare-at price. A product with a compare-at price and no discount
+/// announced a percentage that nobody was ever charged. These are the reads
+/// behind the two prices the screens now show.
 void main() {
   const branch = '00000000-0000-4000-8000-000000000101';
 
@@ -104,7 +105,7 @@ void main() {
     expect(products.first.hasOldPrice, isTrue);
   });
 
-  test('the badge carries the general discount that is applied', () async {
+  test('the catalogue carries the general discount that is applied', () async {
     final repository = SupabaseProductRepository(
       SupabaseClient(
         'https://catalog.test',
@@ -160,64 +161,67 @@ void main() {
     expect(products.first.oldPrice, closeTo(100, 0.001));
   });
 
-  test('the badge carries the branch discount, not the general one', () async {
-    final repository = SupabaseProductRepository(
-      SupabaseClient(
-        'https://catalog.test',
-        'anon-key',
-        httpClient: MockClient((request) async {
-          final uri = request.url;
-          if (uri.path.endsWith('/products')) {
-            return http.Response(
-              jsonEncode(<Map<String, dynamic>>[
-                productJson(discountPercentage: 10, window: activeWindow),
-              ]),
-              200,
-              request: request,
-              headers: {'content-type': 'application/json'},
-            );
-          }
-          if (uri.path.endsWith('/product_images')) {
+  test(
+    'the catalogue carries the branch discount, not the general one',
+    () async {
+      final repository = SupabaseProductRepository(
+        SupabaseClient(
+          'https://catalog.test',
+          'anon-key',
+          httpClient: MockClient((request) async {
+            final uri = request.url;
+            if (uri.path.endsWith('/products')) {
+              return http.Response(
+                jsonEncode(<Map<String, dynamic>>[
+                  productJson(discountPercentage: 10, window: activeWindow),
+                ]),
+                200,
+                request: request,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            if (uri.path.endsWith('/product_images')) {
+              return http.Response(
+                '[]',
+                200,
+                request: request,
+                headers: {'content-type': 'application/json'},
+              );
+            }
+            if (uri.path.endsWith('/branch_product_pricing')) {
+              return http.Response(
+                jsonEncode(<Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'product_id': 'p1',
+                    'price_override': null,
+                    'is_available': true,
+                    'unavailable_reason': null,
+                    'discount_percentage': 20,
+                    ...activeWindow,
+                    'use_general_discount': true,
+                  },
+                ]),
+                200,
+                request: request,
+                headers: {'content-type': 'application/json'},
+              );
+            }
             return http.Response(
               '[]',
               200,
               request: request,
               headers: {'content-type': 'application/json'},
             );
-          }
-          if (uri.path.endsWith('/branch_product_pricing')) {
-            return http.Response(
-              jsonEncode(<Map<String, dynamic>>[
-                <String, dynamic>{
-                  'product_id': 'p1',
-                  'price_override': null,
-                  'is_available': true,
-                  'unavailable_reason': null,
-                  'discount_percentage': 20,
-                  ...activeWindow,
-                  'use_general_discount': true,
-                },
-              ]),
-              200,
-              request: request,
-              headers: {'content-type': 'application/json'},
-            );
-          }
-          return http.Response(
-            '[]',
-            200,
-            request: request,
-            headers: {'content-type': 'application/json'},
-          );
-        }),
-      ),
-    );
+          }),
+        ),
+      );
 
-    final products = await repository.getProducts(branchId: branch);
-    expect(products.first.price, closeTo(80, 0.001));
-    expect(products.first.appliedDiscountPercentage, closeTo(20, 0.001));
-    expect(products.first.hasDiscount, isTrue);
-  });
+      final products = await repository.getProducts(branchId: branch);
+      expect(products.first.price, closeTo(80, 0.001));
+      expect(products.first.appliedDiscountPercentage, closeTo(20, 0.001));
+      expect(products.first.hasDiscount, isTrue);
+    },
+  );
 
   test(
     'an expired discount window leaves the product without a discount',

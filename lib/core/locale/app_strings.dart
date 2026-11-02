@@ -126,6 +126,14 @@ class S {
   static String get couldNotLoadCategories =>
       _ar ? 'تعذر تحميل التصنيفات' : 'Could not load categories';
 
+  /// A banner or a notification can name a category the catalogue no longer has -
+  /// deleted or unpublished between the two reads. "No categories yet" would
+  /// claim the shop has none, and the products themselves are not what is
+  /// missing here.
+  static String get categoryUnavailable => _ar
+      ? 'هذا التصنيف غير متاح حالياً'
+      : 'This category is not available right now';
+
   // ---------- Product details ----------
   static String get productDetails => _ar ? 'تفاصيل المنتج' : 'Product Details';
   static String get totalPrice => _ar ? 'السعر الإجمالي' : 'Total Price';
