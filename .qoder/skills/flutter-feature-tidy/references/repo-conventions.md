@@ -50,12 +50,36 @@ Rules:
 - A widget used by one feature lives in that feature, not in `shared/`.
 - A screen's only way forward stays reachable: the copy scrolls, the action
   button does not. A longer translation may never push the CTA under the fold.
+- The way *out* is placed by the shared control, not by the screen: `SkipBtn`
+  pins itself to `AlignmentDirectional.topEnd` with `AppDimensions.skipInset`,
+  so the intro slides, sign-in and sign-up show the same box in the same corner,
+  and it is always a sibling drawn over the `SingleChildScrollView` - never a
+  child inside it.
 - Inside a fixed-height box the words come first: an art image gets
   `Flexible(child: Image(...))` so the image gives up pixels when a slide needs
   more height, instead of the copy being cut off.
 - Everything a screen decides lives in its cubit - the page wires providers and
   reacts, a widget lays out and reports the tap. No `onPressed` writes to a
   repository or picks a route.
+- Every `emit` after an `await` is preceded by `if (isClosed) return;`. A
+  cubit closed while its request was in flight throws `StateError` on the
+  first emit that follows, and the customer sees a red screen instead of the
+  screen they navigated to.
+- A screen reached with a route argument hands that argument on when it
+  switches to its sibling (`ModalRoute.of(context)?.settings.arguments`), or
+  the guard that pushed it loses the page to return to.
+- Field validation reads from `AuthFormRules`, never a validator written inline
+  in the widget - the four auth forms and the profile's change-password dialog
+  ask the same four questions.
+- Trailing and leading mean reading direction: `AlignmentDirectional`, never
+  `Alignment.centerRight`, which puts the link on the wrong side in Arabic.
+- A text field carries its own glyph: the screen passes `icon: AppIcons.mail`
+  and `CustomTextFormField` decides the size (`AppIconSize.field`), the grey,
+  the focus colour and the inset. No screen writes `Icon(...)` with its own
+  numbers into `prefixIcon`.
+- A tappable thing is a `Material` + `InkWell` inside a `Semantics` that names
+  it. A bare `GestureDetector` on an icon or an underlined word gives neither
+  the press feedback nor the label.
 - No `domain/`, no usecases, no bloc dirs - Cubits with part-file states only.
 
 ## Naming
@@ -110,13 +134,21 @@ flutter analyze --no-pub   # compare with the baseline count
 flutter test               # full suite
 ```
 
-Baseline re-recorded on 2026-11-01, after the ScreenUtil removal and the design
-system rebuild: `flutter analyze --no-pub` = 12 issues, all
-`curly_braces_in_flow_control_structures` infos in `assistant`, `subscriptions`
-and `assistant_fab_cubit` - zero errors, zero warnings. `flutter test` = 867
-passed, 45 skipped - the skips are the `test/integration/*` files marked `skip:`
-because they need a live Supabase. The suite also fails loudly on a render
+Baseline re-recorded on 2026-11-02, after the subscriptions/style sweep and the
+database-contract audit: `flutter analyze --no-pub` = 3 issues, all
+`curly_braces_in_flow_control_structures` infos left inside `assistant` (the
+owner's in-progress area - fix them in the assistant round) - zero errors, zero
+warnings. `flutter test` = 925 passed, 45 skipped - the skips are the
+`test/integration/*` files marked `skip:` because they need a live Supabase. The suite also fails loudly on a render
 overflow, so a clean run means no screen spills.
+
+A column name the database never emits is a silent defect, not a null: the row
+mapper fills its default and the widget shows an empty field. The audit that
+finds them compares every `.from('t')` chain (`.select`, `.eq`, `.order`,
+embedded `rel(col)`) with the columns that relation really has - views included,
+`--` rollback sections excluded - and every `.rpc('f')` window with the
+`returns table(...)` / `json_build_object` shape of that function. Run it
+against `supabase/migrations`, never against a stale dump.
 
 Widget tests pump into `phoneViewport` (`Size(360, 690)`) from
 `test/support/pump_harness.dart`; `tabletViewport` is there for the wide-window
@@ -126,6 +158,22 @@ case. To test a layout at another size, change `tester.view.physicalSize` - a
 Tests are flat in `test/` (one file per behaviour) with `test/support/` for
 fakes and `test/integration/` for the live-backend set. A new test goes next to
 the behaviour it proves, named after the behaviour, not the file it tests.
+
+### Proving a failure on a real device
+
+`developer.log()` from `dart:developer` does **not** appear in `adb logcat`. It
+only reaches a client attached to the VM service (DevTools). Measured on
+emulator-5554 with the auth Google flow: a `developer.log` line fired and
+logcat stayed empty, while the identical line written with `debugPrint` showed
+up as `I/flutter( pid ): …`. So anything the diagnosis depends on while the app
+runs under `adb` is written with `debugPrint`, tagged (`[GoogleSignIn] …`) so it
+can be grepped out of the noise.
+
+Log the *classification*, not only the message: `[16] Account reauth failed`
+arrives inside a `code == 'canceled'` exception, and a handler that logs only
+`code` produces "user canceled" for a framework refusal. Keep the raw
+`description` in the log line and the extracted reason in the token, so the
+report and the dialog cannot drift apart.
 
 ## Deviations still standing (as of 2026-11-01)
 

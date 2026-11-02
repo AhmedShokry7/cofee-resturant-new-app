@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -73,27 +75,32 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 TextFormField(
                   controller: oldPasswordController,
                   obscureText: true,
-                  decoration: InputDecoration(labelText: S.currentPasswordHint),
-                  validator: (value) => (value == null || value.trim().isEmpty)
-                      ? S.required
-                      : null,
+                  decoration: InputDecoration(
+                    labelText: S.currentPasswordHint,
+                    prefixIcon: const Icon(AppIcons.lock),
+                  ),
+                  validator: AuthFormRules.password,
                 ),
                 TextFormField(
                   controller: newPasswordController,
                   obscureText: true,
-                  decoration: InputDecoration(labelText: S.newPasswordHint),
-                  validator: (value) =>
-                      (value == null || value.trim().length < 6)
-                      ? S.passwordMinLength
-                      : null,
+                  decoration: InputDecoration(
+                    labelText: S.newPasswordHint,
+                    prefixIcon: const Icon(AppIcons.lock),
+                  ),
+                  validator: AuthFormRules.newPassword,
                 ),
                 TextFormField(
                   controller: confirmPasswordController,
                   obscureText: true,
-                  decoration: InputDecoration(labelText: S.confirmPasswordHint),
-                  validator: (value) => value != newPasswordController.text
-                      ? S.passwordsNoMatch
-                      : null,
+                  decoration: InputDecoration(
+                    labelText: S.confirmPasswordHint,
+                    prefixIcon: const Icon(AppIcons.lock),
+                  ),
+                  validator: (value) => AuthFormRules.confirmPassword(
+                    value,
+                    newPasswordController.text,
+                  ),
                 ),
               ],
             ),
@@ -173,6 +180,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               CustomTextFormField(
                 controller: _firstNameController,
                 hint: S.firstNameHint,
+                icon: AppIcons.user,
                 keyboardType: TextInputType.name,
                 validator: (value) => (value == null || value.trim().isEmpty)
                     ? S.nameRequired
@@ -181,16 +189,19 @@ class _EditProfilePageState extends State<EditProfilePage> {
               CustomTextFormField(
                 controller: _lastNameController,
                 hint: S.lastNameHint,
+                icon: AppIcons.user,
                 keyboardType: TextInputType.name,
               ),
               CustomTextFormField(
                 controller: _emailController,
                 hint: S.emailHint,
+                icon: AppIcons.mail,
                 keyboardType: TextInputType.emailAddress,
               ),
               CustomTextFormField(
                 controller: _phoneController,
                 hint: S.phoneNumberHint,
+                icon: AppIcons.smartphone,
                 keyboardType: TextInputType.phone,
               ),
               SizedBox(height: AppSpacing.lg),

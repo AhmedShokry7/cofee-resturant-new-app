@@ -13,7 +13,7 @@ class OnBoardingSlide extends StatelessWidget {
 
   /// The art is drawn to fill the slide box at this height; the copy always
   /// stays below it, whatever the screen.
-  static const double _imageHeight = 350;
+  static const double _imageHeight = double.infinity;
 
   /// Gap between the art and the headline. The headline is the second thing
   /// the eye lands on, so it sits further away than a spacing step.

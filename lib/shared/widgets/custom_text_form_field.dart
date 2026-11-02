@@ -22,6 +22,17 @@ class CustomTextFormField extends StatefulWidget {
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
   final void Function(String)? onChanged;
+
+  /// The one glyph that says what the field holds.
+  ///
+  /// The field, not the screen, picks its size, its colour and how far it sits
+  /// from the text, so an address box on the sign-in page and one on the
+  /// address page are the same box. Use [prefixIcon] only when the leading
+  /// thing is not a glyph - a search pill, for instance.
+  ///
+  /// Screens pass `icon: AppIcons.mail`; they never pass `Icon(...)` with their
+  /// own size or their own grey.
+  final IconData? icon;
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final double? padding;
@@ -43,6 +54,7 @@ class CustomTextFormField extends StatefulWidget {
     this.keyboardType,
     this.textInputAction = TextInputAction.next,
     this.onChanged,
+    this.icon,
     this.prefixIcon,
     this.suffixIcon,
     this.padding,
@@ -139,24 +151,8 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   hintStyle: AppFonts.semiBold14(
                     context,
                   ).copyWith(color: AppColor.greyColor.withValues(alpha: 0.85)),
-                  prefixIcon: widget.prefixIcon == null
-                      ? null
-                      : Padding(
-                          padding: EdgeInsetsDirectional.only(
-                            start: AppSizes.px14,
-                            end: AppSizes.px10,
-                          ),
-                          child: IconTheme(
-                            data: IconThemeData(
-                              color: _isFocused
-                                  ? AppColor.secondryColor
-                                  : AppColor.greyColor,
-                              size: AppRadius.r20,
-                            ),
-                            child: widget.prefixIcon!,
-                          ),
-                        ),
-                  prefixIconConstraints: BoxConstraints(
+                  prefixIcon: _buildPrefixIcon(),
+                  prefixIconConstraints: const BoxConstraints(
                     minWidth: AppSpacing.xxxl,
                     minHeight: AppSpacing.xxxl,
                   ),
@@ -190,6 +186,28 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
     );
   }
 
+  /// The leading glyph, or whatever exotic leading widget the screen brought.
+  ///
+  /// One `IconTheme` covers both, so a screen handing in `Icon(AppIcons.mail)`
+  /// cannot accidentally set its own size or its own grey.
+  Widget? _buildPrefixIcon() {
+    final leading = widget.icon == null ? widget.prefixIcon : Icon(widget.icon);
+    if (leading == null) return null;
+    return Padding(
+      padding: EdgeInsetsDirectional.only(
+        start: AppSizes.px14,
+        end: AppSizes.px10,
+      ),
+      child: IconTheme(
+        data: IconThemeData(
+          color: _isFocused ? AppColor.secondryColor : AppColor.greyColor,
+          size: AppIconSize.field,
+        ),
+        child: leading,
+      ),
+    );
+  }
+
   Widget? _buildSuffixIcon() {
     if (widget.obscureText) {
       return IconButton(
@@ -199,7 +217,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
         },
         icon: Icon(
           _isObscure ? AppIcons.viewOff : AppIcons.view,
-          size: AppRadius.r20,
+          size: AppIconSize.field,
           color: AppColor.greyColor,
         ),
       );

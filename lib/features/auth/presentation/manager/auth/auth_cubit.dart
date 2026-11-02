@@ -39,26 +39,14 @@ class AuthCubit extends Cubit<AuthState> {
     );
   }
 
-  Future<void> signInWithGoogle() async {
-    if (state is AuthLoading) return;
-    emit(const AuthLoading());
-    try {
-      final user = await _repository.signInWithGoogle();
-      await _recordAuthenticatedSession();
-      if (isClosed) return;
-      emit(AuthSuccess(user));
-    } on AuthException catch (error) {
-      debugPrint('AuthException: ${error.message}');
-      if (error.message == 'google_sign_in_canceled') {
-        emit(const AuthInitial());
-        return;
-      }
-      emit(AuthFailure(messageFor(error.message)));
-    } catch (error, stackTrace) {
-      debugPrint('Unexpected Google sign-in error: $error\n$stackTrace');
-      emit(AuthFailure(S.authUnexpected));
-    }
-  }
+  /// The Google sheet can be dismissed, which is not a failure.
+  ///
+  /// The provider reports it as an error, so [cancelToken] turns that one token
+  /// back into the idle screen instead of an error dialog.
+  Future<void> signInWithGoogle() => _authenticate(
+    _repository.signInWithGoogle,
+    cancelToken: 'google_sign_in_canceled',
+  );
 
   Future<void> signInWithFacebook() =>
       _authenticate(_repository.signInWithFacebook);
@@ -90,6 +78,7 @@ class AuthCubit extends Cubit<AuthState> {
       await _repository.signOut();
     } catch (error) {
       debugPrint('Sign-out failed: $error');
+      if (isClosed) return;
       emit(AuthFailure(S.logoutFailed));
       return;
     }
@@ -104,12 +93,14 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> _authenticate(
     Future<AuthUser> Function() action, {
     bool Function() verificationPending = _nobodyIsPendingVerification,
+    String? cancelToken,
   }) async {
     if (state is AuthLoading) return;
     emit(const AuthLoading());
     try {
       final user = await action();
       if (verificationPending()) {
+        if (isClosed) return;
         emit(const AuthEmailConfirmationRequired());
         return;
       }
@@ -117,10 +108,18 @@ class AuthCubit extends Cubit<AuthState> {
       if (isClosed) return;
       emit(AuthSuccess(user));
     } on AuthException catch (error) {
+      debugPrint('AuthException: ${error.message}');
+      if (isClosed) return;
+      if (cancelToken != null && error.message == cancelToken) {
+        emit(const AuthInitial());
+        return;
+      }
       // The provider's English never reaches the customer; each known cause
       // maps to one message in the app's current language.
       emit(AuthFailure(messageFor(error.message)));
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Unexpected auth error: $error\n$stackTrace');
+      if (isClosed) return;
       emit(AuthFailure(S.authUnexpected));
     }
   }
@@ -152,6 +151,9 @@ class AuthCubit extends Cubit<AuthState> {
     final lower = message.toLowerCase().trim();
     if (lower == 'service_unavailable') {
       return S.authServiceUnavailable;
+    }
+    if (lower == 'recovery_link_required') {
+      return S.authRecoveryLinkRequired;
     }
     if (lower.contains('invalid_credentials') ||
         lower.contains('invalid_grant') ||
@@ -201,8 +203,27 @@ class AuthCubit extends Cubit<AuthState> {
       return S.authTooManyRequests;
     }
     if (lower.contains('google_client_configuration_error') ||
-        lower.contains('google_sign_in_failed')) {
+        lower.contains('google_sign_in_failed') ||
+        lower.contains('google_sign_in_missing_token')) {
       return S.authGoogleUnavailable;
+    }
+    // Google refused the account on the device, and said why in a code the
+    // provider owns. Retrying the same tap cannot help, so the answer names the
+    // other door.
+    if (lower.contains('google_sign_in_refused')) {
+      return S.authGoogleRefused;
+    }
+    if (lower.contains('google_no_account_on_device')) {
+      return S.authGoogleNoAccount;
+    }
+    // The Supabase dashboard has the provider switched off, or the token was
+    // minted by a Google client the project does not know. Either way the
+    // customer cannot act on a generic failure, and email is the way in.
+    if (lower.contains('provider_not_enabled') ||
+        lower.contains('provider_not_supported') ||
+        lower.contains('provider not enabled') ||
+        lower.contains('provider not supported')) {
+      return S.authProviderNotEnabled;
     }
     return S.authFailed;
   }

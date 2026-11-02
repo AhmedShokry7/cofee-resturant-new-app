@@ -22,12 +22,15 @@ class PhoneAuthCubit extends Cubit<PhoneAuthState> {
     emit(const PhoneAuthLoading());
     try {
       await _repository.sendPhoneCode(phone: phone);
+      if (isClosed) return;
       emit(const PhoneAuthCodeSent());
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
+      if (isClosed) return;
       emit(PhoneAuthFailure(AuthCubit.messageFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected phone auth error: $error\n$stackTrace');
+      if (isClosed) return;
       emit(PhoneAuthFailure(S.authUnexpected));
     }
   }
@@ -49,12 +52,17 @@ class PhoneAuthCubit extends Cubit<PhoneAuthState> {
       emit(PhoneAuthSuccess(user));
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
+      if (isClosed) return;
       emit(PhoneAuthFailure(AuthCubit.messageFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected phone auth error: $error\n$stackTrace');
+      if (isClosed) return;
       emit(PhoneAuthFailure(S.authUnexpected));
     }
   }
 
-  void reset() => emit(const PhoneAuthInitial());
+  void reset() {
+    if (isClosed) return;
+    emit(const PhoneAuthInitial());
+  }
 }

@@ -25,7 +25,7 @@ class OtpPageBody extends StatefulWidget {
 
 class _OtpPageBodyState extends State<OtpPageBody> {
   static const int _codeLength = 6;
-  static const double _cellRadius = 12;
+  static const double _cellRadius = AppRadius.r12;
 
   late final List<TextEditingController> _controllers;
   late final List<FocusNode> _focusNodes;
@@ -51,6 +51,27 @@ class _OtpPageBodyState extends State<OtpPageBody> {
   String get _code => _controllers.map((c) => c.text).join();
 
   void _onChanged(String value, int index) {
+    if (value.length > 1) {
+      // A paste, or the SMS suggestion, arrives in whichever cell is focused as
+      // one string. Clipping every cell to a single character threw five of the
+      // six digits away before the customer could see them, so the code that
+      // was typed correctly still verified as wrong.
+      final digits = value.replaceAll(RegExp(r'\D'), '');
+      // A whole code pasted into the third box still has to land, so a paste
+      // that is long enough to be the entire code starts from the first box.
+      final start = digits.length >= _codeLength ? 0 : index;
+      for (
+        var offset = 0;
+        offset < digits.length && start + offset < _codeLength;
+        offset++
+      ) {
+        _controllers[start + offset].text = digits[offset];
+      }
+      _focusNodes[(start + digits.length - 1).clamp(0, _codeLength - 1)]
+          .requestFocus();
+      setState(() {});
+      return;
+    }
     if (value.isNotEmpty && index < _codeLength - 1) {
       _focusNodes[index + 1].requestFocus();
     }
@@ -75,6 +96,14 @@ class _OtpPageBodyState extends State<OtpPageBody> {
 
   void _resend() {
     FocusScope.of(context).unfocus();
+    // The code that is about to be replaced is already in the boxes. Leaving it
+    // there lets the customer press Verify against a code the server stopped
+    // accepting.
+    for (final controller in _controllers) {
+      controller.clear();
+    }
+    _focusNodes.first.requestFocus();
+    setState(() {});
     context.read<PhoneAuthCubit>().sendCode(phone: widget.phone);
   }
 
@@ -140,12 +169,17 @@ class _OtpPageBodyState extends State<OtpPageBody> {
                         autofocus: index == 0,
                         textAlign: TextAlign.center,
                         keyboardType: TextInputType.number,
+                        // Only the first box is offered to the keyboard's code
+                        // suggestion; `_onChanged` spreads whatever it hands
+                        // over into the boxes after it.
+                        autofillHints: index == 0
+                            ? const [AutofillHints.oneTimeCode]
+                            : null,
                         textInputAction: index == _codeLength - 1
                             ? TextInputAction.done
                             : TextInputAction.next,
                         inputFormatters: [
                           FilteringTextInputFormatter.digitsOnly,
-                          LengthLimitingTextInputFormatter(1),
                         ],
                         onChanged: (value) => _onChanged(value, index),
                         onFieldSubmitted: (_) {

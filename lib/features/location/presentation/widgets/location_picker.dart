@@ -456,7 +456,10 @@ class _LocationPickerState extends State<LocationPicker> {
           controller: _searchController,
           focusNode: _searchFocus,
           hint: S.searchLocation,
-          prefixIcon: const Icon(AppIcons.search, color: AppColor.greyColor),
+          // The field owns the glyph's size and its focus colour, so the search
+          // box matches every other box in the app instead of pinning itself
+          // grey.
+          icon: AppIcons.search,
           // A picked place is a complete answer; the map below stays usable
           // for fine-tuning.
           textInputAction: TextInputAction.search,

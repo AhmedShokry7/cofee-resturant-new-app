@@ -18,25 +18,31 @@ class OnBoardingViewBody extends StatelessWidget {
   static const int _slidesFlex = 6;
   static const int _stepsFlex = 1;
 
-  /// Room between the skip label and the first slide.
-  static const double _skipGap = 10;
-
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Column(
-          children: [
-            SkipBtn(onTap: () => context.read<OnBoardingCubit>().complete()),
-            SizedBox(height: _skipGap),
-            const Expanded(flex: _slidesFlex, child: OnBoardingPageViewData()),
-            const Expanded(
-              flex: _stepsFlex,
-              child: OnBoardingButtonsAndSliderDots(),
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Column(
+              children: [
+                // The skip control is pinned over this band, not in the column:
+                // it holds the same corner it holds on the auth screens.
+                const SizedBox(height: AppDimensions.skipReservedHeight),
+                const Expanded(
+                  flex: _slidesFlex,
+                  child: OnBoardingPageViewData(),
+                ),
+                const Expanded(
+                  flex: _stepsFlex,
+                  child: OnBoardingButtonsAndSliderDots(),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          SkipBtn(onTap: () => context.read<OnBoardingCubit>().complete()),
+        ],
       ),
     );
   }

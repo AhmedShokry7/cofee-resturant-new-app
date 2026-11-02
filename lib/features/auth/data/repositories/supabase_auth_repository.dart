@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer' as developer;
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
@@ -28,7 +28,13 @@ import 'package:supabase_flutter/supabase_flutter.dart'
 /// Every method verifies the caller's intent against the server. No method
 /// invents a user, and no method accepts an identity the server did not issue.
 class SupabaseAuthRepository implements AuthRepository {
-  SupabaseAuthRepository();
+  /// [recoverySessionWait] is how long the reset screen waits for the emailed
+  /// link; it is a parameter only so a test can prove the wait runs out
+  /// without spending twenty seconds doing it.
+  SupabaseAuthRepository({Duration? recoverySessionWait})
+    : _recoverySessionWait = recoverySessionWait ?? const Duration(seconds: 20);
+
+  final Duration _recoverySessionWait;
 
   /// Completes when Supabase reports a PASSWORD_RECOVERY event, which happens
   /// when the user returns from the emailed reset link.
@@ -165,6 +171,7 @@ class SupabaseAuthRepository implements AuthRepository {
     required String password,
   }) async {
     _guard;
+    _signUpNeedsConfirmation = false;
     try {
       final response = await _client.auth.signUp(
         email: email.trim(),
@@ -186,8 +193,16 @@ class SupabaseAuthRepository implements AuthRepository {
       if (user.identities == null || user.identities!.isEmpty) {
         throw const AuthException('user already exists');
       }
+      // The answer is the *response*, and nothing else. `_client.auth.currentUser`
+      // stays null in exactly this case — gotrue only stores a session when the
+      // server handed one over — so reading the client here reported a brand new
+      // unconfirmed address as a signed-in customer, sent them to the store with
+      // no session, and left the "check your inbox" screen unreachable.
+      _signUpNeedsConfirmation = response.session == null;
       final domain = _toDomain(user);
-      await _cacheProfile(domain);
+      // An address that has not been confirmed is not a session, and its name
+      // and email have no business sitting on this device yet.
+      if (!_signUpNeedsConfirmation) await _cacheProfile(domain);
       return domain;
     } catch (error) {
       if (error is AuthException) rethrow;
@@ -197,11 +212,13 @@ class SupabaseAuthRepository implements AuthRepository {
 
   /// Whether the signed-up address still needs confirming.
   /// The UI uses this to route to "check your inbox" instead of the home page.
+  ///
+  /// Set by the [signUp] call itself, because the signed-in user the app would
+  /// otherwise ask does not exist yet while the address is unconfirmed.
   @override
-  bool get lastSignUpNeedsEmailConfirmation {
-    final user = _client.auth.currentUser;
-    return user != null && user.emailConfirmedAt == null;
-  }
+  bool get lastSignUpNeedsEmailConfirmation => _signUpNeedsConfirmation;
+
+  bool _signUpNeedsConfirmation = false;
 
   // -------------------------------------------------------------------------
   // Password reset
@@ -228,34 +245,44 @@ class SupabaseAuthRepository implements AuthRepository {
   Future<void> resetPassword({required String newPassword}) async {
     _guard;
 
-    final session = await _requireRecoverySession();
+    // Throws unless the emailed link was opened; the update below is allowed
+    // only for that session.
+    await _requireRecoverySession();
     await _client.auth.updateUser(UserAttributes(password: newPassword));
-    _recoveryCompleter?.complete(session);
-    _recoveryCompleter = null;
   }
 
   /// Returns the recovery session, waiting briefly for the redirect that may
   /// still be in flight. Throws a clear, actionable error when there is none.
   Future<Session> _requireRecoverySession() async {
-    final current = _client.auth.currentSession;
-    if (current != null) return current;
+    // A session that is merely live is not a recovery session.
+    //
+    // The customer who is signed in already changes their password from the
+    // settings screen, after proving the current one. This screen exists for
+    // the customer who cannot, and the emailed link is its only credential, so
+    // accepting any session here would let an unlocked phone rewrite the
+    // password of whoever it happens to be signed in as.
+    if (SupabaseService.passwordRecoverySeen) {
+      final current = _client.auth.currentSession;
+      if (current != null) return current;
+    }
 
     // If the app was just opened from the emailed link, the event may not have
     // been delivered yet.
+    final pending = _recoveryCompleter ??= Completer<Session>();
     _recoverySubscription ??= _client.auth.onAuthStateChange.listen((event) {
-      if (event.session != null && !_recoveryCompleter!.isCompleted) {
-        _recoveryCompleter!.complete(event.session);
+      if (event.event != AuthChangeEvent.passwordRecovery) return;
+      if (event.session != null && !pending.isCompleted) {
+        pending.complete(event.session);
       }
     });
 
-    final pending = _recoveryCompleter ??= Completer<Session>();
     try {
       return await pending.future.timeout(
-        const Duration(seconds: 20),
-        onTimeout: () => throw const AuthException(
-          'Open the reset link from your email first, then set the new '
-          'password. This screen cannot change a password without that link.',
-        ),
+        _recoverySessionWait,
+        // A token, not the sentence: the cubit owns the wording, and an
+        // English sentence here would reach an Arabic screen as a generic
+        // "something went wrong".
+        onTimeout: () => throw const AuthException('recovery_link_required'),
       );
     } finally {
       await _recoverySubscription?.cancel();
@@ -282,6 +309,28 @@ class SupabaseAuthRepository implements AuthRepository {
     // arriving on a phone the next person uses.
     await PushService.unregister();
     await _client.auth.signOut();
+    // A Google account that was used in this process stays remembered by
+    // Credential Manager after the Supabase session is gone, so the next person
+    // to hold the phone is offered the previous customer's account. On Android
+    // `signOut()` is exactly `CredentialManager.clearCredentialState()`: it
+    // forgets the app's association, and does not revoke the customer's grant.
+    // Only a process that actually initialised the plugin may call it, and a
+    // failure here must not pretend the logout did not happen.
+    if (_googleInitialized) {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (error) {
+        // The Supabase session really ended, so the logout must not be
+        // reported as a failure - but the next person on this phone may still
+        // be offered this account, and that has to be readable.
+        debugPrint('[GoogleSignIn] credential state not cleared: $error');
+      }
+    }
+    // The profile cache is this customer's name, email and phone in plain text
+    // on the device. The session is gone now, so leaving it behind would show
+    // the next person's identity file on a phone the previous customer handed
+    // over.
+    await _clearCachedProfile();
   }
 
   @override
@@ -327,11 +376,15 @@ class SupabaseAuthRepository implements AuthRepository {
       throw const AuthException('Not signed in.');
     }
     // Verify the current password before allowing a change.
+    //
+    // Passed through exactly as typed, the way sign-in and sign-up do it: a
+    // password whose first or last character is a space is a valid one, and
+    // trimming here would report the customer's own password as wrong.
     await _client.auth.signInWithPassword(
       email: user.email!,
-      password: oldPassword.trim(),
+      password: oldPassword,
     );
-    await _client.auth.updateUser(UserAttributes(password: newPassword.trim()));
+    await _client.auth.updateUser(UserAttributes(password: newPassword));
     await _client.auth.refreshSession();
   }
 
@@ -341,7 +394,7 @@ class SupabaseAuthRepository implements AuthRepository {
     if (!SupabaseService.isReady) return null;
     final user = _client.auth.currentUser;
     if (user == null) {
-      await SharedPref.setValue(key: _profileCacheKey, value: '');
+      await _clearCachedProfile();
       return null;
     }
     final cached = await _cachedProfile();
@@ -375,6 +428,9 @@ class SupabaseAuthRepository implements AuthRepository {
   }
 
   static const String _profileCacheKey = 'cached_profile_v1';
+
+  Future<void> _clearCachedProfile() =>
+      SharedPref.setValue(key: _profileCacheKey, value: '');
 
   Future<void> _cacheProfile(AuthUser user) async {
     await SharedPref.setValue(
@@ -425,9 +481,6 @@ class SupabaseAuthRepository implements AuthRepository {
     } catch (_) {}
   }
 
-  /// Auth state changes, for an app-wide session bloc later.
-  Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
-
   // -------------------------------------------------------------------------
   // Not implemented. Each says so plainly instead of faking a success.
   // -------------------------------------------------------------------------
@@ -438,9 +491,13 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Future<AuthUser> signInWithGoogle() async {
     _guard;
-    await _ensureGoogleInitialized();
     GoogleSignInAccount account;
     try {
+      // Setup can refuse before a single sheet opens: an OAuth client that no
+      // Google app recognises fails inside `initialize`, not inside
+      // `authenticate`. Keeping it in this handler is what makes that failure
+      // read as "Google sign-in is unavailable" instead of the catch-all.
+      await _ensureGoogleInitialized();
       account = await GoogleSignIn.instance.authenticate();
     } on GoogleSignInException catch (error) {
       _logGoogleFailure(
@@ -449,7 +506,18 @@ class SupabaseAuthRepository implements AuthRepository {
         error.description,
       );
       if (error.code == GoogleSignInExceptionCode.canceled) {
-        throw const AuthException('google_sign_in_canceled');
+        // Credential Manager reports two very different things as `canceled`:
+        // the customer closing the account sheet, and the framework refusing
+        // the account it was given. Only the first is a dismissal. The second
+        // arrives with the provider's own reason in the message -
+        // `[16] Account reauth failed` for a certificate or client that Google
+        // does not accept - and going silent there leaves the customer tapping
+        // the button again and again for nothing.
+        final reason = credentialManagerReason(error.description);
+        if (reason == null) {
+          throw const AuthException('google_sign_in_canceled');
+        }
+        throw AuthException('google_sign_in_refused: $reason');
       }
       if (error.code == GoogleSignInExceptionCode.clientConfigurationError ||
           error.code == GoogleSignInExceptionCode.providerConfigurationError) {
@@ -459,9 +527,14 @@ class SupabaseAuthRepository implements AuthRepository {
         // Android OAuth client.
         throw const AuthException('google_client_configuration_error');
       }
-      throw AuthException(
-        'Google sign-in failed: ${error.description ?? error.code.name}',
-      );
+      // A phone with no Google account on it is reported as an unknown error
+      // with the plugin's own sentence in front of it. It is not a retryable
+      // failure, and "please try again" is the wrong advice.
+      final description = error.description ?? '';
+      if (description.contains('No credential available')) {
+        throw const AuthException('google_no_account_on_device');
+      }
+      throw AuthException('google_sign_in_failed: ${error.code.name}');
     } on PlatformException catch (error) {
       // Credential Manager reports a misconfigured client as a platform error
       // rather than a GoogleSignInException, so this branch is what a release
@@ -471,34 +544,66 @@ class SupabaseAuthRepository implements AuthRepository {
     }
     final idToken = account.authentication.idToken;
     if (idToken == null || idToken.isEmpty) {
-      throw const AuthException('Google sign-in failed: missing ID token.');
+      _logGoogleFailure('MissingIdToken', account.id, 'no id token issued');
+      throw const AuthException('google_sign_in_missing_token');
     }
-    final response = await _client.auth.signInWithIdToken(
-      provider: OAuthProvider.google,
-      idToken: idToken,
-      nonce: _googleNonce,
-    );
-    final user = response.user;
-    if (user == null) {
-      throw const AuthException('Google sign-in failed: no user returned.');
+    try {
+      final response = await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        nonce: _googleNonce,
+      );
+      final user = response.user;
+      if (user == null) {
+        throw const AuthException('google_sign_in_missing_token');
+      }
+      // The same refusal the email password path applies: a Google account that
+      // belongs to staff has no customer row, and letting it in produces a
+      // broken store instead of a clear answer.
+      await _requireCustomerAccount(user.id);
+      final domain = _toDomain(user);
+      await _cacheProfile(domain);
+      return domain;
+    } on AuthException {
+      // Already an app token, including the staff refusal above.
+      rethrow;
+    } catch (error) {
+      // The SDK's own AuthException is a different class from this app's — it
+      // is hidden in the import above — so a refused exchange ("provider not
+      // enabled", a rejected token, a dropped connection) comes through here
+      // and is normalised like every other Supabase answer.
+      throw AuthException(_mapAuthError(error));
     }
-    final domain = _toDomain(user);
-    await _cacheProfile(domain);
-    return domain;
   }
 
-  /// Writes a Google Sign-In failure where a release build can still read it.
+  /// Writes a Google Sign-In failure where the person debugging it will look.
   ///
-  /// A release build has no debugger attached, and `debugPrint` throttles
-  /// long output, so the one line that explains why sign-in failed could
-  /// easily be dropped. [developer.log] writes straight to logcat and is not
-  /// stripped in release mode.
+  /// Measured on emulator-5554: a `developer.log` line from this file never
+  /// reached logcat at all, while the cubit's `debugPrint` did - `dart:developer`
+  /// hands its output to a connected DevTools session, and a phone driven
+  /// straight from `adb` has none. `debugPrint` is throttled but it is what
+  /// actually arrives, in debug and in release.
   static void _logGoogleFailure(String kind, String code, String? description) {
-    developer.log(
-      'Google sign-in failed: kind=$kind code=$code'
+    debugPrint(
+      '[GoogleSignIn] Google sign-in failed: kind=$kind code=$code'
       '${description == null || description.isEmpty ? '' : ' description=$description'}',
-      name: 'GoogleSignIn',
     );
+  }
+
+  /// The Credential Manager reason hidden inside a `canceled` message, or null
+  /// when the customer really did dismiss the sheet.
+  ///
+  /// The androidx exception writes its own reason code into the message it
+  /// hands to the plugin — `[16] Account reauth failed.` — while a plain
+  /// dismissal says `User canceled activity.` with no code. Exposed so a test
+  /// can prove the two are told apart without a device.
+  @visibleForTesting
+  static String? credentialManagerReason(String? description) {
+    final text = (description ?? '').trim();
+    if (text.isEmpty) return null;
+    final reason = RegExp(r'\[(\d+)\]\s*([^.\]]+)').firstMatch(text);
+    if (reason == null) return null;
+    return '${reason.group(1)} ${reason.group(2)!.trim()}';
   }
 
   Future<void> _ensureGoogleInitialized() async {
@@ -545,10 +650,4 @@ class SupabaseAuthRepository implements AuthRepository {
   static const String _phoneMessage =
       'Phone sign-in is deferred (DATABASE_SPEC.md section 10.4). It needs an '
       'Edge Function and an SMS provider before it can be enabled.';
-
-  void dispose() {
-    _recoverySubscription?.cancel();
-    _recoverySubscription = null;
-    _recoveryCompleter = null;
-  }
 }

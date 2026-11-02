@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
@@ -88,11 +90,10 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                   CustomTextFormField(
                     controller: _emailController,
                     hint: S.emailHint,
+                    icon: AppIcons.mail,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.done,
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? S.emailRequired
-                        : null,
+                    validator: AuthFormRules.email,
                   ),
                   SizedBox(height: AuthSpacings.fieldsGap),
                   CustomBtn(

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
@@ -94,6 +95,7 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
                   CustomTextFormField(
                     controller: _phoneController,
                     hint: S.phoneHint,
+                    icon: AppIcons.smartphone,
                     keyboardType: TextInputType.phone,
                     textInputAction: TextInputAction.done,
                     inputFormatters: [

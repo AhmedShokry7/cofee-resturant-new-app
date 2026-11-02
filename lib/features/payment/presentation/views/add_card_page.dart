@@ -162,6 +162,7 @@ class _AddCardPageState extends State<AddCardPage> {
       CustomTextFormField(
         controller: _nameController,
         hint: S.cardHolderName,
+        icon: AppIcons.user,
         keyboardType: TextInputType.name,
         textInputAction: TextInputAction.next,
         onChanged: (_) => setState(() {}),
@@ -172,6 +173,7 @@ class _AddCardPageState extends State<AddCardPage> {
       CustomTextFormField(
         controller: _numberController,
         hint: S.cardNumber,
+        icon: AppIcons.creditCard,
         keyboardType: TextInputType.number,
         inputFormatters: [CardNumberInputFormatter()],
         textInputAction: TextInputAction.next,
@@ -188,6 +190,7 @@ class _AddCardPageState extends State<AddCardPage> {
             child: CustomTextFormField(
               controller: _expiryController,
               hint: S.expiryFormatHint,
+              icon: AppIcons.calendar,
               keyboardType: TextInputType.number,
               inputFormatters: [ExpiryDateInputFormatter()],
               textInputAction: TextInputAction.next,
@@ -206,6 +209,7 @@ class _AddCardPageState extends State<AddCardPage> {
             child: CustomTextFormField(
               controller: _cvvController,
               hint: S.cvvHint(_cvvLength),
+              icon: AppIcons.lock,
               keyboardType: TextInputType.number,
               obscureText: true,
               inputFormatters: [

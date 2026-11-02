@@ -666,12 +666,8 @@ class SupabaseProductRepository
         imageUrl: Db.textOrNull(m['image_url']),
         effectivePrice: Db.asDouble(m['effective_price']),
         source: Db.text(m['source'], 'manual'),
-        categoryAr:
-            Db.textOrNull(m['category_ar']) ??
-            Db.textOrNull(m['category_name_ar']),
-        categoryEn:
-            Db.textOrNull(m['category_en']) ??
-            Db.textOrNull(m['category_name_en']),
+        categoryAr: Db.textOrNull(m['category_name_ar']),
+        categoryEn: Db.textOrNull(m['category_name_en']),
         regularPrice: Db.asDoubleOrNull(m['regular_price']),
         discountPercentage: Db.asDoubleOrNull(m['discount_percentage']) ?? 0,
       );

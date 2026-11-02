@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
@@ -83,20 +85,21 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
                   CustomTextFormField(
                     controller: _passwordController,
                     hint: S.newPasswordHint,
+                    icon: AppIcons.lock,
                     obscureText: true,
                     textInputAction: TextInputAction.next,
-                    validator: (value) => (value == null || value.isEmpty)
-                        ? S.passwordRequired
-                        : null,
+                    validator: AuthFormRules.newPassword,
                   ),
                   CustomTextFormField(
                     controller: _confirmPasswordController,
                     hint: S.confirmPasswordHint,
+                    icon: AppIcons.lock,
                     obscureText: true,
                     textInputAction: TextInputAction.done,
-                    validator: (value) => (value != _passwordController.text)
-                        ? S.passwordsNoMatch
-                        : null,
+                    validator: (value) => AuthFormRules.confirmPassword(
+                      value,
+                      _passwordController.text,
+                    ),
                   ),
                   SizedBox(height: AuthSpacings.fieldsGap),
                   CustomBtn(

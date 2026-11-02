@@ -197,15 +197,21 @@ class _ProductImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = product.imageUrl;
-    if (url == null || url.isEmpty)
+    if (url == null || url.isEmpty) {
       return const SizedBox(width: AppSizes.px40, height: AppSizes.px40);
+    }
     if (url.startsWith('assets/')) {
-      return Image.asset(url, width: 40, height: 40, fit: BoxFit.cover);
+      return Image.asset(
+        url,
+        width: AppSizes.px40,
+        height: AppSizes.px40,
+        fit: BoxFit.cover,
+      );
     }
     return CachedNetworkImage(
       imageUrl: url,
-      width: 40,
-      height: 40,
+      width: AppSizes.px40,
+      height: AppSizes.px40,
       fit: BoxFit.cover,
     );
   }

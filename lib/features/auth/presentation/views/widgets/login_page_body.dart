@@ -5,6 +5,7 @@ import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
@@ -75,32 +76,33 @@ class _LoginPageBodyState extends State<LoginPageBody> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            if (state is AuthFailure) {
-              AuthMessageDialog.show(
-                context,
-                type: AuthMessageType.error,
-                message: state.message,
-              );
-            } else if (state is AuthSuccess) {
-              _onAuthenticated();
-            } else if (state is AuthSkipped) {
-              _onSkipped();
-            }
-          },
-          builder: (context, state) {
-            final isLoading = state is AuthLoading;
-            return Stack(
-              children: [
-                Form(
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: BlocConsumer<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is AuthFailure) {
+                  AuthMessageDialog.show(
+                    context,
+                    type: AuthMessageType.error,
+                    message: state.message,
+                  );
+                } else if (state is AuthSuccess) {
+                  _onAuthenticated();
+                } else if (state is AuthSkipped) {
+                  _onSkipped();
+                }
+              },
+              builder: (context, state) {
+                final isLoading = state is AuthLoading;
+                return Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(height: AuthSpacings.top),
+                      // The pinned skip control owns this band.
+                      const SizedBox(height: AppDimensions.skipReservedHeight),
                       Text(
                         S.signIn,
                         textAlign: TextAlign.center,
@@ -117,23 +119,21 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       CustomTextFormField(
                         controller: _emailController,
                         hint: S.emailHint,
+                        icon: AppIcons.mail,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? S.emailRequired
-                            : null,
+                        validator: AuthFormRules.email,
                       ),
                       CustomTextFormField(
                         controller: _passwordController,
                         hint: S.passwordHint,
+                        icon: AppIcons.lock,
                         obscureText: true,
                         textInputAction: TextInputAction.done,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? S.passwordRequired
-                            : null,
+                        validator: AuthFormRules.password,
                       ),
                       Align(
-                        alignment: Alignment.centerRight,
+                        alignment: AlignmentDirectional.centerEnd,
                         child: TextButton(
                           onPressed: () =>
                               Navigator.of(context)
@@ -210,24 +210,27 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                       AuthSwitchPrompt(
                         question: S.dontHaveAccount,
                         actionText: S.signUp,
-                        onTap: () =>
-                            Navigator.of(context)
-                                .pushReplacementNamed(SignUpPage.routeName),
+                        // The page that asked for sign-in is passed on, so a
+                        // customer who picks "create an account" instead of
+                        // signing in still ends up back at checkout rather than
+                        // dumped on the store home.
+                        onTap: () => Navigator.of(context).pushReplacementNamed(
+                          SignUpPage.routeName,
+                          arguments: ModalRoute.of(context)?.settings.arguments,
+                        ),
                       ),
                       SizedBox(height: AuthSpacings.bottom),
                     ],
                   ),
-                ),
-                // Last, so it wins the overlap: the form's title box is
-                // stretched across the full width and reaches into the top-right
-                // corner, where skipping lives.
-                SkipBtn(
-                  onTap: () => context.read<AuthCubit>().skipAuthentication(),
-                ),
-              ],
-            );
-          },
-        ),
+                );
+              },
+            ),
+          ),
+          // The way out of the flow is pinned over the scroller, not inside it:
+          // a skip control that scrolls off the top of a long form is no longer
+          // a way out.
+          SkipBtn(onTap: () => context.read<AuthCubit>().skipAuthentication()),
+        ],
       ),
     );
   }

@@ -18,12 +18,15 @@ class PasswordResetCubit extends Cubit<PasswordResetState> {
     emit(PasswordResetLoading());
     try {
       await _repository.sendPasswordResetEmail(email: email);
+      if (isClosed) return;
       emit(PasswordResetEmailSent());
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
+      if (isClosed) return;
       emit(PasswordResetFailure(AuthCubit.messageFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected password reset error: $error\n$stackTrace');
+      if (isClosed) return;
       emit(PasswordResetFailure(S.authUnexpected));
     }
   }
@@ -33,12 +36,15 @@ class PasswordResetCubit extends Cubit<PasswordResetState> {
     emit(PasswordResetLoading());
     try {
       await _repository.resetPassword(newPassword: password);
+      if (isClosed) return;
       emit(PasswordResetSuccess());
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
+      if (isClosed) return;
       emit(PasswordResetFailure(AuthCubit.messageFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected password reset error: $error\n$stackTrace');
+      if (isClosed) return;
       emit(PasswordResetFailure(S.authUnexpected));
     }
   }

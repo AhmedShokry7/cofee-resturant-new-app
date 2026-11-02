@@ -221,10 +221,6 @@ class CouponModel {
       usageLimit: Db.asIntOrNull(map['usage_limit']),
       totalUsed: Db.asInt(map['total_used']),
       appliesTo: Db.text(map['applies_to'], 'all'),
-      scopeCategoryIds: Db.asStringList(map['scope_category_ids']),
-      scopeProductIds: Db.asStringList(map['scope_product_ids']),
-      scopeNamesAr: Db.asStringList(map['scope_names_ar']),
-      scopeNamesEn: Db.asStringList(map['scope_names_en']),
     );
   }
 

@@ -38,18 +38,21 @@ class AuthSocialLogin extends StatelessWidget {
           children: [
             _SocialButton(
               icon: AppIcons.google,
+              label: S.continueWithGoogle,
               isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithGoogle(),
             ),
             SizedBox(width: AppSpacing.lg),
             _SocialButton(
               icon: AppIcons.facebook,
+              label: S.continueWithFacebook,
               isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithFacebook(),
             ),
             SizedBox(width: AppSpacing.lg),
             _SocialButton(
               icon: AppIcons.apple,
+              label: S.continueWithApple,
               isLoading: isLoading,
               onTap: () => context.read<AuthCubit>().signInWithApple(),
             ),
@@ -63,27 +66,41 @@ class AuthSocialLogin extends StatelessWidget {
 class _SocialButton extends StatelessWidget {
   const _SocialButton({
     required this.icon,
+    required this.label,
     required this.onTap,
     this.isLoading = false,
   });
 
   final IconData icon;
+
+  /// What the button does, said out loud.
+  ///
+  /// A circle with a logo inside announces itself to a screen reader as an
+  /// image with no name; the provider is only guessable from the picture.
+  final String label;
   final VoidCallback onTap;
   final bool isLoading;
 
   @override
   Widget build(BuildContext context) {
-    final size = AppSizes.px56;
-    return GestureDetector(
-      onTap: isLoading ? null : onTap,
-      child: Container(
-        height: size,
-        width: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: AppColor.borderColor),
+    return Semantics(
+      label: label,
+      button: true,
+      enabled: !isLoading,
+      child: Material(
+        color: AppColor.whiteColor,
+        clipBehavior: Clip.antiAlias,
+        shape: const CircleBorder(
+          side: BorderSide(color: AppColor.borderColor),
         ),
-        child: Icon(icon, size: AppSizes.px26, color: AppColor.blackColor),
+        child: InkWell(
+          onTap: isLoading ? null : onTap,
+          child: SizedBox(
+            height: AppSizes.px56,
+            width: AppSizes.px56,
+            child: Icon(icon, size: AppSizes.px26, color: AppColor.blackColor),
+          ),
+        ),
       ),
     );
   }

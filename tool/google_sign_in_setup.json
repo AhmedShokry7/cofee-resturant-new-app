@@ -1,0 +1,86 @@
+{
+  "_readme": [
+    "What this file is: the record of what Google Cloud has to contain before",
+    "Google Sign-In can work on a real device, measured from this repository and",
+    "from public endpoints on 2026-11-02. tool/check_google_sign_in_config.dart",
+    "reads it, and the suite fails until androidClientConfirmed is true.",
+    "",
+    "It contains no secret. A client id and a SHA-1 certificate fingerprint are",
+    "public identifiers: the client id is compiled into the APK and the",
+    "fingerprint is meant to be pasted into the Google console.",
+    "",
+    "The two Google Cloud projects are deliberately different. 644544428760",
+    "(new-coffee-4d196) is the Firebase project that google-services.json and",
+    "lib/firebase_options.dart are generated from - it owns Cloud Messaging, and",
+    "replacing it would break push notifications. 496541472556 owns the OAuth",
+    "web client that Supabase redirects to and that the build passes as",
+    "serverClientId, so it is the only project where the Android OAuth client",
+    "can be registered. Nothing in android/ or lib/ reads default_web_client_id,",
+    "which is why the login does not need google-services.json at all; the",
+    "checker verifies that every build.",
+    "",
+    "How to finish this (one step, needs the console owner):",
+    "  1. console.cloud.google.com -> project 496541472556 -> APIs & Services ->",
+    "     Credentials -> Create credentials -> OAuth client ID -> Android.",
+    "  2. Package name: com.example.new_coffee ; SHA-1: both values in",
+    "     signingCertificates below (debug and release are different",
+    "     certificates; one entry per SHA-1).",
+    "  3. Re-check the fingerprints after any keystore change with",
+    "     ./gradlew :app:printSigningFingerprints - it compares them with this",
+    "     file and says MATCHES or DOES NOT MATCH.",
+    "  4. Then set androidClientConfirmed to true and put the date in confirmedOn,",
+    "     and sign in on a device: the refusal logged as",
+    "     '[16] Account reauth failed' has to disappear.",
+    "",
+    "Do not change the web client Supabase is configured with, and do not create",
+    "a third project for this - the evidence below says the existing one works."
+  ],
+
+  "authProjectNumber": "496541472556",
+  "authProjectDisplayNameAsGoogleShowsIt": "webzzasosevzymftgszn.supabase.co",
+  "webClientId": "496541472556-j23g42irr9r93rmeuo078513nj6skiu7.apps.googleusercontent.com",
+  "redirectUriRegisteredOnWebClient": "https://webzzasosevzymftgszn.supabase.co/auth/v1/callback",
+
+  "firebaseProjectForPushOnly": {
+    "projectId": "new-coffee-4d196",
+    "projectNumber": "644544428760"
+  },
+
+  "packageName": "com.example.new_coffee",
+
+  "signingCertificates": [
+    {
+      "kind": "debug",
+      "subject": "C=US,O=Android,CN=Android Debug",
+      "sha1": "B6:67:92:1C:68:76:20:59:C6:9C:DD:B6:F9:27:7B:66:88:47:E8:FC",
+      "sha256": "93:4F:3C:4B:45:8B:04:F5:28:D3:4C:DD:A1:5C:4A:7C:EB:97:3E:8E:50:8A:0B:37:62:78:A6:98:75:F9:E2:54"
+    },
+    {
+      "kind": "release",
+      "subject": "CN=New Coffee,OU=Mobile,O=New Coffee,L=Riyadh,ST=Riyadh,C=SA",
+      "sha1": "72:3B:C4:D6:5D:03:7F:15:9F:64:58:84:97:D1:6B:9F:48:16:D8:7F",
+      "sha256": "8F:BF:66:BD:F4:0B:75:70:CB:40:89:08:1C:81:9C:CF:2C:17:0A:E6:D0:2E:F7:62:DF:A5:31:AF:32:C8:B0:44"
+    }
+  ],
+
+  "androidClientConfirmed": false,
+  "confirmedOn": null,
+
+  "evidence": [
+    "GET https://webzzasosevzymftgszn.supabase.co/auth/v1/authorize?provider=google",
+    "  -> 302 accounts.google.com/o/oauth2/v2/auth?client_id=<webClientId above>",
+    "  -> redirect_uri=<redirectUriRegisteredOnWebClient above>, scope=email profile",
+    "GET that authorize URL with no cookies -> Google accepts the client and",
+    "  continues to the consent flow (requestPath=/signin/oauth/v3/consent, no",
+    "  authError). The same request with one digit of the client id changed ->",
+    "  invalid_client. So the web client exists and its Supabase callback is",
+    "  registered: the provider is configured, the missing piece is not there.",
+    "emulator-5554, 2026-11-02 00:36, debug APK built from this branch:",
+    "  Auth.Api.Credentials: cxqz: [16] Account reauth failed.",
+    "  [GoogleSignIn] Google sign-in failed: kind=GoogleSignInException",
+    "  code=canceled description=[16] Account reauth failed.",
+    "  AuthException: google_sign_in_refused: 16 Account reauth failed",
+    "  That is Credential Manager refusing an app it cannot match to an Android",
+    "  OAuth client, which is what this record is waiting to be marked done."
+  ]
+}

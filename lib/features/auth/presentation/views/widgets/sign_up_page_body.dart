@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
@@ -75,38 +77,39 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: SingleChildScrollView(
-        padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
-        child: BlocConsumer<AuthCubit, AuthState>(
-          listener: (context, state) {
-            if (state is AuthFailure) {
-              AuthMessageDialog.show(
-                context,
-                type: AuthMessageType.error,
-                message: state.message,
-              );
-            } else if (state is AuthEmailConfirmationRequired) {
-              AuthMessageDialog.show(
-                context,
-                type: AuthMessageType.info,
-                message: S.signUpEmailVerification,
-              );
-            } else if (state is AuthSuccess) {
-              _onAuthenticated();
-            } else if (state is AuthSkipped) {
-              _onSkipped();
-            }
-          },
-          builder: (context, state) {
-            final isLoading = state is AuthLoading;
-            return Stack(
-              children: [
-                Form(
+      child: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            child: BlocConsumer<AuthCubit, AuthState>(
+              listener: (context, state) {
+                if (state is AuthFailure) {
+                  AuthMessageDialog.show(
+                    context,
+                    type: AuthMessageType.error,
+                    message: state.message,
+                  );
+                } else if (state is AuthEmailConfirmationRequired) {
+                  AuthMessageDialog.show(
+                    context,
+                    type: AuthMessageType.info,
+                    message: S.signUpEmailVerification,
+                  );
+                } else if (state is AuthSuccess) {
+                  _onAuthenticated();
+                } else if (state is AuthSkipped) {
+                  _onSkipped();
+                }
+              },
+              builder: (context, state) {
+                final isLoading = state is AuthLoading;
+                return Form(
                   key: _formKey,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SizedBox(height: AuthSpacings.top),
+                      // The pinned skip control owns this band.
+                      const SizedBox(height: AppDimensions.skipReservedHeight),
                       Text(
                         S.signUp,
                         textAlign: TextAlign.center,
@@ -123,39 +126,37 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       CustomTextFormField(
                         controller: _nameController,
                         hint: S.nameHint,
+                        icon: AppIcons.user,
                         keyboardType: TextInputType.name,
                         textInputAction: TextInputAction.next,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? S.nameRequired
-                            : null,
+                        validator: AuthFormRules.name,
                       ),
                       CustomTextFormField(
                         controller: _emailController,
                         hint: S.emailHint,
+                        icon: AppIcons.mail,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? S.emailRequired
-                            : null,
+                        validator: AuthFormRules.email,
                       ),
                       CustomTextFormField(
                         controller: _passwordController,
                         hint: S.passwordHint,
+                        icon: AppIcons.lock,
                         obscureText: true,
                         textInputAction: TextInputAction.next,
-                        validator: (value) => (value == null || value.isEmpty)
-                            ? S.passwordRequired
-                            : null,
+                        validator: AuthFormRules.newPassword,
                       ),
                       CustomTextFormField(
                         controller: _confirmPasswordController,
                         hint: S.confirmPasswordHint,
+                        icon: AppIcons.lock,
                         obscureText: true,
                         textInputAction: TextInputAction.done,
-                        validator: (value) =>
-                            (value != _passwordController.text)
-                            ? S.passwordsNoMatch
-                            : null,
+                        validator: (value) => AuthFormRules.confirmPassword(
+                          value,
+                          _passwordController.text,
+                        ),
                       ),
                       SizedBox(height: AuthSpacings.fieldsGap),
                       CustomBtn(
@@ -172,24 +173,25 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                       AuthSwitchPrompt(
                         question: S.alreadyHaveAccount,
                         actionText: S.signIn,
-                        onTap: () =>
-                            Navigator.of(context)
-                                .pushReplacementNamed(AuthPage.routeName),
+                        // Forwarded so switching screens does not lose the page
+                        // the customer was asked to authenticate for.
+                        onTap: () => Navigator.of(context).pushReplacementNamed(
+                          AuthPage.routeName,
+                          arguments: ModalRoute.of(context)?.settings.arguments,
+                        ),
                       ),
                       SizedBox(height: AuthSpacings.bottom),
                     ],
                   ),
-                ),
-                // Last, so it wins the overlap: the form's title box is
-                // stretched across the full width and reaches into the top-right
-                // corner, where skipping lives.
-                SkipBtn(
-                  onTap: () => context.read<AuthCubit>().skipAuthentication(),
-                ),
-              ],
-            );
-          },
-        ),
+                );
+              },
+            ),
+          ),
+          // The way out of the flow is pinned over the scroller, not inside it:
+          // a skip control that scrolls off the top of a long form is no longer
+          // a way out.
+          SkipBtn(onTap: () => context.read<AuthCubit>().skipAuthentication()),
+        ],
       ),
     );
   }

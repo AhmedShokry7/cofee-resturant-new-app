@@ -56,7 +56,7 @@ class WelcomePageBody extends StatelessWidget {
               AppSpacing.xl,
               _clearance,
               AppSpacing.xl,
-              AppSpacing.lg,
+              AppSpacing.xxxl,
             ),
             child: const SafeArea(top: false, child: WelcomePanelContent()),
           ),

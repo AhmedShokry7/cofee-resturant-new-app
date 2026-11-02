@@ -55,8 +55,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   @override
   Future<List<SubscriptionPlan>> plans({String? branchId}) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     final rows = await client.rpc(
       'list_subscription_plans',
       params: {
@@ -105,8 +106,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     await client.rpc(
       'create_pending_subscription',
       params: {'p_plan_id': planId, 'p_idempotency_key': idempotencyKey},
@@ -125,8 +127,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     final result = await client.rpc(
       'reserve_subscription_for_order',
       params: {
@@ -147,8 +150,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     final current = await mySubscription();
     if (current == null || current.id != subscriptionId) {
       throw StateError('Subscription not found.');
@@ -171,8 +175,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required bool enabled,
   }) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     await client.rpc(
       'set_subscription_auto_renew',
       params: {'p_subscription_id': subscriptionId, 'p_enabled': enabled},
@@ -182,8 +187,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   @override
   Future<void> cancel({required String subscriptionId}) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     await client.rpc(
       'cancel_subscription',
       params: {'p_subscription_id': subscriptionId},
@@ -211,8 +217,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
   @override
   Future<String> generateQrToken({required String subscriptionId}) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     final result = await client.rpc(
       'generate_subscription_qr',
       params: {'p_subscription_id': subscriptionId},
@@ -229,8 +236,9 @@ class SubscriptionRepositoryImpl implements SubscriptionRepository {
     required String idempotencyKey,
   }) async {
     final client = _client;
-    if (client == null)
+    if (client == null) {
       throw StateError('Subscriptions need a configured Supabase backend.');
+    }
     final result = await client.rpc(
       'consume_subscription_qr',
       params: {

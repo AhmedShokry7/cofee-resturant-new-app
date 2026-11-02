@@ -8,6 +8,7 @@ import 'package:new_coffee/features/location/data/repositories/place_search_repo
 import 'package:new_coffee/features/location/presentation/widgets/location_picker.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The address editor: a label, a pin or a typed place, and the rules that
@@ -159,6 +160,7 @@ class _AddressFormBodyState extends State<AddressFormBody> {
             child: CustomTextFormField(
               controller: _nameController,
               hint: S.addressNameHint,
+              icon: AppIcons.location,
               textInputAction: TextInputAction.next,
               bottomPadding: 8,
             ),

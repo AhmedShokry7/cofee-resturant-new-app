@@ -30,6 +30,34 @@ void main() {
       },
     );
 
+    test('a value written over several lines is parsed, not skipped', () {
+      // The rule below only catches a leak in a value it can read, and a
+      // pattern that accepted one literal per branch silently dropped every
+      // wrapped value in the file - two of them, in this file's own count.
+      const wrappedSource = '''
+class S {
+  static String get mixed => _ar
+      ? 'نصف أول من الجملة '
+            'ونصف ثانٍ يحمل Google تسرّب'
+      : 'an english value';
+}
+''';
+      final parsed = _translationPairs(wrappedSource);
+      expect(parsed, hasLength(1));
+      expect(parsed.single.arabic, contains('ونصف ثانٍ'));
+      expect(parsed.single.english, 'an english value');
+      final latin = parsed.single.arabic
+          .replaceAll(_arabicLetters, '')
+          .replaceAll(RegExp(r'[\s\d\p{P}]', unicode: true), '');
+      expect(
+        latin,
+        'Google',
+        reason:
+            'the leak in the second half has to reach the rule that '
+            'reports it',
+      );
+    });
+
     test('every Arabic value contains Arabic', () {
       // A value with no Arabic letter at all is an English string that was
       // copied into the Arabic branch, which is the exact bug reported.
@@ -158,18 +186,36 @@ String _withoutInterpolation(String value) =>
 /// Finds every `_ar ? '…' : '…'` pair in the strings file, together with the
 /// getter it belongs to. Covers both the single-line and the wrapped layout.
 List<_Pair> _translationPairs(String source) {
+  // A branch may be written as several adjacent literals, which Dart joins at
+  // compile time. A pattern that accepted only one literal skipped every
+  // wrapped value, and that is how an Arabic string carrying the Latin word
+  // "Google" passed this file unnoticed.
   final pair = RegExp(
-    r"_ar\s*\?\s*'((?:[^'\\\n]|\\.)*)'\s*:\s*'((?:[^'\\\n]|\\.)*)'",
+    r"_ar\s*\?\s*((?:'(?:[^'\\\n]|\\.)*'\s*)+):"
+    r"\s*((?:'(?:[^'\\\n]|\\.)*'\s*)+)",
     dotAll: true,
   );
   final pairs = <_Pair>[];
   for (final match in pair.allMatches(source)) {
     final before = source.substring(0, match.start);
     final name = _lastGetterName(before);
-    pairs.add(_Pair(name, match.group(1)!, match.group(2)!));
+    pairs.add(
+      _Pair(
+        name,
+        _joinedLiterals(match.group(1)!),
+        _joinedLiterals(match.group(2)!),
+      ),
+    );
   }
   return pairs;
 }
+
+/// The text of every adjacent literal in one branch, concatenated.
+String _joinedLiterals(String branch) =>
+    RegExp(r"'((?:[^'\\\n]|\\.)*)'")
+        .allMatches(branch)
+        .map((literal) => literal.group(1)!)
+        .join();
 
 /// The identifier the pair belongs to, so a failure names the offending getter.
 String _lastGetterName(String before) {

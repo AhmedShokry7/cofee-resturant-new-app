@@ -632,6 +632,10 @@ class S {
       _ar ? 'المتابعة برقم الهاتف' : 'Continue with phone number';
   static String get continueWithGoogle =>
       _ar ? 'المتابعة بحساب جوجل' : 'Continue with Google';
+  static String get continueWithFacebook =>
+      _ar ? 'المتابعة بحساب فيسبوك' : 'Continue with Facebook';
+  static String get continueWithApple =>
+      _ar ? 'المتابعة بحساب أبل' : 'Continue with Apple';
 
   static String get forgotPasswordQ =>
       _ar ? 'نسيت كلمة المرور؟' : 'Forget your password?';
@@ -909,6 +913,28 @@ class S {
       ? 'تعذّر تسجيل الدخول بحساب جوجل. برجاء المحاولة مرة أخرى.'
       : 'Google sign-in could not be completed. Please try again.';
 
+  /// Shown when the service itself has no such sign-in method switched on, so
+  /// the customer knows to use the door that is open rather than retrying.
+  static String get authProviderNotEnabled => _ar
+      ? 'هذه الطريقة لتسجيل الدخول غير مفعّلة حالياً. استخدم البريد الإلكتروني وكلمة المرور.'
+      : 'This sign-in method is not available yet. Use your email and password instead.';
+
+  /// Shown when Google on the device refused the account — a certificate or
+  /// client Google does not accept, or the account is signed out of the
+  /// Google app. Distinct from [authGoogleUnavailable] because the customer
+  /// cannot fix it by tapping again.
+  static String get authGoogleRefused => _ar
+      ? 'رفض جوجل هذا الحساب على الجهاز، ولم يتم التحقق منه. '
+            'تأكد من أنك مسجّل الدخول في تطبيق جوجل، أو ادخل بالبريد الإلكتروني وكلمة المرور.'
+      : 'Google could not verify this account on your device. '
+            'Check that you are signed in to the Google app, or sign in with your email and password.';
+
+  /// Shown when the phone holds no Google account at all, so the button can
+  /// never work there — retrying is not the answer, adding an account is.
+  static String get authGoogleNoAccount => _ar
+      ? 'لا يوجد حساب جوجل مسجّل الدخول على هذا الجهاز. أضِف حسابًا من إعدادات جوجل، أو ادخل بالبريد الإلكتروني وكلمة المرور.'
+      : 'There is no Google account signed in on this device. Add one in your Google settings, or sign in with your email and password.';
+
   /// Shown when the backend could not be reached at all. Distinct from
   /// [authFailed], which means the request itself was rejected.
   static String get authServiceUnavailable => _ar
@@ -922,6 +948,15 @@ class S {
       : 'If that email is registered, we sent a password reset link.';
   static String get passwordResetSuccess =>
       _ar ? 'تم تحديث كلمة المرور.' : 'Your password has been updated.';
+
+  /// Shown when the reset screen is asked for a new password before the emailed
+  /// link has ever been opened. The link, not this screen, authorises the
+  /// change, so the customer needs to know which of the two they are missing.
+  static String get authRecoveryLinkRequired => _ar
+      ? 'افتح رابط إعادة التعيين الذي وصلك في بريدك أولاً، ثم أدخل كلمة المرور '
+            'الجديدة. لا يمكن لهذه الشاشة تغيير كلمة المرور بدون الرابط.'
+      : 'Open the reset link from your email first, then set the new password. '
+            'This screen cannot change a password without that link.';
 
   // ---------- Coupons ----------
   static String get couponApplied =>

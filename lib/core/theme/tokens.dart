@@ -115,6 +115,11 @@ abstract final class AppIconSize {
   /// The default: form fields and list rows.
   static const double md = AppSizes.px16;
 
+  /// The glyph inside a text field. One step above [md] because it shares the
+  /// box with 16pt input text, and a stroke-rounded outline at 16 loses to it.
+  /// Every field in the app draws this size, so a form reads as one system.
+  static const double field = AppSizes.px20;
+
   /// Section headings and compact buttons.
   static const double lg = AppSizes.px18;
 
@@ -178,6 +183,13 @@ abstract final class AppDimensions {
 
   /// The smallest tappable edge - the accessibility floor no screen goes under.
   static const double tapTargetMin = AppSizes.px44;
+
+  /// How far the skip control sits from the top and end edges of the window.
+  static const double skipInset = AppSpacing.lg;
+
+  /// The band a screen keeps clear under the skip control, so its first line of
+  /// content never starts underneath it.
+  static const double skipReservedHeight = AppSizes.px56;
 
   /// The round social-login button.
   static const double socialButtonSize = AppSizes.px56;

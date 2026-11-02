@@ -27,8 +27,40 @@ class SupabaseService {
   static bool get isSignedIn =>
       debugSignedIn || (_client != null && _client!.auth.currentUser != null);
 
-  /// Whether the app should use the live backend.
+  /// Whether the backend is configured.
   static bool get isConfigured => AppConfig.isSupabaseConfigured;
+
+  static bool _passwordRecoverySeen = false;
+
+  /// Whether this process got its session by opening the emailed reset link.
+  ///
+  /// The reset screen has to be able to tell the two kinds of live session
+  /// apart. One that was already on the device proves somebody signed in — not
+  /// that they own the mailbox — so letting it set a new password would turn an
+  /// unlocked, signed-in phone into a way to take an account over without ever
+  /// knowing its password.
+  static bool get passwordRecoverySeen => _passwordRecoverySeen;
+
+  /// Records the auth events the app cannot afford to miss.
+  ///
+  /// Supabase reports `passwordRecovery` once, the moment the link is
+  /// processed. The screen that needs to know about it is opened later and
+  /// cannot rewind that broadcast stream, so the answer is kept here for the
+  /// lifetime of the session.
+  static void _watchAuthEvents(SupabaseClient client) {
+    client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.passwordRecovery) {
+        _passwordRecoverySeen = true;
+        return;
+      }
+      // A new session, or an ended one, retires the proof: the link that
+      // authorised the previous session says nothing about this one.
+      if (state.event == AuthChangeEvent.signedIn ||
+          state.event == AuthChangeEvent.signedOut) {
+        _passwordRecoverySeen = false;
+      }
+    });
+  }
 
   /// The shared client. Throws [StateError] if Supabase was never configured,
   /// so callers cannot silently fall back to a half-initialised client.
@@ -103,6 +135,7 @@ class SupabaseService {
         ),
       );
       _client = Supabase.instance.client;
+      _watchAuthEvents(_client!);
       _initialisationError = null;
       return _client;
     } catch (error) {
@@ -115,12 +148,17 @@ class SupabaseService {
   /// future that will never complete.
   static Object? get initialisationError => _initialisationError;
 
+  @visibleForTesting
+  static void debugSetPasswordRecoverySeen(bool value) =>
+      _passwordRecoverySeen = value;
+
   /// Test hook. Production code never calls this.
   @visibleForTesting
   static void debugReset() {
     _client = null;
     _initialising = null;
     _initialisationError = null;
+    _passwordRecoverySeen = false;
   }
 
   /// Test hook for injecting a client that talks to a fake server.
