@@ -506,7 +506,9 @@ void main() {
           'products': stage.hookFor('products'),
           'product_images': stage.hookFor('product_images'),
           'branch_product_pricing': stage.hookFor('branch_product_pricing'),
-          'product_option_groups': stage.hookFor('product_option_groups'),
+          'product_option_groups_effective': stage.hookFor(
+            'product_option_groups_effective',
+          ),
         },
       );
 
@@ -588,8 +590,8 @@ void main() {
             'branch_product_pricing': firstStage.hookFor(
               'branch_product_pricing',
             ),
-            'product_option_groups': firstStage.hookFor(
-              'product_option_groups',
+            'product_option_groups_effective': firstStage.hookFor(
+              'product_option_groups_effective',
             ),
             'option_groups': secondStage.hookFor('option_groups'),
             'option_values': secondStage.hookFor('option_values'),
@@ -726,8 +728,9 @@ class _Catalog {
       requests.where((u) => u.path.endsWith('/product_images')).length;
   int get pricingRequests =>
       requests.where((u) => u.path.endsWith('/branch_product_pricing')).length;
-  int get linkRequests =>
-      requests.where((u) => u.path.endsWith('/product_option_groups')).length;
+  int get linkRequests => requests
+      .where((u) => u.path.endsWith('/product_option_groups_effective'))
+      .length;
   int get optionGroupRequests =>
       requests.where((u) => u.path.endsWith('/option_groups')).length;
   int get optionValueRequests =>
@@ -777,7 +780,7 @@ class _Catalog {
     if (url.path.endsWith('/products')) {
       return _response(request, jsonEncode(products), 200);
     }
-    if (url.path.endsWith('/product_option_groups')) {
+    if (url.path.endsWith('/product_option_groups_effective')) {
       return _response(request, jsonEncode(links), 200);
     }
     if (url.path.endsWith('/option_groups')) {

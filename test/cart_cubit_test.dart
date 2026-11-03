@@ -140,6 +140,31 @@ void main() {
   });
 
   test(
+    'a failed cart load reports the customer sentence, not the exception',
+    () async {
+      // A slot the device cannot decode - what a crashed write leaves behind -
+      // is the load path that has nothing to show.
+      SharedPreferences.setMockInitialValues({
+        'cart_v1_guest': 'not json at all',
+      });
+
+      final cubit = CartCubit(
+        cartRepository: LocalCartRepository(),
+        catalogRepository: _ThrowingCatalog(),
+      );
+      await cubit.settled;
+      // The constructor load is not awaited by the cubit itself.
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+
+      // The page prints state.error as the whole message, so it must never be
+      // the raw exception.
+      expect(cubit.state.error, S.couldNotLoadCart);
+
+      await cubit.close();
+    },
+  );
+
+  test(
     'an unavailable product is preserved when loading under a branch',
     () async {
       SharedPreferences.setMockInitialValues({

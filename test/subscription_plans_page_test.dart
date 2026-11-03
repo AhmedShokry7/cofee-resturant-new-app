@@ -26,8 +26,9 @@ class _FakeRepository implements SubscriptionRepository {
   @override
   Future<List<SubscriptionPlan>> plans({String? branchId}) async {
     plansCalls++;
-    if (failPlans)
+    if (failPlans) {
       throw StateError('permission denied for function list_plans');
+    }
     return plansToReturn;
   }
 

@@ -94,8 +94,9 @@ class AssistantFabCubit extends Cubit<AssistantFabState> {
 
   /// The text the bubble shows right now.
   String get bubbleText {
-    if (!state.hasCycled && state.welcomeText != null)
+    if (!state.hasCycled && state.welcomeText != null) {
       return state.welcomeText!;
+    }
     final hints = _hints();
     if (hints.isEmpty) return '';
     return hints[state.hintIndex % hints.length];

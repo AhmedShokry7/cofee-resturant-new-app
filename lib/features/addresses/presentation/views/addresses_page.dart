@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
@@ -85,27 +84,23 @@ class _AddressesView extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (state.error != null && state.addresses.isEmpty) {
+            // A failed read, not an empty book: the localized title says what
+            // happened, the failure detail stays underneath for support. Same
+            // shape as the favorites, loyalty and notifications error states.
             return Center(
-              child: Padding(
-                padding: EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    EmptyState(icon: AppIcons.location, title: S.myAddresses),
-                    SizedBox(height: AppSpacing.sm),
-                    Text(
-                      state.error!,
-                      textAlign: TextAlign.center,
-                      style: AppFonts.regular14(context)
-                          .copyWith(color: AppColor.greyColor),
-                    ),
-                    SizedBox(height: AppSpacing.md),
-                    TextButton(
-                      onPressed: () => context.read<AddressesCubit>().load(),
-                      child: Text(S.retry),
-                    ),
-                  ],
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  EmptyState(
+                    icon: AppIcons.location,
+                    title: S.couldNotLoadAddresses,
+                    subtitle: state.error,
+                  ),
+                  TextButton(
+                    onPressed: () => context.read<AddressesCubit>().load(),
+                    child: Text(S.retry),
+                  ),
+                ],
               ),
             );
           }

@@ -33,6 +33,7 @@ import 'package:admin_app/features/inventory/presentation/pages/stock_movements_
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
 import 'package:admin_app/features/loyalty/presentation/pages/loyalty_page.dart';
 import 'package:admin_app/features/notifications/presentation/pages/notifications_page.dart';
+import 'package:admin_app/features/option_groups/presentation/pages/option_group_page.dart';
 import 'package:admin_app/features/orders/presentation/pages/order_page.dart';
 import 'package:admin_app/features/payments/presentation/pages/payment_page.dart';
 import 'package:admin_app/features/pos/presentation/pages/pos_page.dart';
@@ -199,6 +200,13 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       case 'bundles':
         return BundlePage(
           searchController: _searchController,
+          canManage: widget.session.hasPermission('catalog.product.write'),
+        );
+      case 'optionGroups':
+        return OptionGroupPage(
+          searchController: _searchController,
+          // 020 و224 تطلبان catalog.product.write لكل كتابة على المجموعات
+          // وقيمها ونطاقها، فلا أدوات كتابة لمن يُرفض حفظه دائمًا.
           canManage: widget.session.hasPermission('catalog.product.write'),
         );
       case 'payments':

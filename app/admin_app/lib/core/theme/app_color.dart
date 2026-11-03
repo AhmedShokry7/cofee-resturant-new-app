@@ -4,6 +4,12 @@ class AppColor {
   static const primaryColor = Color(0xff087F68);
   static const secondaryColor = Color(0xffDDF5EE);
 
+  /// الحلقة الخفيفة حول العناصر الدائرية، وهي نفس حلقة تطبيق العميل.
+  static Color get primaryRing => primaryColor.withAlpha(75);
+
+  /// ظل بلاطة واحدة، بقدر ظل العميل نفسه.
+  static const shadowMedium = Color(0x1F000000);
+
   /// Deeper tone of [secondaryColor] used for borders and focus rings on light
   /// backgrounds where the bright brand mint would be hard to see.
   static const secondaryStrong = Color(0xff087F68);

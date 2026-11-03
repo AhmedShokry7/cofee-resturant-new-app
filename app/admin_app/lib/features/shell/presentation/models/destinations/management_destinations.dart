@@ -70,6 +70,22 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
     section: S.sectionManagement,
     tables: <String>['catalog.bundles', 'catalog.bundle_items'],
   ),
+  // الأحجام والإضافات وأسعارها ونطاقها: صفحة مستقلة لأن المجموعة تُختار
+  // للمشروبات كلها أو لفئة أو لمنتجات بعينها، فهي لا تخصّ منتجًا واحدًا.
+  AdminDestination(
+    id: 'optionGroups',
+    label: S.optionGroups,
+    icon: AppIcons.tag01,
+    searchHint: S.searchOptionGroupsHint,
+    permission: 'catalog.product.write',
+    section: S.sectionManagement,
+    tables: <String>[
+      'catalog.option_groups',
+      'catalog.option_values',
+      'catalog.option_group_categories',
+      'catalog.product_option_groups',
+    ],
+  ),
   AdminDestination(
     id: 'carts',
     label: S.carts,

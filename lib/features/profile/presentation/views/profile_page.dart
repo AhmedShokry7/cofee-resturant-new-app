@@ -84,7 +84,7 @@ class _LanguageOption extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      radio: true,
+      button: true,
       checked: selected,
       child: Material(
         color: AppColor.transparent,

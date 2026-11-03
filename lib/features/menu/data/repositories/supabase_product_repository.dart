@@ -506,11 +506,11 @@ class SupabaseProductRepository
   ) async {
     final linksFuture = productIds.isEmpty
         ? _client
-              .from('product_option_groups')
+              .from('product_option_groups_effective')
               .select('product_id, group_id, sort_order, is_required')
               .limit(2000)
         : _client
-              .from('product_option_groups')
+              .from('product_option_groups_effective')
               .select('product_id, group_id, sort_order, is_required')
               .inFilter('product_id', productIds)
               .limit(2000);
@@ -611,6 +611,11 @@ class SupabaseProductRepository
   /// The option groups bound to one product, with the per-product overrides the
   /// binding row carries.
   ///
+  /// Read from `product_option_groups_effective`, not the raw binding table: a
+  /// group the admin scoped to a category or to every product has no binding row
+  /// for this product, and the server prices and validates it anyway (224).
+  /// Reading the raw table would hide options the customer is allowed to choose.
+  ///
   /// A method rather than the query builder at the call site: a PostgREST
   /// builder only sends its request when something listens to it, so holding it
   /// in a variable beside an `await` would have run this read after the product
@@ -618,7 +623,7 @@ class SupabaseProductRepository
   Future<List<Map<String, dynamic>>> _productOptionLinks(
     String productId,
   ) async => _client
-      .from('product_option_groups')
+      .from('product_option_groups_effective')
       .select('group_id, sort_order, is_required')
       .eq('product_id', productId);
 
@@ -748,14 +753,25 @@ class SupabaseProductRepository
     String? branchId,
     List<String> optionValueIds = const [],
   }) async {
-    final rows = await _client.rpc(
-      'resolve_effective_price',
-      params: {
-        'p_branch_id': branchId,
-        'p_product_id': productId,
-        'p_option_value_ids': optionValueIds,
-      },
-    );
+    List rows;
+    try {
+      rows = await _client.rpc(
+        'resolve_effective_price',
+        params: {
+          'p_branch_id': branchId,
+          'p_product_id': productId,
+          'p_option_value_ids': optionValueIds,
+        },
+      );
+    } on PostgrestException catch (error) {
+      // Measured against the live project 2026-11-03: the rpc raises P0002
+      // rather than returning no row when the product is gone. A product the
+      // shop deleted while it sat in a cart is a normal state, not an exception
+      // one, and the declared answer for "the server has no price for this" is
+      // null - which lets the details screen keep its local estimate.
+      if (error.code == 'P0002') return null;
+      rethrow;
+    }
     if (rows.isEmpty) return null;
     final m = rows.first as Map<String, dynamic>;
     return ResolvedPrice(

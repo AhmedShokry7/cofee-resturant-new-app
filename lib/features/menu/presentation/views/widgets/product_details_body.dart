@@ -38,7 +38,11 @@ class ProductDetailsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<ProductDetailsCubit, ProductDetailsState>(
       builder: (context, state) {
-        if (state.isLoading && state.product == null) {
+        // One screen, one render. The cubit holds the page in the loading state
+        // until the product, its options, the server's price and the companion
+        // products are all in hand, so nothing pops in and shifts what the
+        // customer is already reading.
+        if (state.isLoading) {
           return const ProductDetailsSkeleton();
         }
         final product = state.product;

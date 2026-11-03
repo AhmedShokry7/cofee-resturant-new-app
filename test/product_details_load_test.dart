@@ -9,12 +9,14 @@ import 'support/mock_product_repository.dart';
 
 /// How the product details page fills itself in.
 ///
-/// The page used to issue eight requests one after another, so the customer
-/// stared at a skeleton through eight round trips. These tests pin the shape
-/// the screen has now: the product payload first, then the price and the
-/// companion carousel open at the same time, and a second visit to the same
-/// product served from the catalogue cache while the price is still asked of
-/// the server.
+/// The page used to issue eight requests one after another, and then to paint
+/// the screen in pieces as they answered: the product first, the price when the
+/// price call landed, the companion carousel after that — each arrival shifting
+/// content the customer had already started reading. These tests pin the shape
+/// the screen has now: one render, issued when every read of the open has
+/// answered, with the price and the companion read open at the same time, and a
+/// second visit to the same product served from the catalogue cache while the
+/// price is still asked of the server.
 ///
 /// Everything here runs against an in-memory double - no database, no network.
 void main() {
@@ -33,13 +35,12 @@ void main() {
       log: log,
       readDelay: const Duration(milliseconds: 40),
     );
-    final opened = repository.beginOpen();
     final cubit = ProductDetailsCubit(
       repository: repository,
       productId: _productId,
     );
-    await opened;
     addTearDown(cubit.close);
+    await awaitLoaded(cubit);
 
     expect(
       log.take(2).where((event) => event.endsWith(':start')).length,
@@ -48,7 +49,36 @@ void main() {
           'the price read and the companion read both started before '
           'either answered: $log',
     );
-    expect(cubit.state.pairs, isNotEmpty, reason: 'the carousel filled in');
+    expect(
+      cubit.state.pairs,
+      isNotEmpty,
+      reason: 'the carousel is on page one',
+    );
+  });
+
+  test('the screen holds nothing back: no content renders before every read answers', () async {
+    // One emit at the end of the load is the whole contract. A page that
+    // emitted the product and then emitted again for the price would show the
+    // customer two frames of the same screen.
+    final cubit = ProductDetailsCubit(
+      repository: _TrackingRepository(
+        readDelay: const Duration(milliseconds: 40),
+      ),
+      productId: _productId,
+    );
+    addTearDown(cubit.close);
+
+    final frames = <ProductDetailsState>[];
+    cubit.stream.listen(frames.add);
+    await awaitLoaded(cubit);
+
+    expect(frames, hasLength(1));
+    final rendered = frames.single;
+    expect(rendered.isLoading, isFalse);
+    expect(rendered.product, isNotNull);
+    expect(rendered.groups, isNotEmpty);
+    expect(rendered.pairs, isNotEmpty);
+    expect(rendered.resolvedPrice, isNotNull);
   });
 
   test(
@@ -56,22 +86,20 @@ void main() {
     () async {
       final repository = _TrackingRepository();
 
-      final firstOpen = repository.beginOpen();
       final first = ProductDetailsCubit(
         repository: repository,
         productId: _productId,
         branchId: 'branch-1',
       );
-      await firstOpen;
+      await awaitLoaded(first);
       await first.close();
 
-      final secondOpen = repository.beginOpen();
       final second = ProductDetailsCubit(
         repository: repository,
         productId: _productId,
         branchId: 'branch-1',
       );
-      await secondOpen;
+      await awaitLoaded(second);
 
       expect(
         repository.optionReads,
@@ -84,10 +112,17 @@ void main() {
         reason: 'what the branch charges now is never a cached answer',
       );
       expect(
+        repository.pairsReads,
+        1,
+        reason:
+            'the carousel is catalogue data, cached with the rest of the page',
+      );
+      expect(
         second.state.groups,
         isNotEmpty,
         reason: 'the cached payload still configures the screen',
       );
+      expect(second.state.pairs, isNotEmpty);
       await second.close();
     },
   );
@@ -95,22 +130,20 @@ void main() {
   test('a different branch gets its own payload', () async {
     final repository = _TrackingRepository();
 
-    final firstOpen = repository.beginOpen();
     final first = ProductDetailsCubit(
       repository: repository,
       productId: _productId,
       branchId: 'branch-1',
     );
-    await firstOpen;
+    await awaitLoaded(first);
     await first.close();
 
-    final secondOpen = repository.beginOpen();
     final second = ProductDetailsCubit(
       repository: repository,
       productId: _productId,
       branchId: 'branch-2',
     );
-    await secondOpen;
+    await awaitLoaded(second);
 
     expect(
       repository.optionReads,
@@ -122,6 +155,20 @@ void main() {
     await second.close();
   });
 }
+
+/// Wait until the page has drawn: [ProductDetailsCubit] starts loading in its
+/// constructor, so a test cannot arm a latch before it is built.
+Future<void> awaitLoaded(ProductDetailsCubit cubit) =>
+    Future.doWhile(() async {
+      if (!cubit.state.isLoading) return false;
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      return true;
+    }).timeout(
+      const Duration(seconds: 10),
+      onTimeout: () => throw StateError(
+        'the details page never finished its load for ${cubit.productId}',
+      ),
+    );
 
 /// A product with option groups in the offline catalogue, so the details page
 /// has something to configure and something to price.
@@ -142,42 +189,6 @@ class _TrackingRepository extends MockProductRepository {
   int optionReads = 0;
   int priceReads = 0;
   int pairsReads = 0;
-
-  /// Incremented when a read has answered, so [beginOpen] waits for the page to
-  /// be filled in and not merely for the request to have gone out.
-  int priceAnswers = 0;
-  int pairsAnswers = 0;
-
-  int _priceAtOpen = 0;
-  int _pairsAtOpen = 0;
-
-  /// Call before the cubit is constructed. The future it returns completes when
-  /// this open's price confirmation and companion read have both answered.
-  ///
-  /// [ProductDetailsCubit]'s constructor starts the load itself, so a test must
-  /// not call `load()` again - that would add reads of its own.
-  Future<void> beginOpen() {
-    _priceAtOpen = priceAnswers;
-    _pairsAtOpen = pairsAnswers;
-    final eventsAtOpen = log?.length ?? 0;
-    return Future.doWhile(() async {
-      // Each read logs a start and an end, so four events of this open is also
-      // the point where both have answered; waiting for them keeps a test that
-      // reads the log from seeing only the emits that came before.
-      final answered =
-          priceAnswers > _priceAtOpen && pairsAnswers > _pairsAtOpen;
-      final fullyLogged = log == null || log!.length - eventsAtOpen >= 4;
-      if (answered && fullyLogged) return false;
-      await Future<void>.delayed(const Duration(milliseconds: 5));
-      return true;
-    }).timeout(
-      const Duration(seconds: 10),
-      onTimeout: () => throw StateError(
-        'the details page never finished its load: priceReads=$priceReads '
-        'pairsReads=$pairsReads',
-      ),
-    );
-  }
 
   @override
   Future<ProductWithOptions?> getWithOptions(String id, {String? branchId}) {
@@ -200,7 +211,6 @@ class _TrackingRepository extends MockProductRepository {
       optionValueIds: optionValueIds,
     );
     log?.add('price:end');
-    priceAnswers++;
     return resolved;
   }
 
@@ -221,7 +231,6 @@ class _TrackingRepository extends MockProductRepository {
       offset: offset,
     );
     log?.add('pairs:end');
-    pairsAnswers++;
     return rows;
   }
 }

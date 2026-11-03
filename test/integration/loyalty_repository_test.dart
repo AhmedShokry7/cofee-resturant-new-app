@@ -35,14 +35,18 @@ void main() {
     final catalog = await repository.loadCatalog();
     expect(catalog.currencyCode, 'SAR');
     expect(catalog.rules, isNotEmpty);
-    expect(catalog.rewards.map((reward) => reward.pointsCost), [
-      150,
-      180,
-      200,
-      250,
-      300,
-      400,
-    ]);
+    // The point values are the shop's to set, so the live contract is the shape
+    // of the catalogue, not its numbers. The list this asserted before
+    // ([150, 180, 200, 250, 300, 400]) was copied from the demo seed that
+    // 136_remove_demo_catalogue.sql deleted; production answers two real rewards
+    // (10 points for a product, 100 for a bundle) and any future edit made this
+    // test fail on a change that was not a defect.
+    expect(catalog.rewards, isNotEmpty);
+    expect(
+      catalog.rewards.every((reward) => reward.pointsCost > 0),
+      isTrue,
+      reason: 'a reward that costs nothing cannot be earned or spent',
+    );
     expect(catalog.rewards.every((reward) => reward.name.isNotEmpty), isTrue);
 
     expect(await repository.loadWallet(), isNull);

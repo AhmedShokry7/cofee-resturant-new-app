@@ -3,360 +3,168 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
-import 'package:admin_app/core/theme/app_icons.dart';
-import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/presentation/manager/customer_preview_cubit.dart';
-import 'package:admin_app/features/customer_preview/presentation/widgets/android_emulator_preview.dart';
+import 'package:admin_app/features/customer_preview/presentation/manager/customer_preview_state.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/customer_preview_rail.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/phone_frame.dart';
-import 'package:admin_app/features/customer_preview/presentation/widgets/preview_surface/preview_surface.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_viewport.dart';
+import 'package:admin_app/shared/widgets/admin_page_title.dart';
+import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
-class CustomerPreviewPage extends StatelessWidget {
-  const CustomerPreviewPage({super.key});
+/// محاكي تطبيق العميل داخل اللوحة.
+///
+/// الصفحة طريق وحالة حياة: تبني الـ cubit وتقرأ، وهي التي تقرّر إن كان عرض
+/// الهاتف بجانب السكة أم تحته. قواعد ما يراه الزبون كلها في `CustomerFeed`،
+/// وشاشات الهاتف في widgets المحاكي.
+class CustomerPreviewPage extends StatefulWidget {
+  const CustomerPreviewPage({super.key, this.cubit});
+
+  final CustomerPreviewCubit? cubit;
+
+  @override
+  State<CustomerPreviewPage> createState() => _CustomerPreviewPageState();
+}
+
+class _CustomerPreviewPageState extends State<CustomerPreviewPage> {
+  late final CustomerPreviewCubit _cubit;
+  late final bool _ownsCubit;
+
+  @override
+  void initState() {
+    super.initState();
+    _ownsCubit = widget.cubit == null;
+    _cubit = widget.cubit ?? CustomerPreviewCubit();
+    if (_ownsCubit) _cubit.load();
+  }
+
+  @override
+  void dispose() {
+    if (_ownsCubit) _cubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => CustomerPreviewCubit(),
-      child: const _CustomerPreviewView(),
+    return BlocProvider<CustomerPreviewCubit>.value(
+      value: _cubit,
+      child: _CustomerPreviewView(cubit: _cubit),
     );
   }
 }
 
 class _CustomerPreviewView extends StatelessWidget {
-  const _CustomerPreviewView();
+  const _CustomerPreviewView({required this.cubit});
+
+  final CustomerPreviewCubit cubit;
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<CustomerPreviewCubit, CustomerPreviewState>(
       builder: (context, state) {
-        final cubit = context.read<CustomerPreviewCubit>();
-        final url = _buildUrl(state);
-        final width = _viewportWidth(state.viewport);
-
-        return DefaultTabController(
-          length: 2,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _Header(isDirty: state.isDirty),
-                const SizedBox(height: AppSpacing.md),
-                TabBar(
-                  tabs: [
-                    Tab(text: S.browserPreview),
-                    Tab(text: S.androidEmulator),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Expanded(
-                  child: TabBarView(
-                    children: [
-                      LayoutBuilder(
-                        builder: (context, constraints) {
-                          final wide = constraints.maxWidth >= 900;
-                          final controls = _Controls(
-                            cubit: cubit,
-                            state: state,
-                          );
-                          final preview = SingleChildScrollView(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.max,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: AppSpacing.sm,
-                                    vertical: AppSpacing.xs,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: AppColor.lightGreyColor,
-                                    borderRadius: BorderRadius.circular(
-                                      AppRadius.pill,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    state.isDirty
-                                        ? S.previewDraftMode
-                                        : S.previewPublishedMode,
-                                    style: const TextStyle(
-                                      fontSize: AppFontSizes.size12,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                PhoneFrame(
-                                  width: width,
-                                  child: url.isEmpty
-                                      ? Center(
-                                          child: Padding(
-                                            padding: const EdgeInsets.all(
-                                              AppSpacing.md,
-                                            ),
-                                            child: Text(
-                                              '${S.previewCustomerAppUrl}\n'
-                                              'Run: flutter run -d web-server '
-                                              '--web-port 8080',
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                        )
-                                      : PreviewSurface(url: url),
-                                ),
-                              ],
-                            ),
-                          );
-
-                          if (wide) {
-                            return Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: AppDimensions.dialogBodyWidthCompact,
-                                  child: SingleChildScrollView(child: controls),
-                                ),
-                                const SizedBox(width: AppSpacing.lg),
-                                Expanded(child: preview),
-                              ],
-                            );
-                          }
-                          return SingleChildScrollView(
-                            child: Column(
-                              children: [
-                                controls,
-                                const SizedBox(height: AppSpacing.lg),
-                                preview,
-                              ],
-                            ),
-                          );
-                        },
-                      ),
-                      const AndroidEmulatorPreview(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+        return Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppDimensions.pageHorizontalPadding,
+            vertical: AppDimensions.pageVerticalPadding,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AdminPageTitle(S.customerPreview),
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(child: _body(context, state, cubit)),
+            ],
           ),
         );
       },
     );
   }
 
-  double _viewportWidth(PreviewViewport viewport) {
-    switch (viewport) {
-      case PreviewViewport.small:
-        return 280;
-      case PreviewViewport.medium:
-        return 260;
-      case PreviewViewport.large:
-        return 360;
+  Widget _body(
+    BuildContext context,
+    CustomerPreviewState state,
+    CustomerPreviewCubit cubit,
+  ) {
+    if (state.status == CustomerPreviewStatus.failure) {
+      return AdminFailureView(message: state.errorMessage, onRetry: cubit.load);
     }
-  }
+    if (state.feed == null) return const AdminLoadingView();
 
-  String _buildUrl(CustomerPreviewState state) {
-    final base = state.customerAppUrl.trim();
-    if (base.isEmpty) return '';
-    Uri uri;
-    try {
-      uri = Uri.parse(base);
-    } catch (_) {
-      return '';
-    }
-    final params = Map<String, String>.from(uri.queryParameters);
-    params['preview'] = '1';
-    params['screen'] = state.screen.name;
-    params['primary'] = _hex(state.draft.primaryColor);
-    params['secondary'] = _hex(state.draft.secondaryColor);
-    params['background'] = _hex(state.draft.backgroundColor);
-    params['surface'] = _hex(state.draft.surfaceColor);
-    params['refresh'] = '';
-    return uri.replace(queryParameters: params).toString();
-  }
-
-  String _hex(Color color) =>
-      color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2);
-}
-
-class _Header extends StatelessWidget {
-  const _Header({required this.isDirty});
-
-  final bool isDirty;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(AppIcons.smartPhone01, size: 20),
-        const SizedBox(width: AppSpacing.sm),
-        Text(S.customerPreview, style: Theme.of(context).textTheme.titleLarge),
-        const Spacer(),
-        Text(
-          isDirty ? S.previewDraftMode : S.previewPublishedMode,
-          style: TextStyle(
-            color: isDirty ? AppColor.errorColor : AppColor.greenColor,
-            fontSize: AppFontSizes.size12,
-          ),
-        ),
-      ],
+    final rail = CustomerPreviewRail(
+      state: state,
+      onRefresh: cubit.load,
+      onLanguageChanged: cubit.setPhoneLanguage,
+      onBranchChanged: cubit.selectBranch,
     );
-  }
-}
 
-class _Controls extends StatelessWidget {
-  const _Controls({required this.cubit, required this.state});
-
-  final CustomerPreviewCubit cubit;
-  final CustomerPreviewState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TextField(
-              decoration: InputDecoration(labelText: S.previewCustomerAppUrl),
-              controller: TextEditingController(text: state.customerAppUrl),
-              onChanged: cubit.updateCustomerAppUrl,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<PreviewScreen>(
-              initialValue: state.screen,
-              decoration: InputDecoration(labelText: S.previewScreen),
-              items: PreviewScreen.values
-                  .map(
-                    (s) => DropdownMenuItem<PreviewScreen>(
-                      value: s,
-                      child: Text(s.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) cubit.updateScreen(v);
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            DropdownButtonFormField<PreviewViewport>(
-              initialValue: state.viewport,
-              decoration: InputDecoration(labelText: S.previewViewport),
-              items: PreviewViewport.values
-                  .map(
-                    (v) => DropdownMenuItem<PreviewViewport>(
-                      value: v,
-                      child: Text(v.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) cubit.updateViewport(v);
-              },
-            ),
-            const SizedBox(height: AppSpacing.md),
-            _ColorField(
-              label: S.previewPrimaryColor,
-              color: state.draft.primaryColor,
-              onChanged: cubit.updatePrimaryColor,
-            ),
-            _ColorField(
-              label: S.previewSecondaryColor,
-              color: state.draft.secondaryColor,
-              onChanged: cubit.updateSecondaryColor,
-            ),
-            _ColorField(
-              label: S.previewBackgroundColor,
-              color: state.draft.backgroundColor,
-              onChanged: cubit.updateBackgroundColor,
-            ),
-            _ColorField(
-              label: S.previewSurfaceColor,
-              color: state.draft.surfaceColor,
-              onChanged: cubit.updateSurfaceColor,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final phone = _Phone(
+          state: state,
+          cubit: cubit,
+          maxWidth: constraints.maxWidth,
+          maxHeight: constraints.maxHeight,
+        );
+        final wide =
+            constraints.maxWidth >=
+            AppDimensions.simulatorRailWidth +
+                AppDimensions.simulatorScreenWidth +
+                AppSpacing.lg;
+        if (!wide) {
+          return SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ElevatedButton.icon(
-                  onPressed: cubit.refresh,
-                  icon: const Icon(AppIcons.refresh, size: 16),
-                  label: Text(S.previewRefresh),
-                ),
-                OutlinedButton(
-                  onPressed: cubit.resetDraft,
-                  child: Text(S.previewResetDraft),
-                ),
-                OutlinedButton(
-                  onPressed: state.isSaving ? null : cubit.saveDraft,
-                  child: Text(S.previewSaveDraft),
-                ),
+                Center(child: phone),
+                const SizedBox(height: AppSpacing.lg),
+                rail,
               ],
             ),
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              width: AppDimensions.simulatorRailWidth,
+              child: SingleChildScrollView(child: rail),
+            ),
+            const SizedBox(width: AppSpacing.lg),
+            Expanded(
+              child: SingleChildScrollView(child: Center(child: phone)),
+            ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
 
-class _ColorField extends StatefulWidget {
-  const _ColorField({
-    required this.label,
-    required this.color,
-    required this.onChanged,
+/// الهاتف بقدر ما تسع اللوحة: لا يكبر عن مقاس شاشة العميل الموثّق، ويصغر حين
+/// تضيق المساحة حتى لا تبتلع الشاشة حواف اللوحة.
+class _Phone extends StatelessWidget {
+  const _Phone({
+    required this.state,
+    required this.cubit,
+    required this.maxWidth,
+    required this.maxHeight,
   });
 
-  final String label;
-  final Color color;
-  final ValueChanged<Color> onChanged;
-
-  @override
-  State<_ColorField> createState() => _ColorFieldState();
-}
-
-class _ColorFieldState extends State<_ColorField> {
-  late final TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: _hex(widget.color));
-  }
-
-  @override
-  void didUpdateWidget(covariant _ColorField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.color != widget.color) {
-      _controller.text = _hex(widget.color);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final CustomerPreviewState state;
+  final CustomerPreviewCubit cubit;
+  final double maxWidth;
+  final double maxHeight;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: TextField(
-        controller: _controller,
-        decoration: InputDecoration(labelText: widget.label),
-        onSubmitted: (value) {
-          final parsed = int.tryParse(value.replaceFirst('#', ''), radix: 16);
-          if (parsed != null) {
-            widget.onChanged(Color(parsed | 0xFF000000));
-          }
-        },
+    return PhoneFrame(
+      width: PhoneFrame.widthFitting(maxWidth: maxWidth, maxHeight: maxHeight),
+      child: SimulatorViewport(
+        state: state,
+        onSelectTab: cubit.selectTab,
+        onSelectCategory: cubit.selectCategory,
+        onSearchChanged: cubit.updateQuery,
+        onRefresh: cubit.load,
       ),
     );
   }
-
-  String _hex(Color color) => '#';
 }

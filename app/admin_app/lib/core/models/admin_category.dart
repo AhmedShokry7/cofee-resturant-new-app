@@ -11,6 +11,8 @@ class AdminCategory {
     this.isActive = true,
     this.imageUrl,
     this.productCount = 0,
+    this.slug = '',
+    this.iconKey,
   });
 
   final String id;
@@ -21,6 +23,17 @@ class AdminCategory {
   final bool isActive;
   final String? imageUrl;
   final int productCount;
+
+  /// المعرّف المستقر للتصنيف في `catalog.categories.slug`.
+  ///
+  /// قاعدة توصيات العميل تختار تصنيفات الموسم بهذا لا بالاسم: تغيير اسم تصنيف
+  /// لا يكسر القاعدة حينها. اللوحة كانت تقرأ الصف بلا هذا العمود رغم أنه يصل
+  /// منها، لأن عرض `to_jsonb(c)` يجلب أعمدة التصنيف كلها.
+  final String slug;
+
+  /// `icon_key` كما خزّنته اللوحة، أو null بلا مفتاح. دائرة التصنيف عند
+  /// العميل ترسم رمزًا من هذا المفتاح حين لا صورة.
+  final String? iconKey;
 
   /// The category name in the language of the admin panel.
   ///
@@ -41,6 +54,9 @@ class AdminCategory {
     String? imageUrl,
     bool clearImageUrl = false,
     int? productCount,
+    String? slug,
+    String? iconKey,
+    bool clearIconKey = false,
   }) {
     return AdminCategory(
       id: id ?? this.id,
@@ -55,6 +71,8 @@ class AdminCategory {
       isActive: isActive ?? this.isActive,
       imageUrl: clearImageUrl ? null : (imageUrl ?? this.imageUrl),
       productCount: productCount ?? this.productCount,
+      slug: slug ?? this.slug,
+      iconKey: clearIconKey ? null : (iconKey ?? this.iconKey),
     );
   }
 
@@ -68,6 +86,8 @@ class AdminCategory {
       isActive: row['is_active'] != false,
       imageUrl: row['image_url'] as String?,
       productCount: (row['product_count'] as num?)?.toInt() ?? 0,
+      slug: '${row['slug'] ?? ''}',
+      iconKey: row['icon_key'] as String?,
     );
   }
 }

@@ -25,6 +25,7 @@ abstract final class AppIcons {
   static const arrowUpRight01 = HugeIcons.strokeRoundedArrowUpRight01;
   static const bicycle01 = HugeIcons.strokeRoundedBicycle01;
   static const blocked = HugeIcons.strokeRoundedBlocked;
+  static const bubbleTea01 = HugeIcons.strokeRoundedBubbleTea01;
   static const calendar01 = HugeIcons.strokeRoundedCalendar01;
   static const calendar03 = HugeIcons.strokeRoundedCalendar03;
   static const calendarAdd01 = HugeIcons.strokeRoundedCalendarAdd01;
@@ -46,9 +47,12 @@ abstract final class AppIcons {
   static const coffee02 = HugeIcons.strokeRoundedCoffee02;
   static const coins01 = HugeIcons.strokeRoundedCoins01;
   static const comment01 = HugeIcons.strokeRoundedComment01;
+  static const cookie = HugeIcons.strokeRoundedCookie;
   static const copy01 = HugeIcons.strokeRoundedCopy01;
   static const creditCard = HugeIcons.strokeRoundedCreditCard;
+  static const croissant = HugeIcons.strokeRoundedCroissant;
   static const cube = HugeIcons.strokeRoundedCube;
+  static const cupcake01 = HugeIcons.strokeRoundedCupcake01;
   static const dashboardSquare01 = HugeIcons.strokeRoundedDashboardSquare01;
   static const delete01 = HugeIcons.strokeRoundedDelete01;
   static const delete02 = HugeIcons.strokeRoundedDelete02;
@@ -65,20 +69,25 @@ abstract final class AppIcons {
   static const gift = HugeIcons.strokeRoundedGift;
   static const globe = HugeIcons.strokeRoundedGlobe;
   static const globe02 = HugeIcons.strokeRoundedGlobe02;
+  static const gridView = HugeIcons.strokeRoundedGridView;
   static const home01 = HugeIcons.strokeRoundedHome01;
+  static const iceCream01 = HugeIcons.strokeRoundedIceCream01;
   static const image01 = HugeIcons.strokeRoundedImage01;
   static const imageAdd01 = HugeIcons.strokeRoundedImageAdd01;
   static const informationCircle = HugeIcons.strokeRoundedInformationCircle;
   static const invoice01 = HugeIcons.strokeRoundedInvoice01;
   static const keyboard = HugeIcons.strokeRoundedKeyboard;
   static const kitchenUtensils = HugeIcons.strokeRoundedKitchenUtensils;
+  static const layers01 = HugeIcons.strokeRoundedLayers01;
   static const link01 = HugeIcons.strokeRoundedLink01;
   static const loading03 = HugeIcons.strokeRoundedLoading03;
   static const location01 = HugeIcons.strokeRoundedLocation01;
   static const logout01 = HugeIcons.strokeRoundedLogout01;
   static const mapPin = HugeIcons.strokeRoundedMapPin;
   static const menu01 = HugeIcons.strokeRoundedMenu01;
+  static const milkBottle = HugeIcons.strokeRoundedMilkBottle;
   static const money01 = HugeIcons.strokeRoundedMoney01;
+  static const moon01 = HugeIcons.strokeRoundedMoon01;
   static const moreHorizontal = HugeIcons.strokeRoundedMoreHorizontal;
   static const moreHorizontalCircle01 =
       HugeIcons.strokeRoundedMoreHorizontalCircle01;
@@ -86,6 +95,7 @@ abstract final class AppIcons {
   static const note01 = HugeIcons.strokeRoundedNote01;
   static const notification01 = HugeIcons.strokeRoundedNotification01;
   static const package = HugeIcons.strokeRoundedPackage;
+  static const package02 = HugeIcons.strokeRoundedPackage02;
   static const packageRemove = HugeIcons.strokeRoundedPackageRemove;
   static const pause = HugeIcons.strokeRoundedPause;
   static const payment01 = HugeIcons.strokeRoundedPayment01;
@@ -98,6 +108,7 @@ abstract final class AppIcons {
   static const qrCode = HugeIcons.strokeRoundedQrCode;
   static const receiptDollar = HugeIcons.strokeRoundedReceiptDollar;
   static const refresh = HugeIcons.strokeRoundedRefresh;
+  static const redo = HugeIcons.strokeRoundedRedo;
   static const remove01 = HugeIcons.strokeRoundedRemove01;
   static const repeat = HugeIcons.strokeRoundedRepeat;
   static const restaurant01 = HugeIcons.strokeRoundedRestaurant01;
@@ -110,6 +121,7 @@ abstract final class AppIcons {
   static const shoppingBag01 = HugeIcons.strokeRoundedShoppingBag01;
   static const shoppingCart01 = HugeIcons.strokeRoundedShoppingCart01;
   static const smartPhone01 = HugeIcons.strokeRoundedSmartPhone01;
+  static const sodaCan = HugeIcons.strokeRoundedSodaCan;
   static const sofa01 = HugeIcons.strokeRoundedSofa01;
   static const sparkles = HugeIcons.strokeRoundedSparkles;
   static const star = HugeIcons.strokeRoundedStar;
@@ -118,6 +130,7 @@ abstract final class AppIcons {
   static const table01 = HugeIcons.strokeRoundedTable01;
   static const tag01 = HugeIcons.strokeRoundedTag01;
   static const taskDone01 = HugeIcons.strokeRoundedTaskDone01;
+  static const tea = HugeIcons.strokeRoundedTea;
   static const thumbsUp = HugeIcons.strokeRoundedThumbsUp;
   static const tick01 = HugeIcons.strokeRoundedTick01;
   static const tick02 = HugeIcons.strokeRoundedTick02;
@@ -126,6 +139,7 @@ abstract final class AppIcons {
   static const timer01 = HugeIcons.strokeRoundedTimer01;
   static const transactionHistory = HugeIcons.strokeRoundedTransactionHistory;
   static const translate = HugeIcons.strokeRoundedTranslate;
+  static const undo = HugeIcons.strokeRoundedUndo;
   static const upload01 = HugeIcons.strokeRoundedUpload01;
   static const upload02 = HugeIcons.strokeRoundedUpload02;
   static const user = HugeIcons.strokeRoundedUser;
@@ -138,4 +152,6 @@ abstract final class AppIcons {
   static const userSettings01 = HugeIcons.strokeRoundedUserSettings01;
   static const wallet01 = HugeIcons.strokeRoundedWallet01;
   static const warehouse = HugeIcons.strokeRoundedWarehouse;
+  static const zoomInArea = HugeIcons.strokeRoundedZoomInArea;
+  static const zoomOutArea = HugeIcons.strokeRoundedZoomOutArea;
 }

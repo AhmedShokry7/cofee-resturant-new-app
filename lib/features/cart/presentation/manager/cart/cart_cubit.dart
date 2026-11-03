@@ -441,7 +441,9 @@ class CartCubit extends Cubit<CartState> {
           if (!isClosed &&
               generation == _loadGeneration &&
               _identity == _userId) {
-            emit(CartState(items: preAdoptionItems, error: error.toString()));
+            // The customer reads a sentence about the cart, never the
+            // exception; the cause still goes to addError below.
+            emit(CartState(items: preAdoptionItems, error: S.cartSyncFailed));
           }
           if (!isClosed) {
             addError(error, stackTrace);
@@ -461,7 +463,7 @@ class CartCubit extends Cubit<CartState> {
       // Best-effort: start with an empty cart rather than crash, but keep
       // the failure visible so a sync problem is recoverable.
       if (!isClosed) {
-        emit(CartState(items: state.items, error: error.toString()));
+        emit(CartState(items: state.items, error: S.couldNotLoadCart));
         addError(error, stackTrace);
       }
     }

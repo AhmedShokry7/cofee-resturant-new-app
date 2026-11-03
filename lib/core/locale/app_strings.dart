@@ -181,6 +181,8 @@ class S {
   static String get cartSyncFailed => _ar
       ? 'تعذّر حفظ السلة على الخادم. سنعيد المحاولة تلقائيًا.'
       : 'The cart could not be saved on the server. We will retry automatically.';
+  static String get couldNotLoadCart =>
+      _ar ? 'تعذّر تحميل السلة' : 'The cart could not be loaded';
 
   /// The cart's line cap belongs to the cart's state layer; the sentence carries
   /// the number it was given so the two can never disagree.
@@ -824,6 +826,8 @@ class S {
   static String get addressDeleteFailed => _ar
       ? 'تعذر حذف العنوان. حاول مرة أخرى.'
       : 'Could not delete the address. Please try again.';
+  static String get couldNotLoadAddresses =>
+      _ar ? 'تعذّر تحميل العناوين' : 'The saved addresses could not be loaded';
 
   // ---------- Help / FAQ / policy ----------
   static String get couldNotLoadFaqs =>

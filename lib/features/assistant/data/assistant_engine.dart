@@ -421,8 +421,9 @@ class AssistantEngine {
         );
       case AssistantIntent.selectOrdinal:
         final picked = _pickOrdinal(query, memory);
-        if (picked != null)
+        if (picked != null) {
           return _selectAnswer(picked, memory, arabic: arabic);
+        }
         return _suggest(
           query,
           memory: memory,
@@ -627,9 +628,12 @@ class AssistantEngine {
               }
               if (product.hasDiscount) score += 0.3;
               for (final token in tokens) {
-                if (normalizeText(canonicalName).contains(token)) score += 1;
-                if (normalizeText(product.category).contains(token))
+                if (normalizeText(canonicalName).contains(token)) {
+                  score += 1;
+                }
+                if (normalizeText(product.category).contains(token)) {
                   score += 1.5;
+                }
               }
               return MapEntry(product, score);
             })

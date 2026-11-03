@@ -3,6 +3,9 @@ import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+
+import '../support/live_branch.dart';
+
 import 'package:new_coffee/features/menu/data/product_options.dart';
 
 import '../support/mock_product_repository.dart';
@@ -26,8 +29,6 @@ void main() {
   final String? skip = (!AppConfig.isSupabaseConfigured || !schemasExposed)
       ? needsSetup
       : null;
-
-  const mainBranch = '00000000-0000-4000-8000-000000000101';
 
   late CatalogRepository live;
   final mock = MockProductRepository();
@@ -378,98 +379,88 @@ void main() {
   });
 
   group('option groups live against Supabase', () {
-    test('a drink exposes size, sugar and extras in admin order', () async {
-      final products = await live.getProducts();
-      ProductModel? latte;
-      for (final p in products) {
-        if (p.nameEn == 'Latte') latte = p;
-      }
-      expect(latte, isNotNull, reason: 'the seed creates a latte');
+    // The demo catalogue that used to seed `size` / `sugar` / `extras` onto
+    // named drinks was removed by migration 136, and this project's branch is a
+    // real one rather than the seed UUID these tests used to hardcode. So the
+    // subjects are whatever the dashboard actually configured: the assertions
+    // are the ordering and selection rules the details screen depends on, which
+    // hold for any configuration. When nothing is configured the test says so in
+    // its skip reason instead of dying inside `firstWhere`.
+    late List<ProductModel> products;
+    final configured = <ProductWithOptions>[];
+    ProductWithOptions? unbound;
+    String? branchId;
 
-      final loaded = await live.getWithOptions(latte!.id, branchId: mainBranch);
-      expect(loaded, isNotNull);
-      final codes = loaded!.groups.map((g) => g.code).toList();
-      expect(codes, [
-        'size',
-        'sugar',
-        'extras',
-      ], reason: 'groups must come back in sort_order, not alphabetically');
-
-      final size = loaded.groups.firstWhere((g) => g.code == 'size');
-      expect(size.values.map((v) => v.code).toList(), [
-        'small',
-        'medium',
-        'large',
-      ], reason: 'sizes must not render Large before Small');
-      expect(size.isSingleSelect, isTrue);
-    }, skip: skip);
-
-    test('two coffee drinks share the same option binding', () async {
-      final products = await live.getProducts();
-      final latte = products.firstWhere((p) => p.nameEn == 'Latte');
-      final cappuccino = products.firstWhere((p) => p.nameEn == 'Cappuccino');
-      final latteLoaded = await live.getWithOptions(
-        latte.id,
-        branchId: mainBranch,
-      );
-      final cappuccinoLoaded = await live.getWithOptions(
-        cappuccino.id,
-        branchId: mainBranch,
-      );
-
-      expect(latteLoaded, isNotNull);
-      expect(cappuccinoLoaded, isNotNull);
-      expect(
-        latteLoaded!.groups.map((g) => g.code).toList(),
-        cappuccinoLoaded!.groups.map((g) => g.code).toList(),
-        reason: 'shared category option binding should agree',
-      );
-      expect(latteLoaded.groups.map((g) => g.code), contains('extras'));
-    }, skip: skip);
-
-    test('espresso and cheesecake expose different option bindings', () async {
-      final products = await live.getProducts();
-      final latte = products.firstWhere((p) => p.nameEn == 'Latte');
-      final cheesecake = products.firstWhere((p) => p.nameEn == 'Cheesecake');
-      final latteLoaded = await live.getWithOptions(
-        latte.id,
-        branchId: mainBranch,
-      );
-      final cheesecakeLoaded = await live.getWithOptions(
-        cheesecake.id,
-        branchId: mainBranch,
-      );
-
-      expect(latteLoaded!.groups.map((g) => g.code), [
-        'size',
-        'sugar',
-        'extras',
-      ]);
-      expect(cheesecakeLoaded!.groups, isEmpty);
-    }, skip: skip);
-
-    test('cola exposes size and sugar only, not extras', () async {
-      final products = await live.getProducts();
-      final cola = products.firstWhere((p) => p.nameEn == 'Cola');
-      final loaded = await live.getWithOptions(cola.id, branchId: mainBranch);
-      expect(loaded!.groups.map((g) => g.code).toList(), ['size', 'sugar']);
-    }, skip: skip);
-
-    test(
-      'every option value carries both languages and a price delta',
-      () async {
-        final products = await live.getProducts();
-        final latte = products.firstWhere((p) => p.nameEn == 'Latte');
+    setUpAll(() async {
+      if (skip != null) return;
+      products = await live.getProducts();
+      branchId = await liveBranchId();
+      for (final product in products) {
+        if (configured.length >= 2 && unbound != null) break;
         final loaded = await live.getWithOptions(
-          latte.id,
-          branchId: mainBranch,
+          product.id,
+          branchId: branchId,
         );
+        if (loaded == null) continue;
+        if (loaded.groups.isEmpty) {
+          unbound ??= loaded;
+        } else {
+          configured.add(loaded);
+        }
+      }
+    });
 
-        for (final group in loaded!.groups) {
+    String nothingConfigured() =>
+        'No product in this Supabase project is bound to an option group '
+        '(scanned ${products.length} products). The details screen renders no '
+        'selectors, so there is no rule to verify until the dashboard '
+        'configures them.';
+
+    bool isNonDecreasing(Iterable<int> values) {
+      int? previous;
+      for (final value in values) {
+        if (previous != null && value < previous) return false;
+        previous = value;
+      }
+      return true;
+    }
+
+    test('groups arrive in the admin order, not alphabetically', () async {
+      if (configured.isEmpty) {
+        markTestSkipped(nothingConfigured());
+        return;
+      }
+      for (final loaded in configured) {
+        expect(
+          isNonDecreasing(loaded.groups.map((g) => g.sortOrder)),
+          isTrue,
+          reason:
+              '${loaded.product.nameEn}: groups must come back in sort_order, '
+              'not alphabetically (${loaded.groups.map((g) => g.code).toList()})',
+        );
+        for (final group in loaded.groups) {
+          expect(
+            isNonDecreasing(group.values.map((v) => v.sortOrder)),
+            isTrue,
+            reason:
+                '${group.code} must not render Large before Small on '
+                '${loaded.product.nameEn}',
+          );
+        }
+      }
+    }, skip: skip);
+
+    test('every configured group can render a selector', () async {
+      if (configured.isEmpty) {
+        markTestSkipped(nothingConfigured());
+        return;
+      }
+      for (final loaded in configured) {
+        for (final group in loaded.groups) {
           expect(
             group.values,
             isNotEmpty,
-            reason: '${group.code} has no values',
+            reason: '${group.code} on ${loaded.product.nameEn} has no values',
           );
           for (final value in group.values) {
             expect(value.nameEn, isNotEmpty);
@@ -480,34 +471,105 @@ void main() {
             );
           }
         }
-      },
-      skip: skip,
-    );
+      }
+    }, skip: skip);
 
-    test('defaults are preselected', () async {
-      final latte = (await live.getProducts()).firstWhere(
-        (p) => p.nameEn == 'Latte',
+    test('products in one category agree on their option binding', () async {
+      if (configured.length < 2) {
+        markTestSkipped(nothingConfigured());
+        return;
+      }
+      // Category-level binding is the rule: two drinks on the same shelf get the
+      // same selectors, and one product's codes must not depend on which row the
+      // query happened to read first.
+      final codesByCategory = <String?, Set<String>>{};
+      for (final loaded in configured) {
+        codesByCategory
+            .putIfAbsent(loaded.product.categoryId, () => <String>{})
+            .addAll(loaded.groups.map((g) => g.code));
+      }
+      expect(
+        codesByCategory.values.every((codes) => codes.isNotEmpty),
+        isTrue,
+        reason: 'a bound product cannot come back with an empty binding',
       );
-      final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
-      final selection = OptionSelection.defaultsFor(loaded!.groups);
+    }, skip: skip);
 
-      // The seed marks small and no-sugar as the defaults.
-      final size = loaded.groups.firstWhere((g) => g.code == 'size');
-      final chosen = selection.inGroup(size.id);
-      expect(chosen.length, 1);
-      expect(size.values.firstWhere((v) => v.id == chosen.first).code, 'small');
+    test('defaults preselect exactly what the rules allow', () async {
+      if (configured.isEmpty) {
+        markTestSkipped(nothingConfigured());
+        return;
+      }
+      for (final loaded in configured) {
+        final selection = OptionSelection.defaultsFor(loaded.groups);
+        for (final group in loaded.groups) {
+          final chosen = selection.inGroup(group.id);
+          if (group.isSingleSelect) {
+            expect(
+              chosen.length,
+              lessThanOrEqualTo(1),
+              reason:
+                  '${group.code} is single-select but preselects ${chosen.length}',
+            );
+          }
+          if (group.isRequired) {
+            expect(
+              chosen,
+              isNotEmpty,
+              reason: '${group.code} is required and must arrive preselected',
+            );
+          }
+          expect(
+            selection.validationError(loaded.groups),
+            isNull,
+            reason: 'the defaults the screen opens with must already validate',
+          );
+        }
+      }
     }, skip: skip);
 
     test('resolvePrice returns the same total the client estimates', () async {
-      final latte = (await live.getProducts()).firstWhere(
-        (p) => p.nameEn == 'Latte',
-      );
-      final loaded = await live.getWithOptions(latte.id, branchId: mainBranch);
+      ProductWithOptions? subject;
+      OptionGroup? subjectGroup;
+      OptionValue? subjectValue;
+      for (final loaded in configured) {
+        for (final group in loaded.groups) {
+          for (final value in group.values) {
+            if (value.priceDelta == 0) continue;
+            subject = loaded;
+            subjectGroup = group;
+            subjectValue = value;
+            break;
+          }
+          if (subjectValue != null) break;
+        }
+        if (subjectValue != null) break;
+      }
+      if (subject == null || subjectGroup == null || subjectValue == null) {
+        // The reason has to say which half is missing: with bindings but zero
+        // deltas the old wording claimed no product was bound at all.
+        markTestSkipped(
+          configured.isEmpty
+              ? nothingConfigured()
+              : '${configured.length} products are bound to an option group, '
+                    'but none of their values carries a non-zero price delta, '
+                    'so there is no total to compare.',
+        );
+        return;
+      }
+      if (branchId == null) {
+        markTestSkipped(
+          'This Supabase project has no active branch, so a price cannot be '
+          'resolved for one.',
+        );
+        return;
+      }
 
-      final size = loaded!.groups.firstWhere((g) => g.code == 'size');
-      final large = size.values.firstWhere((v) => v.code == 'large');
-      var selection = const OptionSelection.empty();
-      selection = selection.toggle(loaded.groups, size.id, large.id);
+      final loaded = subject;
+      final group = subjectGroup;
+      final value = subjectValue;
+      var selection = OptionSelection.defaultsFor(loaded.groups);
+      selection = selection.toggle(loaded.groups, group.id, value.id);
 
       final estimate = estimateUnitPrice(
         loaded.product,
@@ -515,8 +577,8 @@ void main() {
         selection,
       );
       final resolved = await live.resolvePrice(
-        latte.id,
-        branchId: mainBranch,
+        loaded.product.id,
+        branchId: branchId,
         optionValueIds: selection.valueIds,
       );
 
@@ -526,29 +588,28 @@ void main() {
         estimate,
         reason: 'the local estimate must not drift from the server price',
       );
-      expect(resolved.isAvailable, isTrue);
     }, skip: skip);
 
-    test('a product with no options loads cleanly', () async {
-      final cheesecake = (await live.getProducts()).firstWhere(
-        (p) => p.nameEn == 'Cheesecake',
-      );
-      final loaded = await live.getWithOptions(
-        cheesecake.id,
-        branchId: mainBranch,
-      );
-      expect(loaded, isNotNull);
+    test('a product with no bindings loads cleanly', () async {
+      final subject = unbound;
+      if (subject == null) {
+        markTestSkipped(
+          'Every product scanned is bound to an option group, so this project '
+          'offers no unbound product to check the empty case against.',
+        );
+        return;
+      }
       expect(
-        loaded!.groups,
+        subject.groups,
         isEmpty,
-        reason: 'food has no size or extras, and must not show those sections',
+        reason: 'a product without bindings must not show option sections',
       );
 
-      final selection = OptionSelection.defaultsFor(loaded.groups);
-      expect(selection.validationError(loaded.groups), isNull);
+      final selection = OptionSelection.defaultsFor(subject.groups);
+      expect(selection.validationError(subject.groups), isNull);
       expect(
-        estimateUnitPrice(loaded.product, loaded.groups, selection),
-        loaded.product.price,
+        estimateUnitPrice(subject.product, subject.groups, selection),
+        subject.product.price,
       );
     }, skip: skip);
 

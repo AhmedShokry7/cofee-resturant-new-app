@@ -48,7 +48,7 @@ class _NeverFiresLoyaltyRepository implements LoyaltyRepository {
 
 /// Auth-event policy tests.
 ///
-/// **Coverage boundary â€” read before trusting a green run here.** These tests
+/// **Coverage boundary - read before trusting a green run here.** These tests
 /// call each cubit's `shouldReloadOnAuthEvent` directly. They therefore prove
 /// the policy table, and nothing more. They do NOT prove that
 /// `onAuthStateChange` is subscribed, that GoTrue replays `initialSession` to a

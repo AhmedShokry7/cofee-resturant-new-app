@@ -4782,62 +4782,9 @@ class S {
   static String get noSubscriptionsFound =>
       _ar ? 'لا توجد اشتراكات.' : 'No subscriptions found.';
 
-  // ---------- Android emulator preview ----------
-  static String get emulatorPreviewTitle =>
-      _ar ? 'معاينة محاكي أندرويد' : 'Android emulator preview';
-  static String get emulatorPreviewDescription => _ar
-      ? 'معاينة مباشرة لمحاكي أندرويد. شغّل الجسر على هذا الجهاز ثم اتصل.'
-      : 'Live Android emulator preview. Run the bridge on this PC, then connect.';
-  static String get emulatorConnected =>
-      _ar ? 'المحاكي متصل' : 'Emulator connected';
-  static String get emulatorDisconnected =>
-      _ar ? 'المحاكي غير متصل' : 'Emulator disconnected';
-  static String get reloadSavedAppData =>
-      _ar ? 'إعادة تحميل بيانات التطبيق المحفوظة' : 'Reload saved app data';
-  static String get homeScreen => _ar ? 'الرئيسية' : 'Home';
-  static String get typeIntoApp =>
-      _ar ? 'الكتابة داخل التطبيق' : 'Type into the app';
-  static String get send => _ar ? 'إرسال' : 'Send';
-  static String get typeIntoAppButton =>
-      _ar ? 'اكتب داخل التطبيق' : 'Type into app';
-  static String get connectRealEmulator =>
-      _ar ? 'اربط المحاكي الحقيقي' : 'Connect the real emulator';
-  static String get emulatorBridgeHint => _ar
-      ? 'يحتاج المتصفح إلى جسر محلي للوصول إلى محاكي أندرويد. شغّل هذا المساعد على الجهاز نفسه:'
-      : 'The browser needs a local bridge to reach Android Emulator. Run this helper on the same PC:';
-  static String get bridgeTokenLabel => _ar
-      ? 'رمز الجسر من نافذة المساعد'
-      : 'Bridge token from the helper window';
-  static String get bridgeTokenHint => _ar
-      ? 'الصق الرمز الذي يعرضه المساعد'
-      : 'Paste the token shown by the helper';
-  static String get connecting => _ar ? 'جارٍ الاتصال...' : 'Connecting...';
-  static String get connectToEmulator =>
-      _ar ? 'الاتصال بالمحاكي' : 'Connect to emulator';
-  static String get emulatorStepSave => _ar
-      ? 'احفظ تغييراتك في تطبيق الإدارة.'
-      : 'Save your changes in the admin app.';
-  static String get emulatorStepReload => _ar
-      ? 'اختر إعادة التحميل لتحميل البيانات المحفوظة.'
-      : 'Select Reload to load the saved data.';
-  static String get emulatorStepInteract => _ar
-      ? 'اضغط أو اسحب على شاشة الهاتف لاستخدام التطبيق.'
-      : 'Tap or swipe on the phone screen to use the app.';
-  static String get emulatorBridgeNote => _ar
-      ? 'يستمع الجسر على هذا الجهاز فقط ويتطلب Android SDK وAVD مثبتًا.'
-      : 'The bridge listens on this PC only and requires Android SDK and an installed AVD.';
   static String kilometers(String value) => _ar ? '$value كم' : '$value km';
   static String perKilometer(String amount) =>
       _ar ? '$amount/كم' : '$amount/km';
-  static String get loadingEmulatorScreen =>
-      _ar ? 'جارٍ تحميل شاشة المحاكي' : 'Loading emulator screen';
-  static String get startBridgeThenConnect =>
-      _ar ? 'شغّل الجسر ثم اتصل' : 'Start the bridge, then connect';
-  static String get bridgeNotReady =>
-      _ar ? 'الجسر غير جاهز.' : 'The bridge is not ready.';
-  static String bridgeRequestFailed(int statusCode) => _ar
-      ? 'فشل طلب الجسر (رمز $statusCode).'
-      : 'Bridge request failed ($statusCode).';
   static String branchActiveZoneCount(int count) =>
       _ar ? 'مناطق التوصيل النشطة ($count)' : 'Active delivery zones ($count)';
   static String branchDeliverySettings(String branchName) =>
@@ -4876,6 +4823,113 @@ class S {
       : _ar
       ? '$count مكوّنات'
       : '$count components';
+
+  // مجموعات الأحجام والإضافات: النطاق في 224، وقراءة اللوحة لما عطّله في 225.
+  static String get optionGroups =>
+      _ar ? 'الأحجام والإضافات' : 'Sizes & extras';
+  static String optionGroupsCount(int count) =>
+      _ar ? '$count مجموعة' : '$count groups';
+  static String get addOptionGroup => _ar ? 'إضافة مجموعة' : 'Add group';
+  static String get editOptionGroup =>
+      _ar ? 'تعديل مجموعة الأحجام أو الإضافات' : 'Edit the size or extra group';
+  static String get newOptionGroup =>
+      _ar ? 'مجموعة جديدة: حجم أو إضافة' : 'New group: a size or an extra';
+  static String get noOptionGroupsYet => _ar
+      ? 'لا توجد مجموعات أحجام أو إضافات بعد.'
+      : 'No size or extra groups yet.';
+  static String get noOptionGroupsFound =>
+      _ar ? 'لا توجد مجموعات مطابقة.' : 'No matching groups.';
+  static String get searchOptionGroupsHint =>
+      _ar ? 'ابحث في الأحجام والإضافات...' : 'Search sizes and extras...';
+  static String get optionGroupIdentitySection =>
+      _ar ? 'بيانات المجموعة' : 'Group details';
+  static String optionValuesCount(int count) => count == 1
+      ? _ar
+            ? 'خيار واحد'
+            : '1 choice'
+      : _ar
+      ? '$count خيارات'
+      : '$count choices';
+  static String get optionValuesSection =>
+      _ar ? 'الخيارات وأسعارها' : 'Choices and their prices';
+  static String get addOptionValue => _ar ? 'إضافة خيار' : 'Add choice';
+  static String get noOptionValuesYet => _ar
+      ? 'أضف خيارًا واحدًا على الأقل: صغير وكبير للحجم، أو حليب إضافي للإضافة.'
+      : 'Add at least one choice: small and large for a size, extra milk for an add-on.';
+  static String get optionValueNameHint =>
+      _ar ? 'مثل: كبير، حليب لوز' : 'Such as: Large, almond milk';
+  static String optionValueNeedsName(int number) =>
+      _ar ? 'اسم الخيار رقم $number مطلوب.' : 'Choice $number needs a name.';
+  static String get priceDeltaLabel =>
+      _ar ? 'ما يُضاف إلى السعر' : 'Added to the price';
+  static String get priceDeltaHint => _ar
+      ? 'اتركه صفرًا إن كان الخيار بلا مقابل'
+      : 'Leave zero when the choice costs nothing extra';
+  static String get priceDeltaHelper => _ar
+      ? 'لا يُخزَّن سعر مطلق للمنتج: السعر المعروض هو سعر المنتج في الفرع زائد هذا الرقم.'
+      : 'No absolute price is stored: the customer sees the branch price plus this number.';
+  static String get defaultChoiceLabel =>
+      _ar ? 'المفتَّح تلقائيًا' : 'Pre-selected';
+  static String get optionCodeLabel => _ar ? 'الرمز' : 'Code';
+  static String get optionCodeHint => _ar
+      ? 'حروف إنجليزية صغيرة وشرطة سفلية، مثل size'
+      : 'Lowercase English letters and underscores, such as size';
+  static String get invalidOptionCode => _ar
+      ? 'الرمز يجب أن يكون حروفًا إنجليزية صغيرة وقد يحتوي على شرطة سفلية.'
+      : 'The code must be lowercase English letters, with underscores allowed.';
+  static String get duplicateOptionCode => _ar
+      ? 'رمز واحد مكرر داخل المجموعة نفسها.'
+      : 'Two choices in this group share one code.';
+  static String get selectionTypeSection =>
+      _ar ? 'كيف يختار العميل' : 'How the customer chooses';
+  static String get singleChoiceLabel => _ar ? 'واحد فقط' : 'Only one';
+  static String get multipleChoicesLabel => _ar ? 'أكثر من واحد' : 'Several';
+  static String get requiredChoicesLabel => _ar ? 'أقل عدد' : 'At least';
+  static String get requiredChoicesHelper => _ar
+      ? 'مع الإلزام يُحفظ أقل عدد واحدًا.'
+      : 'With required, the minimum is saved as one.';
+  static String get maximumChoicesLabel => _ar ? 'أقصى عدد' : 'At most';
+  static String get maximumChoicesHint =>
+      _ar ? 'اتركه فارغًا بلا سقف' : 'Leave empty for no limit';
+  static String get requiredGroupLabel =>
+      _ar ? 'الاختيار منها إلزامي' : 'The customer must choose';
+  static String get scopeSection =>
+      _ar ? 'أين تظهر هذه المجموعة' : 'Where this group appears';
+  static String get scopeAllProducts => _ar ? 'كل المنتجات' : 'Every product';
+  static String get scopeCategories => _ar ? 'فئات محددة' : 'Chosen categories';
+  static String get scopeProducts => _ar ? 'منتجات محددة' : 'Chosen products';
+  static String get scopeHelper => _ar
+      ? 'القاعدة هي التي تحلّ النطاق، فلا تختلف الشاشة عن طابِق نقاط البيع ولا عن سلّة العميل.'
+      : 'The database resolves the scope, so the screen, the counter and the cart cannot disagree.';
+  static String get pickCategoriesTitle =>
+      _ar ? 'اختر الفئات' : 'Pick the categories';
+  static String get pickProductsTitle =>
+      _ar ? 'اختر المنتجات' : 'Pick the products';
+  static String get excludedProductsTitle =>
+      _ar ? 'منتجات مستثناة' : 'Excluded products';
+  static String get excludedProductsHelper => _ar
+      ? 'تظهر المجموعة لكل ما عدا هذه المنتجات.'
+      : 'The group appears for everything except these products.';
+  static String get scopeNeedsCategories => _ar
+      ? 'اختر فئة واحدة على الأقل، وإلا لم تظهر المجموعة لأحد.'
+      : 'Pick at least one category, or the group shows nowhere.';
+  static String get scopeNeedsProducts => _ar
+      ? 'اختر منتجًا واحدًا على الأقل، وإلا لم تظهر المجموعة لأحد.'
+      : 'Pick at least one product, or the group shows nowhere.';
+  static String scopeSelectedCount(int count) =>
+      _ar ? 'المحدد: $count' : 'Selected: $count';
+  static String get nothingMatchesSearch =>
+      _ar ? 'لا شيء يطابق البحث.' : 'Nothing matches the search.';
+  static String get nothingToChooseFrom => _ar
+      ? 'لا توجد عناصر تُنتقى هنا بعد.'
+      : 'Nothing to choose from here yet.';
+  static String scopeExceptCount(int count) =>
+      _ar ? 'ما عدا $count منتجًا' : 'except $count products';
+  static String get deleteOptionGroupBlockedHint => _ar
+      ? 'عطّل المجموعة بدل حذفها: إحدى قيمها ما زالت في سلّة لم تُطلب بعد.'
+      : 'Deactivate the group instead — one of its values is still in an open cart.';
+  static String get optionGroupSavedMessage =>
+      _ar ? 'تم حفظ المجموعة.' : 'Group saved.';
   static String cartItemsCount(int count) =>
       _ar ? '$count عنصرًا' : '$count items';
   static String cartStatusLabel(String code) =>
@@ -4948,33 +5002,333 @@ class S {
       _ar ? 'معاينة تطبيق العميل' : 'Customer preview';
   static String get customerPreviewHint =>
       _ar ? 'معاينة تطبيق العميل' : 'Preview the customer app';
-  static String get previewDraftMode =>
-      _ar ? 'معاينة - الوضع التجريبي' : 'Preview - draft mode';
-  static String get previewPublishedMode =>
-      _ar ? 'معاينة - المنشور' : 'Preview - published';
-  static String get previewRefresh => _ar ? 'تحديث' : 'Refresh';
-  static String get previewResetDraft =>
-      _ar ? 'إعادة ضبط المسودة' : 'Reset draft';
-  static String get previewSaveDraft => _ar ? 'حفظ المسودة' : 'Save draft';
-  static String get previewViewport => _ar ? 'مقاس العرض' : 'Viewport';
-  static String get previewScreen => _ar ? 'الشاشة' : 'Screen';
-  static String get previewCustomerAppUrl =>
-      _ar ? 'رابط تطبيق العميل' : 'Customer app URL';
-  static String get previewPrimaryColor =>
-      _ar ? 'اللون الأساسي' : 'Primary color';
-  static String get previewSecondaryColor =>
-      _ar ? 'اللون الثانوي' : 'Secondary color';
-  static String get previewBackgroundColor =>
-      _ar ? 'لون الخلفية' : 'Background color';
-  static String get previewSurfaceColor => _ar ? 'لون الأسطح' : 'Surface color';
-  static String get previewUnsupported => _ar
-      ? 'المعاينة متاحة في نسخ الويب فقط.'
-      : 'Preview is available on web builds.';
-  static String get previewLoading =>
-      _ar ? 'جارٍ تحميل معاينة تطبيق العميل...' : 'Loading customer preview...';
-  static String get previewError => _ar
-      ? 'تعذر تحميل معاينة تطبيق العميل.'
-      : 'Unable to load the customer preview.';
+
+  /// لغة الهاتف المعروض: اللوحة بلغة والمعاينة بأخرى عند الحاجة.
+  static String get previewPhoneLanguage =>
+      _ar ? 'لغة الهاتف' : 'Phone language';
+
+  static String get previewBannersShown =>
+      _ar ? 'بانرات منشورة في وقتها' : 'Banners published for this time';
+  static String get previewCategoriesShown =>
+      _ar ? 'تصنيفات نشطة' : 'Active categories';
+
+  /// تسمية صف المنتجات في سكة المعاينة: الأرقام تُطبع بجانبها بأرقام اللغة،
+  /// فلا تُكتب داخل النص.
+  static String get previewProductsShown =>
+      _ar ? 'منتجات معروضة' : 'Products shown';
+  static String get previewFeaturedShown =>
+      _ar ? 'صفوف الأكثر طلبًا' : 'Featured rows';
+  static String get previewBundlesShown =>
+      _ar ? 'باقات منشورة' : 'Published bundles';
+
+  /// الفرع الذي تُقرأ عنه الأسعار والطقس: تطبيق العميل يسأل عن فرع قبل أن
+  /// يحسب سعرًا أو يقترح موسمًا.
+  static String get previewBranch => _ar ? 'فرع المعاينة' : 'Preview branch';
+  static String get previewBranchNone =>
+      _ar ? 'بلا فرع: الأسعار الأساسية' : 'No branch: base prices';
+
+  /// الفرع الذي جاءت معه أسعار الكتالوج ولا اسم له في القائمة المقروءة: القائمة
+  /// نفسها لم تصل، فيُقال السبب بدل أن تُطبع هوية ناقصة.
+  static String get previewBranchUnknown => _ar
+      ? 'فرع القراءة الحالية ليس في قائمة الفروع، أعد القراءة ليظهر اسمه.'
+      : 'The branch of this read is not in the branch list; read again for its name.';
+  static String get previewWeather =>
+      _ar ? 'حرارة الفرع' : 'Branch temperature';
+  static String get previewWeatherNoLocation => _ar
+      ? 'الفرع بلا إحداثيات، فلا قراءة طقس'
+      : 'The branch has no coordinates, so there is no weather read';
+
+  /// المقاطع التي فشلت قراءتها: الشاشة تبقى كما هي والسبب يُقال هنا.
+  static String get previewDegradedTitle =>
+      _ar ? 'مقاطع لم تُقرأ' : 'Sections that did not load';
+
+  static String get previewNotShownTitle =>
+      _ar ? 'ما لا يعرضه المحاكي' : 'What the simulator does not show';
+  static String get previewNotShownAccount => _ar
+      ? 'سلة الزبون ومفضلته وحسابه: تُقرأ من جهازه، واللوحة لا تملك نسخة منها.'
+      : 'Cart, favourites and account data live on the customer device.';
+  static String get previewNotShownPersonalisation => _ar
+      ? 'ترتيب الترشيحات يقف على الطقس وحده: مفضّلة الزبون لا تُقرأ من اللوحة.'
+      : 'Recommendations rank on weather only: a customer favourite list is not readable here.';
+  static String get previewNotShownTheme => _ar
+      ? 'ألوان تطبيق العميل وخطوطه: المحاكي يرسم الشاشات بثيم اللوحة.'
+      : 'The customer app theme and fonts: the simulator draws on the dashboard theme.';
+  static String get previewNotShownDetails => _ar
+      ? 'تفاصيل المنتج: المحاكي يسرد المنتجات ولا يفتح صفحة واحد منها.'
+      : 'Product details: the simulator lists products and does not open one.';
+
+  // ---------- App builder ----------
+
+  /// إصدار محدد في القائمة لا يقرأ المحرّر ملفّه: صف مفقود أو صلاحية ناقصة،
+  /// فيُقال السبب بدل أن يُعرض الهاتف بالمسودة كأن الرجوع تمّ.
+  static String get builderVersionMissing => _ar
+      ? 'ملفّ هذا الإصدار لم يُقرأ، فلن يُعرض ولن يُرجَع إليه.'
+      : 'That version’s file could not be read, so it is not shown or restored.';
+
+  /// وجهة الشريط الجانبي: الموضع الذي يُبنى منه تصميم تطبيق العميل.
+  static String get appBuilder => _ar
+      ? 'مصمم تطبيق العميل'
+      : 'Customer app builder';
+
+  static String get appBuilderHint => _ar
+      ? 'اسحب عناصر إلى شاشة الهاتف وراجع خصائصها قبل النشر'
+      : 'Drag elements onto the phone screen and review their properties before publishing';
+
+  static String get builderModeEdit => _ar ? 'تحرير' : 'Edit';
+
+  /// وضع الزبون: النقر يعمل كما في جهازه، والبناء لا يعمل.
+  static String get builderModePreview => _ar ? 'مشاهدة' : 'Preview';
+
+  static String get builderSourceDraft => _ar ? 'المسودة' : 'Draft';
+
+  static String get builderSourcePublished => _ar ? 'المنشور' : 'Published';
+
+  static String get builderSourceVersion => _ar ? 'إصدار' : 'Version';
+
+  static String get builderPage => _ar ? 'الصفحة' : 'Page';
+
+  /// اسم صفحة في قائمة المحرّر: تسميات الهاتف نفسها، فلا يسمّي الموظف شاشة
+  /// بغير ما يقرؤها الزبون في شريط التنقل.
+  static String builderPageName(String page) => switch (page) {
+    'home' => _ar ? 'الرئيسية' : 'Home',
+    'categories' => _ar ? 'التصنيفات' : 'Categories',
+    'search' => _ar ? 'البحث' : 'Search',
+    'product_details' => _ar ? 'تفاصيل المنتج' : 'Product details',
+    'cart' => _ar ? 'السلة' : 'Cart',
+    'favourites' => _ar ? 'المفضلة' : 'Favorites',
+    'settings' => _ar ? 'الإعدادات' : 'Settings',
+    _ => page,
+  };
+
+  static String get builderUndo => _ar ? 'تراجع' : 'Undo';
+
+  static String get builderRedo => _ar ? 'إعادة' : 'Redo';
+
+  static String get builderSave => _ar ? 'حفظ المسودة' : 'Save draft';
+
+  static String get builderSaving => _ar ? 'جارٍ الحفظ' : 'Saving';
+
+  static String get builderPublish => _ar ? 'نشر' : 'Publish';
+
+  static String get builderPublishing => _ar ? 'جارٍ النشر' : 'Publishing';
+
+  static String get builderDiscard => _ar ? 'تجاهل ما لم يُحفظ' : 'Discard changes';
+
+  static String get builderDirty => _ar ? 'غير محفوظ' : 'Unsaved changes';
+
+  static String get builderClean => _ar ? 'محفوظ' : 'Saved';
+
+  static String get builderZoomIn => _ar ? 'تكبير' : 'Zoom in';
+
+  static String get builderZoomOut => _ar ? 'تصغير' : 'Zoom out';
+
+  static String get builderZoomReset => _ar ? 'حجم الشاشة' : 'Reset zoom';
+
+  static String get builderLibrary => _ar ? 'مكتبة العناصر' : 'Element library';
+
+  static String get builderLibraryNote => _ar
+      ? 'اسحب عنصرًا إلى اللوحة، أو اضغطه فيُضاف في آخر الصفحة.'
+      : 'Drag an element onto the canvas, or tap it to append it to the page.';
+
+  static String get builderTree => _ar ? 'طبقات الصفحة' : 'Page layers';
+
+  /// عائلات مكتبة العناصر، بأسمائها في [WidgetCategory] لا بأصناف Dart.
+  static String builderFamily(String category) => switch (category) {
+    'layout' => _ar ? 'التخطيط' : 'Layout',
+    'content' => _ar ? 'المحتوى' : 'Content',
+    'restaurant' => _ar ? 'مقاطع المطعم' : 'Restaurant',
+    _ => _ar ? 'التنقّل' : 'Navigation',
+  };
+
+  static String get builderProperties => _ar ? 'خصائص العنصر' : 'Element properties';
+
+  static String get builderNoSelection => _ar
+      ? 'اختر عنصرًا من اللوحة أو من الطبقات لتظهر خصائصه.'
+      : 'Select an element on the canvas or in the layers to see its properties.';
+
+  static String get builderNoLayers => _ar
+      ? 'الصفحة بلا طبقات: أضف عناصر من المكتبة.'
+      : 'This page has no layers yet: add elements from the library.';
+
+  static String get builderIssues => _ar ? 'قبل النشر' : 'Before publishing';
+
+  static String get builderIssuesClean => _ar
+      ? 'لا موانع: المستند صالح للنشر.'
+      : 'Nothing blocks publishing: the document is valid.';
+
+  static String get builderVersions => _ar ? 'الإصدارات' : 'Versions';
+
+  static String get builderNoVersions => _ar
+      ? 'لا إصدار منشور بعد.'
+      : 'No published version yet.';
+
+  static String get builderInspect => _ar ? 'استعراض' : 'Inspect';
+
+  static String get builderRestore => _ar ? 'الرجوع إليه' : 'Restore';
+
+  static String builderVersionLabel(int number) => _ar
+      ? 'الإصدار $number'
+      : 'Version $number';
+
+  /// النشر ممنوع قبل أن يوافق المدقّق: يُقال السبب لا يُترك الزرّ معتمًا صامتًا.
+  static String get builderPublishBlocked => _ar
+      ? 'النشر ممتنع ما بقي مانع واحد في قائمة «قبل النشر».'
+      : 'Publishing stays blocked while any issue remains in “Before publishing”.';
+
+  /// التنقل في وضع التحرير يبدّل الصفحة المحرَّرة، والشاشات المفتوحة فوقها
+  /// تعمل عند الزبون في وضع المشاهدة.
+  static String get builderPreviewOnlyNavigation => _ar
+      ? 'هذه الضغطة تفتح شاشة عند الزبون في وضع المشاهدة؛ اللوحة تعرض صفحة واحدة لكل تحرير.'
+      : 'That tap opens a screen for the customer in preview mode; the editor keeps one page per edit.';
+
+  static String get builderHiddenBadge => _ar ? 'مخفي' : 'Hidden';
+
+  static String get builderLockedBadge => _ar ? 'أساس' : 'Fixed';
+
+  static String get builderRename => _ar ? 'إعادة تسمية' : 'Rename';
+
+  static String get builderRenameTitle => _ar
+      ? 'اسم الطبقة في الشجرة'
+      : 'Layer name in the tree';
+
+  /// الاسم الذي يُعدَّل هو معرّف العقدة في المستند، لا نص يقرأه الزبون.
+  static String get builderRenameNote => _ar
+      ? 'اسم داخلي يحدّد الطبقة في اللوحة وحدها، ولا يطبعه تطبيق العميل.'
+      : 'An internal name that only identifies the layer in the dashboard; the customer app never prints it.';
+
+  static String get builderDuplicate => _ar ? 'تكرار' : 'Duplicate';
+
+  static String get builderHide => _ar ? 'إخفاء' : 'Hide';
+
+  static String get builderShow => _ar ? 'إظهار' : 'Show';
+
+  static String get builderMoveUp => _ar ? 'أعلى' : 'Move up';
+
+  static String get builderMoveDown => _ar ? 'أسفل' : 'Move down';
+
+  /// خاصية يملؤها حال الهاتف، كالتصنيف الذي يقف عليه الموظف الآن.
+  static String get builderSuppliedNote => _ar
+      ? 'يحدّده ما يفعله الهاتف الآن، لا المستند.'
+      : 'Set by what the phone is doing now, not by the document.';
+
+  static String get builderCategoryField => _ar ? 'التصنيف' : 'Category';
+
+  static String get builderProductField => _ar ? 'المنتج' : 'Product';
+
+  /// حقل لا يُقبل فراغًا: نص فارغ في مستند منشور يعني سطرًا فارغًا عند الزبون.
+  static String get builderRequiredField => _ar
+      ? 'لا يُترك هذا الحقل فارغًا.'
+      : 'This field cannot be left empty.';
+
+  /// رقم صحيح مطلوب، لأن المكوّن عدّدتُ لا نصه.
+  static String get builderCountRequired => _ar
+      ? 'رقم صحيح مطلوب.'
+      : 'A whole number is required.';
+
+  /// حدّا العدد قرار المطوّر في السجل، والموظف يُخبَر بهما لا يُمنع صامتًا.
+  static String builderCountRange(String min, String max) => _ar
+      ? 'الرقم بين $min و$max.'
+      : 'Enter a number between $min and $max.';
+
+  /// لا قيمة للمسودة: الخاصية تُترك غائبة، والمكوّن يرسم بقيمة المطوّر.
+  static String get builderNoValue => _ar ? 'بلا قيمة' : 'No value';
+
+  static String get builderLevelEditable => _ar ? 'يُحرَّر كاملًا' : 'Fully editable';
+
+  static String get builderLevelPartial => _ar ? 'شكله فقط' : 'Appearance only';
+
+  static String get builderLevelLocked => _ar
+      ? 'تحت سيطرة المطوّر'
+      : 'Developer controlled';
+
+  static String get builderPageEditable => _ar ? 'تُحرَّر' : 'Editable';
+
+  /// سبب قفل الصفحة يُقال للموظف، فلا تُترك أمامه صفحة بيضاء بلا سبب.
+  static String builderPageLockReason(String lock) => switch (lock) {
+    'perCustomerSession' => _ar
+        ? 'مقفولة: بياناتها من جلسة الزبون وحده — سلّته ومفضلته وحسابه.'
+        : 'Locked: its data comes from the customer session alone — cart, favourites, account.',
+    'developerOnly' => _ar
+        ? 'مقفولة: منطقها يُبنى من صفوف المنتج وخياراته، لا من شكل يُحرَّر.'
+        : 'Locked: it is built from the product row and its options, not from an editable layout.',
+    _ => _ar ? 'مقفولة' : 'Locked',
+  };
+
+  /// سبب رفض عملية على الشجرة، بمفتاح [DesignEditRejection.name].
+  static String builderRejection(String code) => switch (code) {
+    'unknownType' => _ar
+        ? 'عنصر لا يعرفه المحرّر، فلا رسم له ولا يُضاف.'
+        : 'The editor does not know that element, so it has no rendering and cannot be added.',
+    'missingNode' => _ar
+        ? 'العنصر المطلوب ليس في هذه الصفحة.'
+        : 'That element is not on this page.',
+    'parentIsNotContainer' => _ar
+        ? 'هذا العنصر لا يقبل أبناء في المحرّر.'
+        : 'That element takes no children in the editor.',
+    'parentRefusesChild' => _ar
+        ? 'الأب لا يذكر هذا العنصر بين أبنائه المسموحين.'
+        : 'That parent does not allow this element as a child.',
+    'childRefusesParent' => _ar
+        ? 'العنصر لا يقبل هذا الأب.'
+        : 'That element does not accept this parent.',
+    'lockedComponent' => _ar
+        ? 'مكوّن أساس: لا يُنقل ولا يُخفى ولا يُحذف ولا يُسمَّى.'
+        : 'A fixed element: it is never moved, hidden, deleted or renamed.',
+    'intoOwnDescendant' => _ar
+        ? 'لا تُفلت حاوية داخل أحد أبنائها.'
+        : 'A container cannot be dropped inside its own child.',
+    'containerNotEmpty' => _ar
+        ? 'افرغ الحاوية أولًا: لا يختفي ابن بالحذف بلا إعلان.'
+        : 'Empty that container first: a child must not disappear by delete.',
+    'previewMode' => _ar
+        ? 'اللوحة في وضع المشاهدة: البناء موقوف والنقر يعمل كما عند الزبون.'
+        : 'The dashboard is in preview mode: building is paused and taps work as they do for the customer.',
+    'pageNotEditable' => _ar ? 'هذه الصفحة مقفولة.' : 'That page is locked.',
+    'emptyId' => _ar
+        ? 'اسم الطبقة لا يُترك فارغًا.'
+        : 'The layer name cannot be left empty.',
+    'duplicateId' => _ar
+        ? 'اسم أخذته طبقة أخرى في المستند.'
+        : 'Another layer in the document already has that name.',
+    _ => _ar ? 'العملية مرفوضة.' : 'The edit was rejected.',
+  };
+
+  /// مانع نشر واحد بمفتاح [DesignIssueCode.name].
+  static String builderIssue(String code) => switch (code) {
+    'unknownType' => _ar ? 'نوع لا يعرفه المحرّر' : 'Unknown element type',
+    'missingRoot' => _ar ? 'صفحة بلا جذر' : 'Page without a root',
+    'wrongRootType' => _ar ? 'نوع جذر الصفحة خطأ' : 'Wrong page root type',
+    'mandatoryMissing' => _ar ? 'مكوّن أساس مفقود' : 'A fixed element is missing',
+    'mandatoryHidden' => _ar ? 'مكوّن أساس مُخفى' : 'A fixed element is hidden',
+    'duplicateId' => _ar ? 'اسم طبقة مكرَّر' : 'Duplicated layer name',
+    'illegalNesting' => _ar ? 'تداخل غير مسموح' : 'Nesting is not allowed',
+    'emptyPage' => _ar ? 'صفحة بلا مقاطع' : 'Page with no sections',
+    'emptyContainer' => _ar ? 'حاوية فارغة' : 'Empty container',
+    'tooManyChildren' => _ar ? 'أبناء أكثر من السقف' : 'Too many children',
+    'unknownProperty' => _ar ? 'خاصية لا يعرفها المكوّن' : 'Unknown property',
+    'invalidProperty' => _ar ? 'قيمة خاصية خارج حدودها' : 'Property value out of range',
+    'missingProperty' => _ar ? 'خاصية مفقودة' : 'Missing property',
+    'unknownDataSource' => _ar ? 'مصدر بيانات غير مسجَّل' : 'Unknown data source',
+    'dataSourceRefused' => _ar ? 'المكوّن لا يقبل هذا المصدر' : 'The element refuses that source',
+    'dataSourceParameterMissing' => _ar
+        ? 'مصدر بيانات بلا معامل يحدّده'
+        : 'Data source without its parameter',
+    'unknownAction' => _ar ? 'إجراء غير مسجَّل' : 'Unknown action',
+    'actionRefused' => _ar ? 'المكوّن لا يقبل هذا الإجراء' : 'The element refuses that action',
+    'actionParameterMissing' => _ar
+        ? 'إجراء يشير شيئًا بلا معرّف'
+        : 'Action without the row it points at',
+    'linkLabelWithoutAction' => _ar
+        ? 'تسمية رابط بلا إجراء'
+        : 'Link label with no action',
+    'actionWithoutLabel' => _ar
+        ? 'إجراء بلا تسمية تُضغط'
+        : 'Action with no visible label',
+    'schemaVersionMismatch' => _ar
+        ? 'نسخة المخطط لا يطابقها هذا البناء'
+        : 'Schema version this builder does not draw',
+    _ => _ar ? 'مانع غير معروف' : 'Unknown issue',
+  };
 
   // ---------- HR — sidebar ----------
 

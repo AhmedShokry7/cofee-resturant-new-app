@@ -109,8 +109,8 @@ class SupabaseAuthRepository implements AuthRepository {
   }) async {
     final account = email.trim();
     final code = token.trim();
-    // لا يُفتح حساب قبل أن يكون الشكل رمزًا مقبولًا: иначе يبقى شخص بلا دعوة
-    // ولا حساب موظف عنده.
+    // لا يُفتح حساب قبل أن يكون الرمز على صيغة مقبولة: وإلا بقي صاحبُه حسابًا
+    // بلا سجلّ موظف، ولا دعوة تعمله.
     if (!_uuidPattern.hasMatch(code)) {
       return InvitationAcceptOutcome.unknown;
     }

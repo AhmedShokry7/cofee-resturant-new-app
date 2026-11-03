@@ -281,25 +281,47 @@ void main() {
     },
   );
 
-  testWidgets('a load failure shows the error and retry re-fetches', (
+  testWidgets(
+    'a load failure headlines the failure, keeps the detail, and retry re-fetches',
+    (tester) async {
+      await _setSurface(tester);
+      final repository = _FakeAddressRepository(failList: true);
+
+      await _pumpPage(tester, repository);
+      await tester.pumpAndSettle();
+
+      expect(find.text(S.retry), findsOneWidget);
+      // The customer reads a sentence about the failed read, not the page
+      // title: an empty book and an unanswered read are different states.
+      expect(find.text(S.couldNotLoadAddresses), findsOneWidget);
+      // The raw failure stays underneath as the detail line.
+      expect(find.textContaining('signed-in'), findsOneWidget);
+
+      repository.failList = false;
+      repository._addresses = [_address('a1')];
+      await tester.tap(find.text(S.retry));
+      await tester.pumpAndSettle();
+
+      expect(repository.listCalls, 2);
+      expect(find.text('Home a1'), findsOneWidget);
+    },
+  );
+
+  testWidgets('a guest is asked to sign in and no address read is issued', (
     tester,
   ) async {
-    await _setSurface(tester);
-    final repository = _FakeAddressRepository(failList: true);
+    SupabaseService.debugSetSignedIn(false);
+    final repository = _FakeAddressRepository(addresses: [_address('a1')]);
 
     await _pumpPage(tester, repository);
     await tester.pumpAndSettle();
 
-    expect(find.text(S.retry), findsOneWidget);
-    expect(find.textContaining('signed-in'), findsOneWidget);
-
-    repository.failList = false;
-    repository._addresses = [_address('a1')];
-    await tester.tap(find.text(S.retry));
-    await tester.pumpAndSettle();
-
-    expect(repository.listCalls, 2);
-    expect(find.text('Home a1'), findsOneWidget);
+    expect(find.text(S.signInRequired), findsOneWidget);
+    expect(find.text(S.myAddresses), findsNothing);
+    // The book belongs to one account, so nothing may be read for a session
+    // that has none - and the cubit is lazy, so the guarded page never builds
+    // it.
+    expect(repository.listCalls, 0);
   });
 
   testWidgets('a long label with the Default badge fits a 360px screen', (

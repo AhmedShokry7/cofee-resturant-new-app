@@ -82,6 +82,10 @@ abstract class ProductRepository {
   });
 
   /// Branch-specific price for one product, resolved on the server.
+  ///
+  /// Null when the server has no price to give - the product was deleted, or the
+  /// branch does not carry it. Callers keep their local estimate in that case;
+  /// a missing product is a normal state, not an exception.
   Future<ResolvedPrice?> resolvePrice(
     String productId, {
     String? branchId,
