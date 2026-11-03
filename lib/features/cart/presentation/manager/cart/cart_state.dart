@@ -97,10 +97,18 @@ class CartItem {
 
 @immutable
 class CartState {
-  const CartState({required this.items, this.error});
+  const CartState({required this.items, this.error, this.isLoading = false});
 
   final List<CartItem> items;
   final String? error;
+
+  /// True while the newest load has not produced its lines yet.
+  ///
+  /// The cart belongs to the account and the branch, so it is only known after
+  /// a read: a device slot, and for a signed-in customer a server round trip.
+  /// Without this flag a page had nothing to tell an empty cart apart from a
+  /// cart still on its way, so opening the tab flashed "Your cart is empty".
+  final bool isLoading;
 
   bool get isEmpty => items.isEmpty;
 

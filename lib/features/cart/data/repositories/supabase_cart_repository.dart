@@ -75,7 +75,10 @@ class SupabaseCartRepository implements CartRepository {
       lines.add(
         CartLine(
           productId: productId,
-          quantity: Db.asInt(row['quantity'], fallback: 1).clamp(1, 99),
+          quantity: Db.asInt(
+            row['quantity'],
+            fallback: 1,
+          ).clamp(1, CartLimits.maxQuantity),
           note: Db.text(row['note']),
           optionValueIds: canonicalOptionIds(optionIds),
           unitPrice: Db.asDoubleOrNull(row['unit_price']),

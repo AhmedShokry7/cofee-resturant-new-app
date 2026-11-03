@@ -43,4 +43,12 @@ class MotionTokens {
   /// a row that slid off while their finger was still on the glass would move
   /// out from under them.
   static const Duration marqueeResumeHold = Duration(milliseconds: 2500);
+
+  /// How long a transient message (a snackbar) stays up.
+  ///
+  /// Long enough to read a sentence without interrupting what the customer was
+  /// doing, short enough that it is gone before they expect to act on it. A
+  /// snackbar that must disappear on a timer uses this same length for both, or
+  /// the timer and the widget disagree about when the message is over.
+  static const Duration messageHold = Duration(seconds: 3);
 }

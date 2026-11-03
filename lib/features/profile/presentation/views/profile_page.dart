@@ -83,17 +83,25 @@ class _LanguageOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: Row(
-          children: [
-            SelectionRadio(selected: selected),
-            SizedBox(width: AppSpacing.md),
-            Expanded(child: Text(label, style: AppFonts.regular16(context))),
-          ],
+    return Semantics(
+      radio: true,
+      checked: selected,
+      child: Material(
+        color: AppColor.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Row(
+              children: [
+                SelectionRadio(selected: selected),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(label, style: AppFonts.regular16(context)),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -176,39 +184,47 @@ class _SettingsViewState extends State<_SettingsView> {
                     children: [
                       BlocBuilder<ProfileCubit, ProfileState>(
                         builder: (context, state) {
-                          return GestureDetector(
-                            onTap: () => _pickImage(context),
-                            child: Stack(
-                              children: [
-                                ProfileAvatar(
-                                  state: state,
-                                  radius: AppSizes.px52,
-                                ),
-                                Positioned(
-                                  bottom: 2,
-                                  right: 2,
-                                  child: GestureDetector(
-                                    onTap: () => _pickImage(context),
-                                    child: Container(
-                                      height: AppSizes.px36,
-                                      width: AppSizes.px36,
-                                      decoration: BoxDecoration(
-                                        color: AppColor.primaryColor,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(
+                          return Semantics(
+                            button: true,
+                            child: Material(
+                              color: AppColor.transparent,
+                              child: InkWell(
+                                onTap: () => _pickImage(context),
+                                // The splash follows the avatar's circle. The
+                                // badge at its edge stays outside the clip: it
+                                // is part of this one control, not a second
+                                // tap target for the same action.
+                                customBorder: const CircleBorder(),
+                                child: Stack(
+                                  children: [
+                                    ProfileAvatar(
+                                      state: state,
+                                      radius: AppSizes.px52,
+                                    ),
+                                    Positioned(
+                                      bottom: AppSizes.px2,
+                                      right: AppSizes.px2,
+                                      child: Container(
+                                        height: AppSizes.px36,
+                                        width: AppSizes.px36,
+                                        decoration: BoxDecoration(
+                                          color: AppColor.primaryColor,
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            color: AppColor.whiteColor,
+                                            width: AppSizes.px3,
+                                          ),
+                                        ),
+                                        child: Icon(
+                                          AppIcons.camera,
+                                          size: AppSizes.px18,
                                           color: AppColor.whiteColor,
-                                          width: 3,
                                         ),
                                       ),
-                                      child: Icon(
-                                        AppIcons.camera,
-                                        size: AppSizes.px18,
-                                        color: AppColor.whiteColor,
-                                      ),
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                           );
                         },

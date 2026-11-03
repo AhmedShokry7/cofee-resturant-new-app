@@ -116,11 +116,7 @@ void main() {
             planId: 'plan-1',
           )
           ..planProductsToReturn = const [
-            SubscriptionPlanProduct(
-              id: 'p1',
-              nameAr: 'لاتيه',
-              nameEn: 'Latte',
-            ),
+            SubscriptionPlanProduct(id: 'p1', nameAr: 'لاتيه', nameEn: 'Latte'),
           ]
           ..usageToReturn = const [
             SubscriptionUsage(

@@ -265,7 +265,7 @@ void main() {
     expect(find.text('Home a2'), findsOneWidget);
     // The default address carries the badge.
     expect(find.text(S.defaultAddress), findsOneWidget);
-    expect(find.text('+ ${S.enterLocation}'), findsOneWidget);
+    expect(find.text(S.enterLocation), findsOneWidget);
   });
 
   testWidgets(
@@ -277,7 +277,7 @@ void main() {
 
       expect(find.text(S.noAddresses), findsOneWidget);
       expect(find.text(S.addressesHint), findsOneWidget);
-      expect(find.text('+ ${S.enterLocation}'), findsOneWidget);
+      expect(find.text(S.enterLocation), findsOneWidget);
     },
   );
 
@@ -339,7 +339,7 @@ void main() {
     await _pumpPage(tester, repository, places: places);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('+ ${S.enterLocation}'));
+    await tester.tap(find.text(S.enterLocation));
     await tester.pumpAndSettle();
 
     // The form has exactly two text fields: name first, location second.
@@ -369,7 +369,7 @@ void main() {
 
       await _pumpPage(tester, repository, places: places);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('+ ${S.enterLocation}'));
+      await tester.tap(find.text(S.enterLocation));
       await tester.pumpAndSettle();
 
       await tester.enterText(find.byType(TextField).first, 'Work');
@@ -397,7 +397,7 @@ void main() {
     await _setSurface(tester);
     await _pumpPage(tester, _FakeAddressRepository());
     await tester.pumpAndSettle();
-    await tester.tap(find.text('+ ${S.enterLocation}'));
+    await tester.tap(find.text(S.enterLocation));
     await tester.pumpAndSettle();
 
     await tester.tap(find.text(S.confirm));

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/cart/data/repositories/cart_repository.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -160,6 +161,64 @@ void main() {
       await cubit.close();
     },
   );
+
+  test('a cart stops at the line cap and says which line it refused', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    final repository = MockProductRepository();
+    final product = (await repository.getById('1'))!;
+    final cubit = CartCubit(
+      cartRepository: LocalCartRepository(),
+      catalogRepository: repository,
+    );
+    await cubit.load();
+
+    for (var i = 0; i < CartLimits.maxLines; i++) {
+      cubit.add(product, note: 'line $i');
+    }
+    expect(cubit.state.items, hasLength(CartLimits.maxLines));
+    expect(cubit.state.error, isNull);
+
+    cubit.add(product, note: 'one too many');
+
+    expect(cubit.state.items, hasLength(CartLimits.maxLines));
+    expect(
+      cubit.state.items.any((item) => item.note == 'one too many'),
+      isFalse,
+    );
+    expect(cubit.state.error, S.cartLineLimitReached(CartLimits.maxLines));
+
+    // The device slot is written with the same cap, so what is on screen is
+    // what a restart brings back. A line accepted past the cap used to sit
+    // on screen and vanish on the next launch.
+    final prefs = await SharedPreferences.getInstance();
+    final stored = jsonDecode(prefs.getString('cart_v1_guest')!) as List;
+    expect(stored, hasLength(CartLimits.maxLines));
+
+    await cubit.close();
+  });
+
+  test('one line stops at the quantity the server will price', () async {
+    SharedPreferences.setMockInitialValues({});
+
+    final repository = MockProductRepository();
+    final product = (await repository.getById('1'))!;
+    final cubit = CartCubit(
+      cartRepository: LocalCartRepository(),
+      catalogRepository: repository,
+    );
+    await cubit.load();
+
+    cubit.add(product, quantity: CartLimits.maxQuantity + 51);
+    expect(cubit.state.items.single.quantity, CartLimits.maxQuantity);
+
+    for (var i = 0; i < 40; i++) {
+      cubit.incrementLine(cubit.state.items.single.lineId);
+    }
+    expect(cubit.state.items.single.quantity, CartLimits.maxQuantity);
+
+    await cubit.close();
+  });
 }
 
 class _ThrowingCatalog extends MockProductRepository {

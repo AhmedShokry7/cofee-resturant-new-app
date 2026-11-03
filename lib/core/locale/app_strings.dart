@@ -181,6 +181,12 @@ class S {
   static String get cartSyncFailed => _ar
       ? 'تعذّر حفظ السلة على الخادم. سنعيد المحاولة تلقائيًا.'
       : 'The cart could not be saved on the server. We will retry automatically.';
+
+  /// The cart's line cap belongs to the cart's state layer; the sentence carries
+  /// the number it was given so the two can never disagree.
+  static String cartLineLimitReached(int limit) => _ar
+      ? 'لا يمكن للسلة حمل أكثر من $limit صنفًا'
+      : 'The cart cannot hold more than $limit lines';
   static String get favoritesSyncFailed => _ar
       ? 'تعذّر حفظ المفضلة على الخادم. سنعيد المحاولة تلقائيًا.'
       : 'The favorites could not be saved on the server. '
@@ -311,8 +317,15 @@ class S {
   static String get couponScopeDiscountNote => _ar
       ? 'الخصم على المنتجات المؤهلة فقط، مش على كل السلة'
       : 'The discount applies to the eligible items only, not to your whole cart';
-  static String get couponEligibleInCart =>
-      _ar ? 'المنتجات المؤهلة في سلتك' : 'Eligible items in your cart';
+
+  /// The eligible-item caption with its counts written into the sentence.
+  ///
+  /// A widget that appended "(2/5)" after the Arabic label got the pair pushed
+  /// to the other end of the line by the right-to-left run, so the numbers
+  /// belong to the wording, not to the layout.
+  static String couponEligibleInCartCount(int eligible, int total) => _ar
+      ? '$eligible من $total منتجًا مؤهلًا في سلتك'
+      : '$eligible of $total items in your cart are eligible';
   static String get couponDiscountBreakdown =>
       _ar ? 'تفصيل الخصم' : 'Discount breakdown';
   static String get subTotalDiscounted =>
@@ -340,8 +353,6 @@ class S {
   static String get payWithSavedCard =>
       _ar ? 'الدفع ببطاقة محفوظة' : 'Pay with a saved card';
   static String get chooseSavedCard => _ar ? 'اختر البطاقة' : 'Choose a card';
-  static String get noCardsSaved =>
-      _ar ? 'لا توجد بطاقات محفوظة' : 'No saved cards yet';
   static String get cardExpires => _ar ? 'تنتهي في' : 'Expires';
   static String get couponLineNotIncluded =>
       _ar ? 'مش من المنتجات المؤهلة' : 'Not an eligible item';
@@ -469,6 +480,8 @@ class S {
   static String get favoritesHint => _ar
       ? 'اضغط القلب على أي قهوة لحفظها هنا'
       : 'Tap the heart on any coffee to save it here';
+  static String get couldNotLoadFavorites =>
+      _ar ? 'تعذّر تحميل المفضلة' : 'The favorites could not be loaded';
 
   // ---------- Bundles ----------
   static String get noBundles => _ar ? 'لا توجد باقات بعد' : 'No bundles yet';
@@ -486,6 +499,9 @@ class S {
 
   // ---------- Loyalty ----------
   static String get loyaltyPoints => _ar ? 'نقاط الولاء' : 'Loyalty Points';
+  static String get couldNotLoadLoyalty => _ar
+      ? 'تعذّر تحميل نقاط الولاء'
+      : 'The loyalty wallet could not be loaded';
   static String points(int value) => _ar ? '$value نقطة' : '$value points';
   static String get pointsWord => _ar ? 'نقطة' : 'points';
   static String get redeem => _ar ? 'استبدال' : 'Redeem';
@@ -548,6 +564,12 @@ class S {
       _ar ? 'خيارات دفع أخرى' : 'More Payment Options';
   static String get noSavedCards =>
       _ar ? 'لا توجد بطاقات محفوظة بعد' : 'No saved cards yet';
+  static String get couldNotLoadSavedCards => _ar
+      ? 'تعذّر تحميل بطاقاتك المحفوظة'
+      : 'Your saved cards could not be loaded';
+  static String get couldNotLoadAccountDetails => _ar
+      ? 'تعذّر تحميل بيانات حسابك'
+      : 'Your account details could not be loaded';
   static String get yourName => _ar ? 'اسمك' : 'YOUR NAME';
   static String get saveCard => _ar ? 'حفظ البطاقة' : 'Save Card';
   static String get cardHolderRequired =>
@@ -576,6 +598,9 @@ class S {
   static String get saveCardFailed => _ar
       ? 'تعذّر حفظ البطاقة. حاول مرة أخرى.'
       : 'Could not save the card. Please try again.';
+  static String get cardDeleteFailed => _ar
+      ? 'تعذّر حذف البطاقة. ما زالت محفوظة.'
+      : 'The card could not be removed. It is still saved.';
   static String get cardDeclined => _ar
       ? 'لم يتم قبول البطاقة. تحقق من البيانات أو جرّب بطاقة أخرى.'
       : "Your card wasn't accepted. Check the details or try another card.";
@@ -664,6 +689,12 @@ class S {
   static String get createAccountSubtitle =>
       _ar ? 'أنشئ حسابك للبدء' : 'Create your account to get started';
   static String get emailHint => _ar ? 'البريد الإلكتروني' : 'Email';
+
+  /// The sign-in identity is not a profile field: the server moves it only
+  /// after the new address confirms.
+  static String get emailNotEditableHere => _ar
+      ? 'بريدك هو هويّة تسجيل الدخول، ولا يتغيّر من هذه الصفحة'
+      : 'Your email is your sign-in identity and cannot be changed here';
   static String get nameHint => _ar ? 'الاسم' : 'Name';
   static String get passwordHint => _ar ? 'كلمة المرور' : 'Password';
   static String get confirmPasswordHint =>

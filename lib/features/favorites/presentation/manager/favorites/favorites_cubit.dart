@@ -7,6 +7,7 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
+import 'package:new_coffee/features/menu/data/repositories/batch_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
@@ -93,10 +94,6 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     return true;
   }
 
-  /// Favorite rows stay readable when only a subset of the catalog is loaded.
-  /// Two hundred comfortably covers the whole seeded menu without paging.
-  static const _catalogPageSize = 200;
-
   /// Hearts are namespaced per account, so the list reloads exactly when the
   /// account changes.
   ///
@@ -140,30 +137,72 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     }
     if (isClosed) return;
     if (generation != _loadGeneration) return;
-    final localIds = await _favorites.loadLocalIds();
+
+    // The device slot and the server list are independent: neither result is
+    // an input to the other. Awaits in a row made a signed-in customer wait
+    // for the device, then the server, then the catalogue, one after another,
+    // for a list of three hearts.
+    final localFuture = _favorites.loadLocalIds();
+    final remoteFuture = _favorites.loadRemoteIds();
+    final localIds = await localFuture;
+    final remoteIds = await remoteFuture;
     if (isClosed) return;
     if (generation != _loadGeneration) return;
-    emit(state.copyWith(ids: localIds, isLoading: true, clearError: true));
+
+    final ids = {...localIds, ...remoteIds};
+    emit(state.copyWith(ids: ids, isLoading: true, clearError: true));
 
     try {
-      final products = await _repository.getProducts(
+      // A heart is a product row read by id, so the list shows every favourite
+      // the customer owns. Reading a catalogue page instead hid a fourth heart
+      // once the page filled, and downloaded two hundred rows to draw three.
+      final products = await getProductsByIds(
+        _repository,
+        ids.toList(growable: false),
         branchId: branchId,
-        limit: _catalogPageSize,
       );
       if (isClosed) return;
       if (generation != _loadGeneration) return;
-      final productsById = {for (final p in products) p.id: p};
-      final ids = await _favorites.synchronizedIds(
-        await _favorites.loadLocalIds(),
-        validProductIds: productsById.keys.toSet(),
+      emit(
+        state.copyWith(
+          products: {for (final product in products) product.id: product},
+          isLoading: false,
+        ),
       );
-      if (isClosed) return;
-      if (generation != _loadGeneration) return;
-      emit(state.copyWith(ids: ids, products: productsById, isLoading: false));
+      await _mirrorLocalIds(
+        generation,
+        localIds: localIds,
+        remoteIds: remoteIds,
+        validProductIds: {for (final product in products) product.id},
+      );
     } catch (error, stackTrace) {
       if (isClosed) return;
       if (generation != _loadGeneration) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
+      addError(error, stackTrace);
+    }
+  }
+
+  /// Uploads the device hearts the server does not have yet.
+  ///
+  /// Runs after the list is on screen, because a failed mirror must not blank a
+  /// list the customer can already see: it reports the way a failed heart does.
+  Future<void> _mirrorLocalIds(
+    int generation, {
+    required Set<String> localIds,
+    required Set<String> remoteIds,
+    required Set<String> validProductIds,
+  }) async {
+    try {
+      await _favorites.synchronize(
+        localIds: localIds,
+        remoteIds: remoteIds,
+        validProductIds: validProductIds,
+      );
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      if (generation != _loadGeneration) return;
+      emit(state.copyWith(error: S.favoritesSyncFailed));
       addError(error, stackTrace);
     }
   }
@@ -199,9 +238,9 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   /// Adds or removes one favourite, then ensures its product row is available.
   ///
-  /// Kept async because a newly favourited product may not have been part of
-  /// the resolved page, and constructing a placeholder would show a wrong name,
-  /// price or image until the next refresh.
+  /// Kept async because the product being hearted from the menu is not part of
+  /// the favourites list until this tap, and constructing a placeholder would
+  /// show a wrong name, price or image until the next refresh.
   Future<void> _toggle(String productId) async {
     final wasFavorite = state.ids.contains(productId);
     if (wasFavorite) {

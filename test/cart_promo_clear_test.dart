@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
-import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/promo_code_field.dart';
 
 /// Cover for the clear button on the promo-code field.
 void main() {

@@ -3,11 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/widgets/reward_card.dart';
+import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
@@ -59,61 +61,83 @@ class LoyaltyPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text(S.loyaltyPoints)),
-      body: BlocBuilder<LoyaltyCubit, LoyaltyState>(
-        builder: (context, state) {
-          if (state.isLoading && state.rewards.isEmpty) {
-            return const LoyaltyLoadingView();
-          }
-          final unlocked = state.rewards
-              .where((reward) => reward.affordable(state.balance))
-              .toList();
-          final locked = state.rewards
-              .where((reward) => !reward.affordable(state.balance))
-              .toList();
-          return ListView(
-            padding: AppLayout.pageBody,
-            children: [
-              _BalanceCard(
-                balance: state.balance,
-                earnText: _earnText(state),
-                accountText: state.isGuest
-                    ? S.guestWalletDevice
-                    : S.lifetimePoints(state.tier, state.lifetimePoints),
-              ),
-              SizedBox(height: AppSpacing.xl),
-              Text(
-                unlocked.isEmpty
-                    ? S.keepCollectingToUnlock
-                    : S.yourPointsUnlock,
-                style: AppFonts.semiBold18(context),
-              ),
-              SizedBox(height: AppSpacing.md),
-              for (final reward in unlocked)
-                RewardCard(
-                  reward: reward,
-                  locked: false,
-                  onRedeem: () => _redeem(context, reward),
-                ),
-              if (locked.isNotEmpty) ...[
-                SizedBox(height: AppSpacing.md),
-                Text(S.keepCollecting, style: AppFonts.semiBold18(context)),
-                SizedBox(height: AppSpacing.md),
-                for (final reward in locked)
-                  RewardCard(reward: reward, locked: true),
-              ],
-              if (state.transactions.isNotEmpty) ...[
-                SizedBox(height: AppSpacing.md),
-                Text(S.history, style: AppFonts.semiBold18(context)),
-                SizedBox(height: AppSpacing.md),
-                for (final transaction in state.transactions)
-                  _HistoryTile(
-                    title: transaction.title,
-                    points: transaction.points,
-                  ),
-              ],
-            ],
-          );
+      body: BlocListener<LoyaltyCubit, LoyaltyState>(
+        // The rewards are public reference rows; when they arrived but the
+        // wallet did not, the page has something to show and only the balance
+        // needs a word of warning.
+        listenWhen: (previous, current) =>
+            current.error != null && current.error != previous.error,
+        listener: (context, state) {
+          if (state.rewards.isEmpty) return;
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(state.error!)));
         },
+        child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
+          builder: (context, state) {
+            if (state.isLoading && state.rewards.isEmpty) {
+              return const LoyaltyLoadingView();
+            }
+            // A wallet the server would not answer is not a customer who has
+            // no points: showing the empty reward list would tell them to keep
+            // collecting when there is nothing to collect from.
+            if (state.error != null && state.rewards.isEmpty) {
+              return EmptyState(
+                icon: AppIcons.gift,
+                title: S.couldNotLoadLoyalty,
+                subtitle: state.error,
+              );
+            }
+            final unlocked = state.rewards
+                .where((reward) => reward.affordable(state.balance))
+                .toList();
+            final locked = state.rewards
+                .where((reward) => !reward.affordable(state.balance))
+                .toList();
+            return ListView(
+              padding: AppLayout.pageBody,
+              children: [
+                _BalanceCard(
+                  balance: state.balance,
+                  earnText: _earnText(state),
+                  accountText: state.isGuest
+                      ? S.guestWalletDevice
+                      : S.lifetimePoints(state.tier, state.lifetimePoints),
+                ),
+                SizedBox(height: AppSpacing.xl),
+                Text(
+                  unlocked.isEmpty
+                      ? S.keepCollectingToUnlock
+                      : S.yourPointsUnlock,
+                  style: AppFonts.semiBold18(context),
+                ),
+                SizedBox(height: AppSpacing.md),
+                for (final reward in unlocked)
+                  RewardCard(
+                    reward: reward,
+                    locked: false,
+                    onRedeem: () => _redeem(context, reward),
+                  ),
+                if (locked.isNotEmpty) ...[
+                  SizedBox(height: AppSpacing.md),
+                  Text(S.keepCollecting, style: AppFonts.semiBold18(context)),
+                  SizedBox(height: AppSpacing.md),
+                  for (final reward in locked)
+                    RewardCard(reward: reward, locked: true),
+                ],
+                if (state.transactions.isNotEmpty) ...[
+                  SizedBox(height: AppSpacing.md),
+                  Text(S.history, style: AppFonts.semiBold18(context)),
+                  SizedBox(height: AppSpacing.md),
+                  for (final transaction in state.transactions)
+                    _HistoryTile(
+                      title: transaction.title,
+                      points: transaction.points,
+                    ),
+                ],
+              ],
+            );
+          },
+        ),
       ),
     );
   }

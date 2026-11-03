@@ -220,7 +220,6 @@ class ProductCard extends StatelessWidget {
                       amount: (unitPrice ?? product.price) * quantity!,
                       style: AppFonts.semiBold14(context)
                           .copyWith(color: AppColor.primaryColor),
-                      iconSize: 14,
                       iconColor: AppColor.primaryColor,
                     ),
                   ],
@@ -243,7 +242,6 @@ class ProductCard extends StatelessWidget {
                     amount: unitPrice ?? product.price,
                     style: AppFonts.regular12(context)
                         .copyWith(color: AppColor.greyColor),
-                    iconSize: 12,
                     iconColor: AppColor.greyColor,
                   ),
                   // The price before the discount, so the line explains

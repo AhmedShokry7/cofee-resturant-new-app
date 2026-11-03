@@ -73,7 +73,7 @@ class HomeProductsCarousel extends StatelessWidget {
         // The strip height is derived from the card width and aspect ratio
         // instead of a fixed value, so taller cards always fit exactly on
         // every screen size without clipping or dead space.
-           SizedBox(height: AppSpacing.xs),
+        SizedBox(height: AppSpacing.xs),
 
         SizedBox(
           height: ProductCard.stripWidth / ProductCard.cardAspectRatio,

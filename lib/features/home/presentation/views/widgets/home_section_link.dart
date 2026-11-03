@@ -5,11 +5,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 
 /// Bordered action link used at the end of home section headings.
 class HomeSectionLink extends StatelessWidget {
-  const HomeSectionLink({
-    super.key,
-    required this.label,
-    required this.onTap,
-  });
+  const HomeSectionLink({super.key, required this.label, required this.onTap});
 
   final String label;
   final VoidCallback onTap;
@@ -26,15 +22,9 @@ class HomeSectionLink extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(6),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 4,
-              vertical: 3,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
             decoration: BoxDecoration(
-              border: Border.all(
-                color: AppColor.greyColor,
-                width: 1,
-              ),
+              border: Border.all(color: AppColor.greyColor, width: 1),
               borderRadius: BorderRadius.circular(6),
             ),
             child: Text(

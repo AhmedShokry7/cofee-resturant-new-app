@@ -20,32 +20,42 @@ class PaymentOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        margin: EdgeInsets.only(bottom: AppSpacing.md),
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
+    return Semantics(
+      button: true,
+      child: Material(
+        color: AppColor.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadius.r8),
-          border: Border.all(color: AppColor.borderColor),
-        ),
-        child: Row(
-          children: [
-            Icon(method.icon, size: AppSpacing.xl, color: AppColor.greyColor),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                method.label,
-                style: AppFonts.medium16(context)
-                    .copyWith(color: AppColor.greyColor),
-              ),
+          child: Container(
+            margin: EdgeInsets.only(bottom: AppSpacing.md),
+            padding: EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
             ),
-            SelectionRadio(selected: selected),
-          ],
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.r8),
+              border: Border.all(color: AppColor.borderColor),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  method.icon,
+                  size: AppSpacing.xl,
+                  color: AppColor.greyColor,
+                ),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    method.label,
+                    style: AppFonts.medium16(context)
+                        .copyWith(color: AppColor.greyColor),
+                  ),
+                ),
+                SelectionRadio(selected: selected),
+              ],
+            ),
+          ),
         ),
       ),
     );

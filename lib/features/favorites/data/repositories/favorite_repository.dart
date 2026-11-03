@@ -18,10 +18,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// foreign key.
 abstract class FavoritesRepository {
   Future<Set<String>> loadLocalIds();
-  Future<Set<String>> synchronizedIds(
-    Set<String> localIds, {
+
+  /// The hearts the signed-in customer already has on the server.
+  ///
+  /// Empty when Supabase is not configured or nobody is signed in, so the
+  /// caller can build the list it shows without branching on the session.
+  Future<Set<String>> loadRemoteIds();
+
+  /// Uploads the device hearts the server does not have yet.
+  ///
+  /// [validProductIds] are the ids the catalogue confirms still identify real
+  /// products: anything else would violate the `product_id` foreign key. A
+  /// guest has no server list, so this writes nothing.
+  Future<void> synchronize({
+    required Set<String> localIds,
+    required Set<String> remoteIds,
     required Set<String> validProductIds,
   });
+
   Future<void> addFavorite(String productId);
   Future<void> removeFavorite(String productId);
 
@@ -105,20 +119,28 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
   }
 
   @override
-  Future<Set<String>> synchronizedIds(
-    Set<String> localIds, {
+  Future<Set<String>> loadRemoteIds() async {
+    final user = _user;
+    final client = _client;
+    if (user == null || client == null) return const {};
+    return _remoteIds(client, user.id);
+  }
+
+  @override
+  Future<void> synchronize({
+    required Set<String> localIds,
+    required Set<String> remoteIds,
     required Set<String> validProductIds,
   }) async {
     final user = _user;
     final client = _client;
-    if (user == null || client == null) return localIds;
+    if (user == null || client == null) return;
 
-    final remoteIds = await _remoteIds(client, user.id);
     final uploadable = localIds
         .where(validProductIds.contains)
         .where((id) => !remoteIds.contains(id))
         .toList(growable: false);
-    if (uploadable.isEmpty) return {...localIds, ...remoteIds};
+    if (uploadable.isEmpty) return;
     try {
       // One RPC inserts the missing ids with ON CONFLICT DO NOTHING. Syncing
       // 100 local hearts therefore costs one write request, not 100.
@@ -143,7 +165,6 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
         }
       }
     }
-    return {...localIds, ...remoteIds};
   }
 
   @override

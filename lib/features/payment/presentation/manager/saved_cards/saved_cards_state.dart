@@ -7,9 +7,17 @@ class SavedCardsState {
     this.isSaving = false,
     this.saveError,
     this.saveFailure,
+    this.loadError,
   });
 
   final List<SavedCardModel> cards;
+
+  /// Why the list could not be read, in the app's language.
+  ///
+  /// Kept apart from an empty list: a read that failed still has the customer's
+  /// cards on the server, and showing "no saved cards" invites them to add a
+  /// card that is already stored.
+  final String? loadError;
 
   /// A save is in flight. The form disables itself so a double tap cannot
   /// tokenize the same card twice.
@@ -35,11 +43,14 @@ class SavedCardsState {
     bool? isSaving,
     String? saveError,
     SaveCardFailure? saveFailure,
+    String? loadError,
     bool clearSaveError = false,
+    bool clearLoadError = false,
   }) => SavedCardsState(
     cards: cards ?? this.cards,
     isSaving: isSaving ?? this.isSaving,
     saveError: clearSaveError ? null : (saveError ?? this.saveError),
     saveFailure: clearSaveError ? null : (saveFailure ?? this.saveFailure),
+    loadError: clearLoadError ? null : (loadError ?? this.loadError),
   );
 }

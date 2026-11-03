@@ -166,7 +166,29 @@ List<Map<String, dynamic>> mergeServerLines(
       remaining.insertAll(0, matched);
       continue;
     }
-    merged.add({...entry, 'quantity': quantity.clamp(1, 99)});
+    // The server priced every component line, including its share of the bundle,
+    // so the wrapper's price is the sum of those shares. The device copy keeps
+    // the price it was bought at: leaving it in the merged line meant a branch
+    // change or a bundle re-price never reached the cart total.
+    double? serverBundlePrice;
+    for (var i = 0; i < matched.length; i++) {
+      final unit = matched[i].unitPrice;
+      final perBundle = components[i].quantity;
+      if (unit == null || perBundle <= 0) {
+        serverBundlePrice = null;
+        break;
+      }
+      serverBundlePrice = (serverBundlePrice ?? 0) + unit * perBundle;
+    }
+
+    merged.add({
+      ...entry,
+      'quantity': quantity.clamp(1, CartLimits.maxQuantity),
+      if (serverBundlePrice != null) ...{
+        'bundlePrice': serverBundlePrice,
+        'unitPrice': serverBundlePrice,
+      },
+    });
   }
 
   for (final line in remaining) {

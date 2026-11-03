@@ -26,10 +26,9 @@ class SubscriptionDetailsPage extends StatelessWidget {
     // request.
     return AuthGuard(
       child: BlocProvider(
-        create: (context) =>
-            SubscriptionCubit(
-              repository: context.read<SubscriptionRepository>(),
-            )..load(),
+        create: (context) => SubscriptionCubit(
+          repository: context.read<SubscriptionRepository>(),
+        )..load(),
         child: const _SubscriptionDetailsView(),
       ),
     );

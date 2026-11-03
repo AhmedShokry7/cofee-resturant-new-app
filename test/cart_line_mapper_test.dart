@@ -153,6 +153,76 @@ void main() {
       expect(merged.single['quantity'], 3);
     });
 
+    test('the merged bundle is priced from what the server charged, not the device', () {
+      final cached = [
+        {
+          'productId': 'bundle-1',
+          'quantity': 1,
+          'isBundle': true,
+          'bundleId': 'bundle-1',
+          'bundlePrice': 40.0,
+          'unitPrice': 40.0,
+          'bundleComponents': [
+            {'productId': 'p1', 'quantity': 1, 'unitPrice': 20},
+            {'productId': 'p2', 'quantity': 2, 'unitPrice': 10},
+          ],
+        },
+      ];
+      // The server prices each component at its share of the bundle, so the
+      // wrapper's price is the sum of those shares for one bundle.
+      final server = [
+        const CartLine(
+          productId: 'p1',
+          quantity: 1,
+          unitPrice: 11,
+          bundleId: 'bundle-1',
+        ),
+        const CartLine(
+          productId: 'p2',
+          quantity: 2,
+          unitPrice: 7,
+          bundleId: 'bundle-1',
+        ),
+      ];
+
+      final merged = mergeServerLines(server, cached);
+
+      expect(merged.single['quantity'], 1);
+      expect(merged.single['unitPrice'], 25);
+      expect(merged.single['bundlePrice'], 25);
+    });
+
+    test(
+      'an unpriced server cart leaves the device price in the bundle line',
+      () {
+        final cached = [
+          {
+            'productId': 'bundle-1',
+            'quantity': 1,
+            'isBundle': true,
+            'bundleId': 'bundle-1',
+            'bundlePrice': 40.0,
+            'unitPrice': 40.0,
+            'bundleComponents': [
+              {'productId': 'p1', 'quantity': 1, 'unitPrice': 20},
+              {'productId': 'p2', 'quantity': 2, 'unitPrice': 10},
+            ],
+          },
+        ];
+        final server = [
+          const CartLine(productId: 'p1', quantity: 1, bundleId: 'bundle-1'),
+          const CartLine(productId: 'p2', quantity: 2, bundleId: 'bundle-1'),
+        ];
+
+        final merged = mergeServerLines(server, cached);
+
+        // Nothing was invented: the line keeps the only price either side has,
+        // and the next priced read replaces it.
+        expect(merged.single['unitPrice'], 40.0);
+        expect(merged.single['bundlePrice'], 40.0);
+      },
+    );
+
     test(
       'a bundle the server does not hold completely stays as server lines',
       () {

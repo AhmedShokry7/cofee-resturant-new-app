@@ -8,6 +8,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/address_tile.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -173,21 +174,11 @@ class _AddAddressButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: AppDimensions.buttonHeight,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          border: Border.all(color: AppColor.primaryColor),
-          borderRadius: BorderRadius.circular(AppRadius.r8),
-        ),
-        child: Text(
-          '+ ${S.enterLocation}',
-          style: AppFonts.medium12(context)
-              .copyWith(color: AppColor.primaryColor),
-        ),
-      ),
+    return CustomBtn(
+      text: S.enterLocation,
+      leadingIcon: Icon(AppIcons.add, color: AppColor.primaryColor),
+      variant: BtnVariant.outlined,
+      onPressed: onTap,
     );
   }
 }

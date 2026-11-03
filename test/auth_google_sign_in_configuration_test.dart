@@ -40,9 +40,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   final report = checkGoogleSignInConfig(Directory.current);
-  final record =
-      jsonDecode(File(GoogleSignInSetup.relativePath).readAsStringSync())
-          as Map<String, dynamic>;
+  final record = jsonDecode(
+    File(GoogleSignInSetup.relativePath).readAsStringSync(),
+  ) as Map<String, dynamic>;
   // The gate this suite exists for: a human who owns the Google Cloud project
   // has to set it, and nothing here may pretend the local files prove it.
   final confirmedExternally = record['androidClientConfirmed'] == true;
@@ -51,7 +51,7 @@ void main() {
     (finding) => finding.name == name,
     orElse: () => throw StateError(
       'No check named "$name". Findings: '
-          '${report.findings.map((finding) => finding.name).toList()}',
+      '${report.findings.map((finding) => finding.name).toList()}',
     ),
   );
 
@@ -77,7 +77,9 @@ void main() {
         failures,
         confirmedExternally
             ? isEmpty
-            : ['An Android OAuth client is registered for this package and SHA-1'],
+            : [
+                'An Android OAuth client is registered for this package and SHA-1',
+              ],
         reason: report.findings.map((f) => '${f.name}: ${f.detail}').join('\n'),
       );
     });
@@ -115,7 +117,8 @@ void main() {
       expect(record['packageName'], report.applicationId);
       expect(record['authProjectNumber'], report.serverClientProject);
       expect(
-        (record['firebaseProjectForPushOnly'] as Map<String, dynamic>)['projectNumber'],
+        (record['firebaseProjectForPushOnly']
+            as Map<String, dynamic>)['projectNumber'],
         report.firebaseProjectNumber,
       );
       expect(
@@ -126,9 +129,8 @@ void main() {
     });
 
     test('both signing certificates are recorded, and only in public form', () {
-      final certificates =
-          (record['signingCertificates'] as List<dynamic>)
-              .cast<Map<String, dynamic>>();
+      final certificates = (record['signingCertificates'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
       expect(certificates.map((c) => c['kind']).toSet(), {'debug', 'release'});
       final sha1 = RegExp(r'^([0-9A-F]{2}:){19}[0-9A-F]{2}$');
       for (final certificate in certificates) {
@@ -150,47 +152,47 @@ void main() {
       );
     });
 
-    test('a rule with nothing to inspect stays not applicable, never failed', () {
-      // A missing record used to print "clients without a fingerprint: 0",
-      // which reads like a broken count rather than a missing registration.
-      for (final finding in report.findings.where((f) => f.passed == null)) {
-        expect(
-          finding.failed,
-          isFalse,
-          reason: '${finding.name} is unusable and must not be counted twice',
-        );
-        expect(
-          finding.detail,
-          isNotEmpty,
-          reason: 'an unusable result has to say why it is unusable',
-        );
-      }
-    });
+    test(
+      'a rule with nothing to inspect stays not applicable, never failed',
+      () {
+        // A missing record used to print "clients without a fingerprint: 0",
+        // which reads like a broken count rather than a missing registration.
+        for (final finding in report.findings.where((f) => f.passed == null)) {
+          expect(
+            finding.failed,
+            isFalse,
+            reason: '${finding.name} is unusable and must not be counted twice',
+          );
+          expect(
+            finding.detail,
+            isNotEmpty,
+            reason: 'an unusable result has to say why it is unusable',
+          );
+        }
+      },
+    );
   });
 
   group('the fingerprints a registration needs', () {
-    test(
-      'the gradle task prints them and compares them with the record',
-      () {
-        // Registering the wrong SHA-1 is the same dead end as registering none,
-        // and a renewed keystore changes the answer silently. So the number has
-        // to come from the certificate the build actually uses, and be checked
-        // against the record the suite trusts.
-        final gradle = File('android/app/build.gradle.kts').readAsStringSync();
-        expect(gradle, contains('printSigningFingerprints'));
-        expect(
-          gradle,
-          contains('Debug signing certificate'),
-          reason:
-              'the debug certificate is what an emulator is handed, so it '
-              'has to be printed next to the release one',
-        );
-        expect(
-          gradle,
-          contains('google_sign_in_setup.json'),
-          reason: 'the printed fingerprints must be checked against the record',
-        );
-      },
-    );
+    test('the gradle task prints them and compares them with the record', () {
+      // Registering the wrong SHA-1 is the same dead end as registering none,
+      // and a renewed keystore changes the answer silently. So the number has
+      // to come from the certificate the build actually uses, and be checked
+      // against the record the suite trusts.
+      final gradle = File('android/app/build.gradle.kts').readAsStringSync();
+      expect(gradle, contains('printSigningFingerprints'));
+      expect(
+        gradle,
+        contains('Debug signing certificate'),
+        reason:
+            'the debug certificate is what an emulator is handed, so it '
+            'has to be printed next to the release one',
+      );
+      expect(
+        gradle,
+        contains('google_sign_in_setup.json'),
+        reason: 'the printed fingerprints must be checked against the record',
+      );
+    });
   });
 }

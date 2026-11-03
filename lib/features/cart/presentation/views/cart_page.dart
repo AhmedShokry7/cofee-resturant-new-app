@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
@@ -16,6 +17,7 @@ import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class CartPage extends StatelessWidget {
@@ -33,7 +35,7 @@ class CartPage extends StatelessWidget {
     final snackBarController = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(S.removedFromCart(item.product.name)),
-        duration: const Duration(seconds: 3),
+        duration: MotionTokens.messageHold,
         action: SnackBarAction(
           label: S.undo,
           onPressed: () {
@@ -63,8 +65,9 @@ class CartPage extends StatelessWidget {
       ),
     );
     // Snackbars with actions may remain visible indefinitely when accessibility
-    // navigation is enabled; close this specific undo snackbar after 3 seconds.
-    Timer(const Duration(seconds: 3), snackBarController.close);
+    // navigation is enabled; close this undo snackbar on the same length the
+    // snackbar was given, so the two never disagree about when it is over.
+    Timer(MotionTokens.messageHold, snackBarController.close);
   }
 
   @override
@@ -88,6 +91,9 @@ class CartPage extends StatelessWidget {
               Expanded(
                 child: BlocBuilder<CartCubit, CartState>(
                   builder: (context, state) {
+                    if (state.isLoading && state.items.isEmpty) {
+                      return const CartLinesSkeleton();
+                    }
                     if (state.isEmpty) {
                       return EmptyState(
                         icon: AppIcons.cart,

@@ -112,8 +112,11 @@ class CustomBtn extends StatelessWidget {
             foregroundColor: isDisabled
                 ? fgColor.withValues(alpha: 0.5)
                 : fgColor,
+            // The outline is the whole point of this variant, so it takes the
+            // foreground colour. The background stays transparent, and a border
+            // drawn with it would be a button with no border at all.
             side: BorderSide(
-              color: isDisabled ? bgColor.withValues(alpha: 0.3) : bgColor,
+              color: isDisabled ? fgColor.withValues(alpha: 0.3) : fgColor,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(radius),

@@ -26,7 +26,8 @@ class _FakeRepository implements SubscriptionRepository {
   @override
   Future<List<SubscriptionPlan>> plans({String? branchId}) async {
     plansCalls++;
-    if (failPlans) throw StateError('permission denied for function list_plans');
+    if (failPlans)
+      throw StateError('permission denied for function list_plans');
     return plansToReturn;
   }
 
@@ -34,8 +35,9 @@ class _FakeRepository implements SubscriptionRepository {
   Future<CustomerSubscription?> mySubscription() async => null;
 
   @override
-  Future<List<SubscriptionUsage>> usageHistory({String? subscriptionId}) async =>
-      const [];
+  Future<List<SubscriptionUsage>> usageHistory({
+    String? subscriptionId,
+  }) async => const [];
 
   @override
   Future<List<SubscriptionPlanProduct>> planProducts(String planId) async =>

@@ -51,7 +51,21 @@ class PaymentMethodPageBody extends StatelessWidget {
               // directly instead of asking for the number again.
               BlocBuilder<SavedCardsCubit, SavedCardsState>(
                 builder: (context, saved) {
-                  if (saved.cards.isEmpty) return const SizedBox.shrink();
+                  if (saved.cards.isEmpty) {
+                    // A signed-in customer whose cards could not be read must
+                    // not be left choosing between "add a new card" and a card
+                    // the server already holds.
+                    final error = saved.loadError;
+                    if (error == null) return const SizedBox.shrink();
+                    return Padding(
+                      padding: EdgeInsets.only(top: AppSpacing.sm),
+                      child: Text(
+                        error,
+                        style: AppFonts.medium14(context)
+                            .copyWith(color: AppColor.errorColor),
+                      ),
+                    );
+                  }
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

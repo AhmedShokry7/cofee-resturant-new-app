@@ -13,8 +13,8 @@ import 'package:new_coffee/features/checkout/presentation/manager/checkout/check
 import 'package:new_coffee/features/checkout/presentation/views/widgets/delivery_fulfillment_section.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/order_item_card.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/shipping_address_section.dart';
-import 'package:new_coffee/features/cart/presentation/views/widgets/promo_code_field.dart';
-import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/promo_code_field.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/coupon_breakdown.dart';
 import 'package:new_coffee/shared/widgets/labeled_value_row.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 

@@ -82,24 +82,55 @@ class SavedCardTile extends StatelessWidget {
           Text(card.expiry, style: AppFonts.medium14(context)),
           SizedBox(width: AppSpacing.md),
           if (onSetDefault != null && !card.isDefault)
-            GestureDetector(
-              onTap: onSetDefault,
-              child: Icon(
-                AppIcons.star,
-                size: AppSizes.px20,
-                color: AppColor.greyColor,
-              ),
+            _TrailingAction(
+              icon: AppIcons.star,
+              label: S.setDefaultCard,
+              onTap: onSetDefault!,
             )
           else
-            GestureDetector(
+            _TrailingAction(
+              icon: AppIcons.delete,
+              label: S.delete,
               onTap: onDelete,
-              child: Icon(
-                AppIcons.delete,
-                size: AppSizes.px22,
-                color: AppColor.greyColor,
-              ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// The one icon at the end of a saved card: make it the default, or delete it.
+///
+/// Both actions are the same control with a different glyph, and a bare icon is
+/// too small a target for a thumb, so the padding is part of the tappable box
+/// rather than a gap next to it.
+class _TrailingAction extends StatelessWidget {
+  const _TrailingAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: AppColor.transparent,
+        shape: const CircleBorder(),
+        clipBehavior: Clip.hardEdge,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.sm),
+            child: Icon(icon, size: AppSizes.px20, color: AppColor.greyColor),
+          ),
+        ),
       ),
     );
   }

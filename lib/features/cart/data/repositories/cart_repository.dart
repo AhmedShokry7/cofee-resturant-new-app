@@ -1,5 +1,17 @@
 import 'package:new_coffee/features/cart/data/model/cart_line.dart';
 
+/// How much one cart may hold.
+///
+/// These are server rules, not UI choices: `orders.add_to_cart` and the atomic
+/// checkout both reject a quantity above 99 (`supabase/migrations/058`), and a
+/// device slot that kept more lines than it could store used to show lines that
+/// vanished on the next restart. The cubit, the mapper and the reader all read
+/// the numbers here so no copy can drift.
+abstract final class CartLimits {
+  static const int maxQuantity = 99;
+  static const int maxLines = 50;
+}
+
 /// Contract for the server-side cart.
 ///
 /// Screens and cubits depend only on this interface, so the data source can be

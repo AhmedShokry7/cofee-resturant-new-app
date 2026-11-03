@@ -22,6 +22,9 @@ class FavoritesPage extends StatelessWidget {
           listenWhen: (previous, current) =>
               current.error != null && current.error != previous.error,
           listener: (context, state) {
+            // A failed load is already the sentence the body shows; repeating it
+            // as a snackbar would print the same words twice.
+            if (state.favoriteProducts.isEmpty) return;
             ScaffoldMessenger.of(context)
                 .showSnackBar(SnackBar(content: Text(state.error!)));
           },
@@ -36,6 +39,16 @@ class FavoritesPage extends StatelessWidget {
                       return const ProductsGridSkeleton();
                     }
                     final items = state.favoriteProducts;
+                    if (items.isEmpty && state.error != null) {
+                      // Nothing could be shown, and the reason is a failed read,
+                      // not an empty list: the customer must not be told they
+                      // own no hearts when the catalogue never answered.
+                      return EmptyState(
+                        icon: AppIcons.favourite,
+                        title: S.couldNotLoadFavorites,
+                        subtitle: state.error,
+                      );
+                    }
                     if (items.isEmpty) {
                       return EmptyState(
                         icon: AppIcons.favourite,

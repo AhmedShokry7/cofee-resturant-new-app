@@ -79,10 +79,7 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       );
       if (isClosed) return;
       emit(
-        state.copyWith(
-          usage: await _namedUsage(usage),
-          clearUsageError: true,
-        ),
+        state.copyWith(usage: await _namedUsage(usage), clearUsageError: true),
       );
     } catch (error, stackTrace) {
       if (isClosed) return;

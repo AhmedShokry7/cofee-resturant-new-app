@@ -24,8 +24,13 @@ class BranchCubit extends Cubit<BranchState> {
   Future<void> load() async {
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
-      final branches = await _repository.activeBranches();
-      final storedId = await SharedPref.getValue(key: _storageKey);
+      // The remembered choice and the list of branches are independent reads,
+      // so both are asked for before either is waited on: the start-up wait is
+      // the longer of the two instead of their sum.
+      final branchesFuture = _repository.activeBranches();
+      final storedFuture = SharedPref.getValue(key: _storageKey);
+      final branches = await branchesFuture;
+      final storedId = await storedFuture;
       Branch? selected;
       if (storedId != null && storedId.isNotEmpty) {
         for (final branch in branches) {

@@ -8,6 +8,7 @@ import 'package:new_coffee/features/payment/presentation/views/add_card_page.dar
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/widgets/saved_card_tile.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class SavedCardsPage extends StatelessWidget {
@@ -29,7 +30,9 @@ class SavedCardsPage extends StatelessWidget {
                   Padding(
                     padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
                     child: Text(
-                      S.noSavedCards,
+                      // A list that could not be read is not a customer with no
+                      // cards: the two ask for opposite things.
+                      state.loadError ?? S.noSavedCards,
                       textAlign: TextAlign.center,
                       style: AppFonts.regular14(context)
                           .copyWith(color: AppColor.greyColor),
@@ -45,22 +48,11 @@ class SavedCardsPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: AppSpacing.md),
-                GestureDetector(
-                  onTap: () =>
+                CustomBtn(
+                  text: S.addNewCard,
+                  variant: BtnVariant.outlined,
+                  onPressed: () =>
                       Navigator.of(context).pushNamed(AddCardPage.routeName),
-                  child: Container(
-                    height: AppDimensions.buttonHeight,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColor.primaryColor),
-                      borderRadius: BorderRadius.circular(AppRadius.r8),
-                    ),
-                    child: Text(
-                      S.addNewCard,
-                      style: AppFonts.medium14(context)
-                          .copyWith(color: AppColor.primaryColor),
-                    ),
-                  ),
                 ),
               ],
             );

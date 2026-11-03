@@ -41,6 +41,17 @@ class CustomTextFormField extends StatefulWidget {
   /// Space below the field. Defaults to 16 (set 8 for denser forms).
   final double bottomPadding;
 
+  /// A value the customer reads rather than edits.
+  ///
+  /// Use it when the field shows something a form cannot change on its own -
+  /// the sign-in e-mail, which the server only moves after a confirmation
+  /// link. An ordinary editable box that silently discards what was typed
+  /// tells the customer their change was saved.
+  final bool readOnly;
+
+  /// A line under the field that explains a [readOnly] value or an input rule.
+  final String? helper;
+
   const CustomTextFormField({
     super.key,
     required this.hint,
@@ -60,6 +71,8 @@ class CustomTextFormField extends StatefulWidget {
     this.padding,
     this.inputFormatters,
     this.bottomPadding = 16,
+    this.readOnly = false,
+    this.helper,
   });
 
   @override
@@ -136,6 +149,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 controller: widget.controller,
                 focusNode: widget.focusNode,
                 obscureText: _isObscure,
+                readOnly: widget.readOnly,
                 keyboardType: widget.keyboardType,
                 textInputAction: widget.textInputAction,
                 inputFormatters: widget.inputFormatters,
@@ -148,6 +162,9 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                     .copyWith(color: AppColor.secondryColor),
                 decoration: InputDecoration(
                   hintText: widget.hint,
+                  helperText: widget.helper,
+                  helperStyle: AppFonts.regular12(context)
+                      .copyWith(color: AppColor.greyColor),
                   hintStyle: AppFonts.semiBold14(
                     context,
                   ).copyWith(color: AppColor.greyColor.withValues(alpha: 0.85)),

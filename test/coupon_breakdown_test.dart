@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/features/cart/presentation/views/widgets/coupon_breakdown.dart';
+import 'package:new_coffee/features/checkout/presentation/views/widgets/coupon_breakdown.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
 
 /// Cover for the per-line coupon breakdown.
@@ -175,12 +175,14 @@ void main() {
         ),
       );
 
-      // "Eligible items in your cart (1/2)" — the count is the whole point.
-      expect(find.textContaining('1/2'), findsOneWidget);
+      // The counts live inside the localized sentence: appending "(1/2)" to an
+      // Arabic label moved the pair to the other end of the line on screen.
+      final caption = S.couponEligibleInCartCount(1, 2);
+      expect(find.text(caption), findsOneWidget);
       // Collapsed by default: a normal coupon costs no extra taps.
       expect(find.text('Latte'), findsNothing);
 
-      await tester.tap(find.textContaining('1/2'));
+      await tester.tap(find.text(caption));
       await tester.pump();
 
       expect(find.text('Latte'), findsOneWidget);

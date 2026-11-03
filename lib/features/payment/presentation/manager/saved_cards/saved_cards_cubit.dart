@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:new_coffee/features/payment/data/repositories/saved_cards_repository.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show AuthChangeEvent, AuthState;
 
 part 'saved_cards_state.dart';
 
@@ -12,23 +17,108 @@ part 'saved_cards_state.dart';
 /// The Flutter app never stores PAN, CVV or raw card data. A card typed into
 /// the add-card form is tokenized by the backend and stored server-side; this
 /// cubit only mirrors the safe display fields returned by the backend.
+///
+/// Those display fields still belong to one customer, and the cubit lives above
+/// the whole app, so it tracks the signed-in identity the way the cart, the
+/// favourites and the wallet do: the cards of the customer who signs out are
+/// dropped before the next account can see them.
 class SavedCardsCubit extends Cubit<SavedCardsState> {
-  SavedCardsCubit({this._repository}) : super(const SavedCardsState(cards: []));
+  SavedCardsCubit({this._repository})
+    : super(const SavedCardsState(cards: [])) {
+    _identity = SupabaseService.isReady
+        ? SupabaseService.client.auth.currentUser?.id
+        : null;
+    if (SupabaseService.isReady) {
+      _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
+        _onAuthStateChanged,
+      );
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _authSubscription?.cancel();
+    _authSubscription = null;
+    return super.close();
+  }
 
   final SavedCardsRepository? _repository;
 
+  StreamSubscription<AuthState>? _authSubscription;
+
+  /// Identity whose cards are in state. Null means guest.
+  String? _identity;
+
+  /// The newest read. Only its holder may write state, so a slow list read for
+  /// one customer cannot land after another customer has taken over.
+  int _loadGeneration = 0;
+
+  /// Records that the signed-in customer changed and drops their cards.
+  ///
+  /// Returns true when this really was a different identity; a token rotation
+  /// or a profile edit leaves the list alone.
+  @visibleForTesting
+  bool applyIdentityTransition(String? identity) {
+    if (identity == _identity) return false;
+    _identity = identity;
+    _loadGeneration++;
+    emit(const SavedCardsState(cards: []));
+    return true;
+  }
+
+  /// The cards belong to exactly one customer, so they reload only when the
+  /// account changes. `passwordRecovery` counts as a sign-in because GoTrue
+  /// emits it instead of `signedIn` when a recovery link establishes the
+  /// session.
+  @visibleForTesting
+  bool shouldReloadOnAuthEvent(AuthState auth) =>
+      auth.event == AuthChangeEvent.signedIn ||
+      auth.event == AuthChangeEvent.passwordRecovery ||
+      auth.event == AuthChangeEvent.signedOut;
+
+  void _onAuthStateChanged(AuthState auth) {
+    if (!shouldReloadOnAuthEvent(auth)) return;
+    applyIdentityTransition(auth.session?.user.id);
+    unawaited(load());
+  }
+
+  /// Whether this device knows there is no signed-in customer.
+  ///
+  /// The auth service has to be up for `null` to mean a guest: a cubit built
+  /// before Supabase initialised could not read an identity at all, and it
+  /// also never subscribed to auth, so an unknown identity must still go
+  /// through the repository rather than be answered locally.
+  bool get _isGuest => _identity == null && SupabaseService.isReady;
+
   Future<void> load() async {
     final repository = _repository;
+    final generation = ++_loadGeneration;
     if (repository == null) {
+      if (!isClosed) emit(const SavedCardsState(cards: []));
+      return;
+    }
+    if (_isGuest) {
+      // A guest has no cards on the server, and asking for them would throw.
+      // This is an answer, not a failure, so nothing is reported.
       if (!isClosed) emit(const SavedCardsState(cards: []));
       return;
     }
     try {
       final cards = await repository.listSavedCards();
-      if (isClosed) return;
-      emit(SavedCardsState(cards: cards));
-    } catch (_) {
-      if (!isClosed) emit(const SavedCardsState(cards: []));
+      if (isClosed || generation != _loadGeneration) return;
+      emit(
+        state.copyWith(
+          cards: cards,
+          clearLoadError: true,
+          clearSaveError: true,
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed || generation != _loadGeneration) return;
+      // An empty list is not the same as a list that could not be read: shown
+      // as empty, the customer adds a card the server already holds.
+      emit(state.copyWith(loadError: S.couldNotLoadSavedCards));
+      addError(error, stackTrace);
     }
   }
 
@@ -96,8 +186,13 @@ class SavedCardsCubit extends Cubit<SavedCardsState> {
     if (repository == null) return;
     try {
       await repository.deleteSavedCard(id);
-    } catch (_) {
-      // Best-effort: keep UI responsive.
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      // The card is still on the server. Reloading would put it back without a
+      // word, so the list is left as it is and the reason is shown.
+      emit(state.copyWith(loadError: S.cardDeleteFailed));
+      addError(error, stackTrace);
+      return;
     }
     await load();
   }

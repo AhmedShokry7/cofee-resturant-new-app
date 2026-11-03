@@ -289,6 +289,78 @@ class OrdersSkeleton extends StatelessWidget {
   }
 }
 
+/// Skeleton for the cart lines.
+///
+/// The cart belongs to an account and a branch, so it only exists after a read:
+/// a device slot and, for a signed-in customer, a server round trip. Rows shown
+/// while that is on their way, so an empty cart is never flashed at a customer
+/// who has lines.
+class CartLinesSkeleton extends StatelessWidget {
+  const CartLinesSkeleton({super.key, this.itemCount = 3});
+
+  final int itemCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: skeletonListPadding(context),
+      itemCount: itemCount,
+      itemBuilder: (context, index) => const _CartLineTileSkeleton(),
+    );
+  }
+}
+
+/// One row, mirroring the cart variant of [ProductCard]: [AppSizes.px76] image,
+/// the name and line-total columns, and the unit price over the stepper.
+class _CartLineTileSkeleton extends StatelessWidget {
+  const _CartLineTileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: skeletonCardDecoration(context, radius: AppRadius.r16),
+      child: Shimmer(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ShimmerBox(
+              width: AppSizes.px76,
+              height: AppSizes.px76,
+              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+            ),
+            SizedBox(width: AppSpacing.md),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShimmerLine(widthFactor: 0.7, height: AppSizes.px15),
+                  SizedBox(height: AppSpacing.xs),
+                  ShimmerLine(widthFactor: 0.4, height: AppSizes.px13),
+                ],
+              ),
+            ),
+            SizedBox(width: AppSpacing.sm),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                ShimmerLine(
+                  width: AppDimensions.skeletonLineShort,
+                  height: AppSizes.px11,
+                ),
+                SizedBox(height: AppSpacing.xs),
+                ShimmerLine(width: AppSizes.px72, height: AppSizes.px28),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Single skeleton row mirroring [NotificationTile]: [AppSizes.px44] icon box radius
 /// [AppRadius.r12], title + time row and body lines.
 class NotificationTileSkeleton extends StatelessWidget {

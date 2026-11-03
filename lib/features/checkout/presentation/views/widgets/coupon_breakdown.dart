@@ -63,7 +63,10 @@ class _CouponBreakdownState extends State<CouponBreakdown> {
                 Expanded(
                   child: Text(
                     coupon.isPartial
-                        ? '${S.couponEligibleInCart} (${discounted.length}/${lines.length})'
+                        ? S.couponEligibleInCartCount(
+                            discounted.length,
+                            lines.length,
+                          )
                         : S.couponDiscountBreakdown,
                     style: AppFonts.medium12(context)
                         .copyWith(color: AppColor.primaryColor),
@@ -98,7 +101,6 @@ class _CouponBreakdownState extends State<CouponBreakdown> {
                   prefix: '-',
                   style: AppFonts.medium12(context)
                       .copyWith(color: AppColor.primaryColor),
-                  iconSize: 12,
                   iconColor: AppColor.primaryColor,
                 ),
               ],
@@ -157,7 +159,9 @@ class _LineRow extends StatelessWidget {
             prefix: '-',
             style: AppFonts.regular12(context)
                 .copyWith(color: AppColor.primaryColor),
-            iconSize: 11,
+            // One point under the text: this row is a per-line detail, and a
+            // currency mark the size of the label competes with the amount.
+            iconSize: AppSizes.px11,
             iconColor: AppColor.primaryColor,
           )
         else

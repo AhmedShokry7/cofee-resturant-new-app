@@ -39,7 +39,7 @@ class CartCubit extends Cubit<CartState> {
     this.branchId,
     String? Function()? userIdProvider,
   }) : _userIdProvider = userIdProvider ?? _defaultUserId,
-       super(const CartState(items: [])) {
+       super(const CartState(items: [], isLoading: true)) {
     _identity = _userIdProvider();
     if (SupabaseService.isReady) {
       _authSubscription = SupabaseService.client.auth.onAuthStateChange.listen(
@@ -112,7 +112,9 @@ class CartCubit extends Cubit<CartState> {
     _syncTimer?.cancel();
     _syncTimer = null;
     if (state.items.isNotEmpty) {
-      emit(const CartState(items: []));
+      // The new account's lines are not known yet, so this is a load in
+      // progress and not an empty cart.
+      emit(const CartState(items: [], isLoading: true));
     }
     return true;
   }
@@ -145,7 +147,8 @@ class CartCubit extends Cubit<CartState> {
     load();
   }
 
-  static const _maxItems = 50;
+  /// Lines one cart can hold, from the shared [CartLimits] contract.
+  static const _maxItems = CartLimits.maxLines;
 
   /// Guards guest adoption: concurrent loads must not adopt the same guest
   /// lines twice (quantities would double), and a retry must not replay them.
@@ -263,15 +266,17 @@ class CartCubit extends Cubit<CartState> {
       final items = await _resolveItems(entries, catalog);
       if (isClosed) return;
       if (generation != _loadGeneration) return;
-      if (items.isNotEmpty || state.items.isNotEmpty || serverError != null) {
-        emit(
-          CartState(
-            items: items,
-            error: serverError == null ? null : S.cartSyncFailed,
-          ),
-        );
-        if (serverError != null) addError(serverError);
-      }
+      // Emitted whatever the result is: an empty cart is an answer, and the
+      // load flag has to clear for it too, or the page would spin on a skeleton
+      // for a customer who genuinely has nothing in the cart.
+      emit(
+        CartState(
+          items: items,
+          error: serverError == null ? null : S.cartSyncFailed,
+          isLoading: false,
+        ),
+      );
+      if (serverError != null) addError(serverError);
 
       // One-time adoption: a guest cart becomes the account's cart on the
       // first load after sign-in, then the guest slot is cleared so a later
@@ -506,11 +511,20 @@ class CartCubit extends Cubit<CartState> {
           item.note == note &&
           sameOptionIds(item.optionValueIds, optionIds),
     );
+    if (index == -1 && items.length >= _maxItems) {
+      // The device slot and the restored list both stop at this many lines, so
+      // a line added past the cap would sit on screen and disappear on the next
+      // restart. The customer is told the line was not taken.
+      emit(
+        CartState(items: state.items, error: S.cartLineLimitReached(_maxItems)),
+      );
+      return;
+    }
     if (index == -1) {
       items.add(
         CartItem(
           product: product,
-          quantity: quantity.clamp(1, 99),
+          quantity: quantity.clamp(1, CartLimits.maxQuantity),
           note: note,
           optionValueIds: optionIds,
           unitPrice: unitPrice,
@@ -519,7 +533,10 @@ class CartCubit extends Cubit<CartState> {
       );
     } else {
       items[index] = items[index].copyWith(
-        quantity: (items[index].quantity + quantity).clamp(1, 99),
+        quantity: (items[index].quantity + quantity).clamp(
+          1,
+          CartLimits.maxQuantity,
+        ),
         // A re-add updates the price (and bundle membership) on both sides,
         // matching the server's ON CONFLICT update.
         unitPrice: unitPrice,
@@ -562,11 +579,17 @@ class CartCubit extends Cubit<CartState> {
           item.note == note &&
           sameOptionIds(item.optionValueIds, optionIds),
     );
+    if (index == -1 && items.length >= _maxItems) {
+      emit(
+        CartState(items: state.items, error: S.cartLineLimitReached(_maxItems)),
+      );
+      return;
+    }
     if (index == -1) {
       items.add(
         CartItem(
           product: product,
-          quantity: quantity.clamp(1, 99),
+          quantity: quantity.clamp(1, CartLimits.maxQuantity),
           note: note,
           optionValueIds: optionIds,
           unitPrice: price,
@@ -576,7 +599,10 @@ class CartCubit extends Cubit<CartState> {
       );
     } else {
       items[index] = items[index].copyWith(
-        quantity: (items[index].quantity + quantity).clamp(1, 99),
+        quantity: (items[index].quantity + quantity).clamp(
+          1,
+          CartLimits.maxQuantity,
+        ),
         unitPrice: price,
         bundleComponents: components,
       );
@@ -710,7 +736,10 @@ class CartCubit extends Cubit<CartState> {
 
   void _applyQuantity(List<CartItem> items, int index, int delta) {
     if (index == -1) return;
-    final quantity = (items[index].quantity + delta).clamp(0, 99);
+    final quantity = (items[index].quantity + delta).clamp(
+      0,
+      CartLimits.maxQuantity,
+    );
     if (quantity <= 0) {
       items.removeAt(index);
     } else {
@@ -774,7 +803,12 @@ class CartCubit extends Cubit<CartState> {
             (entry['bundlePrice'] as num?)?.toDouble() ??
             (entry['unitPrice'] as num?)?.toDouble() ??
             0.0;
-        final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
+        final quantity =
+            (entry['quantity'] as num?)?.toInt().clamp(
+              1,
+              CartLimits.maxQuantity,
+            ) ??
+            1;
         final components = <CartBundleComponent>[];
         final rawComponents = entry['bundleComponents'];
         if (rawComponents is List) {
@@ -828,7 +862,12 @@ class CartCubit extends Cubit<CartState> {
       if (resolvedProduct == null) continue;
       final productToUse = resolvedProduct;
 
-      final quantity = (entry['quantity'] as num?)?.toInt().clamp(1, 99) ?? 1;
+      final quantity =
+          (entry['quantity'] as num?)?.toInt().clamp(
+            1,
+            CartLimits.maxQuantity,
+          ) ??
+          1;
       items.add(
         CartItem(
           product: productToUse,

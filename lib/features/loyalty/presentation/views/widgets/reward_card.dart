@@ -21,10 +21,16 @@ class RewardCard extends StatelessWidget {
   final bool locked;
   final VoidCallback? onRedeem;
 
+  /// A reward that cannot be redeemed yet is dimmed, never hidden: the
+  /// customer has to see what the next tier gives. This keeps the title and
+  /// the points cost readable while sitting the card clearly below the ones
+  /// that can be redeemed now.
+  static const double _lockedOpacity = 0.55;
+
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: locked ? 0.55 : 1,
+      opacity: locked ? _lockedOpacity : 1,
       child: Container(
         margin: EdgeInsets.only(bottom: AppSpacing.md),
         padding: EdgeInsets.all(AppSpacing.md),
@@ -81,21 +87,27 @@ class RewardCard extends StatelessWidget {
                     .copyWith(color: AppColor.greyColor),
               )
             else
-              GestureDetector(
-                onTap: onRedeem,
-                child: Container(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: AppSpacing.lg,
-                    vertical: AppSpacing.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    color: AppColor.primaryColor,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    S.redeem,
-                    style: AppFonts.medium14(context)
-                        .copyWith(color: AppColor.whiteColor),
+              Semantics(
+                button: true,
+                child: Material(
+                  color: AppColor.primaryColor,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  child: InkWell(
+                    onTap: onRedeem,
+                    // Ink that stops at the pill instead of splashing a
+                    // rectangle behind rounded ends.
+                    customBorder: const StadiumBorder(),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Text(
+                        S.redeem,
+                        style: AppFonts.medium14(context)
+                            .copyWith(color: AppColor.whiteColor),
+                      ),
+                    ),
                   ),
                 ),
               ),

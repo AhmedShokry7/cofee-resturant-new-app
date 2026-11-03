@@ -180,22 +180,28 @@ void main() {
       expect(S.authProviderNotEnabled, contains('البريد الإلكتروني'));
     });
 
-    test('a token our backend refuses is not sold to the customer as retryable', () {
-      // Measured on emulator-5554 on 2026-11-02: GoTrue answered
-      // `nonces mismatch` for an ID token Google had just issued, and the
-      // screen said "Something went wrong signing in. Please try again." -
-      // advice that cannot work, for a failure the customer did not cause.
-      expect(AuthCubit.messageFor('nonces mismatch'), S.authProviderNotEnabled);
-      expect(
-        AuthCubit.messageFor('Invalid audience'),
-        S.authProviderNotEnabled,
-      );
-      expect(
-        AuthCubit.messageFor('nonces mismatch'),
-        isNot(S.authFailed),
-        reason: 'the generic sentence is the defect this guards',
-      );
-    });
+    test(
+      'a token our backend refuses is not sold to the customer as retryable',
+      () {
+        // Measured on emulator-5554 on 2026-11-02: GoTrue answered
+        // `nonces mismatch` for an ID token Google had just issued, and the
+        // screen said "Something went wrong signing in. Please try again." -
+        // advice that cannot work, for a failure the customer did not cause.
+        expect(
+          AuthCubit.messageFor('nonces mismatch'),
+          S.authProviderNotEnabled,
+        );
+        expect(
+          AuthCubit.messageFor('Invalid audience'),
+          S.authProviderNotEnabled,
+        );
+        expect(
+          AuthCubit.messageFor('nonces mismatch'),
+          isNot(S.authFailed),
+          reason: 'the generic sentence is the defect this guards',
+        );
+      },
+    );
 
     test('the exchange sends no client nonce', () {
       // The fix the record in tool/google_sign_in_setup.json explains: Google
@@ -215,9 +221,8 @@ void main() {
         isNot(contains('nonce')),
         reason: 'a client nonce here can never be satisfied',
       );
-      final exchange = RegExp(
-        r'signInWithIdToken\([\s\S]*?\);',
-      ).firstMatch(source);
+      final exchange = RegExp(r'signInWithIdToken\([\s\S]*?\);')
+          .firstMatch(source);
       expect(exchange, isNotNull, reason: 'the exchange call moved');
       expect(
         exchange!.group(0),

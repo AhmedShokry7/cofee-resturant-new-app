@@ -191,10 +191,18 @@ class _FailingOnceFavorites implements FavoritesRepository {
   Future<Set<String>> loadLocalIds() => _inner.loadLocalIds();
 
   @override
-  Future<Set<String>> synchronizedIds(
-    Set<String> localIds, {
+  Future<Set<String>> loadRemoteIds() => _inner.loadRemoteIds();
+
+  @override
+  Future<void> synchronize({
+    required Set<String> localIds,
+    required Set<String> remoteIds,
     required Set<String> validProductIds,
-  }) => _inner.synchronizedIds(localIds, validProductIds: validProductIds);
+  }) => _inner.synchronize(
+    localIds: localIds,
+    remoteIds: remoteIds,
+    validProductIds: validProductIds,
+  );
 
   @override
   Future<void> addFavorite(String productId) => _inner.addFavorite(productId);

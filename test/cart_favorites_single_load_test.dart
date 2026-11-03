@@ -151,10 +151,18 @@ class _CountingFavorites implements FavoritesRepository {
   Future<Set<String>> loadLocalIds() => _inner.loadLocalIds();
 
   @override
-  Future<Set<String>> synchronizedIds(
-    Set<String> localIds, {
+  Future<Set<String>> loadRemoteIds() => _inner.loadRemoteIds();
+
+  @override
+  Future<void> synchronize({
+    required Set<String> localIds,
+    required Set<String> remoteIds,
     required Set<String> validProductIds,
-  }) => _inner.synchronizedIds(localIds, validProductIds: validProductIds);
+  }) => _inner.synchronize(
+    localIds: localIds,
+    remoteIds: remoteIds,
+    validProductIds: validProductIds,
+  );
 
   @override
   Future<void> addFavorite(String productId) => _inner.addFavorite(productId);
@@ -312,8 +320,10 @@ void main() {
       expect(favorites.migrateCalls, 2);
     });
 
-    test('a fresh favourites load reads the catalogue once', () async {
-      SharedPreferences.setMockInitialValues({});
+    test('a favourites load reads its own ids, never a catalogue page', () async {
+      SharedPreferences.setMockInitialValues({
+        'favorites_v1_guest': jsonEncode(['1', '2']),
+      });
       final catalog = _CountingCatalog();
       final cubit = FavoritesCubit(
         repository: catalog,
@@ -322,10 +332,18 @@ void main() {
       addTearDown(cubit.close);
 
       await cubit.stream.firstWhere((state) => !state.isLoading);
-      expect(catalog.getProductsCalls, 1);
 
+      // The hearts know their own product ids, so the load resolves exactly
+      // those rows. Downloading a catalogue page to find two of them was the
+      // old behaviour, and it silently dropped any heart outside the page.
+      expect(catalog.getProductsCalls, 0);
+      expect(catalog.getByIdCalls, 2);
+
+      // A reload reads the same two ids again: nothing is cached away from the
+      // customer and nothing is fetched twice behind their back.
       await cubit.load();
-      expect(catalog.getProductsCalls, 2);
+      expect(catalog.getByIdCalls, 4);
+      expect(catalog.getProductsCalls, 0);
     });
 
     test('toggling still persists a single product', () async {
