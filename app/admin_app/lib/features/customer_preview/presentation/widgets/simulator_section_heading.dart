@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// عنوان مقطع داخل شاشة العميل، مع سطره الثانوي ورابطه على طرفه.
@@ -37,6 +38,7 @@ class SimulatorSectionHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final link = trailingLabel;
     final onTap = onTapTrailing;
     return Column(
@@ -50,7 +52,7 @@ class SimulatorSectionHeading extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: (titleStyle ?? AppFonts.semiBold16(context)).copyWith(
-                  color: adminHeadingColor(theme),
+                  color: palette.textPrimary ?? adminHeadingColor(theme),
                 ),
               ),
             ),
@@ -73,19 +75,21 @@ class SimulatorSectionHeading extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: AppSpacing.xs,
-                          vertical:
-                              AppDimensions.simulatorSectionLinkPaddingVertical,
+                          vertical: AppDimensions.simulatorSectionLinkPaddingVertical,
                         ),
                         decoration: BoxDecoration(
-                          border: Border.all(color: adminMutedColor(theme)),
+                          border: Border.all(
+                            color: palette.textSecondary ?? adminMutedColor(theme),
+                          ),
                           borderRadius: BorderRadius.circular(
                             AppDimensions.simulatorSectionLinkRadius,
                           ),
                         ),
                         child: Text(
                           link,
-                          style: AppFonts.medium12(context)
-                              .copyWith(color: adminBodyColor(theme)),
+                          style: AppFonts.medium12(context).copyWith(
+                            color: palette.textPrimary ?? adminBodyColor(theme),
+                          ),
                         ),
                       ),
                     ),
@@ -99,7 +103,7 @@ class SimulatorSectionHeading extends StatelessWidget {
           Text(
             subtitle!,
             style: AppFonts.regular12(context)
-                .copyWith(color: adminMutedColor(theme)),
+                .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
           ),
       ],
     );

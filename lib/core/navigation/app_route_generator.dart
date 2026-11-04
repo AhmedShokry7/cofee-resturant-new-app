@@ -12,6 +12,7 @@ import 'package:new_coffee/features/menu/presentation/views/product_details_page
 import 'package:new_coffee/features/orders/data/model/order_group.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/presentation/views/leave_review_page.dart';
+import 'package:new_coffee/features/orders/presentation/views/order_details_by_id_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/order_details_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 
@@ -34,6 +35,10 @@ class AppRouteGenerator {
         OrderDetailsPage(order: arguments),
       OrderDetailsPage.routeName when arguments is OrderGroup =>
         OrderDetailsPage(order: arguments.header, lines: arguments.lines),
+      // A notification names an order by id and carries no rows of its own, so
+      // the id is read into the frozen invoice before the details are drawn.
+      OrderDetailsPage.routeName when arguments is String =>
+        OrderDetailsByIdPage(orderId: arguments),
       BannerDetailsPage.routeName when arguments is BannerModel =>
         BannerDetailsPage(banner: arguments),
       SeeAllProductsPage.routeName when arguments is SeeAllProductsArgs =>

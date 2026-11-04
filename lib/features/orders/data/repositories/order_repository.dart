@@ -151,6 +151,23 @@ abstract class OrdersRepository {
   Future<List<OrderStatusEvent>> orderHistory(String orderId);
 }
 
+/// Optional read of one order's frozen lines by id.
+///
+/// A notification names an order and carries no rows of its own, and that id
+/// can point at an order older than any window the list reads, so a repository
+/// that can ask the server for one order answers it in one owner-scoped query
+/// instead of scanning recent lines and hoping the order is in the window.
+///
+/// Separate from [OrdersRepository] for the same reason as
+/// [CheckoutQuoteRepository]: local fakes and the read-only fallback keep their
+/// smaller contract and do not have to implement a lookup they cannot serve.
+abstract interface class OrderLinesRepository {
+  /// The lines of [orderId], oldest first, or an empty list when the id is not
+  /// an order of the signed-in customer. The read stays owner-scoped, so
+  /// another customer's id is an empty list rather than their receipt.
+  Future<List<OrderItemModel>> orderLines(String orderId);
+}
+
 /// Optional server pricing capability, separate so local fakes and
 /// read-only order repositories keep their smaller contract.
 abstract interface class CheckoutQuoteRepository {

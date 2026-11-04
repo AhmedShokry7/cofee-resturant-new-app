@@ -25,7 +25,7 @@ class ProductDetailsBottomBar extends StatelessWidget {
         final total = unit * state.quantity;
         return Container(
           padding: EdgeInsets.all(AppSpacing.lg),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             color: AppColor.whiteColor,
             border: Border(top: BorderSide(color: AppColor.borderColor)),
           ),

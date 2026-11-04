@@ -87,17 +87,17 @@ String _read(String relativePath) {
   return file.readAsStringSync();
 }
 
-/// أقسام جسم الصفحة الرئيسية بترتيبها، من قائمة children الحقيقية.
+/// أقسام جسم الصفحة الرئيسية بترتيبها، من قائمة الافتراضي المكتوبة في المصدر.
 ///
 /// `HomeSection` مستبعد: غلاف الحشو حول القسم لا القسم، ولولا الاستبعاد ظهر
-/// ثمانية مرات زائدة. نقطة البدء `HomeSection.bodyPadding` لا `children: [`,
-/// لأن في الجسم قائمة children أخرى قبلها تخص شاشة الخطأ.
+/// ثمانية مرات زائدة. القائمة التي تُقرأ هي `_defaultHomeSections` وحدها — ما
+/// يرسمه الهاتف حين لا مستند منشور — لا ما يُبنى من المستند وقت الشاشة.
 List<String> _customerHomeSections(String source) {
-  final start = source.indexOf('padding: HomeSection.bodyPadding');
+  final start = source.indexOf('const List<Widget> _defaultHomeSections');
   if (start < 0) {
-    throw StateError('لا قائمة أقسام في المصدر — تغيّر شكل الجسم.');
+    throw StateError('لا قائمة أقسام افتراضية في المصدر — تغيّر شكل الجسم.');
   }
-  final end = source.indexOf('],', start);
+  final end = source.indexOf('];', start);
   final body = source.substring(start, end < 0 ? source.length : end);
   return RegExp(r'\b(Home(?!Section)[A-Za-z]+)\(')
       .allMatches(body)

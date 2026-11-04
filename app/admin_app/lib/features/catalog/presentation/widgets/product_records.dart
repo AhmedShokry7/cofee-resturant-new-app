@@ -17,6 +17,7 @@ class ProductRecords extends StatelessWidget {
     this.onDelete,
     this.onSelect,
     this.onOpenImages,
+    this.onOpenOptions,
     this.onCreateCategory,
     this.selectedIds = const <String>{},
     this.savingProductId,
@@ -34,6 +35,9 @@ class ProductRecords extends StatelessWidget {
 
   /// Opens the gallery of the pictures of a product.
   final ValueChanged<AdminProduct>? onOpenImages;
+
+  /// يفتح حوار أحجام المنتج وإضافاته وأسعاره عنده.
+  final ValueChanged<AdminProduct>? onOpenOptions;
 
   /// Creates a category of its own and hands it back to the card.
   final Future<AdminCategory?> Function(
@@ -83,6 +87,9 @@ class ProductRecords extends StatelessWidget {
                   onOpenImages: onOpenImages == null
                       ? null
                       : () => onOpenImages!(product),
+                  onOpenOptions: onOpenOptions == null
+                      ? null
+                      : () => onOpenOptions!(product),
                   onCreateCategory: onCreateCategory,
                 ),
               ),

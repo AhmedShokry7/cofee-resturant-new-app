@@ -4,6 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 
@@ -26,7 +27,8 @@ class SimulatorStruckPrice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = adminMutedColor(theme);
+    final palette = SimulatorPalette.of(context);
+    final muted = palette.textSecondary ?? adminMutedColor(theme);
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

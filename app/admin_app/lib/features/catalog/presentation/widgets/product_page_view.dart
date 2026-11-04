@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/navigation/admin_product_options_host.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_excel_controller.dart';
@@ -40,6 +41,9 @@ class ProductPageView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // حوار الأحجام ملك فيتشر المجموعات، فلا تفتحه الشاشة بنفسها: القشرة
+    // تعير يدها، ومن لا قشرة فوقه لا يعرض العنصر.
+    final openOptions = AdminProductOptionsHost.maybeOf(context);
     return BlocProvider<AdminProductCubit>.value(
       value: cubit,
       child: BlocConsumer<AdminProductCubit, AdminProductState>(
@@ -85,6 +89,7 @@ class ProductPageView extends StatelessWidget {
                       product: product,
                     )
                   : null,
+              onOpenOptions: canManage ? openOptions : null,
               onSelect: canManage
                   ? (product) => cubit.toggleSelection(product.id)
                   : null,

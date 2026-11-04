@@ -77,8 +77,10 @@ class _FakePushRepository implements PushRepository {
 
 class _EmptyNotificationsRepository implements NotificationsRepository {
   @override
-  Future<List<NotificationModel>> listNotifications({int limit = 50}) async =>
-      const [];
+  Future<List<NotificationModel>> listNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async => const [];
 
   @override
   Future<int> markRead(List<String> ids) async => 0;

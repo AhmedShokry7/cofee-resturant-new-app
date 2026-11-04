@@ -11,7 +11,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Reads the caller's orders through the `public` bridge and delegates all
 /// customer writes to ownership-checking server RPCs.
 class SupabaseOrdersRepository
-    implements OrdersRepository, CheckoutQuoteRepository {
+    implements OrdersRepository, OrderLinesRepository, CheckoutQuoteRepository {
   SupabaseOrdersRepository({
     SupabaseClient? client,
     Future<dynamic> Function(String name, Map<String, dynamic> params)? rpc,
@@ -101,6 +101,45 @@ class SupabaseOrdersRepository
       return aCreated.compareTo(bCreated);
     });
     return lines;
+  }
+
+  /// One order's lines, read by id instead of searched for in a window.
+  ///
+  /// The same two-step read as [listOrders] on the same bridge, because an
+  /// embedded join is an unnecessary failure point here too: the owner-scoped
+  /// header first, then its frozen lines in creation order.
+  @override
+  Future<List<OrderItemModel>> orderLines(String orderId) async {
+    final userId = _requireUserId();
+    // A wild string against a uuid column is a 22P02 error, so an id that is
+    // not one is an order that does not exist as far as this customer goes.
+    final id = Db.uuidOrNull(orderId);
+    if (id == null) return const [];
+
+    final orderRows = List<Map<String, dynamic>>.from(
+      await _client
+              .from('orders')
+              .select()
+              .eq('user_id', userId)
+              .eq('id', id)
+              .limit(1)
+          as List,
+    );
+    if (orderRows.isEmpty) return const [];
+    final order = orderRows.first;
+
+    final itemRows = List<Map<String, dynamic>>.from(
+      await _readClient
+              .from('order_items')
+              .select()
+              .eq('order_id', id)
+              .order('created_at')
+          as List,
+    );
+    return [
+      for (final item in itemRows)
+        OrderItemModel.fromDatabase(order: order, item: Db.asMap(item)),
+    ];
   }
 
   @override

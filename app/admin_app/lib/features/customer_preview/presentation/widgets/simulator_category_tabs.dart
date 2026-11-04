@@ -5,6 +5,7 @@ import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// شريط أسماء التصنيفات أعلى شاشة التصنيفات، كما في تطبيق العميل: الاسم المختار
@@ -28,10 +29,13 @@ class SimulatorCategoryTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     return Container(
       height: AppDimensions.simulatorTabBarHeight,
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: adminCardBorderColor(theme))),
+        border: Border(
+          bottom: BorderSide(color: palette.border ?? adminCardBorderColor(theme)),
+        ),
       ),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -64,8 +68,8 @@ class SimulatorCategoryTabs extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: AppFonts.medium16(context).copyWith(
                                 color: isSelected
-                                    ? AppColor.primaryColor
-                                    : adminMutedColor(theme),
+                                    ? palette.primary
+                                    : palette.textSecondary ?? adminMutedColor(theme),
                               ),
                             ),
                           ),
@@ -74,9 +78,7 @@ class SimulatorCategoryTabs extends StatelessWidget {
                       Container(
                         height: AppDimensions.simulatorTabIndicatorHeight,
                         decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColor.primaryColor
-                              : AppColor.transparent,
+                          color: isSelected ? palette.primary : AppColor.transparent,
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(AppRadius.md),
                           ),

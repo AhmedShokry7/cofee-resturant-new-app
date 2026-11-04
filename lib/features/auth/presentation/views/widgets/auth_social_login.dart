@@ -90,7 +90,7 @@ class _SocialButton extends StatelessWidget {
       child: Material(
         color: AppColor.whiteColor,
         clipBehavior: Clip.antiAlias,
-        shape: const CircleBorder(
+        shape: CircleBorder(
           side: BorderSide(color: AppColor.borderColor),
         ),
         child: InkWell(

@@ -14,7 +14,7 @@ class OrdersTabs extends StatelessWidget {
   Widget build(BuildContext context) {
     final current = context.watch<OrdersCubit>().state.status;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColor.borderColor)),
       ),
       child: Row(

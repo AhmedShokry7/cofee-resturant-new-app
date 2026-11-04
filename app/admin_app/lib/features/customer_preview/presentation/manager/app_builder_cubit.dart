@@ -4,7 +4,10 @@ import 'package:admin_app/core/error/admin_error_message.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_template.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_theme.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_version.dart';
+import 'package:admin_app/features/customer_preview/domain/registry/template_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/widget_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/repositories/app_builder_repository.dart';
 import 'package:admin_app/features/customer_preview/domain/services/design_tree.dart';
@@ -286,6 +289,73 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
     return null;
   }
 
+  // ---------- طبقة الشكل ----------
+
+  /// لون دور عام. القيمة تُفحص هنا لا في اللوحة وحدها: `#GG` ناقص حرف يصل إلى
+  /// ColorScheme عند الزبون فينقلب كل شيء إلى أسود.
+  String? setThemeColor(DesignColorRole role, String hex) {
+    if (_editingRejection != DesignEditRejection.none) return 'قراءة فقط';
+    final document = state.document;
+    if (document == null) return 'لا مستند';
+    if (!DesignTheme.isHexColor(hex)) return 'لون بصيغة #RRGGBB مطلوب';
+    _apply(document.withTheme(document.theme.withColor(role, hex.trim())));
+    return null;
+  }
+
+  /// إرجاع دور إلى ما كان عليه قبل النظام: لا قيمة تُحفظ له، فيقرؤها العميل من
+  /// نظام تصميمه. هذه هي «الرجوع للتصميم الأصلي» على مستوى لون واحد.
+  void clearThemeColor(DesignColorRole role) {
+    final document = state.document;
+    if (document == null || _editingRejection != DesignEditRejection.none) {
+      return;
+    }
+    if (!document.theme.colors.containsKey(role)) return;
+    _apply(document.withTheme(document.theme.withoutColor(role)));
+  }
+
+  /// الطبقة كلها إلى الأصل: خطوة تراجع واحدة، لا دورًا دورًا. ما لا كتابة له
+  /// يُقرأ من نظام تصميم العميل، فـ«التصميم الأصلي» حالة في المستند لا ذكرى في
+  /// اللوحة.
+  void clearTheme() {
+    final document = state.document;
+    if (document == null || _editingRejection != DesignEditRejection.none) {
+      return;
+    }
+    if (!document.theme.isChanged) return;
+    _apply(document.withTheme(DesignTheme.none));
+  }
+
+  /// مقياس الخط: لا رقم حرّ — المفتاح وحده يُخزَّن، والعميل يترجمه إلى مضاعف
+  /// يعرفه هو، فلا تخترع اللوحة مقياسًا لا يقرؤه أحد.
+  String? setThemeTextScale(String key) {
+    return _setThemeScale(
+      key,
+      DesignScale.textKeys,
+      (theme, value) => theme.withTextScale(value),
+    );
+  }
+
+  String? setThemeRadiusScale(String key) {
+    return _setThemeScale(
+      key,
+      DesignScale.radiusKeys,
+      (theme, value) => theme.withRadiusScale(value),
+    );
+  }
+
+  String? _setThemeScale(
+    String key,
+    Set<String> allowed,
+    DesignTheme Function(DesignTheme, String) apply,
+  ) {
+    if (_editingRejection != DesignEditRejection.none) return 'قراءة فقط';
+    final document = state.document;
+    if (document == null) return 'لا مستند';
+    if (!allowed.contains(key)) return 'مقياس غير مسموح';
+    _apply(document.withTheme(apply(document.theme, key)));
+    return null;
+  }
+
   // ---------- التراجع والـ Redo ----------
 
   void undo() {
@@ -380,6 +450,93 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
       final versions = await _repository.loadVersions();
       if (isClosed) return;
       emit(state.copyWith(versions: versions));
+    } catch (error) {
+      if (isClosed) return;
+      emit(state.copyWith(errorMessage: adminErrorMessage(error)));
+    }
+  }
+
+  /// أسماء ما حفظه الموظف من قوالب، لا ملفّاتها: القائمة تُفتح على أسماء،
+  /// والمستند يُسحب فقط حين يقرّر أحد أن يفتحه.
+  Future<void> refreshTemplates() async {
+    try {
+      final templates = await _repository.loadTemplates();
+      if (isClosed) return;
+      emit(state.copyWith(templates: templates));
+    } catch (error) {
+      if (isClosed) return;
+      emit(state.copyWith(errorMessage: adminErrorMessage(error)));
+    }
+  }
+
+  /// قالب مضمّن على المستند الحالي: ترتيب وألوان، ومقاطع الموظف التي لا
+  /// يعرفها القالب تبقى كما هي. تراجع عنه زرّ التراجع نفسه.
+  void applyBuiltInTemplate(AppTemplate template) {
+    final document = state.document;
+    if (document == null) {
+      emit(state.copyWith(errorMessage: S.builderNoDocument));
+      return;
+    }
+    final next = template.applyTo(document);
+    // مرتان من نفس القالب عدلان واحد: لا طابور تراجع بعِدْل لا يغيّر حرفًا،
+    // كما تفعل طبقة الشكل مع دورٍ لم يُلْمَس.
+    if (next.hasSameContent(document)) return;
+    _apply(next);
+  }
+
+  /// فتح قالب محفوظ محلّ المستند الحالي. لا نشر ضمنًا: القالب يدخل المسودة،
+  /// والزبون لا يرى شيئًا حتى يضغط الموظف «نشر».
+  Future<void> applySavedTemplate(String templateId) async {
+    try {
+      final document = await _repository.loadTemplate(templateId);
+      if (isClosed) return;
+      if (document == null || state.document == null) {
+        emit(state.copyWith(errorMessage: S.builderTemplateMissing));
+        return;
+      }
+      _apply(document);
+    } catch (error) {
+      if (isClosed) return;
+      emit(state.copyWith(errorMessage: adminErrorMessage(error)));
+    }
+  }
+
+  /// حفظ ما على الشاشة كقالب. ترفض القاعدة مستندًا لا يُنشر، فلا يقعد في
+  /// المعرض قالب يعطب عند النشر.
+  Future<bool> saveTemplate(String name) async {
+    final document = state.document;
+    if (document == null) {
+      emit(state.copyWith(errorMessage: S.builderNoDocument));
+      return false;
+    }
+    emit(state.copyWith(clearError: true));
+    try {
+      final saved = await _repository.saveTemplate(name, document);
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          templates: <DesignTemplate>[saved, ...state.templates],
+        ),
+      );
+      return true;
+    } catch (error) {
+      if (isClosed) return false;
+      emit(state.copyWith(errorMessage: adminErrorMessage(error)));
+      return false;
+    }
+  }
+
+  Future<void> deleteTemplate(String templateId) async {
+    try {
+      await _repository.deleteTemplate(templateId);
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          templates: state.templates
+              .where((template) => template.id != templateId)
+              .toList(growable: false),
+        ),
+      );
     } catch (error) {
       if (isClosed) return;
       emit(state.copyWith(errorMessage: adminErrorMessage(error)));

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/preview_product.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_struck_price.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
@@ -37,10 +37,9 @@ class SimulatorProductDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final oldPrice = product.oldPrice;
-    final description =
-        (language.isArabic ? product.descriptionAr : product.descriptionEn)
-            ?.trim();
+    final description = (language.isArabic ? product.descriptionAr : product.descriptionEn)?.trim();
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.only(bottom: AppSpacing.lg),
@@ -81,13 +80,13 @@ class SimulatorProductDetailsScreen extends StatelessWidget {
               Text(
                 product.nameFor(language),
                 style: AppFonts.semiBold20(context)
-                    .copyWith(color: adminHeadingColor(theme)),
+                    .copyWith(color: palette.textPrimary ?? adminHeadingColor(theme)),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 product.categoryFor(language),
                 style: AppFonts.regular14(context)
-                    .copyWith(color: adminMutedColor(theme)),
+                    .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
               ),
               const SizedBox(height: AppSpacing.md),
               Row(
@@ -96,7 +95,7 @@ class SimulatorProductDetailsScreen extends StatelessWidget {
                     child: AdminMoneyText(
                       value: product.price,
                       fontSize: AppFontSizes.size18,
-                      color: AppColor.primaryColor,
+                      color: palette.primary,
                     ),
                   ),
                   if (oldPrice != null) ...[
@@ -110,7 +109,7 @@ class SimulatorProductDetailsScreen extends StatelessWidget {
                 Text(
                   description,
                   style: AppFonts.regular14(context)
-                      .copyWith(color: adminMutedColor(theme)),
+                      .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
@@ -125,14 +124,14 @@ class SimulatorProductDetailsScreen extends StatelessWidget {
                     AppIcon(
                       AppIcons.informationCircle,
                       size: AppSizes.px16,
-                      color: adminMutedColor(theme),
+                      color: palette.textSecondary ?? adminMutedColor(theme),
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         labels.detailsNote,
                         style: AppFonts.regular12(context)
-                            .copyWith(color: adminMutedColor(theme)),
+                            .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
                       ),
                     ),
                   ],

@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:new_coffee/features/menu/data/product_options.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 
 /// Deterministic cover for the catalogue read in
@@ -532,7 +533,7 @@ void main() {
       'asks for the option groups and their values in one round trip',
       () async {
         final firstStage = _InFlightBarrier(4);
-        final secondStage = _InFlightBarrier(2);
+        final secondStage = _InFlightBarrier(3);
         final catalog = _Catalog(
           products: productRows(),
           images: imageRows(),
@@ -595,6 +596,9 @@ void main() {
             ),
             'option_groups': secondStage.hookFor('option_groups'),
             'option_values': secondStage.hookFor('option_values'),
+            'product_option_value_pricing': secondStage.hookFor(
+              'product_option_value_pricing',
+            ),
           },
         );
 
@@ -605,9 +609,10 @@ void main() {
 
         expect(catalog.optionGroupRequests, 1);
         expect(catalog.optionValueRequests, 1);
+        expect(catalog.optionPricingRequests, 1);
         expect(
           catalog.totalRequests,
-          6,
+          7,
           reason: 'two stages, not six round trips',
         );
         final group = loaded!.groups.single;
@@ -655,6 +660,179 @@ void main() {
       },
     );
   });
+
+  group('option value pricing override (229)', () {
+    final sizeGroup = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'g1',
+        'code': 'size',
+        'name_ar': 'الحجم',
+        'name_en': 'Size',
+        'selection_type': 'single',
+        'min_select': 1,
+        'max_select': 1,
+        'is_required': true,
+        'sort_order': 0,
+        'is_active': true,
+      },
+    ];
+    final sizeValues = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'id': 'v1',
+        'group_id': 'g1',
+        'code': 'small',
+        'name_ar': 'صغير',
+        'name_en': 'Small',
+        'price_delta': 0,
+        'short_label': null,
+        'is_default': true,
+        'sort_order': 0,
+        'is_active': true,
+      },
+      <String, dynamic>{
+        'id': 'v2',
+        'group_id': 'g1',
+        'code': 'large',
+        'name_ar': 'كبير',
+        'name_en': 'Large',
+        'price_delta': 4,
+        'short_label': null,
+        'is_default': false,
+        'sort_order': 1,
+        'is_active': true,
+      },
+    ];
+    final singleLink = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'group_id': 'g1',
+        'sort_order': 0,
+        'is_required': true,
+      },
+    ];
+
+    test('getWithOptions resolves the value to the override it carries', () async {
+      // Migration 229 lets the dashboard pin one size's delta for one product.
+      // The local estimate must add the same number the server charges, so the
+      // override wins over the group default on the value the app holds.
+      final catalog = _Catalog(
+        products: productRows(),
+        images: imageRows(),
+        links: singleLink,
+        optionGroups: sizeGroup,
+        optionValues: sizeValues,
+        optionPricing: <Map<String, dynamic>>[
+          <String, dynamic>{
+            'product_id': 'p1',
+            'value_id': 'v2',
+            'price_delta': 9,
+          },
+        ],
+      );
+
+      final loaded = await catalog.repository().getWithOptions('p1');
+      final group = loaded!.groups.single;
+      final large = group.values.firstWhere((v) => v.id == 'v2');
+      final small = group.values.firstWhere((v) => v.id == 'v1');
+
+      expect(
+        large.priceDelta,
+        9,
+        reason: 'the override replaces the group default',
+      );
+      expect(
+        small.priceDelta,
+        0,
+        reason: 'a value with no override keeps its own delta',
+      );
+
+      var selection = OptionSelection.defaultsFor(loaded.groups);
+      selection = selection.toggle(loaded.groups, group.id, 'v2');
+      expect(selection.deltaOf(loaded.groups), 9);
+      expect(
+        estimateUnitPrice(loaded.product, loaded.groups, selection),
+        loaded.product.price + 9,
+        reason: 'the local estimate uses the override',
+      );
+    });
+
+    test('getWithOptions keeps the group default when no override exists', () async {
+      final catalog = _Catalog(
+        products: productRows(),
+        images: imageRows(),
+        links: singleLink,
+        optionGroups: sizeGroup,
+        optionValues: sizeValues,
+      );
+
+      final loaded = await catalog.repository().getWithOptions('p1');
+      final large = loaded!.groups.single.values.firstWhere((v) => v.id == 'v2');
+
+      expect(
+        large.priceDelta,
+        4,
+        reason: 'an absent override leaves the value default untouched',
+      );
+      expect(
+        catalog.optionPricingRequests,
+        1,
+        reason: 'the product is still read, it just comes back empty',
+      );
+    });
+
+    test(
+      'getOptionsByProduct resolves each product from one pricing query',
+      () async {
+        // Two products share the group, but only p1 has an override. The batch
+        // read has to price each from its own rows in a single request, never
+        // one per product.
+        final catalog = _Catalog(
+          links: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'product_id': 'p1',
+              'group_id': 'g1',
+              'sort_order': 0,
+              'is_required': true,
+            },
+            <String, dynamic>{
+              'product_id': 'p2',
+              'group_id': 'g1',
+              'sort_order': 0,
+              'is_required': true,
+            },
+          ],
+          optionGroups: sizeGroup,
+          optionValues: sizeValues,
+          optionPricing: <Map<String, dynamic>>[
+            <String, dynamic>{
+              'product_id': 'p1',
+              'value_id': 'v2',
+              'price_delta': 9,
+            },
+          ],
+        );
+
+        final byProduct = await catalog.repository().getOptionsByProduct([
+          'p1',
+          'p2',
+        ]);
+
+        final large1 = byProduct['p1']!.single.values.firstWhere(
+          (v) => v.id == 'v2',
+        );
+        final large2 = byProduct['p2']!.single.values.firstWhere(
+          (v) => v.id == 'v2',
+        );
+
+        expect(large1.priceDelta, 9, reason: 'p1 carries its override');
+        expect(large2.priceDelta, 4, reason: 'p2 keeps the group default');
+        expect(
+          catalog.optionPricingRequests,
+          1,
+          reason: 'the whole batch is one query, not one per product',
+        );
+      },
+    );
+  });
 }
 
 /// Lets a test prove several requests are in flight at once: every participant
@@ -691,6 +869,7 @@ class _Catalog {
     this.links = const <Map<String, dynamic>>[],
     this.optionGroups = const <Map<String, dynamic>>[],
     this.optionValues = const <Map<String, dynamic>>[],
+    this.optionPricing = const <Map<String, dynamic>>[],
     this.failImages = false,
     this.failPricing = false,
     this.onImages,
@@ -707,6 +886,7 @@ class _Catalog {
   final List<Map<String, dynamic>> links;
   final List<Map<String, dynamic>> optionGroups;
   final List<Map<String, dynamic>> optionValues;
+  final List<Map<String, dynamic>> optionPricing;
   final bool failImages;
   final bool failPricing;
   final Future<void> Function()? onImages;
@@ -735,6 +915,9 @@ class _Catalog {
       requests.where((u) => u.path.endsWith('/option_groups')).length;
   int get optionValueRequests =>
       requests.where((u) => u.path.endsWith('/option_values')).length;
+  int get optionPricingRequests =>
+      requests.where((u) => u.path.endsWith('/product_option_value_pricing'))
+          .length;
   int get totalRequests => requests.length;
 
   Uri? requestEndingWith(String suffix) {
@@ -788,6 +971,9 @@ class _Catalog {
     }
     if (url.path.endsWith('/option_values')) {
       return _response(request, jsonEncode(optionValues), 200);
+    }
+    if (url.path.endsWith('/product_option_value_pricing')) {
+      return _response(request, jsonEncode(optionPricing), 200);
     }
     if (url.path.endsWith('/banner_products') ||
         url.path.endsWith('/banner_categories')) {

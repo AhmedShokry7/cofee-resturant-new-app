@@ -14,7 +14,7 @@ class ThemeClass {
   ThemeClass._();
 
   static ThemeData light() {
-    const onSurface = AppColor.blackColor;
+    final onSurface = AppColor.textPrimary;
 
     final colorScheme = ColorScheme.light(
       primary: AppColor.primaryColor,
@@ -27,10 +27,10 @@ class ThemeClass {
       onTertiary: AppColor.whiteColor,
       error: AppColor.errorColor,
       onError: AppColor.whiteColor,
-      surface: AppColor.whiteColor,
+      surface: AppColor.cardSurface,
       onSurface: onSurface,
       surfaceContainerHighest: AppColor.lightGreyColor,
-      onSurfaceVariant: AppColor.greyColor,
+      onSurfaceVariant: AppColor.textSecondary,
       outline: AppColor.borderColor,
       outlineVariant: AppColor.borderColor,
       scrim: AppColor.scrimColor,
@@ -51,21 +51,21 @@ class ThemeClass {
       colorScheme: colorScheme,
       fontFamily: AppFontFamily.primary,
       textTheme: textTheme,
-      scaffoldBackgroundColor: AppColor.whiteColor,
+      scaffoldBackgroundColor: AppColor.background,
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColor.whiteColor,
+        backgroundColor: AppColor.background,
         foregroundColor: onSurface,
         surfaceTintColor: AppColor.transparent,
         elevation: AppElevation.flat,
         scrolledUnderElevation: 0,
         centerTitle: true,
         titleTextStyle: textTheme.titleLarge,
-        iconTheme: const IconThemeData(
+        iconTheme: IconThemeData(
           size: AppIconSize.xl,
-          color: AppColor.blackColor,
+          color: AppColor.textPrimary,
         ),
       ),
-      dividerTheme: const DividerThemeData(
+      dividerTheme: DividerThemeData(
         color: AppColor.borderColor,
         thickness: AppSizes.px1,
         space: AppSizes.px1,
@@ -107,16 +107,20 @@ class ThemeClass {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColor.lightGreyColor,
-        hintStyle: textTheme.bodyMedium?.copyWith(color: AppColor.greyColor),
-        labelStyle: textTheme.bodyMedium?.copyWith(color: AppColor.greyColor),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColor.textSecondary,
+        ),
+        labelStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColor.textSecondary,
+        ),
         contentPadding: controlPadding,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.controlRadius),
-          borderSide: const BorderSide(color: AppColor.borderColor),
+          borderSide: BorderSide(color: AppColor.borderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.controlRadius),
-          borderSide: const BorderSide(color: AppColor.borderColor),
+          borderSide: BorderSide(color: AppColor.borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimensions.controlRadius),
@@ -132,17 +136,17 @@ class ThemeClass {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         surfaceTintColor: AppColor.transparent,
         elevation: AppElevation.flat,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-          side: const BorderSide(color: AppColor.borderColor),
+          side: BorderSide(color: AppColor.borderColor),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: AppColor.whiteColor,
+        backgroundColor: AppColor.cardSurface,
         surfaceTintColor: AppColor.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
@@ -152,8 +156,8 @@ class ThemeClass {
       ),
       // A sheet is the app's heaviest floating surface: rounder than a card and
       // clipped to the top corners only, which is what Material 3 draws.
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColor.whiteColor,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: AppColor.cardSurface,
         surfaceTintColor: AppColor.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
@@ -164,7 +168,7 @@ class ThemeClass {
       chipTheme: ChipThemeData(
         backgroundColor: AppColor.lightGreyColor,
         selectedColor: AppColor.primaryColor,
-        side: const BorderSide(color: AppColor.borderColor),
+        side: BorderSide(color: AppColor.borderColor),
         labelStyle: textTheme.labelLarge,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(
@@ -200,7 +204,7 @@ class ThemeClass {
           }
           return AppColor.transparent;
         }),
-        side: const BorderSide(color: AppColor.borderColor),
+        side: BorderSide(color: AppColor.borderColor),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.r4),
         ),

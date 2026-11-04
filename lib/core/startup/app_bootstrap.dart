@@ -6,6 +6,8 @@ import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/startup/preview_theme.dart';
 import 'package:new_coffee/core/startup/startup_logging.dart';
+import 'package:new_coffee/features/design/data/design_applier.dart';
+import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
 import 'package:new_coffee/features/notifications/data/services/push_tap_opener.dart';
 import 'package:new_coffee/firebase_options.dart';
@@ -41,6 +43,15 @@ Future<StartupTarget> bootstrapApp() async {
   );
 
   final target = await _readSavedSession();
+
+  // التصميم الذي نشره الموظف يُقرأ قبل أول إطار، لا بعد الشاشة الأولى: إقلاع
+  // يلوّن بعد ما ظهر ارتدادٌ يراه الزبون. لا صف منشور يعني طبقة محايدة، فلا
+  // يتغيّر شيء عند بدء النظام.
+  await runGuarded('Design.apply', () async {
+    final design = await SupabaseDesignRepository().published();
+    if (design == null) return;
+    applyPublishedTheme(design.theme);
+  });
 
   // Preview mode: allow the admin dashboard to override design tokens from the
   // query string without touching published configuration. Applied before the

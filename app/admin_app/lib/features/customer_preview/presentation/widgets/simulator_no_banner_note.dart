@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 
@@ -19,6 +20,7 @@ class SimulatorNoBannerNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
@@ -30,14 +32,14 @@ class SimulatorNoBannerNote extends StatelessWidget {
           AppIcon(
             AppIcons.informationCircle,
             size: AppSizes.px16,
-            color: adminMutedColor(theme),
+            color: palette.textSecondary ?? adminMutedColor(theme),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               label,
               style: AppFonts.regular12(context)
-                  .copyWith(color: adminMutedColor(theme)),
+                  .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
             ),
           ),
         ],

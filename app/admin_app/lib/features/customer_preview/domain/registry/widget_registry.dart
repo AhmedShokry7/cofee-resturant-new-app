@@ -75,7 +75,21 @@ abstract final class WidgetRegistry {
   WidgetRegistry._();
 
   /// نسخة مخطط التصميم التي يرسمها هذا البناء.
-  static const int schemaVersion = 1;
+  ///
+  /// النسخة 2 أضفت طبقة الشكل العام [DesignTheme] إلى المستند. لا شيء آخر تغيّر:
+  /// مستند النسخة 1 بلا `theme` يُقرأ ويُرفع طابعه حيّة المحرّر لأن طبقته
+  /// محايدة، فيبقى ما نُشر قبل لوحة الألوان قابلًا للتحرير لا للأرشفة.
+  static const int schemaVersion = 2;
+
+  /// مستند مقروء من قاعدة أو نسخة محفوظّة، بطابع هذا البناء لا بطابع كُتب به.
+  ///
+  /// الترقية خسارةُها صفر لأن الفرق بين النسختين مفتاح غائب يساوي طبقة محايدة؛
+  /// لو حملت نسخة قادمة حقلًا لا يعرفه هذا البناء فلا أحد يحوّله قسرًا — تترك
+  /// [normalize] طابعها أعلى من الباني ويمنع الفاحص النشر.
+  static DesignDocument normalize(DesignDocument document) =>
+      document.schemaVersion == schemaVersion
+      ? document
+      : document.copyWith(schemaVersion: schemaVersion);
 
   static const List<String> _sectionsAndContent = <String>[
     WidgetTypes.header,

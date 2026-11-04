@@ -890,6 +890,35 @@ class S {
   static String get preferenceNotSaved => _ar
       ? 'لم يُحفظ التغيير. تحقّق من الاتصال وحاول مجددًا.'
       : 'The change was not saved. Check the connection and try again.';
+
+  /// The bell in the app bar offers this when a row still waits.
+  static String get notificationMarkAllRead =>
+      _ar ? 'تعليم الكل كمقروء' : 'Mark all as read';
+
+  /// Rows the server holds beyond the ones on screen.
+  static String get notificationShowMore =>
+      _ar ? 'عرض المزيد' : 'Show more';
+
+  static String get notificationDayToday => _ar ? 'اليوم' : 'Today';
+  static String get notificationDayYesterday => _ar ? 'أمس' : 'Yesterday';
+
+  /// The list is silent about the phone channel while the customer has never
+  /// chosen: the banner asks, it does not accuse.
+  static String get notificationPushPausedTitle => _ar
+      ? 'الإشعارات متوقفة على هذا الهاتف'
+      : 'Notifications are off on this phone';
+  static String get notificationPushPausedHint => _ar
+      ? 'فعّلها لتصلك تحديثات الطلب والعروض فورًا.'
+      : 'Turn them on so order updates and offers reach you right away.';
+
+  /// An order named by a notification that this account never placed.
+  static String get orderNotInAccount => _ar
+      ? 'هذا الطلب ليس في حسابك'
+      : 'This order is not in your account';
+  static String get orderNotInAccountHint => _ar
+      ? 'رقم الطلب لا يوجد بين طلبات هذا الحساب. تحقّق من الحساب أو راجع قائمة طلباتك.'
+      : 'That order is not among this account\'s orders. Check the account or open your order list.';
+
   static String get skip => _ar ? 'تخطي' : 'Skip';
 
   // ---------- Banners ----------

@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/navigation/notification_routes.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/notifications/data/repositories/push_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
@@ -60,21 +61,23 @@ class PushService {
   /// the signed-in customer.
   static String? _enabledUserId;
 
-  /// The route a tapped notification asks for, waiting for the app to be
+  /// The destination a tapped notification asked for, waiting for the app to be
   /// ready to show it.
   ///
   /// A tap that opens the app from a cold start arrives before the first
   /// frame is drawn, so there is no navigator to push a route on yet. The
-  /// route waits here until the main page takes it.
-  static String? _pendingRoute;
+  /// destination waits here until the main page takes it, and it keeps the
+  /// record the message names so the wait does not cost the customer the order
+  /// they were sent to.
+  static NotificationOpen? _pendingRoute;
 
-  /// Remembers the route of a tapped notification.
-  static void setPendingRoute(String route) {
+  /// Remembers the destination of a tapped notification.
+  static void setPendingRoute(NotificationOpen route) {
     _pendingRoute = route;
   }
 
-  /// The route of a tapped notification, and forgets it.
-  static String? takePendingRoute() {
+  /// The destination of a tapped notification, and forgets it.
+  static NotificationOpen? takePendingRoute() {
     final route = _pendingRoute;
     _pendingRoute = null;
     return route;
@@ -268,9 +271,33 @@ class PushService {
       if (token == null || token.isEmpty) return;
       _token = token;
       await _registerToken(token, repository);
+      await adoptGrantedPush(repository);
     } catch (error) {
       if (kDebugMode) {
         debugPrint('[PushService] enable failed: $error');
+      }
+    }
+  }
+
+  /// Opens the server switch of a customer who already allowed notifications on
+  /// the phone and has never been asked.
+  ///
+  /// The database stops every message of a customer whose preferences row is
+  /// missing, and this app only wrote that row when the customer pressed the
+  /// switch in the app. A device that granted the system permission and never
+  /// reached the switch therefore received nothing. `updated_at` comes back null
+  /// only in the answer the server synthesises for a customer who has never
+  /// chosen, so a switch the customer turned off is respected and never opened
+  /// again from here.
+  @visibleForTesting
+  static Future<void> adoptGrantedPush(PushRepository repository) async {
+    try {
+      final switches = await repository.preferences();
+      if (switches.chosen || switches.pushEnabled) return;
+      await repository.setPreferences(pushEnabled: true);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('[PushService] push adoption failed: $error');
       }
     }
   }

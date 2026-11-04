@@ -6,6 +6,21 @@
 --    because it becomes the right mechanism on a self-hosted instance, but on
 --    Supabase Cloud it does NOT take effect. Do not rely on it here.
 --
+-- UPDATE 2026-11-04 - the schemas listed below ARE exposed now, but not by this
+--    file. Measured on the live gateway:
+--      * GET /rest/v1/categories with Accept-Profile: catalog   -> 200 rows
+--      * GET /rest/v1/profiles   with Accept-Profile: identity  -> 200, the
+--        caller's own row only (RLS), and 401/42501 for anon
+--      * GET /rest/v1/product_knowledge with Accept-Profile: ai -> 406 PGRST106
+--        "Only the following schemas are exposed: public, graphql_public,
+--        identity, core, catalog, orders, ..." - `ai` is absent, as intended.
+--    The role setting now also reads back
+--    authenticator: pgrst.db_schemas=public,graphql_public,identity,core,
+--    catalog,orders,inventory,payments,loyalty,marketing,engagement. Nothing
+--    below ran, and which switch produced the exposure (the dashboard tick this
+--    file asked a human to make, or the platform itself) is not visible from
+--    SQL - only the serving behaviour above is.
+--
 -- What was verified on webzzasosevzymftgszn (2026-10-15):
 --   * this function is never invoked. Instrumenting it with an INSERT and
 --     issuing a request produced zero invocations, which means in-database

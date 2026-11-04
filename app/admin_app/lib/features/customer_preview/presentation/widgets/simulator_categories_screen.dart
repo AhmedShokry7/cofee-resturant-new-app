@@ -11,6 +11,7 @@ import 'package:admin_app/features/customer_preview/presentation/widgets/simulat
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_category_tabs.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_empty_state.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_product_grid.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -42,6 +43,7 @@ class SimulatorCategoriesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final palette = SimulatorPalette.of(context);
     final categories = feed.visibleCategories;
     if (categories.isEmpty) {
       return SimulatorEmptyState(
@@ -64,8 +66,9 @@ class SimulatorCategoriesScreen extends StatelessWidget {
           child: Text(
             labels.categories,
             textAlign: TextAlign.center,
-            style: AppFonts.semiBold20(context)
-                .copyWith(color: adminHeadingColor(Theme.of(context))),
+            style: AppFonts.semiBold20(context).copyWith(
+              color: palette.textPrimary ?? adminHeadingColor(Theme.of(context)),
+            ),
           ),
         ),
         SimulatorCategoryTabs(

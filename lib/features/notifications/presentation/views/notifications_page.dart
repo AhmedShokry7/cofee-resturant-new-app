@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
-
-import 'package:new_coffee/core/theme/app_icons.dart';
-import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/navigation/notification_routes.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_preferences_sheet.dart';
-import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
+import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_push_switch.dart';
+import 'package:new_coffee/features/notifications/presentation/views/widgets/notifications_page_body.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
-import 'package:new_coffee/shared/widgets/empty_state.dart';
-import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
-import 'package:new_coffee/core/theme/tokens.dart';
 
+/// The customer's own messages, and the switches that decide what is allowed to
+/// reach the phone.
+///
+/// The screen reads nothing and writes nothing: it asks the cubit for the rows
+/// and the switches, and every control hands the decision to it.
 class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
 
@@ -23,55 +24,34 @@ class NotificationsPage extends StatefulWidget {
 }
 
 class _NotificationsPageState extends State<NotificationsPage> {
-  /// Opening the page marks what is on screen as seen, through the server RPC
-  /// rather than device-only flags.
+  /// Reads the switches of the customer when the screen opens.
   ///
-  /// This runs from [State.initState], so it happens once per visit. It used to
-  /// run from a post-frame callback registered inside `BlocBuilder.builder`,
-  /// which meant every emission scheduled another one and the page spun in an
-  /// endless emit -> rebuild -> mark-as-read -> request loop. `initState` is a
-  /// lifecycle callback, not a render callback, so no later emission can
-  /// restart it, and the cubit still re-reads the list afterwards so the unread
-  /// dots clear without losing the rows.
+  /// They belong to the account, not to this phone, so the bell and the banner
+  /// are drawn from the server row rather than from anything stored locally.
   ///
-  /// Notifications that arrive later are not affected: only the ids that are
-  /// unread at the moment of the call are written, and a future visit marks
-  /// whatever is unread then.
+  /// This runs from [State.initState], a lifecycle callback: an earlier version
+  /// ran it from a post-frame callback registered inside a `builder`, which
+  /// meant every emission scheduled another one.
+  ///
+  /// Marking nothing read is deliberate too. Opening the page used to mark
+  /// every row on it as seen, which cleared the dots before the customer had
+  /// read a single message; rows are now marked where they are actually read -
+  /// one at a time, on the tap - and the app bar offers the rest on purpose.
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<NotificationsCubit>().markAllRead();
-      // The switch of the push belongs to the customer, so it is read from
-      // the server instead of being remembered on the device.
       context.read<NotificationsCubit>().loadPushState();
     });
-  }
-
-  /// Turns the push on or off and says what happened.
-  ///
-  /// Turning it on needs the permission of the system, so it can be refused.
-  /// A refusal that leaves the switch where it was is reported, because a
-  /// switch that does nothing looks broken.
-  Future<void> _togglePush(BuildContext context, bool enabled) async {
-    final cubit = context.read<NotificationsCubit>();
-    final requested = !enabled;
-    await cubit.setPushEnabled(requested);
-    if (!context.mounted) return;
-    if (cubit.state.pushEnabled == requested) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          requested ? S.notificationPermissionDenied : S.notificationsTurnedOff,
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<NotificationsCubit, NotificationsState>(
+      buildWhen: (previous, current) =>
+          previous.signedOut != current.signedOut ||
+          previous.unreadCount != current.unreadCount,
       builder: (context, state) {
         if (state.signedOut) {
           return const AuthRequiredView(
@@ -82,76 +62,23 @@ class _NotificationsPageState extends State<NotificationsPage> {
           appBar: AppBar(
             title: Text(S.notifications),
             actions: [
-              if (!state.signedOut)
+              if (state.unreadCount > 0)
                 IconButton(
-                  tooltip: S.notificationPreferences,
-                  icon: const Icon(AppIcons.settings),
-                  onPressed: () => showNotificationPreferencesSheet(context),
+                  key: const ValueKey('notification-mark-all'),
+                  tooltip: S.notificationMarkAllRead,
+                  icon: const Icon(AppIcons.checkmark),
+                  onPressed: () =>
+                      context.read<NotificationsCubit>().markAllRead(),
                 ),
-              BlocBuilder<NotificationsCubit, NotificationsState>(
-                buildWhen: (previous, current) =>
-                    previous.pushEnabled != current.pushEnabled ||
-                    previous.signedOut != current.signedOut,
-                builder: (context, cubitState) {
-                  if (cubitState.signedOut) return const SizedBox.shrink();
-                  final enabled = cubitState.pushEnabled;
-                  return IconButton(
-                    tooltip: enabled
-                        ? S.turnOffNotifications
-                        : S.turnOnNotifications,
-                    icon: Icon(
-                      enabled
-                          ? AppIcons.notification
-                          : AppIcons.notificationOff,
-                    ),
-                    onPressed: () => _togglePush(context, enabled),
-                  );
-                },
+              const NotificationPushToggle(),
+              IconButton(
+                tooltip: S.notificationPreferences,
+                icon: const Icon(AppIcons.settings),
+                onPressed: () => showNotificationPreferencesSheet(context),
               ),
             ],
           ),
-          body: Builder(
-            builder: (context) {
-              if (state.isLoading && state.notifications.isEmpty) {
-                return const NotificationsSkeleton();
-              }
-              if (state.error != null && state.notifications.isEmpty) {
-                return EmptyState(
-                  icon: AppIcons.notification,
-                  title: S.couldNotLoadNotifications,
-                  subtitle: state.error,
-                );
-              }
-              if (state.notifications.isEmpty) {
-                return EmptyState(
-                  icon: AppIcons.notification,
-                  title: S.noNotifications,
-                  subtitle: S.notificationsHint,
-                );
-              }
-              return ListView(
-                padding: AppLayout.pageBody,
-                children: state.notifications
-                    .map(
-                      (notification) => NotificationTile(
-                        notification: notification,
-                        isRead: notification.isRead,
-                        onTap: () {
-                          final route = routeForNotification(
-                            relatedEntityType: notification.relatedEntityType,
-                            type: notification.type,
-                            destination: notification.destination,
-                          );
-                          if (route != null) {
-                            Navigator.of(context).pushNamed(route);
-                          }
-                        },
-                      ),
-                    )
-                    .toList(),
-              );
-            },
-          ),
+          body: const NotificationsPageBody(),
         );
       },
     );

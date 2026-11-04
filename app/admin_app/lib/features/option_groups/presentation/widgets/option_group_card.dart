@@ -236,7 +236,7 @@ class _ValueLines extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSizes.px4),
                 Text(
-                  localizeDigits(_deltaText(value.priceDelta)),
+                  localizeDigits(formatDelta(value.priceDelta)),
                   style: TextStyle(
                     color: adminAmountColor(theme),
                     fontSize: AppFontSizes.size10_5,
@@ -265,11 +265,6 @@ class _ValueLines extends StatelessWidget {
   }
 
   static const int visibleRows = OptionGroupCard.visibleValueRows;
-
-  /// الصفر يُعرض بلا علامة: حجم بلا مقابل فوق الأساس ليس «مجانًا +٠».
-  static String _deltaText(double delta) => delta == 0
-      ? formatAmount(0)
-      : '${delta > 0 ? '+' : '-'}${formatAmount(delta.abs())}';
 }
 
 /// خلية فعل في ذيل البطاقة، على قياس ذيل بطاقة الفئة.

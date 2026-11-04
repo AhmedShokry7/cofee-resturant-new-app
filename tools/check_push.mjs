@@ -66,7 +66,24 @@ const signIn = await fetch(`${url}/auth/v1/token?grant_type=password`, {
   body: JSON.stringify({ email, password }),
 });
 if (!signIn.ok) {
-  console.error(`Could not sign in as ${email}: ${signIn.status} ${await signIn.text()}`);
+  const detail = await signIn.text();
+  console.error(`Could not sign in as ${email}: ${signIn.status} ${detail}`);
+  // `invalid_credentials` does not tell a wrong password from a customer that
+  // no longer exists, and the @test.local fixtures get wiped between rounds of
+  // data work. Ask the database which one it is, so the next step is never a
+  // guess about the password.
+  try {
+    const rows = await sql(
+      `select count(*)::int as n from auth.users where email = '${email.replaceAll("'", "''")}'`,
+    );
+    if (!rows[0]?.n) {
+      console.error(`  No auth user with that email exists in this project, so the test`);
+      console.error(`  fixtures are gone rather than the password being wrong.`);
+      console.error('  Recreate them with:  node supabase/tests/make_test_users.js');
+    }
+  } catch (error) {
+    console.error(`  (could not check whether the account exists: ${error.message})`);
+  }
   process.exit(2);
 }
 const session = await signIn.json();

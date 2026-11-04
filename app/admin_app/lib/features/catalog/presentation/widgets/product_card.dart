@@ -30,6 +30,7 @@ class ProductCard extends StatefulWidget {
     this.onDelete,
     this.onSelect,
     this.onOpenImages,
+    this.onOpenOptions,
     this.onCreateCategory,
     this.isSelected = false,
     this.isSaving = false,
@@ -46,6 +47,9 @@ class ProductCard extends StatefulWidget {
 
   /// Opens the gallery of the pictures of the product.
   final VoidCallback? onOpenImages;
+
+  /// يفتح حوار ما يسري على هذا المنتج من الأحجام والإضافات وأسعاره عنده.
+  final VoidCallback? onOpenOptions;
 
   /// Creates a category of its own and hands it back to the card.
   final Future<AdminCategory?> Function(
@@ -245,6 +249,24 @@ class _ProductCardState extends State<ProductCard> {
   /// handed over its callback — a control that does nothing is not shown.
   Future<void> _openMore(GlobalKey buttonKey) async {
     final items = <PopupMenuEntry<String>>[
+      // المشروب الجديد لم يُحفظ بعد، فلا صفّ له تُكتب عليه زيادة ولا ربط.
+      if (widget.onOpenOptions != null && _draft.id.isNotEmpty)
+        PopupMenuItem<String>(
+          value: 'options',
+          child: Row(
+            children: [
+              const Icon(
+                AppIcons.layers01,
+                size: 16,
+                color: AppColor.greyColor,
+              ),
+              const SizedBox(width: AppSizes.px8),
+              Flexible(
+                child: Text(S.optionGroups, overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+        ),
       if (widget.onToggleFeatured != null)
         PopupMenuItem<String>(
           value: 'featured',
@@ -292,6 +314,11 @@ class _ProductCardState extends State<ProductCard> {
       items: items,
     );
     if (selected == null || !mounted) return;
+
+    if (selected == 'options') {
+      widget.onOpenOptions?.call();
+      return;
+    }
 
     if (selected == 'featured') {
       widget.onToggleFeatured?.call();

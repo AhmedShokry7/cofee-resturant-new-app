@@ -432,6 +432,8 @@ class SupabaseProductRepository
 
     // Both reads are keyed by the same group ids, so neither waits for the
     // other: one round trip fetches the groups and their values together.
+    // The pricing read is keyed by the product id already in hand, so it runs
+    // in the same round trip rather than after the values come back.
     final groupRowsFuture = _client
         .from('option_groups')
         .select(_optionGroupColumns)
@@ -442,18 +444,25 @@ class SupabaseProductRepository
         .select(_optionValueColumns)
         .eq('is_active', true)
         .inFilter('group_id', groupIds);
+    final pricingFuture = _optionValuePricing([id]);
 
     final optionResults = await Future.wait<Object>(<Future<Object>>[
       groupRowsFuture,
       valueRowsFuture,
+      pricingFuture,
     ], eagerError: true);
     final groupRows = optionResults[0] as List<Map<String, dynamic>>;
     final valueRows = optionResults[1] as List<Map<String, dynamic>>;
+    final overrides =
+        (optionResults[2] as Map<String, Map<String, double>>)[id] ??
+        const <String, double>{};
 
     final valuesByGroup = <String, List<OptionValue>>{};
     for (final v in valueRows) {
       final gid = v['group_id'].toString();
-      valuesByGroup.putIfAbsent(gid, () => []).add(OptionValue.fromJson(v));
+      valuesByGroup
+          .putIfAbsent(gid, () => [])
+          .add(_withResolvedDelta(OptionValue.fromJson(v), overrides));
     }
     for (final list in valuesByGroup.values) {
       list.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
@@ -479,16 +488,16 @@ class SupabaseProductRepository
     return ProductWithOptions(product: product, groups: groups, images: images);
   }
 
-  /// Option groups for many products, in three parallel queries instead of
-  /// six per product.
+  /// Option groups for many products, in four shared queries instead of six
+  /// per product.
   ///
   /// The assistant reads this for the whole menu at once when it opens. The
   /// groups themselves (size, sugar, extras) are a small shared catalogue, so
   /// one pass over the bindings is enough to rebuild every product's list.
   ///
-  /// The three reads do not depend on each other, so they run together: the
-  /// bindings only need the product ids when the caller has them, and the
-  /// groups and values are global.
+  /// The four reads do not depend on each other, so they run together: the
+  /// bindings only need the product ids when the caller has them, the groups
+  /// and values are global, and the price overrides cover every product at once.
   @override
   Future<Map<String, List<OptionGroup>>> getOptionsByProduct(
     List<String> productIds,
@@ -500,7 +509,7 @@ class SupabaseProductRepository
     return _optionsFor(productIds);
   }
 
-  /// The three option reads, side by side.
+  /// The option reads for the batch, side by side.
   Future<Map<String, List<OptionGroup>>> _optionsFor(
     List<String> productIds,
   ) async {
@@ -522,10 +531,12 @@ class SupabaseProductRepository
         .from('option_values')
         .select(_optionValueColumns)
         .eq('is_active', true);
+    final pricingFuture = _optionValuePricing(productIds);
 
     final links = await linksFuture;
     final groupRows = await groupsFuture;
     final valueRows = await valuesFuture;
+    final pricingByProduct = await pricingFuture;
 
     final wanted = productIds.isEmpty ? null : productIds.toSet();
     final groupsById = <String, OptionGroup>{};
@@ -559,7 +570,12 @@ class SupabaseProductRepository
       if (wanted != null && !wanted.contains(productId)) continue;
       final group = groupsById[link['group_id'].toString()];
       if (group == null) continue;
-      final values = valuesByGroup[group.id] ?? const [];
+      final overrides =
+          pricingByProduct[productId] ?? const <String, double>{};
+      final defaults = valuesByGroup[group.id] ?? const <OptionValue>[];
+      final values = overrides.isEmpty
+          ? defaults
+          : [for (final v in defaults) _withResolvedDelta(v, overrides)];
       byProduct
           .putIfAbsent(productId, () => [])
           .add(
@@ -626,6 +642,56 @@ class SupabaseProductRepository
       .from('product_option_groups_effective')
       .select('group_id, sort_order, is_required')
       .eq('product_id', productId);
+
+  /// Per-product overrides of an option value's price delta (migration 229).
+  ///
+  /// The server adds the override, else the group default, so the local
+  /// estimate has to know the same rows. One query for the whole batch: a
+  /// menu or feed read costs one request, not one per product. An empty id
+  /// list asks for the whole small table, matching the all-products option
+  /// read. Absent rows simply mean the value keeps its group default.
+  Future<Map<String, Map<String, double>>> _optionValuePricing(
+    List<String> productIds,
+  ) async {
+    final query = _client
+        .from('product_option_value_pricing')
+        .select('product_id, value_id, price_delta');
+    final rows = productIds.isEmpty
+        ? await query
+        : await query.inFilter('product_id', productIds);
+
+    final byProduct = <String, Map<String, double>>{};
+    for (final r in rows) {
+      final delta = Db.asDoubleOrNull(r['price_delta']);
+      if (delta == null) continue;
+      byProduct
+          .putIfAbsent(r['product_id'].toString(), () => <String, double>{})[
+        r['value_id'].toString()
+      ] = delta;
+    }
+    return byProduct;
+  }
+
+  /// The value with this product's override applied, so every reader of
+  /// [OptionValue.priceDelta] sees the resolved number without learning about
+  /// the join. Returns the value unchanged when it has no override.
+  static OptionValue _withResolvedDelta(
+    OptionValue value,
+    Map<String, double> overrides,
+  ) {
+    final delta = overrides[value.id];
+    if (delta == null) return value;
+    return OptionValue(
+      id: value.id,
+      code: value.code,
+      nameAr: value.nameAr,
+      nameEn: value.nameEn,
+      priceDelta: delta,
+      shortLabel: value.shortLabel,
+      isDefault: value.isDefault,
+      sortOrder: value.sortOrder,
+    );
+  }
 
   /// The picture the product is shown with, and the way it is shown.
   ///

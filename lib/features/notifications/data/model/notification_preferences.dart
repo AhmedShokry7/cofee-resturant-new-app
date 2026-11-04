@@ -23,6 +23,7 @@ class NotificationPreferences {
     this.promo = true,
     this.loyalty = true,
     this.system = true,
+    this.chosen = false,
   });
 
   final bool pushEnabled;
@@ -32,6 +33,15 @@ class NotificationPreferences {
   final bool loyalty;
   final bool system;
 
+  /// Whether the customer has ever chosen, as the server records it.
+  ///
+  /// `push_preferences()` answers a customer with no preferences row with a
+  /// synthesised object whose `updated_at` is null, while a stored row always
+  /// carries a timestamp. The difference is what lets the app tell "never
+  /// asked" from "asked and switched off" - only the first of the two may be
+  /// opened on the customer's behalf.
+  final bool chosen;
+
   factory NotificationPreferences.fromJson(Map<String, dynamic> json) =>
       NotificationPreferences(
         pushEnabled: Db.asBool(json['push_enabled']),
@@ -40,6 +50,7 @@ class NotificationPreferences {
         promo: Db.asBool(json['promo'], fallback: true),
         loyalty: Db.asBool(json['loyalty'], fallback: true),
         system: Db.asBool(json['system'], fallback: true),
+        chosen: Db.textOrNull(json['updated_at']) != null,
       );
 
   NotificationPreferences copyWith({
@@ -49,6 +60,7 @@ class NotificationPreferences {
     bool? promo,
     bool? loyalty,
     bool? system,
+    bool? chosen,
   }) => NotificationPreferences(
     pushEnabled: pushEnabled ?? this.pushEnabled,
     emailEnabled: emailEnabled ?? this.emailEnabled,
@@ -56,6 +68,7 @@ class NotificationPreferences {
     promo: promo ?? this.promo,
     loyalty: loyalty ?? this.loyalty,
     system: system ?? this.system,
+    chosen: chosen ?? this.chosen,
   );
 
   bool valueOf(NotificationPreferenceKey key) => switch (key) {
@@ -73,7 +86,8 @@ class NotificationPreferences {
       other.orderStatus == orderStatus &&
       other.promo == promo &&
       other.loyalty == loyalty &&
-      other.system == system;
+      other.system == system &&
+      other.chosen == chosen;
 
   @override
   int get hashCode => Object.hash(
@@ -83,6 +97,7 @@ class NotificationPreferences {
     promo,
     loyalty,
     system,
+    chosen,
   );
 }
 

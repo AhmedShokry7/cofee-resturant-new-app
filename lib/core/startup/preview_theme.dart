@@ -19,7 +19,7 @@ void applyPreviewTheme() {
   final secondary = _colorFromHex(params['secondary']);
   if (secondary != null) AppColor.secondryColor = secondary;
   final surface = _colorFromHex(params['surface']);
-  if (surface != null) AppColor.surfaceColor = surface;
+  if (surface != null) AppColor.cardSurface = surface;
 }
 
 /// A `#RRGGBB` (or `RRGGBB`) from the query string, or null when it is absent

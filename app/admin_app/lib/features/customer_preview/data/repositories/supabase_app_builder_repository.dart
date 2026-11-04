@@ -2,7 +2,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_template.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_version.dart';
+import 'package:admin_app/features/customer_preview/domain/registry/widget_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/repositories/app_builder_repository.dart';
 
 /// تصميم تطبيق العميل في قاعدته: مسودة، ومنشور، وسجلّ إصدارات.
@@ -95,6 +97,68 @@ class SupabaseAppBuilderRepository implements AppBuilderRepository {
     await _supabase.rpc('admin_discard_app_design_draft');
   }
 
+  @override
+  Future<List<DesignTemplate>> loadTemplates() async {
+    final rows = await _supabase.rpc('admin_list_app_design_templates');
+    if (rows is! List) return const <DesignTemplate>[];
+    return rows
+        .whereType<Map<dynamic, dynamic>>()
+        .map(_templateFrom)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<DesignDocument?> loadTemplate(String id) async {
+    if (id.isEmpty) return null;
+    final rows = await _supabase.rpc(
+      'admin_get_app_design_template',
+      params: <String, dynamic>{'p_id': id},
+    );
+    return _documentFrom(rows);
+  }
+
+  @override
+  Future<DesignTemplate> saveTemplate(
+    String name,
+    DesignDocument document, {
+    String? templateId,
+  }) async {
+    final row = await _supabase.rpc(
+      'admin_save_app_design_template',
+      params: <String, dynamic>{
+        'p_id': templateId,
+        'p_name': name,
+        'p_document': document.toMap(),
+      },
+    );
+    if (row is! Map) {
+      throw const AppBuilderPublishException(
+        'حفظ القالب: القاعدة لم ترجع معرّفه',
+      );
+    }
+    final saved = Map<dynamic, dynamic>.from(row);
+    return DesignTemplate(
+      id: '${saved['id'] ?? templateId ?? ''}',
+      name: '${saved['name'] ?? name}',
+      // القاعدة تطبع نسخة المستند والوقت، واللوحة تقرأ جوابها لا ما أرسلته:
+      // ترقية الطابع قرار تخزين لا قرار واجهة، وزمنٌ مختلَق يخدع كل مقارنة.
+      schemaVersion:
+          (saved['schema_version'] as num?)?.toInt() ?? document.schemaVersion,
+      updatedAt:
+          DateTime.tryParse('${saved['updated_at'] ?? ''}')?.toUtc() ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+    );
+  }
+
+  @override
+  Future<void> deleteTemplate(String id) async {
+    if (id.isEmpty) return;
+    await _supabase.rpc(
+      'admin_delete_app_design_template',
+      params: <String, dynamic>{'p_id': id},
+    );
+  }
+
   Future<DesignDocument?> _readDocument(String slot) async {
     final rows = await _supabase.rpc(
       'admin_get_app_design',
@@ -108,9 +172,16 @@ class SupabaseAppBuilderRepository implements AppBuilderRepository {
   /// قراءة صارمة عن قصد: [DesignDocument.fromMap] يرمي على صنف مجهول أو صفحة
   /// مكرّرة، وخطأه يصل اللوحة كما هو. مستند نصف مقروء لا يُعرض ولا يُنشر فوق ما
   /// يراه الزبون الآن.
+  ///
+  /// الطابع الأقدم يُرفع هنا وحدها: طبقة شكل النسخة السابقة محايدة بالبناء،
+  /// فترقية طابعها قرار تخزين لا تغيير تصميم، أما الأحدث من هذا الباني فتصل
+  /// إليه كما هي ويمنعها الفاحص من النشر.
   static DesignDocument? _documentFrom(Object? rows) {
     if (rows is! Map) return null;
-    return DesignDocument.fromMap(Map<Object?, Object?>.from(rows));
+    final document = DesignDocument.fromMap(Map<Object?, Object?>.from(rows));
+    return document.schemaVersion < WidgetRegistry.schemaVersion
+        ? WidgetRegistry.normalize(document)
+        : document;
   }
 
   static DesignVersion _versionFrom(Map<dynamic, dynamic> row) {
@@ -127,6 +198,19 @@ class SupabaseAppBuilderRepository implements AppBuilderRepository {
         final String text when text.trim().isNotEmpty => text.trim(),
         _ => null,
       },
+    );
+  }
+
+  /// صفّ من قائمة القوالب. الاسم كما كتبه صاحبه لا يُجزأ ولا يُنقّح: هو ما
+  /// يبحث به الموظف عن عمله مرة أخرى.
+  static DesignTemplate _templateFrom(Map<dynamic, dynamic> row) {
+    return DesignTemplate(
+      id: '${row['id'] ?? ''}',
+      name: '${row['name'] ?? ''}',
+      schemaVersion: (row['schema_version'] as num?)?.toInt() ?? 0,
+      updatedAt:
+          DateTime.tryParse('${row['updated_at'] ?? ''}')?.toUtc() ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
     );
   }
 }

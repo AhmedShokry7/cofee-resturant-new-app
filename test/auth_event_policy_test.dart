@@ -24,8 +24,10 @@ import 'support/in_memory_profile_photo_repository.dart';
 /// Minimal stand-in for what a signed-out customer sees.
 class _SignedOutNotifications implements NotificationsRepository {
   @override
-  Future<List<NotificationModel>> listNotifications({int limit = 50}) async =>
-      throw const NotificationSignInRequiredException();
+  Future<List<NotificationModel>> listNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async => throw const NotificationSignInRequiredException();
 
   @override
   Future<int> markRead(List<String> ids) async => 0;

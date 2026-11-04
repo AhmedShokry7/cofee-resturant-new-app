@@ -8,7 +8,8 @@ import 'package:flutter/cupertino.dart';
 /// maps onto Material 3 slots are named by their job, not by their hue.
 class AppColor {
   // Brand
-  static Color primaryColor = const Color(0xff1D4ED8);
+  static const Color primaryDefault = Color(0xff1D4ED8);
+  static Color primaryColor = primaryDefault;
 
   /// The lighter half of the brand gradient every primary button ends on.
   static const Color primaryColorEnd = Color(0xff2563EB);
@@ -24,17 +25,38 @@ class AppColor {
   /// mutable pair, so the ring has to repaint with the runtime theme.
   static Color get primaryRing => primaryColor.withAlpha(75);
 
-  static Color secondryColor = const Color(0xff033A58);
+  static Color secondryColor = secondryDefault;
 
   // Neutrals
   static const greyColor = Color(0xff797979);
   static const lightGreyColor = Color(0xffF5F5F5);
   static const whiteColor = Color(0xffFFFFFF);
   static const blackColor = Color(0xff000000);
-  static const borderColor = Color(0xffE6E6E6);
+  static Color borderColor = borderDefault;
 
   /// Light surface color used as fallback background for product images.
-  static Color surfaceColor = const Color(0xffF9F9F9);
+  static Color surfaceColor = surfaceDefault;
+
+  /// الأدوار التي تملكها طبقة الشكل المنشورة.
+  ///
+  /// الثلاثة أعلاه حملت الاسم قبل الاستوديو، وهذا ما أضيف له: خلفية الصفحة
+  /// وسطح البطاقة والنصّ، مقصورة على المواضع التي يقرّر فيها الثيم الدور —
+  /// فلو رُسمت فوق لون لوحة (`whiteColor`) لتغيّر معها حرفٌ أبيض على زرّ ملوّن.
+  /// الأصل هنا هو القيمة التي كان عليها التطبيق، فالطبعة المحايدة ترسم اليوم.
+  static Color background = backgroundDefault;
+  static Color cardSurface = cardSurfaceDefault;
+  static Color textPrimary = textPrimaryDefault;
+  static Color textSecondary = textSecondaryDefault;
+
+  /// الأصل الذي ترجع إليه الأدوار حين يلغيها مستند أو لا مستند: تُكتب مرة واحدة
+  /// في هذا الملف، فلا يحفظ قارئ التصميم شاشةً ويسترجعها من ذاكرته.
+  static const Color secondryDefault = Color(0xff033A58);
+  static const Color surfaceDefault = Color(0xffF9F9F9);
+  static const Color borderDefault = Color(0xffE6E6E6);
+  static const Color backgroundDefault = whiteColor;
+  static const Color cardSurfaceDefault = whiteColor;
+  static const Color textPrimaryDefault = blackColor;
+  static const Color textSecondaryDefault = greyColor;
 
   /// A glyph on a light surface: pure black reads too harsh next to the text.
   static const Color iconOnLight = Color(0xff242424);

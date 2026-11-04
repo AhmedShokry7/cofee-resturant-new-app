@@ -4930,6 +4930,32 @@ class S {
       : 'Deactivate the group instead — one of its values is still in an open cart.';
   static String get optionGroupSavedMessage =>
       _ar ? 'تم حفظ المجموعة.' : 'Group saved.';
+
+  /// حوار «الأحجام والإضافات» الذي يُفتح من بطاقة المنتج نفسه.
+  static String productOptionsTitle(String productName) =>
+      _ar ? 'أحجام وإضافات $productName' : 'Sizes & extras — $productName';
+  static String get productOptionsHelper => _ar
+      ? 'الأسعار هنا لهذا المشروب وحده؛ اترك السعر فارغًا ليُعمل سعر المجموعة.'
+      : 'Prices here apply to this drink only; leave one empty to use the group price.';
+  static String get appliesToThisProduct =>
+      _ar ? 'يطبّق على هذا المشروب' : 'Applies to this drink';
+  static String get groupDeltaLabel => _ar ? 'زيادة المجموعة' : 'Group add-on';
+  static String get ownDeltaLabel => _ar ? 'سعر هذا المشروب' : 'This drink';
+  static String get finalPriceLabel => _ar ? 'السعر النهائي' : 'Final price';
+  static String get basePriceLabel => _ar ? 'السعر الأساسي' : 'Base price';
+  static String get resetToGroupPrice =>
+      _ar ? 'رجوع لسعر المجموعة' : 'Reset to group price';
+  static String get productOptionsGroupsEmpty => _ar
+      ? 'لا مجموعات أحجام أو إضافات بعد؛ أنشئها من صفحة الأحجام والإضافات.'
+      : 'No size or extra groups yet; create them on the Sizes & extras page.';
+  static String get productOptionsAttachedEmpty => _ar
+      ? 'لا مجموعة مطبّقة على هذا المشروب؛ شغّل المفتاح لما تريد.'
+      : 'No group applies to this drink yet; switch one on if you want it.';
+  static String get productOptionsSavedMessage =>
+      _ar ? 'تم حفظ الأسعار.' : 'Prices saved.';
+  static String get productOptionsAttachedMessage => _ar
+      ? 'تم تحديث ما ينطبق على هذا المشروب.'
+      : 'This drink\'s groups updated.';
   static String cartItemsCount(int count) =>
       _ar ? '$count عنصرًا' : '$count items';
   static String cartStatusLabel(String code) =>
@@ -5169,6 +5195,49 @@ class S {
   static String builderVersionLabel(int number) =>
       _ar ? 'الإصدار $number' : 'Version $number';
 
+  // ---------------------------------------------------------------------
+  // قوالب التصميم: معرض يفتح المحرّر على ترتيب جاهز، وحافظة لما أعجب صاحبه.
+  // ---------------------------------------------------------------------
+
+  static String get builderTemplates => _ar ? 'القوالب' : 'Templates';
+
+  static String get builderTemplatesNote => _ar
+      ? 'القالب ترتيبٌ وألوان على ما هو مفتوح الآن؛ لا ينشر شيئًا، والتراجع عنه زرّ التراجع.'
+      : 'A template rearranges and recolours what is open now. It publishes nothing, and undo takes it back.';
+
+  static String get builderBuiltinTemplates =>
+      _ar ? 'قوالب جاهزة' : 'Built-in templates';
+
+  static String get builderSavedTemplates => _ar ? 'قوالبك' : 'Your templates';
+
+  static String get builderNoSavedTemplates => _ar
+      ? 'لم تحفظ قالبًا بعد. رتّب الصفحة كما تعجبك ثم اضغط «حفظ كقالب».'
+      : 'No saved template yet. Arrange the page, then press “Save as template”.';
+
+  static String get builderApplyTemplate => _ar ? 'تطبيق' : 'Apply';
+
+  static String get builderSaveAsTemplate =>
+      _ar ? 'حفظ كقالب' : 'Save as template';
+
+  static String get builderTemplateNameHint =>
+      _ar ? 'اسم القالب' : 'Template name';
+
+  static String get builderDeleteTemplate =>
+      _ar ? 'حذف القالب' : 'Delete template';
+
+  /// المحرّر بلا مستند لا يُطبّق عليه شيء — لا قالب ولا قسم.
+  static String get builderNoDocument => _ar
+      ? 'لا مستند مفتوح بعد؛ احفظ أو افتح المسودة أولًا.'
+      : 'No document is open yet; load or create the draft first.';
+
+  static String get builderTemplateNameMissing => _ar
+      ? 'اكتب اسمًا للقالب قبل حفظه.'
+      : 'Give the template a name before saving.';
+
+  static String get builderTemplateMissing => _ar
+      ? 'القالب لم يصل من القاعدة: ربما حُذف بعد أن عُرض.'
+      : 'The template did not come back from the database: it may have been deleted.';
+
   /// النشر ممنوع قبل أن يوافق المدقّق: يُقال السبب لا يُترك الزرّ معتمًا صامتًا.
   static String get builderPublishBlocked => _ar
       ? 'النشر ممتنع ما بقي مانع واحد في قائمة «قبل النشر».'
@@ -5348,8 +5417,40 @@ class S {
       _ar
           ? 'نسخة المخطط لا يطابقها هذا البناء'
           : 'Schema version this builder does not draw',
+    'themeTextOnSameBackground' =>
+      _ar
+          ? 'نص بلون خلفيته: شاشة لا تُقرأ'
+          : 'Text the colour of its own background',
     _ => _ar ? 'مانع غير معروف' : 'Unknown issue',
   };
+
+  static String get builderThemeColorFormat =>
+      _ar ? 'صيغة اللون #RRGGBB' : 'Colour must be #RRGGBB';
+
+  /// عنوان بطاقة استوديو الشكل.
+  static String get builderTheme => _ar ? 'شكل التطبيق' : 'App appearance';
+
+  static String get builderThemeNote => _ar
+      ? 'ما لا تلمسه يبقى كما يراه الزبون اليوم: الألوان هنا طبقة فوق تصميمه، ولا تصل إليه إلا بحفظ ثم نشر.'
+      : 'Anything you leave untouched stays exactly as customers see it today. These colours are a layer over that design, and reach them only after a save and a publish.';
+
+  static String get builderThemeColors =>
+      _ar ? 'ألوان الشاشات' : 'Screen colours';
+
+  static String get builderThemeText => _ar ? 'النصوص' : 'Text';
+
+  static String get builderThemeTextScale => _ar ? 'حجم الخط' : 'Text size';
+
+  /// الدور بلا كتابة: يرث لون العميل، واللوحة تقول ذلك بدل أن تخترع لونًا.
+  static String get builderThemeSystemValue =>
+      _ar ? 'بلون النظام' : 'System colour';
+
+  static String builderThemeRestoreOne(String role) => _ar
+      ? 'أرجع «$role» إلى لون النظام'
+      : 'Restore $role to the system colour';
+
+  static String get builderThemeRestoreAll =>
+      _ar ? 'رجوع التصميم الأصلي' : 'Restore the original design';
 
   // ---------- HR — sidebar ----------
 

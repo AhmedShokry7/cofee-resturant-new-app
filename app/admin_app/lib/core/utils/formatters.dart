@@ -14,6 +14,13 @@ String formatAmount(num value) {
 
 String formatCount(int value) => _groupDigits('$value');
 
+/// زيادة أو خصم يُعرض فوق سعر أساس.
+///
+/// الصفر بلا علامة: حجم لا يضيف شيئًا فوق الأساس ليس «مجانًا +٠».
+String formatDelta(num value) => value == 0
+    ? formatAmount(0)
+    : '${value > 0 ? '+' : '-'}${formatAmount(value.abs())}';
+
 /// Percentage points written with the numerals of the active language, so
 /// `4.8` reads `٤٫٨٪` in Arabic. A value within a hair of a whole number
 /// drops its fraction, because the metric badge is too narrow for five digits.

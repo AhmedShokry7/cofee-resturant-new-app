@@ -14,7 +14,11 @@ class NotificationSignInRequiredException implements Exception {
 /// Rows are created by server triggers, never by the client. Reads use the
 /// owner-scoped bridge view; marking read uses the ownership-checked RPC.
 abstract class NotificationsRepository {
-  Future<List<NotificationModel>> listNotifications({int limit = 50});
+  /// [limit] rows, newest first, starting after [offset] of them.
+  Future<List<NotificationModel>> listNotifications({
+    int limit = 50,
+    int offset = 0,
+  });
   Future<int> markRead(List<String> ids);
 }
 
@@ -35,13 +39,18 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   }
 
   @override
-  Future<List<NotificationModel>> listNotifications({int limit = 50}) async {
+  Future<List<NotificationModel>> listNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async {
     final client = _client;
     if (client == null) {
       throw StateError('Notifications need a configured Supabase backend.');
     }
     _requireUserId(client);
 
+    final pageSize = limit.clamp(1, 200);
+    final first = offset.clamp(0, 100000);
     final rows =
         await client
                 .from('notifications')
@@ -49,7 +58,7 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
                   'id, type, title_ar, title_en, body_ar, body_en, related_entity_type, related_entity_id, payload, is_read, created_at',
                 )
                 .order('created_at', ascending: false)
-                .limit(limit.clamp(1, 200))
+                .range(first, first + pageSize - 1)
             as List;
     return [
       for (final row in rows)

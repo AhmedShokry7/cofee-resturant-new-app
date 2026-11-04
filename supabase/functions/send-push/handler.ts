@@ -231,23 +231,31 @@ export async function deliver(
   notification: PushNotification,
   deps: PushDeps,
 ): Promise<HandleResult> {
+  const tokens = await deps.store.readTokens(notification.userId);
   const preferences = await deps.store.readPreferences(notification.userId);
+  // A customer who never touched the switches has no row at all, and the app
+  // registers a device only after the operating system granted notifications,
+  // so the token itself is the opt-in. Reading a missing row as "off" is what
+  // kept every message from the admin from ever reaching a phone: the switch
+  // screen had never been opened, so nothing had been switched on.
   const effective: PushPreferences = preferences ?? {
-    pushEnabled: false,
+    pushEnabled: tokens.length > 0,
     orderStatus: true,
     promo: true,
     loyalty: true,
     system: true,
   };
-  const tokens = await deps.store.readTokens(notification.userId);
 
   const preferenceKey = preferenceKeyFor(notification.type);
-  const skipReason = !effective.pushEnabled
+  // The missing device comes first because it is the fact a sender cannot work
+  // around: with no token there is nothing to deliver to, whatever the switches
+  // say, and "no_device_token" tells the admin more than "push_disabled" does.
+  const skipReason = tokens.length === 0
+    ? "no_device_token"
+    : !effective.pushEnabled
     ? "push_disabled"
     : preferenceKey !== null && effective[preferenceKey] === false
     ? "type_disabled"
-    : tokens.length === 0
-    ? "no_device_token"
     : null;
 
   if (skipReason) {

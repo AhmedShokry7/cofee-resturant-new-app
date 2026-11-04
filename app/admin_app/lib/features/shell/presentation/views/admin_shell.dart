@@ -1,8 +1,10 @@
 import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/core/navigation/admin_navigator.dart';
+import 'package:admin_app/core/navigation/admin_product_options_host.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
@@ -36,6 +38,7 @@ import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart'
 import 'package:admin_app/features/loyalty/presentation/pages/loyalty_page.dart';
 import 'package:admin_app/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:admin_app/features/option_groups/presentation/pages/option_group_page.dart';
+import 'package:admin_app/features/option_groups/presentation/widgets/product_option_dialog.dart';
 import 'package:admin_app/features/orders/presentation/pages/order_page.dart';
 import 'package:admin_app/features/payments/presentation/pages/payment_page.dart';
 import 'package:admin_app/features/pos/presentation/pages/pos_page.dart';
@@ -139,6 +142,13 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     });
     _navCubit.refresh();
   }
+
+  /// يفتح حوار أحجام مشروب واحد وإضافاته من أي بطاقة منتج.
+  ///
+  /// هنا لا في شاشة المنتجات: القشرة وحدها تعرف الفيتشرين، والكتابة تقرر
+  /// القاعدة بها سياسةً لكل صفّ.
+  Future<void> _openProductOptions(AdminProduct product) =>
+      showProductOptionsDialog(context: context, product: product);
 
   Future<void> _confirmSignOut() async {
     final shouldSignOut = await showAdminSignOutDialog(context);
@@ -424,7 +434,17 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     final data = _buildLayoutData(counts);
     // الصفحات تُبنى تحت اليد نفسها: رابط «كل الطلبات» داخل بطاقة ينادي
     // `_select` هنا، فلا صفحة تملك قرارًا هو للقشرة.
-    final content = AdminNavigator(onSelect: _select, child: _buildContent());
+    //
+    // ويد الحوار ملكها هي الأخرى: شاشة المنتجات في `catalog` وحوار الأحجام في
+    // `option_groups`، وفيتشر لا يستورد فيتشرًا — فتعير القشرة يدها لمن يملك
+    // `catalog.product.write`، ولا يعرض المنتج عنايته بلا يد.
+    final canPriceProducts = widget.session.hasPermission(
+      'catalog.product.write',
+    );
+    final content = AdminProductOptionsHost(
+      onOpen: canPriceProducts ? _openProductOptions : null,
+      child: AdminNavigator(onSelect: _select, child: _buildContent()),
+    );
 
     if (isWide) {
       return AdminDesktopLayout(

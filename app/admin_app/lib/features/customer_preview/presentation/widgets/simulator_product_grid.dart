@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/preview_product.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_product_card.dart';
 
 /// شبكة منتجات العميل بنفس ما يفعله تطبيقه: عشر بطاقات تُعرض أولًا، والباقي
@@ -132,6 +132,7 @@ class _SimulatorProductGridState extends State<SimulatorProductGrid> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = SimulatorPalette.of(context);
     final shown = _shown.clamp(0, widget.products.length);
     return CustomScrollView(
       controller: _controller,
@@ -165,7 +166,7 @@ class _SimulatorProductGridState extends State<SimulatorProductGrid> {
                   width: AppSpacing.xl,
                   child: CircularProgressIndicator(
                     strokeWidth: AppDimensions.spinnerStroke,
-                    color: AppColor.primaryColor,
+                    color: palette.primary,
                   ),
                 ),
               ),

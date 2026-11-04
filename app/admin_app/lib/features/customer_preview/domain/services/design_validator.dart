@@ -1,6 +1,7 @@
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_node.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_theme.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/action_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/data_source_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/widget_registry.dart';
@@ -53,6 +54,7 @@ enum DesignIssueCode {
   linkLabelWithoutAction,
   actionWithoutLabel,
   schemaVersionMismatch,
+  themeTextOnSameBackground,
 }
 
 /// نتيجة تدقيق مستند كامل.
@@ -120,11 +122,44 @@ abstract final class DesignValidator {
       _validateMandatory(page, root, issues);
     }
 
+    _validateTheme(document, issues);
+
     return DesignValidation(
       issues: issues,
       schemaVersion: WidgetRegistry.schemaVersion,
     );
   }
+
+  /// نص بلون خلفيته شاشة لا تُقرأ، وهي عيب لا يُكتشف إلا بعد النشر.
+  ///
+  /// الفحص على الدورين لا على قيمة: الخلفية والسطح معًا يُكتب عليهما نص، فأي
+  /// تطابق بينهما وبين لون النص الأساسي يمنع النشر قبل أن يراه زبون.
+  static void _validateTheme(
+    DesignDocument document,
+    List<DesignIssue> issues,
+  ) {
+    final text = document.theme.colors[DesignColorRole.textPrimary];
+    if (text == null) return;
+    for (final role in const <DesignColorRole>[
+      DesignColorRole.background,
+      DesignColorRole.surface,
+    ]) {
+      final ground = document.theme.colors[role];
+      if (ground == null) continue;
+      if (_rgb(ground) != _rgb(text)) continue;
+      issues.add(
+        DesignIssue(
+          code: DesignIssueCode.themeTextOnSameBackground,
+          detail: '${DesignColorRole.textPrimary.key} == ${role.key} ($text)',
+        ),
+      );
+    }
+  }
+
+  /// آخر ستة عشرية من اللون، لأن `#80FFFFFF` فوق خلفية بيضاء شفافة نص أبيض.
+  static String _rgb(String hex) => hex.length <= 6
+      ? hex.toUpperCase()
+      : hex.substring(hex.length - 6).toUpperCase();
 
   /// رأس الصفحة أساس في الرئيسية: لا يُنشر تصميم بلا تحية ولا بلا وقت شريط الحالة.
   static void _validateMandatory(

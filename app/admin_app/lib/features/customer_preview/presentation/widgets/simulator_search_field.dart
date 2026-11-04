@@ -4,6 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 
@@ -52,6 +53,7 @@ class _SimulatorSearchFieldState extends State<SimulatorSearchField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     // الحقل يحتاج Material حوله، والمحاكي يُركّب في أشجار مختلفة (الهاتف هنا
     // وشاشة اختبار معزولة هناك)، فالطبقة تخصّ التحكم نفسه لا والِدَه.
     return Material(
@@ -62,15 +64,15 @@ class _SimulatorSearchFieldState extends State<SimulatorSearchField> {
         onChanged: widget.onChanged,
         textInputAction: TextInputAction.search,
         style: AppFonts.regular14(context)
-            .copyWith(color: adminHeadingColor(theme)),
+            .copyWith(color: palette.textPrimary ?? adminHeadingColor(theme)),
         decoration: InputDecoration(
           hintText: widget.hintText,
           hintStyle: AppFonts.regular14(context)
-              .copyWith(color: adminMutedColor(theme)),
-          prefixIcon: const AppIcon(
+              .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
+          prefixIcon: AppIcon(
             AppIcons.search01,
             size: AppSizes.px20,
-            color: AppColor.greyColor,
+            color: palette.textSecondary ?? AppColor.greyColor,
           ),
           prefixIconConstraints: const BoxConstraints(
             minWidth: AppSizes.px40,
@@ -92,7 +94,7 @@ class _SimulatorSearchFieldState extends State<SimulatorSearchField> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.pill),
-            borderSide: const BorderSide(color: AppColor.primaryColor),
+            borderSide: BorderSide(color: palette.primary),
           ),
         ),
       ),

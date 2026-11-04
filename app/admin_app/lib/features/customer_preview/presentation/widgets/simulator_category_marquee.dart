@@ -9,6 +9,7 @@ import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_tokens.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -222,6 +223,7 @@ class SimulatorCategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final name = category.nameFor(language);
     final image = category.imageUrl?.trim() ?? '';
     return Semantics(
@@ -242,7 +244,7 @@ class SimulatorCategoryChip extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: adminTintedSurfaceColor(theme),
-                  border: Border.all(color: AppColor.primaryRing),
+                  border: Border.all(color: palette.primaryRing),
                   boxShadow: SimulatorShadows.tile,
                 ),
                 // الصورة حين تكون، وإلا الرمز من icon_key نفسه الذي يقرأه
@@ -252,7 +254,7 @@ class SimulatorCategoryChip extends StatelessWidget {
                         child: AppIcon(
                           _iconOf(category.iconKey),
                           size: AppSizes.px26,
-                          color: AppColor.primaryColor,
+                          color: palette.primary,
                         ),
                       )
                     : AdminNetworkThumb(
@@ -272,8 +274,9 @@ class SimulatorCategoryChip extends StatelessWidget {
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppFonts.medium12(context)
-                      .copyWith(color: adminBodyColor(theme)),
+                  style: AppFonts.medium12(context).copyWith(
+                    color: palette.textPrimary ?? adminBodyColor(theme),
+                  ),
                 ),
               ),
             ],

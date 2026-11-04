@@ -3,11 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_node.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_template.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_theme.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_version.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/data_source_registry.dart';
+import 'package:admin_app/features/customer_preview/domain/registry/template_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/widget_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/repositories/app_builder_repository.dart';
 import 'package:admin_app/features/customer_preview/domain/services/design_tree.dart';
+import 'package:admin_app/features/customer_preview/domain/services/design_validator.dart';
 import 'package:admin_app/features/customer_preview/presentation/manager/app_builder_cubit.dart';
 import 'package:admin_app/features/customer_preview/presentation/manager/app_builder_state.dart';
 
@@ -25,6 +29,15 @@ class _FakeRepository implements AppBuilderRepository {
   int publishCalls = 0;
   int restoreCalls = 0;
   bool failSave = false;
+
+  /// ما حفظه الموظف في المعرض: صفوف باسمها وملفّاتها في الذاكرة.
+  List<DesignTemplate> templates = <DesignTemplate>[];
+  final Map<String, DesignDocument> templateFiles =
+      <String, DesignDocument>{};
+
+  int templateSaveCalls = 0;
+  int templateDeleteCalls = 0;
+  bool failTemplates = false;
   bool failPublish = false;
   bool failLoad = false;
 
@@ -49,6 +62,47 @@ class _FakeRepository implements AppBuilderRepository {
   @override
   Future<DesignDocument?> loadVersion(String versionId) async =>
       files[versionId];
+
+  @override
+  Future<List<DesignTemplate>> loadTemplates() async {
+    _maybeFail();
+    if (failTemplates) throw StateError('templates unavailable');
+    return templates;
+  }
+
+  @override
+  Future<DesignDocument?> loadTemplate(String id) async => templateFiles[id];
+
+  @override
+  Future<DesignTemplate> saveTemplate(
+    String name,
+    DesignDocument document, {
+    String? templateId,
+  }) async {
+    templateSaveCalls++;
+    if (failSave) throw StateError('rejected');
+    final id = templateId ?? 't${templates.length + 1}';
+    final template = DesignTemplate(
+      id: id,
+      name: name,
+      schemaVersion: document.schemaVersion,
+      updatedAt: DateTime(2026, 11, 4, 9),
+    );
+    templateFiles[id] = document;
+    templates = <DesignTemplate>[
+      template,
+      ...templates.where((other) => other.id != id),
+    ];
+    return template;
+  }
+
+  @override
+  Future<void> deleteTemplate(String id) async {
+    templateDeleteCalls++;
+    if (failTemplates) throw StateError('templates unavailable');
+    templates = templates.where((template) => template.id != id).toList();
+    templateFiles.remove(id);
+  }
 
   @override
   Future<void> saveDraft(DesignDocument document) async {
@@ -479,5 +533,292 @@ void main() {
         expect(AppPage.cart.isEditable, isFalse);
       },
     );
+  });
+
+  group('طبقة الشكل في اللوحة', () {
+    test('اللون يغيّر الشكل وحده، والشجرة تبقى كما كُتبت', () async {
+      await open();
+      final before = cubit.state.document!;
+
+      expect(cubit.setThemeColor(DesignColorRole.primary, '#c09060'), isNull);
+      final after = cubit.state.document!;
+      expect(after.theme.colors[DesignColorRole.primary], '#C09060');
+      expect(after.rootOf(AppPage.home)?.toMap(), before.rootOf(AppPage.home)?.toMap());
+      expect(after.pages.keys, before.pages.keys);
+
+      // الطبقة جزء من المستند، فهي تعدّل وتُحفظ وتُرجع بصفتها مستندًا لا
+      // إعدادًا جانبيًا لا يعرف أحد أنه تغيّر.
+      expect(cubit.state.canUndo, isTrue);
+      expect(cubit.state.isDirty, isTrue);
+
+      cubit.undo();
+      expect(cubit.state.document!.theme.isDefault, isTrue);
+      expect(cubit.state.canRedo, isTrue);
+      cubit.redo();
+      expect(cubit.state.document!.theme.colors[DesignColorRole.primary], '#C09060');
+    });
+
+    test('القيمة المرفوضة لا تدخل سجل الرجوع', () async {
+      await open();
+      final before = cubit.state.document;
+
+      expect(cubit.setThemeColor(DesignColorRole.primary, '#GG'), isNotNull);
+      expect(cubit.setThemeColor(DesignColorRole.primary, 'red'), isNotNull);
+      expect(cubit.setThemeColor(DesignColorRole.primary, 'C09060'), isNotNull);
+      expect(cubit.setThemeTextScale('huge'), isNotNull);
+      expect(cubit.setThemeRadiusScale('round'), isNull);
+      expect(cubit.setThemeTextScale('large'), isNull);
+
+      expect(cubit.state.document, isNot(same(before)));
+      expect(cubit.state.document!.theme.colors, isEmpty);
+      expect(cubit.state.document!.theme.textScale, 'large');
+      expect(cubit.state.document!.theme.radiusScale, 'round');
+    });
+
+    test('حذف الدور يرجعه إلى قيمة العميل لا إلى لون من عند اللوحة', () async {
+      await open();
+      cubit.setThemeColor(DesignColorRole.background, '#FFFFFF');
+      cubit.setThemeColor(DesignColorRole.primary, '#C09060');
+      final themed = cubit.state.document!;
+
+      cubit.clearThemeColor(DesignColorRole.background);
+      expect(cubit.state.document!.theme.colors.keys,
+          <DesignColorRole>[DesignColorRole.primary]);
+
+      // دور لم يُلْمَس أصلاً: لا طبقة جديدة، فلا سجل رجوع بعِدلٍ لا معنى له.
+      final untouched = cubit.state.document;
+      cubit.clearThemeColor(DesignColorRole.success);
+      expect(cubit.state.document, same(untouched));
+
+      cubit.clearThemeColor(DesignColorRole.primary);
+      expect(cubit.state.document!.theme.isDefault, isTrue);
+      expect(cubit.state.document!.toMap().containsKey('theme'), isFalse);
+      expect(themed.theme.isChanged, isTrue);
+    });
+
+    test('الطبقة تُحفظ مع المسودة وتُنشر مع المستند', () async {
+      await open();
+      cubit.setThemeColor(DesignColorRole.primary, '#C09060');
+      cubit.setThemeTextScale('comfortable');
+
+      expect(await cubit.saveDraft(), isTrue);
+      expect(repository.draft?.theme.colors[DesignColorRole.primary], '#C09060');
+      expect(repository.draft?.theme.textScale, 'comfortable');
+
+      expect(cubit.state.canPublish, isTrue);
+      expect(await cubit.publish(), isTrue);
+      expect(repository.published?.theme.toMap(),
+          cubit.state.document!.theme.toMap());
+      // الرجوع إلى المنشور يمسح الطبقة المخزنة، لا التخطيط وحده.
+      cubit.setThemeColor(DesignColorRole.primary, '#000000');
+      await cubit.discardDraft();
+      expect(cubit.state.document!.theme.colors[DesignColorRole.primary],
+          '#C09060');
+    });
+
+    test('نص بلون الخلفية يمنع النشر قبل جولة الشبكة', () async {
+      await open();
+      cubit.setThemeColor(DesignColorRole.textPrimary, '#FFFFFF');
+      cubit.setThemeColor(DesignColorRole.background, '#ffffff');
+
+      expect(
+        cubit.state.validation?.issues.map((issue) => issue.code),
+        contains(DesignIssueCode.themeTextOnSameBackground),
+      );
+      expect(cubit.state.canPublish, isFalse);
+      expect(await cubit.publish(), isFalse);
+      expect(repository.publishCalls, 0);
+      // المسودة تُقبل: الموظف يلوّن وقد يمرّ بلحظة لا تُقرأ فيها الشاشة.
+      expect(await cubit.saveDraft(), isTrue);
+    });
+
+    test('الرجوع للتصميم الأصلي يمسح الطبقة في خطوة واحدة', () async {
+      await open();
+      cubit.setThemeColor(DesignColorRole.primary, '#C09060');
+      cubit.setThemeColor(DesignColorRole.border, '#DDDDDD');
+      cubit.setThemeTextScale('large');
+      final themed = cubit.state.document!;
+
+      cubit.clearTheme();
+      expect(cubit.state.document!.theme.isDefault, isTrue);
+      expect(cubit.state.document!.toMap().containsKey('theme'), isFalse);
+
+      // خطوة تراجع واحدة، لا ثلاث: الزرّ يَعِدُ بالرجوع لا بإلغاء آخر نقرة.
+      cubit.undo();
+      expect(sameTheme(cubit.state.document!.theme, themed.theme), isTrue);
+      expect(cubit.state.document!.theme.colors[DesignColorRole.border],
+          '#DDDDDD');
+      expect(cubit.state.document!.theme.textScale, 'large');
+      cubit.redo();
+      expect(cubit.state.document!.theme.isDefault, isTrue);
+
+      // طبقة محايدة أصلًا: لا عدل ولا سجلّ على ما لا فرق فيه.
+      final neutral = cubit.state.document;
+      cubit.clearTheme();
+      expect(cubit.state.document, same(neutral));
+      expect(cubit.state.canRedo, isFalse);
+    });
+
+    test('وضع المشاهدة لا يمسح الطبقة', () async {
+      await open();
+      cubit.setThemeColor(DesignColorRole.primary, '#C09060');
+      cubit.setMode(AppBuilderMode.preview);
+      final themed = cubit.state.document!;
+
+      cubit.clearTheme();
+      expect(cubit.state.document, same(themed));
+      expect(cubit.state.document!.theme.colors[DesignColorRole.primary],
+          '#C09060');
+      expect(themed.theme.isChanged, isTrue);
+    });
+
+    test('وضع المشاهدة لا يلوّن', () async {
+      await open();
+      cubit.setMode(AppBuilderMode.preview);
+      final before = cubit.state.document;
+
+      expect(
+        cubit.setThemeColor(DesignColorRole.primary, '#C09060'),
+        'قراءة فقط',
+      );
+      expect(cubit.setThemeTextScale('large'), 'قراءة فقط');
+      expect(cubit.setThemeRadiusScale('pill'), 'قراءة فقط');
+      cubit.clearThemeColor(DesignColorRole.primary);
+      expect(cubit.state.document, same(before));
+      expect(cubit.state.canUndo, isFalse);
+    });
+  });
+
+  group('القوالب', () {
+    test('تطبيق قالب مضمّن يعدّل المسودة ولا ينشر شيئًا', () async {
+      await open();
+      final before = cubit.state.document!;
+
+      cubit.applyBuiltInTemplate(TemplateRegistry.quickOrder);
+      final after = cubit.state.document!;
+
+      // الترتيب وصل إلى المستند نفسه، فهو ما يُحفظ وما يُنشر لاحقًا.
+      expect(after.sectionsOf(AppPage.home).first.id, 'home_search');
+      expect(after.hasSameContent(before), isFalse);
+      expect(cubit.state.canUndo, isTrue);
+      expect(cubit.state.isDirty, isTrue);
+      // لا نشر ضمني: الزبون لا يرى ترتيبًا لم يوافق عليه الموظف بعد.
+      expect(repository.publishCalls, 0);
+      expect(repository.published, isNull);
+
+      cubit.undo();
+      expect(
+        cubit.state.document!.sectionsOf(AppPage.home).first.id,
+        'home_header',
+      );
+    });
+
+    test('قالب اليوم لا يحرّك مستندًا لم يلمسه الموظف', () async {
+      await open();
+      final before = cubit.state.document!;
+
+      cubit.applyBuiltInTemplate(TemplateRegistry.today);
+      // عملية لم تغيّر حرفًا لا تدخل طابور التراجع، ولا تبدّل كائن المستند.
+      expect(cubit.state.document, same(before));
+      expect(cubit.state.canUndo, isFalse);
+    });
+
+    test('حفظ المسودة كقالب يضيفها إلى اللوحة ثم يفتحها منها', () async {
+      await open();
+      cubit.setThemeColor(DesignColorRole.primary, '#C09060');
+      cubit.toggleVisible('home_bundles');
+
+      expect(await cubit.saveTemplate('ترتيبي'), isTrue);
+      expect(repository.templateSaveCalls, 1);
+      expect(cubit.state.templates.first.name, 'ترتيبي');
+      expect(
+        cubit.state.templates.first.updatedAt,
+        DateTime(2026, 11, 4, 9),
+      );
+
+      // المحفوظ في القاعدة هو ما على الشاشة، لا نسخة مُبسّطة منه.
+      final stored = repository.templateFiles[cubit.state.templates.first.id]!;
+      expect(stored.theme.colors[DesignColorRole.primary], '#C09060');
+      expect(
+        stored.rootOf(AppPage.home)?.toMap(),
+        cubit.state.document!.rootOf(AppPage.home)?.toMap(),
+      );
+
+      cubit.applyBuiltInTemplate(TemplateRegistry.quickOrder);
+      expect(cubit.state.document!.sectionsOf(AppPage.home).first.id,
+          'home_search');
+
+      await cubit.applySavedTemplate(cubit.state.templates.first.id);
+      expect(cubit.state.document!.theme.colors[DesignColorRole.primary],
+          '#C09060');
+      // رجوع إلى عمل الموظف بحذافيره: ترتيبه وإخفاؤه، لا ترتيب القالب المضمّن.
+      expect(cubit.state.document!.sectionsOf(AppPage.home).first.id,
+          'home_header');
+      expect(
+        DesignTree.find(
+          cubit.state.document!.rootOf(AppPage.home)!,
+          'home_bundles',
+        )!.isVisible,
+        isFalse,
+      );
+      // التطبيق لا ينشر: القالب رجوع إلى عمل الموظف، لا قرار نشر.
+      expect(repository.publishCalls, 0);
+    });
+
+    test('حفظ مرفوض يبقي اللوحة كما كانت ويقول سببًا', () async {
+      await open();
+      repository.failSave = true;
+
+      expect(await cubit.saveTemplate('لا يصل'), isFalse);
+      expect(cubit.state.templates, isEmpty);
+      expect(cubit.state.errorMessage, isNotNull);
+    });
+
+    test('صفحة القاعدة تُعرض، والحذف يزيلها من اللوحة', () async {
+      await open();
+      repository.templates = <DesignTemplate>[
+        DesignTemplate(
+          id: 't1',
+          name: 'قالب من القاعدة',
+          schemaVersion: 2,
+          updatedAt: DateTime(2026, 11, 4, 8),
+        ),
+      ];
+
+      await cubit.refreshTemplates();
+      expect(cubit.state.templates.map((t) => t.id), <String>['t1']);
+
+      await cubit.deleteTemplate('t1');
+      expect(cubit.state.templates, isEmpty);
+      expect(repository.templateDeleteCalls, 1);
+    });
+
+    test('قالب مفقود أو قراءة فاشلة: رسالة ولا مستند نصف مبني', () async {
+      await open();
+      final before = cubit.state.document;
+
+      await cubit.applySavedTemplate('gone');
+      expect(cubit.state.document, same(before));
+      expect(cubit.state.errorMessage, isNotNull);
+
+      repository.failTemplates = true;
+      await cubit.refreshTemplates();
+      expect(cubit.state.errorMessage, isNotNull);
+
+      await cubit.applySavedTemplate('gone');
+      expect(cubit.state.document, same(before));
+    });
+
+    test('محرّر بلا مستند لا يُطبق عليه قالب', () async {
+      await open(failLoad: true);
+      expect(cubit.state.document, isNull);
+
+      cubit.applyBuiltInTemplate(TemplateRegistry.modernCafe);
+      expect(cubit.state.document, isNull);
+      expect(cubit.state.errorMessage, isNotNull);
+      expect(cubit.state.canUndo, isFalse);
+
+      expect(await cubit.saveTemplate('اسم'), isFalse);
+    });
   });
 }

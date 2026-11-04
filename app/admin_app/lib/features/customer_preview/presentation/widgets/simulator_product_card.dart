@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/preview_product.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_struck_price.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -37,13 +37,14 @@ class SimulatorProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final oldPrice = product.oldPrice;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: palette.surface ?? theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: adminCardBorderColor(theme)),
+        border: Border.all(color: palette.border ?? adminCardBorderColor(theme)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -67,7 +68,7 @@ class SimulatorProductCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.semiBold16(context)
-                .copyWith(color: adminHeadingColor(theme)),
+                .copyWith(color: palette.textPrimary ?? adminHeadingColor(theme)),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -75,7 +76,7 @@ class SimulatorProductCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.regular12(context)
-                .copyWith(color: adminMutedColor(theme)),
+                .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
           ),
           if (showPrice) ...[
             const SizedBox(height: AppSizes.px6),
@@ -85,7 +86,7 @@ class SimulatorProductCard extends StatelessWidget {
                   child: AdminMoneyText(
                     value: product.price,
                     fontSize: AppFontSizes.size14,
-                    color: AppColor.primaryColor,
+                    color: palette.primary,
                   ),
                 ),
                 if (oldPrice != null) ...[

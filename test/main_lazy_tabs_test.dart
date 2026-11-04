@@ -9,6 +9,7 @@ import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart'
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/cart/presentation/views/cart_page.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/favorites/presentation/views/favorites_page.dart';
 
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
@@ -26,6 +27,7 @@ import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/mock_product_repository.dart';
 
 import 'package:new_coffee/features/weather/data/model/weather_model.dart';
@@ -107,6 +109,9 @@ void main() {
             BlocProvider.value(value: weather),
             BlocProvider.value(value: home),
             BlocProvider.value(value: categories),
+            BlocProvider(
+              create: (_) => DesignCubit(repository: FakeDesignRepository()),
+            ),
           ],
           child: RepositoryProvider<AuthRepository>.value(
             value: _FakeAuthRepository(),

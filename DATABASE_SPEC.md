@@ -72,7 +72,7 @@
 **الأثر المطلوب (must-have):**
 - الموظف **is not** عميل. `profiles` و`staff_members` منفصلان تمامًا.
 - **تعزيز الأدوار:** حساب في `staff_members` يُمنع عليه استخدام مسارات العملاء (المفضلة، السلة، loyalty كعميل).
-- حساب عميل **لا يستطيع** أن يصبح موظفًا. لا自助 registration في `staff_members`.
+- حساب عميل **لا يستطيع** أن يصبح موظفًا. لا تسجيل ذاتي في `staff_members`.
 - **تسجيل الدخول للموظف يمر عبر بوابة `/admin`** ويتطلب فحصًا إضافيًا: `staff_members.status = 'active'` + `branch_scope` صالح + الأدوار موجودة. الموظف المعطَّل أو بلا فرع مصرّح به **يُرفض** حتى لو كان بريده صحيحًا.
 - invitation فقط: `staff_members` يُنشأ بحالة `invited`، ويُفعَّل بقبول دعوة عبر Edge Function موثوقة.
 
@@ -125,7 +125,7 @@
 
 ### 2.8 القرار D8 — مفتاح مخزون المتغيّرات ✅ مُعتمد
 
-`inventory.branch_stock` يحتاج مفتاحًا يميّز المنتج层面 من المنتج + المتغيّر (حجم كبير + سكر أقل).
+`inventory.branch_stock` يحتاج مفتاحًا يميّز مستوى المنتج عن المنتج + المتغيّر (حجم كبير + سكر أقل).
 عمود `option_value_id` nullable **لا يصلح** كجزء من `PRIMARY KEY` في Postgres (NULL ≠ NULL).
 
 **الحل المعتمد:** عمود **`variant_key uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000'::uuid`** يُستخدم في الـPK. القيم `000...0` = المنتج بلا متغيّر.
@@ -213,7 +213,7 @@ PRIMARY KEY (branch_id, product_id, variant_key)
 ### 4.1 اعتماد `SECURITY DEFINER`
 
 الدوال التي تحتاج `SECURITY DEFINER` **محدودة صراحةً ولا غير** (§8). كل دالة:
-- `SET search_path = ''` ثم参考资料 بأسماء كاملة (`public.core.branches`) — **لا تعتمد على search_path**.
+- `SET search_path = ''` ثمّ المراجع بأسماء كاملة (`public.core.branches`) — **لا تعتمد على search_path**.
 - تفحص هوية المتصل عبر `auth.uid()`.
 - تفحص الدور/الصلاحية عبر `identity.has_permission()`.
 - **لا تستخدم `SECURITY DEFINER` ل читание عادية.** overuse هو أشهر خطأ أمني في Supabase.
@@ -1103,6 +1103,13 @@ system              boolean NOT NULL DEFAULT true
 push_enabled        boolean NOT NULL DEFAULT false
 updated_at          timestamptz NOT NULL DEFAULT now()
 ```
+> **قاعدة التوصيل عند غياب الصف (send-push v11، نُفِّذت 2026-11-04):** عدم وجود صف
+> يعني أن العميل لم يفتح شاشة المفاتيح إطلاقًا، والتوكن لا يُسجَّل إلا بعد إذن نظام
+> التشغيل — لذلك يُعامل كـ«مُفعَّل». صريحًا: صف بـ `push_enabled = false` يبقى مرفوضًا.
+> القياس الحيّ: حساب `4b37c64d` (توكن أندرويد واحد، صفر صفوف تفضيلات) كانت رسائله
+> ترجع `skipped/push_disabled` في 2026-11-03، وصارت `sent` بعد النشر (رسالة FCM
+> `0:1793808520468140%73d27bdc73d27bdc`). عميل التطبيق نفسه صار يكتب الصف عند بدء
+> الجلسة (`PushService.adoptGrantedPush`) حتى لا يعتمد على هذه القاعدة وحدها.
 
 #### `engagement.device_tokens`
 ```
@@ -1301,7 +1308,7 @@ is_active   boolean NOT NULL DEFAULT true
 
 | الفجوة | الجدول/الإجراء |
 |---|---|
-| لا双语 | D4 — أعمدة `_ar`/`_en` |
+| لا دعم للغتين | D4 — أعمدة `_ar`/`_en` |
 | الخيار يُفقد في السلة | `orders.cart_item_options` |
 | الفاتورة تتغير عند تعديل السعر | `orders.order_items` snapshots |
 | لا فئات فرعية | `catalog.categories.parent_id` |
@@ -1326,9 +1333,20 @@ is_active   boolean NOT NULL DEFAULT true
 3. Push عبر FCM/OneSignal (الجداول جاهزة).
 4. ذكاء اصطناعي خارجي (LLM).
 5. تعدد علامات تجارية / SaaS.
-6. Page Builder / تخزين واجهات JSON.
+6. Page Builder / تخزين واجهات JSON — **خرج من التأجيل بأمر صريح من المالك في
+   2026-11-04** (migrations `226`/`227`/`228`). الحدّ الذي بقي داخل النطاق:
+   المستند يسمّي أنواعًا من سجلّ مكوّنات Dart ولا يصف شاشة جديدة؛ `core.app_settings`
+   بمفتاحين (`app_design_draft` / `app_design_published`) و`core.app_design_templates`
+   للقوالب المحفوظة، وكلها تمرّ بـ`core.app_design_is_valid()` قبل الكتابة. لا
+   HTML/WebView، ولا SQL/JS من المحرّر، ولا منطق أعمال — والعميل يقرأ المنشور فقط
+   عبر `public.app_settings` بلا إصدار جديد.
+   **قيد يبقى قبل تعدد العلامات (§10.4/5):** المسودة والمنشور صّفان في
+   `core.app_settings`، ومفتاحها `text primary key` بلا عمود `brand_id`، والقيد
+   `key ~ '^[a-z_]+$'` لا يقبل أرقامًا ولا شرطات — فاسم مفتاح مُوسَّم بمعرّف علامة
+   مرفوض أساسًا. جدول القوالب `core.app_design_templates` وُلد بـ`brand_id` (nullable)
+   جاهزًا، أمّا طبقة العلامات فتحتاج migration مستقلّة عند بدء SaaS لا قبله.
 
-**أي شيء خارج هذه القائمة 且 له شاشة = داخل النطاق.**
+**أي شيء خارج هذه القائمة وله شاشة = داخل النطاق.**
 
 ---
 

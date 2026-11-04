@@ -217,6 +217,14 @@ abstract final class AppDimensions {
   // مكونات مشتركة
   /// عرض بطاقة ملخص الطلب في الصف الأفقي.
   static const double orderSummaryCardWidth = 168.0;
+
+  // حوار «الأحجام والإضافات» الذي يُفتح من بطاقة المنتج
+  /// عرض معاينة السعر النهائي في سطر خيار واحد.
+  static const double productOptionPriceWidth = 96.0;
+
+  /// أقصى ما يبلغه الحوار من عرض وارتفاع؛ ما زاد عليهما يُمرَّر.
+  static const double productOptionDialogMaxWidth = 760.0;
+  static const double productOptionDialogMaxHeight = 620.0;
   static const double searchFieldWidth = 320.0;
   static const double searchFieldWidthCompact = 240.0;
   static const double dialogButtonHeight = AppSizes.px40;
@@ -426,6 +434,10 @@ abstract final class AppDimensions {
 
   /// الطبقة المخفية تُرى في اللوحة ولا تصل إلى الزبون، فتُعرض مخفّفة لا محذوفة.
   static const double builderHiddenOpacity = 0.35;
+
+  /// مربّع لون الدور في استوديو الشكل: يُقرأ منه أن شيئًا كُتب، ولا يزدحم به
+  /// السطر بجانب الحقل.
+  static const double builderSwatchSize = AppSizes.px24;
 }
 
 /// نقاط عرض النافذة التي يغيّر عندها التخطيط شكله. تُقرأ من `MediaQuery` أو

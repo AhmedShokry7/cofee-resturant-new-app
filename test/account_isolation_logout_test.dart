@@ -43,7 +43,10 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   Completer<void>? gate;
 
   @override
-  Future<List<NotificationModel>> listNotifications({int limit = 50}) async {
+  Future<List<NotificationModel>> listNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async {
     // What the server had at request time, captured before any await, the way a
     // real answer belongs to the request and not to the moment it lands.
     final snapshot = List<NotificationModel>.of(rows);

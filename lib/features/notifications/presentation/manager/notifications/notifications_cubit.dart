@@ -4,6 +4,7 @@ import 'package:firebase_messaging/firebase_messaging.dart' show RemoteMessage;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/navigation/notification_routes.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
@@ -124,17 +125,25 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         // The switches belong to the customer too: the next one must not see
         // the switches of the previous one while their own read is in flight.
         preferences: const NotificationPreferences(),
+        preferencesRead: false,
+        // Only the first page belongs to an account, and a page still being
+        // read for the previous customer must not append to the new list.
+        hasMore: false,
+        isLoadingMore: false,
       ),
     );
     return true;
   }
 
-  int get unreadCount =>
-      state.notifications.where((item) => !item.isRead).length;
+  /// Rows read per page. One more is asked for so the screen can tell whether a
+  /// next page exists without a count query.
+  static const int pageSize = 30;
 
-  Future<void> load() => _enqueue(markRead: false);
+  int get unreadCount => state.unreadCount;
 
-  Future<void> refresh() => _enqueue(markRead: false);
+  Future<void> load() => _enqueue();
+
+  Future<void> refresh() => _enqueue();
 
   /// Marks what is currently stored as seen.
   ///
@@ -142,14 +151,72 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   /// still-unread ids, then one more read so the list reflects the result.
   /// Callers own the decision of *when* to run it; this cubit only guarantees
   /// the read, the write and the follow-up read never interleave.
-  Future<void> markAllRead() => _enqueue(markRead: true);
+  ///
+  /// The notifications screen runs this only when the customer asks for it. It
+  /// used to run on opening the screen, which cleared every dot before the
+  /// customer had read a single message and left the bell with nothing to show.
+  Future<void> markAllRead() => _enqueue(markUnread: true);
+
+  /// Marks one row seen, and re-reads so the dot follows the server.
+  Future<void> markRead(String id) => _enqueue(markIds: [id]);
+
+  /// The page [item] belongs to, with its row marked seen.
+  ///
+  /// Opening the record a message was about is reading that message, so the two
+  /// belong together. The write is not awaited: the customer is on the way to
+  /// the order by the time it lands, and a slow write must not feel like a slow
+  /// tap.
+  NotificationOpen? openFrom(NotificationModel item) {
+    if (!item.isRead) unawaited(markRead(item.id));
+    return openForNotification(
+      relatedEntityType: item.relatedEntityType,
+      type: item.type,
+      destination: item.destination,
+      relatedEntityId: item.relatedEntityId,
+    );
+  }
+
+  /// Reads the page of rows after the ones already on screen.
+  ///
+  /// Dropped when the customer changes while it is in flight: the rows belong to
+  /// whoever they were when the read started, and putting them under the next
+  /// account would show one customer's messages inside another's list.
+  Future<void> loadMore() async {
+    if (!state.hasMore || state.isLoadingMore) return;
+    final generation = _loadGeneration;
+    final offset = state.notifications.length;
+    emit(state.copyWith(isLoadingMore: true));
+    try {
+      final page = await _repository.listNotifications(
+        limit: pageSize + 1,
+        offset: offset,
+      );
+      if (isClosed || generation != _loadGeneration) return;
+      final hasMore = page.length > pageSize;
+      emit(
+        state.copyWith(
+          more: hasMore ? page.sublist(0, pageSize) : page,
+          hasMore: hasMore,
+          isLoadingMore: false,
+        ),
+      );
+    } catch (_) {
+      // A failed page leaves what is on screen alone. The customer can ask
+      // again from the same button, and an error over a list they can still
+      // read would only bury it.
+      if (isClosed) return;
+      emit(state.copyWith(isLoadingMore: false));
+    }
+  }
 
   /// Runs loads one after another rather than concurrently.
   ///
   /// The chain survives a failure, so one bad request cannot wedge every later
   /// refresh.
-  Future<void> _enqueue({required bool markRead}) {
-    final run = _pending.then((_) => _load(markRead: markRead));
+  Future<void> _enqueue({bool markUnread = false, List<String>? markIds}) {
+    final run = _pending.then(
+      (_) => _load(markUnread: markUnread, markIds: markIds),
+    );
     _pending = run.then<void>((_) {}, onError: (_, _) {});
     return run;
   }
@@ -234,16 +301,26 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   }
 
   /// The push switches of the signed-in customer.
+  ///
+  /// [NotificationsState.preferencesRead] is set by both answers, including the
+  /// failed one: a customer who is not signed in has no switches to wait for,
+  /// and the screen must not keep the banner off forever because a read never
+  /// came back.
   Future<void> loadPushState() async {
     try {
       final switches = await _pushRepository.preferences();
       if (isClosed) return;
-      emit(state.copyWith(preferences: switches));
+      emit(state.copyWith(preferences: switches, preferencesRead: true));
     } catch (_) {
-      // A customer who is not signed in has no switches yet. The screen shows
-      // the switches of a fresh account, which is the honest answer.
+      // The switches of a fresh account are the honest answer for anyone the
+      // server could not be reached for.
       if (isClosed) return;
-      emit(state.copyWith(preferences: const NotificationPreferences()));
+      emit(
+        state.copyWith(
+          preferences: const NotificationPreferences(),
+          preferencesRead: true,
+        ),
+      );
     }
   }
 
@@ -302,7 +379,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> _load({required bool markRead}) async {
+  Future<void> _load({bool markUnread = false, List<String>? markIds}) async {
     final generation = ++_loadGeneration;
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
@@ -314,30 +391,43 @@ class NotificationsCubit extends Cubit<NotificationsState> {
             isLoading: false,
             signedOut: true,
             clearError: true,
+            hasMore: false,
           ),
         );
         return;
       }
-      var notifications = await _repository.listNotifications();
-      if (markRead) {
-        final unread = notifications
-            .where((item) => !item.isRead)
-            .map((item) => item.id)
-            .toList(growable: false);
-        if (unread.isNotEmpty) {
-          await _repository.markRead(unread);
-          if (isClosed || generation != _loadGeneration) return;
-          notifications = await _repository.listNotifications();
-        }
+      // One row more than a page, so the screen knows whether to offer the next
+      // one without a second query for a count.
+      var notifications = await _repository.listNotifications(
+        limit: pageSize + 1,
+      );
+      final ids =
+          markIds ??
+          (markUnread
+              ? [
+                  for (final item in notifications)
+                    if (!item.isRead) item.id,
+                ]
+              : null);
+      if (ids != null && ids.isNotEmpty) {
+        await _repository.markRead(ids);
+        if (isClosed || generation != _loadGeneration) return;
+        notifications = await _repository.listNotifications(
+          limit: pageSize + 1,
+        );
       }
       if (isClosed) return;
       // A newer load, or a newer identity, already owns the state.
       if (generation != _loadGeneration) return;
+      final hasMore = notifications.length > pageSize;
       emit(
         state.copyWith(
-          notifications: notifications,
+          notifications: hasMore
+              ? notifications.sublist(0, pageSize)
+              : notifications,
           isLoading: false,
           signedOut: false,
+          hasMore: hasMore,
         ),
       );
     } on NotificationSignInRequiredException {
@@ -348,6 +438,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
           notifications: const [],
           isLoading: false,
           signedOut: true,
+          hasMore: false,
         ),
       );
     } catch (error, stackTrace) {

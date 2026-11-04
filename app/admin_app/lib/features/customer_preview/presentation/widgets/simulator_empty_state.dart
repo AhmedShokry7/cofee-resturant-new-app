@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 
@@ -24,19 +25,24 @@ class SimulatorEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(icon, size: AppSizes.px48, color: adminSubtleColor(theme)),
+            AppIcon(
+              icon,
+              size: AppSizes.px48,
+              color: palette.textSecondary ?? adminSubtleColor(theme),
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
               title,
               textAlign: TextAlign.center,
               style: AppFonts.semiBold16(context)
-                  .copyWith(color: adminHeadingColor(theme)),
+                  .copyWith(color: palette.textPrimary ?? adminHeadingColor(theme)),
             ),
             if (subtitle != null) ...[
               const SizedBox(height: AppSpacing.xs),
@@ -44,7 +50,7 @@ class SimulatorEmptyState extends StatelessWidget {
                 subtitle!,
                 textAlign: TextAlign.center,
                 style: AppFonts.regular14(context)
-                    .copyWith(color: adminMutedColor(theme)),
+                    .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
               ),
             ],
           ],

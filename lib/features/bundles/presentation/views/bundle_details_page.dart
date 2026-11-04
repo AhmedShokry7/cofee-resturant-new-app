@@ -42,7 +42,7 @@ class BundleDetailsPage extends StatelessWidget {
             body: const _BundleDetailsBody(),
             bottomNavigationBar: Container(
               padding: EdgeInsets.all(AppSpacing.lg),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppColor.whiteColor,
                 border: Border(top: BorderSide(color: AppColor.borderColor)),
               ),

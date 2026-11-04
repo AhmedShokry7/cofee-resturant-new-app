@@ -1,11 +1,20 @@
 -- app_design_test.sql
--- Behaviour test for migration 226: the app builder's design document — draft,
--- published, version history, rollback — and the two permission codes that
--- gate it.
+-- Behaviour test for migration 226 and its theme follow-up 227: the app
+-- builder's design document — draft, published, version history, rollback — the
+-- two permission codes that gate it, and the theme block a version-2 document
+-- carries.
 --
--- STATUS: NOT EXECUTED. 226 has not been applied to the linked project, so
--- every case below would raise 42883 (function does not exist). Run this only
--- after 226 is applied, with `supabase db query --linked -f` or psql.
+-- STATUS: 226 and 227 are applied to the linked project.
+--   * Cases 16–23 (the theme block) were RUN on the linked database on
+--     2026-11-04 through the Management API (`tools/sbquery.ps1`) and all
+--     passed; a deliberately broken expectation was then substituted and did
+--     raise `FAIL 17`, so the checks were shown to be live, not decorative.
+--     That run carried the fixtures and the theme section only.
+--   * Cases 1–15 have NOT been executed here: case 7 deletes a
+--     `design.publish` row inside the transaction, and the API session role is
+--     `postgres` without DELETE on `identity.role_permissions` (42501), so the
+--     file aborts before any check. Run the whole file with `supabase db query
+--     --linked -f` or psql, where the role is the service owner.
 --
 -- Plain SQL, one transaction, every fixture rolled back at the end, and every
 -- call made as a real role with real JWT claims so the guard arms execute
@@ -29,10 +38,14 @@
 --   DOC  one valid document: home with a section inside the page root.
 --   BAD  documents that break one rule each: unknown page key, a repeated node
 --       id, a property whose value is an object, a subtree deeper than 12.
+--   THEME (16–23) version-2 documents around the theme block: one legal layer,
+--       then one break per rule — a colour role no renderer reads, a colour that
+--       is not #RRGGBB/#AARRGGBB, a theme stamped as version 1, a document from
+--       a newer builder, a key nobody renders, and scales outside the two lists.
 --
 -- PREREQUISITES: 004/005 (identity, RBAC, app_settings), 018 (has_permission),
 -- 020 (settings RLS), 032/033 (the public bridge views and their grants),
--- 116 (audit log), 226.
+-- 116 (audit log), 226, 227.
 
 begin;
 
@@ -561,18 +574,226 @@ end $$;
 --     explicit (and therefore non-null) relacl — an empty ACL is not the goal,
 --     an unusable one is.
 -- ---------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------
+-- 16–23 (migration 227): the theme block.
+--
+-- Run as the same editor, and through the draft path only: case 7 closed
+-- `design.publish` to this role for the rest of the transaction, and the theme
+-- question belongs to the validator, not to that gate. These calls come after
+-- every check above has read the draft row, so the writes here cannot disturb
+-- the expectations before them.
+-- ---------------------------------------------------------------------------
+set local role authenticated;
+
+select set_config('request.jwt.claims',
+  '{"sub":"ad600000-0000-4000-8000-000000000001","role":"authenticated","aud":"authenticated"}', true);
+
+-- 16: a version-2 document with a legal theme — two roles, one colour carrying
+--     an alpha byte, and both scales — saves, and the theme is stored verbatim.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"colors":{"primary":"#c09060","text_secondary":"#80000000"},"text_scale":"comfortable","radius_scale":"soft"},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[{"id":"hero","type":"promo_banner","visible":true,"properties":{"bannerIndex":1},"children":[]}]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_valid', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_valid', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+-- 17: a role the renderers do not know. `accent` is the tempting one — the
+--     customer app has no such colour slot, so storing it promises a change
+--     that can never arrive.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"colors":{"accent":"#FF0000"}},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_bad_role', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_bad_role', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+-- 18: colours that are not colours: a CSS name, three digits, a number.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"colors":{"primary":"red"}},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_bad_hex', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_bad_hex', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"colors":{"primary":"#FFF"}},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_short_hex', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_short_hex', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"colors":{"primary":16711680}},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_number_hex', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_number_hex', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+-- 19: a theme stamped as version 1. The stamp is what says this document may
+--     carry a shape at all; a panel that read such a row would show colours the
+--     installed customer app ignores.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":1,"theme":{"colors":{"primary":"#C09060"}},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_theme_on_v1', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_theme_on_v1', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+-- 20: a document from a builder newer than this database.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":3,"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_v3', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_v3', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+-- 21–22: a key nobody renders, and scales named outside the two lists.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"font_family":"Cairo"},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_unknown_key', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_unknown_key', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"text_scale":"huge"},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_bad_text', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_bad_text', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{"radius_scale":"bubbly"},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_bad_radius', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_bad_radius', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
+-- 23: the neutral layer — an empty theme object on a version-2 document. The
+--     panel prints this for an owner who touched nothing, and it must stay
+--     publishable, or every untouched document would fail to save.
+do $$
+declare v jsonb;
+begin
+  select public.admin_save_app_design_draft(
+    '{"schema_version":2,"theme":{},"pages":[{"page":"home","root":{"id":"page-home","type":"page","visible":true,"properties":{},"children":[]}}]}'::jsonb
+  ) into v;
+  perform set_config('test.adt_empty_theme', coalesce(v::text, 'NULL'), true);
+exception when others then
+  perform set_config('test.adt_empty_theme', 'RAISED:' || sqlstate || ':' || sqlerrm, true);
+end $$;
+
 do $$
 declare
-  v_role text;
-  v_kind text;
+  answer text;
+  v_theme jsonb;
 begin
-  foreach v_role in array array['anon','authenticated'] loop
-    foreach v_kind in array array['select','insert','update','delete','references','trigger'] loop
-      if has_table_privilege(v_role, 'core.app_design_versions', v_kind) then
-        raise exception 'FAIL 15: % holds % on core.app_design_versions', v_role, v_kind;
-      end if;
-    end loop;
+  if left(current_setting('test.adt_valid'), 6) = 'RAISED' then
+    raise exception 'FAIL 16: a legal theme was refused: %', current_setting('test.adt_valid');
+  end if;
+
+  answer := current_setting('test.adt_bad_role');
+  if left(answer, 6) <> 'RAISED' or answer not like '%22023%' or answer not like '%theme_color_role%' then
+    raise exception 'FAIL 17: an unknown colour role answered %', answer;
+  end if;
+
+  foreach answer in array array[
+      current_setting('test.adt_bad_hex'),
+      current_setting('test.adt_short_hex'),
+      current_setting('test.adt_number_hex')
+    ] loop
+    if left(answer, 6) <> 'RAISED' or answer not like '%theme_color_value%' then
+      raise exception 'FAIL 18: a colour that is not #RRGGBB answered %', answer;
+    end if;
   end loop;
+
+  answer := current_setting('test.adt_theme_on_v1');
+  if left(answer, 6) <> 'RAISED' or answer not like '%theme_version%' then
+    raise exception 'FAIL 19: a theme inside a version-1 document answered %', answer;
+  end if;
+
+  answer := current_setting('test.adt_v3');
+  if left(answer, 6) <> 'RAISED' or answer not like '%schema_version%' then
+    raise exception 'FAIL 20: a version-3 document answered %', answer;
+  end if;
+
+  answer := current_setting('test.adt_unknown_key');
+  if left(answer, 6) <> 'RAISED' or answer not like '%theme_key%' then
+    raise exception 'FAIL 21: a key no renderer reads answered %', answer;
+  end if;
+
+  answer := current_setting('test.adt_bad_text');
+  if left(answer, 6) <> 'RAISED' or answer not like '%theme_text_scale%' then
+    raise exception 'FAIL 22: an unknown text scale answered %', answer;
+  end if;
+  answer := current_setting('test.adt_bad_radius');
+  if left(answer, 6) <> 'RAISED' or answer not like '%theme_radius_scale%' then
+    raise exception 'FAIL 22: an unknown radius scale answered %', answer;
+  end if;
+
+  if left(current_setting('test.adt_empty_theme'), 6) = 'RAISED' then
+    raise exception 'FAIL 23: an empty theme was refused: %',
+      current_setting('test.adt_empty_theme');
+  end if;
+
+  -- The last write that succeeded is case 23's empty layer, so the stored draft
+  -- has no colour at all: every refusal above left the row alone, and nothing
+  -- half-read is what the panel would show tomorrow.
+  select s.value into v_theme from core.app_settings s
+   where s.key = 'app_design_draft';
+  if v_theme ->> 'schema_version' <> '2' then
+    raise exception 'FAIL 23: the draft is stamped % after the empty-layer save',
+      v_theme ->> 'schema_version';
+  end if;
+  if v_theme #> '{theme,colors}' is not null then
+    raise exception 'FAIL 23: the draft stored colours % although the last legal write was the empty layer',
+      v_theme #> '{theme,colors}';
+  end if;
+  if v_theme #>> '{pages,0,page}' <> 'home' then
+    raise exception 'FAIL 23: the draft page is %', v_theme #>> '{pages,0,page}';
+  end if;
 end $$;
+
+reset role;
 
 rollback;

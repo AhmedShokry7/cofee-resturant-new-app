@@ -12,6 +12,7 @@ import 'package:admin_app/features/customer_preview/presentation/widgets/simulat
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_home_screen.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_notice_screen.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_status_bar.dart';
 
 /// جوف الهاتف: شريط الحالة، الشاشة التي يقف عليها التبويب، وشريط التنقل.
@@ -56,7 +57,7 @@ class SimulatorViewport extends StatelessWidget {
     final feed = state.feed;
     final now = DateTime.now();
     return Material(
-      color: theme.scaffoldBackgroundColor,
+      color: SimulatorPalette.of(context).background ?? theme.scaffoldBackgroundColor,
       child: Directionality(
         textDirection: state.textDirection,
         child: Column(

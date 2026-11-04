@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_node.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_theme.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/action_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/data_source_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/widget_registry.dart';
@@ -572,6 +573,223 @@ void main() {
         isNotNull,
       );
       expect(DesignValidator.validate(intoCategories).isPublishable, isTrue);
+    });
+  });
+
+  group('طبقة الشكل', () {
+    test('طبقة لم يغيّرها أحد لا تترك أثرًا في المستند', () {
+      final document = WidgetRegistry.defaultDocument();
+      expect(document.theme.isDefault, isTrue);
+      expect(document.toMap().containsKey('theme'), isFalse);
+
+      // نفس المستند بختم النسخة الأولى: الفرق حرف واحد، لأن الطبقة المحايدة
+      // لا تُطبع. القاعدة لا ترى اختلافًا بين من لم يفتح لوحة الألوان ومن
+      // فتحها وتركها.
+      final stamped = <Object?, Object?>{
+        ...document.toMap(),
+        'schema_version': 1,
+      };
+      final asVersionOne = DesignDocument.fromMap(stamped);
+      expect(sameTheme(asVersionOne.theme, document.theme), isTrue);
+      expect(asVersionOne.toMap()['theme'], isNull);
+    });
+
+    test('الطبقة تُطبع كما كُتبت ثم تُقرأ حرفًا حرفًا', () {
+      final theme = const DesignTheme()
+          .withColor(DesignColorRole.primary, '#c09060')
+          .withColor(DesignColorRole.textSecondary, '#80000000')
+          .withTextScale('large')
+          .withRadiusScale('pill');
+      final document = WidgetRegistry.defaultDocument().withTheme(theme);
+
+      final restored = DesignDocument.fromMap(document.toMap());
+      expect(sameTheme(restored.theme, theme), isTrue);
+
+      // الأحرف الكبيرة هي ما يصل الزبون، والمفتاح في JSON هو مفتاح الدور لا
+      // اسمه في Dart.
+      final printed = restored.theme.toMap();
+      expect((printed['colors'] as Map)['primary'], '#C09060');
+      expect((printed['colors'] as Map)['text_secondary'], '#80000000');
+      expect(printed['text_scale'], 'large');
+      expect(printed['radius_scale'], 'pill');
+    });
+
+    test('الطبقة تنقصها مفاتيح: لا لون ولا مقياس يطبعان حين لا فرق', () {
+      expect(const DesignTheme().toMap(), isEmpty);
+      expect(
+        const DesignTheme(textScale: 'compact').toMap(),
+        <String, Object?>{'text_scale': 'compact'},
+      );
+      expect(
+        const DesignTheme(colors: {DesignColorRole.border: '#FFFFFF'}).toMap(),
+        <String, Object?>{
+          'colors': {'border': '#FFFFFF'},
+        },
+      );
+    });
+
+    test('القراءة ترمي على كل قيمة لا يعرفها المحرّر', () {
+      final base = WidgetRegistry.defaultDocument().toMap();
+      Map<Object?, Object?> withTheme(Object? theme) =>
+          <Object?, Object?>{...base, 'theme': theme};
+
+      // دور خارج السجل: لوحة لا تُرسم، لا لون مهمل بصمت.
+      expect(
+        () => DesignDocument.fromMap(
+          withTheme({
+            'colors': {'accent': '#FF0000'},
+          }),
+        ),
+        throwsFormatException,
+      );
+      // الاسم المألوف بصيغة أخرى لا يصل ColorScheme عند الزبون.
+      expect(
+        () => DesignDocument.fromMap(
+          withTheme({
+            'colors': {'primary': 'red'},
+          }),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => DesignDocument.fromMap(
+          withTheme({
+            'colors': {'primary': '#GGGGGG'},
+          }),
+        ),
+        throwsFormatException,
+      );
+      expect(
+        () => DesignDocument.fromMap(withTheme({'text_scale': 'huge'})),
+        throwsFormatException,
+      );
+      expect(
+        () => DesignDocument.fromMap(withTheme({'radius_scale': 'bubbly'})),
+        throwsFormatException,
+      );
+      expect(
+        () => DesignDocument.fromMap(withTheme({'shadow_depth': 2})),
+        throwsFormatException,
+      );
+      expect(
+        () => DesignDocument.fromMap(withTheme('#C09060')),
+        throwsFormatException,
+      );
+    });
+
+    test('الحذف يرجع الدور إلى قيمة العميل لا إلى لون من عند اللوحة', () {
+      const role = DesignColorRole.primary;
+      final themed = const DesignTheme()
+          .withColor(role, '#112233')
+          .withColor(DesignColorRole.border, '#445566');
+
+      expect(themed.withoutColor(role).colors.containsKey(role), isFalse);
+      expect(themed.withoutColor(role).colors.length, 1);
+      // دور لم يُلمس قط: لا طبقة جديدة، فلا رجوع يُنتج تعديلاً وهميًا في السجل.
+      expect(
+        themed.withoutColor(DesignColorRole.success),
+        same(themed),
+      );
+      expect(themed.withColor(role, '#112233').colors[role], '#112233');
+    });
+
+    test('نص بلون خلفيته لا يُنشر', () {
+      final document = WidgetRegistry.defaultDocument().withTheme(
+        const DesignTheme(
+          colors: {
+            DesignColorRole.textPrimary: '#F5F5F5',
+            DesignColorRole.background: '#f5f5f5',
+          },
+        ),
+      );
+
+      final validation = DesignValidator.validate(document);
+      expect(
+        validation.issues.map((issue) => issue.code),
+        contains(DesignIssueCode.themeTextOnSameBackground),
+      );
+      expect(validation.isPublishable, isFalse);
+    });
+
+    test('الشفافية لا تخفي التطابق، والسطح محروس كالخلفية', () {
+      // نص شفافي بلون خلفيته يُركَّب فوقها فيخرج لون الخلفية حرفيًا: الشاشة
+      // بيضاء الكتابة عليها بيضاء، مهما كان الشفافي.
+      final onSurface = WidgetRegistry.defaultDocument().withTheme(
+        const DesignTheme(
+          colors: {
+            DesignColorRole.textPrimary: '#FF202020',
+            DesignColorRole.surface: '#202020',
+          },
+        ),
+      );
+      expect(
+        DesignValidator.validate(onSurface).issues.map((i) => i.code),
+        contains(DesignIssueCode.themeTextOnSameBackground),
+      );
+
+      // المحرّر يمنع الشاشة التي لا تُقرأ، لا كل لونين قريبين.
+      final legible = WidgetRegistry.defaultDocument().withTheme(
+        const DesignTheme(
+          colors: {
+            DesignColorRole.textPrimary: '#80202020',
+            DesignColorRole.background: '#F5F1EA',
+            DesignColorRole.surface: '#FFFFFF',
+          },
+        ),
+      );
+      expect(
+        DesignValidator.validate(legible).issues.map((i) => i.code),
+        isNot(contains(DesignIssueCode.themeTextOnSameBackground)),
+      );
+    });
+
+    test('طبقة سليمة تنشر، والطبقة المحايدة لا تُضاف إلى العيوب', () {
+      final document = WidgetRegistry.defaultDocument().withTheme(
+        const DesignTheme(
+          colors: {
+            DesignColorRole.primary: '#C09060',
+            DesignColorRole.background: '#FFFFFF',
+            DesignColorRole.surface: '#F7F3EE',
+            DesignColorRole.textPrimary: '#1B1B1B',
+          },
+          textScale: 'comfortable',
+          radiusScale: 'soft',
+        ),
+      );
+      final validation = DesignValidator.validate(document);
+      expect(validation.issues, isEmpty, reason: '${validation.issues}');
+      expect(validation.isPublishable, isTrue);
+      expect(DesignTheme.none.isChanged, isFalse);
+      expect(document.theme.isChanged, isTrue);
+    });
+
+    test('مستند النسخة الأولى يرقّى بختم النسخة وحده', () {
+      final current = WidgetRegistry.defaultDocument();
+      final fromDatabase = DesignDocument.fromMap(<Object?, Object?>{
+        ...current.toMap(),
+        'schema_version': 1,
+      });
+
+      // الختم وحده ما ينقص القراءة: الصفحات كما هي، والطبقة محايدة لأن
+      // النسخة الأولى لم تحمل شكلًا.
+      expect(fromDatabase.schemaVersion, 1);
+      expect(
+        DesignValidator.validate(fromDatabase).issues.map((i) => i.code),
+        contains(DesignIssueCode.schemaVersionMismatch),
+      );
+
+      final upgraded = WidgetRegistry.normalize(fromDatabase);
+      expect(upgraded.schemaVersion, WidgetRegistry.schemaVersion);
+      expect(upgraded.pages.keys, fromDatabase.pages.keys);
+      expect(
+        upgraded.rootOf(AppPage.home)?.toMap(),
+        fromDatabase.rootOf(AppPage.home)?.toMap(),
+      );
+      expect(sameTheme(upgraded.theme, DesignTheme.none), isTrue);
+      expect(DesignValidator.validate(upgraded).isPublishable, isTrue);
+
+      // مستند اليوم لا يُلمس: الترقية عملية على من سبق، لا على ما كُتب الآن.
+      expect(WidgetRegistry.normalize(current), same(current));
     });
   });
 }

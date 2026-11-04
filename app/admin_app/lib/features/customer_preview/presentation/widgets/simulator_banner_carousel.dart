@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_tokens.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
@@ -66,7 +66,8 @@ class _SimulatorBannerCarouselState extends State<SimulatorBannerCarousel> {
 
   /// هل يمشي الشريط وحده: قرار المحرّر على المقطع، وقرار صاحب الجهاز تقليل
   /// الحركة — فمن طلبها يرى شريطًا يقلبه بإصبعه بلا مؤقت.
-  bool _shouldWalk() => widget.autoplay && !MediaQuery.disableAnimationsOf(context);
+  bool _shouldWalk() =>
+      widget.autoplay && !MediaQuery.disableAnimationsOf(context);
 
   /// يضبط المؤقت على عدد البنرات الموجود فعلًا: بنر واحد لا يقلب نفسه،
   /// وثلاثة تحتاج مؤقتًا يعمل.
@@ -91,6 +92,7 @@ class _SimulatorBannerCarouselState extends State<SimulatorBannerCarousel> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final count = widget.banners.length;
     return Column(
       children: [
@@ -131,8 +133,8 @@ class _SimulatorBannerCarouselState extends State<SimulatorBannerCarousel> {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: index == _page
-                      ? AppColor.primaryColor
-                      : adminCardBorderColor(theme),
+                      ? palette.primary
+                      : palette.border ?? adminCardBorderColor(theme),
                 ),
               ),
           ],

@@ -95,9 +95,21 @@ void main() {
     }, skip: credentialSkip);
 
     // --- require the exposed-schemas setting ------------------------------
+    //
+    // These read and write the base tables of their own schema, through the
+    // `Accept-Profile` / `Content-Profile` header the client sets. A dotted
+    // name (`from('identity.profiles')`) is not that: PostgREST reads it as a
+    // table called `identity.profiles` inside the default schema and answers
+    // PGRST205, so the assertion below would pass on a name miss instead of on
+    // a real refusal.
 
     test('anon can read the public catalogue', () async {
-      final rows = await client.from('catalog.categories').select('id, slug');
+      // The earlier tests of this group sign in, so the role has to be put back
+      // to anon explicitly for this one to mean what its name says.
+      await client.auth.signOut();
+      final rows = await client.schema('catalog').from('categories').select(
+        'id, slug',
+      );
       expect(
         rows.length,
         greaterThan(0),
@@ -106,30 +118,33 @@ void main() {
     }, skip: dbSkip);
 
     test('anon cannot read customer tables', () async {
-      Object? error;
-      try {
-        await client.from('identity.profiles').select('id');
-      } catch (e) {
-        error = e;
-      }
-      expect(
-        error,
-        isNotNull,
-        reason: 'reading identity.profiles as anon must be refused',
+      // Not a missing row: `anon` holds no SELECT on identity.profiles at all,
+      // so the server refuses the request outright.
+      await client.auth.signOut();
+      await expectLater(
+        client.schema('identity').from('profiles').select('id'),
+        throwsA(
+          isA<PostgrestException>().having(
+            (error) => error.code,
+            'code',
+            '42501',
+          ),
+        ),
       );
     }, skip: dbSkip);
 
     test('cannot reach the ai schema from a client role', () async {
-      Object? error;
-      try {
-        await client.from('ai.product_knowledge').select('product_id');
-      } catch (e) {
-        error = e;
-      }
-      expect(
-        error,
-        isNotNull,
-        reason: 'ai must never be reachable from anon or authenticated',
+      // `ai` is not in the exposed schema list, so the refusal is the platform
+      // not knowing the schema - exactly the point of the rule.
+      await expectLater(
+        client.schema('ai').from('product_knowledge').select('product_id'),
+        throwsA(
+          isA<PostgrestException>().having(
+            (error) => error.code,
+            'code',
+            'PGRST106',
+          ),
+        ),
       );
     }, skip: dbSkip);
 
@@ -155,8 +170,11 @@ void main() {
     test('reads the customer own profile, and only their own', () async {
       await client.auth.signInWithPassword(email: email, password: password);
       final me = client.auth.currentUser;
+      // The role holds SELECT here, so the single row that comes back is the
+      // work of the row policy, not of a missing grant.
       final rows = await client
-          .from('identity.profiles')
+          .schema('identity')
+          .from('profiles')
           .select('id, full_name');
       expect(rows.length, 1, reason: 'RLS should return exactly the caller');
       expect(rows.first['id'], me!.id);
@@ -164,19 +182,19 @@ void main() {
 
     test('cannot write a staff record', () async {
       await client.auth.signInWithPassword(email: email, password: password);
-      Object? error;
-      try {
-        await client.from('identity.staff_members').insert({
+      await expectLater(
+        client.schema('identity').from('staff_members').insert({
           'user_id': client.auth.currentUser!.id,
           'full_name': 'Escalation attempt',
           'email': 'escalation@test.local',
-        });
-      } catch (e) {
-        error = e;
-      }
-      expect(
-        error,
-        isNotNull,
+        }),
+        throwsA(
+          isA<PostgrestException>().having(
+            (error) => error.code,
+            'code',
+            '42501',
+          ),
+        ),
         reason: 'a customer must not be able to grant themselves staff',
       );
     }, skip: dbSkip);

@@ -83,6 +83,45 @@ void main() {
       );
     });
 
+    test('مستند النسخة الأولى يعود بختم اللوحة الحيّة', () async {
+      // المحرّر يرقّي الختم وحده عند القراءة، لا يعيد كتابة الشجرة: المستند
+      // المخزّن قبل طبقة الشكل يُقرأ كما هو ويُقبل النشر من جديد، وإلا كانت كل
+      // مسودة محفوظة منذ 226 تحتاج يدًا في القاعدة قبل أن تُفتح.
+      final stored = <Object?, Object?>{
+        ...document.toMap(),
+        'schema_version': 1,
+      };
+      final client = StubSupabaseFunctions(
+        responses: <String, Object?>{'admin_get_app_design': stored},
+      );
+
+      final draft = await SupabaseAppBuilderRepository(client).loadDraft();
+      expect(draft?.schemaVersion, WidgetRegistry.schemaVersion);
+      expect(
+        draft?.rootOf(AppPage.home)?.toMap(),
+        document.rootOf(AppPage.home)?.toMap(),
+      );
+      expect(draft?.theme.isDefault, isTrue);
+    });
+
+    test('طبقة شكل لا يعرفها المحرّر ترمي ولا تُعرض', () async {
+      final client = StubSupabaseFunctions(
+        responses: <String, Object?>{
+          'admin_get_app_design': <Object?, Object?>{
+            ...document.toMap(),
+            'theme': <String, Object?>{
+              'colors': <String, Object?>{'accent': '#FF0000'},
+            },
+          },
+        },
+      );
+
+      await expectLater(
+        SupabaseAppBuilderRepository(client).loadDraft(),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
     test('رفض القاعدة يصل كما هو', () async {
       final client = StubSupabaseFunctions(
         errors: <String, Object>{

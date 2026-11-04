@@ -171,7 +171,8 @@ Deno.test("only POST is accepted", async () => {
   assertEquals(response.status, 405);
 });
 
-Deno.test("a customer who did not enable push gets a skipped log row", async () => {
+Deno.test("a customer who switched push off gets a skipped log row", async () => {
+  // The row is the decision: a device is registered, yet push stays off.
   const store = makeStore({
     preferences: {
       pushEnabled: false,
@@ -187,6 +188,17 @@ Deno.test("a customer who did not enable push gets a skipped log row", async () 
   assertEquals(store.deliveries.length, 1);
   assertEquals(store.deliveries[0].status, "skipped");
   assertEquals(store.deliveries[0].error, "push_disabled");
+});
+
+Deno.test("a device that never saw the switches is delivered to", async () => {
+  // The app only registers a token once the operating system allowed
+  // notifications, so a customer with a token and no preference row has
+  // already opted in by the only means available to them.
+  const store = makeStore({ preferences: null });
+  const result = await deliver(makeNotification(), makeDeps(store));
+  assertEquals(result.skipped, false);
+  assertEquals(result.sent, 1);
+  assertEquals(store.deliveries[0].status, "sent");
 });
 
 Deno.test("a switched off type is not delivered and says so", async () => {
@@ -232,6 +244,12 @@ Deno.test("a customer without a device gets a skipped log row", async () => {
   assertEquals(result.reason, "no_device_token");
   assertEquals(store.deliveries.length, 1);
   assertEquals(store.deliveries[0].status, "skipped");
+});
+
+Deno.test("no device and no row is the missing device, not a decision", async () => {
+  const store = makeStore({ preferences: null, tokens: [] });
+  const result = await deliver(makeNotification(), makeDeps(store));
+  assertEquals(result.reason, "no_device_token");
 });
 
 Deno.test("the message is written in the language of the device", async () => {

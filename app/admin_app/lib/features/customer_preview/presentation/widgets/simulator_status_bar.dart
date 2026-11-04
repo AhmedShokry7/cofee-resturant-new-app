@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
 /// شريط حالة الهاتف: ساعة الجهاز فقط.
@@ -16,6 +17,7 @@ class SimulatorStatusBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     return Container(
       height: AppDimensions.simulatorStatusBarHeight,
       alignment: AlignmentDirectional.centerStart,
@@ -23,7 +25,7 @@ class SimulatorStatusBar extends StatelessWidget {
       child: Text(
         timeLabel,
         style: AppFonts.medium12(context)
-            .copyWith(color: adminMutedColor(theme)),
+            .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
       ),
     );
   }

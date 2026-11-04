@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 
@@ -30,6 +30,7 @@ class SimulatorHomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final daytime = isDaytime(now);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -45,23 +46,25 @@ class SimulatorHomeHeader extends StatelessWidget {
                       labels.greeting(now),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppFonts.regular14(context)
-                          .copyWith(color: adminMutedColor(theme)),
+                      style: AppFonts.regular14(context).copyWith(
+                        color: palette.textSecondary ?? adminMutedColor(theme),
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   AppIcon(
                     daytime ? AppIcons.sun03 : AppIcons.moon01,
                     size: AppSizes.px30,
-                    color: AppColor.primaryColor,
+                    color: palette.primary,
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 labels.homeQuestion,
-                style: AppFonts.semiBold20(context)
-                    .copyWith(color: adminHeadingColor(theme)),
+                style: AppFonts.semiBold20(context).copyWith(
+                  color: palette.textPrimary ?? adminHeadingColor(theme),
+                ),
               ),
             ],
           ),

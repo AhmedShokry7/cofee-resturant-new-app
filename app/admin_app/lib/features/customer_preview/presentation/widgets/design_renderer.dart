@@ -22,6 +22,7 @@ import 'package:admin_app/features/customer_preview/presentation/widgets/simulat
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_home_header.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_no_banner_note.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_product_card.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_product_grid.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_product_strip.dart';
@@ -561,6 +562,7 @@ class DesignRenderer extends StatelessWidget {
   }
 
   Widget _paragraph(BuildContext context) {
+    final palette = SimulatorPalette.of(context);
     final align = node.stringProperty('align', fallback: 'start') == 'center'
         ? TextAlign.center
         : TextAlign.start;
@@ -570,11 +572,14 @@ class DesignRenderer extends StatelessWidget {
       style: DesignTokens.text(
         context,
         node.stringProperty('size', fallback: '14'),
-      ).copyWith(color: adminHeadingColor(Theme.of(context))),
+      ).copyWith(
+        color: palette.textPrimary ?? adminHeadingColor(Theme.of(context)),
+      ),
     );
   }
 
   Widget _divider(BuildContext context) {
+    final palette = SimulatorPalette.of(context);
     final inset = DesignTokens.spacing(
       node.stringProperty('inset', fallback: 'lg'),
     );
@@ -582,7 +587,7 @@ class DesignRenderer extends StatelessWidget {
       thickness: AppSizes.px1,
       indent: inset,
       endIndent: inset,
-      color: adminCardBorderColor(Theme.of(context)),
+      color: palette.border ?? adminCardBorderColor(Theme.of(context)),
     );
   }
 

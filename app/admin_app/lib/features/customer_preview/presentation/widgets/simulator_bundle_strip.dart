@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/bundles/domain/entities/admin_bundle.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/customer_feed.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_struck_price.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
@@ -34,8 +34,7 @@ class SimulatorBundleStrip extends StatelessWidget {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: bundles.length,
-        separatorBuilder: (context, index) =>
-            const SizedBox(width: AppSpacing.md),
+        separatorBuilder: (context, index) => const SizedBox(width: AppSpacing.md),
         itemBuilder: (context, index) => SimulatorBundleCard(
           bundle: bundles[index],
           original: feed.bundleOriginalTotal(bundles[index]),
@@ -68,15 +67,16 @@ class SimulatorBundleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final price = bundle.effectivePrice;
     final hasDiscount = original > price;
     return Container(
       width: AppDimensions.simulatorBundleCardWidth,
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: palette.surface ?? theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: adminCardBorderColor(theme)),
+        border: Border.all(color: palette.border ?? adminCardBorderColor(theme)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,7 +98,7 @@ class SimulatorBundleCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.semiBold14(context)
-                .copyWith(color: adminHeadingColor(theme)),
+                .copyWith(color: palette.textPrimary ?? adminHeadingColor(theme)),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -106,7 +106,7 @@ class SimulatorBundleCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppFonts.regular12(context)
-                .copyWith(color: adminMutedColor(theme)),
+                .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(
@@ -115,7 +115,7 @@ class SimulatorBundleCard extends StatelessWidget {
                 child: AdminMoneyText(
                   value: price,
                   fontSize: AppFontSizes.size14,
-                  color: AppColor.primaryColor,
+                  color: palette.primary,
                 ),
               ),
               if (hasDiscount) ...[
@@ -156,15 +156,16 @@ class SimulatorBundleListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     final price = bundle.effectivePrice;
     final rtl = Directionality.of(context) == TextDirection.rtl;
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
+        color: palette.surface ?? theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: adminCardBorderColor(theme)),
+        border: Border.all(color: palette.border ?? adminCardBorderColor(theme)),
       ),
       child: Row(
         children: [
@@ -192,7 +193,7 @@ class SimulatorBundleListTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.semiBold16(context)
-                      .copyWith(color: adminHeadingColor(theme)),
+                      .copyWith(color: palette.textPrimary ?? adminHeadingColor(theme)),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -200,7 +201,7 @@ class SimulatorBundleListTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppFonts.regular12(context)
-                      .copyWith(color: adminMutedColor(theme)),
+                      .copyWith(color: palette.textSecondary ?? adminMutedColor(theme)),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Row(
@@ -209,7 +210,7 @@ class SimulatorBundleListTile extends StatelessWidget {
                       child: AdminMoneyText(
                         value: price,
                         fontSize: AppFontSizes.size14,
-                        color: AppColor.primaryColor,
+                        color: palette.primary,
                       ),
                     ),
                     if (original > price) ...[
@@ -225,7 +226,7 @@ class SimulatorBundleListTile extends StatelessWidget {
           AppIcon(
             rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
             size: AppSizes.px20,
-            color: adminMutedColor(theme),
+            color: palette.textSecondary ?? adminMutedColor(theme),
           ),
         ],
       ),

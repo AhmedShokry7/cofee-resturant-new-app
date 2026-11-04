@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_node.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_theme.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/simulator_tab.dart';
 import 'package:admin_app/features/customer_preview/domain/repositories/app_builder_repository.dart';
 import 'package:admin_app/features/customer_preview/domain/services/design_tree.dart';
@@ -25,8 +26,11 @@ import 'package:admin_app/features/customer_preview/presentation/widgets/phone_f
 import 'package:admin_app/features/customer_preview/presentation/widgets/properties_panel.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_bottom_bar.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_status_bar.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_viewport.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/templates_gallery_panel.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/theme_studio_panel.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/widget_library.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/widget_tree.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
@@ -87,6 +91,9 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     if (_ownsCubit) {
       _cubit.load();
       _preview.load();
+      // المعرض يُفتح على أسماء ما حفظه الموظف؛ قراءته لا تمنع المحرّر من
+      // العمل لو عطبت، فخطؤها يُطبع وحده ولا يُغلق شاشة.
+      _cubit.refreshTemplates();
     }
   }
 
@@ -256,6 +263,34 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     );
   }
 
+  /// استوديو الشكل: الطبقة تملكها المستند كله، لا صفحة واحدة، فلا يشترط أن
+  /// تكون الصفحة المفتوحة قابلة للتحرير ليُلوَّن التطبيق. المشاهدة تمنع الكتابة
+  /// لأنها لا تملك مستندًا تُكتب فيه.
+  Widget _theme(AppBuilderState state) {
+    return ThemeStudioPanel(
+      theme: state.document?.theme ?? DesignTheme.none,
+      enabled: widget.canEdit && !state.isPreview,
+      onSetColor: _cubit.setThemeColor,
+      onClearColor: _cubit.clearThemeColor,
+      onTextScale: _cubit.setThemeTextScale,
+      onRestoreAll: _cubit.clearTheme,
+      onRejection: _showMessage,
+    );
+  }
+
+  /// معرض القوالب: يلمس المستند نفسه، فلا يُفتح في المشاهدة ولا على صفحة
+  /// مقفولة.
+  Widget _templates(AppBuilderState state) {
+    return TemplatesGalleryPanel(
+      saved: state.templates,
+      enabled: _writable(state),
+      onApplyBuiltIn: _cubit.applyBuiltInTemplate,
+      onApplySaved: _cubit.applySavedTemplate,
+      onSave: _cubit.saveTemplate,
+      onDelete: _cubit.deleteTemplate,
+    );
+  }
+
   Widget _tree(AppBuilderState state, DesignNode root) {
     final document = state.document;
     if (document == null) return const SizedBox.shrink();
@@ -298,6 +333,10 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
             onRejection: _showMessage,
           ),
         ),
+        const SizedBox(height: AppSpacing.lg),
+        _card(title: S.builderTheme, child: _theme(state)),
+        const SizedBox(height: AppSpacing.lg),
+        _card(title: S.builderTemplates, child: _templates(state)),
         const SizedBox(height: AppSpacing.lg),
         _card(title: S.builderTree, child: _tree(state, root)),
         const SizedBox(height: AppSpacing.lg),
@@ -356,16 +395,22 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
       children: [
         PhoneFrame(
           width: width,
-          child: Column(
-            children: [
-              SimulatorStatusBar(timeLabel: labels.statusBarTime(now)),
-              Expanded(child: screen),
-              SimulatorBottomBar(
-                tab: _tabOfPage(state.page) ?? preview.tab,
-                labels: labels,
-                onSelect: _selectTab,
-              ),
-            ],
+          // الهاتف يُعرض بطبقة الشكل التي يحرّرها الموظف، لا بألوان اللوحة:
+          // اللون الذي يُكتب في المستند يُرى هنا قبل أن يصل إلى الزبون، وما لم
+          // يُكتب يبقى على لونه.
+          child: SimulatorPaletteScope.forDocument(
+            document: state.shown,
+            child: Column(
+              children: [
+                SimulatorStatusBar(timeLabel: labels.statusBarTime(now)),
+                Expanded(child: screen),
+                SimulatorBottomBar(
+                  tab: _tabOfPage(state.page) ?? preview.tab,
+                  labels: labels,
+                  onSelect: _selectTab,
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),

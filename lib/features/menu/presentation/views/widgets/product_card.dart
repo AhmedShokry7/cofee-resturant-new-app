@@ -133,7 +133,7 @@ class ProductCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AppFonts.regular12(context)
-                          .copyWith(color: AppColor.greyColor),
+                          .copyWith(color: AppColor.textSecondary),
                     ),
                     SizedBox(height: AppSizes.px6),
                     Row(
@@ -158,7 +158,7 @@ class ProductCard extends StatelessWidget {
   }
 
   BoxDecoration get _decoration => BoxDecoration(
-    color: AppColor.whiteColor,
+    color: AppColor.cardSurface,
     borderRadius: BorderRadius.circular(AppRadius.r16),
     border: Border.all(color: AppColor.borderColor),
   );
@@ -210,7 +210,7 @@ class ProductCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppFonts.regular12(context)
-                        .copyWith(color: AppColor.greyColor),
+                        .copyWith(color: AppColor.textSecondary),
                   ),
                 ],
                 SizedBox(height: AppSpacing.xs),
@@ -241,7 +241,7 @@ class ProductCard extends StatelessWidget {
                   PriceLabel(
                     amount: unitPrice ?? product.price,
                     style: AppFonts.regular12(context)
-                        .copyWith(color: AppColor.greyColor),
+                        .copyWith(color: AppColor.textSecondary),
                     iconColor: AppColor.greyColor,
                   ),
                   // The price before the discount, so the line explains

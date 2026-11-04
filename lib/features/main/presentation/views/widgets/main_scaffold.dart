@@ -34,7 +34,9 @@ class _MainScaffoldState extends State<MainScaffold> {
       // to show its screen when the tap arrived. The main page is the last stop
       // of the splash, so this is the first moment the screen can be shown.
       final route = PushService.takePendingRoute();
-      if (route != null) Navigator.of(context).pushNamed(route);
+      if (route != null) {
+        Navigator.of(context).pushNamed(route.route, arguments: route.entityId);
+      }
 
       // The location prompt is fired, never awaited: it is a system dialog, and
       // waiting for it before the screen appeared is what froze the app on a

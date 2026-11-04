@@ -1,6 +1,7 @@
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_node.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_template.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_version.dart';
 import 'package:admin_app/features/customer_preview/domain/services/design_tree.dart';
 import 'package:admin_app/features/customer_preview/domain/services/design_validator.dart';
@@ -24,6 +25,7 @@ class AppBuilderState {
     this.draftSaved,
     this.published,
     this.versions = const <DesignVersion>[],
+    this.templates = const <DesignTemplate>[],
     this.versionDocument,
     this.page = AppPage.home,
     this.selectedId,
@@ -48,6 +50,11 @@ class AppBuilderState {
   final DesignDocument? published;
 
   final List<DesignVersion> versions;
+
+  /// القوالب التي حفظها الموظف، بأسمائها. المضمّنة لا تُدرج هنا: هي في سجل
+  /// القوالب وتُعرض دائمًا، فالحفظ والقراءة والصفّ في القاعدة ملك ما يضيفه
+  /// صاحبه وحده.
+  final List<DesignTemplate> templates;
 
   /// ملفّ الإصدار المحدد في القائمة، لعرضه قبل الرجوع إليه.
   final DesignDocument? versionDocument;
@@ -118,6 +125,7 @@ class AppBuilderState {
     DesignDocument? published,
     bool clearPublished = false,
     List<DesignVersion>? versions,
+    List<DesignTemplate>? templates,
     DesignDocument? versionDocument,
     bool clearVersionDocument = false,
     AppPage? page,
@@ -138,6 +146,7 @@ class AppBuilderState {
       draftSaved: clearDraftSaved ? null : (draftSaved ?? this.draftSaved),
       published: clearPublished ? null : (published ?? this.published),
       versions: versions ?? this.versions,
+      templates: templates ?? this.templates,
       versionDocument: clearVersionDocument
           ? null
           : (versionDocument ?? this.versionDocument),

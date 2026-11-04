@@ -6,6 +6,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/simulator_tab.dart';
 import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_labels.dart';
+import 'package:admin_app/features/customer_preview/presentation/widgets/simulator_palette.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 
@@ -30,11 +31,12 @@ class SimulatorBottomBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final palette = SimulatorPalette.of(context);
     return Container(
       height: AppDimensions.simulatorBottomBarHeight,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        border: Border(top: BorderSide(color: adminCardBorderColor(theme))),
+        color: palette.surface ?? theme.colorScheme.surface,
+        border: Border(top: BorderSide(color: palette.border ?? adminCardBorderColor(theme))),
       ),
       child: Row(
         children: [
@@ -86,7 +88,8 @@ class _TabItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = selected ? AppColor.primaryColor : adminMutedColor(theme);
+    final palette = SimulatorPalette.of(context);
+    final color = selected ? palette.primary : (palette.textSecondary ?? adminMutedColor(theme));
     return Semantics(
       button: true,
       selected: selected,

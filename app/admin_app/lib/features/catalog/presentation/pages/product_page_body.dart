@@ -21,6 +21,7 @@ class ProductPageBody extends StatelessWidget {
     this.onDelete,
     this.onSave,
     this.onOpenImages,
+    this.onOpenOptions,
     this.onSelect,
     this.selectedIds = const <String>{},
     this.onSelectAll,
@@ -46,6 +47,9 @@ class ProductPageBody extends StatelessWidget {
   final ValueChanged<AdminProduct>? onDelete;
   final ValueChanged<AdminProduct>? onSave;
   final ValueChanged<AdminProduct>? onOpenImages;
+
+  /// يفتح حوار أحجام المنتج وإضافاته وأسعاره عنده.
+  final ValueChanged<AdminProduct>? onOpenOptions;
   final ValueChanged<AdminProduct>? onSelect;
   final Set<String> selectedIds;
   final VoidCallback? onSelectAll;
@@ -97,6 +101,7 @@ class ProductPageBody extends StatelessWidget {
               onDelete: onDelete,
               onSave: onSave,
               onOpenImages: onOpenImages,
+              onOpenOptions: onOpenOptions,
               onSelect: onSelect,
               selectedIds: selectedIds,
               footer: footer,

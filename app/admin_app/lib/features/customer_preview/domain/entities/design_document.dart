@@ -2,16 +2,23 @@ import 'dart:convert';
 
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_node.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_theme.dart';
 
-/// مستند تصميم تطبيق العميل: نسخة واحدة تحمل صفحات التطبيق كلها.
+/// مستند تصميم تطبيق العميل: نسخة واحدة تحمل صفحات التطبيق كلها وشكلها العام.
 ///
 /// المستند هو وحدة الحفظ والنشر — مسودة أو منشور — لأنه لا معنى لنشر صفحة
-/// مكتملة فوق أخرى قديمة: الزبون يرى التطبيق كله من نسخة واحدة.
+/// مكتملة فوق أخرى قديمة: الزبون يرى التطبيق كله من نسخة واحدة. والثيم جزء من
+/// تلك الوحدة لا بجانبها: لون منشور بلا تخطيطه نصف شاشة، والتراجع عن نشر يجب
+/// أن يرجع الشكل والتخطيط معًا لا أحدهما.
 ///
 /// [schemaVersion] يُطبع ويُتحقَّق منه عند القراءة: تطبيق عميل مثبّت بإصدار لا
 /// يعرف هذه النسخة يرث آخر تصميم صالح بدل أن ينفّذ شكلًا لا يفهمه.
 class DesignDocument {
-  const DesignDocument({required this.schemaVersion, required this.pages});
+  const DesignDocument({
+    required this.schemaVersion,
+    required this.pages,
+    this.theme = DesignTheme.none,
+  });
 
   /// نسخة المستند التي يفهمها `DesignRenderer` المثبّت عند الزبون.
   final int schemaVersion;
@@ -19,6 +26,10 @@ class DesignDocument {
   /// جذر كل صفحة. الصفحات القابلة للتحرير وحدها لها جذر: صفحة مقفلة لا تُحرَّر،
   /// فلا تُخزَّن شكلًا.
   final Map<AppPage, DesignNode> pages;
+
+  /// الطبقة التي تُرسم بها كل الصفحات. محايدة حين لا يغيّرها أحد، فتبقى شاشة
+  /// اليوم هي شاشة ما قبل النظام.
+  final DesignTheme theme;
 
   DesignNode? rootOf(AppPage page) => pages[page];
 
@@ -36,15 +47,22 @@ class DesignDocument {
   DesignDocument withPage(AppPage page, DesignNode root) {
     final next = Map<AppPage, DesignNode>.of(pages);
     next[page] = root;
-    return DesignDocument(schemaVersion: schemaVersion, pages: next);
+    return DesignDocument(schemaVersion: schemaVersion, pages: next, theme: theme);
   }
+
+  /// طبقة الشكل الجديدة لكل المستند: لا تُحرَّر صفحة في هذه العملية، فالشكل
+  /// عام بالتعريف وخصائص الصفحات لا تمسها.
+  DesignDocument withTheme(DesignTheme next) =>
+      DesignDocument(schemaVersion: schemaVersion, pages: pages, theme: next);
 
   DesignDocument copyWith({
     int? schemaVersion,
     Map<AppPage, DesignNode>? pages,
+    DesignTheme? theme,
   }) => DesignDocument(
     schemaVersion: schemaVersion ?? this.schemaVersion,
     pages: pages ?? this.pages,
+    theme: theme ?? this.theme,
   );
 
   /// كل عقد المستند، بما فيها جذور الصفحات، في ترتيب الشجرة.
@@ -63,6 +81,9 @@ class DesignDocument {
 
   Map<String, Object?> toMap() => <String, Object?>{
     'schema_version': schemaVersion,
+    // الطبقة المحايدة لا تُطبع: مستند بلا شكل هو حرفيًا مستند النسخة الأولى،
+    // فلا فرق في القاعدة بين من لم يفتح لوحة الألوان ومن فتحها وتركها.
+    if (!theme.isDefault) 'theme': theme.toMap(),
     'pages': <Object?>[
       for (final entry in pages.entries)
         <String, Object?>{'page': entry.key.key, 'root': entry.value.toMap()},
@@ -98,6 +119,11 @@ class DesignDocument {
       }
       pages[page] = DesignNode.fromMap(root);
     }
-    return DesignDocument(schemaVersion: version, pages: pages);
+    return DesignDocument(
+      schemaVersion: version,
+      pages: pages,
+      // النسخة الأولى لم تحمل مفتاح theme إطلاقًا، فغيابه طبقة محايدة لا عيب.
+      theme: DesignTheme.fromMap(map['theme']),
+    );
   }
 }

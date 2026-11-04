@@ -3,10 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/home/presentation/manager/home/home_cubit.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/home_document_sections.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_loading_view.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
@@ -76,23 +79,9 @@ class HomePageBody extends StatelessWidget {
               // Pull-to-refresh must work even when the content is short.
               physics: const AlwaysScrollableScrollPhysics(),
               padding: HomeSection.bodyPadding,
-              children: [
-                const HomeSection(child: HomeHeader()),
-                SizedBox(height: AppSpacing.lg),
-                const HomeSection(child: HomeSearchBar()),
-                SizedBox(height: AppSpacing.lg),
-                const HomeBannerSection(),
-                SizedBox(height: AppSpacing.lg),
-                const HomeSection(child: HomeCategoriesSection()),
-                SizedBox(height: AppSpacing.lg),
-                const HomeSection(child: HomePopularSection()),
-                SizedBox(height: AppSpacing.lg),
-                const HomeSection(child: HomeSingleBannerSection()),
-                SizedBox(height: AppSpacing.lg),
-                const HomeSection(child: HomeRecommendationsSection()),
-                SizedBox(height: AppSpacing.lg),
-                const HomeSection(child: HomeBundlesSection()),
-              ],
+              children: _homeChildren(
+                context.watch<DesignCubit>().state.homeSections,
+              ),
             ),
           );
         },
@@ -100,3 +89,36 @@ class HomePageBody extends StatelessWidget {
     );
   }
 }
+
+/// أقسام الجسم: ترتيب المستند الذي نشره الموظف إن كان، وإلا ترتيب اليوم.
+///
+/// الفراغ بين قسمين هو الحشو نفسه في الحالتين، فيبقى التبديل بين المنشور
+/// والافتراضي تبديل ترتيب لا تبديل مسافات.
+List<Widget> _homeChildren(List<PublishedSection> document) {
+  final sections = buildHomeDocumentSections(document);
+  final children = sections.isEmpty ? _defaultHomeSections : sections;
+  return <Widget>[
+    for (var index = 0; index < children.length; index++) ...<Widget>[
+      if (index > 0) SizedBox(height: AppSpacing.lg),
+      children[index],
+    ],
+  ];
+}
+
+/// ترتيب الصفحة كما كان قبل الاستوديو، مكتوبًا في مصدره.
+///
+/// هو ما يُرسم حين لا مستند منشور، وحين لا يحمل المستند صفحة رئيسية يقرأها
+/// الهاتف، وحين لا يبقى من أقسامها قسم يُرسم — فالصفحة التي لا بحث فيها ولا
+/// بانير لا تسأل الزبون عن طلب، والمحرّر لا يسمح أصلًا بإخفاء عناصرها الثابتة.
+/// حرس التطابق في `test/home_section_order_parity_test.dart` يربطه بالمستند
+/// الافتراضي في اللوحة، فلا ينقلب أحد الطرفين عن الآخر بغير قرار.
+const List<Widget> _defaultHomeSections = <Widget>[
+  HomeSection(child: HomeHeader()),
+  HomeSection(child: HomeSearchBar()),
+  HomeBannerSection(),
+  HomeSection(child: HomeCategoriesSection()),
+  HomeSection(child: HomePopularSection()),
+  HomeSection(child: HomeSingleBannerSection()),
+  HomeSection(child: HomeRecommendationsSection()),
+  HomeSection(child: HomeBundlesSection()),
+];

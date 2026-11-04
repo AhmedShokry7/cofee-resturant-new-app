@@ -1,4 +1,5 @@
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_template.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_version.dart';
 
 /// قراءة ونشر مستند تصميم تطبيق العميل.
@@ -30,4 +31,20 @@ abstract interface class AppBuilderRepository {
 
   /// تجاهل المسودة والرجوع إلى المنشور.
   Future<void> discardDraft();
+
+  /// القوالب التي حفظها الموظف، أحدثها أولًا، بأسمائها لا بملفّاتها.
+  Future<List<DesignTemplate>> loadTemplates();
+
+  /// مستند قالب واحد، حين يقرّر الموظف أن يفتحه.
+  Future<DesignDocument?> loadTemplate(String id);
+
+  /// حفظ قالب باسم: بـ[templateId] يُستبدل قالب موجود، وبلاّه يُنشأ جديد.
+  /// ترفض القاعدة مستندًا لا يُنشر، فلا يقعد في المعرض قالب يعطب عند النشر.
+  Future<DesignTemplate> saveTemplate(
+    String name,
+    DesignDocument document, {
+    String? templateId,
+  });
+
+  Future<void> deleteTemplate(String id);
 }

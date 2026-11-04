@@ -336,7 +336,7 @@ class CategoryTabsSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: AppDimensions.tabBarHeight,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: AppColor.borderColor)),
       ),
       child: Shimmer(

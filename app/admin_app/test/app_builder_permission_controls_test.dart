@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/app_page.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_document.dart';
+import 'package:admin_app/features/customer_preview/domain/entities/design_template.dart';
 import 'package:admin_app/features/customer_preview/domain/entities/design_version.dart';
 import 'package:admin_app/features/customer_preview/domain/registry/widget_registry.dart';
 import 'package:admin_app/features/customer_preview/domain/repositories/app_builder_repository.dart';
@@ -44,6 +45,23 @@ class _NoopRepository implements AppBuilderRepository {
 
   @override
   Future<void> discardDraft() async {}
+
+  @override
+  Future<List<DesignTemplate>> loadTemplates() async =>
+      const <DesignTemplate>[];
+
+  @override
+  Future<DesignDocument?> loadTemplate(String id) async => null;
+
+  @override
+  Future<DesignTemplate> saveTemplate(
+    String name,
+    DesignDocument document, {
+    String? templateId,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<void> deleteTemplate(String id) async {}
 }
 
 final _state = AppBuilderState(

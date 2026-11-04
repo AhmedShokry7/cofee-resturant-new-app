@@ -25,6 +25,8 @@ import 'package:new_coffee/features/branch/data/repositories/branch_repository.d
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/content/data/repositories/content_repository.dart';
 import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.dart';
+import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/supabase_product_repository.dart';
 import 'package:new_coffee/features/menu/data/repositories/unavailable_catalog_repository.dart';
@@ -129,6 +131,9 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<ContentRepository>(
           create: (_) => SupabaseContentRepository(),
         ),
+        RepositoryProvider<DesignRepository>(
+          create: (_) => SupabaseDesignRepository(),
+        ),
         RepositoryProvider<PlaceSearchRepository>(
           create: (_) => NominatimPlaceSearchRepository(),
         ),
@@ -141,6 +146,12 @@ class AppProviders extends StatelessWidget {
       ],
       child: MultiBlocProvider(
         providers: [
+          BlocProvider(
+            // يقرأ المنشور عند الإنشاء ويرسمه. الإقلاع طبّقه قبل أول إطار حين
+            // وصلت القراءة، فهذه الثانية من الذاكرة لا من القاعدة.
+            create: (context) =>
+                DesignCubit(repository: context.read<DesignRepository>()),
+          ),
           BlocProvider(
             create: (_) =>
                 BranchCubit(repository: const BranchRepositoryImpl()),

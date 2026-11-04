@@ -45,10 +45,11 @@ class ForegroundPushBanners {
     final messenger = rootScaffoldMessengerKey.currentState;
     if (messenger == null || (title.isEmpty && body.isEmpty)) return;
 
-    final route = routeForNotification(
+    final open = openForNotification(
       relatedEntityType: message.data['related_entity_type'],
       type: message.data['type'],
       destination: message.data['destination'],
+      relatedEntityId: message.data['related_entity_id'],
     );
     messenger
       ..hideCurrentSnackBar()
@@ -57,12 +58,14 @@ class ForegroundPushBanners {
           content: Text(
             [title, body].where((part) => part.isNotEmpty).join(' — '),
           ),
-          action: route == null
+          action: open == null
               ? null
               : SnackBarAction(
                   label: S.open,
-                  onPressed: () =>
-                      rootNavigatorKey.currentState?.pushNamed(route),
+                  onPressed: () => rootNavigatorKey.currentState?.pushNamed(
+                    open.route,
+                    arguments: open.entityId,
+                  ),
                 ),
         ),
       );

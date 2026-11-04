@@ -87,4 +87,19 @@ class Db {
     if (value is Map) return value.map((k, v) => MapEntry(k.toString(), v));
     return const {};
   }
+
+  /// A Postgres `uuid` when the value really is one, otherwise null.
+  ///
+  /// A uuid column turns a wild string into a `22P02` server error, and the
+  /// columns that hold an id are free-form, so a value on its way into a query
+  /// is checked here once instead of at every call site.
+  static String? uuidOrNull(dynamic value) {
+    final text = textOrNull(value)?.trim();
+    return text == null || !_uuid.hasMatch(text) ? null : text;
+  }
 }
+
+final RegExp _uuid = RegExp(
+  r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
+  caseSensitive: false,
+);

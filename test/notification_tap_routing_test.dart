@@ -10,6 +10,7 @@ import 'package:new_coffee/features/notifications/data/repositories/notification
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
+import 'package:new_coffee/features/orders/presentation/views/order_details_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 
@@ -18,10 +19,16 @@ import 'package:new_coffee/features/subscriptions/presentation/views/subscriptio
 class _RouteRecorder extends NavigatorObserver {
   final List<String> pushed = [];
 
+  /// The arguments of each push, in the same order as [pushed] - a deep link is
+  /// only correct if the id it names arrives with the route.
+  final List<Object?> arguments = [];
+
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     final name = route.settings.name;
-    if (name != null && name.isNotEmpty) pushed.add(name);
+    if (name == null || name.isEmpty) return;
+    pushed.add(name);
+    arguments.add(route.settings.arguments);
   }
 }
 
@@ -29,19 +36,26 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   _FakeNotificationsRepository(this.rows);
 
   List<NotificationModel> rows;
+  final List<List<String>> markedIds = [];
 
   @override
-  Future<List<NotificationModel>> listNotifications({int limit = 50}) async =>
-      rows;
+  Future<List<NotificationModel>> listNotifications({
+    int limit = 50,
+    int offset = 0,
+  }) async => rows;
 
   @override
-  Future<int> markRead(List<String> ids) async => ids.length;
+  Future<int> markRead(List<String> ids) async {
+    markedIds.add(List<String>.of(ids));
+    return ids.length;
+  }
 }
 
 NotificationModel _row(
   String id, {
   String type = 'system',
   String? relatedEntityType,
+  String? relatedEntityId,
   String? destination,
   String? imageUrl,
 }) => NotificationModel(
@@ -52,6 +66,7 @@ NotificationModel _row(
   bodyEn: 'Body',
   type: type,
   relatedEntityType: relatedEntityType,
+  relatedEntityId: relatedEntityId,
   destination: destination,
   imageUrl: imageUrl,
   createdAt: DateTime.now().subtract(const Duration(hours: 1)),
@@ -68,14 +83,13 @@ void _setSurface(WidgetTester tester) {
 /// The real page over stub destinations, registered under the route names the
 /// pages themselves declare: if a destination ever changes its route name, the
 /// routing helper and this test stop agreeing and the test fails.
-Future<void> _pumpPage(
+Future<_FakeNotificationsRepository> _pumpPage(
   WidgetTester tester,
   List<NotificationModel> rows,
   _RouteRecorder recorder,
 ) async {
-  final cubit = NotificationsCubit(
-    repository: _FakeNotificationsRepository(rows),
-  );
+  final repository = _FakeNotificationsRepository(rows);
+  final cubit = NotificationsCubit(repository: repository);
   addTearDown(cubit.close);
   await tester.pumpWidget(
     MaterialApp(
@@ -88,11 +102,14 @@ Future<void> _pumpPage(
             const Scaffold(body: Text('notifications')),
         SubscriptionDetailsPage.routeName: (_) =>
             const Scaffold(body: Text('subscription')),
+        OrderDetailsPage.routeName: (_) =>
+            const Scaffold(body: Text('order details')),
       },
       home: BlocProvider.value(value: cubit, child: const NotificationsPage()),
     ),
   );
   await tester.pumpAndSettle();
+  return repository;
 }
 
 Future<void> _tapRow(WidgetTester tester, int index) async {
@@ -261,6 +278,91 @@ void main() {
       await _tapRow(tester, 0);
 
       expect(recorder.pushed.length, pushedBefore);
+    });
+  });
+
+  group('the order a notification names', () {
+    const orderId = '4db6e1a4-2f31-4b0a-9d2b-7c1f5e6a8b90';
+
+    test('a row that names an order opens that order', () {
+      final open = openForNotification(
+        relatedEntityType: 'order',
+        type: 'order_status',
+        relatedEntityId: orderId,
+      );
+      expect(open?.route, OrderDetailsPage.routeName);
+      expect(open?.entityId, orderId);
+    });
+
+    test('a row that only says order still opens the list', () {
+      expect(
+        openForNotification(relatedEntityType: 'order')?.route,
+        OrdersPage.routeName,
+      );
+      expect(
+        openForNotification(
+          relatedEntityType: 'order',
+          relatedEntityId: '   ',
+        )?.entityId,
+        isNull,
+      );
+    });
+
+    test('a value that is not a record id is never handed to navigation', () {
+      // The column is free text, so anything that is not an id is dropped
+      // before it can become a lookup key.
+      final open = openForNotification(
+        relatedEntityType: 'order',
+        relatedEntityId: 'https://example.test/orders',
+      );
+      expect(open?.route, OrdersPage.routeName);
+      expect(open?.entityId, isNull);
+      expect(entityIdOf('550e8400-e29b-41d4-a716-44665544000'), isNull);
+    });
+
+    test('what the campaign chose beats the order the row names', () {
+      final open = openForNotification(
+        relatedEntityType: 'order',
+        destination: 'loyalty',
+        relatedEntityId: orderId,
+      );
+      expect(open?.route, LoyaltyPage.routeName);
+      expect(open?.entityId, isNull);
+    });
+
+    testWidgets('the tap carries the id and marks only its own row', (
+      tester,
+    ) async {
+      _setSurface(tester);
+      final recorder = _RouteRecorder();
+      final repository = await _pumpPage(tester, [
+        _row(
+          'named',
+          type: 'order_status',
+          relatedEntityType: 'order',
+          relatedEntityId: orderId,
+        ),
+        _row('other', type: 'order_status', relatedEntityType: 'order'),
+      ], recorder);
+
+      await _tapRow(tester, 0);
+
+      expect(recorder.pushed.last, OrderDetailsPage.routeName);
+      expect(recorder.arguments.last, orderId);
+      expect(repository.markedIds.single, ['named']);
+    });
+
+    testWidgets('a row of another kind is pushed with no argument', (
+      tester,
+    ) async {
+      _setSurface(tester);
+      final recorder = _RouteRecorder();
+      await _pumpPage(tester, [_row('points', type: 'loyalty')], recorder);
+
+      await _tapRow(tester, 0);
+
+      expect(recorder.pushed.last, LoyaltyPage.routeName);
+      expect(recorder.arguments.last, isNull);
     });
   });
 }

@@ -36,7 +36,7 @@ class RateLimitClient {
           'endpoint': endpoint,
           'cost': 1,
         },
-        // أن الوصول到这里 يتطلب مصادقة؛ Supabase يرفق JWT تلقائياً.
+        // أن الوصول إلى هذا المسار يتطلب مصادقة؛ Supabase يرفق JWT تلقائيًا.
       );
 
       final data = _asJsonMap(response.data);
