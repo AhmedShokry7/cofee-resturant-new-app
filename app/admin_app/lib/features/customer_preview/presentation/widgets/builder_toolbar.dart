@@ -24,6 +24,8 @@ class BuilderToolbar extends StatelessWidget {
     required this.cubit,
     required this.zoom,
     required this.onZoom,
+    required this.canEdit,
+    required this.canPublish,
   });
 
   final AppBuilderState state;
@@ -33,8 +35,13 @@ class BuilderToolbar extends StatelessWidget {
   final double zoom;
   final ValueChanged<double> onZoom;
 
-  /// التحرير يعمل في وضع البناء وعلى صفحة تُحرَّر؛ عداه عرض فقط.
-  bool get _canEdit => state.page.isEditable && !state.isPreview;
+  /// صلاحيات القاعدة كما قرأتهما الجلسة: التحرير وحده يفتح الحفظ، والنشر وحده
+  /// يفتح النشر والرجوع. الإطفاء هنا راحة للموظف، والحماية في القاعدة.
+  final bool canEdit;
+  final bool canPublish;
+
+  /// التحرير يعمل لمن يملك صلاحيته وعلى صفحة تُحرَّر وفي وضع البناء؛ عداه عرض.
+  bool get _canEdit => canEdit && state.page.isEditable && !state.isPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +68,7 @@ class BuilderToolbar extends StatelessWidget {
     );
   }
 
-  // ── الصفحة ────────────────────────────────────────────────────────────
+  // ---------- الصفحة ----------
 
   Widget _pagePicker(BuildContext context) {
     final theme = Theme.of(context);
@@ -108,7 +115,7 @@ class BuilderToolbar extends StatelessWidget {
     );
   }
 
-  // ── المصدر ────────────────────────────────────────────────────────────
+  // ---------- المصدر ----------
 
   Widget _sourcePicker(BuildContext context) {
     final theme = Theme.of(context);
@@ -128,7 +135,10 @@ class BuilderToolbar extends StatelessWidget {
               if (source != AppBuilderSource.version || hasVersions)
                 DropdownMenuItem(
                   value: source,
-                  child: Text(_sourceLabel(source), style: AppFonts.regular14(context)),
+                  child: Text(
+                    _sourceLabel(source),
+                    style: AppFonts.regular14(context),
+                  ),
                 ),
           ],
           onChanged: (source) {
@@ -145,10 +155,19 @@ class BuilderToolbar extends StatelessWidget {
     AppBuilderSource.version => S.builderSourceVersion,
   };
 
-  // ── الخطوات والحفظ ────────────────────────────────────────────────────
+  // ---------- الخطوات والحفظ ----------
 
   Widget _actions(BuildContext context) {
-    final publishBlocked = !_canEdit || !state.canPublish;
+    // مانعان مختلفان، ورسالتان مختلفتان: من يظن أن الشجرة هي العيب يضيع وقتًا
+    // على مانع لا يملكه أصلًا.
+    final publishBlocked = !canPublish || !_canEdit || !state.canPublish;
+    final publishHint = !canPublish
+        ? S.builderPublishNeedsPermission
+        : !state.canPublish
+        ? S.builderPublishBlocked
+        : !_canEdit
+        ? S.builderPublishNeedsEdit
+        : S.builderPublish;
     return Wrap(
       spacing: AppSpacing.xs,
       runSpacing: AppSpacing.xs,
@@ -170,7 +189,7 @@ class BuilderToolbar extends StatelessWidget {
           onPressed: _canEdit && state.isDirty ? cubit.saveDraft : null,
         ),
         Tooltip(
-          message: publishBlocked ? S.builderPublishBlocked : S.builderPublish,
+          message: publishHint,
           child: AdminToolbarButton(
             label: state.isPublishing ? S.builderPublishing : S.builderPublish,
             icon: AppIcons.upload01,
@@ -188,7 +207,7 @@ class BuilderToolbar extends StatelessWidget {
     );
   }
 
-  // ── المقياس ───────────────────────────────────────────────────────────
+  // ---------- المقياس ----------
 
   Widget _zoom(BuildContext context) {
     final theme = Theme.of(context);

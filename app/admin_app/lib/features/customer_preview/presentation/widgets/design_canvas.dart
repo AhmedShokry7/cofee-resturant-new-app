@@ -68,7 +68,7 @@ class DesignCanvas extends StatelessWidget {
     );
   }
 
-  // ── الطبقات ────────────────────────────────────────────────────────────
+  // ---------- الطبقات ----------
 
   Widget _decorate(BuildContext context, DesignNode node, Widget child) {
     // الجذر صفحة لا طبقة: لا يُحدَّد ولا يُنقل، ومواضع إفلاته هي [_slot].
@@ -133,7 +133,7 @@ class DesignCanvas extends StatelessWidget {
     );
   }
 
-  // ── مواضع الإفلات ─────────────────────────────────────────────────────
+  // ---------- مواضع الإفلات ----------
 
   Widget _slot(BuildContext context, DesignNode parent, int index) {
     final siblings = parent.children;

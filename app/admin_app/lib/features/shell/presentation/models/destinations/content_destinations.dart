@@ -35,4 +35,18 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
     section: S.sectionContent,
     tables: <String>['core.app_settings'],
   ),
+  AdminDestination(
+    id: 'appBuilder',
+    label: S.appBuilder,
+    icon: AppIcons.gridView,
+    searchHint: S.appBuilderHint,
+    // 226: اللوحة كلها تُقرأ بصلاحية التحرير، فمن لا يقرأ المسودة لا يرى
+    // شجرة ولا ألواحًا تنطفئ أمامه.
+    permission: 'design.edit',
+    section: S.sectionContent,
+    tables: <String>['core.app_settings', 'core.app_design_versions'],
+    // لوحة بثلاثة أعمدة وجهاز في وسطها: الشريط الجانبي الدائم يضغط الهاتف
+    // نفسه، فيؤخذ مكانه كما أُخذ في الصُّدّادة.
+    immersive: true,
+  ),
 ];

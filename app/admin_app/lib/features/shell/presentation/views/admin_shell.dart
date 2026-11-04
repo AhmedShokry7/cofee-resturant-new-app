@@ -15,6 +15,8 @@ import 'package:admin_app/features/carts/presentation/pages/cart_page.dart';
 import 'package:admin_app/features/catalog/presentation/pages/category_page.dart';
 import 'package:admin_app/features/catalog/presentation/pages/product_page.dart';
 import 'package:admin_app/features/coupons/presentation/pages/coupons_page.dart';
+import 'package:admin_app/features/customer_preview/data/repositories/supabase_app_builder_repository.dart';
+import 'package:admin_app/features/customer_preview/presentation/pages/app_builder_page.dart';
 import 'package:admin_app/features/customer_preview/presentation/pages/customer_preview_page.dart';
 import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
 import 'package:admin_app/features/dashboard/presentation/pages/dashboard_page.dart';
@@ -231,6 +233,15 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         return CartPage(searchController: _searchController);
       case 'customerPreview':
         return const CustomerPreviewPage();
+      case 'appBuilder':
+        // 226 تحمل الصلاحيين في القاعدة، واللوحة تفتح ما يملكه الموظف منه:
+        // النشر والرجوع بـ design.publish، والتحرير والحفظ بـ design.edit.
+        // الإطفاء راحة، والرفض 42501 هو الحماية.
+        return AppBuilderPage(
+          repository: SupabaseAppBuilderRepository(),
+          canEdit: widget.session.hasPermission('design.edit'),
+          canPublish: widget.session.hasPermission('design.publish'),
+        );
       case 'customers':
         return CustomerPage(
           searchController: _searchController,

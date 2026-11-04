@@ -5066,9 +5066,8 @@ class S {
       : 'That version’s file could not be read, so it is not shown or restored.';
 
   /// وجهة الشريط الجانبي: الموضع الذي يُبنى منه تصميم تطبيق العميل.
-  static String get appBuilder => _ar
-      ? 'مصمم تطبيق العميل'
-      : 'Customer app builder';
+  static String get appBuilder =>
+      _ar ? 'مصمم تطبيق العميل' : 'Customer app builder';
 
   static String get appBuilderHint => _ar
       ? 'اسحب عناصر إلى شاشة الهاتف وراجع خصائصها قبل النشر'
@@ -5112,7 +5111,8 @@ class S {
 
   static String get builderPublishing => _ar ? 'جارٍ النشر' : 'Publishing';
 
-  static String get builderDiscard => _ar ? 'تجاهل ما لم يُحفظ' : 'Discard changes';
+  static String get builderDiscard =>
+      _ar ? 'تجاهل ما لم يُحفظ' : 'Discard changes';
 
   static String get builderDirty => _ar ? 'غير محفوظ' : 'Unsaved changes';
 
@@ -5140,7 +5140,8 @@ class S {
     _ => _ar ? 'التنقّل' : 'Navigation',
   };
 
-  static String get builderProperties => _ar ? 'خصائص العنصر' : 'Element properties';
+  static String get builderProperties =>
+      _ar ? 'خصائص العنصر' : 'Element properties';
 
   static String get builderNoSelection => _ar
       ? 'اختر عنصرًا من اللوحة أو من الطبقات لتظهر خصائصه.'
@@ -5158,22 +5159,36 @@ class S {
 
   static String get builderVersions => _ar ? 'الإصدارات' : 'Versions';
 
-  static String get builderNoVersions => _ar
-      ? 'لا إصدار منشور بعد.'
-      : 'No published version yet.';
+  static String get builderNoVersions =>
+      _ar ? 'لا إصدار منشور بعد.' : 'No published version yet.';
 
   static String get builderInspect => _ar ? 'استعراض' : 'Inspect';
 
   static String get builderRestore => _ar ? 'الرجوع إليه' : 'Restore';
 
-  static String builderVersionLabel(int number) => _ar
-      ? 'الإصدار $number'
-      : 'Version $number';
+  static String builderVersionLabel(int number) =>
+      _ar ? 'الإصدار $number' : 'Version $number';
 
   /// النشر ممنوع قبل أن يوافق المدقّق: يُقال السبب لا يُترك الزرّ معتمًا صامتًا.
   static String get builderPublishBlocked => _ar
       ? 'النشر ممتنع ما بقي مانع واحد في قائمة «قبل النشر».'
       : 'Publishing stays blocked while any issue remains in “Before publishing”.';
+
+  /// صلاحيات النشر والتحرير في القاعدة، والزرّ المطفأ يسمّي الناقص منها:
+  /// الموظف الذي يرى «تحتاج صلاحية» لا يظن أن الشجرة هي المشكلة.
+  static String get builderPublishNeedsPermission => _ar
+      ? 'النشر والرجوع يحتاجان صلاحية «نشر تصميم التطبيق».'
+      : 'Publishing and rollback need the “Publish app design” permission.';
+
+  static String get builderNeedsPermission => _ar
+      ? 'هذه اللوحة تُعرض وتُقرأ، والتحرير يحتاج صلاحية «تحرير تصميم التطبيق».'
+      : 'This panel shows and reads; editing needs the “Edit app design” permission.';
+
+  /// النشر من وضع البناء وعلى صفحة تُحرَّر: من يقف على المشاهدة أو على شاشة
+  /// مقفلة يقرأ الموضع، لا أن رقم الإصدار ناقص.
+  static String get builderPublishNeedsEdit => _ar
+      ? 'النشر يكون من وضع البناء وعلى صفحة قابلة للتحرير.'
+      : 'Publishing happens from build mode on an editable page.';
 
   /// التنقل في وضع التحرير يبدّل الصفحة المحرَّرة، والشاشات المفتوحة فوقها
   /// تعمل عند الزبون في وضع المشاهدة.
@@ -5187,9 +5202,8 @@ class S {
 
   static String get builderRename => _ar ? 'إعادة تسمية' : 'Rename';
 
-  static String get builderRenameTitle => _ar
-      ? 'اسم الطبقة في الشجرة'
-      : 'Layer name in the tree';
+  static String get builderRenameTitle =>
+      _ar ? 'اسم الطبقة في الشجرة' : 'Layer name in the tree';
 
   /// الاسم الذي يُعدَّل هو معرّف العقدة في المستند، لا نص يقرأه الزبون.
   static String get builderRenameNote => _ar
@@ -5216,80 +5230,81 @@ class S {
   static String get builderProductField => _ar ? 'المنتج' : 'Product';
 
   /// حقل لا يُقبل فراغًا: نص فارغ في مستند منشور يعني سطرًا فارغًا عند الزبون.
-  static String get builderRequiredField => _ar
-      ? 'لا يُترك هذا الحقل فارغًا.'
-      : 'This field cannot be left empty.';
+  static String get builderRequiredField =>
+      _ar ? 'لا يُترك هذا الحقل فارغًا.' : 'This field cannot be left empty.';
 
   /// رقم صحيح مطلوب، لأن المكوّن عدّدتُ لا نصه.
-  static String get builderCountRequired => _ar
-      ? 'رقم صحيح مطلوب.'
-      : 'A whole number is required.';
+  static String get builderCountRequired =>
+      _ar ? 'رقم صحيح مطلوب.' : 'A whole number is required.';
 
   /// حدّا العدد قرار المطوّر في السجل، والموظف يُخبَر بهما لا يُمنع صامتًا.
-  static String builderCountRange(String min, String max) => _ar
-      ? 'الرقم بين $min و$max.'
-      : 'Enter a number between $min and $max.';
+  static String builderCountRange(String min, String max) =>
+      _ar ? 'الرقم بين $min و$max.' : 'Enter a number between $min and $max.';
 
   /// لا قيمة للمسودة: الخاصية تُترك غائبة، والمكوّن يرسم بقيمة المطوّر.
   static String get builderNoValue => _ar ? 'بلا قيمة' : 'No value';
 
-  static String get builderLevelEditable => _ar ? 'يُحرَّر كاملًا' : 'Fully editable';
+  static String get builderLevelEditable =>
+      _ar ? 'يُحرَّر كاملًا' : 'Fully editable';
 
   static String get builderLevelPartial => _ar ? 'شكله فقط' : 'Appearance only';
 
-  static String get builderLevelLocked => _ar
-      ? 'تحت سيطرة المطوّر'
-      : 'Developer controlled';
+  static String get builderLevelLocked =>
+      _ar ? 'تحت سيطرة المطوّر' : 'Developer controlled';
 
   static String get builderPageEditable => _ar ? 'تُحرَّر' : 'Editable';
 
   /// سبب قفل الصفحة يُقال للموظف، فلا تُترك أمامه صفحة بيضاء بلا سبب.
   static String builderPageLockReason(String lock) => switch (lock) {
-    'perCustomerSession' => _ar
-        ? 'مقفولة: بياناتها من جلسة الزبون وحده — سلّته ومفضلته وحسابه.'
-        : 'Locked: its data comes from the customer session alone — cart, favourites, account.',
-    'developerOnly' => _ar
-        ? 'مقفولة: منطقها يُبنى من صفوف المنتج وخياراته، لا من شكل يُحرَّر.'
-        : 'Locked: it is built from the product row and its options, not from an editable layout.',
+    'perCustomerSession' =>
+      _ar ? 'مقفولة: بياناتها من جلسة الزبون وحده — سلّته ومفضلته وحسابه.' : 'Locked: its data comes from the customer session alone — cart, favourites, account.',
+    'developerOnly' =>
+      _ar ? 'مقفولة: منطقها يُبنى من صفوف المنتج وخياراته، لا من شكل يُحرَّر.' : 'Locked: it is built from the product row and its options, not from an editable layout.',
     _ => _ar ? 'مقفولة' : 'Locked',
   };
 
   /// سبب رفض عملية على الشجرة، بمفتاح [DesignEditRejection.name].
   static String builderRejection(String code) => switch (code) {
-    'unknownType' => _ar
-        ? 'عنصر لا يعرفه المحرّر، فلا رسم له ولا يُضاف.'
-        : 'The editor does not know that element, so it has no rendering and cannot be added.',
-    'missingNode' => _ar
-        ? 'العنصر المطلوب ليس في هذه الصفحة.'
-        : 'That element is not on this page.',
-    'parentIsNotContainer' => _ar
-        ? 'هذا العنصر لا يقبل أبناء في المحرّر.'
-        : 'That element takes no children in the editor.',
-    'parentRefusesChild' => _ar
-        ? 'الأب لا يذكر هذا العنصر بين أبنائه المسموحين.'
-        : 'That parent does not allow this element as a child.',
-    'childRefusesParent' => _ar
-        ? 'العنصر لا يقبل هذا الأب.'
-        : 'That element does not accept this parent.',
-    'lockedComponent' => _ar
-        ? 'مكوّن أساس: لا يُنقل ولا يُخفى ولا يُحذف ولا يُسمَّى.'
-        : 'A fixed element: it is never moved, hidden, deleted or renamed.',
-    'intoOwnDescendant' => _ar
-        ? 'لا تُفلت حاوية داخل أحد أبنائها.'
-        : 'A container cannot be dropped inside its own child.',
-    'containerNotEmpty' => _ar
-        ? 'افرغ الحاوية أولًا: لا يختفي ابن بالحذف بلا إعلان.'
-        : 'Empty that container first: a child must not disappear by delete.',
-    'previewMode' => _ar
-        ? 'اللوحة في وضع المشاهدة: البناء موقوف والنقر يعمل كما عند الزبون.'
-        : 'The dashboard is in preview mode: building is paused and taps work as they do for the customer.',
+    'unknownType' => _ar ? 'عنصر لا يعرفه المحرّر، فلا رسم له ولا يُضاف.' : 'The editor does not know that element, so it has no rendering and cannot be added.',
+    'missingNode' =>
+      _ar
+          ? 'العنصر المطلوب ليس في هذه الصفحة.'
+          : 'That element is not on this page.',
+    'parentIsNotContainer' =>
+      _ar
+          ? 'هذا العنصر لا يقبل أبناء في المحرّر.'
+          : 'That element takes no children in the editor.',
+    'parentRefusesChild' =>
+      _ar
+          ? 'الأب لا يذكر هذا العنصر بين أبنائه المسموحين.'
+          : 'That parent does not allow this element as a child.',
+    'childRefusesParent' =>
+      _ar
+          ? 'العنصر لا يقبل هذا الأب.'
+          : 'That element does not accept this parent.',
+    'lockedComponent' =>
+      _ar
+          ? 'مكوّن أساس: لا يُنقل ولا يُخفى ولا يُحذف ولا يُسمَّى.'
+          : 'A fixed element: it is never moved, hidden, deleted or renamed.',
+    'intoOwnDescendant' =>
+      _ar
+          ? 'لا تُفلت حاوية داخل أحد أبنائها.'
+          : 'A container cannot be dropped inside its own child.',
+    'containerNotEmpty' =>
+      _ar
+          ? 'افرغ الحاوية أولًا: لا يختفي ابن بالحذف بلا إعلان.'
+          : 'Empty that container first: a child must not disappear by delete.',
+    'previewMode' =>
+      _ar ? 'اللوحة في وضع المشاهدة: البناء موقوف والنقر يعمل كما عند الزبون.' : 'The dashboard is in preview mode: building is paused and taps work as they do for the customer.',
     'pageNotEditable' => _ar ? 'هذه الصفحة مقفولة.' : 'That page is locked.',
-    'emptyId' => _ar
-        ? 'اسم الطبقة لا يُترك فارغًا.'
-        : 'The layer name cannot be left empty.',
-    'duplicateId' => _ar
-        ? 'اسم أخذته طبقة أخرى في المستند.'
-        : 'Another layer in the document already has that name.',
+    'emptyId' =>
+      _ar
+          ? 'اسم الطبقة لا يُترك فارغًا.'
+          : 'The layer name cannot be left empty.',
+    'duplicateId' =>
+      _ar
+          ? 'اسم أخذته طبقة أخرى في المستند.'
+          : 'Another layer in the document already has that name.',
     _ => _ar ? 'العملية مرفوضة.' : 'The edit was rejected.',
   };
 
@@ -5298,7 +5313,8 @@ class S {
     'unknownType' => _ar ? 'نوع لا يعرفه المحرّر' : 'Unknown element type',
     'missingRoot' => _ar ? 'صفحة بلا جذر' : 'Page without a root',
     'wrongRootType' => _ar ? 'نوع جذر الصفحة خطأ' : 'Wrong page root type',
-    'mandatoryMissing' => _ar ? 'مكوّن أساس مفقود' : 'A fixed element is missing',
+    'mandatoryMissing' =>
+      _ar ? 'مكوّن أساس مفقود' : 'A fixed element is missing',
     'mandatoryHidden' => _ar ? 'مكوّن أساس مُخفى' : 'A fixed element is hidden',
     'duplicateId' => _ar ? 'اسم طبقة مكرَّر' : 'Duplicated layer name',
     'illegalNesting' => _ar ? 'تداخل غير مسموح' : 'Nesting is not allowed',
@@ -5306,27 +5322,32 @@ class S {
     'emptyContainer' => _ar ? 'حاوية فارغة' : 'Empty container',
     'tooManyChildren' => _ar ? 'أبناء أكثر من السقف' : 'Too many children',
     'unknownProperty' => _ar ? 'خاصية لا يعرفها المكوّن' : 'Unknown property',
-    'invalidProperty' => _ar ? 'قيمة خاصية خارج حدودها' : 'Property value out of range',
+    'invalidProperty' =>
+      _ar ? 'قيمة خاصية خارج حدودها' : 'Property value out of range',
     'missingProperty' => _ar ? 'خاصية مفقودة' : 'Missing property',
-    'unknownDataSource' => _ar ? 'مصدر بيانات غير مسجَّل' : 'Unknown data source',
-    'dataSourceRefused' => _ar ? 'المكوّن لا يقبل هذا المصدر' : 'The element refuses that source',
-    'dataSourceParameterMissing' => _ar
-        ? 'مصدر بيانات بلا معامل يحدّده'
-        : 'Data source without its parameter',
+    'unknownDataSource' =>
+      _ar ? 'مصدر بيانات غير مسجَّل' : 'Unknown data source',
+    'dataSourceRefused' =>
+      _ar ? 'المكوّن لا يقبل هذا المصدر' : 'The element refuses that source',
+    'dataSourceParameterMissing' =>
+      _ar
+          ? 'مصدر بيانات بلا معامل يحدّده'
+          : 'Data source without its parameter',
     'unknownAction' => _ar ? 'إجراء غير مسجَّل' : 'Unknown action',
-    'actionRefused' => _ar ? 'المكوّن لا يقبل هذا الإجراء' : 'The element refuses that action',
-    'actionParameterMissing' => _ar
-        ? 'إجراء يشير شيئًا بلا معرّف'
-        : 'Action without the row it points at',
-    'linkLabelWithoutAction' => _ar
-        ? 'تسمية رابط بلا إجراء'
-        : 'Link label with no action',
-    'actionWithoutLabel' => _ar
-        ? 'إجراء بلا تسمية تُضغط'
-        : 'Action with no visible label',
-    'schemaVersionMismatch' => _ar
-        ? 'نسخة المخطط لا يطابقها هذا البناء'
-        : 'Schema version this builder does not draw',
+    'actionRefused' =>
+      _ar ? 'المكوّن لا يقبل هذا الإجراء' : 'The element refuses that action',
+    'actionParameterMissing' =>
+      _ar
+          ? 'إجراء يشير شيئًا بلا معرّف'
+          : 'Action without the row it points at',
+    'linkLabelWithoutAction' =>
+      _ar ? 'تسمية رابط بلا إجراء' : 'Link label with no action',
+    'actionWithoutLabel' =>
+      _ar ? 'إجراء بلا تسمية تُضغط' : 'Action with no visible label',
+    'schemaVersionMismatch' =>
+      _ar
+          ? 'نسخة المخطط لا يطابقها هذا البناء'
+          : 'Schema version this builder does not draw',
     _ => _ar ? 'مانع غير معروف' : 'Unknown issue',
   };
 

@@ -85,7 +85,7 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
     }
   }
 
-  // ── العرض: صفحة، ووضع،ومصدر ──────────────────────────────────────────
+  // ---------- العرض: صفحة، ووضع،ومصدر ----------
 
   void openPage(AppPage page) {
     if (state.page == page) return;
@@ -112,7 +112,7 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
     emit(state.copyWith(source: source, clearSelection: true));
   }
 
-  // ── البناء ────────────────────────────────────────────────────────────
+  // ---------- البناء ----------
 
   /// عنصر جديد من المكتبة، أو إفلاته على اللوحة. يرجع سبب الرفض حتى تُسمّيه
   /// اللوحة، ولا تلمس الشجرة حين لا رسم يقبله.
@@ -286,7 +286,7 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
     return null;
   }
 
-  // ── التراجع والـ Redo ────────────────────────────────────────────────
+  // ---------- التراجع والـ Redo ----------
 
   void undo() {
     if (_past.isEmpty || state.document == null) return;
@@ -318,7 +318,7 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
     );
   }
 
-  // ── الحفظ والنشر والإصدارات ──────────────────────────────────────────
+  // ---------- الحفظ والنشر والإصدارات ----------
 
   /// حفظ المسودة: لا شيء منها يصل إلى الزبون، فلا حاجة أن تكون صالحة للنشر.
   Future<bool> saveDraft() async {
@@ -465,7 +465,7 @@ class AppBuilderCubit extends Cubit<AppBuilderState> {
     }
   }
 
-  // ── خاص ──────────────────────────────────────────────────────────────
+  // ---------- خاص ----------
 
   /// قراءة مستقلّة تُرجع قيمتها أو خطأها في نفس الوقت، حتى يكون لكل قراءة started
   /// مبكرًا سامعٌ يستهلك خطأها في مكانه. أول خطأ يصل يبقى وحده صاحب القرار في

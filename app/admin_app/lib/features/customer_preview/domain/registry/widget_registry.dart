@@ -100,7 +100,7 @@ abstract final class WidgetRegistry {
       .toList(growable: false);
 
   static final List<WidgetSpec> specs = <WidgetSpec>[
-    // ── جذور الصفحات ────────────────────────────────────────────────────
+    // ---------- جذور الصفحات ----------
     WidgetSpec(
       type: WidgetTypes.pageHome,
       name: L10nText('الرئيسية', 'Home'),
@@ -141,7 +141,7 @@ abstract final class WidgetRegistry {
       childTypes: _sectionsAndContent,
     ),
 
-    // ── مقاطع التطبيق الحقيقية ──────────────────────────────────────────
+    // ---------- مقاطع التطبيق الحقيقية ----------
     WidgetSpec(
       type: WidgetTypes.header,
       name: L10nText('رأس الصفحة', 'Page header'),
@@ -502,7 +502,7 @@ abstract final class WidgetRegistry {
       ],
     ),
 
-    // ── محتوى وتخطيط عام ────────────────────────────────────────────────
+    // ---------- محتوى وتخطيط عام ----------
     WidgetSpec(
       type: WidgetTypes.heading,
       name: L10nText('عنوان مقطع', 'Section heading'),

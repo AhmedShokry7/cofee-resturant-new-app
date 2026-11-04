@@ -284,7 +284,7 @@ class DesignRenderer extends StatelessWidget {
     }
   }
 
-  // ── الصفحة ────────────────────────────────────────────────────────────
+  // ---------- الصفحة ----------
 
   /// صفحة بمقاطعها، بتمرير واحد: شبكة المنتجات sliver لا تمرير داخل تمرير،
   /// فتبقى البطاقات تُبنى نزولًا كما عند الزبون.
@@ -375,7 +375,7 @@ class DesignRenderer extends StatelessWidget {
   Widget _draw(BuildContext context, DesignNode child) =>
       DesignRenderer(node: child, scope: scope, decorate: decorate);
 
-  // ── المقاطع ───────────────────────────────────────────────────────────
+  // ---------- المقاطع ----------
 
   Widget _banners(BuildContext context) {
     final banners = scope.bannersOf(node);
@@ -535,7 +535,7 @@ class DesignRenderer extends StatelessWidget {
     title: scope.labels.noProducts,
   );
 
-  // ── المحتوى والتخطيط ──────────────────────────────────────────────────
+  // ---------- المحتوى والتخطيط ----------
 
   Widget _headingOf(
     BuildContext context,

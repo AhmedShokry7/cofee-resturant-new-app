@@ -14,16 +14,11 @@ import 'package:admin_app/features/customer_preview/presentation/manager/app_bui
 /// قاعدة زائفة للاختبار وحده: تُخزّن في الذاكرة وتعدّ النداءات، فلا مسار قراءة
 /// ثاني في التطبيق ولا بيانات وهمية تُعرض على شاشة.
 class _FakeRepository implements AppBuilderRepository {
-  _FakeRepository({
-    this.draft,
-    this.published,
-    this.versions = const <DesignVersion>[],
-    this.failLoad = false,
-  });
+  _FakeRepository({this.draft, this.published, this.failLoad = false});
 
   DesignDocument? draft;
   DesignDocument? published;
-  List<DesignVersion> versions;
+  List<DesignVersion> versions = <DesignVersion>[];
   final Map<String, DesignDocument> files = <String, DesignDocument>{};
 
   int saveCalls = 0;
@@ -52,7 +47,8 @@ class _FakeRepository implements AppBuilderRepository {
   }
 
   @override
-  Future<DesignDocument?> loadVersion(String versionId) async => files[versionId];
+  Future<DesignDocument?> loadVersion(String versionId) async =>
+      files[versionId];
 
   @override
   Future<void> saveDraft(DesignDocument document) async {
@@ -151,12 +147,15 @@ void main() {
       expect(cubit.state.isDirty, isFalse);
     });
 
-    test('فشل القراءة يقلب الحالة كلها إلى فشل ولا يترك شاشة نصف مبنية', () async {
-      await open(failLoad: true);
-      expect(cubit.state.status, AppBuilderStatus.failure);
-      expect(cubit.state.errorMessage, isNotNull);
-      expect(cubit.state.document, isNull);
-    });
+    test(
+      'فشل القراءة يقلب الحالة كلها إلى فشل ولا يترك شاشة نصف مبنية',
+      () async {
+        await open(failLoad: true);
+        expect(cubit.state.status, AppBuilderStatus.failure);
+        expect(cubit.state.errorMessage, isNotNull);
+        expect(cubit.state.document, isNull);
+      },
+    );
   });
 
   group('البناء', () {
@@ -184,15 +183,12 @@ void main() {
     test('الحذف والإخفاء يتركان الأساس وأبناءه', () async {
       await open();
 
+      expect(cubit.remove('home_header'), DesignEditRejection.lockedComponent);
       expect(
-        cubit.remove('home_header'),
+        cubit.toggleVisible('home_header'),
         DesignEditRejection.lockedComponent,
       );
-      expect(cubit.toggleVisible('home_header'), DesignEditRejection.lockedComponent);
-      expect(
-        cubit.remove('home'),
-        DesignEditRejection.containerNotEmpty,
-      );
+      expect(cubit.remove('home'), DesignEditRejection.containerNotEmpty);
 
       expect(cubit.remove('home_banners'), DesignEditRejection.none);
       expect(cubit.state.selectedId, isNull);
@@ -247,7 +243,10 @@ void main() {
       expect(sections[3].id, 'home_banners-2');
       expect(sections[3].type, WidgetTypes.bannerCarousel);
       expect(cubit.state.selectedId, 'home_banners-2');
-      expect(cubit.duplicate('home_header'), DesignEditRejection.lockedComponent);
+      expect(
+        cubit.duplicate('home_header'),
+        DesignEditRejection.lockedComponent,
+      );
     });
 
     test('الخاصية لا تمرّ خارج ما يحدّه السجل', () async {
@@ -282,23 +281,26 @@ void main() {
       );
     });
 
-    test('مصدر بيانات بلا تصنيف مطلوب لا يُنشر، والمسودة تُحفظ رغم ذلك', () async {
-      await open();
-      cubit.setProperty(
-        id: 'home_popular',
-        key: 'dataSource',
-        value: DataSourceRegistry.categoryProducts,
-      );
-      cubit.setProperty(id: 'home_popular', key: 'linkLabel', value: '');
+    test(
+      'مصدر بيانات بلا تصنيف مطلوب لا يُنشر، والمسودة تُحفظ رغم ذلك',
+      () async {
+        await open();
+        cubit.setProperty(
+          id: 'home_popular',
+          key: 'dataSource',
+          value: DataSourceRegistry.categoryProducts,
+        );
+        cubit.setProperty(id: 'home_popular', key: 'linkLabel', value: '');
 
-      expect(cubit.state.canPublish, isFalse);
-      expect(await cubit.publish(), isFalse);
-      expect(repository.publishCalls, 0);
+        expect(cubit.state.canPublish, isFalse);
+        expect(await cubit.publish(), isFalse);
+        expect(repository.publishCalls, 0);
 
-      // المسودة لا تُدقَّق: الموظف يبني، والبناء قد يمرّ بلحظة غير مكتملة.
-      expect(await cubit.saveDraft(), isTrue);
-      expect(cubit.state.isDirty, isFalse);
-    });
+        // المسودة لا تُدقَّق: الموظف يبني، والبناء قد يمرّ بلحظة غير مكتملة.
+        expect(await cubit.saveDraft(), isTrue);
+        expect(cubit.state.isDirty, isFalse);
+      },
+    );
   });
 
   group('التراجع', () {
@@ -323,10 +325,15 @@ void main() {
     test('سجل الرجوع له عمق، فلا تكبر الذاكرة مع جلسة طويلة', () async {
       await open();
       for (var i = 0; i < AppBuilderCubit.historyDepth + 12; i++) {
-        cubit.setProperty(id: 'home_banners', key: 'maxItems', value: 1 + (i % 20));
+        cubit.setProperty(
+          id: 'home_banners',
+          key: 'maxItems',
+          value: 1 + (i % 20),
+        );
       }
       var steps = 0;
-      while (cubit.state.canUndo && steps <= AppBuilderCubit.historyDepth + 20) {
+      while (cubit.state.canUndo &&
+          steps <= AppBuilderCubit.historyDepth + 20) {
         final before = cubit.state.document;
         cubit.undo();
         if (cubit.state.document == before) break;
@@ -350,15 +357,18 @@ void main() {
       expect(cubit.state.source, AppBuilderSource.published);
     });
 
-    test('رفض القاعدة للنشر يبقى كلامًا على الشاشة لا حالة نصف منشورة', () async {
-      await open();
-      repository.failPublish = true;
+    test(
+      'رفض القاعدة للنشر يبقى كلامًا على الشاشة لا حالة نصف منشورة',
+      () async {
+        await open();
+        repository.failPublish = true;
 
-      expect(await cubit.publish(), isFalse);
-      expect(cubit.state.published, isNull);
-      expect(cubit.state.isPublishing, isFalse);
-      expect(cubit.state.errorMessage, isNotNull);
-    });
+        expect(await cubit.publish(), isFalse);
+        expect(cubit.state.published, isNull);
+        expect(cubit.state.isPublishing, isFalse);
+        expect(cubit.state.errorMessage, isNotNull);
+      },
+    );
 
     test('استعراض إصدار يعرض ملفّه في الهاتف دون أن يلمس المسودة', () async {
       await open();
@@ -370,9 +380,13 @@ void main() {
       repository.files[versionId] = DesignDocument(
         schemaVersion: draft!.schemaVersion,
         pages: <AppPage, DesignNode>{
-          AppPage.home: WidgetRegistry.node(WidgetTypes.pageHome, 'home', children: <DesignNode>[
-            WidgetRegistry.node(WidgetTypes.header, 'home_header'),
-          ]),
+          AppPage.home: WidgetRegistry.node(
+            WidgetTypes.pageHome,
+            'home',
+            children: <DesignNode>[
+              WidgetRegistry.node(WidgetTypes.header, 'home_header'),
+            ],
+          ),
         },
       );
 
@@ -385,22 +399,25 @@ void main() {
       expect(cubit.state.root?.children.length, 8);
     });
 
-    test('الرجوع إصدارًا إعادة نشر برقم جديد، والمسودة تبقى عمل الموظف', () async {
-      await open();
-      await cubit.publish();
-      final versionId = cubit.state.versions.first.id;
-      final draft = cubit.state.document;
+    test(
+      'الرجوع إصدارًا إعادة نشر برقم جديد، والمسودة تبقى عمل الموظف',
+      () async {
+        await open();
+        await cubit.publish();
+        final versionId = cubit.state.versions.first.id;
+        final draft = cubit.state.document;
 
-      cubit.setProperty(id: 'home_banners', key: 'maxItems', value: 3);
-      expect(cubit.state.document, isNot(same(draft)));
+        cubit.setProperty(id: 'home_banners', key: 'maxItems', value: 3);
+        expect(cubit.state.document, isNot(same(draft)));
 
-      expect(await cubit.restoreVersion(versionId), isTrue);
-      expect(repository.restoreCalls, 1);
-      expect(cubit.state.versions.length, 2);
-      expect(cubit.state.source, AppBuilderSource.published);
-      // المنشور عاد إلى ملفّ الإصدار، والمسودة ما زالت تعدّل عليها اللوحة.
-      expect(cubit.state.published?.rootOf(AppPage.home)?.children.length, 8);
-    });
+        expect(await cubit.restoreVersion(versionId), isTrue);
+        expect(repository.restoreCalls, 1);
+        expect(cubit.state.versions.length, 2);
+        expect(cubit.state.source, AppBuilderSource.published);
+        // المنشور عاد إلى ملفّ الإصدار، والمسودة ما زالت تعدّل عليها اللوحة.
+        expect(cubit.state.published?.rootOf(AppPage.home)?.children.length, 8);
+      },
+    );
 
     test('تجاهل المسودة يرجع إلى المنشور ويصفرّ سجل الرجوع', () async {
       final published = WidgetRegistry.defaultDocument();
@@ -436,7 +453,10 @@ void main() {
       );
       expect(cubit.remove('home_banners'), DesignEditRejection.previewMode);
       expect(cubit.duplicate('home_banners'), DesignEditRejection.previewMode);
-      expect(cubit.toggleVisible('home_banners'), DesignEditRejection.previewMode);
+      expect(
+        cubit.toggleVisible('home_banners'),
+        DesignEditRejection.previewMode,
+      );
       expect(
         cubit.setProperty(id: 'home_banners', key: 'maxItems', value: 4),
         'قراءة فقط',
@@ -444,17 +464,20 @@ void main() {
       expect(cubit.state.document, same(before));
     });
 
-    test('تبديل الصفحة ينقل التحديد معه، والصفحة المقفلة لا شجرة لها', () async {
-      await open();
-      cubit.select('home_banners');
-      cubit.openPage(AppPage.categories);
-      expect(cubit.state.page, AppPage.categories);
-      expect(cubit.state.selectedId, isNull);
-      expect(cubit.state.root?.type, WidgetTypes.pageCategories);
+    test(
+      'تبديل الصفحة ينقل التحديد معه، والصفحة المقفلة لا شجرة لها',
+      () async {
+        await open();
+        cubit.select('home_banners');
+        cubit.openPage(AppPage.categories);
+        expect(cubit.state.page, AppPage.categories);
+        expect(cubit.state.selectedId, isNull);
+        expect(cubit.state.root?.type, WidgetTypes.pageCategories);
 
-      cubit.openPage(AppPage.cart);
-      expect(cubit.state.root, isNull);
-      expect(AppPage.cart.isEditable, isFalse);
-    });
+        cubit.openPage(AppPage.cart);
+        expect(cubit.state.root, isNull);
+        expect(AppPage.cart.isEditable, isFalse);
+      },
+    );
   });
 }

@@ -19,8 +19,11 @@ import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
 /// كتابة خاصية: ترجع سبب الرفض بعد فحص المحرّر إياها، وnull يعني طُبّقت.
-typedef DesignPropertyWriter =
-    String? Function(String id, String key, Object? value);
+typedef DesignPropertyWriter = String? Function(
+  String id,
+  String key,
+  Object? value,
+);
 
 /// لوحة الخصائص: ما يملك الموظف تغييريه في العنصر المحدَّد، لا أكثر.
 ///
@@ -122,8 +125,14 @@ class PropertiesPanel extends StatelessWidget {
       ),
       DesignPropertyKind.toggle => _LabelledToggle(
         label: label,
-        value: value is bool ? value : property.defaultValue is bool && property.defaultValue != null ? property.defaultValue! as bool : false,
-        onChanged: writable ? (next) => _write(node.id, property.key, next) : null,
+        value: value is bool
+            ? value
+            : property.defaultValue is bool && property.defaultValue != null
+            ? property.defaultValue! as bool
+            : false,
+        onChanged: writable
+            ? (next) => _write(node.id, property.key, next)
+            : null,
       ),
       DesignPropertyKind.token ||
       DesignPropertyKind.choice ||
@@ -133,25 +142,34 @@ class PropertiesPanel extends StatelessWidget {
         property: property,
         value: value,
         language: _language,
-        onChanged: writable ? (next) => _write(node.id, property.key, next) : null,
+        onChanged: writable
+            ? (next) => _write(node.id, property.key, next)
+            : null,
       ),
       DesignPropertyKind.categoryReference => _ReferenceField(
         label: label,
         heading: S.builderCategoryField,
         value: value,
         options: _categoryOptions(),
-        onChanged: writable ? (next) => _write(node.id, property.key, next) : null,
+        onChanged: writable
+            ? (next) => _write(node.id, property.key, next)
+            : null,
       ),
       DesignPropertyKind.productReference => _ReferenceField(
         label: label,
         heading: S.builderProductField,
         value: value,
         options: _productOptions(),
-        onChanged: writable ? (next) => _write(node.id, property.key, next) : null,
+        onChanged: writable
+            ? (next) => _write(node.id, property.key, next)
+            : null,
       ),
     };
     if (writable) return control;
-    return IgnorePointer(ignoring: true, child: Opacity(opacity: 0.6, child: control));
+    return IgnorePointer(
+      ignoring: true,
+      child: Opacity(opacity: 0.6, child: control),
+    );
   }
 
   /// الكتابة تمرّ بالمحرّر وحده: هو الذي يفحص الحدّين والقيم المسموحة قبل أن
@@ -166,7 +184,10 @@ class PropertiesPanel extends StatelessWidget {
     if (rows == null) return const <_Option>[];
     return <_Option>[
       for (final category in rows)
-        _Option(value: category.id, label: _name(category.nameAr, category.nameEn)),
+        _Option(
+          value: category.id,
+          label: _name(category.nameAr, category.nameEn),
+        ),
     ];
   }
 
@@ -175,7 +196,10 @@ class PropertiesPanel extends StatelessWidget {
     if (rows == null) return const <_Option>[];
     return <_Option>[
       for (final product in rows)
-        _Option(value: product.id, label: _name(product.nameAr, product.nameEn)),
+        _Option(
+          value: product.id,
+          label: _name(product.nameAr, product.nameEn),
+        ),
     ];
   }
 
@@ -206,9 +230,8 @@ class _Header extends StatelessWidget {
         Expanded(
           child: Text(
             name,
-            style: AppFonts.semiBold14(context).copyWith(
-              color: adminHeadingColor(theme),
-            ),
+            style: AppFonts.semiBold14(context)
+                .copyWith(color: adminHeadingColor(theme)),
           ),
         ),
         const SizedBox(width: AppSpacing.xs),
@@ -425,7 +448,10 @@ class _CountFieldState extends State<_CountField> {
   Widget build(BuildContext context) {
     return CustomTextFormField(
       label: widget.label,
-      hint: S.builderCountRange(_bound(widget.property.min), _bound(widget.property.max)),
+      hint: S.builderCountRange(
+        _bound(widget.property.min),
+        _bound(widget.property.max),
+      ),
       controller: _controller,
       bottomPadding: AppSpacing.md,
       keyboardType: TextInputType.number,
@@ -577,9 +603,7 @@ class _ReferenceField extends StatelessWidget {
               isExpanded: true,
               value: listed ? current : null,
               hint: Text(
-                listed || current == null
-                    ? heading
-                    : '$heading: $current',
+                listed || current == null ? heading : '$heading: $current',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppFonts.regular12(context),

@@ -45,15 +45,20 @@ class AppBuilderPage extends StatefulWidget {
     super.key,
     required this.repository,
     this.canEdit = false,
+    this.canPublish = false,
     this.cubit,
   });
 
   /// مصدر الحفظ والنشر: المسودة والإصدارات في القاعدة، لا في ذاكرة اللوحة.
   final AppBuilderRepository repository;
 
-  /// صلاحية النشر في القاعدة هي التي تفتح أدوات الكتابة؛ بغيرها تُعرض الشجرة
-  /// وتُقرأ ولا تكتب، والإخفاء هنا راحة لا حماية — القاعدة ترفض كتابته كذلك.
+  /// `design.edit` في القاعدة تفتح أدوات الكتابة؛ بغيرها تُعرض الشجرة وتُقرأ ولا
+  /// تكتب، والإطفاء هنا راحة لا حماية — القاعدة ترفض كتابته كذلك.
   final bool canEdit;
+
+  /// `design.publish` وحدها تفتح النشر والرجوع إلى إصدار: لوحة من يملك التحرير
+  /// وحده ترى سجلّ الإصدارات وتستعرضه، وأزرار النشر معطلة بما يسمّى سببه.
+  final bool canPublish;
 
   /// محرّر جاهز من خارج الصفحة، للاختبار أو لما تبنيه شاشة أعلى.
   final AppBuilderCubit? cubit;
@@ -111,11 +116,17 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
               children: [
                 AdminPageHeader(
                   title: S.appBuilder,
-                  subtitle: S.appBuilderHint,
+                  // من لا يملك التحرير يقرأ السبب فوق الألواح المطفأة، لا يظن
+                  // أن الشجرة فارغة أو أن الزرّ معطوب.
+                  subtitle: widget.canEdit
+                      ? S.appBuilderHint
+                      : S.builderNeedsPermission,
                   footer: BuilderToolbar(
                     state: state,
                     cubit: _cubit,
                     zoom: _zoom,
+                    canEdit: widget.canEdit,
+                    canPublish: widget.canPublish,
                     onZoom: (next) => setState(
                       () => _zoom = next.clamp(
                         AppDimensions.builderZoomMin,
@@ -126,10 +137,11 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Expanded(
-                  child: BlocBuilder<CustomerPreviewCubit, CustomerPreviewState>(
-                    builder: (context, preview) =>
-                        _body(context, state, preview),
-                  ),
+                  child:
+                      BlocBuilder<CustomerPreviewCubit, CustomerPreviewState>(
+                        builder: (context, preview) =>
+                            _body(context, state, preview),
+                      ),
                 ),
               ],
             ),
@@ -139,7 +151,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     );
   }
 
-  // ── الهيكل ────────────────────────────────────────────────────────────
+  // ---------- الهيكل ----------
 
   Widget _body(
     BuildContext context,
@@ -147,7 +159,10 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     CustomerPreviewState preview,
   ) {
     if (state.status == AppBuilderStatus.failure) {
-      return AdminFailureView(message: state.errorMessage, onRetry: _cubit.load);
+      return AdminFailureView(
+        message: state.errorMessage,
+        onRetry: _cubit.load,
+      );
     }
     if (preview.status == CustomerPreviewStatus.failure) {
       return AdminFailureView(
@@ -207,9 +222,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
             ),
             const SizedBox(width: AppSpacing.lg),
             Expanded(
-              child: SingleChildScrollView(
-                child: Center(child: phone),
-              ),
+              child: SingleChildScrollView(child: Center(child: phone)),
             ),
             const SizedBox(width: AppSpacing.lg),
             SizedBox(
@@ -231,7 +244,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     );
   }
 
-  // ── الألواح ───────────────────────────────────────────────────────────
+  // ---------- الألواح ----------
 
   bool _writable(AppBuilderState state) =>
       widget.canEdit && state.page.isEditable && !state.isPreview;
@@ -286,10 +299,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
           ),
         ),
         const SizedBox(height: AppSpacing.lg),
-        _card(
-          title: S.builderTree,
-          child: _tree(state, root),
-        ),
+        _card(title: S.builderTree, child: _tree(state, root)),
         const SizedBox(height: AppSpacing.lg),
         _card(
           title: S.builderIssues,
@@ -299,6 +309,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
             versions: state.versions,
             inspectedVersionId: _inspectedVersion,
             busy: state.isPublishing,
+            canRestore: widget.canPublish,
             onInspect: _inspect,
             onRestore: _restore,
           ),
@@ -314,7 +325,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     );
   }
 
-  // ── الهاتف ────────────────────────────────────────────────────────────
+  // ---------- الهاتف ----------
 
   Widget _phone(
     BuildContext context,
@@ -335,10 +346,12 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
             onSelect: _cubit.select,
             onDrop: _drop,
           );
-    final width = PhoneFrame.widthFitting(
-      maxWidth: MediaQuery.sizeOf(context).width,
-      maxHeight: MediaQuery.sizeOf(context).height,
-    ) * _zoom;
+    final width =
+        PhoneFrame.widthFitting(
+          maxWidth: MediaQuery.sizeOf(context).width,
+          maxHeight: MediaQuery.sizeOf(context).height,
+        ) *
+        _zoom;
     return Column(
       children: [
         PhoneFrame(
@@ -413,7 +426,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
     );
   }
 
-  // ── الأوامر ───────────────────────────────────────────────────────────
+  // ---------- الأوامر ----------
 
   /// إفلات من المكتبة أو من الطبقات: نقل أو إضافة، والمحرّر يرفض ما يرفضه
   /// السجل فتُسمّى الرفض للموظف.
@@ -469,7 +482,7 @@ class _AppBuilderPageState extends State<AppBuilderPage> {
       );
   }
 
-  // ── خرائط التبويب ─────────────────────────────────────────────────────
+  // ---------- خرائط التبويب ----------
 
   /// هل للصفحة جذر في هذا المستند؟ بغيابه تبقى شاشة الهاتف على ما تعرضه
   /// القاعدة، ولا تُفتح لوحة على فراغ.

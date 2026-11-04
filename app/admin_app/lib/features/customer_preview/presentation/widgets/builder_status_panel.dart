@@ -25,6 +25,7 @@ class BuilderStatusPanel extends StatelessWidget {
     required this.versions,
     required this.inspectedVersionId,
     required this.busy,
+    required this.canRestore,
     required this.onInspect,
     required this.onRestore,
   });
@@ -40,6 +41,10 @@ class BuilderStatusPanel extends StatelessWidget {
 
   /// نشرٌ جارٍ: لا رجوع فوق نشر، فلا إصدارَين يكتبان في وقت واحد.
   final bool busy;
+
+  /// الرجوع إعادة نشر، فهو بصلاحية النشر لا بصلاحية التحرير: من يرى السجل ولا
+  /// يملك النشر يقرأ أرقامه وتواريخه وتلمّحه يعترض.
+  final bool canRestore;
   final ValueChanged<String> onInspect;
   final ValueChanged<String> onRestore;
 
@@ -75,6 +80,7 @@ class BuilderStatusPanel extends StatelessWidget {
               version: version,
               inspected: version.id == inspectedVersionId,
               busy: busy,
+              canRestore: canRestore,
               onInspect: () => onInspect(version.id),
               onRestore: () => onRestore(version.id),
             ),
@@ -100,9 +106,8 @@ class _GroupHeading extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: AppFonts.semiBold14(context).copyWith(
-              color: adminHeadingColor(theme),
-            ),
+            style: AppFonts.semiBold14(context)
+                .copyWith(color: adminHeadingColor(theme)),
           ),
         ),
         if (count != null)
@@ -138,9 +143,7 @@ class _Note extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(
-          positive
-              ? AppIcons.checkmarkCircle01
-              : AppIcons.informationCircle,
+          positive ? AppIcons.checkmarkCircle01 : AppIcons.informationCircle,
           size: AppDimensions.iconSizeSm,
           color: tone,
         ),
@@ -197,7 +200,10 @@ class _IssueRow extends StatelessWidget {
           ),
           if (where.isNotEmpty || issue.detail.isNotEmpty)
             Text(
-              <String>[where, issue.detail].where((part) => part.isNotEmpty).join(' — '),
+              <String>[
+                where,
+                issue.detail,
+              ].where((part) => part.isNotEmpty).join(' — '),
               style: TextStyle(
                 color: adminMutedColor(theme),
                 fontSize: AppFontSizes.size9,
@@ -217,6 +223,7 @@ class _VersionRow extends StatelessWidget {
     required this.version,
     required this.inspected,
     required this.busy,
+    required this.canRestore,
     required this.onInspect,
     required this.onRestore,
   });
@@ -224,6 +231,7 @@ class _VersionRow extends StatelessWidget {
   final DesignVersion version;
   final bool inspected;
   final bool busy;
+  final bool canRestore;
   final VoidCallback onInspect;
   final VoidCallback onRestore;
 
@@ -238,9 +246,7 @@ class _VersionRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: inspected ? adminTintedSurfaceColor(theme) : null,
         border: Border.all(
-          color: inspected
-              ? AppColor.adminAccent
-              : adminRowBorderColor(theme),
+          color: inspected ? AppColor.adminAccent : adminRowBorderColor(theme),
           width: inspected
               ? AppDimensions.builderIndicatorStroke
               : AppSizes.px1,
@@ -285,14 +291,16 @@ class _VersionRow extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton(
-                onPressed: onInspect,
-                child: Text(S.builderInspect),
-              ),
+              TextButton(onPressed: onInspect, child: Text(S.builderInspect)),
               const SizedBox(width: AppSpacing.xxs),
-              TextButton(
-                onPressed: busy ? null : onRestore,
-                child: Text(S.builderRestore),
+              Tooltip(
+                message: canRestore
+                    ? S.builderRestore
+                    : S.builderPublishNeedsPermission,
+                child: TextButton(
+                  onPressed: !busy && canRestore ? onRestore : null,
+                  child: Text(S.builderRestore),
+                ),
               ),
             ],
           ),
