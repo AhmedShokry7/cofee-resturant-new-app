@@ -31,7 +31,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
     if (!context.mounted) return;
 
     if (!placed) {
-      final message = checkout.state.orderError ?? S.orderFailed;
+      final message = checkout.state.orderErrorCopy ?? S.orderFailed;
       messenger.showSnackBar(SnackBar(content: Text(message)));
       return;
     }
@@ -40,7 +40,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
     // The server id of the order, never the number the customer reads. The
     // payment functions look the order up by its uuid.
     final orderId = order?.orderId ?? '';
-    final warning = checkout.state.orderWarning;
+    final warning = checkout.state.orderWarningCopy;
     if (warning != null && warning.isNotEmpty) {
       messenger.showSnackBar(SnackBar(content: Text(warning)));
     }
@@ -65,7 +65,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
           messenger.showSnackBar(
             SnackBar(
               content: Text(
-                chargeCubit.state.errorMessage ?? S.paymentRetryLater,
+                chargeCubit.state.errorMessageCopy ?? S.paymentRetryLater,
               ),
             ),
           );
@@ -91,7 +91,7 @@ class PaymentMethodBottomBar extends StatelessWidget {
         messenger.showSnackBar(
           SnackBar(
             content: Text(
-              chargeCubit.state.errorMessage ?? S.paymentNotCompleted,
+              chargeCubit.state.errorMessageCopy ?? S.paymentNotCompleted,
             ),
           ),
         );

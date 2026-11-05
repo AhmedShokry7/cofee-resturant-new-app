@@ -138,6 +138,39 @@ class S {
       expect(row.title, isNot(contains('Order')));
     });
 
+    test('a guest row read back from the device relabels too', () {
+      AppLocale.instance.debugSet(AppLanguage.english);
+      final written = LoyaltyTransaction(
+        id: 'tx-3',
+        reason: 'redeem_reward',
+        rewardNameAr: 'قهوة',
+        rewardNameEn: 'Coffee',
+        title: S.redeemedReward('Coffee'),
+        points: -50,
+        date: DateTime(2026, 10, 1),
+      );
+      // The store keeps the JSON of the row, which includes the English
+      // sentence resolved at the moment of the tap.
+      final stored = LoyaltyTransaction.fromJson(
+        Map<String, dynamic>.from(written.toJson()),
+      )!;
+
+      expect(stored.title, S.redeemedReward('Coffee'));
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+      expect(stored.title, S.redeemedReward('قهوة'));
+    });
+
+    test('the oldest device rows still show the sentence they stored', () {
+      final legacy = LoyaltyTransaction.fromJson(const {
+        'id': 'tx-4',
+        'title': 'Order purchase',
+        'points': 10,
+        'date': '2026-10-01T10:00:00',
+      })!;
+
+      expect(legacy.title, 'Order purchase');
+    });
+
     test('an operator note is shown as written, not translated', () {
       final row = LoyaltyTransaction.fromDatabase({
         'id': 'tx-2',

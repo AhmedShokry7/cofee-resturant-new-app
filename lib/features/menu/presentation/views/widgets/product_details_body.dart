@@ -49,7 +49,7 @@ class ProductDetailsBody extends StatelessWidget {
         if (product == null) {
           return Center(
             child: Text(
-              state.error ?? S.productUnavailable,
+              state.errorCopy ?? S.productUnavailable,
               style: AppFonts.regular14(context),
             ),
           );

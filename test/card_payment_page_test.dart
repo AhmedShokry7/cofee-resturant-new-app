@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/payment/presentation/manager/card_payment/card_payment_state.dart';
 
 void main() {
@@ -59,15 +61,16 @@ void main() {
     });
 
     test('copyWith clears error when clearError is true', () {
-      const state = CardPaymentState(errorMessage: 'error');
+      const state = CardPaymentState(errorMessage: AppCopy.saveCardFailed);
       final updated = state.copyWith(clearError: true);
       expect(updated.errorMessage, isNull);
     });
 
     test('copyWith preserves error when clearError is false', () {
-      const state = CardPaymentState(errorMessage: 'error');
+      const state = CardPaymentState(errorMessage: AppCopy.saveCardFailed);
       final updated = state.copyWith(status: CardPaymentStatus.initial);
-      expect(updated.errorMessage, 'error');
+      expect(updated.errorMessage, AppCopy.saveCardFailed);
+      expect(updated.errorMessageCopy, S.saveCardFailed);
     });
 
     test('copyWith clears chargeId when clearChargeId is true', () {
@@ -111,10 +114,10 @@ void main() {
       const tokenizing = CardPaymentState(status: CardPaymentStatus.tokenizing);
       final failed = tokenizing.copyWith(
         status: CardPaymentStatus.tokenizationFailed,
-        errorMessage: 'Tokenization failed',
+        errorMessage: AppCopy.tokenizationFailed,
       );
       expect(failed.status, CardPaymentStatus.tokenizationFailed);
-      expect(failed.errorMessage, 'Tokenization failed');
+      expect(failed.errorMessageCopy, S.tokenizationFailed);
     });
 
     test('tokenizing -> creatingCharge on valid token', () {
@@ -170,10 +173,10 @@ void main() {
       const verifying = CardPaymentState(status: CardPaymentStatus.verifying);
       final failed = verifying.copyWith(
         status: CardPaymentStatus.paymentFailed,
-        errorMessage: 'Payment failed',
+        errorMessage: AppCopy.paymentNotCompleted,
       );
       expect(failed.status, CardPaymentStatus.paymentFailed);
-      expect(failed.errorMessage, 'Payment failed');
+      expect(failed.errorMessageCopy, S.paymentNotCompleted);
     });
   });
 }

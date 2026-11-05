@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_card.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_image.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
@@ -21,6 +22,17 @@ SubscriptionPlan _plan({String? imageUrl, String nameAr = 'الباقة الأس
       cupsPerCycle: 30,
       imageUrl: imageUrl,
     );
+
+/// The announcement the whole card carries, above the tap it answers to.
+///
+/// The button inside the card announces itself too, so the card's own line is
+/// the one whose child is the tap.
+final _cardSemantics = find.descendant(
+  of: find.byType(SubscriptionPlanCard),
+  matching: find.byWidgetPredicate(
+    (widget) => widget is Semantics && widget.child is InkWell,
+  ),
+);
 
 Future<double> _assetRatio(String asset) async {
   final data = await rootBundle.load(asset);
@@ -55,6 +67,7 @@ void main() {
       SubscriptionPlan plan, {
       VoidCallback? onTap,
       VoidCallback? onSubscribe,
+      bool busy = false,
     }) {
       return MaterialApp(
         home: Scaffold(
@@ -62,17 +75,15 @@ void main() {
             width: 360,
             height: 800,
             child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 0.6,
-              ),
+              // The card is laid out against the grid that ships it, so the
+              // test reads that delegate instead of restating its numbers.
+              gridDelegate: SubscriptionPlansPage.gridDelegate,
               itemCount: 1,
               itemBuilder: (context, _) => SubscriptionPlanCard(
                 plan: plan,
                 onTap: onTap ?? () {},
                 onSubscribe: onSubscribe ?? () {},
+                busy: busy,
               ),
             ),
           ),
@@ -116,6 +127,72 @@ void main() {
       await tester.tap(find.text('الباقة الأساسية'));
       await tester.pump();
       expect(opened, 1);
+    });
+
+    testWidgets('a card with a write in flight answers nothing', (
+      tester,
+    ) async {
+      var subscribed = 0;
+      var opened = 0;
+      await tester.pumpWidget(
+        host(
+          _plan(imageUrl: 'assets/images/product.png'),
+          onTap: () => opened++,
+          onSubscribe: () => subscribed++,
+          busy: true,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text(S.subscribeNow));
+      await tester.tap(find.text('الباقة الأساسية'));
+      await tester.pump();
+
+      expect(subscribed, 0);
+      expect(opened, 0);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, S.subscribeNow),
+            )
+            .onPressed,
+        isNull,
+      );
+    });
+
+    testWidgets('the card is one control that says what it opens', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(_plan()));
+      await tester.pump();
+
+      final semantics = tester.widget<Semantics>(_cardSemantics);
+      expect(semantics.properties.button, isTrue);
+      expect(
+        semantics.properties.label,
+        allOf(contains('الباقة الأساسية'), contains(S.priceLabel)),
+        reason:
+            'a reader hears the card as one named action, not a pile of text',
+      );
+
+      await tester.pumpWidget(host(_plan(), busy: true));
+      await tester.pump();
+
+      expect(
+        tester.widget<Semantics>(_cardSemantics).properties.button,
+        isNot(true),
+        reason: 'a disabled control must not be announced as a button',
+      );
+    });
+
+    testWidgets('the price is read as money, not as a bare number', (
+      tester,
+    ) async {
+      await tester.pumpWidget(host(_plan()));
+      await tester.pump();
+
+      expect(find.textContaining(S.priceLabel), findsOneWidget);
+      expect(find.textContaining('150'), findsOneWidget);
     });
   });
 

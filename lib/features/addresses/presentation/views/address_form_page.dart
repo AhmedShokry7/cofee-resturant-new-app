@@ -27,20 +27,18 @@ class AddressFormPage extends StatelessWidget {
         ),
         body: AddressFormBody(
           address: existing,
-          onSave: (draft) {
+          onSave: (draft) async {
             final cubit = context.read<AddressesCubit>();
             // An empty id means the server has never seen this address, so it
             // is the one that assigns it.
-            if (draft.id.isEmpty) {
-              cubit.addAddress(
-                label: draft.label,
-                details: draft.details,
-                latitude: draft.latitude,
-                longitude: draft.longitude,
-              );
-            } else {
-              cubit.updateAddress(draft);
-            }
+            return draft.id.isEmpty
+                ? cubit.addAddress(
+                    label: draft.label,
+                    details: draft.details,
+                    latitude: draft.latitude,
+                    longitude: draft.longitude,
+                  )
+                : cubit.updateAddress(draft);
           },
         ),
       ),

@@ -13,7 +13,10 @@ class OrdersState {
   final OrderStatus status;
   final List<OrderItemModel> orders;
   final bool isLoading;
-  final String? error;
+  final AppCopy? error;
+
+  /// [error] as the sentence the customer reads, in their current language.
+  String? get errorCopy => error?.copy;
 
   /// True when there is no signed-in customer whose history could be read.
   final bool signedOut;
@@ -33,7 +36,7 @@ class OrdersState {
     OrderStatus? status,
     List<OrderItemModel>? orders,
     bool? isLoading,
-    String? error,
+    AppCopy? error,
     bool clearError = false,
     bool? signedOut,
   }) => OrdersState(

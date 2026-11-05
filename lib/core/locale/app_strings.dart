@@ -430,8 +430,9 @@ class S {
   static String get cancelOrder => _ar ? 'إلغاء الطلب' : 'Cancel Order';
   static String get orderCancelled =>
       _ar ? 'تم إلغاء الطلب' : 'Order cancelled';
-  static String cancelFailed(String error) =>
-      _ar ? 'تعذر الإلغاء: $error' : 'Could not cancel: $error';
+  static String get couldNotCancelOrder => _ar
+      ? 'تعذر إلغاء الطلب. حاول مجددًا.'
+      : 'Could not cancel the order. Try again.';
   static String get trackingId => _ar ? 'رقم التتبع' : 'Tracking ID';
   static String orderNumber(String number) =>
       _ar ? 'طلب رقم $number' : 'Order #$number';
@@ -473,6 +474,11 @@ class S {
       _ar ? 'من فضلك اختر تقييمًا' : 'Please select a rating';
   static String get reviewSubmitted =>
       _ar ? 'تم إرسال التقييم بنجاح' : 'Review submitted successfully';
+  static String get reviewSubmitFailed => _ar
+      ? 'لم يُرسل التقييم. تحقّق من اتصالك ثم حاول مجددًا'
+      : 'The review was not sent. Check your connection and try again';
+  static String rateStars(int stars) =>
+      _ar ? 'تقييم $stars من 5' : 'Rate $stars of 5';
   static String get history => _ar ? 'السجل' : 'History';
 
   // ---------- Favorites ----------
@@ -541,6 +547,11 @@ class S {
   static String get copyCode => _ar ? 'نسخ الكود' : 'Copy Code';
   static String get noCoupons =>
       _ar ? 'لا توجد كوبونات حاليًا' : 'No coupons right now';
+
+  /// What an empty offer list means, so it does not read as a failure.
+  static String get noCouponsHint => _ar
+      ? 'تظهر العروض الجديدة هنا عند توفرها.'
+      : 'New offers appear here as soon as one is published.';
   static String get couldNotLoadCoupons =>
       _ar ? 'تعذر تحميل الكوبونات.' : 'Could not load the coupons.';
   static String get couponCheckFailed => _ar
@@ -551,6 +562,17 @@ class S {
       : 'The coupon discount could not be applied at checkout, so the order was placed without it.';
   static String codeCopied(String code) =>
       _ar ? 'تم نسخ الكود $code' : 'Code $code copied';
+
+  /// The device refused the clipboard. The code stays readable, but the copy
+  /// did not happen and the customer has to know before they leave the page.
+  static String get couldNotCopyCode => _ar
+      ? 'تعذر نسخ الكود على هذا الجهاز.'
+      : 'The code could not be copied on this device.';
+
+  /// The offers were re-read and failed: what is on screen may be old.
+  static String get couponsOutdated => _ar
+      ? 'تعذر تحديث العروض. قد تكون العروض المعروضة قديمة.'
+      : 'The offers could not be refreshed. These offers may be out of date.';
 
   // ---------- Payment & cards ----------
   static String get payment => _ar ? 'الدفع' : 'Payment';
@@ -572,6 +594,15 @@ class S {
   static String get couldNotLoadAccountDetails => _ar
       ? 'تعذّر تحميل بيانات حسابك'
       : 'Your account details could not be loaded';
+
+  /// The first read of the checkout (its payment methods and zones) broke.
+  static String get couldNotLoadCheckout => _ar
+      ? 'تعذّر تحميل معلومات الدفع'
+      : 'The payment information could not be loaded';
+
+  /// A product page that never got its product.
+  static String get couldNotLoadProduct =>
+      _ar ? 'تعذّر تحميل هذا المنتج' : 'This product could not be loaded';
   static String get yourName => _ar ? 'اسمك' : 'YOUR NAME';
   static String get saveCard => _ar ? 'حفظ البطاقة' : 'Save Card';
   static String get cardHolderRequired =>
@@ -603,6 +634,21 @@ class S {
   static String get cardDeleteFailed => _ar
       ? 'تعذّر حذف البطاقة. ما زالت محفوظة.'
       : 'The card could not be removed. It is still saved.';
+
+  /// The card the list still shows is not on the account any more.
+  ///
+  /// Distinct from [cardDeleteFailed]: nothing failed — the customer (or a
+  /// second device) already removed it, and the row on screen is stale.
+  static String get cardAlreadyRemoved => _ar
+      ? 'هذه البطاقة لم تعد محفوظة لديك.'
+      : 'This card is no longer saved to your account.';
+
+  static String get deleteCard => _ar ? 'حذف البطاقة' : 'Delete card';
+
+  /// Says what the customer is about to lose, not just "are you sure".
+  static String get deleteCardConfirm => _ar
+      ? 'سيتم حذف هذه البطاقة المحفوظة ولن تستطيع الدفع بها بعد ذلك.'
+      : 'This saved card will be removed and cannot be used to pay again.';
   static String get cardDeclined => _ar
       ? 'لم يتم قبول البطاقة. تحقق من البيانات أو جرّب بطاقة أخرى.'
       : "Your card wasn't accepted. Check the details or try another card.";
@@ -806,8 +852,12 @@ class S {
       ? 'سجّل الدخول أولاً لحفظ صورة الملف الشخصي.'
       : 'Sign in first to save a profile photo.';
   static String get language => _ar ? 'اللغة' : 'Language';
+
+  /// The selected language as the tile's own value line. The tile's label
+  /// already says "Language", so the value repeats nothing: it is the name of
+  /// the language the screen is drawn in.
   static String languageValue(bool arabic) =>
-      arabic ? 'اللغة: العربية' : 'Language: English';
+      arabic ? arabicLanguage : englishLanguage;
   static String get arabicLanguage => _ar ? 'العربية' : 'Arabic';
   static String get englishLanguage => _ar ? 'الإنجليزية' : 'English';
   static String get myAddresses => _ar ? 'عناويني' : 'My Addresses';
@@ -896,8 +946,7 @@ class S {
       _ar ? 'تعليم الكل كمقروء' : 'Mark all as read';
 
   /// Rows the server holds beyond the ones on screen.
-  static String get notificationShowMore =>
-      _ar ? 'عرض المزيد' : 'Show more';
+  static String get notificationShowMore => _ar ? 'عرض المزيد' : 'Show more';
 
   static String get notificationDayToday => _ar ? 'اليوم' : 'Today';
   static String get notificationDayYesterday => _ar ? 'أمس' : 'Yesterday';
@@ -912,9 +961,8 @@ class S {
       : 'Turn them on so order updates and offers reach you right away.';
 
   /// An order named by a notification that this account never placed.
-  static String get orderNotInAccount => _ar
-      ? 'هذا الطلب ليس في حسابك'
-      : 'This order is not in your account';
+  static String get orderNotInAccount =>
+      _ar ? 'هذا الطلب ليس في حسابك' : 'This order is not in your account';
   static String get orderNotInAccountHint => _ar
       ? 'رقم الطلب لا يوجد بين طلبات هذا الحساب. تحقّق من الحساب أو راجع قائمة طلباتك.'
       : 'That order is not among this account\'s orders. Check the account or open your order list.';
@@ -1155,6 +1203,29 @@ class S {
   static String get loyaltyActivityLabel =>
       _ar ? 'نشاط على النقاط' : 'Loyalty activity';
 
+  /// The wallet was re-read and failed: the points on screen may be old.
+  static String get couldNotRefreshWallet => _ar
+      ? 'تعذر تحديث رصيدك. قد تكون النقاط المعروضة قديمة.'
+      : 'Your wallet could not be refreshed. These points may be out of date.';
+
+  /// A reward the server refused. Saying "not enough points" here would blame
+  /// the customer for a failure that was on the network.
+  static String get couldNotRedeemReward => _ar
+      ? 'تعذر استبدال المكافأة. لم تُخصم نقاطك.'
+      : 'The reward could not be redeemed. Your points were not spent.';
+
+  /// The account tier, in the language the customer reads the app in.
+  ///
+  /// `user_points.tier` holds the column's own word; showing it raw printed
+  /// `bronze` in an Arabic screen.
+  static String tierLabel(String tier) => switch (tier) {
+    'bronze' => _ar ? 'برونز' : 'Bronze',
+    'silver' => _ar ? 'فضي' : 'Silver',
+    'gold' => _ar ? 'ذهبي' : 'Gold',
+    'platinum' => _ar ? 'بلاتيني' : 'Platinum',
+    _ => tier,
+  };
+
   // ---------- Subscriptions ----------
   static String get subscriptionPlans =>
       _ar ? 'باقات اشتراك القهوة' : 'Coffee subscription plans';
@@ -1234,6 +1305,43 @@ class S {
   static String get couldNotDeductCups => _ar
       ? 'تعذر خصم الكوب. حاول مرة أخرى.'
       : 'Could not deduct the cup. Try again.';
+
+  /// The subscription page could be re-read, so what is on screen may be old.
+  ///
+  /// The rows stay visible under this line: they are the customer's own facts,
+  /// and a failed refresh is not a reason to throw away a cup balance.
+  static String get subscriptionOutdated => _ar
+      ? 'تعذر تحديث الاشتراك. قد تكون البيانات المعروضة قديمة.'
+      : 'The subscription could not be refreshed. These details may be out of date.';
+
+  static String get couldNotShowQr => _ar
+      ? 'تعذر إنشاء رمز QR. حاول مرة أخرى.'
+      : 'Could not create the QR code. Try again.';
+
+  static String get couldNotSaveAutoRenew => _ar
+      ? 'تعذر حفظ خيار التجديد التلقائي.'
+      : 'Could not save the auto-renew choice.';
+
+  /// A renewal was created but no payment was opened for it.
+  ///
+  /// The app only knows the price from the plan list, so a renewal whose plan
+  /// is not in that list cannot be charged honestly and has to say so.
+  static String get couldNotPriceRenewal => _ar
+      ? 'تعذر معرفة سعر التجديد. حاول مرة أخرى.'
+      : 'The renewal price could not be read. Try again.';
+
+  /// How a cup left the subscription.
+  ///
+  /// The history table stores `'qr'` and `'cashier'`; the customer reads the
+  /// counter, not the column value.
+  static String get usageByQr => _ar ? 'برمز QR' : 'With a QR code';
+  static String get usageByCashier => _ar ? 'من الموظف' : 'At the counter';
+  static String get usageUnknownMethod => _ar ? 'عملية' : 'Redemption';
+
+  static String cupsCount(int count) =>
+      _ar ? '$count كوب' : '$count ${count == 1 ? 'cup' : 'cups'}';
+
+  static String daysCount(int days) => _ar ? '$days يوم' : '$days days';
 
   // ---------- Shared widgets ----------
   static String get showPassword => _ar ? 'إظهار كلمة المرور' : 'Show password';

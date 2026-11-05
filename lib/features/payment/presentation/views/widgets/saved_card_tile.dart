@@ -18,8 +18,10 @@ class SavedCardTile extends StatelessWidget {
   final SavedCardModel card;
   final VoidCallback onDelete;
 
-  /// Makes this card the customer's preferred one. Omitted on the checkout
-  /// picker, which shows the same rows without offering to change the default.
+  /// Makes this card the customer's preferred one.
+  ///
+  /// Null means this row cannot set a preference - the actions available on a
+  /// card are then only its own.
   final VoidCallback? onSetDefault;
 
   @override
@@ -32,7 +34,9 @@ class SavedCardTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(
           color: card.isDefault ? AppColor.primaryColor : AppColor.borderColor,
-          width: card.isDefault ? 1.5 : 1,
+          width: card.isDefault
+              ? AppDimensions.fieldBorderWidthActive
+              : AppDimensions.fieldBorderWidth,
         ),
       ),
       child: Row(
@@ -57,11 +61,17 @@ class SavedCardTile extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      card.brand.label.isEmpty
-                          ? S.cardBrandFallback
-                          : card.brand.label,
-                      style: AppFonts.semiBold16(context),
+                    // The brand line is the one that can be long: a card name
+                    // and the default badge have to share whatever the two
+                    // trailing actions leave, so the name gives way rather than
+                    // pushing the badge off the tile.
+                    Flexible(
+                      child: Text(
+                        card.displayBrand,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppFonts.semiBold16(context),
+                      ),
                     ),
                     if (card.isDefault) ...[
                       SizedBox(width: AppSpacing.xs),
@@ -71,7 +81,7 @@ class SavedCardTile extends StatelessWidget {
                 ),
                 SizedBox(height: AppSpacing.xs),
                 Text(
-                  "**** **** **** ${card.last4}",
+                  card.maskedNumber,
                   style: AppFonts.regular14(context)
                       .copyWith(color: AppColor.greyColor),
                 ),
@@ -80,19 +90,21 @@ class SavedCardTile extends StatelessWidget {
           ),
           SizedBox(width: AppSpacing.sm),
           Text(card.expiry, style: AppFonts.medium14(context)),
-          SizedBox(width: AppSpacing.md),
+          // Every card carries both actions it can answer to. The version here
+          // drew one OR the other, so the default card could not be deleted and
+          // a second card could not become the default without deleting the
+          // first - the two buttons were mutually exclusive by accident.
           if (onSetDefault != null && !card.isDefault)
             _TrailingAction(
               icon: AppIcons.star,
               label: S.setDefaultCard,
               onTap: onSetDefault!,
-            )
-          else
-            _TrailingAction(
-              icon: AppIcons.delete,
-              label: S.delete,
-              onTap: onDelete,
             ),
+          _TrailingAction(
+            icon: AppIcons.delete,
+            label: S.delete,
+            onTap: onDelete,
+          ),
         ],
       ),
     );
@@ -126,8 +138,11 @@ class _TrailingAction extends StatelessWidget {
         clipBehavior: Clip.hardEdge,
         child: InkWell(
           onTap: onTap,
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.sm),
+          // The box is the target: a glyph of twenty inside a square of the
+          // accessibility floor, so the last tap on the row is a thumb-sized
+          // one and not the icon's own outline.
+          child: SizedBox.square(
+            dimension: AppDimensions.tapTargetMin,
             child: Icon(icon, size: AppSizes.px20, color: AppColor.greyColor),
           ),
         ),

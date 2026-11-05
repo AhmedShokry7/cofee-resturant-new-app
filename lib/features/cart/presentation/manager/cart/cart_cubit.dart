@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -272,7 +273,7 @@ class CartCubit extends Cubit<CartState> {
       emit(
         CartState(
           items: items,
-          error: serverError == null ? null : S.cartSyncFailed,
+          error: serverError == null ? null : AppCopy.cartSyncFailed,
           isLoading: false,
         ),
       );
@@ -341,7 +342,10 @@ class CartCubit extends Cubit<CartState> {
                     entry['bundleImage']?.toString().trim() ?? '';
                 addBundle(
                   bundleId: bundleId,
-                  title: entry['bundleTitle']?.toString() ?? S.bundleLabel,
+                  titleAr: entry['bundleNameAr']?.toString(),
+                  titleEn: entry['bundleNameEn']?.toString(),
+                  title: entry['bundleTitle']?.toString() ?? '',
+                  titleCopy: AppCopy.bundleLabel,
                   image: guestImage.isEmpty
                       ? await _bundleFallbackImage(components, catalog)
                       : guestImage,
@@ -443,7 +447,9 @@ class CartCubit extends Cubit<CartState> {
               _identity == _userId) {
             // The customer reads a sentence about the cart, never the
             // exception; the cause still goes to addError below.
-            emit(CartState(items: preAdoptionItems, error: S.cartSyncFailed));
+            emit(
+              CartState(items: preAdoptionItems, error: AppCopy.cartSyncFailed),
+            );
           }
           if (!isClosed) {
             addError(error, stackTrace);
@@ -463,7 +469,7 @@ class CartCubit extends Cubit<CartState> {
       // Best-effort: start with an empty cart rather than crash, but keep
       // the failure visible so a sync problem is recoverable.
       if (!isClosed) {
-        emit(CartState(items: state.items, error: S.couldNotLoadCart));
+        emit(CartState(items: state.items, error: AppCopy.couldNotLoadCart));
         addError(error, stackTrace);
       }
     }
@@ -517,9 +523,7 @@ class CartCubit extends Cubit<CartState> {
       // The device slot and the restored list both stop at this many lines, so
       // a line added past the cap would sit on screen and disappear on the next
       // restart. The customer is told the line was not taken.
-      emit(
-        CartState(items: state.items, error: S.cartLineLimitReached(_maxItems)),
-      );
+      emit(CartState(items: state.items, error: AppCopy.cartLineLimitReached));
       return;
     }
     if (index == -1) {
@@ -556,6 +560,9 @@ class CartCubit extends Cubit<CartState> {
   void addBundle({
     required String bundleId,
     required String title,
+    String? titleAr,
+    String? titleEn,
+    AppCopy? titleCopy,
     required String image,
     required double price,
     required List<CartBundleComponent> components,
@@ -571,6 +578,9 @@ class CartCubit extends Cubit<CartState> {
     final product = ProductModel(
       id: 'bundle:$bundleId',
       name: title,
+      nameAr: titleAr,
+      nameEn: titleEn,
+      nameCopy: titleCopy,
       price: price,
       image: image,
     );
@@ -582,9 +592,7 @@ class CartCubit extends Cubit<CartState> {
           sameOptionIds(item.optionValueIds, optionIds),
     );
     if (index == -1 && items.length >= _maxItems) {
-      emit(
-        CartState(items: state.items, error: S.cartLineLimitReached(_maxItems)),
-      );
+      emit(CartState(items: state.items, error: AppCopy.cartLineLimitReached));
       return;
     }
     if (index == -1) {
@@ -715,7 +723,7 @@ class CartCubit extends Cubit<CartState> {
       if (_userId != identity) return;
       await _setPendingSync(true);
       if (!isClosed) {
-        emit(CartState(items: state.items, error: S.cartSyncFailed));
+        emit(CartState(items: state.items, error: AppCopy.cartSyncFailed));
         addError(error, stackTrace);
       }
     }
@@ -800,7 +808,9 @@ class CartCubit extends Cubit<CartState> {
             entry['productId']?.toString() ??
             '';
         if (bundleId.isEmpty) continue;
-        final title = entry['bundleTitle']?.toString() ?? S.bundleLabel;
+        final titleAr = entry['bundleNameAr']?.toString();
+        final titleEn = entry['bundleNameEn']?.toString();
+        final title = entry['bundleTitle']?.toString() ?? '';
         final price =
             (entry['bundlePrice'] as num?)?.toDouble() ??
             (entry['unitPrice'] as num?)?.toDouble() ??
@@ -829,6 +839,9 @@ class CartCubit extends Cubit<CartState> {
         final product = ProductModel(
           id: 'bundle:$bundleId',
           name: title,
+          nameAr: titleAr,
+          nameEn: titleEn,
+          nameCopy: AppCopy.bundleLabel,
           price: price,
           image: image,
         );
@@ -857,7 +870,7 @@ class CartCubit extends Cubit<CartState> {
               ? null
               : ProductModel(
                   id: productId,
-                  name: S.productUnavailable,
+                  nameCopy: AppCopy.productUnavailable,
                   price: (entry['unitPrice'] as num?)?.toDouble() ?? 0,
                   image: '',
                 ));
@@ -950,6 +963,10 @@ class CartCubit extends Cubit<CartState> {
                     'bundleId': item.bundleId,
                   if (item.isBundle) 'isBundle': true,
                   if (item.isBundle) 'bundleTitle': item.product.name,
+                  if (item.product.nameAr != null)
+                    'bundleNameAr': item.product.nameAr,
+                  if (item.product.nameEn != null)
+                    'bundleNameEn': item.product.nameEn,
                   if (item.isBundle) 'bundleImage': item.product.image,
                   if (item.isBundle) 'bundlePrice': item.product.price,
                   if (item.isBundle)

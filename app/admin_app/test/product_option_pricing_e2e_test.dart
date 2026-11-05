@@ -9,9 +9,9 @@ import 'package:admin_app/features/option_groups/domain/entities/admin_product_o
 
 /// مسار تسعير الأحجام والإضافات على القاعدة الحيّة بجلسة موظف حقيقية.
 ///
-/// السياسيّات هي التي تقرّر، لا اختبارات زائفة: الكتابة تُقرأ من جديد عبر
+/// السياسيّات هي التي تقرّر: الكتابة تُقرأ من جديد عبر
 /// `catalog.effective_product_option_groups` (224) و`option_value_delta` (229).
-/// يُنطّ حين لا تُسمّى البيئة:
+/// يُتخطّى الاختبار حين لا تُسمّى البيئة:
 ///
 ///   E2E_SUPABASE_URL=... E2E_SUPABASE_KEY=... \
 ///   E2E_ADMIN_EMAIL=... E2E_ADMIN_PASSWORD=... \
@@ -39,28 +39,41 @@ void main() {
       final snapshot = await catalog.loadCatalog();
       expect(snapshot.categories, isNotEmpty);
 
-      final product = await catalog.saveProduct(
-        AdminProduct.draft(
-          'e2e-options-${DateTime.now().microsecondsSinceEpoch}',
-        ).copyWith(
-          nameAr: 'منتج تسعير الخيارات',
-          nameEn: 'Option pricing E2E',
-          basePrice: 20,
-          categoryId: snapshot.categories.first.id,
-        ),
-        branchId: snapshot.branchId,
-      );
+      // مشروب واحد يُعاد استخدامه: الاسم الإنجليزي يولّد المعرف، فالبحث به
+      // يجعل للمشروب صفًّا واحدًا بدل صفٍّ عن كل تشغيل.
+      const slug = 'option-pricing-e2e';
+      final saved = snapshot.products.where((p) => p.slug == slug);
+      final product = saved.isEmpty
+          ? await catalog.saveProduct(
+              AdminProduct.draft(slug).copyWith(
+                nameAr: 'منتج تسعير الخيارات',
+                nameEn: 'Option pricing E2E',
+                basePrice: 20,
+                categoryId: snapshot.categories.first.id,
+              ),
+              branchId: snapshot.branchId,
+            )
+          : saved.first;
       final options = AdminProductOptionRepository(client);
       addTearDown(() => _cleanUp(client, product.id));
 
-      // 1. المشروب الجديد يرى المجموعات العامّة موصولة وحدها.
-      final first = await options.loadForProduct(product.id);
-      expect(first, isNotEmpty, reason: 'كل مجموعة معروضة للوحة لها جواب');
-      final attached = _withValues(first.where((g) => g.isAttached));
-      expect(attached, isNotEmpty, reason: 'نطاق `all` يمسك المشروب الجديد');
+      // 1. المشروب لا يمسك مجموعة: نطاقهما `products` وصفُّها هو الوصل.
+      final opened = await options.loadForProduct(product.id);
+      expect(opened, isNotEmpty, reason: 'كل مجموعة نشطة تُعرض للوحة');
+      final group = _withValues(opened);
+      expect(group.isAttached, isFalse, reason: 'لم يُوصَل بها بعد');
 
-      // 2. تجاوز السعر لهذا المشروب وحده يسري على جواب القاعدة.
-      final value = attached.values.first;
+      // 2. الوصل يكتب صفَّه، و224 يجيب المشروب به.
+      await options.setGroupAttached(product.id, group.id, true);
+      final linked = _groupOf(
+        await options.loadForProduct(product.id),
+        group.id,
+      );
+      expect(linked.isAttached, isTrue);
+      expect(linked.hasValues, isTrue);
+
+      // 3. تجاوز السعر لهذا المشروب وحده يسري على جواب القاعدة.
+      final value = linked.values.first;
       await options.setValuePrice(product.id, value.id, 7.5);
       final priced = _valueOf(
         await options.loadForProduct(product.id),
@@ -69,7 +82,7 @@ void main() {
       expect(priced.overrideDelta, 7.5);
       expect(priced.effectiveDelta, 7.5, reason: 'التجاوز يحكم زيادة المجموعة');
 
-      // 3. الامحاء رجوع إلى زيادة المجموعة، لا صفر.
+      // 4. الامحاء رجوع إلى زيادة المجموعة، لا صفر.
       await options.setValuePrice(product.id, value.id, null);
       final cleared = _valueOf(
         await options.loadForProduct(product.id),
@@ -78,29 +91,12 @@ void main() {
       expect(cleared.overrideDelta, isNull);
       expect(cleared.effectiveDelta, cleared.groupDelta);
 
-      // 4. الوصل والفصل يكتبان صفًّا ويجيب 224 بالجواب الجديد.
-      final loose = first.where(
-        (g) => !g.isAttached && g.bindsProductsDirectly,
+      // 5. الفصل يمحُ الصفّ، فيعود المشروب لا يرى المجموعة.
+      await options.setGroupAttached(product.id, group.id, false);
+      expect(
+        _groupOf(await options.loadForProduct(product.id), group.id).isAttached,
+        isFalse,
       );
-      if (loose.isNotEmpty) {
-        final group = loose.first;
-        await options.setGroupAttached(product.id, group.id, true);
-        expect(
-          _groupOf(
-            await options.loadForProduct(product.id),
-            group.id,
-          ).isAttached,
-          isTrue,
-        );
-        await options.setGroupAttached(product.id, group.id, false);
-        expect(
-          _groupOf(
-            await options.loadForProduct(product.id),
-            group.id,
-          ).isAttached,
-          isFalse,
-        );
-      }
     },
     skip: canRun
         ? false
@@ -113,7 +109,7 @@ AdminProductOptionGroup _withValues(Iterable<AdminProductOptionGroup> groups) {
   for (final group in groups) {
     if (group.hasValues) return group;
   }
-  throw StateError('no attached group has a value');
+  throw StateError('no group offered has a value');
 }
 
 AdminProductOptionGroup _groupOf(
@@ -133,19 +129,19 @@ AdminProductOptionValue _valueOf(
   throw StateError('$id is gone');
 }
 
-/// يمحُو ما كتب الاختبار ثم المشروب نفسه.
+/// يمحُو ما كتب الاختبار: صفَّي الوصل والتسعير يُمسحان من جسريهما اللذين
+/// يُكتب عليهما، أمّا المشروب فيبقى للمرات القادمة.
 Future<void> _cleanUp(SupabaseClient client, String productId) async {
-  try {
-    await client
-        .from('product_option_value_pricing')
-        .delete()
-        .eq('product_id', productId);
-    await client
-        .from('product_option_groups')
-        .delete()
-        .eq('product_id', productId);
-    await client.from('catalog.products').delete().eq('id', productId);
-  } catch (_) {
-    // التنظيف لا يُفشل الاختبار.
+  for (final table in [
+    'product_option_value_pricing',
+    'product_option_groups',
+  ]) {
+    try {
+      await client.from(table).delete().eq('product_id', productId);
+    } catch (error) {
+      // التنظيف لا يُفشل الاختبار، لكنه لا يُمحى صمتًا.
+      // ignore: avoid_print
+      print('e2e cleanup refused on $table: $error');
+    }
   }
 }

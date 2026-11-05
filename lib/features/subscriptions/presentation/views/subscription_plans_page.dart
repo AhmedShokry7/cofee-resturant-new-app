@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
+import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plan_details_page.dart';
@@ -15,6 +17,18 @@ class SubscriptionPlansPage extends StatelessWidget {
 
   static const routeName = '/subscriptions';
 
+  /// Two columns, and a picture that takes the upper half of the cell.
+  ///
+  /// The card lays itself out against exactly this shape, so the ratio belongs
+  /// beside the grid that uses it rather than inside the card.
+  static const SliverGridDelegate gridDelegate =
+      SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: AppSpacing.md,
+        mainAxisSpacing: AppSpacing.md,
+        childAspectRatio: 0.6,
+      );
+
   @override
   Widget build(BuildContext context) {
     // The plans read only through `subscriptions.list_plans`, which the server
@@ -25,8 +39,19 @@ class SubscriptionPlansPage extends StatelessWidget {
       child: BlocProvider(
         create: (context) => SubscriptionCubit(
           repository: context.read<SubscriptionRepository>(),
+          branchId: context.read<BranchCubit>().state.selected?.id,
         )..load(),
-        child: const _SubscriptionPlansView(),
+        // Plans are sold per branch (083 filters on `p_branch_id`), and the
+        // selector is on the shell under this page: choosing another branch
+        // while the plans are open has to re-ask, or the customer is shown
+        // prices for a branch they no longer stand at.
+        child: BlocListener<BranchCubit, BranchState>(
+          listenWhen: (previous, current) =>
+              previous.selected?.id != current.selected?.id,
+          listener: (context, state) =>
+              context.read<SubscriptionCubit>().setBranch(state.selected?.id),
+          child: const _SubscriptionPlansView(),
+        ),
       ),
     );
   }
@@ -41,10 +66,10 @@ class _SubscriptionPlansView extends StatelessWidget {
       appBar: AppBar(title: Text(S.subscriptionPlans)),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
-          if (state.loading) {
+          if (state.loading && state.plans.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state.error != null) {
+          if (state.loadError != null) {
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -64,40 +89,51 @@ class _SubscriptionPlansView extends StatelessWidget {
           }
           return GridView.builder(
             padding: EdgeInsets.all(AppSpacing.md),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: AppSpacing.md,
-              mainAxisSpacing: AppSpacing.md,
-              childAspectRatio: 0.6,
-            ),
+            gridDelegate: SubscriptionPlansPage.gridDelegate,
             itemCount: state.plans.length,
             itemBuilder: (context, index) {
               final plan = state.plans[index];
               return SubscriptionPlanCard(
                 plan: plan,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => SubscriptionPlanDetailsPage(plan: plan),
-                  ),
+                onTap: () => Navigator.of(context).pushNamed(
+                  SubscriptionPlanDetailsPage.routeName,
+                  arguments: plan,
                 ),
-                onSubscribe: () async {
-                  final cubit = context.read<SubscriptionCubit>();
-                  await cubit.subscribe(plan);
-                  if (!context.mounted) return;
-                  final subscription = cubit.state.subscription;
-                  if (subscription == null) return;
-                  CardPaymentPage.pushForSubscription(
-                    context,
-                    subscriptionId: subscription.id,
-                    amount: plan.price,
-                    currency: plan.currencyCode,
-                  );
-                },
+                // A write in flight makes this cell's answer unknown: a second
+                // tap could open a payment for a subscription the first one is
+                // still creating.
+                busy: state.isMutating,
+                onSubscribe: () => _subscribe(context, plan),
               );
             },
           );
         },
       ),
+    );
+  }
+
+  /// Starts the plan and pays for it, in that order.
+  ///
+  /// The subscription the payment is opened for is the one this call created.
+  /// Reading it back out of the cubit's state could pick up a subscription the
+  /// customer already had, which would charge the new plan's price to the old
+  /// subscription's id.
+  Future<void> _subscribe(BuildContext context, SubscriptionPlan plan) async {
+    final cubit = context.read<SubscriptionCubit>();
+    final messenger = ScaffoldMessenger.of(context);
+    final subscription = await cubit.subscribe(plan);
+    if (subscription == null) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(S.couldNotStartSubscription)),
+      );
+      return;
+    }
+    if (!context.mounted) return;
+    CardPaymentPage.pushForSubscription(
+      context,
+      subscriptionId: subscription.id,
+      amount: plan.price,
+      currency: plan.currencyCode,
     );
   }
 }

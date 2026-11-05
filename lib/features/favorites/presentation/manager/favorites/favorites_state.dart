@@ -16,7 +16,10 @@ class FavoritesState {
   final Map<String, ProductModel> products;
 
   final bool isLoading;
-  final String? error;
+  final AppCopy? error;
+
+  /// [error] as the sentence the customer reads, in their current language.
+  String? get errorCopy => error?.copy;
 
   List<ProductModel> get favoriteProducts => [
     for (final id in ids)
@@ -29,7 +32,7 @@ class FavoritesState {
     Set<String>? ids,
     Map<String, ProductModel>? products,
     bool? isLoading,
-    String? error,
+    AppCopy? error,
     bool clearError = false,
   }) => FavoritesState(
     ids: ids ?? this.ids,

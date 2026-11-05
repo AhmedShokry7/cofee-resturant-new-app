@@ -1,3 +1,4 @@
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/payment/data/model/card_brand.dart';
 
 class SavedCardModel {
@@ -39,6 +40,17 @@ class SavedCardModel {
   /// The checkout uses this to decide which card to charge without asking, so it
   /// has to be readable rather than inferred from list position.
   bool get isPreferred => isDefault;
+
+  /// The number as a customer may be shown it: the last four and nothing else.
+  ///
+  /// One owner because two screens print it, and the same card has to read the
+  /// same way on the saved list and at checkout.
+  String get maskedNumber => '**** **** **** $last4';
+
+  /// The network name a customer reads, with the fallback for a card the
+  /// backend could not classify.
+  String get displayBrand =>
+      brand.label.isEmpty ? S.cardBrandFallback : brand.label;
 
   factory SavedCardModel.fromDatabase(Map<String, dynamic> json) {
     final brandName = json['brand']?.toString() ?? '';

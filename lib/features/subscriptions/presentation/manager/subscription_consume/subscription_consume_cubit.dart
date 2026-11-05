@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/shared/utils/idempotency_key.dart';
@@ -32,7 +33,7 @@ class SubscriptionConsumeCubit extends Cubit<SubscriptionConsumeState> {
     // it as "1" used to deduct a cup the cashier never asked for.
     final quantity = int.tryParse(quantityText.trim());
     if (quantity == null || quantity < 1) {
-      emit(state.copyWith(message: S.invalidQuantity));
+      emit(state.copyWith(message: AppCopy.invalidQuantity));
       return;
     }
     final intent = '$token|$productId|$quantity';
@@ -51,12 +52,18 @@ class SubscriptionConsumeCubit extends Cubit<SubscriptionConsumeState> {
       emit(
         state.copyWith(
           isSubmitting: false,
-          message: S.cupsRemaining(remaining),
+          message: AppCopy.cupsRemaining,
+          cupsRemaining: remaining,
         ),
       );
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(state.copyWith(isSubmitting: false, message: S.couldNotDeductCups));
+      emit(
+        state.copyWith(
+          isSubmitting: false,
+          message: AppCopy.couldNotDeductCups,
+        ),
+      );
       addError(error, stackTrace);
     }
   }

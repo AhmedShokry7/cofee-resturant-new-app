@@ -16,10 +16,21 @@ class CouponCard extends StatelessWidget {
   /// Highlights the code currently attached to the cart.
   final bool isApplied;
 
-  void _copyCode(BuildContext context) {
-    Clipboard.setData(ClipboardData(text: coupon.code));
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(S.codeCopied(coupon.code))));
+  /// Puts the code on the device, or says that it did not.
+  ///
+  /// The clipboard call can be refused (a browser that has no focus, a device
+  /// policy), and a snackBar promising "copied" after that refusal would send
+  /// the customer to the checkout with nothing pasted.
+  Future<void> _copyCode(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await Clipboard.setData(ClipboardData(text: coupon.code));
+      messenger.showSnackBar(
+        SnackBar(content: Text(S.codeCopied(coupon.code))),
+      );
+    } catch (_) {
+      messenger.showSnackBar(SnackBar(content: Text(S.couldNotCopyCode)));
+    }
   }
 
   /// One line telling the customer where they stand with this coupon.
@@ -28,7 +39,9 @@ class CouponCard extends StatelessWidget {
   /// had already spent their allowance on looked available right up until the
   /// checkout refused it.
   String? _statusLine() {
-    if (coupon.isExhaustedForMe) return S.couponNoUsesLeft;
+    // The strip under the card already says this, and a card that prints the
+    // same sentence twice reads as a bug.
+    if (coupon.isExhaustedForMe) return null;
     final remaining = coupon.remainingUses;
     if (remaining == null) return null;
     return S.couponUsesLeft(remaining);
@@ -146,24 +159,35 @@ class CouponCard extends StatelessWidget {
               ],
             ),
           ),
-          GestureDetector(
-            // Copying a code the customer cannot use would only set them up
-            // for the same failure later.
-            onTap: exhausted ? null : () => _copyCode(context),
-            behavior: HitTestBehavior.opaque,
-            child: Container(
-              width: double.infinity,
+          Semantics(
+            // The code is what the tap produces, so it is part of what a screen
+            // reader announces.
+            button: true,
+            label: '${S.copyCode}: ${coupon.code}',
+            child: Material(
               color: exhausted
                   ? AppColor.surfaceColor
                   : AppColor.lightGreyColor,
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-              child: Center(
-                child: Text(
-                  exhausted ? S.couponNoUsesLeft : S.copyCode,
-                  style: AppFonts.medium16(context).copyWith(
-                    color: exhausted
-                        ? AppColor.greyColor
-                        : AppColor.primaryColor,
+              child: InkWell(
+                // Copying a code the customer cannot use would only set them up
+                // for the same failure later.
+                onTap: exhausted ? null : () => _copyCode(context),
+                child: Container(
+                  width: double.infinity,
+                  alignment: Alignment.center,
+                  // This strip is the only way to the code, so it is a full
+                  // target rather than a line of text.
+                  constraints: const BoxConstraints(
+                    minHeight: AppDimensions.tapTargetMin,
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                  child: Text(
+                    exhausted ? S.couponNoUsesLeft : S.copyCode,
+                    style: AppFonts.medium16(context).copyWith(
+                      color: exhausted
+                          ? AppColor.greyColor
+                          : AppColor.primaryColor,
+                    ),
                   ),
                 ),
               ),

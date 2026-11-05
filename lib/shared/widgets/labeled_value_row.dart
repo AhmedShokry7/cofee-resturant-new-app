@@ -20,6 +20,10 @@ class LabeledValueRow extends StatelessWidget {
     this.pricePrefix = '',
   });
 
+  /// The size the order-detail breakdowns ask for, so a screen never writes the
+  /// number this widget compares against.
+  static const double detailValueSize = AppSizes.px16;
+
   final String label;
   final String value;
 
@@ -52,7 +56,7 @@ class LabeledValueRow extends StatelessWidget {
                 ? AppFonts.semiBold18(context)
                 : emphasized
                 ? AppFonts.semiBold16(context)
-                : valueSize == 16
+                : valueSize == detailValueSize
                 ? AppFonts.semiBold16(context)
                 : AppFonts.semiBold14(context))
             .copyWith(

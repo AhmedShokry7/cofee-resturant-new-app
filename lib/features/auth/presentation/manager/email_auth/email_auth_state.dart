@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 
 @immutable
@@ -26,7 +27,11 @@ final class EmailAuthSuccess extends EmailAuthState {
 }
 
 final class EmailAuthFailure extends EmailAuthState {
-  const EmailAuthFailure(this.message);
+  const EmailAuthFailure(this.reason);
 
-  final String message;
+  /// Why the attempt failed, held as a token so the screen reads the sentence
+  /// in the language the customer is using now.
+  final AppCopy reason;
+
+  String get message => reason.copy;
 }

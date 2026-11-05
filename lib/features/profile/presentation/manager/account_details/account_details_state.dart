@@ -30,8 +30,13 @@ class AccountDetailsState {
 
   final bool isChangingPassword;
 
-  /// Why the last operation failed, already resolved to what the page shows.
-  final String? error;
+  /// Why the last operation failed.
+  ///
+  /// Held as a token so the page reads the sentence in the language the
+  /// customer is currently using, not the one the failure happened in.
+  final AppCopy? error;
+
+  String? get errorCopy => error?.copy;
 
   AccountDetailsState copyWith({
     String? firstName,
@@ -42,7 +47,7 @@ class AccountDetailsState {
     bool? isLoading,
     bool? isSaving,
     bool? isChangingPassword,
-    String? error,
+    AppCopy? error,
     bool clearError = false,
   }) {
     return AccountDetailsState(

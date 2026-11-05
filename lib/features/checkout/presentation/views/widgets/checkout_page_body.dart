@@ -136,7 +136,7 @@ class _CouponSectionState extends State<_CouponSection> {
     if (!mounted) return;
     final message = applied
         ? S.couponApplied
-        : checkout.state.couponError ?? S.invalidCouponCode;
+        : checkout.state.couponErrorCopy ?? S.invalidCouponCode;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(message)));
     if (applied) _promoController.clear();
@@ -150,7 +150,7 @@ class _CouponSectionState extends State<_CouponSection> {
           return PromoCodeField(
             controller: _promoController,
             onApply: _apply,
-            error: state.couponError,
+            error: state.couponErrorCopy,
             onClear: () => context.read<CheckoutCubit>().removeCoupon(),
           );
         }

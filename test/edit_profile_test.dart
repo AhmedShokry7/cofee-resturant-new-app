@@ -36,6 +36,9 @@ class _FakeAuthRepository implements AuthRepository {
   bool failSave = false;
   bool failPasswordChange = false;
 
+  /// The password the screen asked the provider to set, once it got that far.
+  String? newPasswordSent;
+
   /// Held open to keep the save in flight, the way a slow server would.
   Completer<void>? saveGate;
 
@@ -76,6 +79,7 @@ class _FakeAuthRepository implements AuthRepository {
     required String newPassword,
   }) async {
     if (failPasswordChange) throw StateError('password rejected');
+    newPasswordSent = newPassword;
   }
 
   @override
@@ -158,7 +162,7 @@ void main() {
       await cubit.load();
 
       expect(cubit.state.isLoading, isFalse);
-      expect(cubit.state.error, S.couldNotLoadAccountDetails);
+      expect(cubit.state.errorCopy, S.couldNotLoadAccountDetails);
     });
 
     test('a refused change password says it was refused', () async {
@@ -170,9 +174,44 @@ void main() {
       );
 
       expect(changed, isFalse);
-      expect(cubit.state.error, S.passwordChangeFailed);
+      expect(cubit.state.errorCopy, S.passwordChangeFailed);
       expect(cubit.state.isChangingPassword, isFalse);
     });
+
+    test(
+      'a number typed the local way is stored as the provider needs it',
+      () async {
+        final repository = _FakeAuthRepository();
+        final cubit = _cubit(repository);
+
+        final saved = await cubit.save(
+          firstName: 'Ahmed',
+          lastName: 'Shokry',
+          phone: '0501234567',
+        );
+
+        expect(saved, isTrue);
+        expect(repository.savedPhone, '+966501234567');
+      },
+    );
+
+    test(
+      'a number that cannot carry a message is refused before the call',
+      () async {
+        final repository = _FakeAuthRepository();
+        final cubit = _cubit(repository);
+
+        final saved = await cubit.save(
+          firstName: 'Ahmed',
+          phone: 'not a number',
+        );
+
+        expect(saved, isFalse);
+        expect(repository.updateCalls, isZero);
+        expect(cubit.state.errorCopy, S.validPhoneNumber);
+        expect(cubit.state.isSaving, isFalse);
+      },
+    );
   });
 
   group('the form', () {
@@ -267,6 +306,37 @@ void main() {
       expect(find.text(S.nameRequired), findsOneWidget);
     });
 
+    testWidgets('a phone the app cannot text is refused on the field', (
+      tester,
+    ) async {
+      final repository = _FakeAuthRepository();
+      await _openEditor(tester, repository);
+
+      // The account itself holds a valid number, so this is the customer's edit
+      // being refused, not a blank field.
+      await tester.enterText(_field(3), '12345');
+      await tester.tap(find.text(S.save));
+      await tester.pumpAndSettle();
+
+      expect(repository.updateCalls, isZero);
+      expect(find.text(S.validPhoneNumber), findsOneWidget);
+      // Still on the form: the customer can correct the number.
+      expect(find.text(S.changePassword), findsOneWidget);
+    });
+
+    testWidgets('a number typed without the country code is completed', (
+      tester,
+    ) async {
+      final repository = _FakeAuthRepository();
+      await _openEditor(tester, repository);
+
+      await tester.enterText(_field(3), '0501234567');
+      await tester.tap(find.text(S.save));
+      await tester.pumpAndSettle();
+
+      expect(repository.savedPhone, '+966501234567');
+    });
+
     testWidgets(
       'the save waits for the server instead of taking a second tap',
       (tester) async {
@@ -285,6 +355,47 @@ void main() {
 
         expect(repository.updateCalls, 1);
         expect(find.text('open'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'the password dialog keeps the customer until the entries agree',
+      (tester) async {
+        final repository = _FakeAuthRepository();
+        await _openEditor(tester, repository);
+
+        await tester.tap(find.text(S.changePassword));
+        await tester.pumpAndSettle();
+
+        final dialog = find.byType(AlertDialog);
+        final entries = find.descendant(
+          of: dialog,
+          matching: find.byType(TextFormField),
+        );
+        expect(entries, findsNWidgets(3));
+
+        await tester.enterText(entries.at(0), '123456');
+        await tester.enterText(entries.at(1), '654321');
+        await tester.enterText(entries.at(2), '65432');
+        await tester.tap(
+          find.descendant(of: dialog, matching: find.text(S.save)),
+        );
+        await tester.pumpAndSettle();
+
+        // A mistyped confirmation is a typing mistake, so it is answered on the
+        // field and the dialog stays open instead of reaching the provider.
+        expect(find.text(S.passwordsNoMatch), findsOneWidget);
+        expect(repository.newPasswordSent, isNull);
+
+        await tester.enterText(entries.at(2), '654321');
+        await tester.tap(
+          find.descendant(of: dialog, matching: find.text(S.save)),
+        );
+        await tester.pumpAndSettle();
+
+        expect(repository.newPasswordSent, '654321');
+        expect(dialog, findsNothing);
+        expect(find.text(S.passwordChanged), findsOneWidget);
       },
     );
   });

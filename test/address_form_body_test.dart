@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +10,7 @@ import 'package:new_coffee/features/addresses/presentation/views/widgets/address
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/location/data/model/place_suggestion.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
+import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
 class _FakePlaceSearch implements PlaceSearchRepository {
   List<PlaceSuggestion> results = [];
@@ -48,10 +51,14 @@ void main() {
   late _FakePlaceSearch search;
 
   /// The form is pushed as a route so confirming can pop it, like the app does.
+  ///
+  /// [captured] records the draft the form hands over; [save] is what comes
+  /// back to it, so a write the server refused can be drawn as it really is.
   Future<void> open(
     WidgetTester tester, {
     AddressModel? address,
-    ValueChanged<AddressModel>? onSave,
+    ValueChanged<AddressModel>? captured,
+    Future<String?> Function(AddressModel draft)? save,
   }) async {
     tester.view.physicalSize = const Size(360, 800) * 3.0;
     tester.view.devicePixelRatio = 3.0;
@@ -66,7 +73,13 @@ void main() {
           'form': (_) => RepositoryProvider<PlaceSearchRepository>.value(
             value: search,
             child: Scaffold(
-              body: AddressFormBody(address: address, onSave: onSave ?? (_) {}),
+              body: AddressFormBody(
+                address: address,
+                onSave: (draft) async {
+                  captured?.call(draft);
+                  return save == null ? null : await save(draft);
+                },
+              ),
             ),
           ),
         },
@@ -89,7 +102,7 @@ void main() {
 
   testWidgets('a label with no name saves nothing', (tester) async {
     AddressModel? saved;
-    await open(tester, onSave: (model) => saved = model);
+    await open(tester, captured: (model) => saved = model);
 
     await confirm(tester);
 
@@ -99,7 +112,7 @@ void main() {
 
   testWidgets('a name with no pin saves nothing', (tester) async {
     AddressModel? saved;
-    await open(tester, onSave: (model) => saved = model);
+    await open(tester, captured: (model) => saved = model);
     await name(tester, 'Home');
 
     await confirm(tester);
@@ -114,7 +127,7 @@ void main() {
     // OpenStreetMap sometimes answers with "24.71360, 46.67530" instead of a
     // street name. That used to be saved as the customer's address.
     AddressModel? saved;
-    await open(tester, onSave: (model) => saved = model);
+    await open(tester, captured: (model) => saved = model);
     search.results = [_place('24.71360, 46.67530')];
     await name(tester, 'Home');
     await typedPlace(tester, 'Riyadh');
@@ -127,7 +140,7 @@ void main() {
 
   testWidgets('a new address is handed over without an id', (tester) async {
     AddressModel? saved;
-    await open(tester, onSave: (model) => saved = model);
+    await open(tester, captured: (model) => saved = model);
     search.results = [_place('King Fahd Road, Riyadh')];
     await name(tester, 'Home');
     await typedPlace(tester, 'Riyadh');
@@ -154,7 +167,7 @@ void main() {
         longitude: 46.67,
         isDefault: true,
       ),
-      onSave: (model) => saved = model,
+      captured: (model) => saved = model,
     );
     await name(tester, 'Flat');
 
@@ -165,5 +178,71 @@ void main() {
     expect(saved?.isDefault, isTrue);
     // The pin came from the stored address, so nothing was re-geocoded.
     expect(search.queries, isEmpty);
+  });
+
+  testWidgets('a write the server refused keeps the draft on screen', (
+    tester,
+  ) async {
+    AddressModel? saved;
+    await open(
+      tester,
+      captured: (model) => saved = model,
+      save: (_) async => S.addressSaveFailed,
+    );
+    await name(tester, 'Home');
+    search.results = [_place('King Fahd Road, Riyadh')];
+    await typedPlace(tester, 'Riyadh');
+
+    await confirm(tester);
+
+    expect(saved?.label, 'Home');
+    // The form is still the screen the customer is on, with the reason shown.
+    expect(find.text(S.addressSaveFailed), findsOneWidget);
+    expect(find.byType(AddressFormBody), findsOneWidget);
+  });
+
+  testWidgets('an address the server took closes the form', (tester) async {
+    await open(tester);
+    await name(tester, 'Home');
+    search.results = [_place('King Fahd Road, Riyadh')];
+    await typedPlace(tester, 'Riyadh');
+
+    await confirm(tester);
+
+    expect(find.byType(AddressFormBody), findsNothing);
+    expect(find.text('ROOT'), findsOneWidget);
+  });
+
+  testWidgets('a second tap while the write is on its way sends one save', (
+    tester,
+  ) async {
+    final gate = Completer<String?>();
+    var saves = 0;
+    await open(
+      tester,
+      save: (_) async {
+        saves++;
+        return gate.future;
+      },
+    );
+    await name(tester, 'Home');
+    search.results = [_place('King Fahd Road, Riyadh')];
+    await typedPlace(tester, 'Riyadh');
+
+    await tester.tap(find.text(S.confirm));
+    await tester.pump();
+    // The button became the wait it is covering, so a second tap has no action
+    // to fire.
+    expect(find.text(S.confirm), findsNothing);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.tap(find.byType(CustomBtn), warnIfMissed: false);
+    await tester.pump();
+
+    expect(saves, 1);
+
+    gate.complete(null);
+    await tester.pumpAndSettle();
+    expect(find.byType(AddressFormBody), findsNothing);
+    expect(saves, 1);
   });
 }

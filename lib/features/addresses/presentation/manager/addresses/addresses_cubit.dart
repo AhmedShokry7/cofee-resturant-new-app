@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/addresses/data/address_book_editor.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
@@ -96,7 +97,7 @@ class AddressesCubit extends Cubit<AddressesState> {
 
   Future<void> load() async {
     final generation = ++_loadGeneration;
-    emit(state.copyWith(isLoading: true, clearError: true));
+    emit(state.copyWith(isLoading: true, clearError: true, readFailed: false));
     try {
       final addresses = await _repository.listAddresses();
       if (isClosed || generation != _loadGeneration) return;
@@ -108,7 +109,16 @@ class AddressesCubit extends Cubit<AddressesState> {
       );
     } catch (error, stackTrace) {
       if (isClosed || generation != _loadGeneration) return;
-      emit(state.copyWith(isLoading: false, error: error.toString()));
+      // The provider's own text names tables and policies; the customer gets
+      // the sentence that says what to do next. `readFailed` is what lets the
+      // screen offer a retry for this rather than for a failed write.
+      emit(
+        state.copyWith(
+          isLoading: false,
+          error: AppCopy.couldNotLoadAddresses,
+          readFailed: true,
+        ),
+      );
       addError(error, stackTrace);
     }
   }
@@ -119,44 +129,66 @@ class AddressesCubit extends Cubit<AddressesState> {
     emit(state.copyWith(clearError: true));
   }
 
-  Future<void> addAddress({
+  /// Adds an address and answers `null` when the server took it, or the
+  /// sentence to show.
+  ///
+  /// The editor awaits this: a screen that closed before the write was answered
+  /// left the customer believing an address they cannot see was saved.
+  Future<String?> addAddress({
     required String label,
     required String details,
     double? latitude,
     double? longitude,
     bool isDefault = false,
-  }) async {
-    await _write(
-      () => _editor.add(
-        state.addresses,
-        label: label,
-        details: details,
-        latitude: latitude,
-        longitude: longitude,
-        isDefault: isDefault,
-      ),
-    );
-  }
+  }) => _write(
+    () => _editor.add(
+      state.addresses,
+      label: label,
+      details: details,
+      latitude: latitude,
+      longitude: longitude,
+      isDefault: isDefault,
+    ),
+  );
 
-  Future<void> updateAddress(AddressModel address) =>
+  Future<String?> updateAddress(AddressModel address) =>
       _write(() => _editor.update(state.addresses, address));
 
-  Future<void> removeAddress(String id) =>
-      _write(() => _editor.remove(state.addresses, id));
+  Future<String?> removeAddress(String id) => _write(
+    () => _editor.remove(state.addresses, id),
+    busy: AppCopy.addressDeleteFailed,
+  );
 
-  Future<void> setDefaultAddress(String id) =>
+  Future<String?> setDefaultAddress(String id) =>
       _write(() => _editor.setDefault(state.addresses, id));
 
-  /// Runs one address write and shows its result, or its localized failure.
-  Future<void> _write(Future<AddressBookChange> Function() write) async {
+  /// Runs one address write, shows its result, and says whether it succeeded.
+  ///
+  /// [busy] is the copy a second, queued write answers with: the editor awaits
+  /// the answer, so a tap that never reached the server must not look like one
+  /// the server accepted.
+  Future<String?> _write(
+    Future<AddressBookChange> Function() write, {
+    AppCopy? busy,
+  }) async {
+    if (state.isSaving) return (busy ?? AppCopy.addressSaveFailed).copy;
+    emit(state.copyWith(isSaving: true, clearError: true, readFailed: false));
     try {
       final change = await write();
-      if (isClosed) return;
-      emit(state.copyWith(addresses: change.addresses, clearError: true));
+      if (isClosed) return null;
+      emit(state.copyWith(isSaving: false, addresses: change.addresses));
+      return null;
     } on AddressBookFailure catch (failure, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: failure.message));
+      if (isClosed) return failure.message;
+      emit(
+        state.copyWith(
+          isSaving: false,
+          error: failure.reason,
+          readFailed: false,
+        ),
+      );
       addError(failure.cause, stackTrace);
+      return failure.message;
     }
   }
 

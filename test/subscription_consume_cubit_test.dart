@@ -49,7 +49,7 @@ void main() {
       );
 
       expect(repository.requests, isEmpty);
-      expect(cubit.state.message, S.invalidQuantity);
+      expect(cubit.state.messageCopy, S.invalidQuantity);
       await cubit.close();
     });
 
@@ -92,7 +92,7 @@ void main() {
         repository.requests.last['key'],
         reason: 'the cashier tapped once; the server must see one deduction',
       );
-      expect(cubit.state.message, S.couldNotDeductCups);
+      expect(cubit.state.messageCopy, S.couldNotDeductCups);
       await cubit.close();
     });
 
@@ -117,7 +117,7 @@ void main() {
         repository.requests.first['key'],
         isNot(repository.requests.last['key']),
       );
-      expect(cubit.state.message, S.cupsRemaining(3));
+      expect(cubit.state.messageCopy, S.cupsRemaining(3));
       await cubit.close();
     });
 

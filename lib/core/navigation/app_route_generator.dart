@@ -15,6 +15,8 @@ import 'package:new_coffee/features/orders/presentation/views/leave_review_page.
 import 'package:new_coffee/features/orders/presentation/views/order_details_by_id_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/order_details_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
+import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plan_details_page.dart';
 
 /// Routes that require arguments passed via [RouteSettings.arguments].
 ///
@@ -31,6 +33,11 @@ class AppRouteGenerator {
         ProductDetailsPage(product: arguments),
       BundleDetailsPage.routeName when arguments is BundleModel =>
         BundleDetailsPage(bundle: arguments),
+      // A subscription plan is sold by its row, so the page is built from the
+      // plan the caller already has rather than re-reading the plan list.
+      SubscriptionPlanDetailsPage.routeName
+          when arguments is SubscriptionPlan =>
+        SubscriptionPlanDetailsPage(plan: arguments),
       OrderDetailsPage.routeName when arguments is OrderItemModel =>
         OrderDetailsPage(order: arguments),
       OrderDetailsPage.routeName when arguments is OrderGroup =>

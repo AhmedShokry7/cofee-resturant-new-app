@@ -14,128 +14,139 @@ class RewardCard extends StatelessWidget {
     super.key,
     required this.reward,
     required this.locked,
+    this.busy = false,
     this.onRedeem,
   });
 
   final RewardModel reward;
   final bool locked;
-  final VoidCallback? onRedeem;
 
-  /// A reward that cannot be redeemed yet is dimmed, never hidden: the
-  /// customer has to see what the next tier gives. This keeps the title and
-  /// the points cost readable while sitting the card clearly below the ones
-  /// that can be redeemed now.
-  static const double _lockedOpacity = 0.55;
+  /// Another reward is being spent, so this card cannot start a second spend.
+  final bool busy;
+  final VoidCallback? onRedeem;
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: locked ? _lockedOpacity : 1,
-      child: Container(
-        margin: EdgeInsets.only(bottom: AppSpacing.md),
-        padding: EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(AppRadius.r16),
-          border: Border.all(color: AppColor.borderColor),
-        ),
-        child: Row(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-              child: SizedBox(
-                height: AppSizes.px56,
-                width: AppSizes.px56,
-                child: _RewardThumb(reward: reward),
-              ),
+    // A reward that cannot be redeemed yet is set below the redeemable ones by
+    // its own surface, never by an Opacity over the subtree: dimming the whole
+    // card to 55% takes the title and the points cost below the contrast a
+    // customer needs to read them.
+    return Container(
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: locked ? AppColor.lightGreyColor : AppColor.whiteColor,
+        borderRadius: BorderRadius.circular(AppRadius.r16),
+        border: Border.all(color: AppColor.borderColor),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+            child: SizedBox(
+              height: AppSizes.px56,
+              width: AppSizes.px56,
+              child: _RewardThumb(reward: reward, muted: locked),
             ),
-            SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    reward.name,
-                    style: AppFonts.semiBold16(context),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  SizedBox(height: AppSpacing.xs),
-                  Row(
-                    children: [
-                      if (reward.type != RewardTargetType.product) ...[
-                        _RewardTypeBadge(type: reward.type),
-                        SizedBox(width: AppSpacing.xs),
-                      ],
-                      Flexible(
-                        child: Text(
-                          S.points(reward.pointsCost),
-                          style: AppFonts.medium14(context)
-                              .copyWith(color: AppColor.primaryColor),
-                        ),
-                      ),
+          ),
+          SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  reward.name,
+                  style: AppFonts.semiBold16(context),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: AppSpacing.xs),
+                Row(
+                  children: [
+                    if (reward.type != RewardTargetType.product) ...[
+                      _RewardTypeBadge(type: reward.type, muted: locked),
+                      SizedBox(width: AppSpacing.xs),
                     ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(width: AppSpacing.sm),
-            if (locked)
-              Text(
-                S.locked,
-                style: AppFonts.medium14(context)
-                    .copyWith(color: AppColor.greyColor),
-              )
-            else
-              Semantics(
-                button: true,
-                child: Material(
-                  color: AppColor.primaryColor,
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                  child: InkWell(
-                    onTap: onRedeem,
-                    // Ink that stops at the pill instead of splashing a
-                    // rectangle behind rounded ends.
-                    customBorder: const StadiumBorder(),
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.sm,
-                      ),
+                    Flexible(
                       child: Text(
-                        S.redeem,
+                        S.points(reward.pointsCost),
                         style: AppFonts.medium14(context)
-                            .copyWith(color: AppColor.whiteColor),
+                            .copyWith(color: AppColor.primaryColor),
                       ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          SizedBox(width: AppSpacing.sm),
+          if (locked)
+            Text(
+              S.locked,
+              style: AppFonts.medium14(context)
+                  .copyWith(color: AppColor.iconOnLight),
+            )
+          else
+            Semantics(
+              button: true,
+              // Naming the reward as well as the action, because several of
+              // these cards sit one under another.
+              label: '${S.redeem}: ${reward.name}',
+              child: Material(
+                color: AppColor.primaryColor,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: InkWell(
+                  // The spend this tap starts is already in flight.
+                  onTap: busy ? null : onRedeem,
+                  // Ink that stops at the pill instead of splashing a
+                  // rectangle behind rounded ends.
+                  customBorder: const StadiumBorder(),
+                  child: Container(
+                    alignment: Alignment.center,
+                    // The pill is the only way to spend this reward, so it is a
+                    // full target rather than a line of text.
+                    constraints: const BoxConstraints(
+                      minHeight: AppDimensions.tapTargetMin,
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    child: Text(
+                      S.redeem,
+                      style: AppFonts.medium14(context)
+                          .copyWith(color: AppColor.whiteColor),
                     ),
                   ),
                 ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
   }
 }
 
 class _RewardThumb extends StatelessWidget {
-  const _RewardThumb({required this.reward});
+  const _RewardThumb({required this.reward, required this.muted});
 
   final RewardModel reward;
 
+  /// A reward that is not available yet has its picture pushed back; its words
+  /// stay at full strength.
+  final bool muted;
+
   @override
   Widget build(BuildContext context) {
+    final iconColor = muted ? AppColor.greyColor : AppColor.primaryColor;
     final product = reward.product;
     if (product != null) return ProductImageView(product: product);
     final image = reward.image;
-    if (image != null) return DbImage(image: image, iconSize: 22);
+    if (image != null) return DbImage(image: image, iconSize: AppSizes.px22);
     return ColoredBox(
       color: AppColor.primaryColor.withValues(alpha: 0.08),
       child: Center(
         child: Icon(
           _rewardTypeIcon(reward.type),
-          color: AppColor.primaryColor,
-          size: AppSpacing.xl,
+          color: iconColor,
+          size: AppIconSize.xxl,
         ),
       ),
     );
@@ -143,19 +154,21 @@ class _RewardThumb extends StatelessWidget {
 }
 
 class _RewardTypeBadge extends StatelessWidget {
-  const _RewardTypeBadge({required this.type});
+  const _RewardTypeBadge({required this.type, required this.muted});
 
   final RewardTargetType type;
+  final bool muted;
 
   @override
   Widget build(BuildContext context) {
+    final tint = muted ? AppColor.greyColor : AppColor.primaryColor;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.xs + AppSpacing.xxs,
         vertical: AppSizes.px1,
       ),
       decoration: BoxDecoration(
-        color: AppColor.primaryColor.withValues(alpha: 0.08),
+        color: tint.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadius.r6),
       ),
       child: Text(
@@ -164,10 +177,8 @@ class _RewardTypeBadge extends StatelessWidget {
           RewardTargetType.plan => S.subscriptionLabel,
           RewardTargetType.product => '',
         },
-        style: AppFonts.regular12(context).copyWith(
-          color: AppColor.primaryColor,
-          fontWeight: AppFontWeights.semiBold,
-        ),
+        style: AppFonts.regular12(context)
+            .copyWith(color: tint, fontWeight: AppFontWeights.semiBold),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
@@ -57,22 +58,26 @@ class _AddressesView extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed == true) {
-      await cubit.removeAddress(addressId);
-    }
+    if (confirmed != true) return;
+    // The answer goes to the state, and the listener above shows it: a delete
+    // the server refused leaves the row on screen, which is the truth.
+    await cubit.removeAddress(addressId);
   }
+
+  void _openEditor(BuildContext context, [AddressModel? address]) =>
+      Navigator.of(context)
+          .pushNamed(AddressFormPage.routeName, arguments: address);
 
   @override
   Widget build(BuildContext context) {
     return BlocListener<AddressesCubit, AddressesState>(
-      // Only failures on a non-empty list need a snackbar: the empty-list
-      // case already shows an inline error with a retry button. The error is
-      // cleared right after the snackbar is queued, so rebuilds cannot
-      // resurface the same message.
+      // A failed read already has its own inline state with a retry; only a
+      // failed write needs a message over the list. The error is cleared right
+      // after the snackbar is queued, so rebuilds cannot resurface it.
       listenWhen: (previous, current) =>
-          current.error != null && current.addresses.isNotEmpty,
+          current.error != null && !current.readFailed,
       listener: (context, state) {
-        final message = state.error;
+        final message = state.errorCopy;
         if (message == null) return;
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(message)));
@@ -83,25 +88,15 @@ class _AddressesView extends StatelessWidget {
           if (state.isLoading && state.addresses.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state.error != null && state.addresses.isEmpty) {
-            // A failed read, not an empty book: the localized title says what
-            // happened, the failure detail stays underneath for support. Same
-            // shape as the favorites, loyalty and notifications error states.
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  EmptyState(
-                    icon: AppIcons.location,
-                    title: S.couldNotLoadAddresses,
-                    subtitle: state.error,
-                  ),
-                  TextButton(
-                    onPressed: () => context.read<AddressesCubit>().load(),
-                    child: Text(S.retry),
-                  ),
-                ],
-              ),
+          if (state.readFailed) {
+            // A failed read, not an empty book: the retry re-reads, because
+            // telling the customer they have no addresses is the wrong answer
+            // to a request that never arrived.
+            return EmptyState(
+              icon: AppIcons.location,
+              title: S.couldNotLoadAddresses,
+              actionLabel: S.retry,
+              onAction: () => context.read<AddressesCubit>().load(),
             );
           }
           if (state.addresses.isEmpty) {
@@ -132,16 +127,12 @@ class _AddressesView extends StatelessWidget {
                 AddressTile(
                   address: state.addresses[index],
                   selected: state.addresses[index].isDefault,
-                  onTap: () => context.read<AddressesCubit>().setDefaultAddress(
-                    state.addresses[index].id,
-                  ),
+                  // The row opens the editor: this screen has no address to
+                  // select, so a tap here means "change this one".
+                  onTap: () => _openEditor(context, state.addresses[index]),
                   onSetDefault: () => context
                       .read<AddressesCubit>()
                       .setDefaultAddress(state.addresses[index].id),
-                  onEdit: () => Navigator.of(context).pushNamed(
-                    AddressFormPage.routeName,
-                    arguments: state.addresses[index],
-                  ),
                   onDelete: () => _confirmDelete(
                     context,
                     addressId: state.addresses[index].id,

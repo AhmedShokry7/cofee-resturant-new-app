@@ -158,7 +158,7 @@ void main() {
 
       // The page prints state.error as the whole message, so it must never be
       // the raw exception.
-      expect(cubit.state.error, S.couldNotLoadCart);
+      expect(cubit.state.errorCopy, S.couldNotLoadCart);
 
       await cubit.close();
     },
@@ -211,7 +211,7 @@ void main() {
       cubit.state.items.any((item) => item.note == 'one too many'),
       isFalse,
     );
-    expect(cubit.state.error, S.cartLineLimitReached(CartLimits.maxLines));
+    expect(cubit.state.errorCopy, S.cartLineLimitReached(CartLimits.maxLines));
 
     // The device slot is written with the same cap, so what is on screen is
     // what a restart brings back. A line accepted past the cap used to sit

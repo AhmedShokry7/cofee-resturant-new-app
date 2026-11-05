@@ -192,3 +192,25 @@ abstract interface class CheckoutQuoteRepository {
     String? note,
   });
 }
+
+/// Optional write of a product review.
+///
+/// A review belongs to a product, not to the order that produced it: the server
+/// stores one row per customer and product, so a second purchase of the same
+/// drink updates the first review instead of piling up a second one.
+///
+/// Separate from [OrdersRepository] for the same reason as
+/// [OrderLinesRepository]: the read-only fallback has no backend to write to and
+/// must not be forced to promise one.
+abstract interface class ReviewRepository {
+  /// Stores [rating] (1-5) and the optional [body] for [productId].
+  ///
+  /// Throws [OrderSignInRequiredException] when nobody is signed in: the row is
+  /// owned by `auth.uid()`, and the server refuses one that names anyone else.
+  Future<void> submitReview({
+    required String productId,
+    String? orderId,
+    required int rating,
+    String? body,
+  });
+}

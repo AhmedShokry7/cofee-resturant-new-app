@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
+import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 
@@ -46,7 +47,10 @@ class AccountDetailsCubit extends Cubit<AccountDetailsState> {
     } catch (error, stackTrace) {
       if (isClosed) return;
       emit(
-        state.copyWith(isLoading: false, error: S.couldNotLoadAccountDetails),
+        state.copyWith(
+          isLoading: false,
+          error: AppCopy.couldNotLoadAccountDetails,
+        ),
       );
       addError(error, stackTrace);
     }
@@ -58,17 +62,26 @@ class AccountDetailsCubit extends Cubit<AccountDetailsState> {
   /// The email is deliberately not sent: this app has no address-change call,
   /// and posting a field it cannot change would let the customer believe the
   /// address had moved.
+  ///
+  /// The number is put in the shape the provider accepts before the call, by the
+  /// same rule the field validates with. Sending `0501234567` as typed would
+  /// cost a round trip and come back as a failure the customer cannot act on.
   Future<bool> save({
     required String firstName,
     String? lastName,
     required String phone,
   }) async {
+    final e164Phone = AuthFormRules.e164Of(phone);
+    if (e164Phone == null) {
+      emit(state.copyWith(isSaving: false, error: AppCopy.validPhoneNumber));
+      return false;
+    }
     emit(state.copyWith(isSaving: true, clearError: true));
     final fullName = '$firstName ${lastName ?? ''}'.trim();
     try {
       final updated = await _repository.updateProfile(
         fullName: fullName,
-        phone: phone.trim(),
+        phone: e164Phone,
       );
       if (isClosed) return false;
       final draft = _draftOf(updated);
@@ -85,7 +98,7 @@ class AccountDetailsCubit extends Cubit<AccountDetailsState> {
       return true;
     } catch (error, stackTrace) {
       if (isClosed) return false;
-      emit(state.copyWith(isSaving: false, error: S.profileUpdateFailed));
+      emit(state.copyWith(isSaving: false, error: AppCopy.profileUpdateFailed));
       addError(error, stackTrace);
       return false;
     }
@@ -111,7 +124,7 @@ class AccountDetailsCubit extends Cubit<AccountDetailsState> {
       emit(
         state.copyWith(
           isChangingPassword: false,
-          error: S.passwordChangeFailed,
+          error: AppCopy.passwordChangeFailed,
         ),
       );
       addError(error, stackTrace);

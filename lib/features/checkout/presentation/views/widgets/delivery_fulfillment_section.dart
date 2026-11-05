@@ -104,7 +104,7 @@ class DeliveryFulfillmentSection extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     final applied = cubit.setFulfillment(FulfillmentType.delivery);
     if (applied) return;
-    final message = cubit.state.orderError;
+    final message = cubit.state.orderErrorCopy;
     if (message != null) {
       messenger
         ..hideCurrentSnackBar()

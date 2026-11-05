@@ -165,7 +165,7 @@ class _CardPaymentPageState extends State<CardPaymentPage>
       case PaymentOutcome.pending:
         _showMessage(S.paymentProcessing);
       case PaymentOutcome.failed:
-        _showMessage(cubit.state.errorMessage ?? S.paymentFailed);
+        _showMessage(cubit.state.errorMessageCopy ?? S.paymentFailed);
       case null:
         break;
     }
@@ -268,7 +268,7 @@ class _CardPaymentView extends StatelessWidget {
                     vertical: AppSpacing.sm,
                   ),
                   child: Text(
-                    state.errorMessage!,
+                    state.errorMessageCopy!,
                     style: TextStyle(color: AppColor.errorColor),
                     textAlign: TextAlign.center,
                   ),

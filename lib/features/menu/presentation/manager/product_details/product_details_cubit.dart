@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/shared/utils/cache_manager.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/product_options.dart';
@@ -64,7 +64,7 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
         emit(
           state.copyWith(
             isLoading: false,
-            error: S.productNoLongerAvailable,
+            error: AppCopy.productNoLongerAvailable,
             clearProduct: true,
           ),
         );
@@ -110,7 +110,9 @@ class ProductDetailsCubit extends Cubit<ProductDetailsState> {
       );
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(state.copyWith(isLoading: false, error: error.toString()));
+      emit(
+        state.copyWith(isLoading: false, error: AppCopy.couldNotLoadProduct),
+      );
       addError(error, stackTrace);
     }
   }

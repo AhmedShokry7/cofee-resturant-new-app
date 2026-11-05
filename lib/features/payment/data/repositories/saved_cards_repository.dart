@@ -1,10 +1,14 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/payment/data/model/saved_card_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart'
-    show FunctionResponse, FunctionsHttpException, SupabaseClient;
+    show
+        FunctionResponse,
+        FunctionsHttpException,
+        PostgrestException,
+        SupabaseClient;
 
 /// Why a save failed, so the failure is diagnosable rather than a shrug.
 ///
@@ -32,12 +36,16 @@ enum SaveCardFailure {
 /// the customer.
 class SaveCardException implements Exception {
   const SaveCardException(
-    this.message, {
+    this.reason, {
     this.failure = SaveCardFailure.temporary,
   });
 
-  final String message;
+  /// Why the customer cannot use this card, held as a token so the screen
+  /// reads the sentence in the language they are using now.
+  final AppCopy reason;
   final SaveCardFailure failure;
+
+  String get message => reason.copy;
 
   @override
   String toString() => 'SaveCardException(${failure.name})';
@@ -75,7 +83,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
   void _requireSignedIn() {
     if (_client.auth.currentUser == null) {
       throw SaveCardException(
-        S.cardSaveNotAllowed,
+        AppCopy.cardSaveNotAllowed,
         failure: SaveCardFailure.notSignedIn,
       );
     }
@@ -128,7 +136,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
       // reached. Retryable.
       debugPrint('Save card failed before a response: $error');
       throw SaveCardException(
-        S.saveCardFailed,
+        AppCopy.saveCardFailed,
         failure: SaveCardFailure.temporary,
       );
     }
@@ -148,7 +156,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     });
     if (card.id.isEmpty) {
       throw SaveCardException(
-        S.saveCardFailed,
+        AppCopy.saveCardFailed,
         failure: SaveCardFailure.temporary,
       );
     }
@@ -173,13 +181,13 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
         'before saving cards.',
       );
       return SaveCardException(
-        S.cardSavingNotConfigured,
+        AppCopy.cardSavingNotConfigured,
         failure: SaveCardFailure.notConfigured,
       );
     }
     if (error.status == 401 || error.status == 403) {
       return SaveCardException(
-        S.cardSaveNotAllowed,
+        AppCopy.cardSaveNotAllowed,
         failure: SaveCardFailure.notSignedIn,
       );
     }
@@ -187,7 +195,7 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     if (error.status >= 500) {
       debugPrint('tap-tokenize-card returned ${error.status}');
       return SaveCardException(
-        S.saveCardFailed,
+        AppCopy.saveCardFailed,
         failure: SaveCardFailure.temporary,
       );
     }
@@ -212,23 +220,65 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
       'not_configured' => SaveCardFailure.notConfigured,
       _ => SaveCardFailure.temporary,
     };
-    final message = switch (name) {
-      'invalid_card_number' => S.validCardNumber,
-      'invalid_expiry' => S.invalidDate,
-      'invalid_cvv' => S.invalidCvv,
-      'missing_holder_name' => S.cardHolderRequired,
-      'card_declined' => S.cardDeclined,
-      'unauthorized' => S.cardSaveNotAllowed,
-      'not_configured' => S.cardSavingNotConfigured,
-      _ => S.saveCardFailed,
+    final reason = switch (name) {
+      'invalid_card_number' => AppCopy.validCardNumber,
+      'invalid_expiry' => AppCopy.invalidDate,
+      'invalid_cvv' => AppCopy.invalidCvv,
+      'missing_holder_name' => AppCopy.cardHolderRequired,
+      'card_declined' => AppCopy.cardDeclined,
+      'unauthorized' => AppCopy.cardSaveNotAllowed,
+      'not_configured' => AppCopy.cardSavingNotConfigured,
+      _ => AppCopy.saveCardFailed,
     };
-    return SaveCardException(message, failure: failure);
+    return SaveCardException(reason, failure: failure);
   }
 
   @override
   Future<void> deleteSavedCard(String id) async {
     _requireSignedIn();
-    await _client.functions.invoke('tap-delete-card', body: {'cardId': id});
+    final FunctionResponse response;
+    try {
+      response = await _client.functions.invoke(
+        'tap-delete-card',
+        body: {'cardId': id},
+      );
+    } on FunctionsHttpException catch (error) {
+      throw classifyDeleteHttpError(error);
+    } catch (error) {
+      debugPrint('Delete card failed before a response: $error');
+      throw SaveCardException(
+        AppCopy.cardDeleteFailed,
+        failure: SaveCardFailure.temporary,
+      );
+    }
+
+    // The function answers 200 with {deleted: false} when the provider refused,
+    // so a resolved call is not proof the card is gone. Reading the flag is what
+    // keeps a still-chargeable card from disappearing off the list.
+    final refusal = deleteRefusalFor(
+      status: response.status,
+      data: response.data,
+    );
+    if (refusal != null) throw refusal;
+  }
+
+  /// The one answer `tap-delete-card` gives that means the card is gone.
+  ///
+  /// Returns null for it, and a failure the list can show for everything else:
+  /// a refused provider call, a status that is not 200, or a body that does not
+  /// say `deleted`.
+  @visibleForTesting
+  static SaveCardException? deleteRefusalFor({
+    required int status,
+    required Object? data,
+  }) {
+    if (status == 200 && data is Map && data['deleted'] == true) return null;
+    final reason = data is Map ? data['error'] : null;
+    debugPrint('tap-delete-card refused: status=$status error=$reason');
+    return SaveCardException(
+      AppCopy.cardDeleteFailed,
+      failure: SaveCardFailure.temporary,
+    );
   }
 
   @override
@@ -239,6 +289,80 @@ class SupabaseSavedCardsRepository implements SavedCardsRepository {
     // in one transaction (073, bridged by proposals/223). The customer role has
     // no write grant on `public.saved_cards`, so there is no client-side
     // alternative that keeps the single-default invariant.
-    await _client.rpc('set_default_card', params: {'p_card_id': id});
+    try {
+      await _client.rpc('set_default_card', params: {'p_card_id': id});
+    } on PostgrestException catch (error) {
+      throw classifyDefaultRpcError(error.code);
+    }
+  }
+
+  /// Separates "this preference cannot be stored here" from "it did not land
+  /// this time".
+  ///
+  /// PGRST202/42883 mean the bridge is not in the schema: no retry fixes that,
+  /// and the customer's default stays exactly as it was, so the failure has to
+  /// name the deploy rather than read as a hiccup.
+  @visibleForTesting
+  static SaveCardException classifyDefaultRpcError(Object? code) {
+    final name = code?.toString() ?? '';
+    if (name == 'PGRST202' || name == '42883') {
+      debugPrint(
+        'set_default_card is not in the database schema ($name). '
+        'Apply supabase/proposals/223_public_bridge_set_default_card.',
+      );
+      return SaveCardException(
+        AppCopy.cardSavingNotConfigured,
+        failure: SaveCardFailure.notConfigured,
+      );
+    }
+    return SaveCardException(
+      AppCopy.saveCardFailed,
+      failure: SaveCardFailure.temporary,
+    );
+  }
+
+  /// Classifies a delete refusal the way [classifyHttpError] classifies a save.
+  ///
+  /// Kept apart because the two functions fail for different reasons: a 422
+  /// from `tap-tokenize-card` is a bad card number the customer can correct,
+  /// while a 4xx from `tap-delete-card` is a card that is not theirs, and
+  /// naming a field would send them back to a form they never opened.
+  @visibleForTesting
+  static SaveCardException classifyDeleteHttpError(
+    FunctionsHttpException error,
+  ) {
+    if (error.status == 404) {
+      final details = error.details;
+      final message = details is Map ? details['message']?.toString() : null;
+      // Two different 404s. Supabase's own says the function was not found —
+      // a build problem no retry fixes. The function's says this customer has
+      // no such card, which usually means somebody deleted it in another
+      // session and the list on screen is stale.
+      if (message?.toLowerCase().contains('function') ?? false) {
+        debugPrint(
+          'tap-delete-card is not deployed (404). Deploy the Edge Function '
+          'before deleting cards.',
+        );
+        return SaveCardException(
+          AppCopy.cardSavingNotConfigured,
+          failure: SaveCardFailure.notConfigured,
+        );
+      }
+      return SaveCardException(
+        AppCopy.cardAlreadyRemoved,
+        failure: SaveCardFailure.declined,
+      );
+    }
+    if (error.status == 401 || error.status == 403) {
+      return SaveCardException(
+        AppCopy.cardSaveNotAllowed,
+        failure: SaveCardFailure.notSignedIn,
+      );
+    }
+    debugPrint('tap-delete-card returned ${error.status}');
+    return SaveCardException(
+      AppCopy.cardDeleteFailed,
+      failure: SaveCardFailure.temporary,
+    );
   }
 }

@@ -49,7 +49,10 @@ class ProductDetailsState {
   final String? unavailableReason;
 
   final bool isLoading;
-  final String? error;
+  final AppCopy? error;
+
+  /// [error] as the sentence the customer reads, in their current language.
+  String? get errorCopy => error?.copy;
 
   /// Same-category companions for the "Goes well with" section. Decorative:
   /// empty until loaded, and never blocks the page when unavailable.
@@ -81,7 +84,7 @@ class ProductDetailsState {
     String? unavailableReason,
     bool clearUnavailableReason = false,
     bool? isLoading,
-    String? error,
+    AppCopy? error,
     bool clearError = false,
     List<ProductModel>? pairs,
   }) => ProductDetailsState(

@@ -566,7 +566,7 @@ void main() {
       expect(ok, isFalse);
       expect(cubit.state.isPlacingOrder, isFalse);
       expect(cubit.state.lastOrder, isNull);
-      expect(cubit.state.orderError, S.orderFailed);
+      expect(cubit.state.orderErrorCopy, S.orderFailed);
 
       await cubit.close();
     },
@@ -646,7 +646,7 @@ void main() {
 
     expect(applied, isFalse);
     expect(cubit.state.fulfillment, FulfillmentType.pickup);
-    expect(cubit.state.orderError, S.deliveryUnavailable);
+    expect(cubit.state.orderErrorCopy, S.deliveryUnavailable);
     expect(cubit.state.deliveryBlocked, isTrue);
 
     await cubit.close();
@@ -705,7 +705,7 @@ void main() {
 
       expect(applied, isFalse);
       expect(cubit.state.fulfillment, FulfillmentType.pickup);
-      expect(cubit.state.orderError, S.deliveryUnavailableError);
+      expect(cubit.state.orderErrorCopy, S.deliveryUnavailableError);
       expect(cubit.state.deliveryBlocked, isTrue);
 
       await cubit.close();
@@ -725,7 +725,7 @@ void main() {
       );
 
       expect(ok, isFalse);
-      expect(cubit.state.orderError, S.deliveryChoosePickup);
+      expect(cubit.state.orderErrorCopy, S.deliveryChoosePickup);
       expect(orders.lines, isNull); // the server is never called
 
       await cubit.close();
@@ -961,7 +961,7 @@ void main() {
 
     expect(applied, isFalse);
     expect(cubit.state.appliedCoupon, isNull);
-    expect(cubit.state.couponError, S.couponCheckFailed);
+    expect(cubit.state.couponErrorCopy, S.couponCheckFailed);
     expect(cubit.summary(25).discount, 0);
 
     await cubit.close();
@@ -970,7 +970,9 @@ void main() {
   test('a rejected validation leaves no coupon applied', () async {
     final orders = _FakeOrders(result: _placed());
     final coupons = _FakeCoupons(
-      error: const CouponRejectedException('code does not apply to your items'),
+      error: const CouponRejectedException(
+        legacyMessage: 'code does not apply to your items',
+      ),
     );
     final cubit = _cubit(orders, branchId: 'branch-1', coupons: coupons);
     await cubit.load();
@@ -979,7 +981,12 @@ void main() {
 
     expect(applied, isFalse);
     expect(cubit.state.appliedCoupon, isNull);
-    expect(cubit.state.couponError, 'code does not apply to your items');
+    // A legacy message with no reason code is translated rather than echoed,
+    // so the customer is not handed provider English on an Arabic screen.
+    expect(
+      cubit.state.couponErrorCopy,
+      S.couponRejected('code does not apply to your items'),
+    );
 
     await cubit.close();
   });
@@ -1212,7 +1219,7 @@ void main() {
 
       expect(placed, isFalse);
       expect(cubit.state.isPlacingOrder, isFalse);
-      expect(cubit.state.orderError, S.signIn);
+      expect(cubit.state.orderErrorCopy, S.signIn);
       expect(orders.lines, isNull);
 
       await cubit.close();

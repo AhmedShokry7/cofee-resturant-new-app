@@ -38,7 +38,11 @@ final class AuthSignedOut extends AuthState {
 }
 
 final class AuthFailure extends AuthState {
-  const AuthFailure(this.message);
+  const AuthFailure(this.reason);
 
-  final String message;
+  /// Why the attempt failed, held as a token so the screen reads the sentence
+  /// in the language the customer is using now.
+  final AppCopy reason;
+
+  String get message => reason.copy;
 }

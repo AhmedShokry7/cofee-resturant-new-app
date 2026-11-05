@@ -12,11 +12,18 @@ class LoyaltyTransaction {
     this.balanceAfter,
     this.titleAr,
     this.titleEn,
+    this.rewardNameAr,
+    this.rewardNameEn,
   }) : _legacyTitle = title;
 
   final String id;
   final String? titleAr;
   final String? titleEn;
+
+  /// The reward a `redeem_reward` row spent points on, in both stored
+  /// languages. The sentence around it comes from [S] when the row is read.
+  final String? rewardNameAr;
+  final String? rewardNameEn;
   final int points;
   final DateTime date;
   final String _legacyTitle;
@@ -28,12 +35,24 @@ class LoyaltyTransaction {
       en: titleEn ?? '',
     ), isArabic: AppLocale.instance.isArabic);
     if (localized.isNotEmpty) return localized;
+    // A reward names itself, inside the sentence the app uses for a spend.
+    if (reason == 'redeem_reward') {
+      final reward = _storedRewardName;
+      if (reward.isNotEmpty) return S.redeemedReward(reward);
+    }
     // A reason-coded row has no note, so its wording comes from `S` — resolved
     // on *read*, not at load, so switching language relabels history rows that
     // were loaded while the app was in the other language.
-    final labelled = reasonLabel(reason);
-    return labelled.isEmpty ? _legacyTitle : labelled;
+    if (reason != null) return reasonLabel(reason);
+    // The oldest device rows stored a sentence and nothing else, so that
+    // sentence — whatever language it was written in — is all there is to show.
+    return _legacyTitle.isEmpty ? S.loyaltyActivityLabel : _legacyTitle;
   }
+
+  String get _storedRewardName => pickText((
+    ar: rewardNameAr ?? '',
+    en: rewardNameEn ?? '',
+  ), isArabic: AppLocale.instance.isArabic);
 
   /// Wording for a ledger reason code, in the app's current language.
   static String reasonLabel(String? reason) => switch (reason) {
@@ -58,6 +77,8 @@ class LoyaltyTransaction {
     'points': points,
     'date': date.toIso8601String(),
     if (reason != null) 'reason': reason,
+    if (rewardNameAr != null) 'rewardNameAr': rewardNameAr,
+    if (rewardNameEn != null) 'rewardNameEn': rewardNameEn,
     if (balanceAfter != null) 'balanceAfter': balanceAfter,
   };
 
@@ -72,6 +93,8 @@ class LoyaltyTransaction {
             DateTime.tryParse(value['date']?.toString() ?? '') ??
             DateTime.now(),
         reason: value['reason']?.toString(),
+        rewardNameAr: value['rewardNameAr']?.toString(),
+        rewardNameEn: value['rewardNameEn']?.toString(),
         balanceAfter: (value['balanceAfter'] as num?)?.toInt(),
       );
     } catch (_) {

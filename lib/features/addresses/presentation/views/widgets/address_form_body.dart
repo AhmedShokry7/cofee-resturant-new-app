@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
+import 'package:new_coffee/features/location/data/model/location_failure.dart';
 import 'package:new_coffee/features/location/data/repositories/place_search_repository.dart';
 import 'package:new_coffee/features/location/presentation/widgets/location_picker.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -27,7 +28,11 @@ class AddressFormBody extends StatefulWidget {
   ///
   /// [AddressModel.id] is empty for a new address: the server assigns the real
   /// one, and both callers read it back from the repository result.
-  final ValueChanged<AddressModel> onSave;
+  ///
+  /// The handler answers `null` once the server has the row, or the sentence to
+  /// show when it has not. The editor waits for that before closing: a screen
+  /// that popped on the tap used to report an address the customer never got.
+  final Future<String?> Function(AddressModel draft) onSave;
 
   @override
   State<AddressFormBody> createState() => _AddressFormBodyState();
@@ -43,6 +48,10 @@ class _AddressFormBodyState extends State<AddressFormBody> {
 
   /// Null until the customer picks a spot.
   PickedLocation? _picked;
+
+  /// The save is on its way, so the button cannot be tapped into a second row
+  /// on the server.
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -141,8 +150,20 @@ class _AddressFormBodyState extends State<AddressFormBody> {
             longitude: picked.point.longitude,
           );
 
-    widget.onSave(draft);
-    Navigator.of(context).pop();
+    // The write is awaited before this screen closes: a refused save keeps the
+    // draft on screen with the reason, instead of a list that never shows the
+    // address the customer just typed.
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _isSaving = true);
+    final failure = await widget.onSave(draft);
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    if (failure != null) {
+      messenger.showSnackBar(SnackBar(content: Text(failure)));
+      return;
+    }
+    navigator.pop();
   }
 
   @override
@@ -162,7 +183,7 @@ class _AddressFormBodyState extends State<AddressFormBody> {
               hint: S.addressNameHint,
               icon: AppIcons.location,
               textInputAction: TextInputAction.next,
-              bottomPadding: 8,
+              bottomPadding: AppSpacing.sm,
             ),
           ),
           Expanded(
@@ -173,7 +194,10 @@ class _AddressFormBodyState extends State<AddressFormBody> {
                 controller: _searchController,
                 initialPoint: _picked?.point,
                 onPicked: (location) => setState(() => _picked = location),
-                onLocationFailure: (_) {},
+                // The picker keeps its own caption, but the customer is looking
+                // at this form: a position that could not be had has to say so
+                // here rather than leave the pin silently still.
+                onLocationFailure: (failure) => _warn(failure.userMessage),
               ),
             ),
           ),
@@ -184,7 +208,11 @@ class _AddressFormBodyState extends State<AddressFormBody> {
               AppSpacing.lg,
               AppSpacing.md,
             ),
-            child: CustomBtn(text: S.confirm, onPressed: _confirm),
+            child: CustomBtn(
+              text: S.confirm,
+              isLoading: _isSaving,
+              onPressed: _isSaving ? null : _confirm,
+            ),
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -24,7 +25,7 @@ class _FakeOrdersRepository implements OrdersRepository {
   }) async {
     listCalls++;
     lastStatus = status;
-    if (fail) throw StateError('Could not load orders');
+    if (fail) throw StateError('socket hung up');
     if (status == null) return _orders;
     return _orders.where((line) => line.status == status).toList();
   }
@@ -164,7 +165,8 @@ void main() {
 
       await cubit.stream.firstWhere((state) => state.error != null);
 
-      expect(cubit.state.error, contains('Could not load orders'));
+      // The customer sees a localized message, never the exception's text.
+      expect(cubit.state.errorCopy, S.couldNotLoadOrders);
       expect(cubit.state.orders, isEmpty);
     });
 

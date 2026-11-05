@@ -281,31 +281,31 @@ void main() {
     },
   );
 
-  testWidgets(
-    'a load failure headlines the failure, keeps the detail, and retry re-fetches',
-    (tester) async {
-      await _setSurface(tester);
-      final repository = _FakeAddressRepository(failList: true);
+  testWidgets('a load failure headlines the failure and retry re-fetches', (
+    tester,
+  ) async {
+    await _setSurface(tester);
+    final repository = _FakeAddressRepository(failList: true);
 
-      await _pumpPage(tester, repository);
-      await tester.pumpAndSettle();
+    await _pumpPage(tester, repository);
+    await tester.pumpAndSettle();
 
-      expect(find.text(S.retry), findsOneWidget);
-      // The customer reads a sentence about the failed read, not the page
-      // title: an empty book and an unanswered read are different states.
-      expect(find.text(S.couldNotLoadAddresses), findsOneWidget);
-      // The raw failure stays underneath as the detail line.
-      expect(find.textContaining('signed-in'), findsOneWidget);
+    expect(find.text(S.retry), findsOneWidget);
+    // The customer reads a sentence about the failed read, not the page
+    // title: an empty book and an unanswered read are different states.
+    expect(find.text(S.couldNotLoadAddresses), findsOneWidget);
+    // What actually broke is for the logs, not for the screen: the server's
+    // own text names tables and sessions the customer cannot act on.
+    expect(find.textContaining('signed-in'), findsNothing);
 
-      repository.failList = false;
-      repository._addresses = [_address('a1')];
-      await tester.tap(find.text(S.retry));
-      await tester.pumpAndSettle();
+    repository.failList = false;
+    repository._addresses = [_address('a1')];
+    await tester.tap(find.text(S.retry));
+    await tester.pumpAndSettle();
 
-      expect(repository.listCalls, 2);
-      expect(find.text('Home a1'), findsOneWidget);
-    },
-  );
+    expect(repository.listCalls, 2);
+    expect(find.text('Home a1'), findsOneWidget);
+  });
 
   testWidgets('a guest is asked to sign in and no address read is issued', (
     tester,
@@ -441,7 +441,9 @@ void main() {
     await _pumpPage(tester, repository, places: places);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byIcon(AppIcons.edit));
+    // The row is the way in: this screen has no address to select, so a tap on
+    // one of its rows means "change this one".
+    await tester.tap(find.text('Home a1'));
     await tester.pumpAndSettle();
 
     // The form opens pre-filled; replacing the name and confirming routes the

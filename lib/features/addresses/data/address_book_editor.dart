@@ -1,4 +1,4 @@
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
 
@@ -39,7 +39,7 @@ class AddressBookEditor {
         saved: saved,
       );
     } catch (error) {
-      throw AddressBookFailure(S.addressSaveFailed, cause: error);
+      throw AddressBookFailure(AppCopy.addressSaveFailed, cause: error);
     }
   }
 
@@ -63,7 +63,7 @@ class AddressBookEditor {
         saved: saved,
       );
     } catch (error) {
-      throw AddressBookFailure(S.addressSaveFailed, cause: error);
+      throw AddressBookFailure(AppCopy.addressSaveFailed, cause: error);
     }
   }
 
@@ -77,7 +77,7 @@ class AddressBookEditor {
         addresses: addresses.where((address) => address.id != id).toList(),
       );
     } catch (error) {
-      throw AddressBookFailure(S.addressDeleteFailed, cause: error);
+      throw AddressBookFailure(AppCopy.addressDeleteFailed, cause: error);
     }
   }
 
@@ -96,7 +96,7 @@ class AddressBookEditor {
         ]),
       );
     } catch (error) {
-      throw AddressBookFailure(S.addressSaveFailed, cause: error);
+      throw AddressBookFailure(AppCopy.addressSaveFailed, cause: error);
     }
   }
 
@@ -124,16 +124,18 @@ class AddressBookChange {
   final AddressModel? saved;
 }
 
-/// A failed write, carrying the copy the customer should see.
+/// A failed write, carrying the reason the customer should be told.
 ///
 /// The repository error stays in [cause] so the cubit can still report the real
-/// failure to the bloc observer; the customer only ever sees the localized
-/// message.
+/// failure to the bloc observer; the customer only ever sees [message], which is
+/// read in the current language rather than frozen when the write failed.
 class AddressBookFailure implements Exception {
-  const AddressBookFailure(this.message, {required this.cause});
+  const AddressBookFailure(this.reason, {required this.cause});
 
-  final String message;
+  final AppCopy reason;
   final Object cause;
+
+  String get message => reason.copy;
 
   @override
   String toString() => message;

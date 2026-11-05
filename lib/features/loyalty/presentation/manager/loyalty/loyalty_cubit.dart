@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/loyalty/data/model/loyalty_transaction.dart';
@@ -12,6 +13,28 @@ import 'package:supabase_flutter/supabase_flutter.dart'
     show AuthChangeEvent, AuthState;
 
 part 'loyalty_state.dart';
+
+/// What a tap on "Redeem" ended up being.
+enum RedeemOutcome {
+  /// The points were spent and the reward is on its way.
+  redeemed,
+
+  /// Another tap is still being answered, so this one did nothing.
+  inProgress,
+
+  /// The wallet holds fewer points than the reward costs.
+  notEnoughPoints,
+
+  /// The reward is collected at a branch and none is chosen.
+  needsBranch,
+
+  /// A guest device wallet can only hold a product; a bundle or a plan belongs
+  /// to an account.
+  requiresAccount,
+
+  /// The server refused the spend. Nothing was deducted.
+  refused,
+}
 
 /// Customer loyalty wallet and redeemable catalogue.
 ///
@@ -185,7 +208,13 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
 
     final transaction = LoyaltyTransaction(
       id: _nextId(),
+      // A reason code, because the wording then comes from `S` each time the
+      // row is read and the row relabels when the customer switches language.
+      // An explicit [title] is stored as a note instead, and a note wins.
+      reason: 'earn_order',
       title: title ?? S.orderPurchaseLabel,
+      titleAr: title,
+      titleEn: title,
       points: points,
       date: DateTime.now(),
     );
@@ -204,22 +233,40 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     return points;
   }
 
-  /// Spends points on a reward. Returns false when the balance is short.
+  /// Spends points on a reward and says why it did not.
   ///
   /// Guests redeem from the device wallet. Signed-in redemption happens on the
   /// server: a product or bundle becomes a free pickup order at the chosen
   /// branch (so [branchId] is required) and a plan activates a new
   /// subscription cycle (no branch needed).
-  Future<bool> redeem(RewardModel reward) async {
-    if (state.isGuest) return _redeemGuest(reward);
-    final rewardId = reward.id;
-    if (rewardId == null || rewardId.isEmpty) return false;
-    if (state.balance < reward.pointsCost || isClosed) return false;
+  ///
+  /// The answer is an outcome rather than a `bool` because a tap that failed
+  /// for the network, a tap that failed for the balance and a tap that was
+  /// never sent are three different sentences to the customer — and the page
+  /// used to call all of them "Not enough points".
+  Future<RedeemOutcome> redeem(RewardModel reward) async {
+    // A second tap while the first is unanswered would spend the same points
+    // twice: `redeem_loyalty_reward` accepts no idempotency key, so this flag
+    // is the only guard.
+    if (state.isRedeeming) return RedeemOutcome.inProgress;
+    emit(state.copyWith(isRedeeming: true, clearError: true));
+    try {
+      if (state.isGuest) return await _redeemGuest(reward);
+      return await _redeemOnServer(reward);
+    } finally {
+      if (!isClosed) emit(state.copyWith(isRedeeming: false));
+    }
+  }
 
+  Future<RedeemOutcome> _redeemOnServer(RewardModel reward) async {
+    final rewardId = reward.id;
+    if (rewardId == null || rewardId.isEmpty) return RedeemOutcome.refused;
+    if (state.balance < reward.pointsCost) {
+      return RedeemOutcome.notEnoughPoints;
+    }
     final branch = branchId;
     if (reward.type.needsBranch && (branch == null || branch.isEmpty)) {
-      emit(state.copyWith(error: S.selectBranchBeforeRedeeming));
-      return false;
+      return RedeemOutcome.needsBranch;
     }
 
     try {
@@ -227,28 +274,34 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
         rewardId: rewardId,
         branchId: reward.type.needsBranch ? branch : null,
       );
-      if (isClosed) return true;
-      emit(state.copyWith(balance: balance, clearError: true));
+      if (isClosed) return RedeemOutcome.redeemed;
+      emit(state.copyWith(balance: balance));
+      // The spend creates an order or a subscription, so the ledger behind the
+      // balance is read again rather than guessed at.
       await load();
-      return true;
+      return RedeemOutcome.redeemed;
     } catch (error, stackTrace) {
-      if (isClosed) return false;
-      emit(state.copyWith(error: error.toString()));
+      // The refusal is answered by the returned outcome, not by [error]: that
+      // channel belongs to the wallet read, and putting a spend failure in it
+      // would make the page announce the same failure twice.
       addError(error, stackTrace);
-      return false;
+      return RedeemOutcome.refused;
     }
   }
 
-  Future<bool> _redeemGuest(RewardModel reward) async {
+  Future<RedeemOutcome> _redeemGuest(RewardModel reward) async {
     if (!reward.isProduct || reward.product == null) {
-      if (!isClosed) {
-        emit(state.copyWith(error: S.rewardRequiresAccount));
-      }
-      return false;
+      return RedeemOutcome.requiresAccount;
     }
-    if (state.balance < reward.pointsCost || isClosed) return false;
+    if (state.balance < reward.pointsCost) return RedeemOutcome.notEnoughPoints;
     final transaction = LoyaltyTransaction(
       id: _nextId(),
+      // The reward's two stored names, so the row says "Redeemed <reward>" in
+      // whichever language the customer reads the wallet in, rather than the
+      // one the tap happened in.
+      reason: 'redeem_reward',
+      rewardNameAr: reward.nameAr ?? reward.name,
+      rewardNameEn: reward.nameEn ?? reward.name,
       title: S.redeemedReward(reward.name),
       points: -reward.pointsCost,
       date: DateTime.now(),
@@ -264,7 +317,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
       balance: state.balance,
       transactions: state.transactions,
     );
-    return true;
+    return RedeemOutcome.redeemed;
   }
 
   @override

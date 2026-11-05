@@ -20,36 +20,49 @@ class LoyaltyPage extends StatelessWidget {
 
   Future<void> _redeem(BuildContext context, RewardModel reward) async {
     final loyalty = context.read<LoyaltyCubit>();
+    final messenger = ScaffoldMessenger.of(context);
     final wasGuest = loyalty.state.isGuest;
-    final redeemed = await loyalty.redeem(reward);
-    if (!context.mounted) return;
-    if (redeemed) {
+    // Read before the wait, and only for the path that uses it: a guest spend
+    // puts the product in the device cart, while a signed-in spend is fulfilled
+    // by the server and needs no cart at all.
+    final cart = wasGuest ? context.read<CartCubit>() : null;
+    final outcome = await loyalty.redeem(reward);
+    // The tap that is still in flight answers this reward with its own
+    // message, so a second one says nothing rather than repeating it.
+    if (outcome == RedeemOutcome.inProgress) return;
+
+    if (outcome == RedeemOutcome.redeemed && wasGuest) {
       // Signed-in redemption is fulfilled by the server: a product or bundle
       // becomes a free pickup order and a plan starts a subscription. Guests
       // only have the device cart and can redeem product rewards.
-      if (wasGuest) {
-        final product = reward.product;
-        if (product != null) {
-          context.read<CartCubit>().add(
-            product,
-            unitPrice: 0,
-            note: S.loyaltyRewardNote,
-          );
-        }
+      final product = reward.product;
+      if (product != null) {
+        cart?.add(product, unitPrice: 0, note: S.loyaltyRewardNote);
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            wasGuest ? S.enjoyReward(reward.name) : _successMessage(reward),
-          ),
-        ),
-      );
-    } else {
-      final error = context.read<LoyaltyCubit>().state.error;
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error ?? S.notEnoughPoints)));
     }
+    messenger.showSnackBar(
+      SnackBar(content: Text(_redeemMessage(outcome, reward, wasGuest))),
+    );
   }
+
+  /// One sentence per outcome, in the customer's language.
+  ///
+  /// The backend's own words are never printed, and a failure of the network is
+  /// never described as a shortage of points.
+  static String _redeemMessage(
+    RedeemOutcome outcome,
+    RewardModel reward,
+    bool wasGuest,
+  ) => switch (outcome) {
+    // Unreachable: the caller returns before building a message for it.
+    RedeemOutcome.inProgress => '',
+    RedeemOutcome.redeemed =>
+      wasGuest ? S.enjoyReward(reward.name) : _successMessage(reward),
+    RedeemOutcome.notEnoughPoints => S.notEnoughPoints,
+    RedeemOutcome.needsBranch => S.selectBranchBeforeRedeeming,
+    RedeemOutcome.requiresAccount => S.rewardRequiresAccount,
+    RedeemOutcome.refused => S.couldNotRedeemReward,
+  };
 
   static String _successMessage(RewardModel reward) => switch (reward.type) {
     RewardTargetType.plan => S.rewardSubscriptionActivated(reward.name),
@@ -69,8 +82,10 @@ class LoyaltyPage extends StatelessWidget {
             current.error != null && current.error != previous.error,
         listener: (context, state) {
           if (state.rewards.isEmpty) return;
+          // What the server said stays out of the sentence — the customer needs
+          // to know the points on screen may be old, not which table refused.
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(state.error!)));
+              .showSnackBar(SnackBar(content: Text(S.couldNotRefreshWallet)));
         },
         child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
           builder: (context, state) {
@@ -84,7 +99,8 @@ class LoyaltyPage extends StatelessWidget {
               return EmptyState(
                 icon: AppIcons.gift,
                 title: S.couldNotLoadLoyalty,
-                subtitle: state.error,
+                actionLabel: S.retry,
+                onAction: () => context.read<LoyaltyCubit>().load(),
               );
             }
             final unlocked = state.rewards
@@ -101,7 +117,7 @@ class LoyaltyPage extends StatelessWidget {
                   earnText: _earnText(state),
                   accountText: state.isGuest
                       ? S.guestWalletDevice
-                      : S.lifetimePoints(state.tier, state.lifetimePoints),
+                      : S.lifetimePoints(state.tierLabel, state.lifetimePoints),
                 ),
                 SizedBox(height: AppSpacing.xl),
                 Text(
@@ -115,6 +131,9 @@ class LoyaltyPage extends StatelessWidget {
                   RewardCard(
                     reward: reward,
                     locked: false,
+                    // One spend at a time: the reward that is being answered
+                    // cannot be answered again.
+                    busy: state.isRedeeming,
                     onRedeem: () => _redeem(context, reward),
                   ),
                 if (locked.isNotEmpty) ...[

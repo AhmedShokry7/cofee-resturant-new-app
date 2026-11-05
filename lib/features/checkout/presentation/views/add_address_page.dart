@@ -26,13 +26,14 @@ class AddAddressPage extends StatelessWidget {
       ),
       body: AddressFormBody(
         address: existing,
-        onSave: (draft) {
+        onSave: (draft) async {
           final cubit = context.read<CheckoutCubit>();
-          if (draft.id.isEmpty) {
-            cubit.addAddress(draft);
-          } else {
-            cubit.updateAddress(draft);
-          }
+          // The editor waits for this answer, so a write the server refused
+          // keeps the draft on screen instead of returning to a checkout that
+          // never got the address.
+          return draft.id.isEmpty
+              ? cubit.addAddress(draft)
+              : cubit.updateAddress(draft);
         },
       ),
     );

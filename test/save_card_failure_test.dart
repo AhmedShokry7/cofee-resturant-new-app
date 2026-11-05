@@ -138,4 +138,110 @@ void main() {
       );
     });
   });
+
+  group('a delete that did not happen', () {
+    SaveCardException? refuse(int status, Object? data) =>
+        SupabaseSavedCardsRepository.deleteRefusalFor(
+          status: status,
+          data: data,
+        );
+
+    test('only deleted:true says the card is gone', () {
+      expect(refuse(200, {'deleted': true}), isNull);
+    });
+
+    test('the provider refusing is a failure, not a success', () {
+      // The bug this covers: `invoke()` resolving was taken as proof, so a
+      // 200 with {deleted: false} dropped a still-chargeable card off the list.
+      final error = refuse(200, {'deleted': false, 'error': 'provider_down'});
+      expect(error, isNotNull);
+      expect(error!.failure, SaveCardFailure.temporary);
+      expect(error.message, S.cardDeleteFailed);
+    });
+
+    test('a body that never answers is a failure', () {
+      expect(refuse(200, {'error': 'boom'}), isNotNull);
+      expect(refuse(200, null), isNotNull);
+      expect(refuse(200, 'deleted'), isNotNull);
+    });
+
+    test('a non-200 that still claims success is a failure', () {
+      expect(refuse(502, {'deleted': true}), isNotNull);
+    });
+  });
+
+  group('a delete refused over HTTP', () {
+    FunctionsHttpException httpError(int status, {Object? details}) =>
+        FunctionsHttpException(status: status, details: details);
+
+    test('an absent function is a deploy problem, not a retry', () {
+      final error = SupabaseSavedCardsRepository.classifyDeleteHttpError(
+        httpError(
+          404,
+          details: {
+            'message': 'Requested function "tap-delete-card" not found',
+          },
+        ),
+      );
+      expect(error.failure, SaveCardFailure.notConfigured);
+      expect(error.message, S.cardSavingNotConfigured);
+    });
+
+    test('a card the account no longer has is not a deploy problem', () {
+      final error = SupabaseSavedCardsRepository.classifyDeleteHttpError(
+        httpError(404, details: {'error': 'Card not found'}),
+      );
+      expect(error.failure, SaveCardFailure.declined);
+      expect(error.message, S.cardAlreadyRemoved);
+    });
+
+    test('a session that went away says sign in', () {
+      for (final status in [401, 403]) {
+        final error = SupabaseSavedCardsRepository.classifyDeleteHttpError(
+          httpError(status),
+        );
+        expect(error.failure, SaveCardFailure.notSignedIn, reason: '$status');
+      }
+    });
+
+    test('a provider outage is retryable and says so in app words', () {
+      final error = SupabaseSavedCardsRepository.classifyDeleteHttpError(
+        httpError(
+          502,
+          details: {'error': 'Tap gateway timeout on host internal'},
+        ),
+      );
+      expect(error.failure, SaveCardFailure.temporary);
+      expect(error.message, S.cardDeleteFailed);
+      expect(error.message, isNot(contains('Tap gateway')));
+    });
+  });
+
+  group('a default the database refused', () {
+    test('a bridge that is not installed is named as one', () {
+      for (final code in ['PGRST202', '42883']) {
+        final error = SupabaseSavedCardsRepository.classifyDefaultRpcError(
+          code,
+        );
+        expect(error.failure, SaveCardFailure.notConfigured, reason: code);
+        expect(error.message, S.cardSavingNotConfigured, reason: code);
+      }
+    });
+
+    test('a row locked elsewhere stays retryable', () {
+      final error = SupabaseSavedCardsRepository.classifyDefaultRpcError(
+        '23505',
+      );
+      expect(error.failure, SaveCardFailure.temporary);
+      // The preference write failing must not read as "cards cannot be saved".
+      expect(error.message, S.saveCardFailed);
+    });
+
+    test('a missing code is retryable and never raw', () {
+      expect(
+        SupabaseSavedCardsRepository.classifyDefaultRpcError(null).failure,
+        SaveCardFailure.temporary,
+      );
+    });
+  });
 }

@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 class SubscriptionUsage {
   const SubscriptionUsage({
@@ -24,7 +25,24 @@ class SubscriptionUsage {
   /// falls back to the redemption method while it is null.
   final String? productName;
   final int quantity;
+
+  /// `'qr'` or `'cashier'`, straight from the history table.
   final String method;
+
+  /// How the cup was spent, in the language the customer reads the app in.
+  ///
+  /// The column value is never shown: 'qr' is not a sentence, and a method this
+  /// app has not been told about reads as a redemption rather than as a
+  /// database word the customer has to guess.
+  String get methodLabel => switch (method) {
+    'qr' => S.usageByQr,
+    'cashier' => S.usageByCashier,
+    _ => S.usageUnknownMethod,
+  };
+
+  /// What the row is titled: the drink, or how it was taken out.
+  String get title => productName ?? methodLabel;
+
   final DateTime? createdAt;
 
   SubscriptionUsage copyWith({String? productName}) {

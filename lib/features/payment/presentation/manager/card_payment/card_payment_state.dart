@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
+
 enum CardPaymentStatus {
   initial,
   cardInputInvalid,
@@ -30,7 +32,10 @@ class CardPaymentState {
   });
 
   final CardPaymentStatus status;
-  final String? errorMessage;
+  final AppCopy? errorMessage;
+
+  /// [errorMessage] in the language the customer is reading the page in.
+  String? get errorMessageCopy => errorMessage?.copy;
   final String? chargeId;
   final String? transactionUrl;
 
@@ -43,7 +48,7 @@ class CardPaymentState {
 
   CardPaymentState copyWith({
     CardPaymentStatus? status,
-    String? errorMessage,
+    AppCopy? errorMessage,
     bool clearError = false,
     String? chargeId,
     bool clearChargeId = false,

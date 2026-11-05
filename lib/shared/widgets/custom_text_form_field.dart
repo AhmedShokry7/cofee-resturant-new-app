@@ -38,7 +38,8 @@ class CustomTextFormField extends StatefulWidget {
   final double? padding;
   final List<TextInputFormatter>? inputFormatters;
 
-  /// Space below the field. Defaults to 16 (set 8 for denser forms).
+  /// Space below the field. Defaults to a screen margin (set
+  /// [AppSpacing.sm] for denser forms).
   final double bottomPadding;
 
   /// A value the customer reads rather than edits.
@@ -70,7 +71,7 @@ class CustomTextFormField extends StatefulWidget {
     this.suffixIcon,
     this.padding,
     this.inputFormatters,
-    this.bottomPadding = 16,
+    this.bottomPadding = AppSpacing.lg,
     this.readOnly = false,
     this.helper,
   });
@@ -81,6 +82,11 @@ class CustomTextFormField extends StatefulWidget {
 
 class _CustomTextFormFieldState extends State<CustomTextFormField> {
   static const double _fieldRadius = AppDimensions.fieldRadius;
+
+  /// A helper is a whole sentence — the longest one explains that the e-mail
+  /// only moves after a confirmation link. The decorator allows a single line
+  /// by default and would end that sentence in an ellipsis.
+  static const int _helperMaxLines = 3;
 
   late bool _isObscure;
   bool _isFocused = false;
@@ -163,6 +169,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                 decoration: InputDecoration(
                   hintText: widget.hint,
                   helperText: widget.helper,
+                  helperMaxLines: _helperMaxLines,
                   helperStyle: AppFonts.regular12(context)
                       .copyWith(color: AppColor.greyColor),
                   hintStyle: AppFonts.semiBold14(

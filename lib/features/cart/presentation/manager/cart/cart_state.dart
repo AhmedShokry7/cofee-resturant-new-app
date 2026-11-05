@@ -100,7 +100,21 @@ class CartState {
   const CartState({required this.items, this.error, this.isLoading = false});
 
   final List<CartItem> items;
-  final String? error;
+
+  /// Why the last cart operation failed, held as a token so the sentence is
+  /// read in the language the customer is using now.
+  final AppCopy? error;
+
+  String? get errorCopy {
+    final token = error;
+    if (token == null) return null;
+    // The line limit belongs to the cart rules, so the cart says the sentence
+    // that quotes it.
+    if (token == AppCopy.cartLineLimitReached) {
+      return S.cartLineLimitReached(CartLimits.maxLines);
+    }
+    return token.copy;
+  }
 
   /// True while the newest load has not produced its lines yet.
   ///

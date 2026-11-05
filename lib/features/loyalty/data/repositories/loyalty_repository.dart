@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -14,7 +15,7 @@ class LoyaltyCatalog {
   const LoyaltyCatalog({
     this.rules = const [],
     this.rewards = const [],
-    this.currencyCode = 'SAR',
+    this.currencyCode = AppConstant.defaultCurrencyCode,
   });
 
   final List<LoyaltyRule> rules;
@@ -126,8 +127,11 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
       rules: [for (final row in ruleRows) LoyaltyRule.fromDatabase(row)],
       rewards: rewards,
       currencyCode: brandRows.isEmpty
-          ? 'SAR'
-          : Db.text(brandRows.first['currency_code'], 'SAR'),
+          ? AppConstant.defaultCurrencyCode
+          : Db.text(
+              brandRows.first['currency_code'],
+              AppConstant.defaultCurrencyCode,
+            ),
     );
   }
 

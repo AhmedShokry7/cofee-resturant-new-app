@@ -21,35 +21,45 @@ class OrdersTabs extends StatelessWidget {
         children: OrderStatus.values
             .map(
               (status) => Expanded(
-                child: GestureDetector(
-                  onTap: () => context.read<OrdersCubit>().selectStatus(status),
-                  behavior: HitTestBehavior.opaque,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
-                        child: Text(
-                          status.label,
-                          textAlign: TextAlign.center,
-                          style: AppFonts.medium16(context).copyWith(
-                            color: current == status
-                                ? AppColor.primaryColor
-                                : AppColor.greyColor,
+                child: Semantics(
+                  selected: current == status,
+                  // The glyph-free label is what a screen reader announces as
+                  // the tab; without it the tap target is unnamed.
+                  child: Material(
+                    color: AppColor.transparent,
+                    child: InkWell(
+                      onTap: () =>
+                          context.read<OrdersCubit>().selectStatus(status),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              vertical: AppSpacing.md,
+                            ),
+                            child: Text(
+                              status.label,
+                              textAlign: TextAlign.center,
+                              style: AppFonts.medium16(context).copyWith(
+                                color: current == status
+                                    ? AppColor.primaryColor
+                                    : AppColor.greyColor,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
-                      Container(
-                        height: AppSpacing.xs,
-                        decoration: BoxDecoration(
-                          color: current == status
-                              ? AppColor.primaryColor
-                              : AppColor.transparent,
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(AppRadius.r8),
+                          Container(
+                            height: AppSpacing.xs,
+                            decoration: BoxDecoration(
+                              color: current == status
+                                  ? AppColor.primaryColor
+                                  : AppColor.transparent,
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(AppRadius.r8),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),

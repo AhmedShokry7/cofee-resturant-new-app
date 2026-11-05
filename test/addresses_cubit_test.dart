@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/features/addresses/data/repositories/address_repository.dart';
@@ -34,6 +35,11 @@ class _FakeAddressRepository implements AddressRepository {
   /// Holds the next read open until completed, to test in-flight reads.
   Completer<void>? gate;
 
+  /// Holds the next add open, to test a second write queued behind it.
+  Completer<void>? addGate;
+
+  int addCalls = 0;
+
   void seedUser(String userId, List<AddressModel> addresses) =>
       _byUser[userId] = List<AddressModel>.of(addresses);
 
@@ -63,7 +69,10 @@ class _FakeAddressRepository implements AddressRepository {
     double? longitude,
     bool isDefault = false,
   }) async {
+    addCalls++;
     if (failAdd) throw StateError('Could not save the address.');
+    final held = addGate;
+    if (held != null) await held.future;
     final saved = AddressModel(
       id: 'addr-${_addresses.length + 1}',
       label: label,
@@ -160,7 +169,10 @@ void main() {
 
       await cubit.stream.firstWhere((state) => state.error != null);
 
-      expect(cubit.state.error, contains('signed-in'));
+      // The customer reads a sentence, never the server's own text, and the
+      // screen can tell this apart from a failed save.
+      expect(cubit.state.errorCopy, S.couldNotLoadAddresses);
+      expect(cubit.state.readFailed, isTrue);
       expect(cubit.state.addresses, isEmpty);
     });
 
@@ -290,6 +302,76 @@ void main() {
       expect(cubit.state.error, isNotNull);
       expect(cubit.state.addresses.where((a) => a.isDefault), isEmpty);
     });
+
+    test('a write answers null when the server took it', () async {
+      final cubit = AddressesCubit(repository: _FakeAddressRepository());
+      addTearDown(cubit.close);
+
+      await cubit.stream.firstWhere((state) => !state.isLoading);
+
+      expect(
+        await cubit.addAddress(label: 'Work', details: 'Office tower'),
+        isNull,
+      );
+      expect(cubit.state.isSaving, isFalse);
+    });
+
+    test('a refused write answers with the sentence to show', () async {
+      final cubit = AddressesCubit(
+        repository: _FakeAddressRepository(failAdd: true),
+      );
+      addTearDown(cubit.close);
+
+      await cubit.stream.firstWhere((state) => !state.isLoading);
+
+      expect(
+        await cubit.addAddress(label: 'Work', details: 'Office tower'),
+        S.addressSaveFailed,
+      );
+      expect(cubit.state.isSaving, isFalse);
+    });
+
+    test(
+      'a failed save of the first address is not shown as a failed read',
+      () async {
+        final cubit = AddressesCubit(
+          repository: _FakeAddressRepository(failAdd: true),
+        );
+        addTearDown(cubit.close);
+
+        await cubit.stream.firstWhere((state) => !state.isLoading);
+        await cubit.addAddress(label: 'Work', details: 'Office tower');
+
+        // The book is empty because the save was refused, not because the read
+        // never answered: a retry of the read would fix nothing.
+        expect(cubit.state.errorCopy, S.addressSaveFailed);
+        expect(cubit.state.readFailed, isFalse);
+      },
+    );
+
+    test(
+      'a second write while one is on its way never reaches the server',
+      () async {
+        final gate = Completer<void>();
+        final repository = _FakeAddressRepository()..addGate = gate;
+        final cubit = AddressesCubit(repository: repository);
+        addTearDown(cubit.close);
+
+        await cubit.stream.firstWhere((state) => !state.isLoading);
+
+        final first = cubit.addAddress(label: 'Work', details: 'First');
+        expect(cubit.state.isSaving, isTrue);
+
+        final second = await cubit.addAddress(label: 'Home', details: 'Second');
+        expect(second, S.addressSaveFailed);
+        expect(repository.addCalls, 1);
+
+        gate.complete();
+        expect(await first, isNull);
+        expect(repository.addCalls, 1);
+        expect(cubit.state.addresses.single.label, 'Work');
+      },
+    );
   });
 
   group('account isolation', () {

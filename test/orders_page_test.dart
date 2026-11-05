@@ -4,12 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/model/order_tracking.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
+import 'package:new_coffee/features/orders/presentation/views/track_order_page.dart';
 
 class _FakeOrdersRepository implements OrdersRepository {
   _FakeOrdersRepository({List<OrderItemModel>? orders, this.fail = false})
@@ -19,6 +21,9 @@ class _FakeOrdersRepository implements OrdersRepository {
   bool fail;
 
   int listCalls = 0;
+  int cancelCalls = 0;
+  String? cancelledId;
+  bool cancelFails = false;
 
   @override
   Future<List<OrderItemModel>> listOrders({
@@ -50,8 +55,11 @@ class _FakeOrdersRepository implements OrdersRepository {
   }) => throw UnimplementedError();
 
   @override
-  Future<void> cancelOrder(String orderId, {String? reason}) =>
-      throw UnimplementedError();
+  Future<void> cancelOrder(String orderId, {String? reason}) async {
+    cancelCalls++;
+    cancelledId = orderId;
+    if (cancelFails) throw StateError('order already delivered');
+  }
 
   @override
   Future<List<OrderStatusEvent>> orderHistory(String orderId) =>
@@ -94,11 +102,14 @@ Future<void> _setSurface(WidgetTester tester) async {
 }
 
 Future<void> _pumpPage(WidgetTester tester, OrdersRepository repository) {
+  // The repository sits above the navigator because a pushed route is built by
+  // the root navigator and never inherits a screen-level provider.
   return tester.pumpWidget(
-    MaterialApp(
-      home: RepositoryProvider<OrdersRepository>.value(
-        value: repository,
-        child: const OrdersPage(),
+    RepositoryProvider<OrdersRepository>.value(
+      value: repository,
+      child: MaterialApp(
+        onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+        home: const OrdersPage(),
       ),
     ),
   );
@@ -207,5 +218,68 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.listCalls, 2);
+  });
+
+  testWidgets('a cancel made on the tracking screen re-reads the list', (
+    tester,
+  ) async {
+    await _setSurface(tester);
+    final repository = _FakeOrdersRepository(
+      orders: [
+        _line(
+          id: 'l1',
+          orderId: 'o1',
+          orderNumber: 'ORD-1',
+          status: OrderStatus.active,
+        ),
+      ],
+    );
+
+    await _pumpPage(tester, repository);
+    await tester.pumpAndSettle();
+    final readsBeforeCancel = repository.listCalls;
+
+    await tester.tap(find.text(S.trackOrder));
+    await tester.pumpAndSettle();
+    expect(find.byType(TrackOrderPage), findsOneWidget);
+
+    await tester.tap(find.text(S.cancelOrder));
+    await tester.pumpAndSettle();
+
+    expect(repository.cancelledId, 'o1');
+    expect(find.byType(TrackOrderPage), findsNothing);
+    // The route came back saying the order is cancelled, so the list the
+    // customer returns to cannot still be showing the row it had.
+    expect(repository.listCalls, greaterThan(readsBeforeCancel));
+  });
+
+  testWidgets('a cancel the server refused leaves the list alone', (
+    tester,
+  ) async {
+    await _setSurface(tester);
+    final repository = _FakeOrdersRepository(
+      orders: [
+        _line(
+          id: 'l1',
+          orderId: 'o1',
+          orderNumber: 'ORD-1',
+          status: OrderStatus.active,
+        ),
+      ],
+    )..cancelFails = true;
+
+    await _pumpPage(tester, repository);
+    await tester.pumpAndSettle();
+    final readsBefore = repository.listCalls;
+
+    await tester.tap(find.text(S.trackOrder));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text(S.cancelOrder));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TrackOrderPage), findsOneWidget);
+    expect(find.text(S.couldNotCancelOrder), findsOneWidget);
+    expect(repository.listCalls, readsBefore);
   });
 }

@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/services/supabase_read_service.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
@@ -8,10 +9,18 @@ import 'package:new_coffee/features/orders/data/repositories/order_repository.da
 import 'package:new_coffee/shared/utils/rate_limit_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Reads the caller's orders through the `public` bridge and delegates all
-/// customer writes to ownership-checking server RPCs.
+/// Reads the caller's orders through the `public` bridge and delegates the
+/// money-carrying writes to ownership-checking server RPCs.
+///
+/// The review write is the one customer row placed directly: the server owns the
+/// only rule it has to enforce (the row must belong to `auth.uid()`), and that
+/// rule is an insert policy on the table, so there is nothing for an RPC to add.
 class SupabaseOrdersRepository
-    implements OrdersRepository, OrderLinesRepository, CheckoutQuoteRepository {
+    implements
+        OrdersRepository,
+        OrderLinesRepository,
+        CheckoutQuoteRepository,
+        ReviewRepository {
   SupabaseOrdersRepository({
     SupabaseClient? client,
     Future<dynamic> Function(String name, Map<String, dynamic> params)? rpc,
@@ -376,6 +385,38 @@ class SupabaseOrdersRepository
       for (final row in rows)
         if (row is Map<String, dynamic>) OrderStatusEvent.fromDatabase(row),
     ];
+  }
+
+  /// The one review this customer holds for this product, replaced rather than
+  /// added: `engagement.product_reviews` is unique over (product_id, user_id).
+  ///
+  /// [orderId] is stored so the row keeps pointing at the purchase that earned
+  /// it, and the language of the sentence follows the language the customer was
+  /// reading when they wrote it — the table holds one column per language, and
+  /// leaving the other null is what says the review was not written in it.
+  @override
+  Future<void> submitReview({
+    required String productId,
+    String? orderId,
+    required int rating,
+    String? body,
+  }) async {
+    if (productId.isEmpty) {
+      throw ArgumentError.value(productId, 'productId', 'must not be empty');
+    }
+    if (rating < 1 || rating > 5) {
+      throw ArgumentError.value(rating, 'rating', 'must be between 1 and 5');
+    }
+    final userId = _requireUserId();
+    final text = body?.trim();
+    final bodyColumn = AppLocale.instance.isArabic ? 'body_ar' : 'body_en';
+    await _client.from('product_reviews').upsert(<String, dynamic>{
+      'product_id': productId,
+      'user_id': userId,
+      if (orderId?.isNotEmpty ?? false) 'order_id': orderId,
+      'rating': rating,
+      if (text != null && text.isNotEmpty) bodyColumn: text,
+    }, onConflict: 'product_id,user_id');
   }
 }
 

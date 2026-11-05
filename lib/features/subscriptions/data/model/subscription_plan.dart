@@ -1,5 +1,6 @@
 import 'package:new_coffee/core/data/db_values.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/locale/app_strings.dart';
 
 class SubscriptionPlan {
   const SubscriptionPlan({
@@ -61,6 +62,34 @@ class SubscriptionPlan {
     ar: descriptionAr ?? '',
     en: descriptionEn ?? '',
   ), isArabic: AppLocale.instance.isArabic);
+
+  /// Whether the plan hands out an extra credit beside its cups.
+  ///
+  /// `'none'` is the column's word for "no bonus", so the comparison lives
+  /// here and the page asks a question instead of matching a string.
+  bool get offersBonus => bonusType != 'none';
+
+  /// How the cycle ends, in the language the customer reads the app in.
+  ///
+  /// A policy this app has not been told about is shown as it arrived rather
+  /// than renamed: an unknown value that reads as "Manual" would promise a
+  /// customer they will not be charged again.
+  String get renewalPolicyLabel => switch (renewalPolicy) {
+    'auto' => S.renewalAutomatic,
+    'manual' => S.renewalManual,
+    _ => renewalPolicy,
+  };
+
+  String get productScopeLabel => switch (productScope) {
+    'all' => S.allProducts,
+    'selected' => S.selectedProducts,
+    _ => productScope,
+  };
+
+  /// Whether the plan is served by a list of products it names.
+  ///
+  /// Only then is there a list worth reading from the repository.
+  bool get coversSelectedProducts => productScope == 'selected';
 
   factory SubscriptionPlan.fromDatabase(Map<String, dynamic> row) {
     final map = Db.asMap(row);

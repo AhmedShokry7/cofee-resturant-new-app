@@ -1,4 +1,5 @@
 import 'package:new_coffee/core/data/db_values.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 
 /// A product.
@@ -18,6 +19,7 @@ class ProductModel {
     required this.image,
     this.nameAr,
     this.nameEn,
+    this.nameCopy,
     this.categoryAr,
     this.categoryEn,
     this.descriptionAr,
@@ -50,6 +52,14 @@ class ProductModel {
 
   /// English name. Falls back to [nameAr] when absent.
   final String? nameEn;
+
+  /// The name a line the app created for itself should read as.
+  ///
+  /// A cart line for a product that left the branch has no bilingual pair, so
+  /// its words come from a token: read when the screen asks, the line changes
+  /// language with everything else instead of keeping the language the cart
+  /// happened to be built in.
+  final AppCopy? nameCopy;
 
   final String? categoryAr;
   final String? categoryEn;
@@ -152,7 +162,9 @@ class ProductModel {
   String get name {
     final ar = nameAr ?? '';
     final en = nameEn ?? '';
-    if (ar.trim().isEmpty && en.trim().isEmpty) return _legacyName;
+    if (ar.trim().isEmpty && en.trim().isEmpty) {
+      return _legacyName.isNotEmpty ? _legacyName : (nameCopy?.copy ?? '');
+    }
     return pickText((ar: ar, en: en), isArabic: isArabic);
   }
 

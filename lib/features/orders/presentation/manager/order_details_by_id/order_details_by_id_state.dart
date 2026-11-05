@@ -19,14 +19,17 @@ class OrderDetailsByIdState {
   /// was deleted, or the message names a record that is not theirs.
   final bool notFound;
   final bool signedOut;
-  final String? error;
+  final AppCopy? error;
+
+  /// [error] as the sentence the customer reads, in their current language.
+  String? get errorCopy => error?.copy;
 
   OrderDetailsByIdState copyWith({
     bool? isLoading,
     OrderGroup? order,
     bool? notFound,
     bool? signedOut,
-    String? error,
+    AppCopy? error,
     bool clearError = false,
   }) {
     return OrderDetailsByIdState(

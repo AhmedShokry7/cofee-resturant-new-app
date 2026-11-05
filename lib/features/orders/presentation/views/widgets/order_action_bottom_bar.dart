@@ -12,12 +12,18 @@ class OrderActionBottomBar extends StatelessWidget {
     required this.onSubmit,
     this.cancelText,
     this.submitText,
+    this.isCancelling = false,
   });
 
-  final VoidCallback onCancel;
-  final VoidCallback onSubmit;
+  /// Null while the write behind it is on its way, or when this screen has no
+  /// second action to offer.
+  final VoidCallback? onCancel;
+  final VoidCallback? onSubmit;
   final String? cancelText;
   final String? submitText;
+
+  /// The left button is the destructive one here, so it shows the wait.
+  final bool isCancelling;
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +40,7 @@ class OrderActionBottomBar extends StatelessWidget {
               text: cancelText ?? S.cancel,
               variant: BtnVariant.secondary,
               textColor: AppColor.primaryColor,
+              isLoading: isCancelling,
               onPressed: onCancel,
             ),
           ),

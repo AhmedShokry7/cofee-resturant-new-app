@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
@@ -226,7 +226,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       await resolveZoneForSelectedAddress();
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(state.copyWith(isLoading: false, error: error.toString()));
+      emit(
+        state.copyWith(isLoading: false, error: AppCopy.couldNotLoadCheckout),
+      );
       addError(error, stackTrace);
     }
   }
@@ -278,8 +280,9 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         ),
       );
       // Log the non-sensitive category so a missing bridge is distinguishable
-      // from "this branch serves no zones". The raw error stays in addError for
-      // the app's error observer; no credentials or locations are printed.
+      // from "this branch serves no zones". The raw error goes to addError,
+      // which the app has no global observer for yet, so this print is the only
+      // trace of it; no credentials or locations are printed.
       if (kDebugMode) {
         debugPrint('Delivery zones unavailable: $error');
       }
@@ -294,7 +297,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       emit(state.copyWith(availableCoupons: coupons, clearCouponError: true));
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(state.copyWith(couponError: error.toString()));
+      emit(state.copyWith(couponError: AppCopy.couponCheckFailed));
       addError(error, stackTrace);
     }
   }
@@ -334,8 +337,8 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         state.copyWith(
           deliveryBlocked: true,
           orderError: state.deliveryZonesLoadFailed
-              ? S.deliveryUnavailableError
-              : S.deliveryUnavailable,
+              ? AppCopy.deliveryUnavailableError
+              : AppCopy.deliveryUnavailable,
         ),
       );
       return false;
@@ -498,7 +501,11 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     resolveZoneForSelectedAddress();
   }
 
-  Future<void> addAddress(AddressModel address) async {
+  /// Adds an address and answers `null` when the server took it, or the
+  /// sentence the editor should show. The address form waits for this before
+  /// closing, so a refused write cannot leave the customer on a checkout that
+  /// never got their address.
+  Future<String?> addAddress(AddressModel address) async {
     try {
       final change = await _addressBook.add(
         state.addresses,
@@ -507,7 +514,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         latitude: address.latitude,
         longitude: address.longitude,
       );
-      if (isClosed) return;
+      if (isClosed) return null;
       emit(
         state.copyWith(
           addresses: change.addresses,
@@ -515,8 +522,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         ),
       );
       resolveZoneForSelectedAddress();
+      return null;
     } on AddressBookFailure catch (failure, stackTrace) {
       _reportAddressFailure(failure, stackTrace);
+      return failure.message;
     }
   }
 
@@ -555,10 +564,11 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     }
   }
 
-  Future<void> updateAddress(AddressModel address) async {
+  /// See [addAddress]: the editor awaits this answer before it closes.
+  Future<String?> updateAddress(AddressModel address) async {
     try {
       final change = await _addressBook.update(state.addresses, address);
-      if (isClosed) return;
+      if (isClosed) return null;
       final selected = state.selectedAddress;
       emit(
         state.copyWith(
@@ -572,8 +582,10 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         ),
       );
       resolveZoneForSelectedAddress();
+      return null;
     } on AddressBookFailure catch (failure, stackTrace) {
       _reportAddressFailure(failure, stackTrace);
+      return failure.message;
     }
   }
 
@@ -582,7 +594,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     StackTrace stackTrace,
   ) {
     if (isClosed) return;
-    emit(state.copyWith(error: failure.message));
+    emit(state.copyWith(error: failure.reason));
     addError(failure.cause, stackTrace);
   }
 
@@ -657,11 +669,11 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       return true;
     } on CouponRejectedException catch (error) {
       if (isClosed) return false;
-      emit(state.copyWith(couponError: error.message));
+      emit(state.copyWith(couponRejection: error));
       return false;
     } catch (error, stackTrace) {
       if (isClosed) return false;
-      emit(state.copyWith(couponError: S.couponCheckFailed));
+      emit(state.copyWith(couponError: AppCopy.couponCheckFailed));
       addError(error, stackTrace);
       return false;
     }
@@ -774,18 +786,18 @@ class CheckoutCubit extends Cubit<CheckoutState> {
     if (state.isPlacingOrder || _orderSubmissionInProgress) return false;
     final branch = branchId?.trim() ?? '';
     if (branch.isEmpty) {
-      emit(state.copyWith(orderError: S.selectBranchBeforePaying));
+      emit(state.copyWith(orderError: AppCopy.selectBranchBeforePaying));
       return false;
     }
     if (items.isEmpty) {
-      emit(state.copyWith(orderError: S.cartEmpty));
+      emit(state.copyWith(orderError: AppCopy.cartEmpty));
       return false;
     }
     // Order creation requires an authenticated customer. The check depends on
     // the resolved user identity, not on whether Supabase has been initialised,
     // so a guest is rejected in production and in tests alike.
     if (_currentOrderUserId == null) {
-      emit(state.copyWith(orderError: S.signIn));
+      emit(state.copyWith(orderError: AppCopy.signIn));
       return false;
     }
     final expectedQuote = state.checkoutQuote;
@@ -795,14 +807,14 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         '${state.appliedCoupon?.coupon.code ?? ''}';
     if (expectedQuote == null && _orders is CheckoutQuoteRepository ||
         expectedQuote != null && _requestedQuoteSignature != quoteSignature) {
-      emit(state.copyWith(orderError: S.orderFailed));
+      emit(state.copyWith(orderError: AppCopy.orderFailed));
       return false;
     }
     // A shopper who asked for delivery but got "unavailable" must explicitly
     // choose pickup before checkout can proceed, so the order is never silently
     // placed as a pickup they did not pick.
     if (state.deliveryBlocked) {
-      emit(state.copyWith(orderError: S.deliveryChoosePickup));
+      emit(state.copyWith(orderError: AppCopy.deliveryChoosePickup));
       return false;
     }
     final isDelivery = state.fulfillment.isDelivery;
@@ -812,20 +824,20 @@ class CheckoutCubit extends Cubit<CheckoutState> {
       // refuse this too; refusing here means the customer is told before they
       // reach a payment screen.
       if (state.addressOutOfZone) {
-        emit(state.copyWith(orderError: S.deliveryOutOfZone));
+        emit(state.copyWith(orderError: AppCopy.deliveryOutOfZone));
         return false;
       }
       if (selectedZone == null) {
-        emit(state.copyWith(orderError: S.deliveryZoneRequired));
+        emit(state.copyWith(orderError: AppCopy.deliveryZoneRequired));
         return false;
       }
       if (state.selectedAddress == null) {
-        emit(state.copyWith(orderError: S.deliveryAddressRequired));
+        emit(state.copyWith(orderError: AppCopy.deliveryAddressRequired));
         return false;
       }
       final subtotal = items.fold<double>(0, (sum, item) => sum + item.total);
       if (subtotal < state.minimumOrderAmount) {
-        emit(state.copyWith(orderError: S.deliveryMinimumNotMet));
+        emit(state.copyWith(orderError: AppCopy.deliveryMinimumNotMet));
         return false;
       }
     }
@@ -916,7 +928,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
         emit(
           state.copyWith(
             clearCoupon: true,
-            orderWarning: S.couponNotAppliedAtCheckout,
+            orderWarning: AppCopy.couponNotAppliedAtCheckout,
           ),
         );
       }
@@ -940,17 +952,17 @@ class CheckoutCubit extends Cubit<CheckoutState> {
 
   /// Maps backend/technical failures to a customer-facing message while the
   /// original error is still reported through [addError] for diagnostics.
-  String _customerFacingOrderError(Object error) {
+  AppCopy _customerFacingOrderError(Object error) {
     final text = error.toString().toLowerCase();
     if (text.contains('not authenticated') ||
         text.contains('jwt') ||
         text.contains('sign in')) {
-      return S.signIn;
+      return AppCopy.signIn;
     }
     if (text.contains('delivery') || text.contains('zone')) {
-      return S.deliveryUnavailable;
+      return AppCopy.deliveryUnavailable;
     }
-    return S.orderFailed;
+    return AppCopy.orderFailed;
   }
 
   String? get _currentOrderUserId =>

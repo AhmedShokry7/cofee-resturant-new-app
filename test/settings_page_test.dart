@@ -165,10 +165,23 @@ void main() {
     await tester.tap(find.text(S.language));
     await tester.pumpAndSettle();
 
-    expect(find.text(S.arabicLanguage), findsOneWidget);
-    expect(find.text(S.englishLanguage), findsOneWidget);
+    // The tile's own subtitle now shows the current language too, and in the
+    // Arabic UI that value is the same word as the dialog's first option, so
+    // the options are asserted inside the dialog rather than across the tree.
+    final dialog = find.byType(AlertDialog);
+    expect(dialog, findsOneWidget);
+    expect(
+      find.descendant(of: dialog, matching: find.text(S.arabicLanguage)),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: dialog, matching: find.text(S.englishLanguage)),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.text(S.englishLanguage));
+    await tester.tap(
+      find.descendant(of: dialog, matching: find.text(S.englishLanguage)),
+    );
     await tester.pumpAndSettle();
 
     expect(AppLocale.instance.language, AppLanguage.english);

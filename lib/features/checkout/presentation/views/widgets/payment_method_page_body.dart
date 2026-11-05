@@ -55,7 +55,7 @@ class PaymentMethodPageBody extends StatelessWidget {
                     // A signed-in customer whose cards could not be read must
                     // not be left choosing between "add a new card" and a card
                     // the server already holds.
-                    final error = saved.loadError;
+                    final error = saved.loadErrorCopy;
                     if (error == null) return const SizedBox.shrink();
                     return Padding(
                       padding: EdgeInsets.only(top: AppSpacing.sm),
@@ -138,7 +138,7 @@ class _SavedCardRow extends StatelessWidget {
             SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
-                '${card.brand.label.isEmpty ? S.cardBrandFallback : card.brand.label}  ****${card.last4}',
+                '${card.displayBrand}  ${card.maskedNumber}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppFonts.medium14(context).copyWith(color: accent),

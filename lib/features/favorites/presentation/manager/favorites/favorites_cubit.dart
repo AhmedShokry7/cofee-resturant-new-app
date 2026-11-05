@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -178,7 +178,9 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     } catch (error, stackTrace) {
       if (isClosed) return;
       if (generation != _loadGeneration) return;
-      emit(state.copyWith(isLoading: false, error: error.toString()));
+      emit(
+        state.copyWith(isLoading: false, error: AppCopy.couldNotLoadFavorites),
+      );
       addError(error, stackTrace);
     }
   }
@@ -202,7 +204,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     } catch (error, stackTrace) {
       if (isClosed) return;
       if (generation != _loadGeneration) return;
-      emit(state.copyWith(error: S.favoritesSyncFailed));
+      emit(state.copyWith(error: AppCopy.favoritesSyncFailed));
       addError(error, stackTrace);
     }
   }
@@ -251,7 +253,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
         // The heart is off on the device but the server still has it. The
         // failure is reported so the customer is not told a silent success.
         if (!isClosed) {
-          emit(state.copyWith(error: S.favoritesSyncFailed));
+          emit(state.copyWith(error: AppCopy.favoritesSyncFailed));
           addError(error, stackTrace);
         }
       }
@@ -279,7 +281,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
       // The failure is reported instead of being swallowed, so a heart that
       // never reached the server is never presented as a saved one.
       if (!isClosed) {
-        emit(state.copyWith(error: S.favoritesSyncFailed));
+        emit(state.copyWith(error: AppCopy.favoritesSyncFailed));
         addError(error, stackTrace);
       }
     }

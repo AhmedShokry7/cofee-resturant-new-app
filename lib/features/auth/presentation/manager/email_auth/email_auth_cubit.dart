@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
@@ -33,11 +33,11 @@ class EmailAuthCubit extends Cubit<EmailAuthState> {
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
       if (isClosed) return;
-      emit(EmailAuthFailure(AuthCubit.messageFor(error.message)));
+      emit(EmailAuthFailure(AuthCubit.reasonFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected email auth error: $error\n$stackTrace');
       if (isClosed) return;
-      emit(EmailAuthFailure(S.authUnexpected));
+      emit(const EmailAuthFailure(AppCopy.authUnexpected));
     }
   }
 
@@ -59,11 +59,11 @@ class EmailAuthCubit extends Cubit<EmailAuthState> {
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
       if (isClosed) return;
-      emit(EmailAuthFailure(AuthCubit.messageFor(error.message)));
+      emit(EmailAuthFailure(AuthCubit.reasonFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected email auth error: $error\n$stackTrace');
       if (isClosed) return;
-      emit(EmailAuthFailure(S.authUnexpected));
+      emit(const EmailAuthFailure(AppCopy.authUnexpected));
     }
   }
 

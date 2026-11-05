@@ -26,7 +26,7 @@ class FavoritesPage extends StatelessWidget {
             // as a snackbar would print the same words twice.
             if (state.favoriteProducts.isEmpty) return;
             ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.error!)));
+                .showSnackBar(SnackBar(content: Text(state.errorCopy!)));
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -43,10 +43,11 @@ class FavoritesPage extends StatelessWidget {
                       // Nothing could be shown, and the reason is a failed read,
                       // not an empty list: the customer must not be told they
                       // own no hearts when the catalogue never answered.
+                      // The error token says the same sentence as the title, so
+                      // it is not printed twice.
                       return EmptyState(
                         icon: AppIcons.favourite,
                         title: S.couldNotLoadFavorites,
-                        subtitle: state.error,
                       );
                     }
                     if (items.isEmpty) {

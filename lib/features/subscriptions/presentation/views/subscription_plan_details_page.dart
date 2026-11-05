@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -6,12 +5,12 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/payment/presentation/views/card_payment_page.dart';
 import 'package:new_coffee/features/subscriptions/data/model/subscription_plan.dart';
-import 'package:new_coffee/features/subscriptions/data/model/subscription_plan_product.dart';
 import 'package:new_coffee/features/subscriptions/data/repositories/subscription_repository.dart';
 import 'package:new_coffee/features/subscriptions/presentation/manager/subscription/subscription_cubit.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_detail_row.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/widgets/subscription_plan_image.dart';
 import 'package:new_coffee/shared/utils/formatters.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class SubscriptionPlanDetailsPage extends StatelessWidget {
@@ -24,9 +23,15 @@ class SubscriptionPlanDetailsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) =>
-          SubscriptionCubit(repository: context.read<SubscriptionRepository>())
-            ..loadPlanProducts(plan.id),
+      create: (context) {
+        final cubit = SubscriptionCubit(
+          repository: context.read<SubscriptionRepository>(),
+        );
+        // A plan that covers every product has no list to read, so the page
+        // asks only for the one it can show.
+        if (plan.coversSelectedProducts) cubit.loadPlanProducts(plan.id);
+        return cubit;
+      },
       child: _PlanDetailsView(plan: plan),
     );
   }
@@ -37,11 +42,16 @@ class _PlanDetailsView extends StatelessWidget {
 
   final SubscriptionPlan plan;
 
+  /// Starts the plan and pays for it, in that order.
+  ///
+  /// The subscription the payment is opened for is the row this call created.
+  /// Reading it back out of the cubit's state could pick up a subscription the
+  /// customer already had, which would charge this plan's price to that other
+  /// subscription's id.
   Future<void> _subscribe(BuildContext context) async {
     final cubit = context.read<SubscriptionCubit>();
     final messenger = ScaffoldMessenger.of(context);
-    await cubit.subscribe(plan);
-    final subscription = cubit.state.subscription;
+    final subscription = await cubit.subscribe(plan);
     if (subscription == null) {
       messenger.showSnackBar(
         SnackBar(content: Text(S.couldNotStartSubscription)),
@@ -85,26 +95,24 @@ class _PlanDetailsView extends StatelessWidget {
               ),
               SubscriptionDetailRow(
                 label: S.durationLabel,
-                value: '${plan.durationDays}',
+                value: S.daysCount(plan.durationDays),
               ),
               SubscriptionDetailRow(
                 label: S.cupsPerCycle,
-                value: '${plan.cupsPerCycle}',
+                value: S.cupsCount(plan.cupsPerCycle),
               ),
               SubscriptionDetailRow(
                 label: S.rolloverCap,
-                value: '${plan.rolloverCapCups}',
+                value: S.cupsCount(plan.rolloverCapCups),
               ),
-              if (plan.bonusType != 'none')
+              if (plan.offersBonus)
                 SubscriptionDetailRow(
                   label: S.extraCredit,
                   value: Formatters.amount(plan.bonusValue),
                 ),
               SubscriptionDetailRow(
                 label: S.renewalLabel,
-                value: plan.renewalPolicy == 'auto'
-                    ? S.renewalAutomatic
-                    : S.renewalManual,
+                value: plan.renewalPolicyLabel,
               ),
               SubscriptionDetailRow(
                 label: S.branchLabel,
@@ -112,11 +120,9 @@ class _PlanDetailsView extends StatelessWidget {
               ),
               SubscriptionDetailRow(
                 label: S.productsLabel,
-                value: plan.productScope == 'all'
-                    ? S.allProducts
-                    : S.selectedProducts,
+                value: plan.productScopeLabel,
               ),
-              if (plan.productScope == 'selected') ...[
+              if (plan.coversSelectedProducts) ...[
                 SizedBox(height: AppSpacing.md),
                 Text(S.includedProducts, style: AppFonts.semiBold16(context)),
                 SizedBox(height: AppSpacing.xs),
@@ -130,7 +136,9 @@ class _PlanDetailsView extends StatelessWidget {
               ],
               SizedBox(height: AppSpacing.lg),
               FilledButton(
-                onPressed: state.loading ? null : () => _subscribe(context),
+                // A second tap cannot tell whether the first created a
+                // subscription, and paying twice is the worse answer.
+                onPressed: state.isMutating ? null : () => _subscribe(context),
                 child: Text(S.subscribeNow),
               ),
             ],
@@ -180,39 +188,15 @@ class _IncludedProducts extends StatelessWidget {
         for (final product in products)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            leading: _ProductImage(product: product),
+            leading: SizedBox(
+              width: AppSizes.px40,
+              height: AppSizes.px40,
+              child: DbImage(image: product.imageUrl),
+            ),
             title: Text(product.name),
             subtitle: Text(Formatters.price(product.price, currencyCode)),
           ),
       ],
-    );
-  }
-}
-
-class _ProductImage extends StatelessWidget {
-  const _ProductImage({required this.product});
-
-  final SubscriptionPlanProduct product;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = product.imageUrl;
-    if (url == null || url.isEmpty) {
-      return const SizedBox(width: AppSizes.px40, height: AppSizes.px40);
-    }
-    if (url.startsWith('assets/')) {
-      return Image.asset(
-        url,
-        width: AppSizes.px40,
-        height: AppSizes.px40,
-        fit: BoxFit.cover,
-      );
-    }
-    return CachedNetworkImage(
-      imageUrl: url,
-      width: AppSizes.px40,
-      height: AppSizes.px40,
-      fit: BoxFit.cover,
     );
   }
 }

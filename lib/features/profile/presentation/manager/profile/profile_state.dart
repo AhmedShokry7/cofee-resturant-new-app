@@ -31,6 +31,33 @@ class ProfileState {
   /// True when there is something to draw.
   bool get hasVisibleImage => imageBytes != null;
 
+  /// [error] as a sentence the customer can act on.
+  ///
+  /// The state keeps the failure token so the cache, the cubit and the tests
+  /// can act on which failure it was; only the screen needs the wording, and
+  /// every failure is reported - a photo that did not save is never presented
+  /// as one that did.
+  String? get errorCopy {
+    final failure = error;
+    if (failure == null) return null;
+    if (failure == ProfilePhotoFailure.unsupportedFormat.name) {
+      return S.photoFormatUnsupported;
+    }
+    if (failure == ProfilePhotoFailure.notSignedIn.name) {
+      // The photo belongs to an account, so there is nothing to attach it to
+      // without one. This is not a failed save.
+      return S.photoSignInRequired;
+    }
+    if (failure == ProfilePhotoFailure.profileUpdateFailed.name ||
+        failure == ProfilePhotoFailure.profileRowMissing.name) {
+      return S.photoSaveFailed;
+    }
+    if (failure == ProfilePhotoFailure.photoLoadFailed.name) {
+      return S.photoLoadFailed;
+    }
+    return S.photoUploadFailed;
+  }
+
   ProfileState copyWith({
     Uint8List? imageBytes,
     String? avatarPath,

@@ -102,7 +102,7 @@ class _ConsumeForm extends StatelessWidget {
                   ),
                   if (state.message != null) ...[
                     SizedBox(height: AppSpacing.md),
-                    Text(state.message!),
+                    Text(state.messageCopy!),
                   ],
                 ],
               ),

@@ -13,10 +13,28 @@ part 'subscription_state.dart';
 /// The customer's coffee subscription: the plans on sale, the active one and
 /// the QR pass that spends it.
 class SubscriptionCubit extends Cubit<SubscriptionState> {
-  SubscriptionCubit({required this._repository})
-    : super(const SubscriptionState());
+  SubscriptionCubit({required this._repository, String? branchId})
+    : _selectedBranchId = branchId,
+      super(const SubscriptionState());
 
   final SubscriptionRepository _repository;
+
+  /// The branch the plans are priced and sold for.
+  ///
+  /// `subscriptions.list_plans` filters on it (083), and the branch selector
+  /// lives on the shell under these pages, so it is state the cubit has to hold
+  /// rather than a value each read is handed.
+  String? _selectedBranchId;
+
+  /// Moves the page to another branch and re-reads what that branch sells.
+  ///
+  /// The same branch answers without a request: a rebuild that does not change
+  /// the choice must not flash the grid.
+  Future<void> setBranch(String? branchId) {
+    if (branchId == _selectedBranchId) return Future.value();
+    _selectedBranchId = branchId;
+    return load();
+  }
 
   /// One idempotency key per intended mutation, kept until it succeeds.
   ///
@@ -27,6 +45,11 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
 
   String _keyFor(String intent) =>
       _idempotencyKeys.putIfAbsent(intent, IdempotencyKey.create);
+
+  /// The newest read. Only its holder may write state, so a slow page read or a
+  /// history read for a subscription the customer has already left cannot land
+  /// on top of the one they are looking at.
+  int _loadGeneration = 0;
 
   /// The plan the customer's subscription belongs to, null while the plans are
   /// not in this state.
@@ -42,14 +65,15 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     return null;
   }
 
-  Future<void> load({String? branchId}) async {
-    emit(state.copyWith(loading: true, clearError: true));
+  Future<void> load() async {
+    final generation = ++_loadGeneration;
+    emit(state.copyWith(loading: true, clearLoadError: true));
     try {
       final results = await Future.wait([
-        _repository.plans(branchId: branchId),
+        _repository.plans(branchId: _selectedBranchId),
         _repository.mySubscription(),
       ]);
-      if (isClosed) return;
+      if (isClosed || generation != _loadGeneration) return;
       final subscription = results[1] as CustomerSubscription?;
       emit(
         state.copyWith(
@@ -57,6 +81,9 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
           plans: results[0] as List<SubscriptionPlan>,
           subscription: subscription,
           clearSubscription: subscription == null,
+          // A fresh read makes whatever pass is on screen unknown again.
+          clearQr: true,
+          clearQrError: true,
         ),
       );
       // The history belongs to the subscription the customer just opened the
@@ -64,8 +91,8 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
       // repository.
       if (subscription != null) await loadUsage(subscription.id);
     } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, error: error.toString()));
+      if (isClosed || generation != _loadGeneration) return;
+      emit(state.copyWith(loading: false, loadError: error.toString()));
       addError(error, stackTrace);
     }
   }
@@ -73,16 +100,18 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
   /// The cups already spent, read apart from the subscription so a failed
   /// side list cannot blank the page the customer is paying for.
   Future<void> loadUsage(String subscriptionId) async {
+    final generation = _loadGeneration;
     try {
       final usage = await _repository.usageHistory(
         subscriptionId: subscriptionId,
       );
-      if (isClosed) return;
-      emit(
-        state.copyWith(usage: await _namedUsage(usage), clearUsageError: true),
-      );
+      // The names are a second read, so the answer is only held while this
+      // subscription is still the one on screen.
+      final named = await _namedUsage(usage);
+      if (isClosed || generation != _loadGeneration) return;
+      emit(state.copyWith(usage: named, clearUsageError: true));
     } catch (error, stackTrace) {
-      if (isClosed) return;
+      if (isClosed || generation != _loadGeneration) return;
       emit(state.copyWith(usageError: error.toString()));
       addError(error, stackTrace);
     }
@@ -131,8 +160,14 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
     }
   }
 
-  Future<void> subscribe(SubscriptionPlan plan) async {
-    emit(state.copyWith(loading: true, clearError: true));
+  /// Starts a subscription and returns the row the server created.
+  ///
+  /// The answer is the return value, not [SubscriptionState.subscription]: the
+  /// state can still hold a subscription the customer already had, and paying
+  /// for a new plan against that id would charge the wrong one.
+  Future<CustomerSubscription?> subscribe(SubscriptionPlan plan) async {
+    if (state.isMutating) return null;
+    emit(state.copyWith(isMutating: true, clearActionError: true));
     final intent = 'subscribe:${plan.id}';
     try {
       final subscription = await _repository.subscribe(
@@ -140,19 +175,34 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         idempotencyKey: _keyFor(intent),
       );
       _idempotencyKeys.remove(intent);
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, subscription: subscription));
+      if (isClosed) return null;
+      // The pass belongs to the subscription that is being replaced.
+      emit(
+        state.copyWith(
+          isMutating: false,
+          subscription: subscription,
+          clearQr: true,
+        ),
+      );
+      return subscription;
     } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, error: error.toString()));
+      if (isClosed) return null;
+      emit(state.copyWith(isMutating: false, actionError: error.toString()));
       addError(error, stackTrace);
+      return null;
     }
   }
 
-  Future<void> renew() async {
+  /// Renews and returns the row the server created, or null.
+  ///
+  /// A renewal is a new subscription with a new id, and the caller has to be
+  /// able to tell that apart from the one it already had — charging the old id
+  /// would pay off a cycle that is already spent.
+  Future<CustomerSubscription?> renew() async {
     final current = state.subscription;
-    if (current == null) return;
-    emit(state.copyWith(loading: true, clearError: true));
+    if (current == null) return null;
+    if (state.isMutating) return null;
+    emit(state.copyWith(isMutating: true, clearActionError: true));
     final intent = 'renew:${current.id}';
     try {
       final subscription = await _repository.renew(
@@ -161,61 +211,99 @@ class SubscriptionCubit extends Cubit<SubscriptionState> {
         idempotencyKey: _keyFor(intent),
       );
       _idempotencyKeys.remove(intent);
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, subscription: subscription));
+      if (isClosed) return null;
+      emit(
+        state.copyWith(
+          isMutating: false,
+          subscription: subscription,
+          clearQr: true,
+        ),
+      );
+      return subscription;
     } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, error: error.toString()));
+      if (isClosed) return null;
+      emit(state.copyWith(isMutating: false, actionError: error.toString()));
       addError(error, stackTrace);
+      return null;
     }
   }
 
-  Future<void> setAutoRenew(bool enabled) async {
+  /// Turns the auto-renew preference on or off, answering whether it landed.
+  Future<bool> setAutoRenew(bool enabled) async {
     final current = state.subscription;
-    if (current == null) return;
+    if (current == null) return false;
     try {
       await _repository.setAutoRenew(
         subscriptionId: current.id,
         enabled: enabled,
       );
-      if (isClosed) return;
+      if (isClosed) return false;
       emit(state.copyWith(subscription: current.copyWith(autoRenew: enabled)));
+      return true;
     } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: error.toString()));
+      if (isClosed) return false;
+      // The preference is one switch on a page of facts: it fails on its own
+      // line, and the subscription stays where the customer left it.
+      emit(state.copyWith(actionError: error.toString()));
       addError(error, stackTrace);
+      return false;
     }
   }
 
-  Future<void> cancel() async {
+  /// Cancels, and reports whether the subscription is gone.
+  Future<bool> cancel() async {
     final current = state.subscription;
-    if (current == null) return;
-    emit(state.copyWith(loading: true, clearError: true));
+    if (current == null) return false;
+    if (state.isMutating) return false;
+    emit(state.copyWith(isMutating: true, clearActionError: true));
     try {
       await _repository.cancel(subscriptionId: current.id);
       _idempotencyKeys.remove('renew:${current.id}');
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, clearSubscription: true));
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          isMutating: false,
+          clearSubscription: true,
+          // A cancelled subscription has no pass to show.
+          clearQr: true,
+        ),
+      );
+      return true;
     } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(loading: false, error: error.toString()));
+      if (isClosed) return false;
+      emit(state.copyWith(isMutating: false, actionError: error.toString()));
       addError(error, stackTrace);
+      return false;
     }
   }
 
-  Future<void> showQr() async {
+  /// Makes a single-use pass, and reports whether there is one to show.
+  Future<bool> showQr() async {
     final current = state.subscription;
-    if (current == null) return;
+    if (current == null) return false;
+    if (state.isMutating) return false;
+    emit(state.copyWith(isMutating: true, clearQrError: true));
     try {
       final token = await _repository.generateQrToken(
         subscriptionId: current.id,
       );
-      if (isClosed) return;
-      emit(state.copyWith(qrToken: token));
+      if (isClosed) return false;
+      emit(state.copyWith(isMutating: false, qrToken: token));
+      return true;
     } catch (error, stackTrace) {
-      if (isClosed) return;
-      emit(state.copyWith(error: error.toString()));
+      if (isClosed) return false;
+      // Whatever token was on screen belongs to a request that just failed: it
+      // is single-use and five minutes old, so leaving it up invites a scan of
+      // a pass the cashier will refuse.
+      emit(
+        state.copyWith(
+          isMutating: false,
+          clearQr: true,
+          qrError: error.toString(),
+        ),
+      );
       addError(error, stackTrace);
+      return false;
     }
   }
 }

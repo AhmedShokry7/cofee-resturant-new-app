@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/payment/data/repositories/tap_payment_repository.dart';
 
 import 'card_payment_state.dart';
@@ -78,7 +78,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       emit(
         state.copyWith(
           status: CardPaymentStatus.cardInputInvalid,
-          errorMessage: S.invalidCardDetails,
+          errorMessage: AppCopy.invalidCardDetails,
         ),
       );
       return;
@@ -108,7 +108,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
     emit(
       state.copyWith(
         status: CardPaymentStatus.tokenizationFailed,
-        errorMessage: S.tokenizationFailed,
+        errorMessage: AppCopy.tokenizationFailed,
       ),
     );
   }
@@ -147,7 +147,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
         emit(
           state.copyWith(
             status: CardPaymentStatus.paymentFailed,
-            errorMessage: S.paymentNotCompleted,
+            errorMessage: AppCopy.paymentNotCompleted,
           ),
         );
         return PaymentOutcome.failed;
@@ -157,7 +157,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       emit(
         state.copyWith(
           status: CardPaymentStatus.paymentFailed,
-          errorMessage: S.paymentVerificationFailed,
+          errorMessage: AppCopy.paymentVerificationFailed,
         ),
       );
       return PaymentOutcome.failed;
@@ -212,7 +212,7 @@ class CardPaymentCubit extends Cubit<CardPaymentState> {
       emit(
         state.copyWith(
           status: CardPaymentStatus.paymentFailed,
-          errorMessage: S.paymentRetryLater,
+          errorMessage: AppCopy.paymentRetryLater,
         ),
       );
     } finally {

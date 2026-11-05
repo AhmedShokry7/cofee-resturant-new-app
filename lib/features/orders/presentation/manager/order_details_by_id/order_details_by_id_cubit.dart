@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/orders/data/model/order_group.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 
@@ -56,7 +57,9 @@ class OrderDetailsByIdCubit extends Cubit<OrderDetailsByIdState> {
       emit(state.copyWith(isLoading: false, signedOut: true));
     } catch (error, stackTrace) {
       if (isClosed) return;
-      emit(state.copyWith(isLoading: false, error: error.toString()));
+      // The provider's own text is English and technical; what the screen needs
+      // is a sentence and a retry, and the log keeps the real cause.
+      emit(state.copyWith(isLoading: false, error: AppCopy.couldNotLoadOrders));
       addError(error, stackTrace);
     }
   }

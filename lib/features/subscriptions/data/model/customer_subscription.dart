@@ -63,7 +63,15 @@ class CustomerSubscription {
     );
   }
 
-  int get availableCups => cupsEntitled + cupsCarriedOver - cupsUsed;
+  /// Cups that can still be taken out, and never fewer than none.
+  ///
+  /// The arithmetic runs below zero when a cycle closes with more spent than it
+  /// granted, and a negative "available cups" on the screen is not something the
+  /// customer can act on — the pass simply has nothing left.
+  int get availableCups {
+    final left = cupsEntitled + cupsCarriedOver - cupsUsed;
+    return left < 0 ? 0 : left;
+  }
 
   bool get isActive =>
       status == 'active' && (endsAt == null || endsAt!.isAfter(DateTime.now()));

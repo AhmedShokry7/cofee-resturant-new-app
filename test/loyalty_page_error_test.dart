@@ -106,7 +106,14 @@ void main() {
       findsOneWidget,
       reason: 'the reward list is reference data, not part of the wallet',
     );
-    expect(find.textContaining('user_points'), findsOneWidget);
+    expect(find.text(S.couldNotRefreshWallet), findsOneWidget);
+    expect(
+      find.textContaining('user_points'),
+      findsNothing,
+      reason:
+          'the table that refused is the backend\'s business, not the '
+          'customer\'s',
+    );
   });
 
   test('a wallet failure lands in state, not only in the observer', () async {

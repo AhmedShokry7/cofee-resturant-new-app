@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
@@ -23,11 +23,11 @@ class PasswordResetCubit extends Cubit<PasswordResetState> {
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
       if (isClosed) return;
-      emit(PasswordResetFailure(AuthCubit.messageFor(error.message)));
+      emit(PasswordResetFailure(AuthCubit.reasonFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected password reset error: $error\n$stackTrace');
       if (isClosed) return;
-      emit(PasswordResetFailure(S.authUnexpected));
+      emit(PasswordResetFailure(AppCopy.authUnexpected));
     }
   }
 
@@ -41,11 +41,11 @@ class PasswordResetCubit extends Cubit<PasswordResetState> {
     } on AuthException catch (error) {
       debugPrint('AuthException: ${error.message}');
       if (isClosed) return;
-      emit(PasswordResetFailure(AuthCubit.messageFor(error.message)));
+      emit(PasswordResetFailure(AuthCubit.reasonFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected password reset error: $error\n$stackTrace');
       if (isClosed) return;
-      emit(PasswordResetFailure(S.authUnexpected));
+      emit(PasswordResetFailure(AppCopy.authUnexpected));
     }
   }
 }

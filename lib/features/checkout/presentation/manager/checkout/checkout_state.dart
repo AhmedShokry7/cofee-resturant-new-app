@@ -50,6 +50,7 @@ class CheckoutState {
     this.appliedCoupon,
     this.availableCoupons = const [],
     this.couponError,
+    this.couponRejection,
     this.isLoading = true,
     this.isPlacingOrder = false,
     this.orderError,
@@ -85,7 +86,17 @@ class CheckoutState {
   final List<CouponModel> availableCoupons;
 
   /// Last coupon validation failure, if any.
-  final String? couponError;
+  final AppCopy? couponError;
+
+  /// The coupon the server refused, when the refusal names a scope.
+  ///
+  /// Its sentence quotes the reason code and the thing the coupon would have
+  /// applied to, so the refusal itself is kept rather than the words: the
+  /// sentence is read from the current language every time the field is shown.
+  final CouponRejectedException? couponRejection;
+
+  /// [couponError] as the sentence the customer reads, in their current language.
+  String? get couponErrorCopy => couponRejection?.message ?? couponError?.copy;
 
   final bool isLoading;
 
@@ -95,14 +106,23 @@ class CheckoutState {
 
   /// Last placement failure. Never null together with a fresh [lastOrder]:
   /// success clears it before setting [lastOrder].
-  final String? orderError;
+  final AppCopy? orderError;
+
+  /// [orderError] as the sentence the customer reads, in their current language.
+  String? get orderErrorCopy => orderError?.copy;
 
   /// Something the customer must know about an order that was placed, e.g. a
   /// coupon the server did not grant. It is not a failure: the order exists
   /// and its total is the server's.
-  final String? orderWarning;
+  final AppCopy? orderWarning;
 
-  final String? error;
+  /// [orderWarning] as the sentence the customer reads, in their current language.
+  String? get orderWarningCopy => orderWarning?.copy;
+
+  final AppCopy? error;
+
+  /// [error] as the sentence the customer reads, in their current language.
+  String? get errorCopy => error?.copy;
 
   /// Whether the order is collected at the branch or delivered.
   final FulfillmentType fulfillment;
@@ -170,16 +190,17 @@ class CheckoutState {
     bool clearLastOrder = false,
     ValidatedCoupon? appliedCoupon,
     List<CouponModel>? availableCoupons,
-    String? couponError,
+    AppCopy? couponError,
+    CouponRejectedException? couponRejection,
     bool clearCoupon = false,
     bool clearCouponError = false,
     bool? isLoading,
     bool? isPlacingOrder,
-    String? orderError,
+    AppCopy? orderError,
     bool clearOrderError = false,
-    String? orderWarning,
+    AppCopy? orderWarning,
     bool clearOrderWarning = false,
-    String? error,
+    AppCopy? error,
     bool clearError = false,
     FulfillmentType? fulfillment,
     List<DeliveryZone>? deliveryZones,
@@ -209,6 +230,9 @@ class CheckoutState {
       appliedCoupon: clearCoupon ? null : appliedCoupon ?? this.appliedCoupon,
       availableCoupons: availableCoupons ?? this.availableCoupons,
       couponError: clearCouponError ? null : (couponError ?? this.couponError),
+      couponRejection: clearCouponError
+          ? null
+          : (couponRejection ?? this.couponRejection),
       isLoading: isLoading ?? this.isLoading,
       isPlacingOrder: isPlacingOrder ?? this.isPlacingOrder,
       orderError: clearOrderError ? null : (orderError ?? this.orderError),

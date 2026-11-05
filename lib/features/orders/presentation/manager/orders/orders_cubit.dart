@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/features/orders/data/model/order_group.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -21,6 +22,13 @@ class OrdersCubit extends Cubit<OrdersState> {
 
   final OrdersRepository _repository;
 
+  /// Counts the reads this cubit has started, so a response that arrives after a
+  /// newer one was asked for is dropped instead of replacing it.
+  ///
+  /// Switching tabs fast used to leave the slower bucket's rows under the tab the
+  /// customer is now looking at.
+  int _generation = 0;
+
   Future<void> load() => _load(status: state.status);
 
   Future<void> refresh() => _load(status: state.status);
@@ -31,9 +39,14 @@ class OrdersCubit extends Cubit<OrdersState> {
   }
 
   Future<void> _load({required OrderStatus status}) async {
+    final generation = ++_generation;
+    // A tab change is a different question, so the old rows are dropped with it;
+    // a refresh of the same tab keeps them on screen while the answer comes.
+    final keepRows = status == state.status;
     emit(
       state.copyWith(
         status: status,
+        orders: keepRows ? null : const [],
         isLoading: true,
         clearError: true,
         signedOut: false,
@@ -41,10 +54,10 @@ class OrdersCubit extends Cubit<OrdersState> {
     );
     try {
       final orders = await _repository.listOrders(status: status);
-      if (isClosed) return;
+      if (isClosed || generation != _generation) return;
       emit(state.copyWith(status: status, orders: orders, isLoading: false));
     } on OrderSignInRequiredException {
-      if (isClosed) return;
+      if (isClosed || generation != _generation) return;
       emit(
         state.copyWith(
           status: status,
@@ -54,25 +67,18 @@ class OrdersCubit extends Cubit<OrdersState> {
         ),
       );
     } catch (error, stackTrace) {
-      if (isClosed) return;
+      if (isClosed || generation != _generation) return;
+      // The provider's text is English and technical, and the list has a retry to
+      // offer, so the state carries the sentence the customer reads.
       emit(
         state.copyWith(
           status: status,
+          orders: const [],
           isLoading: false,
-          error: error.toString(),
+          error: AppCopy.couldNotLoadOrders,
         ),
       );
       addError(error, stackTrace);
     }
-  }
-
-  /// Cancels one order through the backend and reloads history.
-  ///
-  /// Customer cancellation is the only supported transition: other statuses are
-  /// moved by staff, stock, payment and fulfillment events on the server.
-  Future<void> cancelOrder(OrderItemModel order, {String? reason}) async {
-    final orderId = order.orderId.isNotEmpty ? order.orderId : order.id;
-    await _repository.cancelOrder(orderId, reason: reason);
-    await refresh();
   }
 }

@@ -82,7 +82,7 @@ class CartPage extends StatelessWidget {
               current.error != null && current.error != previous.error,
           listener: (context, state) {
             ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.error!)));
+                .showSnackBar(SnackBar(content: Text(state.errorCopy!)));
           },
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

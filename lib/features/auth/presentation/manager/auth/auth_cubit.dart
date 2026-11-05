@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/data/model/auth_exception.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
@@ -79,7 +79,7 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (error) {
       debugPrint('Sign-out failed: $error');
       if (isClosed) return;
-      emit(AuthFailure(S.logoutFailed));
+      emit(const AuthFailure(AppCopy.logoutFailed));
       return;
     }
     final cleared = await session.markSignedOutConfirmed();
@@ -116,11 +116,11 @@ class AuthCubit extends Cubit<AuthState> {
       }
       // The provider's English never reaches the customer; each known cause
       // maps to one message in the app's current language.
-      emit(AuthFailure(messageFor(error.message)));
+      emit(AuthFailure(reasonFor(error.message)));
     } catch (error, stackTrace) {
       debugPrint('Unexpected auth error: $error\n$stackTrace');
       if (isClosed) return;
-      emit(AuthFailure(S.authUnexpected));
+      emit(const AuthFailure(AppCopy.authUnexpected));
     }
   }
 
@@ -142,18 +142,21 @@ class AuthCubit extends Cubit<AuthState> {
 
   /// Maps a provider error onto a customer-facing message.
   ///
-  /// Anything unrecognised becomes [S.authFailed] rather than echoing the raw
+  /// Anything unrecognised becomes [AppCopy.authFailed] rather than echoing the raw
   /// text, which would put English (or provider jargon) into an Arabic screen.
   /// Matching is done on the lowercased input with `contains`, so both the
   /// stable codes returned by Supabase (e.g. `invalid_credentials`) and the
   /// legacy English messages are handled.
-  static String messageFor(String message) {
+  static String messageFor(String message) => reasonFor(message).copy;
+
+  /// Maps a provider error onto the [AppCopy] token for its customer-facing message.
+  static AppCopy reasonFor(String message) {
     final lower = message.toLowerCase().trim();
     if (lower == 'service_unavailable') {
-      return S.authServiceUnavailable;
+      return AppCopy.authServiceUnavailable;
     }
     if (lower == 'recovery_link_required') {
-      return S.authRecoveryLinkRequired;
+      return AppCopy.authRecoveryLinkRequired;
     }
     if (lower.contains('invalid_credentials') ||
         lower.contains('invalid_grant') ||
@@ -161,15 +164,15 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('invalid password') ||
         lower.contains('invalid email or password') ||
         lower.contains('wrong password')) {
-      return S.authInvalidCredentials;
+      return AppCopy.authInvalidCredentials;
     }
     if (lower.contains('user_not_found') ||
         lower.contains('user not found') ||
         lower.contains('no user')) {
-      return S.authUserNotFound;
+      return AppCopy.authUserNotFound;
     }
     if (lower.contains('staff_account') || lower.contains('staff account')) {
-      return S.authStaffAccount;
+      return AppCopy.authStaffAccount;
     }
     // Phone sign-in, and it has to be read here: three of its codes end in the
     // word `disabled`, which the banned-account rule below matches on its own,
@@ -187,24 +190,24 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('signups not allowed') ||
         lower.contains('otp_disabled') ||
         lower.contains('signup_disabled')) {
-      return S.authProviderNotEnabled;
+      return AppCopy.authProviderNotEnabled;
     }
     if (lower.contains('otp_expired') || lower.contains('invalid token')) {
-      return S.authOtpInvalid;
+      return AppCopy.authOtpInvalid;
     }
     if (lower.contains('invalid_phone') || lower.contains('invalid phone')) {
-      return S.validPhoneNumber;
+      return AppCopy.validPhoneNumber;
     }
     if (lower.contains('over_sms_send_rate_limit')) {
-      return S.authTooManyRequests;
+      return AppCopy.authTooManyRequests;
     }
     if (lower.contains('sms_send_failed')) {
-      return S.authSmsSendFailed;
+      return AppCopy.authSmsSendFailed;
     }
     if (lower.contains('user_banned') ||
         lower.contains('user disabled') ||
         lower.contains('disabled')) {
-      return S.authUserDisabled;
+      return AppCopy.authUserDisabled;
     }
     if (lower.contains('email_exists') ||
         lower.contains('user_already_exists') ||
@@ -212,39 +215,39 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('already') && lower.contains('exists') ||
         lower.contains('already in use') ||
         lower.contains('email already')) {
-      return S.authEmailInUse;
+      return AppCopy.authEmailInUse;
     }
     if (lower.contains('weak_password') || lower.contains('weak password')) {
-      return S.authWeakPassword;
+      return AppCopy.authWeakPassword;
     }
     if (lower.contains('invalid_email') ||
         lower.contains('invalid email') ||
         lower.contains('validation_failed')) {
-      return S.authInvalidEmail;
+      return AppCopy.authInvalidEmail;
     }
     if (lower.contains('email_not_confirmed') ||
         lower.contains('email not confirmed')) {
-      return S.authEmailNotConfirmed;
+      return AppCopy.authEmailNotConfirmed;
     }
     if (lower.contains('over_request_rate_limit') ||
         lower.contains('over_email_send_rate_limit') ||
         lower.contains('too many') ||
         lower.contains('rate limit')) {
-      return S.authTooManyRequests;
+      return AppCopy.authTooManyRequests;
     }
     if (lower.contains('google_client_configuration_error') ||
         lower.contains('google_sign_in_failed') ||
         lower.contains('google_sign_in_missing_token')) {
-      return S.authGoogleUnavailable;
+      return AppCopy.authGoogleUnavailable;
     }
     // Google refused the account on the device, and said why in a code the
     // provider owns. Retrying the same tap cannot help, so the answer names the
     // other door.
     if (lower.contains('google_sign_in_refused')) {
-      return S.authGoogleRefused;
+      return AppCopy.authGoogleRefused;
     }
     if (lower.contains('google_no_account_on_device')) {
-      return S.authGoogleNoAccount;
+      return AppCopy.authGoogleNoAccount;
     }
     // The Supabase dashboard has the provider switched off, or the token was
     // minted by a Google client the project does not know. Either way the
@@ -253,7 +256,7 @@ class AuthCubit extends Cubit<AuthState> {
         lower.contains('provider_not_supported') ||
         lower.contains('provider not enabled') ||
         lower.contains('provider not supported')) {
-      return S.authProviderNotEnabled;
+      return AppCopy.authProviderNotEnabled;
     }
     // Our own backend refusing a token Google actually issued. `nonces
     // mismatch` is the one measured on emulator-5554 on 2026-11-02, when the
@@ -263,8 +266,8 @@ class AuthCubit extends Cubit<AuthState> {
     // to land on the generic retry sentence.
     if (lower.contains('nonces mismatch') ||
         lower.contains('invalid audience')) {
-      return S.authProviderNotEnabled;
+      return AppCopy.authProviderNotEnabled;
     }
-    return S.authFailed;
+    return AppCopy.authFailed;
   }
 }

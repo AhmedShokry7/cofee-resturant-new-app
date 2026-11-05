@@ -23,8 +23,9 @@ class ShippingAddressesPageBody extends StatelessWidget {
           current.error != null && previous.error != current.error,
       listener: (context, state) {
         if (state.error == null) return;
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(S.addressSaveFailed)));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(state.errorCopy ?? S.addressSaveFailed)),
+        );
         context.read<CheckoutCubit>().clearError();
       },
       builder: (context, state) {

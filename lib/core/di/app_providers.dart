@@ -88,6 +88,18 @@ class AppProviders extends StatelessWidget {
     return _UnavailableOrdersRepository();
   }
 
+  /// Saved cards, or nothing at all when the backend never came up.
+  ///
+  /// `SupabaseSavedCardsRepository` reads the client in its constructor, so
+  /// building it before initialisation throws instead of starting the app. With
+  /// no repository the cubit answers "no cards" and the add-card form reports
+  /// that saving is not allowed — which is the truth, and better than a card
+  /// number collected into a backend that cannot be reached.
+  SavedCardsRepository? _buildSavedCardsRepository() {
+    if (SupabaseService.isReady) return SupabaseSavedCardsRepository();
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     // One instance, exposed under both interfaces, so a category listing and a
@@ -181,7 +193,7 @@ class AppProviders extends StatelessWidget {
           ),
           BlocProvider(
             create: (context) =>
-                SavedCardsCubit(repository: SupabaseSavedCardsRepository())
+                SavedCardsCubit(repository: _buildSavedCardsRepository())
                   ..load(),
           ),
           // The card payment cubit is app wide: the checkout charges an order
@@ -202,7 +214,7 @@ class AppProviders extends StatelessWidget {
           BlocProvider(
             create: (context) => NotificationsCubit(
               repository: const NotificationsRepositoryImpl(),
-            )..load(),
+            ),
           ),
           BlocProvider(
             create: (context) =>
@@ -221,12 +233,14 @@ class AppProviders extends StatelessWidget {
             create: (context) =>
                 HomeCubit(repository: context.read<CatalogRepository>()),
           ),
+          // The constructor already reads the wallet, so no `..load()` here:
+          // it cost a second pair of catalogue and ledger reads on every start.
           BlocProvider(
             create: (context) => LoyaltyCubit(
               repository: LoyaltyRepositoryImpl(
                 catalog: context.read<CatalogRepository>(),
               ),
-            )..load(),
+            ),
           ),
           BlocProvider(
             create: (context) =>

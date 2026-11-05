@@ -72,11 +72,19 @@ class _AddCardPageState extends State<AddCardPage> {
         : 3;
   }
 
+  /// Digits the brand typed so far expects: Amex prints 15, every other brand
+  /// in this app 16. Read in the validator, so a complete Amex is not rejected
+  /// for being three digits shorter than a Visa.
+  int get _expectedNumberLength =>
+      detectCardBrand(_digits) == CardBrand.amex ? 15 : 16;
+
   bool _hasExpired() {
     final month = int.tryParse(_month);
     final year = int.tryParse(_year);
     if (month == null || year == null) return false;
-    final fullYear = 2000 + year;
+    // A pasted four-digit year is a year already. Adding 2000 to it would date
+    // the card to the 4000s and let it never expire.
+    final fullYear = year < 100 ? 2000 + year : year;
     final now = DateTime.now();
     // A card is good through the last day of its expiry month.
     return fullYear < now.year || (fullYear == now.year && month < now.month);
@@ -103,7 +111,8 @@ class _AddCardPageState extends State<AddCardPage> {
       message.showSnackBar(
         SnackBar(
           content: Text(
-            context.read<SavedCardsCubit>().state.saveError ?? S.saveCardFailed,
+            context.read<SavedCardsCubit>().state.saveErrorCopy ??
+                S.saveCardFailed,
           ),
         ),
       );
@@ -124,7 +133,7 @@ class _AddCardPageState extends State<AddCardPage> {
             // collect: asking for a full card number that cannot be saved is how
             // the customer ends up typing a real PAN into a form that fails.
             body: state.isSavingUnavailable
-                ? _UnavailableNotice(message: state.saveError)
+                ? _UnavailableNotice(message: state.saveErrorCopy)
                 : AbsorbPointer(
                     absorbing: state.isSaving,
                     child: Form(key: _formKey, child: _formBody()),
@@ -179,7 +188,8 @@ class _AddCardPageState extends State<AddCardPage> {
         textInputAction: TextInputAction.next,
         onChanged: (_) => setState(_syncCvvLength),
         validator: (value) =>
-            (value == null || value.replaceAll(' ', '').length < 16)
+            (value == null ||
+                value.replaceAll(' ', '').length != _expectedNumberLength)
             ? S.validCardNumber
             : null,
       ),
@@ -197,6 +207,13 @@ class _AddCardPageState extends State<AddCardPage> {
               onChanged: (_) => setState(() {}),
               validator: (value) {
                 if (value == null || value.length < 5) {
+                  return S.invalidDate;
+                }
+                // A month outside 1-12 never expires and never arrives, so it
+                // has to be refused here: the expiry check below compares it
+                // against this month and would read 13 as "still valid".
+                final month = int.tryParse(_month);
+                if (month == null || month < 1 || month > 12) {
                   return S.invalidDate;
                 }
                 if (_hasExpired()) return S.cardExpired;
@@ -245,7 +262,7 @@ class _UnavailableNotice extends StatelessWidget {
           children: [
             Icon(
               AppIcons.cardNotAccepted,
-              size: AppSpacing.xxxl,
+              size: AppIconSize.xxxl,
               color: AppColor.greyColor,
             ),
             SizedBox(height: AppSpacing.md),

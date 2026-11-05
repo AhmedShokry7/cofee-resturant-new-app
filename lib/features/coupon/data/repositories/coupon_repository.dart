@@ -311,14 +311,10 @@ class CouponRepositoryImpl implements CouponRepository {
       final reason = row['reason_code']?.toString() ?? '';
       final scopeLabel = await _scopeLabelFor(normalized);
       throw CouponRejectedException(
-        S.couponRejectedReason(
-          reason,
-          scopeLabel,
-          // Older deployments return no reason_code, only the legacy message.
-          legacyMessage: message,
-        ),
         reasonCode: reason,
         scopeLabel: scopeLabel,
+        // Older deployments return no reason_code, only the server's own text.
+        legacyMessage: message,
       );
     }
     final coupons = await activeCoupons();
@@ -396,22 +392,32 @@ class CouponRepositoryImpl implements CouponRepository {
   }
 }
 
-/// A coupon the server refused, with the reason in the app's language.
+/// A coupon the server refused, with the reason it refused it.
 class CouponRejectedException implements Exception {
-  const CouponRejectedException(
-    this.message, {
+  const CouponRejectedException({
     this.reasonCode = '',
     this.scopeLabel = '',
+    this.legacyMessage = '',
   });
 
   /// Ready to show. Never raw provider text.
-  final String message;
+  ///
+  /// Read on demand rather than stored: the refusal lands in the checkout's
+  /// state, and the customer may switch language before they look at it again.
+  String get message => S.couponRejectedReason(
+    reasonCode,
+    scopeLabel,
+    legacyMessage: legacyMessage,
+  );
 
   /// The machine reason, kept for callers that want to react differently.
   final String reasonCode;
 
   /// What the coupon *would* have applied to. Empty when unscoped or unknown.
   final String scopeLabel;
+
+  /// The server's own text, used only by deployments that return no reason code.
+  final String legacyMessage;
 
   @override
   String toString() => message;

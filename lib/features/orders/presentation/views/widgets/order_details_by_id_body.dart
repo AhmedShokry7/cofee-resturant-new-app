@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
-import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
-import 'package:new_coffee/core/theme/tokens.dart';
-import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/orders/presentation/manager/order_details_by_id/order_details_by_id_cubit.dart';
 import 'package:new_coffee/features/orders/presentation/views/order_details_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/shared/widgets/auth_guard.dart';
-import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 
@@ -38,53 +34,32 @@ class OrderDetailsByIdBody extends StatelessWidget {
         }
         return Scaffold(
           appBar: AppBar(title: Text(S.orderDetails)),
-          body: state.isLoading
-              ? const OrdersSkeleton()
-              : _UnavailableOrder(
-                  message: state.error,
-                  onOpenOrders: () =>
-                      Navigator.of(context)
-                          .pushReplacementNamed(OrdersPage.routeName),
-                ),
+          body: Builder(
+            builder: (context) {
+              if (state.isLoading) return const OrdersSkeleton();
+              // A read that broke and an order that is not in this account are
+              // different answers, and only one of them has a retry to offer.
+              if (state.error != null) {
+                return EmptyState(
+                  icon: AppIcons.package,
+                  title: S.couldNotLoadOrders,
+                  actionLabel: S.retry,
+                  onAction: () => context.read<OrderDetailsByIdCubit>().load(),
+                );
+              }
+              return EmptyState(
+                icon: AppIcons.package,
+                title: S.orderNotInAccount,
+                subtitle: S.orderNotInAccountHint,
+                actionLabel: S.myOrders,
+                onAction: () =>
+                    Navigator.of(context)
+                        .pushReplacementNamed(OrdersPage.routeName),
+              );
+            },
+          ),
         );
       },
-    );
-  }
-}
-
-class _UnavailableOrder extends StatelessWidget {
-  const _UnavailableOrder({required this.message, required this.onOpenOrders});
-
-  final String? message;
-  final VoidCallback onOpenOrders;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(AppSpacing.xl),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            EmptyState(
-              icon: AppIcons.package,
-              title: S.orderNotInAccount,
-              subtitle: S.orderNotInAccountHint,
-            ),
-            if (message != null) ...[
-              SizedBox(height: AppSpacing.sm),
-              Text(
-                message!,
-                textAlign: TextAlign.center,
-                style: AppFonts.regular14(context)
-                    .copyWith(color: AppColor.greyColor),
-              ),
-            ],
-            SizedBox(height: AppSpacing.md),
-            CustomBtn(text: S.myOrders, onPressed: onOpenOrders),
-          ],
-        ),
-      ),
     );
   }
 }

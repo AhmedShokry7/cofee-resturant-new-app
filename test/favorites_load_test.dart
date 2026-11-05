@@ -218,7 +218,7 @@ void main() {
       expect(cubit.state.favoriteProducts.map((p) => p.name), [
         'Espresso',
       ], reason: 'the hearts the customer already has stay on screen');
-      expect(cubit.state.error, S.favoritesSyncFailed);
+      expect(cubit.state.errorCopy, S.favoritesSyncFailed);
       expect(favorites.syncAttempts, 1);
     });
   });
