@@ -299,6 +299,30 @@ export type RememberCall = (input: {
   topic?: string | null;
 }) => Promise<void>;
 
+/**
+ * A page the assistant read on the internet.
+ *
+ * The shape is the one the app already parses for a shop document, so a cited
+ * link and a cited help article travel the same way and are shown the same way.
+ */
+export type WebSource = {
+  source_type: "web";
+  source_id: string;
+  title: string;
+  body: string;
+  score: number;
+  uri: string;
+};
+
+export type WebAnswer =
+  | { text: string; sources: WebSource[] }
+  /** `notConfigured` is said apart from a failure: with no search provider
+   * configured there is nothing to retry, and the normal answer follows. */
+  | { error: string; notConfigured?: boolean };
+
+/** Reads the open web for one question and returns what it used. */
+export type WebSearchCall = (messages: Message[]) => Promise<WebAnswer>;
+
 export type AssistantDeps = {
   env: (name: string) => string | undefined;
   now: () => Date;
@@ -306,6 +330,7 @@ export type AssistantDeps = {
   rpc: RpcCall;
   recall: RecallCall;
   remember: RememberCall;
+  searchWeb: WebSearchCall;
   providers: () => Provider[];
   askProvider: (provider: Provider, messages: Message[]) => Promise<ProviderAnswer>;
   log: (entry: Diagnostic) => void;
@@ -335,6 +360,8 @@ function defaultDeps(): AssistantDeps {
     },
     providers: () => resolveProviders((name) => Deno.env.get(name)),
     askProvider,
+    searchWeb: (messages) =>
+      searchGeminiWeb((name) => Deno.env.get(name), messages),
     recall: async (questionKey) => {
       const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
       const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -382,8 +409,129 @@ function defaultDeps(): AssistantDeps {
   };
 }
 
-class QuotaTimeout extends Error {}
+/** A chat bubble can name three sources; a terminal can read five. */
+const MAX_WEB_SOURCES = 5;
 
+/**
+ * Google Search grounding, through Gemini's own endpoint.
+ *
+ * The OpenAI-compatible chain cannot search: those endpoints answer from the
+ * prompt alone. Gemini's native `generateContent` takes a `google_search` tool
+ * and, more importantly for this app, hands back the pages it actually read
+ * (`groundingChunks`). That is the difference between a citation and a link the
+ * model made up — the app only ever shows what the provider returned here.
+ *
+ * Reading the web is not training on it: nothing found here is written to the
+ * learned answers, and the reply goes out with its sources attached.
+ */
+export function toGeminiRequest(messages: Message[]): Record<string, unknown> {
+  const system = messages
+    .filter((message) => message.role === "system")
+    .map((message) => message.content)
+    .join("\n");
+  const contents = messages
+    .filter((message) => message.role !== "system")
+    .map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [{ text: message.content }],
+    }));
+  const body: Record<string, unknown> = {
+    contents,
+    tools: [{ google_search: {} }],
+    generationConfig: { temperature: 0.3, maxOutputTokens: 500 },
+  };
+  if (system) body.systemInstruction = { parts: [{ text: system }] };
+  return body;
+}
+
+/** The pages Gemini says it read, in the shape the app parses. */
+export function webSourcesFrom(json: unknown): WebSource[] {
+  const candidate = (json as any)?.candidates?.[0];
+  const chunks = candidate?.groundingMetadata?.groundingChunks;
+  if (!Array.isArray(chunks)) return [];
+  const seen = new Set<string>();
+  const sources: WebSource[] = [];
+  for (const chunk of chunks) {
+    const uri = typeof chunk?.web?.uri === "string" ? chunk.web.uri.trim() : "";
+    if (!uri || !/^https?:\/\//i.test(uri)) continue;
+    if (seen.has(uri)) continue;
+    seen.add(uri);
+    const title = typeof chunk?.web?.title === "string" &&
+        chunk.web.title.trim() !== ""
+      ? chunk.web.title.trim()
+      : uri;
+    sources.push({
+      source_type: "web",
+      source_id: uri,
+      title,
+      body: "",
+      score: 1,
+      uri,
+    });
+    if (sources.length >= MAX_WEB_SOURCES) break;
+  }
+  return sources;
+}
+
+async function searchGeminiWeb(
+  env: (name: string) => string | undefined,
+  messages: Message[],
+): Promise<WebAnswer> {
+  const apiKey = envOrEmpty(env, "GEMINI_API_KEY");
+  if (!apiKey) {
+    return { error: "no search provider configured", notConfigured: true };
+  }
+  // The same model the provider chain already uses, so a deployment that works
+  // today gains search without a second secret to set.
+  const model = envOrEmpty(env, "GEMINI_MODEL") || "gemini-3.8-flash";
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      {
+        method: "POST",
+        // The key travels in a header, never in the URL: an address ends up in
+        // logs and proxies, a header does not.
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify(toGeminiRequest(messages)),
+        signal: controller.signal,
+      },
+    );
+    const text = await response.text();
+    if (!response.ok) {
+      return { error: `search failed with ${response.status}` };
+    }
+    let json: unknown = null;
+    try {
+      json = text ? JSON.parse(text) : null;
+    } catch {
+      return { error: "search returned unreadable text" };
+    }
+    const parts = (json as any)?.candidates?.[0]?.content?.parts;
+    const reply = Array.isArray(parts)
+      ? parts
+        .map((part: any) => (typeof part?.text === "string" ? part.text : ""))
+        .join("")
+        .trim()
+      : "";
+    if (!reply) return { error: "search returned an empty reply" };
+    return { text: reply, sources: webSourcesFrom(json) };
+  } catch (error) {
+    const aborted = String(error).includes("AbortError");
+    return {
+      error: aborted ? "search timed out" : "search could not be reached",
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+class QuotaTimeout extends Error {}
 /**
  * Counts one question against the caller's window.
  *
@@ -523,8 +671,13 @@ export async function handleRequest(
   const questionKey = typeof body?.questionKey === "string"
     ? body.questionKey.trim()
     : "";
-  const mayLearn = body?.learn !== false;
-  if (questionKey) {
+  // Whose answer this is. A reply written with one customer's memories in the
+  // prompt is theirs alone: it must not be read out of the shared cache, and it
+  // must not join it. The app already says this, and the function does not take
+  // a client's word for a rule about other people's data.
+  const personal = body?.personal === true;
+  const mayLearn = body?.learn !== false && !personal;
+  if (questionKey && !personal) {
     // The memory is an optimisation, never a dependency: if it is down the
     // assistant still answers.
     let remembered: RecalledAnswer | null = null;
@@ -595,6 +748,48 @@ export async function handleRequest(
   const providers = deps.providers();
   if (providers.length === 0) {
     return jsonResponse({ error: "LLM provider is not configured" }, 503);
+  }
+
+  // The internet, when this customer allowed it and the shop's own pages did
+  // not answer. A guest is refused the tool even if the body asks for it: the
+  // consent lives in their account, and an anonymous request to browse the web
+  // with this project's key is not a thing the shop should pay for.
+  const wantWeb = body?.webSearch === true && userId !== null;
+  if (wantWeb) {
+    let searched: WebAnswer | null = null;
+    try {
+      searched = await deps.searchWeb(rawMessages);
+    } catch (error) {
+      deps.log({ event: "assistant_web_search_failed", category: "search" });
+    }
+    if (searched && "text" in searched) {
+      deps.log({
+        event: "assistant_web_searched",
+        category: "search",
+        provider: "gemini",
+        status: 200,
+      });
+      // Read, not learned: a page can change tomorrow, and an answer built on
+      // it belongs to this conversation only.
+      return jsonResponse(
+        {
+          text: searched.text,
+          topic: "web",
+          provider: "gemini",
+          sources: searched.sources,
+        },
+        200,
+      );
+    }
+    if (searched && "error" in searched) {
+      deps.log({
+        event: searched.notConfigured
+          ? "assistant_web_search_unconfigured"
+          : "assistant_web_search_failed",
+        category: "search",
+        status: 502,
+      });
+    }
   }
 
   const failures: Array<{ provider: string; status: number }> = [];

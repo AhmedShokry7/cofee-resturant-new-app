@@ -20,7 +20,8 @@ import 'package:new_coffee/features/orders/data/repositories/order_repository.da
 
 /// Records what the cubit asked the model.
 class _RecordingLlmClient implements LlmClient {
-  final List<({String questionKey, bool learn, String query})> calls = [];
+  final List<({String questionKey, bool learn, bool personal, String query})>
+  calls = [];
 
   @override
   Future<LlmReply?> complete({
@@ -29,8 +30,17 @@ class _RecordingLlmClient implements LlmClient {
     required String query,
     String questionKey = '',
     bool learn = true,
+    bool personal = false,
+    bool webSearch = false,
   }) async {
-    calls.add((questionKey: questionKey, learn: learn, query: query));
+    calls.add(
+      (
+        questionKey: questionKey,
+        learn: learn,
+        personal: personal,
+        query: query,
+      ),
+    );
     return const LlmReply(text: 'رد الموديل', provider: 'groq');
   }
 }

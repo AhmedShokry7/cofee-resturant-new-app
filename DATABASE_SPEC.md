@@ -1276,7 +1276,7 @@ is_active   boolean NOT NULL DEFAULT true
 | 33 | `notificationsRoute` | `NotificationsPage` | `engagement.notifications`, `notification_preferences` | ثابت |
 | 34 | `helpRoute` | `HelpPage` | `core.faq_items` | ثابت |
 | 35 | `privacyPolicyRoute` | `PrivacyPolicyPage` | `core.legal_documents` | ثابت |
-| 36 | Assistant FAB | `AssistantSheet` | `ai.product_knowledge`, `ai.knowledge_articles`, `catalog.product_aliases` | ثابت |
+| 36 | Assistant FAB | `AssistantPage` | `ai.product_knowledge`, `ai.knowledge_articles`, `catalog.product_aliases` | ثابت |
 
 ### 10.2 مصادر البيانات الثابتة اليوم ← الجداول البديلة
 

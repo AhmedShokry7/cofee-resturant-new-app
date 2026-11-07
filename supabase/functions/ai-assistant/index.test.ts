@@ -13,6 +13,8 @@ import {
   buildRequestBody,
   consumeQuota,
   handleRequest,
+  toGeminiRequest,
+  webSourcesFrom,
   type AssistantDeps,
   type Diagnostic,
   type Provider,
@@ -39,11 +41,13 @@ type Overrides = {
   providers?: AssistantDeps["providers"];
   recall?: AssistantDeps["recall"];
   remember?: AssistantDeps["remember"];
+  searchWeb?: AssistantDeps["searchWeb"];
 };
 
 function deps(overrides: Overrides = {}) {
   const diagnostics: Diagnostic[] = [];
   let providerCalls = 0;
+  let searchCalls = 0;
   const remembered: Array<{ questionKey: string; answer: string }> = [];
 
   const base: AssistantDeps = {
@@ -74,6 +78,13 @@ function deps(overrides: Overrides = {}) {
         providerCalls++;
         return { text: "hello" };
       }),
+    // No search by default: a test that wants it says so, and every other test
+    // proves the ordinary answer does not depend on it.
+    searchWeb: overrides.searchWeb ??
+      (async () => {
+        searchCalls++;
+        return { error: "not configured", notConfigured: true };
+      }),
     log: (entry) => diagnostics.push(entry),
     quotaTimeoutMs: overrides.quotaTimeoutMs ?? 200,
   };
@@ -82,6 +93,7 @@ function deps(overrides: Overrides = {}) {
     deps: base,
     diagnostics,
     providerCalls: () => providerCalls,
+    searchCalls: () => searchCalls,
     remembered,
   };
 }
@@ -607,4 +619,184 @@ Deno.test("the client is not told which provider failed", async () => {
     !JSON.stringify(body).includes("secret-key"),
     "the answer must not carry the provider key or its error",
   );
+});
+// ---------------------------------------------------------------------------
+// The tools
+//
+// Requirement 4: the assistant may read the internet when the shop's own data
+// does not answer, and must say which pages it read. Reading is not training,
+// and the permission is one customer's, not everyone's.
+// ---------------------------------------------------------------------------
+
+Deno.test("a signed-in customer who allowed it gets the web answer with its pages", async () => {
+  const { deps: d, providerCalls } = deps({
+    resolveUser: async () => ({ id: "user-123" }),
+    searchWeb: async () => ({
+      text: "المقهى فتح حتى الحادية عشرة",
+      sources: [{
+        source_type: "web",
+        source_id: "https://shop.test/hours",
+        title: "Opening hours",
+        body: "",
+        score: 1,
+        uri: "https://shop.test/hours",
+      }],
+    }),
+  });
+
+  const response = await handleRequest(
+    postRequest(
+      {
+        messages: [{ role: "user", content: "المكان مفتاح لامتى؟" }],
+        webSearch: true,
+      },
+      { authorization: "Bearer a.b.c" },
+    ),
+    d,
+  );
+  const body = await response.json();
+  assertEquals(response.status, 200);
+  assertEquals(body.topic, "web");
+  assertEquals(body.sources.length, 1);
+  assertEquals(body.sources[0].uri, "https://shop.test/hours");
+  assertEquals(providerCalls(), 0, "a searched answer does not also ask a provider");
+});
+
+Deno.test("a guest is not given the search tool, whatever the body claims", async () => {
+  const { deps: d, providerCalls, searchCalls } = deps({
+    resolveUser: async () => null,
+    searchWeb: async () => ({ text: "لوحة المفاتيح", sources: [] }),
+  });
+
+  const response = await handleRequest(
+    postRequest({ messages: [{ role: "user", content: "ابحث لي" }], webSearch: true }),
+    d,
+  );
+  assertEquals(response.status, 200);
+  assertEquals(searchCalls(), 0);
+  assertEquals(providerCalls(), 1, "the ordinary answer still goes out");
+});
+
+Deno.test("a web answer is never written into the learned answers", async () => {
+  const { deps: d, remembered } = deps({
+    resolveUser: async () => ({ id: "user-123" }),
+    searchWeb: async () => ({
+      text: "من ويكيبيديا",
+      sources: [{
+        source_type: "web",
+        source_id: "https://a.test/x",
+        title: "A page",
+        body: "",
+        score: 1,
+        uri: "https://a.test/x",
+      }],
+    }),
+  });
+
+  await handleRequest(
+    postRequest(
+      {
+        messages: [{ role: "user", content: "ايه اصل كلمة موكا؟" }],
+        questionKey: "ايه اصل كلمة موكا",
+        webSearch: true,
+      },
+      { authorization: "Bearer a.b.c" },
+    ),
+    d,
+  );
+  assertEquals(remembered, [], "a page can change tomorrow");
+});
+
+Deno.test("when there is no search provider the ordinary answer is used", async () => {
+  const { deps: d, diagnostics, providerCalls } = deps({
+    resolveUser: async () => ({ id: "user-123" }),
+  });
+
+  const response = await handleRequest(
+    postRequest(
+      { messages: [{ role: "user", content: "ابحث لي" }], webSearch: true },
+      { authorization: "Bearer a.b.c" },
+    ),
+    d,
+  );
+  assertEquals(response.status, 200);
+  assertEquals(providerCalls(), 1);
+  const body = await response.json();
+  assertEquals(body.text, "hello");
+  assert(
+    diagnostics.some((entry) => entry.event === "assistant_web_search_unconfigured"),
+    "the shop is told search did not exist",
+  );
+});
+
+Deno.test("a search that fails is a fall-back, not a broken chat", async () => {
+  const { deps: d, diagnostics } = deps({
+    resolveUser: async () => ({ id: "user-123" }),
+    searchWeb: async () => ({ error: "search timed out" }),
+  });
+
+  const response = await handleRequest(
+    postRequest(
+      { messages: [{ role: "user", content: "ابحث لي" }], webSearch: true },
+      { authorization: "Bearer a.b.c" },
+    ),
+    d,
+  );
+  assertEquals(response.status, 200);
+  assert(
+    diagnostics.some((entry) => entry.event === "assistant_web_search_failed"),
+  );
+});
+
+Deno.test("an answer built from one customer never touches the shared cache", async () => {
+  const { deps: d, remembered, providerCalls } = deps({
+    recall: async () => ({ answer: "إجابة عميل تاني", provider: "memory" }),
+  });
+
+  const response = await handleRequest(
+    postRequest({
+      messages: [{ role: "user", content: "انا بحب اللاتيه" }],
+      questionKey: "انا بحب اللاتيه",
+      personal: true,
+    }),
+    d,
+  );
+  const body = await response.json();
+  assertEquals(providerCalls(), 1, "the remembered answer is not this customer's");
+  assertEquals(body.text, "hello");
+  assertEquals(remembered, [], "and this answer is not the next customer's");
+});
+
+Deno.test("the search request is the conversation in the shape Gemini takes", () => {
+  const body = toGeminiRequest([
+    { role: "system", content: "أنت مساعد المتجر" },
+    { role: "user", content: "مرحبا" },
+    { role: "assistant", content: "أهلا" },
+    { role: "user", content: "الموكا بكام؟" },
+  ]);
+  const json = JSON.stringify(body);
+  assert(json.includes("systemInstruction"), "the shop's rules are not a user turn");
+  assert(json.includes("google_search"), "without the tool there is no search");
+  assertEquals((body.contents as unknown[]).length, 3);
+});
+
+Deno.test("only a real link is offered as a source", () => {
+  const sources = webSourcesFrom({
+    candidates: [{
+      groundingMetadata: {
+        groundingChunks: [
+          { web: { uri: "https://a.test/1", title: "First" } },
+          { web: { uri: "https://a.test/1", title: "First again" } },
+          { web: { uri: "javascript:alert(1)", title: "Not a page" } },
+          { web: {} },
+          { web: { uri: "https://b.test/2" } },
+        ],
+      },
+    }],
+  });
+  assertEquals(sources.map((source) => source.uri), [
+    "https://a.test/1",
+    "https://b.test/2",
+  ]);
+  assertEquals(sources[1].title, "https://b.test/2", "a page with no title is named by its address");
 });

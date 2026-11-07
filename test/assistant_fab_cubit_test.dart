@@ -1,32 +1,29 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
-import 'package:new_coffee/features/assistant/data/assistant_hints.dart';
+import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/assistant/presentation/manager/assistant_fab/assistant_fab_cubit.dart';
 
-/// The rotation is the behaviour under test, so the timers are made short;
-/// the production durations live on `AssistantFab`.
-AssistantFabCubit _cubit({
-  Duration cycle = const Duration(milliseconds: 20),
-  Duration visible = const Duration(milliseconds: 20),
-}) {
-  return AssistantFabCubit(
-    hintCycle: cycle,
-    hintVisible: visible,
-    firstHintDelay: Duration.zero,
-  );
+/// The entry point only needs a name and a session marker from the session, so
+/// the fake answers those two questions and nothing else.
+class _FakeAuthRepository implements AuthRepository {
+  _FakeAuthRepository(this.name);
+
+  final String? name;
+
+  @override
+  Future<AuthUser?> currentUser() async =>
+      name == null ? null : AuthUser(id: 'u-1', name: name);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
 }
 
-/// A cubit that only has to answer the welcome question, so the rotation that
-/// would otherwise replace it is parked far in the future.
-AssistantFabCubit _oneShot() => _cubit(
-  cycle: const Duration(minutes: 5),
-  visible: const Duration(seconds: 30),
-);
+AssistantFabCubit _cubit({String? name = 'Ahmed Shokry'}) =>
+    AssistantFabCubit(auth: _FakeAuthRepository(name));
 
 void main() {
   setUp(() {
@@ -35,86 +32,40 @@ void main() {
     AppLocale.instance.debugSet(AppLanguage.english);
   });
 
-  test('a first visit gets the welcome, not a hint', () async {
-    final cubit = _oneShot();
+  test('a device that never reached Home is a first visit', () async {
+    final cubit = _cubit();
     await cubit.start();
 
     expect(cubit.state.isReturningUser, isFalse);
-    expect(cubit.state.welcomeText, contains('Welcome'));
-    expect(cubit.bubbleText, cubit.state.welcomeText);
-
     await cubit.close();
   });
 
-  test('a device that already reached Home is greeted as returning', () async {
+  test('a device that already reached Home is recognised as returning', () async {
     SharedPreferences.setMockInitialValues({
       AppConstant.routesKey: AppConstant.homeRoute,
     });
 
-    final cubit = _oneShot();
+    final cubit = _cubit();
     await cubit.start();
 
     expect(cubit.state.isReturningUser, isTrue);
-    expect(cubit.state.welcomeText, contains('Welcome back'));
-
     await cubit.close();
   });
 
-  test('the app language decides the bubble until a chat picks one', () async {
-    final cubit = _oneShot();
+  test('the signed-in first name is carried into the chat', () async {
+    final cubit = _cubit(name: 'Ahmed Shokry');
     await cubit.start();
-    expect(cubit.state.replyArabic, isFalse);
-    await cubit.close();
 
-    // Someone who already chatted in Arabic keeps Arabic bubbles even though
-    // the app itself is showing English.
-    SharedPreferences.setMockInitialValues({
-      'assistant_memory_v1': jsonEncode({'totalChats': 2, 'replyArabic': true}),
-    });
-    final returning = _oneShot();
-    await returning.start();
-
-    expect(returning.state.replyArabic, isTrue);
-    expect(returning.state.welcomeText, contains('أهلاً'));
-    await returning.close();
-  });
-
-  test('the welcome gives way to a rotating hint', () async {
-    final cubit = _cubit();
-    await cubit.start();
-    final welcome = cubit.state.welcomeText;
-
-    await Future<void>.delayed(const Duration(milliseconds: 60));
-
-    expect(cubit.state.hasCycled, isTrue);
-    expect(cubit.bubbleText, isNot(equals(welcome)));
-    expect(assistantHints, contains(cubit.bubbleText));
-
+    expect(cubit.state.firstName, 'Ahmed');
     await cubit.close();
   });
 
-  test('no bubble competes with the open chat sheet', () async {
-    final cubit = _oneShot();
+  test('a guest or a failing session still leaves a usable state', () async {
+    final cubit = _cubit(name: null);
     await cubit.start();
 
-    cubit.sheetOpened();
-    cubit.showHint();
-    expect(cubit.state.showHint, isFalse);
-
-    cubit.sheetClosed();
-    cubit.showHint();
-    expect(cubit.state.showHint, isTrue);
-
+    expect(cubit.state.firstName, isNull);
+    expect(cubit.state.isReturningUser, isFalse);
     await cubit.close();
-  });
-
-  test('closing stops the rotation instead of leaving a live timer', () async {
-    final cubit = _cubit();
-    await cubit.start();
-    final index = cubit.state.hintIndex;
-    await cubit.close();
-
-    await Future<void>.delayed(const Duration(milliseconds: 80));
-    expect(cubit.state.hintIndex, index);
   });
 }

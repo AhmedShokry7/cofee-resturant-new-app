@@ -3,7 +3,7 @@
 /// The engine names a destination, never a route string: the route belongs to
 /// the page that registers it, and [routeForAssistantDestination] is the one
 /// place that maps between the two.
-enum AssistantDestination { coupons, orders, checkout }
+enum AssistantDestination { coupons, orders, checkout, memory }
 
 /// Tool calls the assistant engine can request (LLM-style function calling).
 ///

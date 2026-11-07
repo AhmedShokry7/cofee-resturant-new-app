@@ -265,9 +265,6 @@ abstract final class AppDimensions {
   static const double skeletonTabShortWidth = 72.0;
 
   // Floating structures
-  /// The widest bubble the assistant is allowed to answer in.
-  static const double assistantBubbleMaxWidth = 230.0;
-
   /// The widest the floating assistant panel gets.
   static const double assistantPanelMaxWidth = 270.0;
 

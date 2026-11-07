@@ -25,9 +25,6 @@ class AssistantDraftFlow {
           memory.totalChats,
         ),
         topic: 'affirm',
-        quickReplies: arabic
-            ? AssistantComposer.suggestRepliesAr
-            : const ['Something stronger', 'Something sweet', 'Yes please'],
       );
     }
     return AssistantAnswer(
@@ -38,9 +35,6 @@ class AssistantDraftFlow {
         memory.totalChats,
       ),
       topic: 'affirm',
-      quickReplies: arabic
-          ? AssistantComposer.quickRepliesAr
-          : AssistantEngine.defaultQuickReplies,
     );
   }
 
@@ -55,9 +49,6 @@ class AssistantDraftFlow {
               )
             : 'No problem at all — tell me the mood and I will re-pick: strong, sweet, cold, or cheap?',
         topic: 'deny',
-        quickReplies: arabic
-            ? AssistantComposer.suggestRepliesAr
-            : const ['Something stronger', 'Something sweet', 'Something else'],
       );
     }
     return AssistantAnswer(
@@ -68,9 +59,6 @@ class AssistantDraftFlow {
         memory.totalChats,
       ),
       topic: 'deny',
-      quickReplies: arabic
-          ? AssistantComposer.quickRepliesAr
-          : AssistantEngine.defaultQuickReplies,
     );
   }
 
@@ -87,13 +75,6 @@ class AssistantDraftFlow {
       topic: 'order',
       sourceId: 'order-total',
       products: draftProducts(memory),
-      quickReplies: memory.pendingQuestion == 'order_confirm'
-          ? (arabic
-                ? const ['أكد الاوردر', 'الغي']
-                : const ['Confirm order', 'Cancel'])
-          : (arabic
-                ? AssistantComposer.quickRepliesAr
-                : AssistantEngine.defaultQuickReplies),
     );
   }
 
@@ -142,9 +123,6 @@ class AssistantDraftFlow {
         text: arabic ? 'عيني! عايز تطلب إيه بالظبط؟ قولي مثلا "2 لاتيه كبير".' : 'With pleasure! What exactly would you like? Say e.g. "2 large lattes".',
         topic: 'order',
         sourceId: 'order-empty',
-        quickReplies: arabic
-            ? const ['لاتيه كبير', 'كابتشينو', 'تشيز كيك']
-            : const ['Large latte', 'Cappuccino', 'Cheesecake'],
       );
     }
     if (parsed.unclearDessert) {
@@ -165,7 +143,6 @@ class AssistantDraftFlow {
         topic: 'order',
         sourceId: 'order-clarify',
         products: draftProducts(memory),
-        quickReplies: dessertOptions().map((product) => product.name).toList(),
       );
     }
     return confirmDraftMessage(memory, arabic: arabic);
@@ -199,7 +176,6 @@ class AssistantDraftFlow {
         text: arabic ? 'محددتش — تحب $options؟' : 'Pick one for me — $options?',
         topic: 'order',
         sourceId: 'order-clarify',
-        quickReplies: dessertOptions().map((product) => product.name).toList(),
       );
     }
     if (parsed.unclearDessert) {
@@ -221,7 +197,6 @@ class AssistantDraftFlow {
       topic: 'order',
       sourceId: 'order-clarify',
       products: draftProducts(memory),
-      quickReplies: dessertOptions().map((p) => p.name).toList(),
     );
   }
 
@@ -239,9 +214,6 @@ class AssistantDraftFlow {
       topic: 'order',
       sourceId: 'order-confirm',
       products: draftProducts(memory),
-      quickReplies: arabic
-          ? const ['أكد الاوردر', 'الغي']
-          : const ['Confirm order', 'Cancel'],
     );
   }
 
@@ -258,9 +230,6 @@ class AssistantDraftFlow {
             : 'Your order is empty right now. Tell me what to add.',
         topic: 'order',
         sourceId: 'order-empty-confirm',
-        quickReplies: arabic
-            ? const ['عايز اطلب', 'رشحلي مشروب']
-            : const ['I want to order', 'Suggest a drink'],
       );
     }
     final actions = memory.draft.items
@@ -281,9 +250,6 @@ class AssistantDraftFlow {
       topic: 'order',
       sourceId: 'order-confirmed',
       products: products,
-      quickReplies: arabic
-          ? const ['ادفع دلوقتي', 'عند الاستلام']
-          : const ['Pay now', 'Cash on delivery'],
       actions: actions,
     );
   }
@@ -302,9 +268,6 @@ class AssistantDraftFlow {
             : 'What should I add to the cart? Name the drink or dessert.',
         topic: 'order',
         sourceId: 'order-add-empty',
-        quickReplies: arabic
-            ? const ['لاتيه', 'كابتشينو', 'تشيز كيك']
-            : const ['Latte', 'Cappuccino', 'Cheesecake'],
       );
     }
     final names = <String>[];
@@ -334,9 +297,6 @@ class AssistantDraftFlow {
       topic: 'order',
       sourceId: 'order-added',
       products: products,
-      quickReplies: arabic
-          ? const ['عايز اطلب حاجة تانية', 'عايز ادفع']
-          : const ['Order more', 'Checkout'],
       actions: actions,
     );
   }
@@ -357,9 +317,6 @@ class AssistantDraftFlow {
             : 'There is no active order right now.',
         topic: 'order',
         sourceId: 'order-cancel-empty',
-        quickReplies: arabic
-            ? AssistantComposer.quickRepliesAr
-            : AssistantEngine.defaultQuickReplies,
       );
     }
     return AssistantAnswer(
@@ -372,9 +329,6 @@ class AssistantDraftFlow {
                 : 'Done, your order is cancelled.'),
       topic: 'order',
       sourceId: 'order-cancelled',
-      quickReplies: arabic
-          ? AssistantComposer.quickRepliesAr
-          : AssistantEngine.defaultQuickReplies,
     );
   }
 

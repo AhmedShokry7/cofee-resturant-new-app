@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/assistant/data/assistant_retrieval.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_client.dart';
 import 'package:new_coffee/features/assistant/data/llm/llm_reply_sanitizer.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show FunctionException;
@@ -44,6 +45,8 @@ class SupabaseLlmClient implements LlmClient {
     required String query,
     String questionKey = '',
     bool learn = true,
+    bool personal = false,
+    bool webSearch = false,
   }) async {
     if (!SupabaseService.isConfigured) return null;
     if (_providerMissing) return null;
@@ -62,6 +65,11 @@ class SupabaseLlmClient implements LlmClient {
               // a client that could write the memory could poison it.
               if (questionKey.isNotEmpty) 'questionKey': questionKey,
               'learn': learn,
+              // An answer built on this customer's own memories must not join
+              // the cache the next customer reads.
+              if (personal) 'personal': true,
+              // Reading the web is allowed per customer, never for all of them.
+              if (webSearch) 'webSearch': true,
             },
           )
           .timeout(timeout);
@@ -80,6 +88,7 @@ class SupabaseLlmClient implements LlmClient {
         provider: provider is String && provider.trim().isNotEmpty
             ? provider.trim()
             : null,
+        sources: _parseSources(data['sources']),
       );
     } on FunctionException catch (error) {
       if (error.status == 503 && _isProviderMissing(error.details)) {
@@ -93,4 +102,17 @@ class SupabaseLlmClient implements LlmClient {
       return null;
     }
   }
+}
+
+/// The sources the function read to write this answer, in the shape the
+/// database returns them.
+List<RetrievedSource> _parseSources(dynamic raw) {
+  if (raw is! List) return const [];
+  final sources = <RetrievedSource>[];
+  for (final entry in raw) {
+    if (entry is! Map) continue;
+    final source = RetrievedSource.fromRow(entry.cast<String, dynamic>());
+    if (source != null) sources.add(source);
+  }
+  return sources;
 }

@@ -52,6 +52,9 @@ abstract final class AppIcons {
   static const bundle = HugeIcons.strokeRoundedPackage02;
   static const gift = HugeIcons.strokeRoundedGift;
   static const sparkles = HugeIcons.strokeRoundedSparkles;
+  /// The assistant's own memory of one customer - what it was told, and what
+  /// it may take back.
+  static const memory = HugeIcons.strokeRoundedBrain;
 
   // Delivery and place
   static const deliveryTruck = HugeIcons.strokeRoundedTruckDelivery;

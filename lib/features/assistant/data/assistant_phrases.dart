@@ -232,6 +232,28 @@ class AssistantPhrases {
       'the third one',
       'the last one',
     ],
+    AssistantIntent.memory: [
+      // The customer asking what the assistant holds about them, or asking it
+      // to put that down.
+      'what do you remember about me',
+      'what do you know about me',
+      'show my memory',
+      'delete my memory',
+      'erase my memory',
+      'forget everything about me',
+      'forget me',
+      'my memory settings',
+      'ايه اللي فاكره عني',
+      'اللي فاكره عني',
+      'ايه اللي تعرفه عني',
+      'اعرض ذاكرتي',
+      'اوريني ذاكرتي',
+      'صفحة الذاكرة',
+      'امسح ذاكرتي',
+      'احذف ذاكرتي',
+      'الغي ذاكرتي',
+      'انسى كل حاجة عني',
+    ],
   };
 
   /// Single-word triggers per intent (exact or fuzzy matched).
@@ -397,6 +419,16 @@ class AssistantPhrases {
       'first',
       'second',
       'third',
+    ],
+    AssistantIntent.memory: [
+      'memory',
+      'memories',
+      'remember',
+      'forget',
+      // 'ذاكرة' normalises to 'ذاكره' and the customer writes both 'ذاكرتي' and
+      // 'الذاكرة' (the article is stripped), so these two forms cover it.
+      'ذاكرة',
+      'ذاكرتي',
     ],
   };
 

@@ -360,5 +360,14 @@ void main() {
       expect(detectIntent('ايه'), AssistantIntent.affirm);
       expect(detectIntent('ايه تمام'), AssistantIntent.affirm);
     });
+
+    test('a question about the customer own memory is its own intent', () {
+      expect(detectIntent('اعرض ذاكرتي'), AssistantIntent.memory);
+      // "امسح" is also the cancel-order word. The customer named their memory,
+      // not an order, so memory has to outrank it.
+      expect(detectIntent('امسح ذاكرتي'), AssistantIntent.memory);
+      expect(detectIntent('what do you remember about me'), AssistantIntent.memory);
+      expect(detectIntent('ذاكرتك'), AssistantIntent.memory);
+    });
   });
 }

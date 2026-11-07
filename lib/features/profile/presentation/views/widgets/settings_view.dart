@@ -5,6 +5,7 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
+import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
@@ -82,6 +83,9 @@ class _SettingsEntries extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A memory belongs to an account. A device that is not signed in has no
+    // island to review, so the door to it is not shown rather than shown empty.
+    final signedIn = context.watch<CurrentUserCubit>().state.user != null;
     return ListView(
       children: [
         SettingsHeader(),
@@ -157,6 +161,13 @@ class _SettingsEntries extends StatelessWidget {
           onTap: () =>
               Navigator.of(context).pushNamed(PrivacyPolicyPage.routeName),
         ),
+        if (signedIn)
+          ProfileMenuTile(
+            icon: AppIcons.memory,
+            label: S.assistantMemoryTitle,
+            onTap: () =>
+                Navigator.of(context).pushNamed(AssistantMemoryPage.routeName),
+          ),
         ProfileMenuTile(
           icon: AppIcons.logout,
           label: S.logOut,

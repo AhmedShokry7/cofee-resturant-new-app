@@ -20,6 +20,8 @@ class HttpLlmClient implements LlmClient {
     required String query,
     String questionKey = '',
     bool learn = true,
+    bool personal = false,
+    bool webSearch = false,
   }) async {
     if (!config.enabled) return null;
     try {

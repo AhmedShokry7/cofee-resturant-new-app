@@ -978,6 +978,74 @@ class S {
   static String get assistantTitle => _ar ? 'مساعد القهوة' : 'Coffee Assistant';
   static String get open => _ar ? 'فتح' : 'Open';
 
+  /// Under an answer that was read from the shop's own documents. Each source
+  /// is its own line, so the heading is read once per link by a screen reader.
+  static String get assistantSourcesHeading =>
+      _ar ? 'المصادر' : 'Sources';
+
+  // ---------- Assistant memory ----------
+  static String get assistantMemoryTitle =>
+      _ar ? 'ذاكرة المساعد' : 'Assistant memory';
+  static String get assistantMemorySubtitle => _ar
+      ? 'يتذكّر المساعد ما أخبرته به عن نفسك، داخل حسابك وحدك.'
+      : 'The assistant keeps what you tell it about yourself, in your account only.';
+  static String get assistantMemoryEnable =>
+      _ar ? 'السماح بتذكّر محادثاتي' : 'Let the assistant remember me';
+  static String get assistantMemoryEmpty => _ar
+      ? 'لا شيء محفوظة بعد.' : 'Nothing has been remembered yet.';
+
+  /// A device that is not signed in has no island to open, which is a different
+  /// fact from an empty one.
+  static String get assistantMemorySignedOut => _ar
+      ? 'الذاكرة مرتبطة بحسابك. سجّل الدخول لتراها.'
+      : 'Memory belongs to your account. Sign in to see it.';
+  static String get assistantMemoryPrivate =>
+      _ar ? 'معلومة خاصة (مشفّرة)' : 'Private detail (encrypted)';
+
+  /// How the assistant reads a memory it kept: a stated fact is not a
+  /// preference, and neither of them is a guess it made.
+  static String assistantMemoryKind(String kind) => switch (kind) {
+    'fact' => _ar ? 'حقيقة' : 'Fact',
+    'preference' => _ar ? 'تفضيل' : 'Preference',
+    'opinion' => _ar ? 'رأي' : 'Opinion',
+    _ => _ar ? 'تخمين' : 'Guess',
+  };
+
+  static String get assistantMemoryDelete =>
+      _ar ? 'حذف' : 'Delete';
+  static String get assistantMemoryDeleteAll =>
+      _ar ? 'حذف كل ذاكرتي' : 'Delete all my memory';
+  static String get assistantMemoryDeletedAll => _ar
+      ? 'تم حذف كل ما كان المساعد يعرفه عنك.'
+      : 'Everything the assistant knew about you has been deleted.';
+  static String get assistantMemoryOffWarning => _ar
+      ? 'إيقاف الذاكرة يحذف كل ما حفظه المساعد عنك. لا يمكن التراجع.'
+      : 'Turning memory off deletes everything the assistant kept about you. This cannot be undone.';
+
+  /// Letting the assistant read outside the shop. Separate from memory: a
+  /// customer may want the bot to remember them and still not want it browsing.
+  static String get assistantWebSearchEnable =>
+      _ar ? 'السماح بالبحث في الإنترنت' : 'Let the assistant search the web';
+  static String get assistantWebSearchNote => _ar
+      ? 'يقرأ المساعد صفحات الإنترنت عند الحاجة ويذكر روابطها مع الرد. ما يقرأه لا يُستخدم لتدريبه.'
+      : 'The assistant reads web pages when it needs to and lists them with the answer. What it reads is never used to train it.';
+
+  // ---------- Assistant conversations ----------
+  /// The drawer of chats the customer already had. Each row is the question
+  /// they opened it with, in their own words.
+  static String get assistantNewChat => _ar ? 'محادثة جديدة' : 'New chat';
+  static String get assistantChatsHeading =>
+      _ar ? 'محادثاتك السابقة' : 'Your previous chats';
+  static String get assistantChatsTooltip =>
+      _ar ? 'المحادثات' : 'Conversations';
+  static String get assistantChatDelete =>
+      _ar ? 'حذف المحادثة' : 'Delete this conversation';
+  static String get assistantChatDeleted =>
+      _ar ? 'تم حذف المحادثة.' : 'Conversation deleted.';
+  static String get assistantEmptyHistory => _ar
+      ? 'لسه في محادثة واحدة مفتوحة. اللي قبلها هيظهروا هنا.'
+      : 'Nothing here yet. Chats you have already had will be listed here.';
+
   // ---------- Branch ----------
   static String get chooseBranch => _ar ? 'اختر الفرع' : 'Choose branch';
 

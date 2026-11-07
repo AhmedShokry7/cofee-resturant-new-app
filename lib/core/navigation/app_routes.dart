@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
+import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
@@ -64,6 +65,7 @@ class AppRoutes {
     SearchPage.routeName: (context) => const SearchPage(),
     AddressesPage.routeName: (context) => const AddressesPage(),
     AddressFormPage.routeName: (context) => const AddressFormPage(),
+    AssistantMemoryPage.routeName: (context) => const AssistantMemoryPage(),
     SubscriptionPlansPage.routeName: (context) => const SubscriptionPlansPage(),
     SubscriptionDetailsPage.routeName: (context) =>
         const SubscriptionDetailsPage(),

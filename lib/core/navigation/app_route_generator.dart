@@ -4,6 +4,7 @@ import 'package:new_coffee/features/auth/presentation/views/email_otp_page.dart'
 import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
+import 'package:new_coffee/features/assistant/presentation/views/assistant_page.dart';
 import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/views/banner_details_page.dart';
 import 'package:new_coffee/features/home/presentation/views/see_all_products_page.dart';
@@ -29,6 +30,13 @@ class AppRouteGenerator {
   static Route<dynamic>? onGenerateRoute(RouteSettings settings) {
     final arguments = settings.arguments;
     final Widget? page = switch (settings.name) {
+      // The assistant page opens a conversation from what Home already knew
+      // about the customer, so its route name alone is not enough to build it.
+      AssistantPage.routeName when arguments is AssistantPageArgs =>
+        AssistantPage(
+          isReturning: arguments.isReturning,
+          firstName: arguments.firstName,
+        ),
       ProductDetailsPage.routeName when arguments is ProductModel =>
         ProductDetailsPage(product: arguments),
       BundleDetailsPage.routeName when arguments is BundleModel =>

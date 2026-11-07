@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/navigation/assistant_routes.dart';
 import 'package:new_coffee/features/assistant/data/assistant_actions.dart';
+import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
@@ -21,6 +22,10 @@ void main() {
     expect(
       routeForAssistantDestination(AssistantDestination.checkout),
       CheckoutPage.routeName,
+    );
+    expect(
+      routeForAssistantDestination(AssistantDestination.memory),
+      AssistantMemoryPage.routeName,
     );
   });
 

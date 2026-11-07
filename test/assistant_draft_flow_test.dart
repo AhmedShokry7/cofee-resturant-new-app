@@ -87,7 +87,13 @@ void main() {
 
       expect(answer.sourceId, 'order-clarify');
       expect(memory.pendingQuestion, 'order_clarify');
-      expect(answer.quickReplies, isNotEmpty);
+      // The chips are gone, so the sentence itself has to name every choice
+      // the customer can reply with.
+      final options = _withCatalog(AssistantDraftFlow.dessertOptions);
+      expect(options, isNotEmpty);
+      for (final product in options) {
+        expect(answer.text, contains(product.name));
+      }
     });
 
     test('the clarification reuses the size held from the first message', () {
@@ -208,7 +214,8 @@ void main() {
       );
 
       expect(answer.topic, 'deny');
-      expect(answer.quickReplies, isNotEmpty);
+      // No chips to point at: the answer has to say how to steer it.
+      expect(answer.text, contains('قوي'));
     });
   });
 }

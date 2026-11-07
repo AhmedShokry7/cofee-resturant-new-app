@@ -59,10 +59,8 @@ Future<void> _pump(WidgetTester tester, Widget child) {
   return tester.pumpWidget(MaterialApp(home: Scaffold(body: child)));
 }
 
-/// Lets the assistant FAB's one-shot hint timers fire, then disposes the
-/// tree so its periodic hint cycle cannot outlive the test.
+/// Disposes the tree so the FAB's cubit cannot outlive the test.
 Future<void> _disposeFab(WidgetTester tester) async {
-  await tester.pump(AssistantFab.hintCycle);
   await tester.pumpWidget(const SizedBox());
   await tester.pump();
 }

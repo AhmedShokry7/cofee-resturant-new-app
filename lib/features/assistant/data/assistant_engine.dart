@@ -27,7 +27,6 @@ class AssistantAnswer {
     required this.text,
     this.sourceId,
     this.topic = 'general',
-    this.quickReplies = const [],
     this.products = const [],
     this.destination,
     this.navigateLabel,
@@ -37,7 +36,6 @@ class AssistantAnswer {
   final String text;
   final String? sourceId;
   final String topic;
-  final List<String> quickReplies;
   final List<ProductModel> products;
   final AssistantDestination? destination;
   final String? navigateLabel;
@@ -47,12 +45,6 @@ class AssistantAnswer {
 }
 
 class AssistantEngine {
-  static const List<String> defaultQuickReplies = [
-    'Suggest a drink',
-    'Track my order',
-    'Any coupons?',
-  ];
-
   static AssistantAnswer answer(
     String query, {
     required AssistantSnapshot snapshot,
@@ -62,6 +54,7 @@ class AssistantEngine {
     Set<String> cartProductIds = const {},
     bool isReturning = false,
     String? firstName,
+    AssistantIntent? deviceIntent,
   }) => AssistantSnapshot.run(
     snapshot,
     () => _answer(
@@ -72,6 +65,7 @@ class AssistantEngine {
       cartProductIds: cartProductIds,
       isReturning: isReturning,
       firstName: firstName,
+      deviceIntent: deviceIntent,
     ),
   );
 
@@ -83,6 +77,7 @@ class AssistantEngine {
     Set<String> cartProductIds = const {},
     bool isReturning = false,
     String? firstName,
+    AssistantIntent? deviceIntent,
   }) {
     // Corrections first: "مش عايز لاتيه" rejects Latte before anything else.
     final negatedIds = _negatedProductIds(query);
@@ -92,13 +87,7 @@ class AssistantEngine {
     // LLM-style accommodation: answer in the user's own language and
     // remember it for the next greeting. Falls back to the app language
     // when the message carries no detectable script (adaptive to customer).
-    final hasArabicScript = prefersArabic(query);
-    final hasLatinScript = RegExp(r'[A-Za-z]').hasMatch(query);
-    final arabic = hasArabicScript
-        ? true
-        : hasLatinScript
-        ? false
-        : AppLocale.instance.isArabic;
+    final arabic = arabicReplyFor(query);
     memory.replyArabic = arabic;
     var leadPrefix = '';
     if (negatedIds.isNotEmpty) {
@@ -176,7 +165,7 @@ class AssistantEngine {
       }
     }
     // Draft follow-ups shortcut intent detection (price / clarification).
-    if (memory.draft.items.isNotEmpty && _asksPrice(query)) {
+    if (memory.draft.items.isNotEmpty && asksPrice(query)) {
       return AssistantDraftFlow.draftTotal(memory, arabic: arabic);
     }
     // The subject of the conversation. A follow-up rarely names it: "كام
@@ -250,6 +239,16 @@ class AssistantEngine {
         isFollowUpMessage(query)) {
       intent = AssistantIntent.suggestDrink;
     }
+    // The subject the reading layer found wins over the keyword scorer, because
+    // the scorer reads a tie as a drink suggestion and answers "دي ترشيحاتي"
+    // when the customer asked where their order is. It is suppressed while a
+    // draft is in progress: there the sentence is a refinement of the previous
+    // turn, not a fresh subject, and the draft flow above owns the answer.
+    final drafting =
+        memory.draft.items.isNotEmpty || memory.pendingQuestion != null;
+    if (deviceIntent != null && !drafting && negatedIds.isEmpty) {
+      intent = deviceIntent;
+    }
     return respond(
       intent,
       query,
@@ -280,9 +279,6 @@ class AssistantEngine {
     Set<String> negatedIds = const {},
     bool arabic = false,
   }) {
-    final replies = arabic
-        ? AssistantComposer.quickRepliesAr
-        : defaultQuickReplies;
     switch (intent) {
       case AssistantIntent.greeting:
         memory.pendingQuestion = null;
@@ -299,15 +295,11 @@ class AssistantEngine {
                   now: now,
                 ),
           topic: 'greeting',
-          quickReplies: replies,
         );
       case AssistantIntent.thanks:
         return AssistantAnswer(
-          text: arabic
-              ? 'العفو! تحب حاجة تانية — ترشيح مشروب، حالة طلبك، ولا أحدث العروض؟'
-              : 'You are most welcome! Anything else — a drink idea, your order status, or our latest offers?',
+          text: arabic ? 'العفو.' : 'You are most welcome.',
           topic: 'thanks',
-          quickReplies: replies,
         );
       case AssistantIntent.suggestDrink:
         return _suggest(
@@ -339,11 +331,21 @@ class AssistantEngine {
               : 'We have active coupons right now. Open the Coupon page to copy a code and apply it at checkout.',
           topic: 'faq',
           sourceId: 'faq-coupon',
-          quickReplies: arabic
-              ? const ['فين الاوردر؟', 'رشحلي مشروب']
-              : const ['Track my order', 'Suggest a drink'],
           destination: AssistantDestination.coupons,
           navigateLabel: arabic ? 'العروض' : 'Open Coupons',
+        );
+      case AssistantIntent.memory:
+        // The customer asks to see, or take back, what was kept about them.
+        // The answer opens the review screen rather than deleting in the chat:
+        // emptying a memory table is not something a keyword match should do.
+        memory.pendingQuestion = null;
+        return AssistantAnswer(
+          text: arabic
+              ? 'كل اللي فاكره عنك موجود في صفحة الذاكرة. من هناك تشوف كل سطر وتمسحه، أو تمسح الكل.'
+              : 'Everything I keep about you is on the Memory page. There you can read each item and delete it, or delete all of it.',
+          topic: 'memory',
+          destination: AssistantDestination.memory,
+          navigateLabel: arabic ? 'الذاكرة' : 'Open Memory',
         );
       case AssistantIntent.botIdentity:
         return AssistantAnswer(
@@ -352,7 +354,6 @@ class AssistantEngine {
             memory.totalChats,
           ),
           topic: 'identity',
-          quickReplies: replies,
         );
       case AssistantIntent.farewell:
         return AssistantAnswer(
@@ -361,7 +362,6 @@ class AssistantEngine {
             memory.totalChats,
           ),
           topic: 'farewell',
-          quickReplies: replies,
         );
       case AssistantIntent.affirm:
         if (memory.pendingQuestion == 'order_confirm') {
@@ -690,9 +690,6 @@ class AssistantEngine {
       topic: 'suggest',
       sourceId: 'suggest',
       products: allPicks,
-      quickReplies: arabic
-          ? AssistantComposer.suggestRepliesAr
-          : const ['Something stronger', 'Something sweet', 'Any coupons?'],
     );
   }
 
@@ -753,27 +750,59 @@ class AssistantEngine {
   /// The knowledge base holds facts and the intents handle actions. "عايز
   /// اطلب لاتيه كبير" is an order, not a question about lattes, so the
   /// knowledge base must stay out of it.
-  static bool _isActionRequest(String query) =>
+  static bool isActionRequest(String query) =>
       mentionsWord(query, AssistantPhrases.actionWords);
+
+  /// The script the answer is written in — the same rule the engine uses
+  /// internally, exposed so the understanding layer replies in the language
+  /// the customer used too, instead of guessing again from a second copy.
+  static bool arabicReplyFor(String query) {
+    if (prefersArabic(query)) return true;
+    if (RegExp(r'[A-Za-z]').hasMatch(query)) return false;
+    return AppLocale.instance.isArabic;
+  }
+
+  /// The article the shop wrote down that answers this sentence, with the
+  /// score it matched at, or null when nothing clears the floor.
+  ///
+  /// One rule, shared by the engine and by [AssistantUnderstanding]: a fact
+  /// has to clear [factFloor], and an action verb has to clear the higher
+  /// [factFloorForAction], because "عايز اطلب لاتيه كبير" shares words with the
+  /// latte article but is an order, not a question about lattes.
+  static ({KnowledgeArticle article, double score})? factMatch(
+    String query,
+    AssistantMemory memory, {
+    bool arabic = false,
+  }) {
+    final ranked = rankArticles(query, memory, limit: 1, arabic: arabic);
+    if (ranked.isEmpty) return null;
+    final (article, score) = ranked.first;
+    if (score < factFloor) return null;
+    if (isActionRequest(query) && score < factFloorForAction) return null;
+    return (article: article, score: score);
+  }
+
+  /// True when the shop wrote this sentence's answer down.
+  static bool knowsFact(
+    String query,
+    AssistantMemory memory, {
+    bool arabic = false,
+  }) => factMatch(query, memory, arabic: arabic) != null;
+
+  static const double factFloor = 3;
+  static const double factFloorForAction = 5;
 
   static AssistantAnswer? _knowledgeAnswer(
     String query,
     AssistantMemory memory, {
     required bool arabic,
   }) {
-    final ranked = rankArticles(query, memory, limit: 1, arabic: arabic);
-    if (ranked.isEmpty) return null;
-    if (ranked.first.$2 < 3) return null;
-    // An action belongs to the intents, not to the facts.
-    if (_isActionRequest(query) && ranked.first.$2 < 5) return null;
-    final best = ranked.first.$1;
+    final match = factMatch(query, memory, arabic: arabic);
+    if (match == null) return null;
     return AssistantAnswer(
-      text: best.bodyFor(arabic: arabic),
-      topic: best.topic,
-      sourceId: best.id,
-      quickReplies: arabic
-          ? AssistantComposer.quickRepliesAr
-          : const ['Suggest a drink', 'Track my order', 'Any coupons?'],
+      text: match.article.bodyFor(arabic: arabic),
+      topic: match.article.topic,
+      sourceId: match.article.id,
     );
   }
 
@@ -816,14 +845,9 @@ class AssistantEngine {
   }) {
     if (cartProductIds.isEmpty) {
       return AssistantAnswer(
-        text: arabic
-            ? 'السلة فاضية دلوقتي. تحب أديك ترشيح؟'
-            : 'Your cart is empty right now. Shall I suggest something?',
+        text: arabic ? 'السلة فاضية دلوقتي.' : 'Your cart is empty right now.',
         topic: 'cart',
         sourceId: 'cart-empty',
-        quickReplies: arabic
-            ? const ['رشحلي مشروب', 'حاجه تانية']
-            : const ['Suggest a drink', 'Something else'],
       );
     }
     final names = <String>[];
@@ -838,9 +862,6 @@ class AssistantEngine {
           : 'Your cart has $items ${items == 1 ? 'item' : 'items'}${names.isEmpty ? '' : ': ${names.join(', ')}'}.',
       topic: 'cart',
       sourceId: 'cart-status',
-      quickReplies: arabic
-          ? const ['عايز اطلب', 'حاجه تانية']
-          : const ['I want to order', 'Something else'],
     );
   }
 
@@ -872,9 +893,6 @@ class AssistantEngine {
               : 'Your cart is empty right now, there is nothing to remove.',
           topic: 'cart',
           sourceId: 'cart-empty',
-          quickReplies: arabic
-              ? const ['رشحلي مشروب', 'حاجه تانية']
-              : const ['Suggest a drink', 'Something else'],
         );
       }
       return AssistantAnswer(
@@ -884,7 +902,6 @@ class AssistantEngine {
         topic: 'cart',
         sourceId: 'cart-clarify',
         products: inCart.take(3).toList(),
-        quickReplies: inCart.take(3).map((product) => product.name).toList(),
       );
     }
     if (!cartProductIds.contains(target.id)) {
@@ -894,9 +911,6 @@ class AssistantEngine {
             : '${target.name} is not in your cart right now.',
         topic: 'cart',
         sourceId: 'cart-missing',
-        quickReplies: arabic
-            ? const ['السلة فيها ايه؟', 'حاجه تانية']
-            : const ["What's in my cart?", 'Something else'],
       );
     }
     return AssistantAnswer(
@@ -906,9 +920,6 @@ class AssistantEngine {
       topic: 'cart',
       sourceId: 'cart-removed',
       actions: [CartAction(productId: target.id, remove: true)],
-      quickReplies: arabic
-          ? const ['السلة فيها ايه؟', 'حاجه تانية']
-          : const ["What's in my cart?", 'Something else'],
     );
   }
 
@@ -935,9 +946,6 @@ class AssistantEngine {
       topic: 'suggest',
       sourceId: 'ingredient-match',
       products: [product],
-      quickReplies: arabic
-          ? const ['أيوه هو دا', 'لا مش هو']
-          : const ['Yes, this one', 'Not this one'],
     );
   }
 
@@ -945,6 +953,18 @@ class AssistantEngine {
   ///
   /// Returns null when the ingredient is on the menu, or when the question is
   /// not about an ingredient at all.
+  /// True when the sentence names an ingredient that nothing on the menu has.
+  ///
+  /// "مفيش حاجة عندنا فيها مكسرات" is a fact the shop knows exactly, and it is
+  /// the fact an allergy question turns on — the language model may only guess
+  /// at it. Naming an ingredient that the menu does carry is a different case:
+  /// that is a search or an order, and the answer comes from the menu itself.
+  static bool statesMissingIngredient(String query) {
+    final hits = AssistantCatalog.current.detectIngredients(query);
+    if (hits.isEmpty) return false;
+    return AssistantCatalog.current.matchByIngredients(hits).isEmpty;
+  }
+
   static AssistantAnswer? _missingIngredientAnswer(
     String query,
     AssistantMemory memory, {
@@ -983,9 +1003,6 @@ class AssistantEngine {
       topic: 'suggest',
       sourceId: 'ingredient-none',
       products: alternatives,
-      quickReplies: arabic
-          ? const ['رشحلي مشروب', 'حاجه تانية']
-          : const ['Suggest a drink', 'Something else'],
     );
   }
 
@@ -1105,9 +1122,6 @@ class AssistantEngine {
       topic: 'suggest',
       sourceId: 'suggest-select',
       products: [product],
-      quickReplies: arabic
-          ? const ['فين الاوردر؟', 'حاجة تانية']
-          : const ['Track my order', 'Something else', 'Any coupons?'],
     );
   }
 
@@ -1138,7 +1152,6 @@ class AssistantEngine {
         topic: 'suggest',
         sourceId: 'suggest-usual',
         products: fallback.products,
-        quickReplies: fallback.quickReplies,
       );
     }
     return AssistantAnswer(
@@ -1154,9 +1167,6 @@ class AssistantEngine {
       topic: 'suggest',
       sourceId: 'suggest-usual',
       products: [usual],
-      quickReplies: arabic
-          ? const ['أيوه', 'حاجة تانية', 'فين الاوردر؟']
-          : const ['Yes please', 'Something else', 'Track my order'],
     );
   }
 
@@ -1198,6 +1208,16 @@ class AssistantEngine {
     }
     return null;
   }
+
+  /// The menu items and menu categories a sentence actually names.
+  ///
+  /// This is the difference between a question the app can answer from live
+  /// data and one it cannot: "عايز لاتيه من غير سكر" names a real product, so
+  /// the order can be drafted; "ابغى قهوة تركية" names nothing on the menu, and
+  /// answering it from the menu would be a guess.
+  static ({Set<String> wanted, Set<String> categories}) mentionedProducts(
+    String query,
+  ) => _expandAll(query, tokenize(query).toSet());
 
   /// Maps dialect taste words + product names onto the canonical English
   /// tokens the scorer understands (حلو -> sweet, لاتيه -> Latte...).
@@ -1296,7 +1316,7 @@ class AssistantEngine {
   /// The customer's own order, the cart and the prices change; an answer
   /// about them must never be remembered and served to the next customer.
   static bool isPerishableQuestion(String query) {
-    if (_asksPrice(query)) return true;
+    if (asksPrice(query)) return true;
     final intent = detectIntent(query);
     return const {
       AssistantIntent.orderStatus,
@@ -1326,12 +1346,9 @@ class AssistantEngine {
         .toList();
     if (active.isEmpty && delivered.isEmpty) {
       return AssistantAnswer(
-        text: arabic ? 'لسه معندكش طلبات. قولي نفسك في إيه وأنا أرشحلك حاجة!' : 'You have no orders yet. Tell me what you feel like and I will suggest something!',
+        text: arabic ? 'لسه معندكش طلبات.' : 'You have no orders yet.',
         topic: 'orders',
         sourceId: 'orders-empty',
-        quickReplies: arabic
-            ? const ['رشحلي مشروب', 'في عروض؟']
-            : const ['Suggest a drink', 'Any coupons?'],
       );
     }
     final lines = [
@@ -1354,9 +1371,6 @@ class AssistantEngine {
           : '${lines.join(' ')} Open My Orders for live tracking.',
       topic: 'orders',
       sourceId: 'orders-status',
-      quickReplies: arabic
-          ? const ['رشحلي مشروب', 'في عروض؟']
-          : const ['Suggest a drink', 'Any coupons?'],
       destination: AssistantDestination.orders,
       navigateLabel: arabic ? 'طلباتي' : 'My Orders',
     );
@@ -1364,7 +1378,12 @@ class AssistantEngine {
 
   // ==================== Conversational ordering ====================
 
-  static bool _asksPrice(String query) {
+  /// True when the sentence asks what something costs.
+  ///
+  /// Public because the answer is not only for pricing: whether a price is
+  /// being asked about a named menu item is what lets the assistant answer
+  /// from live data instead of handing the question to the language model.
+  static bool asksPrice(String query) {
     final normalized = normalizeText(query);
     // Short markers need whole-word match ("كم" lives inside "كمان").
     if (normalized.split(' ').contains('كم')) return true;
@@ -1552,9 +1571,6 @@ class AssistantEngine {
       topic: 'options',
       sourceId: 'options-context',
       products: [product],
-      quickReplies: arabic
-          ? const ['عايز اضيفه', 'حاجه تانية']
-          : const ['Add it', 'Something else'],
     );
   }
 
@@ -1592,14 +1608,11 @@ class AssistantEngine {
     final names = context.map((product) => product.name).join('، ');
     return AssistantAnswer(
       text: arabic
-          ? 'أيوه، دي اللي رشحتها ليك: $names. عايز اضيف واحدة منهم للسلة؟'
-          : 'Yes, those are the ones I suggested: $names. Shall I add one to your cart?',
+          ? 'أيوه، دي اللي رشحتها ليك: $names.'
+          : 'Yes, those are the ones I suggested: $names.',
       topic: 'suggest',
       sourceId: 'suggest-confirm',
       products: context.take(3).toList(),
-      quickReplies: arabic
-          ? const ['ايوه ضيفها', 'حاجه تانية']
-          : const ['Yes, add it', 'Something else'],
     );
   }
 
@@ -1612,7 +1625,7 @@ class AssistantEngine {
     required bool arabic,
     List<ProductModel> context = const [],
   }) {
-    if (!_asksPrice(query)) return null;
+    if (!asksPrice(query)) return null;
     // A question about discounts is a coupon question, not a price one.
     if (_mentionsCoupons(query)) return null;
     final tokens = tokenize(query).toSet();
@@ -1650,9 +1663,6 @@ class AssistantEngine {
       topic: 'prices',
       sourceId: 'price-inquiry',
       products: products,
-      quickReplies: arabic
-          ? const ['عايز اطلب', 'ضيف للسلة']
-          : const ['I want to order', 'Add to cart'],
     );
   }
 
@@ -1794,9 +1804,6 @@ class AssistantEngine {
         text: best.bodyFor(arabic: arabic),
         topic: best.topic,
         sourceId: best.id,
-        quickReplies: arabic
-            ? AssistantComposer.quickRepliesAr
-            : const ['Suggest a drink', 'Track my order', 'Any coupons?'],
       );
     }
 
@@ -1806,9 +1813,6 @@ class AssistantEngine {
         memory.totalChats,
       ),
       topic: 'fallback',
-      quickReplies: arabic
-          ? AssistantComposer.quickRepliesAr
-          : defaultQuickReplies,
     );
   }
 }

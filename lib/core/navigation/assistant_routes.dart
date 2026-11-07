@@ -1,4 +1,5 @@
 import 'package:new_coffee/features/assistant/data/assistant_actions.dart';
+import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
@@ -15,5 +16,6 @@ String? routeForAssistantDestination(AssistantDestination? destination) {
     AssistantDestination.coupons => CouponPage.routeName,
     AssistantDestination.orders => OrdersPage.routeName,
     AssistantDestination.checkout => CheckoutPage.routeName,
+    AssistantDestination.memory => AssistantMemoryPage.routeName,
   };
 }

@@ -17,9 +17,6 @@ const edits = {
     ['backgroundColor: Colors.transparent', 'backgroundColor: AppColor.transparent'],
     ['return Colors.transparent;', 'return AppColor.transparent;'],
   ],
-  'lib/features/assistant/presentation/views/assistant_sheet.dart': [
-    ['size: 32,', 'size: AppDimensions.addToCartButtonAssistant,'],
-  ],
   'lib/features/assistant/presentation/widgets/assistant_fab.dart': [
     ['elevation: 6,', 'elevation: AppElevation.floating,'],
   ],

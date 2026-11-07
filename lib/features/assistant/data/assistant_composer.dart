@@ -55,37 +55,34 @@ class AssistantComposer {
   }
 
   static const List<String> usualFound = [
-    'Your usual is {product} — excellent choice! Want it again today?',
-    'Back to {product}? You clearly know what you love. Enjoy!',
-    '{product} it is — your all-time favorite. Shall I keep it coming?',
+    'Your usual is {product}.',
+    '{product} — you know what you like.',
+    '{product} it is, your all-time favorite.',
   ];
 
   static const String usualUnknownLead =
-      "I don't know your usual yet — tell me what you love and I'll remember it. ";
+      "I don't know your usual yet — nothing you ordered repeats often enough "
+      'to be called a habit. ';
 
   static const List<String> affirmSuggest = [
-    'Perfect! Tell me how to fine-tune it — stronger, sweeter, colder, or cheaper?',
-    'Love it! Want me to adjust — maybe stronger or sweeter?',
+    'Perfect — enjoy it.',
+    'Great pick.',
   ];
 
-  static const List<String> affirmGeneral = [
-    'Got it! What next — a drink idea, your order status, or coupons?',
-    'On it! Anything else — suggestions, orders, or offers?',
-  ];
+  static const List<String> affirmGeneral = ['Got it!', 'On it!'];
 
   static const List<String> denySuggest = [
     'No problem at all — tell me the mood and I will re-pick: strong, sweet, cold, or cheap?',
     'All good! Give me a direction — strong, sweet, cold, or cheap — and I will find another one.',
   ];
 
-  static const List<String> denyGeneral = [
-    'No worries! I am here whenever you need a suggestion or an order update.',
-    'Totally fine! Just say the word when you want a drink idea or your order status.',
-  ];
+  static const List<String> denyGeneral = ['No worries!', 'All good!'];
 
   static const List<String> identity = [
-    'I am your coffee assistant here in the app — I suggest drinks, track orders and hunt coupons. How can I help?',
-    'Think of me as your personal barista helper: drink ideas, order tracking and offers, all in one chat.',
+    'I am your coffee assistant here in the app — I suggest drinks, track '
+        'orders and check coupons.',
+    'Think of me as your personal barista helper: drink ideas, order tracking '
+        'and offers, all in one chat.',
   ];
 
   static const List<String> farewell = [
@@ -96,23 +93,11 @@ class AssistantComposer {
   static const List<String> fallback = [
     "I couldn't quite catch that. I can suggest drinks, track your orders, or check coupons — try one of those.",
     "Hmm, I didn't get that. Tell me what you're in the mood for, or ask about your order.",
-    'Not sure I follow. I shine at drink suggestions, order tracking and coupon hunting — pick one below.',
+    'Not sure I follow. I shine at drink suggestions, order tracking and coupon hunting — tell me which one you want.',
     'I want to help, but I need a little more. Are we talking drinks, orders, or offers?',
   ];
 
   // ==================== Egyptian Arabic pools ====================
-
-  static const List<String> quickRepliesAr = [
-    'رشحلي مشروب',
-    'فين الاوردر؟',
-    'في عروض؟',
-  ];
-
-  static const List<String> suggestRepliesAr = [
-    'حاجة أقوى',
-    'حاجة مسكرة',
-    'في عروض؟',
-  ];
 
   static const List<String> suggestLeadsAr = [
     'دي ترشيحاتي ليك دلوقتي: {names}.',
@@ -126,37 +111,30 @@ class AssistantComposer {
   ];
 
   static const List<String> usualFoundAr = [
-    'المعتاد بتاعك هو {product} — ذوق عالي! تحبه تاني النهاردة؟',
-    'نرجع لـ {product}؟ انت عارف بتحب إيه. بالهنا!',
+    'المعتاد بتاعك هو {product}.',
+    '{product} — انت عارف بتحب إيه.',
     '{product} زي كل مرة — اختيار موفق!',
   ];
 
   static const String usualUnknownLeadAr =
-      'لسه معرفش المعتاد بتاعك — قولي بتحب إيه وأنا هفتكره. ';
+      'لسه معرفش المعتاد بتاعك — مفيش طلب متكرر يتسما عادة. ';
 
-  static const List<String> affirmSuggestAr = [
-    'تمام! قولي أظبطها إزاي — أقوى، مسكرة، ساقعة، ولا أرخص؟',
-    'حلو! تحب أعدل — أقوى ولا مسكرة؟',
-  ];
+  static const List<String> affirmSuggestAr = ['تمام! بالهنا.', 'اختيار حلو.'];
 
-  static const List<String> affirmGeneralAr = [
-    'تمام! تحب إيه تاني — ترشيح مشروب، حالة طلبك، ولا العروض؟',
-    'معاك! أي حاجة تانية — ترشيحات، طلبات، ولا عروض؟',
-  ];
+  static const List<String> affirmGeneralAr = ['تمام!', 'معاك!'];
 
   static const List<String> denySuggestAr = [
     'ولا يهمك — قولي المود وأنا أختار من جديد: قوي، مسكر، ساقع، ولا رخيص؟',
     'عادي! اديني اتجاه — قوي، مسكر، ساقع، ولا رخيص — وهلاقيلك غيره.',
   ];
 
-  static const List<String> denyGeneralAr = [
-    'ولا يهمك! أنا هنا لو احتجت ترشيح أو متابعة طلب.',
-    'عادي خالص! قولي بس لو عايز ترشيح مشروب أو حالة طلبك.',
-  ];
+  static const List<String> denyGeneralAr = ['ولا يهمك!', 'عادي خالص!'];
 
   static const List<String> identityAr = [
-    'أنا مساعد القهوة بتاعك هنا في التطبيق — برشح مشروبات، بتابع الطلبات، وبدور على العروض. أساعدك إزاي؟',
-    'اعتبرني الباريستا المساعد بتاعك: ترشيحات مشروبات، متابعة طلبات وعروض، كل ده في الشات.',
+    'أنا مساعد القهوة بتاعك هنا في التطبيق — برشح مشروبات، بتابع الطلبات، '
+        'وبدور على العروض.',
+    'اعتبرني الباريستا المساعد بتاعك: ترشيحات مشروبات، متابعة طلبات وعروض، '
+        'كل ده في الشات.',
   ];
 
   static const List<String> farewellAr = [
@@ -167,7 +145,7 @@ class AssistantComposer {
   static const List<String> fallbackAr = [
     'مش قادر ألقطها كده. أقدر أرشحلك مشروبات، أتابع طلباتك، أو أشوفلك العروض — جرب واحدة من دول.',
     'همم، مفهمتش قصدك. قولي نفسك في إيه، أو اسألني عن طلبك.',
-    'مش متأكد إني فاهم. أنا شاطر في ترشيح المشروبات ومتابعة الطلبات وتدوير العروض — اختار واحدة من تحت.',
+    'مش متأكد إني فاهم. أنا شاطر في ترشيح المشروبات ومتابعة الطلبات وتدوير العروض — قولي واحدة من دول.',
     'عايز أساعدك بس محتاج توضيح. بنتكلم عن مشروبات، طلبات، ولا عروض؟',
   ];
 

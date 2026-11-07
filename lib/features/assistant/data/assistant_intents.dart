@@ -19,6 +19,9 @@ enum AssistantIntent {
   payNow,
   payCash,
   selectOrdinal,
+
+  /// "What do you remember about me?" / "امسح ذاكرتي".
+  memory,
   unknown,
 }
 
@@ -176,10 +179,17 @@ Map<AssistantIntent, double> scoreIntents(
     for (final rawPhrase
         in AssistantPhrases.intentPhrases[intent] ?? const <String>[]) {
       final phrase = normalizeText(rawPhrase);
-      // Full phrases outrank single keywords: they are more specific.
-      if (phrase.length > 3 && normalizedQuery.contains(phrase)) {
-        score += 2;
+      if (phrase.length <= 3) continue;
+      if (phrase.contains(' ')) {
+        // A phrase is as specific as the whole question: it outranks a single
+        // keyword.
+        if (normalizedQuery.contains(phrase)) score += 2;
+        continue;
       }
+      // A single word counts on a word boundary only. "ساعد" (help) lives
+      // inside "المساعدة" (the help), and that substring outscored the exact
+      // "شكرا" — so "شكرا على المساعدة" was read as a hello.
+      if (effectiveTokens.contains(phrase)) score += 2;
     }
     scores[intent] = score;
   }

@@ -10,6 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/features/assistant/data/assistant_actions.dart';
 import 'package:new_coffee/features/assistant/data/assistant_catalog.dart';
 import 'package:new_coffee/features/assistant/data/assistant_engine.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
@@ -163,5 +164,43 @@ void main() {
 
     expect(answer.sourceId, 'faq-hours');
     expect(answer.topic, isNot('fallback'));
+  });
+
+  test('a request about the customer memory opens the review page', () {
+    // "show me what you keep about me" and "delete my memory" both belong to
+    // the review screen. Deleting is not something a keyword match does on its
+    // own — the page asks twice before it empties the table.
+    for (final query in ['اعرض ذاكرتي', 'امسح ذاكرتي', 'ذاكرتك']) {
+      final answer = AssistantEngine.answer(
+        query,
+        snapshot: snapshot,
+        memory: AssistantMemory(replyArabic: true),
+        now: DateTime.now(),
+      );
+      expect(
+        answer.destination,
+        AssistantDestination.memory,
+        reason: '"$query" must reach the page that owns the memory',
+      );
+      expect(answer.topic, 'memory');
+    }
+  });
+
+  test('small talk carries no pitch', () {
+    // The customer asked for the unsolicited suggestions to stop. A thank-you
+    // that ends with "أي حاجة تانية — ترشيحات، طلبات، ولا عروض؟" is one.
+    for (final query in ['شكرا', 'ازيك', 'مع السلامه']) {
+      final answer = AssistantEngine.answer(
+        query,
+        snapshot: snapshot,
+        memory: AssistantMemory(replyArabic: true),
+        now: DateTime.now(),
+      );
+      expect(
+        answer.text,
+        isNot(contains('؟')),
+        reason: '"$query" was answered with a pitch: ${answer.text}',
+      );
+    }
   });
 }

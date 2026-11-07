@@ -56,6 +56,26 @@ void main() {
     expect(prompt, contains('never invent products, prices'));
   });
 
+  test('no example answer ends by pitching something', () {
+    // The examples teach the shape of an answer better than the rules do, so a
+    // single "تحب أضيفه لك؟" in one of them reappears in every reply.
+    final prompt = buildSystemPrompt(
+      memory: AssistantMemory(replyArabic: true),
+    );
+    final examples = prompt
+        .split('Examples of the right answer')
+        .last
+        .split('\n')
+        .where((line) => line.startsWith('Assistant: '))
+        .toList();
+
+    expect(examples, isNotEmpty);
+    for (final line in examples) {
+      expect(line, isNot(contains('؟')));
+      expect(line, isNot(contains('?')));
+    }
+  });
+
   test('the menu is grounded with the real names and prices', () {
     final context = buildLiveContext(
       AssistantMemory(replyArabic: true),
