@@ -25,8 +25,8 @@ const List<KnowledgeArticle> faqKnowledge = [
       'قافلا',
       'باقص',
     ],
-    body: 'We are open every day from 7:00 AM to 11:00 PM. The kitchen closes 30 minutes before closing time.',
-    bodyAr: 'بنفتح كل يوم من 7:00 الصبح لحد 11:00 بالليل، والمطبخ بيقفل نص ساعة قبل ما نقفل.',
+    body: 'We are open every day from 9:00 AM to 10:00 PM. The kitchen closes 30 minutes before closing time.',
+    bodyAr: 'بنفتح كل يوم من 9:00 الصبح لحد 10:00 بالليل، والمطبخ بيقفل نص ساعة قبل ما نقفل.',
     topic: 'faq',
   ),
   KnowledgeArticle(

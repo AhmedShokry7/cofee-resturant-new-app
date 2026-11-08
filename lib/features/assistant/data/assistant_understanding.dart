@@ -335,8 +335,13 @@ class AssistantUnderstanding {
         mentionsMenuItem: namesMenuItem,
         deviceIntent: deviceIntent,
         safeToLearn:
-            subject != SentenceSubject.ownOrder &&
-            !AssistantEngine.isPerishableQuestion(query),
+            // Shared answers have no link to the catalogue/article version
+            // they were based on. Never reuse them for a fact that can change
+            // in the shop; those answers must use this turn's live data.
+            subject == SentenceSubject.none &&
+            !AssistantEngine.isPerishableQuestion(query) &&
+            !isWeatherQuestion(query) &&
+            !isHealthQuestion(query),
       );
     }
 
@@ -360,6 +365,12 @@ class AssistantUnderstanding {
     // no answer at all: only the shop's own recipe may reply.
     if (subject == SentenceSubject.ingredient) {
       return decide(AnswerOwner.liveData, 'ingredient-fact');
+    }
+    if (isWeatherQuestion(query)) {
+      return decide(AnswerOwner.languageModel, 'coffee-weather-expertise');
+    }
+    if (isHealthQuestion(query) && !AssistantEngine.asksPrice(query)) {
+      return decide(AnswerOwner.languageModel, 'coffee-health-expertise');
     }
     if (subject == SentenceSubject.menuItem) {
       return decide(AnswerOwner.liveData, 'menu-item');
@@ -389,6 +400,143 @@ class AssistantUnderstanding {
     }
     return decide(AnswerOwner.languageModel, 'no-grounding:${intent.name}');
   }
+
+  static bool isWeatherQuestion(String query) => mentionsWord(query, const [
+    'طقس',
+    'الجو',
+    'الحرارة',
+    'درجة الحرارة',
+    'مطر',
+    'تمطر',
+    'جو حار',
+    'جو بارد',
+    'الجو حر',
+    'الجو برد',
+    'الحر',
+    'صيف',
+    'الصيف',
+    'شتا',
+    'الشتا',
+    'شتاء',
+    'weather',
+    'temperature',
+    'rain',
+    'hot outside',
+    'cold outside',
+  ]);
+
+  static bool isHealthQuestion(String query) => mentionsWord(query, const [
+    'فايدة',
+    'فوائد',
+    'وظيفة القهوة',
+    'اضرار',
+    'أضرار',
+    'مضر',
+    'مضرة',
+    'مفيد',
+    'مفيدة',
+    'صحي',
+    'صحية',
+    'يضر',
+    'ضرر',
+    'يسبب',
+    'كافيين',
+    'تأثير القهوة',
+    'تأثيرها',
+    'القهوة للجسم',
+    'الصحة',
+    'قهوة والنوم',
+    'القهوة والنوم',
+    'ضغط الدم',
+    'الضغط',
+    'خفقان',
+    'قلق',
+    'صداع',
+    'حموضة',
+    'المعدة',
+    'القلب',
+    'النبض',
+    'الحمل',
+    'حامل',
+    'رضاعة',
+    'سكري',
+    'مرض',
+    'health',
+    'healthy',
+    'effect of coffee',
+    'what does coffee do',
+    'benefits',
+    'harmful',
+    'helpful',
+    'cause',
+    'side effects',
+    'caffeine',
+    'blood pressure',
+    'headache',
+    'heart rate',
+    'stomach',
+    'pregnant',
+    'diabetes',
+  ]);
+
+  /// Keep the shared learning queue focused on cafe questions, not unrelated
+  /// personal questions that happen to reach the language model.
+  static bool isCafeRelatedQuestion(String query) => mentionsWord(query, const [
+    'قهوة',
+    'بن',
+    'كافيه',
+    'مشروب',
+    'مشروبات',
+    'منيو',
+    'قائمة',
+    'لاتيه',
+    'كابتشينو',
+    'اسبريسو',
+    'اسبرسو',
+    'موكا',
+    'كولد برو',
+    'ديكاف',
+    'كافيين',
+    'لبن',
+    'حليب',
+    'سكر',
+    'شاي',
+    'شوكولاتة',
+    'كيك',
+    'حلى',
+    'حساسية',
+    'طلب',
+    'فرع',
+    'توصيل',
+    'سعر',
+    'عرض',
+    'طقس',
+    'الجو',
+    'coffee',
+    'cafe',
+    'drink',
+    'menu',
+    'latte',
+    'cappuccino',
+    'espresso',
+    'mocha',
+    'cold brew',
+    'decaf',
+    'caffeine',
+    'milk',
+    'sugar',
+    'allergy',
+    'order',
+    'branch',
+    'delivery',
+    'price',
+    'weather',
+    'tea',
+    'chocolate',
+    'cake',
+    'dessert',
+    'milkshake',
+  ]);
 
   static SentenceSubject _subjectOf(
     String query, {

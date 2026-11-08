@@ -11,12 +11,15 @@ import 'package:new_coffee/features/assistant/data/llm/rag_context.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
+import 'support/mock_product_repository.dart';
+
 void main() {
   final snapshot = AssistantSnapshot(
     products: const [
       ProductModel(
         id: 'p1',
         name: 'Latte',
+        nameAr: 'لاتيه',
         nameEn: 'Latte',
         category: 'Hot Coffee',
         price: 35,
@@ -83,6 +86,54 @@ void main() {
     );
 
     expect(context, contains('Latte'));
+    expect(context, isNot(contains('لاتيه')));
     expect(context, contains('35'));
+  });
+
+  test('Arabic prompts tell the model to preserve English product names', () {
+    final prompt = buildSystemPrompt(
+      memory: AssistantMemory(replyArabic: true),
+    );
+
+    expect(prompt, contains('Keep product names exactly as written'));
+    expect(prompt, contains('write every other word in the customer language'));
+  });
+
+  test('a failed orders read is not reported as "no orders"', () {
+    final context = buildLiveContext(
+      AssistantMemory(replyArabic: true),
+      snapshot: const AssistantSnapshot(
+        products: [],
+        ordersState: DataState.failed,
+      ),
+    );
+
+    expect(context, isNot(contains('Orders: none.')));
+    expect(context, contains('Orders: temporarily unavailable'));
+  });
+
+  test('a failed menu read is not reported as an empty shop', () {
+    final context = buildLiveContext(
+      AssistantMemory(replyArabic: true),
+      snapshot: const AssistantSnapshot(
+        products: [],
+        productsState: DataState.failed,
+      ),
+    );
+
+    expect(context, contains('Menu: temporarily unavailable'));
+    expect(context, isNot(contains('Menu (name | category')));
+  });
+
+  test('load marks a failed orders read instead of an empty one', () async {
+    final loaded = await AssistantSnapshot.load(
+      catalog: const MockProductRepository(),
+      activeOrders: () async => throw Exception('orders read failed'),
+    );
+
+    expect(loaded.ordersState, DataState.failed);
+    expect(loaded.orders, isEmpty);
+    expect(loaded.productsState, DataState.loaded);
+    expect(loaded.products, isNotEmpty);
   });
 }

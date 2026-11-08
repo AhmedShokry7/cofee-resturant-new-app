@@ -84,14 +84,21 @@ class _EmptyNotificationsRepository implements NotificationsRepository {
 
   @override
   Future<int> markRead(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteNotifications(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteAllNotifications() async => 0;
 }
 
 NotificationsCubit _cubit(_FakePushRepository push) => NotificationsCubit(
   repository: _EmptyNotificationsRepository(),
   pushRepository: push,
-  // The permission of the phone is not what these tests are about, so the
-  // switch answers exactly what it is asked for.
-  pushSwitch: (enabled) async => enabled,
+  // The permission prompt is not part of these tests. Mimic the repository
+  // write the real push service makes after permission is granted.
+  pushSwitch: (enabled) async =>
+      (await push.setPreferences(pushEnabled: enabled)).pushEnabled,
 );
 
 void main() {
@@ -220,6 +227,21 @@ void main() {
       expect(cubit.state.preferences.orderStatus, isFalse);
     });
 
+    test('a failed push-off write keeps the switch on', () async {
+      final push = _FakePushRepository()
+        ..pushEnabled = true
+        ..refuseWrites = true;
+      final cubit = _cubit(push);
+      addTearDown(cubit.close);
+      await cubit.loadPushState();
+
+      final saved = await cubit.setPushEnabled(false);
+
+      expect(saved, isFalse);
+      expect(cubit.state.pushEnabled, isTrue);
+      expect(push.pushEnabled, isTrue);
+    });
+
     test('the mail switch opens the mail channel and nothing else', () async {
       final push = _FakePushRepository()
         ..pushEnabled = true
@@ -302,27 +324,26 @@ void main() {
         await tester.tap(find.byKey(const Key('open-preferences')));
         await tester.pumpAndSettle();
 
-        expect(find.byType(SwitchListTile), findsNWidgets(5));
+        expect(find.byType(SwitchListTile), findsNWidgets(6));
         final rows = tester
             .widgetList<SwitchListTile>(find.byType(SwitchListTile))
             .toList();
-        // The mail channel is offered first, then the types in the order of
-        // NotificationPreferenceKey: order updates, offers, loyalty, messages.
-        expect(rows[0].value, isTrue);
+        // Push, mail, then order updates, offers, loyalty and store messages.
+        expect(rows[0].value, isFalse);
         expect(rows[1].value, isTrue);
-        expect(rows[3].value, isFalse);
+        expect(rows[4].value, isFalse);
 
         // Five rows are taller than the test window, so the row that is about
         // to be tapped is brought into view first.
-        await tester.ensureVisible(find.byType(SwitchListTile).at(2));
-        await tester.tap(find.byType(Switch).at(2));
+        await tester.ensureVisible(find.byType(SwitchListTile).at(3));
+        await tester.tap(find.byType(Switch).at(3));
         await tester.pumpAndSettle();
 
         expect(push.promo, isFalse);
         final after = tester
             .widgetList<SwitchListTile>(find.byType(SwitchListTile))
             .toList();
-        expect(after[2].value, isFalse);
+        expect(after[3].value, isFalse);
       },
     );
 
@@ -338,7 +359,7 @@ void main() {
       await tester.tap(find.byKey(const Key('open-preferences')));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(Switch).first);
+      await tester.tap(find.byType(Switch).at(1));
       await tester.pumpAndSettle();
 
       expect(push.writeCount, 1);
@@ -359,16 +380,16 @@ void main() {
         await tester.tap(find.byKey(const Key('open-preferences')));
         await tester.pumpAndSettle();
 
-        // The second switch is the first of the types: order updates.
-        await tester.ensureVisible(find.byType(SwitchListTile).at(1));
-        await tester.tap(find.byType(Switch).at(1));
+        // Push and mail come first; order updates is the third switch.
+        await tester.ensureVisible(find.byType(SwitchListTile).at(2));
+        await tester.tap(find.byType(Switch).at(2));
         await tester.pumpAndSettle();
 
         expect(push.orderStatus, isTrue);
         final rows = tester
             .widgetList<SwitchListTile>(find.byType(SwitchListTile))
             .toList();
-        expect(rows[1].value, isTrue);
+        expect(rows[2].value, isTrue);
         // The customer is told, rather than left with a switch that moved and
         // silently moved back.
         expect(find.byType(SnackBar), findsOneWidget);

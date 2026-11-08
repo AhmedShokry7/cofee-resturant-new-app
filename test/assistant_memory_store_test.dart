@@ -151,6 +151,8 @@ class _FakeStore implements AssistantMemoryStore {
     String? conversationId,
     required int rating,
     String? correction,
+    String? question,
+    String? answer,
   }) async {
     ratings.add(rating);
   }
@@ -173,6 +175,7 @@ class _RecordingClient implements LlmClient {
     bool learn = true,
     bool personal = false,
     bool webSearch = false,
+    bool captureKnowledgeGap = false,
   }) async {
     lastSystem = system;
     lastLearn = learn;

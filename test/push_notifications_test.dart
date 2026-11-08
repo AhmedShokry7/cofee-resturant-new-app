@@ -95,6 +95,12 @@ class _EmptyNotificationsRepository implements NotificationsRepository {
 
   @override
   Future<int> markRead(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteNotifications(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteAllNotifications() async => 0;
 }
 
 /// The push lives on the server: the token of the device and the switch of
@@ -141,10 +147,12 @@ void main() {
   });
 
   test('turning the push off is answered by the switch', () async {
+    final push = _FakePushRepository();
     final cubit = NotificationsCubit(
       repository: _EmptyNotificationsRepository(),
-      pushRepository: _FakePushRepository(),
-      pushSwitch: (enabled) async => enabled,
+      pushRepository: push,
+      pushSwitch: (enabled) async =>
+          (await push.setPreferences(pushEnabled: enabled)).pushEnabled,
     );
     addTearDown(cubit.close);
 

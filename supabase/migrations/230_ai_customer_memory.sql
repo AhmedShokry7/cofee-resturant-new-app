@@ -853,29 +853,29 @@ grant execute on function public.assistant_may_touch(uuid) to authenticated, ser
 
 revoke all on function public.assistant_get_consent(uuid) from public, anon;
 grant execute on function public.assistant_get_consent(uuid) to authenticated, service_role;
-revoke all on function public.assistant_set_consent(uuid, boolean, boolean) from public, anon;
-grant execute on function public.assistant_set_consent(uuid, boolean, boolean) to authenticated, service_role;
-revoke all on function public.assistant_recall_memory(uuid, text, integer) from public, anon;
-grant execute on function public.assistant_recall_memory(uuid, text, integer) to authenticated, service_role;
-revoke all on function public.assistant_remember(uuid, text, text, text, text, real, boolean, text, uuid, text) from public, anon;
-grant execute on function public.assistant_remember(uuid, text, text, text, text, real, boolean, text, uuid, text) to authenticated, service_role;
-revoke all on function public.assistant_forget(uuid, uuid, text) from public, anon;
-grant execute on function public.assistant_forget(uuid, uuid, text) to authenticated, service_role;
+revoke all on function public.assistant_set_consent(boolean, boolean, uuid) from public, anon;
+grant execute on function public.assistant_set_consent(boolean, boolean, uuid) to authenticated, service_role;
+revoke all on function public.assistant_recall_memory(text, integer, uuid) from public, anon;
+grant execute on function public.assistant_recall_memory(text, integer, uuid) to authenticated, service_role;
+revoke all on function public.assistant_remember(text, text, text, text, real, boolean, text, uuid, text, uuid) from public, anon;
+grant execute on function public.assistant_remember(text, text, text, text, real, boolean, text, uuid, text, uuid) to authenticated, service_role;
+revoke all on function public.assistant_forget(uuid, text, uuid) from public, anon;
+grant execute on function public.assistant_forget(uuid, text, uuid) to authenticated, service_role;
 revoke all on function public.assistant_erase(uuid) from public, anon;
 grant execute on function public.assistant_erase(uuid) to authenticated, service_role;
-revoke all on function public.assistant_log_message(uuid, uuid, text, text, jsonb, text) from public, anon;
-grant execute on function public.assistant_log_message(uuid, uuid, text, text, jsonb, text) to authenticated, service_role;
-revoke all on function public.assistant_recent_messages(uuid, integer) from public, anon;
-grant execute on function public.assistant_recent_messages(uuid, integer) to authenticated, service_role;
-revoke all on function public.assistant_record_feedback(uuid, uuid, uuid, smallint, text) from public, anon;
-grant execute on function public.assistant_record_feedback(uuid, uuid, uuid, smallint, text) to authenticated, service_role;
+revoke all on function public.assistant_log_message(text, text, uuid, jsonb, text, uuid) from public, anon;
+grant execute on function public.assistant_log_message(text, text, uuid, jsonb, text, uuid) to authenticated, service_role;
+revoke all on function public.assistant_recent_messages(integer, uuid) from public, anon;
+grant execute on function public.assistant_recent_messages(integer, uuid) to authenticated, service_role;
+revoke all on function public.assistant_record_feedback(smallint, uuid, uuid, text, uuid) from public, anon;
+grant execute on function public.assistant_record_feedback(smallint, uuid, uuid, text, uuid) to authenticated, service_role;
 
 -- The two learning functions stay service-role only, as 097 left them, but the
 -- new signatures have to be granted or the Edge Function cannot call them.
-revoke all on function public.recall_learned_answer(text, real, uuid) from public, anon, authenticated;
-grant execute on function public.recall_learned_answer(text, real, uuid) to service_role;
-revoke all on function public.remember_answer(text, text, text, text, text, text, uuid) from public, anon, authenticated;
-grant execute on function public.remember_answer(text, text, text, text, text, text, uuid) to service_role;
+revoke all on function public.recall_learned_answer(text, real) from public, anon, authenticated;
+grant execute on function public.recall_learned_answer(text, real) to service_role;
+revoke all on function public.remember_answer(text, text, text, text, text) from public, anon, authenticated;
+grant execute on function public.remember_answer(text, text, text, text, text) to service_role;
 
 revoke all on function public.prune_assistant_transcripts(integer) from public, anon, authenticated;
 grant execute on function public.prune_assistant_transcripts(integer) to service_role;

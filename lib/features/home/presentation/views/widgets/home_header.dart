@@ -8,6 +8,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
+import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
 import 'package:new_coffee/shared/utils/optional_provider.dart';
@@ -56,6 +57,34 @@ class HomeHeader extends StatelessWidget {
               SizedBox(height: AppSpacing.xs),
               Text(S.homeQuestion, style: AppFonts.semiBold20(context)),
             ],
+          ),
+        ),
+        SizedBox(width: AppSpacing.sm),
+        Semantics(
+          button: true,
+          label: S.loyaltyPoints,
+          child: Material(
+            color: AppColor.transparent,
+            shape: CircleBorder(
+              side: BorderSide(
+                color: AppColor.primaryRing,
+                width: AppSizes.px1,
+              ),
+            ),
+            child: InkWell(
+              onTap: () =>
+                  Navigator.of(context).pushNamed(LoyaltyPage.routeName),
+              customBorder: const CircleBorder(),
+              child: SizedBox(
+                height: AppSizes.px44,
+                width: AppSizes.px44,
+                child: Icon(
+                  AppIcons.gift,
+                  size: AppSizes.px22,
+                  color: AppColor.primaryColor,
+                ),
+              ),
+            ),
           ),
         ),
         SizedBox(width: AppSpacing.sm),

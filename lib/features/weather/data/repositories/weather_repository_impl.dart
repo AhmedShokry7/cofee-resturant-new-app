@@ -19,7 +19,8 @@ class WeatherRepositoryImpl implements WeatherRepository {
 
     final uri = Uri.parse(
       'https://api.open-meteo.com/v1/forecast'
-      '?latitude=$latitude&longitude=$longitude&current=temperature_2m',
+      '?latitude=$latitude&longitude=$longitude'
+      '&current=temperature_2m,apparent_temperature,precipitation,weather_code',
     );
     // A hung request would keep the widget on WeatherLoading forever, and the
     // cubit already has a failure state to show: bound the wait instead.
@@ -30,7 +31,12 @@ class WeatherRepositoryImpl implements WeatherRepository {
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     final current = data['current'] as Map<String, dynamic>;
     final temperature = (current['temperature_2m'] as num).toDouble();
-    return WeatherModel(temperature: temperature);
+    return WeatherModel(
+      temperature: temperature,
+      apparentTemperature: (current['apparent_temperature'] as num?)?.toDouble(),
+      precipitationMm: (current['precipitation'] as num?)?.toDouble(),
+      weatherCode: (current['weather_code'] as num?)?.toInt(),
+    );
   }
 
   Future<(double, double)> _position() async {

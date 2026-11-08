@@ -55,6 +55,7 @@ class ForegroundPushBanners {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
+          persist: false,
           content: Text(
             [title, body].where((part) => part.isNotEmpty).join(' — '),
           ),

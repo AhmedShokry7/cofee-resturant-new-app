@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/di/branch_cubit_binding.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/core/locale/app_copy.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
@@ -24,7 +26,9 @@ class FavoritesCubit extends Cubit<FavoritesState> {
     required this._repository,
     required this._favorites,
     this.branchId,
+    BranchCubit? branchCubit,
   }) : super(const FavoritesState(ids: {})) {
+    if (branchCubit != null) _branchBinding.bind(branchCubit, setBranch);
     // Seeded from the same source the repositories read, so restoring the
     // session that is already present is not mistaken for a switch to it.
     _identity = SupabaseService.isReady
@@ -40,6 +44,7 @@ class FavoritesCubit extends Cubit<FavoritesState> {
 
   final CatalogRepository _repository;
   final FavoritesRepository _favorites;
+  final BranchCubitBinding _branchBinding = BranchCubitBinding();
 
   /// Branch whose prices apply to favourite rows. Null until one is chosen.
   String? branchId;
@@ -288,9 +293,10 @@ class FavoritesCubit extends Cubit<FavoritesState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _authSubscription?.cancel();
     _authSubscription = null;
-    return super.close();
+    await _branchBinding.close();
+    await super.close();
   }
 }

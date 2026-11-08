@@ -149,6 +149,8 @@ abstract interface class AssistantMemoryStore {
     String? conversationId,
     required int rating,
     String? correction,
+    String? question,
+    String? answer,
   });
 }
 
@@ -211,6 +213,8 @@ class NoAssistantMemoryStore implements AssistantMemoryStore {
     String? conversationId,
     required int rating,
     String? correction,
+    String? question,
+    String? answer,
   }) async {}
 }
 
@@ -407,15 +411,19 @@ class ServerAssistantMemoryStore implements AssistantMemoryStore {
     String? conversationId,
     required int rating,
     String? correction,
+    String? question,
+    String? answer,
   }) {
     return _ignore(() async {
       await _client.rpc(
-        'assistant_record_feedback',
+        'assistant_record_learning_feedback',
         params: {
           'p_message_id': messageId,
           'p_conversation_id': conversationId,
           'p_rating': rating,
           'p_correction': correction,
+          'p_question': question,
+          'p_answer': answer,
         },
       );
     });

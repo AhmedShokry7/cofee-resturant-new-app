@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -36,7 +37,7 @@ class AssistantFeedbackRow extends StatelessWidget {
           ),
           IconButton(
             onPressed: open
-                ? () => cubit.giveFeedback(message.id, false)
+                ? () => _rateDown(context, cubit)
                 : null,
             icon: Icon(
               AppIcons.thumbsDown,
@@ -48,6 +49,47 @@ class AssistantFeedbackRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _rateDown(BuildContext context, AssistantCubit cubit) async {
+    final arabic = AppLocale.instance.language.code.startsWith('ar');
+    final controller = TextEditingController();
+    final correction = await showDialog<String?>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          arabic ? 'إيه اللي محتاج تصحيح؟' : 'What should be corrected?',
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 500,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: arabic
+                ? 'اكتب التصحيح لو تحب، أو تخطّى'
+                : 'Add a correction, or skip',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(''),
+            child: Text(arabic ? 'تخطي' : 'Skip'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(controller.text),
+            child: Text(arabic ? 'إرسال' : 'Send'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (!context.mounted || correction == null) return;
+    await cubit.giveFeedback(
+      message.id,
+      false,
+      correction: correction.trim().isEmpty ? null : correction.trim(),
     );
   }
 }

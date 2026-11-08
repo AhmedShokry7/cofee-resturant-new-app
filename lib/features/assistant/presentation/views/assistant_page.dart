@@ -29,6 +29,7 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 import 'package:new_coffee/shared/utils/optional_provider.dart';
 
 /// What the entry point knows about the customer, passed to the page.
@@ -60,7 +61,7 @@ class AssistantPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => AssistantCubit(
+      create: (context) => AssistantCubit(
         catalog: context.read<CatalogRepository>(),
         orders: context.read<OrdersRepository>(),
         branchId: context.read<BranchCubit>().state.selected?.id,
@@ -84,6 +85,34 @@ class AssistantPage extends StatelessWidget {
         retrieval: SupabaseService.isReady
             ? ServerRetrieval(SupabaseService.client)
             : const NoRetrieval(),
+        currentWeather: () {
+          final state = context.maybeRead<WeatherCubit>()?.state;
+          return state is WeatherLoaded ? state.weather : null;
+        },
+        // The cubit owns cart writes so it can announce success only after the
+        // write lands. The page just hands it the cart layer; it no longer
+        // executes anything itself on a state change.
+        cartExecutor: (actions, snapshot) async {
+          if (!context.mounted) return false;
+          final cart = context.maybeRead<CartCubit>();
+          if (cart == null) return false;
+          for (final action in actions) {
+            final product = snapshot.productById(action.productId);
+            if (product == null) return false;
+            if (action.remove) {
+              cart.remove(product.id);
+              continue;
+            }
+            cart.add(
+              product,
+              quantity: action.quantity,
+              note: action.note,
+              optionValueIds: action.optionValueIds,
+              unitPrice: action.unitPrice,
+            );
+          }
+          return true;
+        },
       )..start(isReturning: isReturning, firstName: firstName),
       child: const _AssistantView(),
     );
@@ -99,6 +128,7 @@ class _AssistantView extends StatefulWidget {
 
 class _AssistantViewState extends State<_AssistantView> {
   final _scroll = ScrollController();
+  bool _showConversationNotice = true;
 
   @override
   void dispose() {
@@ -126,31 +156,7 @@ class _AssistantViewState extends State<_AssistantView> {
     );
   }
 
-  /// Runs the tool calls the engine asked for (add to cart) against the real
-  /// cart, then marks them done.
-  void _executeCartActions(BuildContext context, AssistantState state) {
-    if (state.cartActions.isEmpty) return;
-    final cart = context.maybeRead<CartCubit>();
-    if (cart == null) return;
-    final snapshot = context.read<AssistantCubit>().snapshot;
-    for (final action in state.cartActions) {
-      final product = snapshot.productById(action.productId);
-      if (product == null) continue;
-      if (action.remove) {
-        cart.remove(product.id);
-        continue;
-      }
-      cart.add(
-        product,
-        quantity: action.quantity,
-        note: action.note,
-        optionValueIds: action.optionValueIds,
-        unitPrice: action.unitPrice,
-      );
-    }
-    context.read<AssistantCubit>().clearCartActions();
-  }
-
+  /// Keeps the newest line in view as the conversation grows.
   void _toBottom(AssistantState state) {
     if (!_scroll.hasClients || state.messages.isEmpty) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -221,11 +227,26 @@ class _AssistantViewState extends State<_AssistantView> {
         body: SafeArea(
           child: Column(
             children: [
+              if (_showConversationNotice)
+                Padding(
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    AppSpacing.md,
+                    AppSpacing.xs,
+                    AppSpacing.md,
+                    0,
+                  ),
+                  child: _AssistantConversationSavedNotice(
+                    onDismiss: () =>
+                        setState(() => _showConversationNotice = false),
+                    onManageMemory: () =>
+                        Navigator.of(context)
+                            .pushNamed(AssistantMemoryPage.routeName),
+                  ),
+                ),
               Expanded(
                 child: BlocConsumer<AssistantCubit, AssistantState>(
                   listener: (context, state) {
                     _toBottom(state);
-                    _executeCartActions(context, state);
                   },
                   builder: (context, state) {
                     final lastAssistant = state.messages.lastIndexWhere(
@@ -271,4 +292,51 @@ class _AssistantViewState extends State<_AssistantView> {
       ),
     );
   }
+}
+
+class _AssistantConversationSavedNotice extends StatelessWidget {
+  const _AssistantConversationSavedNotice({
+    required this.onDismiss,
+    required this.onManageMemory,
+  });
+
+  final VoidCallback onDismiss;
+  final VoidCallback onManageMemory;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsetsDirectional.only(
+      start: AppSpacing.sm,
+      end: AppSpacing.xs,
+      top: AppSpacing.xs,
+      bottom: AppSpacing.xs,
+    ),
+    decoration: BoxDecoration(
+      color: AppColor.primarySoft,
+      borderRadius: BorderRadius.circular(AppRadius.r12),
+    ),
+    child: Row(
+      children: [
+        Icon(AppIcons.information, color: AppColor.primaryColor),
+        SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            S.assistantConversationSavedNotice,
+            style: AppFonts.regular12(context),
+          ),
+        ),
+        IconButton(
+          tooltip: S.assistantMemoryTitle,
+          onPressed: onManageMemory,
+          icon: const Icon(AppIcons.memory),
+        ),
+        IconButton(
+          tooltip: S.assistantDismissNotice,
+          onPressed: onDismiss,
+          icon: const Icon(AppIcons.close),
+          visualDensity: VisualDensity.compact,
+        ),
+      ],
+    ),
+  );
 }

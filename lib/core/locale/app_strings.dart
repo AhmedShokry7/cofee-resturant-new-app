@@ -519,6 +519,33 @@ class S {
   static String get yourPointsUnlock =>
       _ar ? 'نقاطك تفتح' : 'Your points unlock';
   static String get keepCollecting => _ar ? 'واصل الجمع' : 'Keep collecting';
+  static String loyaltyProductRewardsCount(int count) => _ar
+      ? '$count منتجات متاحة للاستبدال'
+      : '$count products available to redeem';
+  static String loyaltyHistoryCount(int count) =>
+      _ar ? '$count عملية' : '$count transactions';
+  static String loyaltyShowMore(int count) =>
+      _ar ? 'عرض المزيد ($count)' : 'Show more ($count)';
+  static String get loyaltyShowAll => _ar ? 'عرض الكل' : 'View all';
+  static String get loyaltyShowLess => _ar ? 'عرض أقل' : 'Show less';
+  static String get loyaltyLoadMoreHistory =>
+      _ar ? 'تحميل المزيد من السجل' : 'Load more history';
+  static String get loyaltyAllRewards => _ar ? 'كل المكافآت' : 'All rewards';
+  static String get loyaltyRedeemableProducts =>
+      _ar ? 'المنتجات القابلة للاستبدال' : 'Redeemable products';
+  static String get loyaltyRefreshCatalog =>
+      _ar ? 'تحديث المكافآت' : 'Refresh rewards';
+  static String loyaltyCatalogPointsBalance(int balance) => _ar
+      ? 'رصيدك الحالي: $balance نقطة — استكشف المكافآت المتاحة والقادمة'
+      : 'Your balance: $balance points — explore available and upcoming rewards';
+  static String get loyaltyNoAvailableRewards => _ar
+      ? 'لا توجد مكافآت يمكنك استبدالها الآن'
+      : 'No rewards are redeemable yet';
+  static String get loyaltyNoHistory =>
+      _ar ? 'لا يوجد سجل نقاط حتى الآن' : 'No points activity yet';
+  static String get loyaltyNoRewards => _ar
+      ? 'لا توجد مكافآت متاحة حاليًا'
+      : 'No rewards are available right now';
   static String get yourBalance => _ar ? 'رصيدك' : 'Your Balance';
   static String get guestWalletDevice =>
       _ar ? 'محفظة الضيف على هذا الجهاز' : 'Guest wallet on this device';
@@ -945,6 +972,30 @@ class S {
   static String get notificationMarkAllRead =>
       _ar ? 'تعليم الكل كمقروء' : 'Mark all as read';
 
+  static String get notificationDeleteFailed => _ar
+      ? 'تعذّر حذف الإشعار. حاول مرة أخرى.'
+      : 'Could not delete the notification. Please try again.';
+  static String notificationSelectionCount(int count) =>
+      _ar ? 'تم تحديد $count' : '$count selected';
+  static String get notificationSelectAll => _ar ? 'تحديد الكل' : 'Select all';
+  static String get notificationCancelSelection =>
+      _ar ? 'إلغاء التحديد' : 'Cancel selection';
+  static String get notificationDeleteSelected =>
+      _ar ? 'حذف المحدد' : 'Delete selected';
+  static String get notificationDeleteAll =>
+      _ar ? 'حذف كل الإشعارات' : 'Delete all notifications';
+  static String get notificationDeleteAllConfirm => _ar
+      ? 'هل تريد حذف جميع الإشعارات؟ لا يمكن التراجع عن هذا الإجراء.'
+      : 'Delete all notifications? This action cannot be undone.';
+  static String get notificationPreferencesLoadFailed => _ar
+      ? 'تعذّر تحميل إعدادات الإشعارات من حسابك.'
+      : 'Could not load notification settings from your account.';
+  static String get notificationPushNotSaved => _ar
+      ? 'تعذّر تفعيل الإشعارات. تحقق من صلاحية الهاتف والاتصال.'
+      : 'Could not turn notifications on. Check phone permission and connection.';
+  static String notificationDeletedCount(int count) =>
+      _ar ? 'تم حذف $count إشعار' : 'Deleted $count notifications';
+
   /// Rows the server holds beyond the ones on screen.
   static String get notificationShowMore => _ar ? 'عرض المزيد' : 'Show more';
 
@@ -980,19 +1031,18 @@ class S {
 
   /// Under an answer that was read from the shop's own documents. Each source
   /// is its own line, so the heading is read once per link by a screen reader.
-  static String get assistantSourcesHeading =>
-      _ar ? 'المصادر' : 'Sources';
+  static String get assistantSourcesHeading => _ar ? 'المصادر' : 'Sources';
 
   // ---------- Assistant memory ----------
   static String get assistantMemoryTitle =>
       _ar ? 'ذاكرة المساعد' : 'Assistant memory';
   static String get assistantMemorySubtitle => _ar
-      ? 'يتذكّر المساعد ما أخبرته به عن نفسك، داخل حسابك وحدك.'
-      : 'The assistant keeps what you tell it about yourself, in your account only.';
+      ? 'عند التفعيل، تُحفظ محادثاتك وتفضيلاتك في حسابك ليستخدمها المساعد في تخصيص ردوده. تقدر توقف الذاكرة وتحذف المحفوظ في أي وقت.'
+      : 'When enabled, your chats and preferences are saved to your account to personalise replies. You can turn memory off and delete saved data at any time.';
   static String get assistantMemoryEnable =>
       _ar ? 'السماح بتذكّر محادثاتي' : 'Let the assistant remember me';
-  static String get assistantMemoryEmpty => _ar
-      ? 'لا شيء محفوظة بعد.' : 'Nothing has been remembered yet.';
+  static String get assistantMemoryEmpty =>
+      _ar ? 'لا شيء محفوظة بعد.' : 'Nothing has been remembered yet.';
 
   /// A device that is not signed in has no island to open, which is a different
   /// fact from an empty one.
@@ -1011,8 +1061,7 @@ class S {
     _ => _ar ? 'تخمين' : 'Guess',
   };
 
-  static String get assistantMemoryDelete =>
-      _ar ? 'حذف' : 'Delete';
+  static String get assistantMemoryDelete => _ar ? 'حذف' : 'Delete';
   static String get assistantMemoryDeleteAll =>
       _ar ? 'حذف كل ذاكرتي' : 'Delete all my memory';
   static String get assistantMemoryDeletedAll => _ar
@@ -1045,6 +1094,11 @@ class S {
   static String get assistantEmptyHistory => _ar
       ? 'لسه في محادثة واحدة مفتوحة. اللي قبلها هيظهروا هنا.'
       : 'Nothing here yet. Chats you have already had will be listed here.';
+  static String get assistantConversationSavedNotice => _ar
+      ? 'محادثاتك تُحفظ على هذا الجهاز لتقدر ترجع لها. تفعيل ذاكرة المساعد يحفظ تفضيلاتك في حسابك.'
+      : 'Your chats are saved on this device so you can return to them. Turn on assistant memory to save your preferences to your account.';
+  static String get assistantDismissNotice =>
+      _ar ? 'إخفاء التنبيه' : 'Dismiss notice';
 
   // ---------- Branch ----------
   static String get chooseBranch => _ar ? 'اختر الفرع' : 'Choose branch';

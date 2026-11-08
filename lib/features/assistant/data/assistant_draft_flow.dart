@@ -234,8 +234,13 @@ class AssistantDraftFlow {
     }
     final actions = memory.draft.items
         .map(
-          (item) =>
-              AssistantSnapshot.current.cartActionFor(item, arabic: arabic),
+          (item) => AssistantSnapshot.current.cartActionFor(
+            item,
+            arabic: arabic,
+            // Reached only by an explicit "yes" on the proposal just shown, so
+            // the write is authorised by that confirmation, not by the draft.
+            approvedBy: 'explicit_confirm',
+          ),
         )
         .toList();
     final summary = memory.draft.describe(arabic: arabic);
@@ -254,14 +259,17 @@ class AssistantDraftFlow {
     );
   }
 
-  /// "ضيف لاتيه للسلة" → immediate cart action, no confirmation round-trip.
+  /// "ضيف لاتيه للسلة" → drafts the line and asks for confirmation.
+  ///
+  /// Adding to the cart is a write like any order: it proposes first and waits
+  /// for an explicit yes, instead of pushing the product in on the wording alone.
   static AssistantAnswer addDirect(
     String query, {
     required AssistantMemory memory,
     required bool arabic,
   }) {
     final parsed = parseOrderMessage(query);
-    if (parsed.items.isEmpty) {
+    if (parsed.items.isEmpty && !parsed.unclearDessert) {
       return AssistantAnswer(
         text: arabic
             ? 'أضيف إيه للسلة؟ قولي اسم المشروب أو الحلو.'
@@ -270,35 +278,7 @@ class AssistantDraftFlow {
         sourceId: 'order-add-empty',
       );
     }
-    final names = <String>[];
-    final products = <ProductModel>[];
-    final actions = <CartAction>[];
-    for (final item in parsed.items) {
-      for (final product in AssistantSnapshot.current.products) {
-        if (product.id == item.productId) {
-          final note = AssistantSnapshot.current.variantNoteFor(
-            item,
-            arabic: arabic,
-          );
-          names.add(
-            '${item.quantity}x ${product.name}${note.isEmpty ? '' : ' ($note)'}',
-          );
-          products.add(product);
-          actions.add(
-            AssistantSnapshot.current.cartActionFor(item, arabic: arabic),
-          );
-        }
-      }
-    }
-    return AssistantAnswer(
-      text: arabic
-          ? 'ضفت للسلة: ${names.join(' + ')}.'
-          : 'Added to your cart: ${names.join(' + ')}.',
-      topic: 'order',
-      sourceId: 'order-added',
-      products: products,
-      actions: actions,
-    );
+    return takeOrder(query, memory: memory, now: DateTime.now(), arabic: arabic);
   }
 
   static AssistantAnswer cancelDraft(
@@ -332,47 +312,39 @@ class AssistantDraftFlow {
     );
   }
 
-  /// Pays for the confirmed order: opens real checkout, hinting the method.
+  /// Opens checkout for the order already in the cart.
+  ///
+  /// An unconfirmed draft is not silently pushed into the cart on the way to
+  /// payment: paying is a write too, so the customer confirms the order first.
   static AssistantAnswer payChoice(
     AssistantMemory memory, {
     required bool arabic,
     required bool now,
   }) {
-    final actions = <CartAction>[];
-    var prefix = '';
     if (memory.draft.items.isNotEmpty) {
-      // Skipped confirmation: confirm silently, then pay.
-      for (final item in memory.draft.items) {
-        actions.add(
-          AssistantSnapshot.current.cartActionFor(item, arabic: arabic),
-        );
-      }
-      prefix = arabic ? 'ضفت طلبك للسلة. ' : 'Added your order to the cart. ';
-      memory.draft = OrderDraft();
+      return confirmDraftMessage(memory, arabic: arabic);
     }
     memory.pendingQuestion = null;
     memory.pendingDessertSize = null;
     if (now) {
       return AssistantAnswer(
         text: arabic
-            ? '$prefixتمام، افتح الدفع واختار البطاقة المناسبة.'
-            : '${prefix}Opening payment — pick your card there.',
+            ? 'تمام، افتح الدفع واختار البطاقة المناسبة.'
+            : 'Opening payment — pick your card there.',
         topic: 'order',
         sourceId: 'order-pay-now',
         destination: AssistantDestination.checkout,
         navigateLabel: arabic ? 'ادفع دلوقتي' : 'Pay now',
-        actions: actions,
       );
     }
     return AssistantAnswer(
       text: arabic
-          ? '$prefixتمام، افتح الدفع واختار (عند الاستلام).'
-          : '${prefix}Opening checkout — choose On Delivery there.',
+          ? 'تمام، افتح الدفع واختار (عند الاستلام).'
+          : 'Opening checkout — choose On Delivery there.',
       topic: 'order',
       sourceId: 'order-pay-cash',
       destination: AssistantDestination.checkout,
       navigateLabel: arabic ? 'إتمام الاوردر' : 'Checkout',
-      actions: actions,
     );
   }
 }

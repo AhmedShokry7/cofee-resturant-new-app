@@ -18,16 +18,31 @@ class SupabaseLlmClient implements LlmClient {
   final String functionName;
   final Duration timeout;
 
-  /// Set once the edge function reports that no provider is configured.
+  /// How long the app stops asking after the backend says "no provider".
   ///
-  /// Nothing changes without a redeploy, so asking again only costs the
-  /// customer a round trip for an answer that cannot be different.
-  static bool _providerMissing = false;
+  /// A 503 can be transient (a deploy in flight), and the operator can
+  /// configure the provider server-side without redeploying the function — so
+  /// this is a short cooldown, not a latch that disables the model for the
+  /// whole app session.
+  static const Duration providerCooldown = Duration(minutes: 5);
 
-  /// Whether the backend has no provider at all.
+  static DateTime? _providerMissingUntil;
+
+  /// Whether the backend recently said it has no provider.
   ///
-  /// Exposed so the app can skip the call entirely.
-  static bool get providerMissing => _providerMissing;
+  /// Exposed so the app can skip the call during the cooldown; it turns false
+  /// again on its own once the cooldown passes.
+  static bool get providerMissing {
+    final until = _providerMissingUntil;
+    return until != null && DateTime.now().isBefore(until);
+  }
+
+  @visibleForTesting
+  static void debugSetProviderMissing({required DateTime until}) =>
+      _providerMissingUntil = until;
+
+  @visibleForTesting
+  static void debugResetProvider() => _providerMissingUntil = null;
 
   /// True when the edge function answered "no provider is configured".
   static bool _isProviderMissing(Object? details) {
@@ -47,9 +62,10 @@ class SupabaseLlmClient implements LlmClient {
     bool learn = true,
     bool personal = false,
     bool webSearch = false,
+    bool captureKnowledgeGap = false,
   }) async {
     if (!SupabaseService.isConfigured) return null;
-    if (_providerMissing) return null;
+    if (providerMissing) return null;
     try {
       final client = SupabaseService.client;
       final response = await client.functions
@@ -70,6 +86,7 @@ class SupabaseLlmClient implements LlmClient {
               if (personal) 'personal': true,
               // Reading the web is allowed per customer, never for all of them.
               if (webSearch) 'webSearch': true,
+              if (captureKnowledgeGap) 'captureKnowledgeGap': true,
             },
           )
           .timeout(timeout);
@@ -92,7 +109,7 @@ class SupabaseLlmClient implements LlmClient {
       );
     } on FunctionException catch (error) {
       if (error.status == 503 && _isProviderMissing(error.details)) {
-        _providerMissing = true;
+        _providerMissingUntil = DateTime.now().add(providerCooldown);
       }
       return null;
     } catch (error, stackTrace) {

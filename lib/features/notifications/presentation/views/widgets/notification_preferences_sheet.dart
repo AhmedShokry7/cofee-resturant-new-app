@@ -6,7 +6,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_preferences.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
-import 'package:new_coffee/shared/widgets/sheet_handle.dart';
+import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_push_switch.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// Opens the switches of the signed-in customer: the mail channel and the four
@@ -24,13 +24,15 @@ Future<void> showNotificationPreferencesSheet(BuildContext context) {
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),
-    builder: (sheetContext) =>
-        BlocProvider.value(value: cubit, child: const _PreferencesSheet()),
+    builder: (sheetContext) => BlocProvider.value(
+      value: cubit,
+      child: const NotificationPreferencesPanel(),
+    ),
   );
 }
 
-class _PreferencesSheet extends StatelessWidget {
-  const _PreferencesSheet();
+class NotificationPreferencesPanel extends StatelessWidget {
+  const NotificationPreferencesPanel({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,8 +43,6 @@ class _PreferencesSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SheetHandle(),
-            SizedBox(height: AppSpacing.lg),
             Text(
               S.notificationPreferences,
               style: AppFonts.semiBold18(context),
@@ -56,9 +56,11 @@ class _PreferencesSheet extends StatelessWidget {
             SizedBox(height: AppSpacing.lg),
             BlocBuilder<NotificationsCubit, NotificationsState>(
               buildWhen: (previous, current) =>
-                  previous.preferences != current.preferences,
+                  previous.preferences != current.preferences ||
+                  previous.pushEnabled != current.pushEnabled,
               builder: (context, state) => Column(
                 children: [
+                  const _PushSwitchRow(),
                   _EmailSwitchRow(value: state.preferences.emailEnabled),
                   for (final preference in NotificationPreferenceKey.values)
                     _PreferenceRow(
@@ -73,6 +75,23 @@ class _PreferencesSheet extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PushSwitchRow extends StatelessWidget {
+  const _PushSwitchRow();
+
+  @override
+  Widget build(BuildContext context) =>
+      BlocBuilder<NotificationsCubit, NotificationsState>(
+        buildWhen: (previous, current) =>
+            previous.pushEnabled != current.pushEnabled,
+        builder: (context, state) => SwitchListTile(
+          value: state.pushEnabled,
+          onChanged: (enabled) => setPushAndReport(context, enabled),
+          title: Text(S.notifications, style: AppFonts.semiBold16(context)),
+          contentPadding: EdgeInsets.zero,
+        ),
+      );
 }
 
 /// The mail channel of the customer, one switch of the server row.

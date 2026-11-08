@@ -31,6 +31,12 @@ class _SignedOutNotifications implements NotificationsRepository {
 
   @override
   Future<int> markRead(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteNotifications(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteAllNotifications() async => 0;
 }
 
 /// The auth stream is a replaying stream, so a cubit registered during startup

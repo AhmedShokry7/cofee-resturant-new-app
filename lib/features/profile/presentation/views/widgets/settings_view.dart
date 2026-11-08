@@ -13,7 +13,7 @@ import 'package:new_coffee/features/content/presentation/views/help_page.dart';
 import 'package:new_coffee/features/content/presentation/views/privacy_policy_page.dart';
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
-import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/features/notifications/presentation/views/notification_settings_page.dart';
 import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
 import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
@@ -137,10 +137,11 @@ class _SettingsEntries extends StatelessWidget {
           onTap: () => Navigator.of(context).pushNamed(LoyaltyPage.routeName),
         ),
         ProfileMenuTile(
-          icon: AppIcons.notification,
-          label: S.notifications,
+          icon: AppIcons.settings,
+          label: S.notificationPreferences,
           onTap: () =>
-              Navigator.of(context).pushNamed(NotificationsPage.routeName),
+              Navigator.of(context)
+                  .pushNamed(NotificationSettingsPage.routeName),
         ),
         ProfileMenuTile(
           icon: AppIcons.language,

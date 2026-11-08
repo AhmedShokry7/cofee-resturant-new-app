@@ -30,6 +30,7 @@ class _FakeNotificationsRepository implements NotificationsRepository {
   int listCalls = 0;
   int markReadCalls = 0;
   final List<List<String>> markedIds = [];
+  final List<List<String>> deletedIds = [];
 
   @override
   Future<List<NotificationModel>> listNotifications({
@@ -50,6 +51,21 @@ class _FakeNotificationsRepository implements NotificationsRepository {
     markedIds.add(List<String>.of(ids));
     rows = [for (final row in rows) ids.contains(row.id) ? _asRead(row) : row];
     return ids.length;
+  }
+
+  @override
+  Future<int> deleteNotifications(List<String> ids) async {
+    deletedIds.add(List<String>.of(ids));
+    final before = rows.length;
+    rows = rows.where((row) => !ids.contains(row.id)).toList();
+    return before - rows.length;
+  }
+
+  @override
+  Future<int> deleteAllNotifications() async {
+    final count = rows.length;
+    rows = [];
+    return count;
   }
 
   static NotificationModel _asRead(NotificationModel row) => NotificationModel(
@@ -451,8 +467,8 @@ void main() {
     });
   });
 
-  group('the offer to open the phone channel', () {
-    testWidgets('a customer who never chose is asked once, on the page', (
+  group('notification settings live in Settings', () {
+    testWidgets('the notification list does not show settings prompts', (
       tester,
     ) async {
       await _setSurface(tester);
@@ -462,12 +478,6 @@ void main() {
       );
 
       await _pumpPage(tester, cubit);
-      expect(find.byType(NotificationPushBanner), findsOneWidget);
-
-      await tester.tap(find.byType(NotificationPushBanner));
-      await tester.pumpAndSettle();
-
-      expect(cubit.state.pushEnabled, isTrue);
       expect(find.byType(NotificationPushBanner), findsNothing);
     });
 
@@ -483,7 +493,10 @@ void main() {
       );
 
       await _pumpPage(tester, cubit);
-      expect(find.byType(NotificationPushBanner), findsNothing);
+      expect(
+        find.byKey(const ValueKey('notification-push-toggle')),
+        findsNothing,
+      );
     });
   });
 
@@ -575,5 +588,24 @@ void main() {
       expect(repository.listCalls, 5);
       expect(repository.markReadCalls, 1);
     });
+
+    test(
+      'deleting a notification removes it and refreshes unread count',
+      () async {
+        final repository = _FakeNotificationsRepository(
+          rows: [_row('n1'), _row('n2', isRead: true)],
+        );
+        final cubit = _cubit(repository);
+        await cubit.stream.firstWhere((state) => !state.isLoading);
+
+        expect(await cubit.deleteNotification('n1'), isTrue);
+        expect(repository.deletedIds, [
+          <String>['n1'],
+        ]);
+        expect(cubit.state.notifications.map((row) => row.id), ['n2']);
+        expect(cubit.state.unreadCount, 0);
+        await cubit.close();
+      },
+    );
   });
 }

@@ -117,6 +117,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     emit(
       state.copyWith(
         notifications: const [],
+        selectedIds: const {},
         isLoading: true,
         clearError: true,
         // A signed-out customer has no rows at all, so say so straight away
@@ -126,6 +127,7 @@ class NotificationsCubit extends Cubit<NotificationsState> {
         // the switches of the previous one while their own read is in flight.
         preferences: const NotificationPreferences(),
         preferencesRead: false,
+        preferencesLoadFailed: false,
         // Only the first page belongs to an account, and a page still being
         // read for the previous customer must not append to the new list.
         hasMore: false,
@@ -152,13 +154,79 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   /// Callers own the decision of *when* to run it; this cubit only guarantees
   /// the read, the write and the follow-up read never interleave.
   ///
-  /// The notifications screen runs this only when the customer asks for it. It
-  /// used to run on opening the screen, which cleared every dot before the
-  /// customer had read a single message and left the bell with nothing to show.
-  Future<void> markAllRead() => _enqueue(markUnread: true);
+  /// The screen calls this as soon as it opens; one server operation clears all
+  /// unread rows and the following read keeps the list and badge in sync.
+  Future<void> markAllRead() => _enqueue(markAllUnread: true);
 
   /// Marks one row seen, and re-reads so the dot follows the server.
   Future<void> markRead(String id) => _enqueue(markIds: [id]);
+
+  void toggleSelection(String id) {
+    final selected = {...state.selectedIds};
+    if (!selected.add(id)) selected.remove(id);
+    emit(state.copyWith(selectedIds: selected));
+  }
+
+  void selectNotifications(Iterable<String> ids) {
+    final allIds = ids.toSet();
+    final shouldClear =
+        allIds.isNotEmpty &&
+        allIds.length == state.selectedIds.length &&
+        allIds.containsAll(state.selectedIds);
+    emit(state.copyWith(selectedIds: shouldClear ? <String>{} : allIds));
+  }
+
+  void clearSelection() {
+    if (state.selectedIds.isEmpty) return;
+    emit(state.copyWith(selectedIds: const {}));
+  }
+
+  /// Deletes a notification through the owner-checked server RPC, then reloads
+  /// the list so its unread badge and paging stay in sync.
+  Future<bool> deleteNotification(String id) async {
+    return await deleteNotifications([id]) > 0;
+  }
+
+  /// Deletes one or more rows as one server operation.
+  Future<int> deleteNotifications(List<String> ids) =>
+      _deleteAndReload(() => _repository.deleteNotifications(ids), ids: ids);
+
+  /// Deletes every notification owned by the current account.
+  Future<int> deleteAllNotifications() =>
+      _deleteAndReload(_repository.deleteAllNotifications, deleteAll: true);
+
+  Future<int> _deleteAndReload(
+    Future<int> Function() operation, {
+    List<String>? ids,
+    bool deleteAll = false,
+  }) async {
+    final run = _pending.then((_) async {
+      final deleted = await operation();
+      if (deleted > 0 && !isClosed) {
+        emit(
+          state.copyWith(
+            notifications: deleteAll
+                ? const []
+                : state.notifications
+                      .where((item) => !ids!.contains(item.id))
+                      .toList(),
+            selectedIds: deleteAll
+                ? const {}
+                : state.selectedIds.difference(ids!.toSet()),
+            hasMore: deleteAll ? false : state.hasMore,
+          ),
+        );
+      }
+      await _load();
+      return deleted;
+    });
+    _pending = run.then<void>((_) {}, onError: (_, _) {});
+    try {
+      return await run;
+    } catch (_) {
+      return 0;
+    }
+  }
 
   /// The page [item] belongs to, with its row marked seen.
   ///
@@ -209,13 +277,22 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
+  /// Loads every remaining page before a customer chooses Select all.
+  Future<void> loadAll() async {
+    while (state.hasMore && !state.isLoadingMore && !isClosed) {
+      final before = state.notifications.length;
+      await loadMore();
+      if (state.notifications.length <= before) break;
+    }
+  }
+
   /// Runs loads one after another rather than concurrently.
   ///
   /// The chain survives a failure, so one bad request cannot wedge every later
   /// refresh.
-  Future<void> _enqueue({bool markUnread = false, List<String>? markIds}) {
+  Future<void> _enqueue({bool markAllUnread = false, List<String>? markIds}) {
     final run = _pending.then(
-      (_) => _load(markUnread: markUnread, markIds: markIds),
+      (_) => _load(markAllUnread: markAllUnread, markIds: markIds),
     );
     _pending = run.then<void>((_) {}, onError: (_, _) {});
     return run;
@@ -307,20 +384,24 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   /// and the screen must not keep the banner off forever because a read never
   /// came back.
   Future<void> loadPushState() async {
+    if (!isClosed) {
+      emit(
+        state.copyWith(preferencesRead: false, preferencesLoadFailed: false),
+      );
+    }
     try {
       final switches = await _pushRepository.preferences();
       if (isClosed) return;
-      emit(state.copyWith(preferences: switches, preferencesRead: true));
-    } catch (_) {
-      // The switches of a fresh account are the honest answer for anyone the
-      // server could not be reached for.
-      if (isClosed) return;
       emit(
         state.copyWith(
-          preferences: const NotificationPreferences(),
+          preferences: switches,
           preferencesRead: true,
+          preferencesLoadFailed: false,
         ),
       );
+    } catch (_) {
+      if (isClosed) return;
+      emit(state.copyWith(preferencesRead: true, preferencesLoadFailed: true));
     }
   }
 
@@ -328,10 +409,24 @@ class NotificationsCubit extends Cubit<NotificationsState> {
   ///
   /// Turning it on needs the permission of the system, so it can fail: the
   /// switch then stays where it was.
-  Future<void> setPushEnabled(bool enabled) async {
-    final changed = await _pushSwitch(enabled);
-    if (isClosed) return;
-    emit(state.copyWith(pushEnabled: changed));
+  Future<bool> setPushEnabled(bool enabled) async {
+    try {
+      if (!enabled) {
+        final saved = await _pushRepository.setPreferences(pushEnabled: false);
+        if (isClosed || saved.pushEnabled) return false;
+        emit(state.copyWith(preferences: saved));
+        return true;
+      }
+
+      final enabledOnDevice = await _pushSwitch(true);
+      if (isClosed || !enabledOnDevice) return false;
+      final saved = await _pushRepository.preferences();
+      if (isClosed || !saved.pushEnabled) return false;
+      emit(state.copyWith(preferences: saved));
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Turns the mail channel on or off, and says whether the server kept it.
@@ -379,7 +474,10 @@ class NotificationsCubit extends Cubit<NotificationsState> {
     }
   }
 
-  Future<void> _load({bool markUnread = false, List<String>? markIds}) async {
+  Future<void> _load({
+    bool markAllUnread = false,
+    List<String>? markIds,
+  }) async {
     final generation = ++_loadGeneration;
     emit(state.copyWith(isLoading: true, clearError: true));
     try {
@@ -401,16 +499,18 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       var notifications = await _repository.listNotifications(
         limit: pageSize + 1,
       );
-      final ids =
-          markIds ??
-          (markUnread
-              ? [
-                  for (final item in notifications)
-                    if (!item.isRead) item.id,
-                ]
-              : null);
-      if (ids != null && ids.isNotEmpty) {
-        await _repository.markRead(ids);
+      if (markAllUnread) {
+        if (_repository is BulkNotificationsReadRepository) {
+          await (_repository as BulkNotificationsReadRepository).markAllRead();
+        } else {
+          await _markUnreadPages();
+        }
+        if (isClosed || generation != _loadGeneration) return;
+        notifications = await _repository.listNotifications(
+          limit: pageSize + 1,
+        );
+      } else if (markIds != null && markIds.isNotEmpty) {
+        await _repository.markRead(markIds);
         if (isClosed || generation != _loadGeneration) return;
         notifications = await _repository.listNotifications(
           limit: pageSize + 1,
@@ -446,6 +546,23 @@ class NotificationsCubit extends Cubit<NotificationsState> {
       if (generation != _loadGeneration) return;
       emit(state.copyWith(isLoading: false, error: error.toString()));
       addError(error, stackTrace);
+    }
+  }
+
+  Future<void> _markUnreadPages() async {
+    var offset = 0;
+    while (true) {
+      final page = await _repository.listNotifications(
+        limit: 200,
+        offset: offset,
+      );
+      final unread = [
+        for (final item in page)
+          if (!item.isRead) item.id,
+      ];
+      if (unread.isNotEmpty) await _repository.markRead(unread);
+      if (page.length < 200) return;
+      offset += page.length;
     }
   }
 

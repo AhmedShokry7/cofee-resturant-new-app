@@ -33,6 +33,7 @@ class AssistantHistoryDrawer extends StatelessWidget {
     messenger.showSnackBar(
       SnackBar(
         content: Text(S.assistantChatDeleted),
+        persist: false,
         action: SnackBarAction(
           label: S.undo,
           onPressed: () => cubit.restoreChat(removed),

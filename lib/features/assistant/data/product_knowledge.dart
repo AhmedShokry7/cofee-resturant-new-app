@@ -79,6 +79,12 @@ class LocalProductKnowledgeRepository implements ProductKnowledgeRepository {
     'mocha': ['espresso', 'milk', 'chocolate', 'cream'],
     'americano': ['espresso', 'water'],
     'iced-latte': ['espresso', 'milk', 'ice'],
+    // Pistachio carries the 'nuts' family id as well, so a generic "بالمكسرات"
+    // allergy question matches it instead of being falsely denied.
+    'pistachio-latte': ['espresso', 'milk', 'pistachio', 'nuts'],
+    'iced-pistachio-latte': ['espresso', 'milk', 'pistachio', 'nuts', 'ice'],
+    'spanish-latte': ['espresso', 'milk', 'condensed_milk'],
+    'iced-spanish-latte': ['espresso', 'milk', 'condensed_milk', 'ice'],
     'green-tea': ['tea', 'water'],
     'masala-tea': ['tea', 'milk', 'spices', 'ginger', 'cardamom', 'cinnamon'],
     'cheesecake': ['cheese', 'cream', 'biscuit', 'sugar', 'egg'],
@@ -110,6 +116,10 @@ class LocalProductKnowledgeRepository implements ProductKnowledgeRepository {
     'cola': '14',
     'butter-bread': '15',
     'glazed-donut': '16',
+    'pistachio-latte': '17',
+    'iced-pistachio-latte': '18',
+    'spanish-latte': '19',
+    'iced-spanish-latte': '20',
   };
 
   @override
@@ -142,8 +152,11 @@ class IngredientLexicon {
     // nuts family
     'مكسرات': 'nuts', 'مكسره': 'nuts', 'بندق': 'nuts', 'لوز': 'nuts',
     'كاجو': 'nuts', 'فول سوداني': 'nuts', 'nuts': 'nuts',
+    'فستق': 'pistachio', 'fistq': 'pistachio', 'pistachio': 'pistachio',
     // milk family
     'حليب': 'milk', 'لبن': 'milk', 'milk': 'milk',
+    'لبن مكثف': 'condensed_milk', 'حليب مكثف': 'condensed_milk',
+    'condensed milk': 'condensed_milk',
     // ice family
     'تلج': 'ice', 'ثلج': 'ice', 'ايس': 'ice', 'ice': 'ice',
     'ايس كريم': 'ice_cream',
@@ -208,6 +221,8 @@ class IngredientLexicon {
     'glaze': 'الشيسيل',
     'soda': 'صودا',
     'nuts': 'مكسرات',
+    'pistachio': 'فستق',
+    'condensed_milk': 'لبن مكثف',
   };
 
   /// The ingredient's name in the customer's language.

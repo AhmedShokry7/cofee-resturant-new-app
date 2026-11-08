@@ -915,6 +915,7 @@ class CheckoutCubit extends Cubit<CheckoutState> {
                 : null,
             discountLines: approvedCoupon?.lines ?? const [],
             productDiscount: placed.productDiscountTotal,
+            pointsEarned: placed.pointsEarned,
           ),
         ),
       );

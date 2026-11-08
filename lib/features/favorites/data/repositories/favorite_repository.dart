@@ -190,19 +190,34 @@ class FavoritesRepositoryImpl implements FavoritesRepository {
   }
 
   Future<Set<String>> _remoteIds(SupabaseClient client, String userId) async {
-    final rows =
-        await client
-                .from('customer_favorites')
-                .select('product_id')
-                .eq('user_id', userId)
-                .order('created_at', ascending: false)
-                .limit(1000)
-            as List;
-    return {
-      for (final row in rows)
-        if (row is Map && (row['product_id']?.toString() ?? '').isNotEmpty)
-          row['product_id'].toString(),
-    };
+    const pageSize = 500;
+    var offset = 0;
+    final ids = <String>{};
+
+    // PostgREST applies a server-side maximum row count. Fetch every page so
+    // an account with a long history never silently loses hearts after a
+    // client-side limit. A stable tie-breaker keeps equal created_at values
+    // in a deterministic order between pages.
+    while (true) {
+      final rows = await client
+          .from('customer_favorites')
+          .select('product_id')
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .order('product_id')
+          .range(offset, offset + pageSize - 1);
+
+      for (final row in rows as List) {
+        if (row is Map && (row['product_id']?.toString() ?? '').isNotEmpty) {
+          ids.add(row['product_id'].toString());
+        }
+      }
+
+      if (rows.length < pageSize) break;
+      offset += pageSize;
+    }
+
+    return ids;
   }
 
   Future<void> _insertRemote(String productId) async {

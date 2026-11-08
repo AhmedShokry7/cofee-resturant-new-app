@@ -50,5 +50,10 @@ abstract class LlmClient {
     /// this question. The function answers with the pages it used, so the
     /// citation is the server's, not a link the model invented.
     bool webSearch = false,
+
+    /// Save a cafe-related question the local knowledge could not answer for
+    /// later review. The caller enables this only when conversation memory is
+    /// on for this customer.
+    bool captureKnowledgeGap = false,
   });
 }

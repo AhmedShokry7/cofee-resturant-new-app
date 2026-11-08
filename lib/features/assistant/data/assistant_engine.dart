@@ -40,7 +40,9 @@ class AssistantAnswer {
   final AssistantDestination? destination;
   final String? navigateLabel;
 
-  /// Tool calls for the UI layer to execute (e.g. add items to the cart).
+  /// Tool calls the cubit executes once the customer authorised them (e.g. add
+  /// items to the cart). An action with no [CartAction.approvedBy] is a proposal
+  /// only and is never executed.
   final List<CartAction> actions;
 }
 
@@ -283,17 +285,13 @@ class AssistantEngine {
       case AssistantIntent.greeting:
         memory.pendingQuestion = null;
         return AssistantAnswer(
-          text: arabic
-              ? AssistantGreetings.chatGreetingAr(
-                  isReturning: isReturning || memory.totalChats > 0,
-                  firstName: firstName,
-                  now: now,
-                )
-              : AssistantGreetings.chatGreeting(
-                  isReturning: isReturning || memory.totalChats > 0,
-                  firstName: firstName,
-                  now: now,
-                ),
+          text: AssistantGreetings.replyToGreeting(
+            query: query,
+            arabic: arabic,
+            isReturning: isReturning || memory.totalChats > 0,
+            firstName: firstName,
+            now: now,
+          ),
           topic: 'greeting',
         );
       case AssistantIntent.thanks:
@@ -446,7 +444,7 @@ class AssistantEngine {
 
   static String? _productNameOf(String id) {
     for (final product in AssistantSnapshot.current.products) {
-      if (product.id == id) return product.name;
+      if (product.id == id) return AssistantSnapshot.canonicalName(product);
     }
     return null;
   }
@@ -659,10 +657,13 @@ class AssistantEngine {
       }
     }
 
-    final names = picks.map((product) => product.name).join(', ');
+    final names = picks.map(AssistantSnapshot.canonicalName).join(', ');
     var text = AssistantComposer.suggestText(
       names: names,
-      preferenceCategory: memory.topCategory(),
+      preferenceCategory: _categoryNameForReply(
+        memory.topCategory(),
+        arabic: arabic,
+      ),
       seed: memory.totalChats,
       leadPrefix: leadPrefix,
       arabic: arabic,
@@ -671,8 +672,8 @@ class AssistantEngine {
     final allPicks = [...picks, ?pairing];
     if (pairing != null) {
       text += arabic
-          ? ' ماشي مع اللي في السلة عندك: ${pairing.name}.'
-          : ' It pairs well with what is in your cart: ${pairing.name}.';
+          ? ' ماشي مع اللي في السلة عندك: ${AssistantSnapshot.canonicalName(pairing)}.'
+          : ' It pairs well with what is in your cart: ${AssistantSnapshot.canonicalName(pairing)}.';
     }
     if (!_hasConstraints(tokens, wantedProducts, memory) &&
         ingredientHits.isEmpty) {
@@ -691,6 +692,28 @@ class AssistantEngine {
       sourceId: 'suggest',
       products: allPicks,
     );
+  }
+
+  static String? _categoryNameForReply(
+    String? category, {
+    required bool arabic,
+  }) {
+    if (!arabic || category == null) return category;
+    final normalized = normalizeText(category.replaceAll('-', ' '));
+    return switch (normalized) {
+      'coffee' || 'hot coffee' => 'قهوة',
+      'cold coffee' => 'قهوة باردة',
+      'hot drinks' => 'مشروبات ساخنة',
+      'cold drinks' => 'مشروبات باردة',
+      'tea' => 'شاي',
+      'dessert' || 'desserts' => 'حلويات',
+      'snack' || 'snacks' => 'سناكس',
+      'bakery' => 'مخبوزات',
+      'donut' || 'donuts' => 'دونات',
+      'milkshake' || 'milkshakes' => 'ميلك شيك',
+      'beverage' || 'beverages' || 'drinks' => 'مشروبات',
+      _ => prefersArabic(category) ? category : 'مشروبات',
+    };
   }
 
   /// True when the request carries any explicit constraint (taste, product)
@@ -729,6 +752,8 @@ class AssistantEngine {
       if (token.length < 3 || generic.contains(token)) continue;
       for (final product in AssistantSnapshot.current.products) {
         if (normalizeText(product.name).contains(token) ||
+            normalizeText(AssistantSnapshot.canonicalName(product))
+                .contains(token) ||
             normalizeText(product.category).contains(token)) {
           return true;
         }
@@ -853,7 +878,7 @@ class AssistantEngine {
     final names = <String>[];
     for (final id in cartProductIds) {
       final product = _productById(id);
-      if (product != null) names.add(product.name);
+      if (product != null) names.add(AssistantSnapshot.canonicalName(product));
     }
     final items = names.isEmpty ? cartProductIds.length : names.length;
     return AssistantAnswer(
@@ -897,8 +922,8 @@ class AssistantEngine {
       }
       return AssistantAnswer(
         text: arabic
-            ? 'أشيل إيه بالظبط؟ في السلة: ${inCart.map((p) => p.name).join('، ')}.'
-            : 'Which one exactly? In the cart: ${inCart.map((p) => p.name).join(', ')}.',
+            ? 'أشيل إيه بالظبط؟ في السلة: ${inCart.map(AssistantSnapshot.canonicalName).join('، ')}.'
+            : 'Which one exactly? In the cart: ${inCart.map(AssistantSnapshot.canonicalName).join(', ')}.',
         topic: 'cart',
         sourceId: 'cart-clarify',
         products: inCart.take(3).toList(),
@@ -907,19 +932,27 @@ class AssistantEngine {
     if (!cartProductIds.contains(target.id)) {
       return AssistantAnswer(
         text: arabic
-            ? '${target.name} مش في السلة دلوقتي.'
-            : '${target.name} is not in your cart right now.',
+            ? '${AssistantSnapshot.canonicalName(target)} مش في السلة دلوقتي.'
+            : '${AssistantSnapshot.canonicalName(target)} is not in your cart right now.',
         topic: 'cart',
         sourceId: 'cart-missing',
       );
     }
     return AssistantAnswer(
       text: arabic
-          ? 'شلت ${target.name} من السلة.'
-          : 'Removed ${target.name} from your cart.',
+          ? 'شلت ${AssistantSnapshot.canonicalName(target)} من السلة.'
+          : 'Removed ${AssistantSnapshot.canonicalName(target)} from your cart.',
       topic: 'cart',
       sourceId: 'cart-removed',
-      actions: [CartAction(productId: target.id, remove: true)],
+      actions: [
+        // Naming the product to take out of the cart is itself the explicit
+        // instruction, so the removal is authorised by that command.
+        CartAction(
+          productId: target.id,
+          remove: true,
+          approvedBy: 'explicit_command',
+        ),
+      ],
     );
   }
 
@@ -941,8 +974,8 @@ class AssistantEngine {
     memory.pendingQuestion = null;
     return AssistantAnswer(
       text: arabic
-          ? 'قصدك ${product.name}؟ هو دا؟'
-          : 'Do you mean ${product.name}? Is this the one?',
+          ? 'قصدك ${AssistantSnapshot.canonicalName(product)}؟ هو دا؟'
+          : 'Do you mean ${AssistantSnapshot.canonicalName(product)}? Is this the one?',
       topic: 'suggest',
       sourceId: 'ingredient-match',
       products: [product],
@@ -994,7 +1027,7 @@ class AssistantEngine {
         .where((product) => !memory.dismissedIds.contains(product.id))
         .take(3)
         .toList();
-    final names = alternatives.map((product) => product.name).join('، ');
+    final names = alternatives.map(AssistantSnapshot.canonicalName).join('، ');
     final label = IngredientLexicon.label(ingredient, arabic: arabic);
     return AssistantAnswer(
       text: arabic
@@ -1117,8 +1150,8 @@ class AssistantEngine {
     memory.pendingQuestion = null;
     return AssistantAnswer(
       text: arabic
-          ? 'اختيار موفق — ${product.name}! دوس على الكارت عشان تفتحه.'
-          : 'Excellent choice — ${product.name}! Tap the card to open it.',
+          ? 'اختيار موفق — ${AssistantSnapshot.canonicalName(product)}! دوس على الكارت عشان تفتحه.'
+          : 'Excellent choice — ${AssistantSnapshot.canonicalName(product)}! Tap the card to open it.',
       topic: 'suggest',
       sourceId: 'suggest-select',
       products: [product],
@@ -1162,7 +1195,7 @@ class AssistantEngine {
               : AssistantComposer.usualFound,
           memory.totalChats,
         ),
-        {'product': usual.name},
+        {'product': AssistantSnapshot.canonicalName(usual)},
       ),
       topic: 'suggest',
       sourceId: 'suggest-usual',
@@ -1566,8 +1599,8 @@ class AssistantEngine {
     if (lines.isEmpty) return null;
     return AssistantAnswer(
       text: arabic
-          ? '${product.name} متاح بـ ${lines.join('، و')}.'
-          : '${product.name} comes with ${lines.join(', and ')}.',
+          ? '${AssistantSnapshot.canonicalName(product)} متاح بـ ${lines.join('، و')}.'
+          : '${AssistantSnapshot.canonicalName(product)} comes with ${lines.join(', and ')}.',
       topic: 'options',
       sourceId: 'options-context',
       products: [product],
@@ -1605,7 +1638,7 @@ class AssistantEngine {
       }
     }
     if (!asks) return null;
-    final names = context.map((product) => product.name).join('، ');
+    final names = context.map(AssistantSnapshot.canonicalName).join('، ');
     return AssistantAnswer(
       text: arabic
           ? 'أيوه، دي اللي رشحتها ليك: $names.'
@@ -1652,8 +1685,8 @@ class AssistantEngine {
       products.add(product);
       lines.add(
         arabic
-            ? '${product.name} بـ ${Formatters.price(product.price)}'
-            : '${product.name} is ${Formatters.price(product.price)}',
+            ? '${AssistantSnapshot.canonicalName(product)} بـ ${Formatters.price(product.price)}'
+            : '${AssistantSnapshot.canonicalName(product)} is ${Formatters.price(product.price)}',
       );
     }
     return AssistantAnswer(
@@ -1690,7 +1723,7 @@ class AssistantEngine {
           // A phrase is as specific as the whole question, and customers
           // inflect the verbs ("بتاخد" is "ياخد" with a prefix), so a phrase
           // is matched anywhere in the text.
-          if (normalizedQuery.contains(normalized)) score += 2;
+          if (normalizedQuery.contains(normalized)) score += 3;
           continue;
         }
         // A single word only counts on a word boundary: "لاتي" is not inside

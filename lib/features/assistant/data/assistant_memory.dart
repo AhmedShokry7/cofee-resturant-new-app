@@ -150,6 +150,19 @@ class AssistantMemory {
     }
   }
 
+  /// Drops the transient state of the conversation that just closed: the open
+  /// question, the pending dessert size, the last suggestion and the
+  /// unconfirmed draft. A new chat must not act on a previous chat's "أيوه"
+  /// and execute a days-old draft. The learned profile (tastes, rejections,
+  /// language, counts) is kept.
+  void resetConversation() {
+    pendingQuestion = null;
+    pendingDessertSize = null;
+    lastTopic = null;
+    lastSuggestedIds = [];
+    draft = OrderDraft();
+  }
+
   void recordQuery(String query) {
     totalChats += 1;
     recentQueries = [...recentQueries, query];

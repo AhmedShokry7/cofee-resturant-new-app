@@ -8,8 +8,9 @@ enum AssistantDestination { coupons, orders, checkout, memory }
 /// Tool calls the assistant engine can request (LLM-style function calling).
 ///
 /// The engine itself stays pure/testable: it only *describes* actions in
-/// [AssistantAnswer.actions], and the UI layer (which owns BuildContext)
-/// executes them — e.g. adding products to the real [CartCubit].
+/// [AssistantAnswer.actions]. The cubit executes the ones the customer explicitly
+/// authorised ([approvedBy]) through its cart executor, and only then shows the
+/// result — the UI renders the conversation and never writes to the cart itself.
 class CartAction {
   const CartAction({
     required this.productId,
@@ -18,6 +19,7 @@ class CartAction {
     this.optionValueIds = const [],
     this.unitPrice,
     this.remove = false,
+    this.approvedBy,
   });
 
   final String productId;
@@ -34,6 +36,13 @@ class CartAction {
   /// True when the action takes the product out of the cart instead of
   /// putting it in.
   final bool remove;
+
+  /// How the customer authorised this write ('explicit_confirm' for a yes on a
+  /// shown proposal, 'explicit_command' for naming the product to remove).
+  ///
+  /// Null means the action is only a proposal: the executor must refuse it.
+  /// The command is not the authority — a separate, explicit yes is.
+  final String? approvedBy;
 
   Map<String, dynamic> toJson() => {
     'type': remove ? 'remove_from_cart' : 'add_to_cart',

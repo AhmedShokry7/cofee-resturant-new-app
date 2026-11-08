@@ -7,7 +7,6 @@ class AssistantState {
     this.products = const [],
     this.navigateRoute,
     this.navigateLabel,
-    this.cartActions = const [],
     this.consent = const AssistantMemoryConsent(),
     this.memories = const [],
     this.chats = const [],
@@ -28,9 +27,6 @@ class AssistantState {
   /// screen once it has a question in it.
   final List<AssistantConversation> chats;
 
-  /// Pending tool calls (e.g. add-to-cart) for the UI layer to execute once.
-  final List<CartAction> cartActions;
-
   /// What this customer has agreed to have remembered about them. False by
   /// default: the assistant has no memory of a customer until they say so.
   final AssistantMemoryConsent consent;
@@ -45,7 +41,6 @@ class AssistantState {
     List<ProductModel>? products,
     String? navigateRoute,
     String? navigateLabel,
-    List<CartAction>? cartActions,
     AssistantMemoryConsent? consent,
     List<AssistantMemoryItem>? memories,
     List<AssistantConversation>? chats,
@@ -58,7 +53,6 @@ class AssistantState {
       products: products ?? this.products,
       navigateRoute: clearAction ? null : navigateRoute ?? this.navigateRoute,
       navigateLabel: clearAction ? null : navigateLabel ?? this.navigateLabel,
-      cartActions: clearAction ? const [] : cartActions ?? this.cartActions,
       consent: consent ?? this.consent,
       memories: memories ?? this.memories,
       chats: chats ?? this.chats,

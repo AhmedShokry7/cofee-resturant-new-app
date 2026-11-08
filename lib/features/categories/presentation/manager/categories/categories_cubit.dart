@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/di/branch_cubit_binding.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/bundles/data/model/bundle_model.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
@@ -19,10 +21,16 @@ part 'categories_state.dart';
 /// بيانات التصنيفات والمنتجات تُخزّن مؤقتاً في [CacheManager] لمدة 5 دقائق
 /// لتقليل الجولات المتكررة إلى Supabase عند فتح شاشة التصنيفات.
 class CategoriesCubit extends Cubit<CategoriesState> {
-  CategoriesCubit({required this._repository, this.branchId})
-    : super(const CategoriesState());
+  CategoriesCubit({
+    required this._repository,
+    this.branchId,
+    BranchCubit? branchCubit,
+  }) : super(const CategoriesState()) {
+    if (branchCubit != null) _branchBinding.bind(branchCubit, setBranch);
+  }
 
   bool _loadStarted = false;
+  final BranchCubitBinding _branchBinding = BranchCubitBinding();
 
   void ensureLoaded() {
     if (_loadStarted) return;
@@ -95,6 +103,12 @@ class CategoriesCubit extends Cubit<CategoriesState> {
     if (branchId == this.branchId) return Future.value();
     this.branchId = branchId;
     return load();
+  }
+
+  @override
+  Future<void> close() async {
+    await _branchBinding.close();
+    await super.close();
   }
 
   void select(int index) {

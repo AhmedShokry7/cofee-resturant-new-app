@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/di/branch_cubit_binding.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/features/bundles/data/bundle_pricing.dart'
     as pricing;
@@ -28,12 +30,17 @@ part 'home_state.dart';
 /// to the database, because a refresh gesture that hands back the cache it just
 /// read is a gesture that does nothing.
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit({required this._repository, this.branchId})
-    : super(const HomeState()) {
+  HomeCubit({
+    required this._repository,
+    this.branchId,
+    BranchCubit? branchCubit,
+  }) : super(const HomeState()) {
+    if (branchCubit != null) _branchBinding.bind(branchCubit, setBranch);
     load();
   }
 
   final CatalogRepository _repository;
+  final BranchCubitBinding _branchBinding = BranchCubitBinding();
 
   /// Branch whose prices and availability apply. Null until the customer picks.
   ///
@@ -267,6 +274,12 @@ class HomeCubit extends Cubit<HomeState> {
       addError(error, stackTrace);
     }
     return banner;
+  }
+
+  @override
+  Future<void> close() async {
+    await _branchBinding.close();
+    await super.close();
   }
 
   /// Featured rows carry the fields a card needs, so no second query is needed

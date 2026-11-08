@@ -5,6 +5,8 @@ class LoyaltyState {
   const LoyaltyState({
     this.balance = 0,
     this.transactions = const [],
+    this.hasMoreTransactions = false,
+    this.isLoadingMoreTransactions = false,
     this.lastEarned = 0,
     this.rules = const [],
     this.rewards = const [],
@@ -19,6 +21,8 @@ class LoyaltyState {
 
   final int balance;
   final List<LoyaltyTransaction> transactions;
+  final bool hasMoreTransactions;
+  final bool isLoadingMoreTransactions;
 
   /// Points granted by the latest purchase (shown on the success page).
   final int lastEarned;
@@ -58,6 +62,8 @@ class LoyaltyState {
   LoyaltyState copyWith({
     int? balance,
     List<LoyaltyTransaction>? transactions,
+    bool? hasMoreTransactions,
+    bool? isLoadingMoreTransactions,
     int? lastEarned,
     List<LoyaltyRule>? rules,
     List<RewardModel>? rewards,
@@ -72,6 +78,9 @@ class LoyaltyState {
   }) => LoyaltyState(
     balance: balance ?? this.balance,
     transactions: transactions ?? this.transactions,
+    hasMoreTransactions: hasMoreTransactions ?? this.hasMoreTransactions,
+    isLoadingMoreTransactions:
+        isLoadingMoreTransactions ?? this.isLoadingMoreTransactions,
     lastEarned: lastEarned ?? this.lastEarned,
     rules: rules ?? this.rules,
     rewards: rewards ?? this.rewards,

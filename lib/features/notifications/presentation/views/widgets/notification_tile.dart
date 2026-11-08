@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
@@ -19,12 +20,16 @@ class NotificationTile extends StatelessWidget {
     super.key,
     required this.notification,
     this.isRead = true,
+    this.isSelected = false,
     this.onTap,
+    this.onLongPress,
   });
 
   final NotificationModel notification;
   final bool isRead;
+  final bool isSelected;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -33,17 +38,25 @@ class NotificationTile extends StatelessWidget {
       padding: EdgeInsetsDirectional.only(bottom: AppSpacing.md),
       child: Semantics(
         button: true,
+        selected: isSelected,
         child: Material(
-          color: isRead ? AppColor.cardSurface : AppColor.primarySoft,
+          color: isSelected
+              ? AppColor.primarySoft
+              : isRead
+              ? AppColor.cardSurface
+              : AppColor.primarySoft,
           shape: RoundedRectangleBorder(
             borderRadius: corner,
             side: BorderSide(
-              color: isRead ? AppColor.borderColor : AppColor.primaryRing,
+              color: isSelected || !isRead
+                  ? AppColor.primaryRing
+                  : AppColor.borderColor,
             ),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
+            onLongPress: onLongPress,
             borderRadius: corner,
             child: Padding(
               padding: EdgeInsets.all(AppSpacing.md),
@@ -77,6 +90,12 @@ class NotificationTile extends StatelessWidget {
                                   color: AppColor.primaryColor,
                                   shape: BoxShape.circle,
                                 ),
+                              ),
+                            if (isSelected)
+                              Icon(
+                                AppIcons.checkmarkCircle,
+                                color: AppColor.primaryColor,
+                                size: AppSizes.px20,
                               ),
                             SizedBox(width: AppSpacing.sm),
                             Text(

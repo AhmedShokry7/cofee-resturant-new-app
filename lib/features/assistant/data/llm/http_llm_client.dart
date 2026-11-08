@@ -22,6 +22,7 @@ class HttpLlmClient implements LlmClient {
     bool learn = true,
     bool personal = false,
     bool webSearch = false,
+    bool captureKnowledgeGap = false,
   }) async {
     if (!config.enabled) return null;
     try {

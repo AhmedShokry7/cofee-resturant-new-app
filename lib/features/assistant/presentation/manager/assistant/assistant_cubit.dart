@@ -29,8 +29,21 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
+import 'package:new_coffee/features/weather/data/model/weather_model.dart';
 
 part 'assistant_state.dart';
+
+/// Performs the cart writes the customer explicitly authorised, and reports
+/// whether they actually happened.
+///
+/// The cubit owns execution so a success line is only ever shown after the
+/// write lands; the UI renders the conversation and never touches the cart.
+/// Returning false (or throwing) means nothing was written, so the assistant
+/// must not claim it was.
+typedef CartExecutor = Future<bool> Function(
+  List<CartAction> actions,
+  AssistantSnapshot snapshot,
+);
 
 class AssistantCubit extends Cubit<AssistantState> {
   AssistantCubit({
@@ -40,10 +53,13 @@ class AssistantCubit extends Cubit<AssistantState> {
     LlmClient? llmClient,
     AssistantMemoryStore? memoryStore,
     AssistantRetrieval? retrieval,
+    WeatherModel? Function()? currentWeather,
+    this._cartExecutor,
     this.llmConfig = const LlmConfig(),
   }) : _llmClient = llmClient ?? HttpLlmClient(llmConfig),
        _store = memoryStore ?? const NoAssistantMemoryStore(),
        _retrieval = retrieval ?? const NoRetrieval(),
+       _currentWeather = currentWeather,
        super(const AssistantState()) {
     _snapshot = const AssistantSnapshot.empty();
   }
@@ -56,6 +72,11 @@ class AssistantCubit extends Cubit<AssistantState> {
 
   /// The shop documents the assistant is allowed to read for one question.
   final AssistantRetrieval _retrieval;
+  final WeatherModel? Function()? _currentWeather;
+
+  /// The cart layer that performs authorised writes. Null when the host has no
+  /// cart (tests, previews): a write that cannot happen is never called a success.
+  final CartExecutor? _cartExecutor;
 
   /// Branch used for catalogue prices in the assistant snapshot.
   String? branchId;
@@ -98,9 +119,16 @@ class AssistantCubit extends Cubit<AssistantState> {
           if (!isClosed) _snapshot = loaded;
         })
         .catchError((_) {
-          // A catalogue that cannot be read leaves the assistant with an empty
-          // menu, which is a valid answer rather than a crash.
-          if (!isClosed) _snapshot = const AssistantSnapshot.empty();
+          // A catalogue that cannot be read is not an empty shop: mark the
+          // sources failed so the answer says "unavailable", not "we have
+          // nothing".
+          if (!isClosed) {
+            _snapshot = const AssistantSnapshot(
+              products: [],
+              productsState: DataState.failed,
+              ordersState: DataState.failed,
+            );
+          }
         });
     return future;
   }
@@ -188,6 +216,9 @@ class AssistantCubit extends Cubit<AssistantState> {
   void _beginChat() {
     _chatId = 'chat_${DateTime.now().microsecondsSinceEpoch}';
     _conversationId = null;
+    // A new chat starts with no open question and no unconfirmed draft, so a
+    // stray "أيوه" cannot execute an order left over from a previous chat.
+    _memory.resetConversation();
     final arabic = _memory.totalChats > 0
         ? _memory.replyArabic
         : AppLocale.instance.isArabic;
@@ -382,6 +413,11 @@ class AssistantCubit extends Cubit<AssistantState> {
       ),
     );
 
+    // Persist the user's question immediately, so closing the app before the
+    // answer arrives cannot lose the conversation from local history.
+    await _saveOpenChat();
+    if (isClosed) return;
+
     // Stored verbatim: the exact user wording, ready for future learning.
     // Writing to disk must never delay the answer.
     unawaited(_log.logUser(raw, channel: channel));
@@ -441,19 +477,41 @@ class AssistantCubit extends Cubit<AssistantState> {
       unawaited(_answerWithModel(text, reading, turn, answer));
       return;
     }
-    _emitLocalAnswer(text, answer, _turn);
+    await _emitLocalAnswer(text, answer, _turn);
   }
 
   /// Puts the offline engine's answer on screen and records the turn.
-  void _emitLocalAnswer(
+  ///
+  /// A cart write the customer authorised is performed here, before the answer
+  /// is shown: the success line is only ever printed once the write landed, and
+  /// a failed write is reported as a failure rather than a silent success.
+  Future<void> _emitLocalAnswer(
     String text,
     AssistantAnswer answer,
     int turn,
-  ) {
+  ) async {
     if (isClosed || turn != _turn) return;
+    // Only an explicitly authorised write may reach the cart. A proposal that
+    // somehow still carries actions is dropped, never executed.
+    final authorised = answer.actions
+        .where((action) => action.approvedBy != null)
+        .toList();
+    var written = true;
+    if (authorised.isNotEmpty) {
+      written = await _writeToCart(authorised);
+      if (isClosed || turn != _turn) return;
+    }
+    final arabic = AppLocale.instance.isArabic;
+    final succeeded = authorised.isEmpty || written;
+    final shownText = succeeded
+        ? answer.text
+        : (arabic
+              ? 'تعذر تنفيذ الطلب على السلة دلوقتي، حاول تاني.'
+              : "Couldn't update your cart right now, please try again.");
+    final sourceId = succeeded ? answer.sourceId : 'cart-write-failed';
     unawaited(
       _log.logAssistant(
-        answer.text,
+        shownText,
         intent: detectIntent(
           text,
           recentQueries: _memory.recentQueries,
@@ -470,15 +528,14 @@ class AssistantCubit extends Cubit<AssistantState> {
           ChatMessage(
             id: assistantMessageId,
             role: MessageRole.assistant,
-            text: answer.text,
-            sourceId: answer.sourceId,
+            text: shownText,
+            sourceId: sourceId,
           ),
         ]),
         typing: false,
         products: answer.products,
         navigateRoute: routeForAssistantDestination(answer.destination),
         navigateLabel: answer.navigateLabel,
-        cartActions: answer.actions,
       ),
     );
     // The server copy of this turn: the transcript, and whatever the customer
@@ -486,13 +543,27 @@ class AssistantCubit extends Cubit<AssistantState> {
     unawaited(
       _recordTurn(
         text,
-        answer: answer.text,
+        answer: shownText,
         topic: answer.topic,
         assistantMessageId: assistantMessageId,
       ),
     );
     // And the device copy, which is what the history drawer lists tomorrow.
     unawaited(_saveOpenChat());
+  }
+
+  /// Runs the authorised cart writes and reports whether they happened.
+  ///
+  /// No cart layer, an unknown product, or a thrown error all mean the write
+  /// did not land, so the caller must not announce a success.
+  Future<bool> _writeToCart(List<CartAction> actions) async {
+    final executor = _cartExecutor;
+    if (executor == null) return false;
+    try {
+      return await executor(actions, _snapshot);
+    } catch (_) {
+      return false;
+    }
   }
 
   /// The whole of one turn in the customer's own transcript, whoever answered:
@@ -557,13 +628,6 @@ class AssistantCubit extends Cubit<AssistantState> {
     emit(state.copyWith(memories: items));
   }
 
-  /// Called by the UI layer after executing [AssistantState.cartActions].
-  /// Clears only the actions — navigation buttons stay visible.
-  void clearCartActions() {
-    if (state.cartActions.isEmpty || isClosed) return;
-    emit(state.copyWith(cartActions: const []));
-  }
-
   /// Answers the sentences the app cannot ground, and keeps the offline
   /// engine's line for the case where the model cannot be reached.
   ///
@@ -584,10 +648,18 @@ class AssistantCubit extends Cubit<AssistantState> {
     // The retrieved rows replace the whole-catalogue dump when they exist.
     // With nothing found the dump stays: a model shown the menu still beats a
     // model shown nothing.
-    final shop = sources.isEmpty
-        ? '${buildLocalContext(text, _memory)}\n'
-              '${buildLiveContext(_memory, snapshot: _snapshot, cartProductIds: _lastCartIds)}'
-        : buildRetrievedContext(sources);
+    final shop = [
+      if (sources.isNotEmpty) buildRetrievedContext(sources),
+      // Keep the coffee education articles available even when the database
+      // also returned menu rows for the same question.
+      buildLocalContext(text, _memory),
+      if (sources.isEmpty)
+        buildLiveContext(
+          _memory,
+          snapshot: _snapshot,
+          cartProductIds: _lastCartIds,
+        ),
+    ].where((part) => part.trim().isNotEmpty).join('\n\n');
     // Only a customer who said yes gets their past read back to the model.
     final personal = state.consent.memoryEnabled;
     final customer = personal
@@ -603,6 +675,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     final reply = await _llmClient.complete(
       system:
           '${buildSystemPrompt(memory: _memory)}\n'
+          '${buildWeatherContext(_currentWeather?.call())}\n'
           '${customer.isEmpty ? '' : '$customer\n'}'
           '$shop',
       history: _promptHistory(),
@@ -617,6 +690,12 @@ class AssistantCubit extends Cubit<AssistantState> {
       learn: reading.safeToLearn && !personal,
       personal: personal,
       webSearch: webSearch,
+      captureKnowledgeGap:
+          personal &&
+          sources.isEmpty &&
+          reading.knowledgeScore < AssistantEngine.factFloor &&
+          !AssistantUnderstanding.isWeatherQuestion(text) &&
+          AssistantUnderstanding.isCafeRelatedQuestion(text),
     );
     if (isClosed) return;
     // A newer question is on screen: this answer belongs to the one the
@@ -626,14 +705,21 @@ class AssistantCubit extends Cubit<AssistantState> {
     if (reply == null) {
       // Nobody to ask. The offline engine's line is better than silence, and
       // it is the only reason it was computed.
-      _emitLocalAnswer(text, fallback, turn);
+      await _emitLocalAnswer(text, fallback, turn);
       return;
     }
+    final replyText = AssistantSnapshot.preserveEnglishProductNames(
+      reply.text,
+      [
+        ..._snapshot.products,
+        for (final order in _snapshot.orders) order.product,
+      ],
+    );
     _memory.recordTopic(reply.topic);
     unawaited(_memory.save());
     unawaited(
       _log.logAssistant(
-        reply.text,
+        replyText,
         intent: reading.intent.name,
         topic: reply.topic,
       ),
@@ -647,7 +733,7 @@ class AssistantCubit extends Cubit<AssistantState> {
           ChatMessage(
             id: llmMessageId,
             role: MessageRole.assistant,
-            text: reply.text,
+            text: replyText,
             sourceId: reply.fromMemory ? 'memory' : 'llm',
             // The shop rows the assistant read for this question, then any
             // page the function read from the web — the same page never twice.
@@ -662,7 +748,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     unawaited(
       _recordTurn(
         text,
-        answer: reply.text,
+        answer: replyText,
         topic: reply.topic,
         assistantMessageId: llmMessageId,
         sources: (sources.isEmpty ? reply.sources : sources)
@@ -725,7 +811,29 @@ class AssistantCubit extends Cubit<AssistantState> {
     );
   }
 
-  Future<void> giveFeedback(String messageId, bool liked) async {
+  Future<void> giveFeedback(
+    String messageId,
+    bool liked, {
+    String? correction,
+  }) async {
+    final messageIndex = state.messages.indexWhere(
+      (message) => message.id == messageId,
+    );
+    if (messageIndex < 0 || state.messages[messageIndex].feedback != null) {
+      return;
+    }
+    final target = state.messages[messageIndex];
+    var question = '';
+    for (var index = messageIndex - 1; index >= 0; index--) {
+      if (state.messages[index].role == MessageRole.user) {
+        question = state.messages[index].text;
+        break;
+      }
+    }
+    final maySubmitForReview =
+        AssistantUnderstanding.isCafeRelatedQuestion(question) &&
+        !AssistantEngine.isPerishableQuestion(question) &&
+        !mentionsWord(question, AssistantUnderstanding.ownOrderWords);
     final messages = state.messages.map((message) {
       if (message.id != messageId || message.feedback != null) return message;
       if (message.sourceId != null) {
@@ -745,6 +853,9 @@ class AssistantCubit extends Cubit<AssistantState> {
       messageId: _serverMessageIds[messageId],
       conversationId: _conversationId,
       rating: liked ? 1 : -1,
+      correction: correction,
+      question: maySubmitForReview ? question : null,
+      answer: maySubmitForReview ? target.text : null,
     );
   }
 

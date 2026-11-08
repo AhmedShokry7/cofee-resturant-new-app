@@ -19,6 +19,7 @@ class OrderModel {
     this.deliveryAddress,
     this.discountLines = const [],
     this.productDiscount = 0,
+    this.pointsEarned = 0,
   });
 
   /// The number the customer reads, e.g. `ORD-2026-000123`.
@@ -52,6 +53,9 @@ class OrderModel {
   /// shows the price before the discount, then the discount, and the total is
   /// what the customer pays.
   final double productDiscount;
+
+  /// Points the server actually credited while placing the order.
+  final int pointsEarned;
 
   bool get isDelivery => fulfillmentType == 'delivery';
 

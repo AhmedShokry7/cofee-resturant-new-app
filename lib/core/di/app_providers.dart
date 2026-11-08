@@ -174,12 +174,15 @@ class AppProviders extends StatelessWidget {
             create: (context) => CartCubit(
               cartRepository: context.read<CartRepository>(),
               catalogRepository: context.read<CatalogRepository>(),
+              branchId: context.read<BranchCubit>().state.selected?.id,
             ),
           ),
           BlocProvider(
             create: (context) => FavoritesCubit(
               repository: context.read<CatalogRepository>(),
               favorites: FavoritesRepositoryImpl(),
+              branchId: context.read<BranchCubit>().state.selected?.id,
+              branchCubit: context.read<BranchCubit>(),
             ),
           ),
           BlocProvider(
@@ -208,7 +211,8 @@ class AppProviders extends StatelessWidget {
           BlocProvider(
             create: (context) => SearchCubit(
               catalogRepository: context.read<CatalogRepository>(),
-              branchId: null,
+              branchId: context.read<BranchCubit>().state.selected?.id,
+              branchCubit: context.read<BranchCubit>(),
             ),
           ),
           BlocProvider(
@@ -217,8 +221,11 @@ class AppProviders extends StatelessWidget {
             ),
           ),
           BlocProvider(
-            create: (context) =>
-                CategoriesCubit(repository: context.read<CatalogRepository>()),
+            create: (context) => CategoriesCubit(
+              repository: context.read<CatalogRepository>(),
+              branchId: context.read<BranchCubit>().state.selected?.id,
+              branchCubit: context.read<BranchCubit>(),
+            ),
           ),
           BlocProvider(
             create: (context) =>
@@ -230,8 +237,11 @@ class AppProviders extends StatelessWidget {
             ),
           ),
           BlocProvider(
-            create: (context) =>
-                HomeCubit(repository: context.read<CatalogRepository>()),
+            create: (context) => HomeCubit(
+              repository: context.read<CatalogRepository>(),
+              branchId: context.read<BranchCubit>().state.selected?.id,
+              branchCubit: context.read<BranchCubit>(),
+            ),
           ),
           // The constructor already reads the wallet, so no `..load()` here:
           // it cost a second pair of catalogue and ledger reads on every start.
@@ -240,6 +250,8 @@ class AppProviders extends StatelessWidget {
               repository: LoyaltyRepositoryImpl(
                 catalog: context.read<CatalogRepository>(),
               ),
+              branchId: context.read<BranchCubit>().state.selected?.id,
+              branchCubit: context.read<BranchCubit>(),
             ),
           ),
           BlocProvider(
@@ -296,12 +308,11 @@ class _UnavailableOrdersRepository implements OrdersRepository {
   Future<List<OrderStatusEvent>> orderHistory(String orderId) async => const [];
 }
 
-/// Propagates the customer's explicit branch choice to every branch-aware
-/// cubit.
+/// Propagates branch changes to the always-needed cart and checkout state.
 ///
-/// Each cubit reloads only when the id actually changes, so opening the app
-/// with a stored branch costs one coordinated refresh rather than unrelated
-/// screens drifting across different branches.
+/// Other branch-aware feature cubits follow BranchCubit themselves when their
+/// lazy provider is first used, so a branch change does not create and load
+/// unrelated screens in the background.
 class _BranchSync extends StatelessWidget {
   const _BranchSync({required this.child});
 
@@ -315,14 +326,7 @@ class _BranchSync extends StatelessWidget {
       listener: (context, state) async {
         final branchId = state.selected?.id;
         context.read<CheckoutCubit>().setBranch(branchId);
-        await Future.wait([
-          context.read<CartCubit>().setBranch(branchId),
-          context.read<FavoritesCubit>().setBranch(branchId),
-          context.read<SearchCubit>().setBranch(branchId),
-          context.read<CategoriesCubit>().setBranch(branchId),
-          context.read<HomeCubit>().setBranch(branchId),
-          context.read<LoyaltyCubit>().setBranch(branchId),
-        ]);
+        await context.read<CartCubit>().setBranch(branchId);
       },
       // A coupon is approved for one exact cart; when the cart changes the
       // approval is dropped rather than shown against a cart it never priced.

@@ -20,6 +20,7 @@ import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/assistant_understanding.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
 import 'support/mock_product_repository.dart';
@@ -135,7 +136,8 @@ void main() {
       'اقفل البوت': 'the app has no such control to reach',
       'مسحت المحادثة بالغلط': 'a recovery the assistant was never given',
       'قهوة بدون كافيين': 'a limit about the body, not the menu',
-      'ايه احسن حاجة للاولاد الصغار؟': 'a child is not a taste the menu sorts by',
+      'ايه احسن حاجة للاولاد الصغار؟':
+          'a child is not a taste the menu sorts by',
     };
 
     test('they reach the language model', () {
@@ -166,8 +168,8 @@ void main() {
       expect(read('فين طلبي؟').safeToLearn, isFalse);
     });
 
-    test('a shop fact is safe to keep for the next customer', () {
-      expect(read('انتم بتقفلوا امتى؟').safeToLearn, isTrue);
+    test('a changing shop fact is not kept in the shared answer cache', () {
+      expect(read('انتم بتقفلوا امتى؟').safeToLearn, isFalse);
     });
   });
 
@@ -200,6 +202,44 @@ void main() {
     test('a drink with its options drafts the order', () {
       final answer = answerFor('عايز لاتيه من غير سكر');
       expect(answer.topic, 'order');
+    });
+
+    test('a plain hi gets a direct, natural English greeting', () {
+      final greeting = read('hi');
+      expect(greeting.intent, AssistantIntent.greeting);
+      expect(greeting.owner, AnswerOwner.liveData);
+      final answer = answerFor('hi');
+      expect(answer.text, 'Hi! What can I get you?');
+    });
+
+    test('an Arabic sentence keeps an English menu name in English', () {
+      const bilingualProduct = ProductModel(
+        id: 'vanilla-latte',
+        name: 'Vanilla Latte',
+        nameAr: 'فانيلا لاتيه',
+        nameEn: 'Vanilla Latte',
+        category: 'Coffee',
+        categoryAr: 'قهوة',
+        categoryEn: 'Coffee',
+        price: 18,
+        image: '',
+      );
+      final answer = AssistantEngine.answer(
+        'سعر Vanilla Latte كام؟',
+        snapshot: const AssistantSnapshot(products: [bilingualProduct]),
+        memory: AssistantMemory(replyArabic: true),
+        now: DateTime(2026, 11, 8),
+      );
+
+      expect(answer.text, contains('الأسعار عندنا'));
+      expect(answer.text, contains('Vanilla Latte'));
+      expect(answer.text, isNot(contains('فانيلا لاتيه')));
+
+      final modelReply = AssistantSnapshot.preserveEnglishProductNames(
+        'السعر مناسب لفانيلا لاتيه.',
+        const [bilingualProduct],
+      );
+      expect(modelReply, 'السعر مناسب لـVanilla Latte.');
     });
   });
 }

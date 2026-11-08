@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/di/branch_cubit_binding.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -22,14 +24,17 @@ class SearchCubit extends Cubit<SearchState> {
   SearchCubit({
     required CatalogRepository catalogRepository,
     required this.branchId,
+    BranchCubit? branchCubit,
   }) : _catalog = catalogRepository,
        super(
          const SearchState(query: "", sort: SearchSort.relevance, results: []),
        ) {
+    if (branchCubit != null) _branchBinding.bind(branchCubit, setBranch);
     loadInitial();
   }
 
   final CatalogRepository _catalog;
+  final BranchCubitBinding _branchBinding = BranchCubitBinding();
 
   /// Branch whose prices and availability apply to these results.
   final String? branchId;
@@ -293,11 +298,12 @@ class SearchCubit extends Cubit<SearchState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     // Nothing may fire after the page is gone.
     _debounce?.cancel();
     _debounce = null;
     _queryResults = const [];
-    return super.close();
+    await _branchBinding.close();
+    await super.close();
   }
 }

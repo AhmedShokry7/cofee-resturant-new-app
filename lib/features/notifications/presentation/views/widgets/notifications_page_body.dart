@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/features/notifications/data/model/notification_model.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_day_header.dart';
-import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_push_banner.dart';
 import 'package:new_coffee/features/notifications/presentation/views/widgets/notification_tile.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
@@ -19,7 +19,14 @@ import 'package:new_coffee/core/theme/tokens.dart';
 /// and nothing else. It never picks a route or writes a switch: it asks the
 /// cubit, which is where the reading, the marking and the destination live.
 class NotificationsPageBody extends StatelessWidget {
-  const NotificationsPageBody({super.key});
+  const NotificationsPageBody({
+    super.key,
+    required this.selectedIds,
+    required this.onSelectionChanged,
+  });
+
+  final Set<String> selectedIds;
+  final ValueChanged<String> onSelectionChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -59,10 +66,6 @@ class NotificationsPageBody extends StatelessWidget {
         // list cannot grow past one block per day plus a page of rows.
         return _Refreshable(
           children: [
-            if (state.preferencesRead &&
-                state.pushNeverChosen &&
-                !state.pushEnabled)
-              const NotificationPushBanner(),
             ..._dayBlocks(context, state.notifications),
             if (state.hasMore) _ShowMore(isLoading: state.isLoadingMore),
           ],
@@ -86,16 +89,57 @@ class NotificationsPageBody extends StatelessWidget {
         children.add(NotificationDayHeader(label: notificationDayLabel(day)));
       }
       previousDay = day;
+      final isSelected = selectedIds.contains(item.id);
       children.add(
-        NotificationTile(
-          notification: item,
-          isRead: item.isRead,
-          onTap: () {
-            final open = cubit.openFrom(item);
-            if (open == null || !context.mounted) return;
-            Navigator.of(context)
-                .pushNamed(open.route, arguments: open.entityId);
+        Dismissible(
+          key: ValueKey('notification-${item.id}'),
+          direction: selectedIds.isEmpty
+              ? (Directionality.of(context) == TextDirection.rtl
+                    ? DismissDirection.endToStart
+                    : DismissDirection.startToEnd)
+              : DismissDirection.none,
+          background: Container(
+            margin: EdgeInsetsDirectional.only(bottom: AppSpacing.md),
+            padding: EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColor.errorColor,
+              borderRadius: BorderRadius.circular(AppRadius.r16),
+            ),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(AppIcons.delete, color: Colors.white),
+                SizedBox(width: AppSpacing.xs),
+                Text(S.delete, style: const TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+          confirmDismiss: (_) async {
+            final deleted = await cubit.deleteNotification(item.id);
+            if (!context.mounted || deleted) return deleted;
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(S.notificationDeleteFailed)));
+            return false;
           },
+          child: NotificationTile(
+            key: ValueKey('notification-card-${item.id}'),
+            notification: item,
+            isRead: item.isRead,
+            isSelected: isSelected,
+            onLongPress: () => onSelectionChanged(item.id),
+            onTap: () {
+              if (selectedIds.isNotEmpty) {
+                onSelectionChanged(item.id);
+                return;
+              }
+              final open = cubit.openFrom(item);
+              if (open == null || !context.mounted) return;
+              Navigator.of(context)
+                  .pushNamed(open.route, arguments: open.entityId);
+            },
+          ),
         ),
       );
     }

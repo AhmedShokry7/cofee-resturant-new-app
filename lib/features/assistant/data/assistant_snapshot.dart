@@ -6,6 +6,13 @@ import 'package:new_coffee/features/menu/data/model/product_model.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 
+/// Whether a snapshot data source was read successfully.
+///
+/// A failed read must not be reported as "the shop has nothing": the model
+/// would tell a customer with orders that they have none, or deny a menu that
+/// simply could not be loaded.
+enum DataState { unknown, loaded, failed }
+
 /// Repository-backed data available to the assistant's synchronous engine.
 ///
 /// The engine makes dozens of small catalogue lookups while answering. Passing
@@ -19,16 +26,26 @@ class AssistantSnapshot {
     required this.products,
     this.orders = const [],
     this.optionsByProductId = const {},
+    this.productsState = DataState.loaded,
+    this.ordersState = DataState.loaded,
   });
 
   const AssistantSnapshot.empty()
     : products = const [],
       orders = const [],
-      optionsByProductId = const {};
+      optionsByProductId = const {},
+      productsState = DataState.unknown,
+      ordersState = DataState.unknown;
 
   final List<ProductModel> products;
   final List<OrderItemModel> orders;
   final Map<String, List<OptionGroup>> optionsByProductId;
+
+  /// Whether the catalogue and the order history were actually read. A failed
+  /// read leaves an empty list but [DataState.failed], so callers can tell
+  /// "nothing there" apart from "could not look".
+  final DataState productsState;
+  final DataState ordersState;
 
   static const _zoneKey = #assistantSnapshot;
 
@@ -56,33 +73,36 @@ class AssistantSnapshot {
     int productLimit = 200,
   }) async {
     // An empty list asks for every product, so this read can start before the
-    // product query has answered.
-    final optionsFuture = catalog.getOptionsByProduct(const []);
-    final ordersFuture = activeOrders();
+    // product query has answered. Each concurrent read gets its error handler
+    // attached right away: a future that fails while we await the products
+    // would otherwise surface as an unhandled async error.
+    final optionsFuture = catalog
+        .getOptionsByProduct(const [])
+        .then<Map<String, List<OptionGroup>>>(
+          (groups) => groups,
+          // A product without its option groups still belongs in the catalogue.
+          onError: (_) => const <String, List<OptionGroup>>{},
+        );
+    final ordersFuture = activeOrders().then(
+      (orders) => (orders: orders, failed: false),
+      // A failed history read is not "the customer has no orders": keep the
+      // list empty but mark it failed so the answer does not assert a fact.
+      onError: (_) => (orders: const <OrderItemModel>[], failed: true),
+    );
     final productsFuture = catalog.getProducts(
       branchId: branchId,
       limit: productLimit,
     );
 
     final products = await productsFuture;
+    final optionsByProduct = await optionsFuture;
+    final ordersResult = await ordersFuture;
 
-    Map<String, List<OptionGroup>> optionsByProduct = const {};
-    try {
-      optionsByProduct = await optionsFuture;
-    } catch (_) {
-      // A product without its option groups still belongs in the catalogue.
-      optionsByProduct = const {};
-    }
-    List<OrderItemModel> orders = const [];
-    try {
-      orders = await ordersFuture;
-    } catch (_) {
-      orders = const [];
-    }
     return AssistantSnapshot(
       products: products,
-      orders: orders,
+      orders: ordersResult.orders,
       optionsByProductId: optionsByProduct,
+      ordersState: ordersResult.failed ? DataState.failed : DataState.loaded,
     );
   }
 
@@ -92,12 +112,55 @@ class AssistantSnapshot {
 
   ProductModel? productById(String id) => productsById[id];
 
-  /// Canonical English name used for synonym matching. Display text stays
-  /// locale-aware elsewhere.
+  /// Canonical product name for matching and assistant replies. Prefer the
+  /// exact English catalogue name so Arabic sentences do not transliterate a
+  /// branded/menu name; fall back only when the catalogue has no English name.
   static String canonicalName(ProductModel product) {
     final nameEn = product.nameEn?.trim();
     if (nameEn != null && nameEn.isNotEmpty) return nameEn;
     return product.name;
+  }
+
+  /// Restores the exact English menu spelling when a model transliterates a
+  /// product name inside an otherwise Arabic reply.
+  static String preserveEnglishProductNames(
+    String text,
+    Iterable<ProductModel> products,
+  ) {
+    final aliases = <({String alias, String canonical})>[];
+    for (final product in products) {
+      final canonical = canonicalName(product).trim();
+      if (canonical.isEmpty || !RegExp(r'[A-Za-z]').hasMatch(canonical)) {
+        continue;
+      }
+      final candidates = <String>{
+        product.nameAr?.trim() ?? '',
+        product.name.trim(),
+      }..removeWhere((name) => name.isEmpty || name == canonical);
+      for (final alias in candidates) {
+        aliases.add((alias: alias, canonical: canonical));
+      }
+    }
+    aliases.sort((a, b) => b.alias.length.compareTo(a.alias.length));
+    var result = text;
+    for (final entry in aliases) {
+      final prefixedPattern = RegExp(
+        '([لبوفك])${RegExp.escape(entry.alias)}(?![\\p{L}\\p{N}])',
+        unicode: true,
+        caseSensitive: false,
+      );
+      result = result.replaceAllMapped(
+        prefixedPattern,
+        (match) => '${match.group(1)}ـ${entry.canonical}',
+      );
+      final pattern = RegExp(
+        '(?<![\\p{L}\\p{N}])${RegExp.escape(entry.alias)}(?![\\p{L}\\p{N}])',
+        unicode: true,
+        caseSensitive: false,
+      );
+      result = result.replaceAll(pattern, entry.canonical);
+    }
+    return result;
   }
 
   /// Stable category key used for scoring and pairing rules.
@@ -161,14 +224,18 @@ class AssistantSnapshot {
   /// The estimated price stays null when no size was requested, preserving the
   /// old base-price behaviour. Option ids are always included so the cart does
   /// not have to recover structured choices from display text.
-  CartAction cartActionFor(OrderDraftItem item, {required bool arabic}) =>
-      CartAction(
-        productId: item.productId,
-        quantity: item.quantity,
-        note: variantNoteFor(item, arabic: arabic),
-        optionValueIds: optionIdsFor(item),
-        unitPrice: item.size == null ? null : estimatedUnitPriceFor(item),
-      );
+  CartAction cartActionFor(
+    OrderDraftItem item, {
+    required bool arabic,
+    String? approvedBy,
+  }) => CartAction(
+    productId: item.productId,
+    quantity: item.quantity,
+    note: variantNoteFor(item, arabic: arabic),
+    optionValueIds: optionIdsFor(item),
+    unitPrice: item.size == null ? null : estimatedUnitPriceFor(item),
+    approvedBy: approvedBy,
+  );
 
   String variantNoteFor(OrderDraftItem item, {required bool arabic}) {
     final groups = optionsFor(item.productId);

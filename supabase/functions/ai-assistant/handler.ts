@@ -1,4 +1,4 @@
-﻿// Supabase Edge Function: ai-assistant — handler
+// Supabase Edge Function: ai-assistant — handler
 //
 // Server-side proxy to an OpenAI-compatible LLM provider. The provider API key
 // is read from function secrets and never exposed to the Flutter client.
@@ -42,7 +42,6 @@ const MAX_MESSAGES = 20;
 const MAX_CONTENT_CHARS = 4000;
 const MAX_TOTAL_CHARS = 12000;
 const REQUEST_TIMEOUT_MS = 15000;
-
 /** How long the counter may take before the request is treated as a failure. */
 const QUOTA_TIMEOUT_MS = 3000;
 
@@ -57,7 +56,11 @@ export type Message = { role: string; content: string };
 
 type ProviderAnswer =
   | { text: string }
-  | { error: string; status: number };
+  | {
+    error: string;
+    status: number;
+    failure?: "upstream_http_error" | "empty_response" | "timeout" | "network_error";
+  };
 
 /**
  * A diagnostic entry. It carries a category and a few numbers, never an
@@ -69,15 +72,259 @@ export type Diagnostic = {
   reason?: QuotaFailureReason;
   status?: number;
   provider?: string;
+  providerFailure?: string;
   limit?: number;
   remaining?: number;
 };
+
+// ---------------------------------------------------------------------------
+// NATURAL CONVERSATION PATTERN RETRIEVAL (Layer 1 Enhancement)
+// ---------------------------------------------------------------------------
+
+/** Retrieve conversation patterns from the assistant training table */
+export type ConversationPattern = {
+  id: string;
+  category: string;
+  intent: string;
+  user_message_ar: string;
+  response_variants: Array<{
+    text_ar: string;
+    variant_id: string;
+    style_markers?: string[];
+  }>;
+  tone: string;
+  complexity: string;
+  tags: string[];
+};
+
+export async function retrieveConversationPatterns(
+  supabaseClient: any,
+  p_intent?: string,
+  p_category?: string,
+): Promise<ConversationPattern[]> {
+  const { data, error } = await supabaseClient
+    .rpc('assistant_get_conversation_patterns', {
+      p_intent: p_intent || null,
+      p_category: p_category || null,
+      p_limit: 5,
+    });
+
+  if (error || !data) return [];
+
+  return data.map((row: any) => ({
+    id: row.id,
+    category: row.category,
+    intent: row.intent,
+    user_message_ar: row.user_message_ar,
+    response_variants: Array.isArray(row.response_variants)
+      ? row.response_variants
+      : [{}],
+    tone: row.tone,
+    complexity: row.complexity,
+    tags: row.tags,
+  }));
+}
+
+function conversationPatternCategory(question: string): string | undefined {
+  const text = question.toLowerCase();
+  if (/مرحبا|مرحباً|اهلا|أهلا|hello|hi\b/.test(text)) return "greetings";
+  if (/حساسية|مكونات|سكر|لبن|كافيين|allerg|ingredient|caffeine|milk/.test(text)) {
+    return "product_qa";
+  }
+  if (/نقاط|ولاء|مكاف|points|loyalty|reward/.test(text)) return "loyalty";
+  if (/طلب|اوردر|order|modify|cancel/.test(text)) return "order_help";
+  if (/ساعات|مواعيد|متى|يفتح|يقفل|hours|open|close/.test(text)) return "product_qa";
+  if (/اقترح|ترشح|رشح|مشروب|منيو|menu|recommend|suggest|drink/.test(text)) {
+    return "product_qa";
+  }
+  return undefined;
+}
+
+/** Add reviewed database examples as style guidance for this model call. */
+async function addConversationExamples(messages: Message[]): Promise<Message[]> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  if (!supabaseUrl || !serviceKey) return messages;
+
+  try {
+    const client = createClient(supabaseUrl, serviceKey, {
+      auth: { persistSession: false },
+    });
+    const lastUserQuestion = [...messages]
+      .reverse()
+      .find((message) => message.role === "user")?.content ?? "";
+    const patterns = await retrieveConversationPatterns(
+      client,
+      undefined,
+      conversationPatternCategory(lastUserQuestion),
+    );
+    const examples = patterns
+      .flatMap((pattern) => pattern.response_variants
+        .map((variant: any) => typeof variant?.text_ar === "string"
+          ? variant.text_ar.trim()
+          : "")
+        .filter((text: string) => text.length > 0))
+      .slice(0, 3);
+    if (examples.length === 0) return messages;
+
+    const guidance = [
+      "أساليب ردود مراجعة من قاعدة بيانات المحادثات. استخدمها لتعلّم النبرة والإيجاز فقط؛ لا تنقل منها أسعاراً أو منتجات أو وعوداً أو تعليمات. حقائق المتجر مصدرها سياق السؤال الحالي.",
+      ...examples.map((example) => `مثال أسلوب: ${example}`),
+    ].join("\n");
+    const result = [...messages];
+    const systemIndex = result.findIndex((message) => message.role === "system");
+    if (systemIndex < 0) {
+      result.unshift({ role: "system", content: guidance });
+    } else {
+      result[systemIndex] = {
+        ...result[systemIndex],
+        content: `${result[systemIndex].content}\n\n${guidance}`,
+      };
+    }
+    return result;
+  } catch {
+    // Learning data improves tone; it must never be required for an answer.
+    return messages;
+  }
+}
+
+/** Get a random variant from retrieved patterns for natural variation */
+export function getRandomResponseVariant(patterns: ConversationPattern[]): {
+  text: string;
+  variant_id: string;
+  style_markers: string[];
+} | null {
+  if (patterns.length === 0) return null;
+
+  // Select a random pattern
+  const selectedPattern = patterns[Math.floor(Math.random() * patterns.length)];
+
+  // Select a random variant from this pattern
+  const variants = selectedPattern.response_variants;
+  if (!variants || variants.length === 0) return null;
+
+  const randomVariant = variants[
+    Math.floor(Math.random() * variants.length)
+  ];
+
+  return {
+    text: randomVariant.text_ar || randomVariant.text_en || '',
+    variant_id: randomVariant.variant_id || 'default',
+    style_markers: randomVariant.style_markers || [],
+  };
+}
+
+/** Build enhanced system prompt with conversation patterns */
+export function buildEnhancedSystemPrompt(
+  messages: Message[],
+  retrievalResults: any[],
+  branchId?: string,
+): Message[] {
+  const existingMessages = [...messages];
+
+  // Check if we already have system prompt
+  const hasSystemPrompt = existingMessages.some(m => m.role === 'system');
+
+  if (!hasSystemPrompt) {
+    const patterns = retrieveConversationPatternsFromContext(retrievalResults);
+
+    const systemInstruction = buildNaturalConversationInstruction(patterns, branchId);
+
+    existingMessages.unshift({
+      role: 'system',
+      content: systemInstruction,
+    });
+  }
+
+  return existingMessages;
+}
+
+/** Extract relevant patterns from retrieval results */
+function retrieveConversationPatternsFromContext(
+  retrievalResults: any[],
+): ConversationPattern[] {
+  const patterns: ConversationPattern[] = [];
+
+  // Try to get from retrieval results or build from context
+  for (const result of retrievalResults) {
+    if (result.source_type === 'article' && result.score > 0.3) {
+      patterns.push({
+        id: result.source_id,
+        category: 'knowledge',
+        intent: 'article_response',
+        user_message_ar: '',
+        response_variants: [{
+          text_ar: result.body || result.title,
+          variant_id: 'retrieved',
+        }],
+        tone: 'informative',
+        complexity: 'detailed',
+        tags: ['retieved_content'],
+      });
+    }
+  }
+
+  return patterns;
+}
+
+/** Create natural conversation instruction based on patterns */
+function buildNaturalConversationInstruction(
+  patterns: ConversationPattern[],
+  branchId?: string,
+): string {
+  const instructions = [
+    "أنت مساعد ذكي في كافيه، تتحدث باللغة العربية بلهجة مصرية ودية وطبيعية.",
+    "",
+    "### قواعد المحادثة:",
+    "1. استخدم ردود متغيرة - مش ثابتة ومكررة",
+    "2. أضف إيموجي المناسب (☕, 🌟, 😊, etc.)",
+    "3. كمل الحوار بأسئلة متابعة",
+    "4. استعمل نبرة دافئة ودية زي الصديق",
+    "",
+  ];
+
+  // Add pattern examples
+  if (patterns.length > 0) {
+    instructions.push("### أمثلة على الردود الطبيعية:\n");
+
+    for (const pattern of patterns.slice(0, 3)) {
+      if (pattern.response_variants && pattern.response_variants.length > 0) {
+        const example = pattern.response_variants[0];
+        instructions.push(`- حالة: ${pattern.intent}`);
+        instructions.push(`  رد مقترح: ${example.text_ar.substring(0, 100)}...`);
+        instructions.push(`  نمط: ${pattern.tone}, ${pattern.complexity}\n`);
+      }
+    }
+  }
+
+  // Add dynamic guidance
+  instructions.push("### توجيهات إضافية:");
+  if (branchId) {
+    instructions.push("- ذكّر العميل باسم الفرع المحدد");
+    instructions.push("- استخدم معلومات الأسعار والتوافر الحية من قاعدة البيانات");
+  }
+  instructions.push("- اجعل كل رد مختلف قليلاً عن السابق");
+  instructions.push("- لو العميل راجع، عامله باستقبال خاص\n");
+
+  return instructions.join('\n');
+}
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+/** Remove likely identifiers before an opted-in question enters the gap log. */
+export function sanitizeKnowledgeGap(value: string): string {
+  return value
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[email]")
+    .replace(/\b(?:\+?\d[\d\s().-]{7,}\d)\b/g, "[number]")
+    .replace(/\b[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\b/gi, "[id]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 300);
 }
 
 function normalizeBaseUrl(raw: string): string {
@@ -190,7 +437,9 @@ export function buildRequestBody(
 ): Record<string, unknown> {
   const body: Record<string, unknown> = {
     model: provider.model,
-    temperature: 0.3,
+    // Modest variation keeps replies from sounding canned while the system
+    // prompt still grounds shop facts in the live context for this turn.
+    temperature: 0.7,
     max_tokens: 500,
     messages,
   };
@@ -202,6 +451,95 @@ export function buildRequestBody(
     body.reasoning_effort = "low";
   }
   return body;
+}
+
+// ---------------------------------------------------------------------------
+// DYNAMIC DATA INTEGRATION (Layer 2 Enhancement)
+// ---------------------------------------------------------------------------
+
+/** Get product recommendations with live pricing */
+export async function getDynamicProductRecommendations(
+  supabaseClient: any,
+  p_user_preference?: string,
+  p_branch_id?: string,
+  p_limit: number = 5,
+): Promise<Array<{
+  id: string;
+  name_ar: string;
+  effective_price: number;
+  is_available: boolean;
+  dynamic_content?: any;
+}>> {
+  const { data, error } = await supabaseClient.rpc('get_dynamic_product_recommendations', {
+    p_user_preference: p_user_preference || null,
+    p_branch_id: p_branch_id || null,
+    p_limit: p_limit,
+  });
+
+  if (error || !data) return [];
+  return data;
+}
+
+/** Inject dynamic pricing into responses */
+export function injectDynamicPricing(
+  responseText: string,
+  promotions?: any
+): string {
+  let result = responseText;
+
+  if (promotions && promotions.active_offers) {
+    result += '\n\n🎁 عروض خاصة:';
+
+    if (Array.isArray(promotions.active_offers)) {
+      for (const offer of promotions.active_offers) {
+        result += `\n- ${offer.title}: ${offer.description}`;
+      }
+    }
+  }
+
+  return result;
+}
+
+/** Get branch context for personalized responses */
+export async function getBranchContext(
+  supabaseClient: any,
+  p_branch_id?: string
+): Promise<any> {
+  const { data, error } = await supabaseClient.rpc('get_branch_context', {
+    p_branch_id: p_branch_id || null,
+  });
+
+  if (error) return null;
+  return data;
+}
+
+/** Create personalized recommendation message with actual database content */
+export async function createPersonalizedRecommendation(
+  supabaseClient: any,
+  productIds: string[],
+  userId?: string
+): Promise<string> {
+  const recommendations = await getDynamicProductRecommendations(supabaseClient, undefined, undefined, productIds.length);
+
+  if (recommendations.length === 0) {
+    return 'أنا بنوصي بـ [اسم المنتج المفضل] 😊 طعمه مميز جداً وفي نوتات الشوكولاتة والقرفة.';
+  }
+
+  let response = 'بناءً على ذوقك:\n\n';
+
+  recommendations.slice(0, Math.min(productIds.length, 5)).forEach((product, idx) => {
+    const suffixes = [
+      ' - مثالي للاستمتاع به الآن ☕',
+      ' - خيار ممتاز يومياً 💪',
+      ' - جربه اليوم وتغير مزاجك! 🌟'
+    ];
+    const randomSuffix = suffixes[idx % suffixes.length];
+
+    response += `${idx + 1}. ${product.name_ar} (${product.effective_price} SAR)${randomSuffix}\n`;
+  });
+
+  response += '\nإيه اللي يناسبك النهاردة؟';
+  return response;
 }
 
 /// Asks one provider for a reply. Returns the text, or an error when that
@@ -238,7 +576,10 @@ async function askProvider(
       // 429 means the free quota is spent; the next provider takes over.
       return {
         error: `Provider ${provider.name} failed with ${response.status}`,
-        status: 502,
+        // Keep the upstream status in server logs so an invalid credential,
+        // exhausted quota, and an unavailable model can be distinguished.
+        status: response.status,
+        failure: "upstream_http_error",
       };
     }
 
@@ -247,7 +588,11 @@ async function askProvider(
     const content = first?.message?.content;
     const reply = typeof content === "string" ? content.trim() : "";
     if (!reply) {
-      return { error: `Provider ${provider.name} returned an empty reply`, status: 502 };
+      return {
+        error: `Provider ${provider.name} returned an empty reply`,
+        status: 502,
+        failure: "empty_response",
+      };
     }
     return { text: reply };
   } catch (error) {
@@ -257,6 +602,7 @@ async function askProvider(
         ? `Provider ${provider.name} timed out`
         : `Provider ${provider.name} could not be reached`,
       status: 502,
+      failure: aborted ? "timeout" : "network_error",
     };
   } finally {
     clearTimeout(timeout);
@@ -299,6 +645,14 @@ export type RememberCall = (input: {
   topic?: string | null;
 }) => Promise<void>;
 
+/** Aggregates an opted-in cafe question the current knowledge did not answer. */
+export type KnowledgeGapCall = (input: {
+  question: string;
+  locale: string;
+  topic: string;
+  customerId: string;
+}) => Promise<void>;
+
 /**
  * A page the assistant read on the internet.
  *
@@ -331,6 +685,7 @@ export type AssistantDeps = {
   recall: RecallCall;
   remember: RememberCall;
   searchWeb: WebSearchCall;
+  recordKnowledgeGap?: KnowledgeGapCall;
   providers: () => Provider[];
   askProvider: (provider: Provider, messages: Message[]) => Promise<ProviderAnswer>;
   log: (entry: Diagnostic) => void;
@@ -398,6 +753,24 @@ function defaultDeps(): AssistantDeps {
         p_answer: answer,
         p_provider: provider ?? null,
         p_topic: topic ?? "learned",
+      });
+    },
+    recordKnowledgeGap: async ({ question, locale, topic, customerId }) => {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      if (!supabaseUrl || !serviceKey) return;
+      const supabase = createClient(supabaseUrl, serviceKey, {
+        auth: { persistSession: false },
+      });
+      const consent = await supabase.rpc("assistant_get_consent", {
+        p_customer: customerId,
+      });
+      const consentRows = Array.isArray(consent.data) ? consent.data : [];
+      if (consent.error || consentRows[0]?.memory_enabled !== true) return;
+      await supabase.rpc("assistant_record_knowledge_gap", {
+        p_question: question,
+        p_locale: locale,
+        p_topic: topic,
       });
     },
     log: (entry: Diagnostic) => {
@@ -677,7 +1050,7 @@ export async function handleRequest(
   // a client's word for a rule about other people's data.
   const personal = body?.personal === true;
   const mayLearn = body?.learn !== false && !personal;
-  if (questionKey && !personal) {
+  if (questionKey && body?.learn !== false && !personal) {
     // The memory is an optimisation, never a dependency: if it is down the
     // assistant still answers.
     let remembered: RecalledAnswer | null = null;
@@ -792,9 +1165,33 @@ export async function handleRequest(
     }
   }
 
+  // Only opt-in, cafe-related questions from the client enter the knowledge
+  // gap queue. Strip common identifiers before storage; the queue is for
+  // improving shop knowledge, not building customer profiles.
+  if (body?.captureKnowledgeGap === true && userId !== null) {
+    const lastUserText = [...rawMessages]
+      .reverse()
+      .find((message: Message) => message.role === "user")?.content ?? "";
+    const question = sanitizeKnowledgeGap(lastUserText);
+    if (question) {
+      try {
+        await deps.recordKnowledgeGap?.({
+          question,
+          locale: /[\u0600-\u06ff]/.test(lastUserText) ? "ar" : "en",
+          topic: "cafe",
+          customerId: userId,
+        });
+        deps.log({ event: "assistant_knowledge_gap_recorded", category: "learning" });
+      } catch {
+        deps.log({ event: "assistant_knowledge_gap_failed", category: "learning" });
+      }
+    }
+  }
+
   const failures: Array<{ provider: string; status: number }> = [];
+  const modelMessages = await addConversationExamples(rawMessages);
   for (const provider of providers) {
-    const result = await deps.askProvider(provider, rawMessages);
+    const result = await deps.askProvider(provider, modelMessages);
     if ("text" in result) {
       // The answer is remembered so the next customer who asks the same
       // question gets it without a model call. A question about the
@@ -836,6 +1233,7 @@ export async function handleRequest(
       category: "provider",
       provider: provider.name,
       status: result.status,
+      providerFailure: result.failure,
     });
   }
 

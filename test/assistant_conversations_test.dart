@@ -293,6 +293,22 @@ void main() {
     );
 
     test(
+      'a new chat drops the unconfirmed draft so a stray yes cannot execute it',
+      () async {
+        final cubit = await openChat();
+        await cubit.sendMessage('عايز اطلب لاتيه كبير');
+        // A draft is now waiting for the customer to confirm it.
+        expect(cubit.state.messages.last.sourceId, 'order-confirm');
+
+        await cubit.newChat();
+        await cubit.sendMessage('أيوه');
+
+        // The yes belongs to no open question: nothing is confirmed or written.
+        expect(cubit.state.messages.last.sourceId, isNot('order-confirmed'));
+      },
+    );
+
+    test(
       'the question and its answer are stored under the open chat',
       () async {
         final cubit = await openChat();

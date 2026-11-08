@@ -49,6 +49,12 @@ class _FakeNotificationsRepository implements NotificationsRepository {
     markedIds.add(List<String>.of(ids));
     return ids.length;
   }
+
+  @override
+  Future<int> deleteNotifications(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteAllNotifications() async => 0;
 }
 
 NotificationModel _row(

@@ -65,6 +65,12 @@ class _FakeNotificationsRepository implements NotificationsRepository {
 
   @override
   Future<int> markRead(List<String> ids) async => ids.length;
+
+  @override
+  Future<int> deleteNotifications(List<String> ids) async => 0;
+
+  @override
+  Future<int> deleteAllNotifications() async => 0;
 }
 
 class _ScriptedLoyaltyRepository implements LoyaltyRepository {

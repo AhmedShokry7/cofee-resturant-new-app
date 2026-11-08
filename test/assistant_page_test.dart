@@ -14,6 +14,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/features/assistant/presentation/manager/assistant/assistant_cubit.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_page.dart';
 import 'package:new_coffee/features/assistant/presentation/views/widgets/assistant_bubbles.dart';
 import 'package:new_coffee/features/assistant/presentation/views/widgets/assistant_history_drawer.dart';
@@ -21,6 +22,8 @@ import 'package:new_coffee/features/assistant/presentation/views/widgets/assista
 import 'package:new_coffee/features/branch/data/model/branch_model.dart';
 import 'package:new_coffee/features/branch/data/repositories/branch_repository.dart';
 import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
+import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
+import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
 import 'package:new_coffee/features/orders/data/model/order_item_model.dart';
 import 'package:new_coffee/features/orders/data/model/order_status.dart';
@@ -235,5 +238,65 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await tester.pump();
     });
+
+    testWidgets(
+      'a confirmed order reaches the real cart through the page wiring',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final cart = CartCubit(
+          cartRepository: LocalCartRepository(),
+          catalogRepository: const MockProductRepository(),
+        );
+        await cart.load();
+        addTearDown(cart.close);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MultiBlocProvider(
+              providers: [
+                BlocProvider(
+                  create: (_) =>
+                      BranchCubit(repository: _FakeBranchRepository()),
+                ),
+                BlocProvider<CartCubit>.value(value: cart),
+                RepositoryProvider<CatalogRepository>(
+                  create: (_) => const MockProductRepository(),
+                ),
+                RepositoryProvider<OrdersRepository>(
+                  create: (_) => _NoOrders(),
+                ),
+              ],
+              child: const AssistantPage(),
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 100));
+
+        // The cubit the page built, read from below its provider, so the send
+        // runs the page's own cart executor against the real CartCubit above.
+        final cubit = tester
+            .element(find.byType(AssistantInputBar))
+            .read<AssistantCubit>();
+
+        await cubit.sendMessage('عايز اطلب لاتيه كبير');
+        await tester.pump();
+        // The proposal is on screen; the cart is still empty.
+        expect(cart.state.items, isEmpty);
+
+        await cubit.sendMessage('أيوه');
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 50));
+
+        // The explicit yes wrote the latte into the real cart.
+        expect(
+          cart.state.items.map((item) => item.product.name),
+          contains('Latte'),
+        );
+
+        await tester.pumpWidget(const SizedBox());
+        await tester.pump();
+      },
+    );
   });
 }

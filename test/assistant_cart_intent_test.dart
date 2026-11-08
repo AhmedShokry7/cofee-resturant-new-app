@@ -53,6 +53,7 @@ void main() {
       expect(answer.actions, hasLength(1));
       expect(answer.actions.first.remove, isTrue);
       expect(answer.actions.first.productId, latteId);
+      expect(answer.actions.first.approvedBy, 'explicit_command');
       expect(answer.text, contains('شلت'));
     });
 

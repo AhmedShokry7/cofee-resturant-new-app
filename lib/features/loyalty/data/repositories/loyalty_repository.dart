@@ -38,12 +38,14 @@ class LoyaltyWallet {
     this.lifetimePoints = 0,
     this.tier = 'bronze',
     this.transactions = const [],
+    this.hasMoreTransactions = false,
   });
 
   final int balance;
   final int lifetimePoints;
   final String tier;
   final List<LoyaltyTransaction> transactions;
+  final bool hasMoreTransactions;
 }
 
 /// Reads loyalty reference data and, when signed in, the customer's ledger.
@@ -63,7 +65,16 @@ abstract class LoyaltyRepository {
   Future<int> redeemReward({required String rewardId, String? branchId});
 }
 
-class LoyaltyRepositoryImpl implements LoyaltyRepository {
+/// Optional paged history reader for account wallets.
+abstract interface class LoyaltyTransactionHistoryRepository {
+  Future<List<LoyaltyTransaction>> loadTransactions({
+    required int offset,
+    int limit = 50,
+  });
+}
+
+class LoyaltyRepositoryImpl
+    implements LoyaltyRepository, LoyaltyTransactionHistoryRepository {
   const LoyaltyRepositoryImpl({required this._catalog, SupabaseClient? client})
     : _clientOverride = client;
 
@@ -148,19 +159,45 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
           .select('id, points, reason, note, balance_after, created_at')
           .eq('user_id', user.id)
           .order('created_at', ascending: false)
-          .limit(50),
+          .limit(51),
     ]);
     final account = results[0] as Map<String, dynamic>?;
-    final transactionRows = (results[1] as List).cast<Map<String, dynamic>>();
+    final allTransactionRows = (results[1] as List)
+        .cast<Map<String, dynamic>>();
+    final hasMoreTransactions = allTransactionRows.length > 50;
+    final transactionRows = allTransactionRows.take(50);
 
     return LoyaltyWallet(
       balance: Db.asInt(account?['points_balance']),
       lifetimePoints: Db.asInt(account?['lifetime_points']),
       tier: Db.text(account?['tier'], 'bronze'),
+      hasMoreTransactions: hasMoreTransactions,
       transactions: [
         for (final row in transactionRows) LoyaltyTransaction.fromDatabase(row),
       ],
     );
+  }
+
+  @override
+  Future<List<LoyaltyTransaction>> loadTransactions({
+    required int offset,
+    int limit = 50,
+  }) async {
+    final client = _client;
+    final user = _user;
+    if (client == null || user == null) return const [];
+    final safeOffset = offset.clamp(0, 1000000);
+    final safeLimit = limit.clamp(1, 200);
+    final rows = await client
+        .from('loyalty_transactions')
+        .select('id, points, reason, note, balance_after, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', ascending: false)
+        .range(safeOffset, safeOffset + safeLimit - 1);
+    return [
+      for (final row in (rows as List).cast<Map<String, dynamic>>())
+        LoyaltyTransaction.fromDatabase(row),
+    ];
   }
 
   @override

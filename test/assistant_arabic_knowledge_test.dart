@@ -13,6 +13,7 @@ import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_snapshot.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/coffee_knowledge.dart';
 import 'package:new_coffee/features/assistant/data/knowledge/faq_knowledge.dart';
+import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
 import 'support/mock_product_repository.dart';
 
@@ -46,7 +47,7 @@ void main() {
       final answer = ask('امتى بتقفلوا؟');
 
       expect(answer.sourceId, 'faq-hours');
-      expect(answer.text, contains('7:00'));
+      expect(answer.text, contains('9:00'));
       expect(
         answer.text,
         isNot(contains('We are open')),
@@ -107,6 +108,24 @@ void main() {
 
       expect(answer.sourceId, 'snacks-pairing');
     });
+
+    test(
+      'Egyptian, Saudi and simple Arabic phrasings find the same answer',
+      () {
+        for (final query in [
+          'ايه ناكل مع القهوه',
+          'وش يناسب القهوه',
+          'شو بناكل مع القهوه',
+          'what to eat with coffee',
+        ]) {
+          expect(
+            ask(query).sourceId,
+            'snacks-pairing',
+            reason: 'the knowledge should understand "$query"',
+          );
+        }
+      },
+    );
   });
 
   group('an ingredient the shop does not carry', () {
@@ -126,6 +145,47 @@ void main() {
       final answer = ask('عايز حاجه بالشوكولاتة');
 
       expect(answer.sourceId, isNot('ingredient-none'));
+    });
+  });
+
+  group('a nut allergen the shop does carry', () {
+    // Production carries pistachio lattes while catalog.products.allergens is
+    // empty, so the local knowledge table is the only allergen source. A
+    // generic "nuts" question must match the pistachio family, not deny it.
+    const pistachioMenu = AssistantSnapshot(
+      products: [
+        ProductModel(
+          id: 'p1',
+          name: 'Pistachio Latte',
+          nameEn: 'Pistachio Latte',
+          slug: 'pistachio-latte',
+          category: 'Hot Coffee',
+          price: 18,
+          image: '',
+        ),
+      ],
+    );
+
+    AssistantAnswer askWithMenu(String query) => AssistantEngine.answer(
+      query,
+      snapshot: pistachioMenu,
+      memory: AssistantMemory(replyArabic: true),
+      now: DateTime.now(),
+    );
+
+    test('a generic nuts question is not falsely denied', () {
+      final answer = askWithMenu('عايز حاجه بالمكسرات');
+      expect(answer.sourceId, isNot('ingredient-none'));
+    });
+
+    test('pistachio by name matches the pistachio latte', () {
+      final answer = askWithMenu('عايز حاجه بالفستق');
+      expect(answer.sourceId, isNot('ingredient-none'));
+    });
+
+    test('an ingredient genuinely absent is still refused', () {
+      final answer = askWithMenu('عايز حاجه بالفراولة');
+      expect(answer.sourceId, 'ingredient-none');
     });
   });
 
@@ -154,7 +214,7 @@ void main() {
     test('the Arabic bodies have no English left in them', () {
       final articles = [...faqKnowledge, ...coffeeKnowledge];
       for (final article in articles) {
-        final body = article.bodyAr ?? '';
+        final body = article.bodyAr.replaceAll(RegExp(r'https?://\S+'), '');
         // A stray Latin word reads as broken to a customer. Product and menu
         // names are allowed; ordinary English words are not.
         final latinWords = RegExp(r'[A-Za-z]{3,}')
@@ -180,6 +240,9 @@ void main() {
           'Shot',
           'French',
           'press',
+          // Official regulator names are retained as source citations.
+          'FDA',
+          'EFSA',
         };
         for (final word in latinWords) {
           expect(

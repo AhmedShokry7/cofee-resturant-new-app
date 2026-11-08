@@ -19,7 +19,7 @@ void main() {
 
       expect(
         context,
-        contains('7:00'),
+        contains('9:00'),
         reason: 'the opening hours are the answer to this question',
       );
       expect(context, isNot(contains('No local knowledge matched')));
@@ -33,7 +33,7 @@ void main() {
 
       // Nothing matched this question, but the model must still know the
       // hours, the delivery and the payment instead of inventing them.
-      expect(context, contains('7:00'));
+      expect(context, contains('9:00'));
       expect(context, contains('25'));
       expect(context, contains('كاش'));
     });
@@ -62,8 +62,9 @@ void main() {
       expect(prompt, contains('never name another currency'));
       expect(prompt, contains('Name each product once'));
       // The examples are what actually teach the style.
-      expect(prompt, contains('سعر اللاتيه 35.00 SAR'));
-      expect(prompt, contains('بنفتح كل يوم من 7:00 الصبح'));
+      expect(prompt, contains('سعر اللاتيه حسب السعر الظاهر في المنيو الحالي'));
+      expect(prompt, isNot(contains('سعر اللاتيه 15.00 SAR')));
+      expect(prompt, contains('بنفتح كل يوم من 9:00 الصبح'));
     });
 
     test('forbids the markdown a model writes for documents', () {
@@ -99,7 +100,10 @@ void main() {
 
       expect(prompt, contains('answer only what was asked'));
       expect(prompt, isNot(contains('then offer')));
-      expect(prompt, contains('Never ask again for anything the customer already'));
+      expect(
+        prompt,
+        contains('Never ask again for anything the customer already'),
+      );
     });
 
     test('not knowing is a rule, not an option', () {

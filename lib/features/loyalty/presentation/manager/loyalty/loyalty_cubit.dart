@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/di/branch_cubit_binding.dart';
+import 'package:new_coffee/features/branch/presentation/manager/branch/branch_cubit.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
@@ -43,8 +45,12 @@ enum RedeemOutcome {
 /// wallet that starts empty because there is no account for a ledger
 /// to belong to.
 class LoyaltyCubit extends Cubit<LoyaltyState> {
-  LoyaltyCubit({required this._repository, this.branchId})
-    : super(const LoyaltyState()) {
+  LoyaltyCubit({
+    required this._repository,
+    this.branchId,
+    BranchCubit? branchCubit,
+  }) : super(const LoyaltyState()) {
+    if (branchCubit != null) _branchBinding.bind(branchCubit, setBranch);
     // Seeded from the same source the repository reads, so restoring the
     // session that is already present is not mistaken for a switch to it.
     _identity = SupabaseService.isReady
@@ -59,6 +65,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   }
 
   final LoyaltyRepository _repository;
+  final BranchCubitBinding _branchBinding = BranchCubitBinding();
 
   /// Branch used for server-side reward redemption. Null until one is chosen.
   String? branchId;
@@ -161,6 +168,7 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
           currencyCode: catalog.currencyCode,
           balance: wallet?.balance ?? guest.balance,
           transactions: wallet?.transactions ?? guest.transactions,
+          hasMoreTransactions: wallet?.hasMoreTransactions ?? false,
           lifetimePoints: wallet?.lifetimePoints ?? 0,
           tier: wallet?.tier ?? 'guest',
           isGuest: wallet == null,
@@ -183,6 +191,43 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
     return load();
   }
 
+  Future<void> loadMoreTransactions() async {
+    if (!state.hasMoreTransactions ||
+        state.isLoadingMoreTransactions ||
+        state.isGuest) {
+      return;
+    }
+    emit(state.copyWith(isLoadingMoreTransactions: true));
+    try {
+      final historyRepository = _repository;
+      if (historyRepository is! LoyaltyTransactionHistoryRepository) {
+        emit(
+          state.copyWith(
+            hasMoreTransactions: false,
+            isLoadingMoreTransactions: false,
+          ),
+        );
+        return;
+      }
+      final next =
+          await (historyRepository as LoyaltyTransactionHistoryRepository)
+              .loadTransactions(offset: state.transactions.length, limit: 51);
+      if (isClosed) return;
+      final hasMore = next.length > 50;
+      emit(
+        state.copyWith(
+          transactions: [...state.transactions, ...next.take(50)],
+          hasMoreTransactions: hasMore,
+          isLoadingMoreTransactions: false,
+        ),
+      );
+    } catch (error, stackTrace) {
+      if (isClosed) return;
+      emit(state.copyWith(isLoadingMoreTransactions: false));
+      addError(error, stackTrace);
+    }
+  }
+
   /// +points for a completed local checkout. Returns the granted amount.
   ///
   /// This remains a device wallet until the server-backed checkout places a
@@ -190,20 +235,27 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   /// method deliberately does not touch the server ledger.
   Future<int> earnForOrder(
     double orderTotal, {
+    int? serverPointsEarned,
     // Null rather than `S.orderPurchaseLabel`: a localized getter is not a
     // compile-time constant, so it cannot be a default value. Resolved inside
     // so it still resolves in the *current* language.
     String? title,
   }) async {
     final rule = state.rules.isEmpty ? null : state.rules.first;
-    final points = rule?.pointsFor(orderTotal) ?? 0;
-    if (points <= 0 || isClosed) return 0;
+    final points = serverPointsEarned ?? rule?.pointsFor(orderTotal) ?? 0;
+    if (isClosed) return 0;
 
     if (!state.isGuest) {
-      // Show the server rule's estimate without inventing ledger rows. The
-      // real credit arrives when the order itself is placed on the server.
       emit(state.copyWith(lastEarned: points));
+      // The order RPC is the only writer of an account wallet. Refresh that
+      // wallet after success so both its balance and its ledger show the
+      // credit that the success screen just announced.
+      await load();
       return points;
+    }
+    if (points <= 0) {
+      emit(state.copyWith(lastEarned: 0));
+      return 0;
     }
 
     final transaction = LoyaltyTransaction(
@@ -321,9 +373,10 @@ class LoyaltyCubit extends Cubit<LoyaltyState> {
   }
 
   @override
-  Future<void> close() {
+  Future<void> close() async {
     _authSubscription?.cancel();
     _authSubscription = null;
-    return super.close();
+    await _branchBinding.close();
+    await super.close();
   }
 }

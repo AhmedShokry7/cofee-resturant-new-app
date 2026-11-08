@@ -4,6 +4,7 @@ part of 'notifications_cubit.dart';
 class NotificationsState {
   const NotificationsState({
     this.notifications = const [],
+    this.selectedIds = const {},
     this.isLoading = true,
     this.error,
     this.signedOut = false,
@@ -11,9 +12,11 @@ class NotificationsState {
     this.hasMore = false,
     this.isLoadingMore = false,
     this.preferencesRead = false,
+    this.preferencesLoadFailed = false,
   });
 
   final List<NotificationModel> notifications;
+  final Set<String> selectedIds;
   final bool isLoading;
   final String? error;
   final bool signedOut;
@@ -33,6 +36,9 @@ class NotificationsState {
   /// switches is "off, never chosen", which would offer the banner to a customer
   /// who already turned the phone channel on.
   final bool preferencesRead;
+
+  /// A failed server read is different from the default settings row.
+  final bool preferencesLoadFailed;
 
   /// Whether any row on screen still waits for the customer.
   int get unreadCount => notifications.where((item) => !item.isRead).length;
@@ -54,6 +60,7 @@ class NotificationsState {
 
   NotificationsState copyWith({
     List<NotificationModel>? notifications,
+    Set<String>? selectedIds,
     bool? isLoading,
     String? error,
     bool clearError = false,
@@ -64,12 +71,14 @@ class NotificationsState {
     bool? hasMore,
     bool? isLoadingMore,
     bool? preferencesRead,
+    bool? preferencesLoadFailed,
   }) {
     final switches = preferences ?? this.preferences;
     return NotificationsState(
       notifications: more == null
           ? (notifications ?? this.notifications)
           : [...this.notifications, ...more],
+      selectedIds: selectedIds ?? this.selectedIds,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
       signedOut: signedOut ?? this.signedOut,
@@ -79,6 +88,8 @@ class NotificationsState {
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       preferencesRead: preferencesRead ?? this.preferencesRead,
+      preferencesLoadFailed:
+          preferencesLoadFailed ?? this.preferencesLoadFailed,
     );
   }
 }

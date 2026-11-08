@@ -8,15 +8,34 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
 import 'package:new_coffee/features/loyalty/data/model/reward_model.dart';
 import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
+import 'package:new_coffee/features/loyalty/presentation/views/loyalty_history_page.dart';
+import 'package:new_coffee/features/loyalty/presentation/views/loyalty_rewards_page.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/widgets/reward_card.dart';
 import 'package:new_coffee/shared/widgets/empty_state.dart';
 import 'package:new_coffee/shared/widgets/shimmer/page_skeletons.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
-class LoyaltyPage extends StatelessWidget {
+class LoyaltyPage extends StatefulWidget {
   const LoyaltyPage({super.key});
 
   static const routeName = "loyaltyRoute";
+
+  @override
+  State<LoyaltyPage> createState() => _LoyaltyPageState();
+}
+
+class _LoyaltyPageState extends State<LoyaltyPage> {
+  static const _previewCount = 3;
+
+  void _openRewards(BuildContext context, List<RewardModel> rewards) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            LoyaltyRewardsPage(onRedeem: (reward) => _redeem(context, reward)),
+      ),
+    );
+    context.read<LoyaltyCubit>().load();
+  }
 
   Future<void> _redeem(BuildContext context, RewardModel reward) async {
     final loyalty = context.read<LoyaltyCubit>();
@@ -109,6 +128,11 @@ class LoyaltyPage extends StatelessWidget {
             final locked = state.rewards
                 .where((reward) => !reward.affordable(state.balance))
                 .toList();
+            final visibleUnlocked = unlocked.take(_previewCount).toList();
+            final visibleLocked = locked.take(_previewCount).toList();
+            final visibleHistory = state.transactions
+                .take(_previewCount)
+                .toList();
             return ListView(
               padding: AppLayout.pageBody,
               children: [
@@ -120,14 +144,30 @@ class LoyaltyPage extends StatelessWidget {
                       : S.lifetimePoints(state.tierLabel, state.lifetimePoints),
                 ),
                 SizedBox(height: AppSpacing.xl),
-                Text(
-                  unlocked.isEmpty
+                _SectionHeading(
+                  title: unlocked.isEmpty
                       ? S.keepCollectingToUnlock
                       : S.yourPointsUnlock,
-                  style: AppFonts.semiBold18(context),
+                  subtitle: S.loyaltyProductRewardsCount(
+                    unlocked.where((reward) => reward.isProduct).length,
+                  ),
+                  action: state.rewards.isEmpty
+                      ? null
+                      : TextButton(
+                          onPressed: () => _openRewards(context, state.rewards),
+                          child: Text(S.loyaltyShowAll),
+                        ),
                 ),
                 SizedBox(height: AppSpacing.md),
-                for (final reward in unlocked)
+                if (unlocked.isEmpty && state.rewards.isEmpty)
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    child: Text(
+                      S.loyaltyNoRewards,
+                      style: AppFonts.regular14(context),
+                    ),
+                  ),
+                for (final reward in visibleUnlocked)
                   RewardCard(
                     reward: reward,
                     locked: false,
@@ -138,16 +178,36 @@ class LoyaltyPage extends StatelessWidget {
                   ),
                 if (locked.isNotEmpty) ...[
                   SizedBox(height: AppSpacing.md),
-                  Text(S.keepCollecting, style: AppFonts.semiBold18(context)),
+                  _SectionHeading(
+                    title: S.keepCollecting,
+                    subtitle: S.loyaltyProductRewardsCount(
+                      locked.where((reward) => reward.isProduct).length,
+                    ),
+                    action: TextButton(
+                      onPressed: () => _openRewards(context, state.rewards),
+                      child: Text(S.loyaltyShowAll),
+                    ),
+                  ),
                   SizedBox(height: AppSpacing.md),
-                  for (final reward in locked)
+                  for (final reward in visibleLocked)
                     RewardCard(reward: reward, locked: true),
                 ],
                 if (state.transactions.isNotEmpty) ...[
                   SizedBox(height: AppSpacing.md),
-                  Text(S.history, style: AppFonts.semiBold18(context)),
+                  _SectionHeading(
+                    title: S.history,
+                    subtitle: S.loyaltyHistoryCount(state.transactions.length),
+                    action: TextButton(
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => const LoyaltyHistoryPage(),
+                        ),
+                      ),
+                      child: Text(S.loyaltyShowAll),
+                    ),
+                  ),
                   SizedBox(height: AppSpacing.md),
-                  for (final transaction in state.transactions)
+                  for (final transaction in visibleHistory)
                     _HistoryTile(
                       title: transaction.title,
                       points: transaction.points,
@@ -169,6 +229,36 @@ class LoyaltyPage extends StatelessWidget {
         : rate.toString();
     return S.earnRate(formatted, state.currencyCode);
   }
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({
+    required this.title,
+    required this.subtitle,
+    this.action,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget? action;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Expanded(child: Text(title, style: AppFonts.semiBold18(context))),
+          ?action,
+        ],
+      ),
+      SizedBox(height: AppSpacing.xs),
+      Text(
+        subtitle,
+        style: AppFonts.regular12(context).copyWith(color: AppColor.greyColor),
+      ),
+    ],
+  );
 }
 
 class _BalanceCard extends StatelessWidget {

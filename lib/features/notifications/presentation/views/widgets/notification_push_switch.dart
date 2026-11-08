@@ -14,15 +14,19 @@ import 'package:new_coffee/features/notifications/presentation/manager/notificat
 /// Both places that can change the channel - the bell in the app bar and the
 /// banner above the list - run through here, so the two cannot tell the
 /// customer different things about the same refusal.
-Future<void> togglePushAndReport(BuildContext context, bool enabled) async {
+Future<void> togglePushAndReport(BuildContext context, bool enabled) =>
+    setPushAndReport(context, !enabled);
+
+/// Saves the requested state and leaves the previous setting in place on
+/// permission or server failure.
+Future<void> setPushAndReport(BuildContext context, bool requested) async {
   final cubit = context.read<NotificationsCubit>();
-  final requested = !enabled;
-  await cubit.setPushEnabled(requested);
-  if (!context.mounted || cubit.state.pushEnabled == requested) return;
+  final saved = await cubit.setPushEnabled(requested);
+  if (!context.mounted || saved) return;
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
       content: Text(
-        requested ? S.notificationPermissionDenied : S.notificationsTurnedOff,
+        requested ? S.notificationPushNotSaved : S.preferenceNotSaved,
       ),
     ),
   );

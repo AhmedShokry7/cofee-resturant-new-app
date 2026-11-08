@@ -36,6 +36,7 @@ class CartPage extends StatelessWidget {
       SnackBar(
         content: Text(S.removedFromCart(item.product.name)),
         duration: MotionTokens.messageHold,
+        persist: false,
         action: SnackBarAction(
           label: S.undo,
           onPressed: () {

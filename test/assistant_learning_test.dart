@@ -32,6 +32,7 @@ class _RecordingLlmClient implements LlmClient {
     bool learn = true,
     bool personal = false,
     bool webSearch = false,
+    bool captureKnowledgeGap = false,
   }) async {
     calls.add(
       (

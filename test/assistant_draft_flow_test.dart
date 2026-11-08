@@ -135,6 +135,7 @@ void main() {
       expect(answer.sourceId, 'order-confirmed');
       expect(answer.actions, hasLength(1));
       expect(answer.actions.single.quantity, 2);
+      expect(answer.actions.single.approvedBy, 'explicit_confirm');
       expect(memory.draft.items, isEmpty);
       expect(memory.pendingQuestion, 'order_payment');
     });
@@ -172,7 +173,7 @@ void main() {
       expect(answer.sourceId, 'order-cancel-empty');
     });
 
-    test('choosing to pay keeps an unconfirmed draft and opens checkout', () {
+    test('paying an unconfirmed draft asks to confirm first, not write', () {
       final memory = AssistantMemory()
         ..pendingQuestion = 'order_payment'
         ..draft.add(_item('3'));
@@ -181,13 +182,28 @@ void main() {
         () => AssistantDraftFlow.payChoice(memory, arabic: true, now: true),
       );
 
+      // The draft is a write waiting for a yes: paying must not push it into
+      // the cart silently on the way to checkout.
+      expect(answer.sourceId, 'order-confirm');
+      expect(answer.destination, isNull);
+      expect(answer.actions, isEmpty);
+      expect(memory.draft.items, hasLength(1));
+      expect(memory.pendingQuestion, 'order_confirm');
+    });
+
+    test('paying with nothing drafted opens checkout without writing', () {
+      final memory = AssistantMemory()..pendingQuestion = 'order_payment';
+
+      final answer = _withCatalog(
+        () => AssistantDraftFlow.payChoice(memory, arabic: true, now: true),
+      );
+
       expect(answer.destination, AssistantDestination.checkout);
-      expect(answer.actions, hasLength(1));
-      expect(memory.draft.items, isEmpty);
+      expect(answer.actions, isEmpty);
       expect(memory.pendingQuestion, isNull);
     });
 
-    test('a direct add never asks for confirmation', () {
+    test('a direct add proposes and waits for confirmation', () {
       final memory = AssistantMemory();
 
       final answer = _withCatalog(
@@ -198,12 +214,13 @@ void main() {
         ),
       );
 
-      expect(answer.sourceId, 'order-added');
-      expect(answer.actions, isNotEmpty);
-      // The draft is a separate conversation state: a direct add must not
-      // leave a pending order behind.
-      expect(memory.draft.items, isEmpty);
-      expect(memory.pendingQuestion, isNull);
+      // Adding to the cart is a write: it proposes first instead of pushing
+      // the product in on the wording alone.
+      expect(answer.sourceId, 'order-confirm');
+      expect(answer.actions, isEmpty);
+      expect(answer.text, contains('أكد'));
+      expect(memory.draft.items, hasLength(1));
+      expect(memory.pendingQuestion, 'order_confirm');
     });
 
     test('a refusal after a suggestion asks for a direction', () {
