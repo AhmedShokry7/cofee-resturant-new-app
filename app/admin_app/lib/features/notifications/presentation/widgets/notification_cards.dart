@@ -31,6 +31,8 @@ class NotificationCards extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
       itemCount: notifications.length,
       separatorBuilder: (_, _) => const SizedBox(height: AppSizes.px10),

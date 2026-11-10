@@ -1,5 +1,6 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_reference.dart';
@@ -7,13 +8,12 @@ import 'package:admin_app/features/hr/domain/entities/hr_schedule.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_list_state.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_cell_text.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_date_field.dart';
-import 'package:admin_app/features/hr/presentation/widgets/hr_filter_scroll.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_format.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_page_scaffold.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_record_card.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_row_button.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_status_cell.dart';
-import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_value_segment.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 import 'package:flutter/material.dart';
 
@@ -68,6 +68,15 @@ class HrScheduleView extends StatelessWidget {
       state: state,
       search: search,
       emptyLabel: S.hrEmptySchedules,
+      emptyHint: S.hrNoSchedulesHint,
+      emptyIcon: AppIcons.calendar01,
+      emptyAction: canManage
+          ? CustomBtn(
+              text: S.hrBtnNewSchedule,
+              variant: BtnVariant.outlined,
+              onPressed: onNew,
+            )
+          : null,
       columns: <String>[
         S.hrColEmployee,
         S.hrColBranch,
@@ -191,22 +200,19 @@ class HrScheduleView extends StatelessWidget {
   }
 
   Widget _branchRow(List<HrBranch> options) {
-    final labels = <String>[
-      S.hrFilterAllBranches,
-      for (final branch in options) hrBranchName(branch),
-    ];
-    final found = options.indexWhere((branch) => branch.id == branchId);
-    final index = found < 0 ? 0 : found + 1;
-    return HrFilterScroll(
-      control: AdminSegmentedControl(
-        options: labels,
-        selected: labels[index],
-        onChanged: (label) {
-          final next = labels.indexOf(label);
-          if (next == index) return;
-          onBranchChanged(next == 0 ? null : options[next - 1].id);
-        },
-      ),
+    return HrFilterStrip(
+      children: [
+        HrValueSegment(
+          label: S.hrColBranch,
+          allLabel: S.hrFilterAllBranches,
+          choices: [
+            for (final branch in options)
+              HrFilterChoice(branch.id, hrBranchName(branch)),
+          ],
+          selected: branchId,
+          onChanged: onBranchChanged,
+        ),
+      ],
     );
   }
 

@@ -37,8 +37,8 @@ class AdminStatTile extends StatelessWidget {
     final heading = dark ? AppColor.darkText : AppColor.adminHeading;
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     return Container(
-      constraints: const BoxConstraints(minHeight: 88),
-      padding: const EdgeInsets.all(AppSpacing.md),
+      constraints: const BoxConstraints(minHeight: 84),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -55,41 +55,47 @@ class AdminStatTile extends StatelessWidget {
                 ),
               ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           AdminIconTile(icon: icon, tint: tint, surface: surface),
-          const SizedBox(height: AppSpacing.sm),
-          if (money != null)
-            AdminMoneyText(
-              value: money!,
-              fontSize: AppFontSizes.size15,
-              color: valueColor ?? heading,
-              formatter: moneyFormatter,
-            )
-          else
-            Text(
-              value!,
-              // القيمتان قد تكونان جملةً لا رقمًا («لم تصدر قسيمة بعد»)، فسطر
-              // واحد يقطعها في نصف كلمة: البلاطة ترتفع سطرين ولا تُبتر.
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: valueColor ?? heading,
-                fontSize: AppFontSizes.size15,
-                fontWeight: AppFontWeights.bold,
-                height: AppTextHeights.line1_4,
-              ),
-            ),
-          const SizedBox(height: AppSizes.px2),
-          Text(
-            label,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: muted,
-              fontSize: AppFontSizes.size9_5,
-              height: AppTextHeights.line1_4,
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (money != null)
+                  AdminMoneyText(
+                    value: money!,
+                    fontSize: AppFontSizes.size17,
+                    color: valueColor ?? heading,
+                    formatter: moneyFormatter,
+                  )
+                else
+                  Text(
+                    value!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: valueColor ?? heading,
+                      fontSize: AppFontSizes.size18,
+                      fontWeight: AppFontWeights.bold,
+                      height: AppTextHeights.line1_4,
+                    ),
+                  ),
+                const SizedBox(height: AppSizes.px2),
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: muted,
+                    fontSize: AppFontSizes.size11_5,
+                    height: AppTextHeights.line1_4,
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
@@ -81,6 +82,8 @@ class HrAdjustmentListView extends StatelessWidget {
     state: state,
     search: search,
     emptyLabel: S.hrEmptyAdjustments,
+    emptyHint: S.hrEmptyFilterHint,
+    emptyIcon: AppIcons.coins01,
     columns: <String>[
       S.hrColEmployee,
       S.hrColType,
@@ -168,6 +171,7 @@ class HrAdjustmentListView extends StatelessWidget {
   Widget _filters(BuildContext context) => HrFilterStrip(
     children: [
       HrValueSegment(
+        label: S.hrFilterStatus,
         choices: [
           for (final wire in _statuses)
             HrFilterChoice(wire, hrStatusLabel(wire).text),
@@ -177,6 +181,7 @@ class HrAdjustmentListView extends StatelessWidget {
         onChanged: onStatusChanged,
       ),
       HrValueSegment(
+        label: S.hrColSource,
         choices: [
           for (final wire in _sources)
             HrFilterChoice(wire, hrSourceLabel(wire)),
@@ -186,6 +191,7 @@ class HrAdjustmentListView extends StatelessWidget {
         onChanged: onSourceChanged,
       ),
       HrValueSegment(
+        label: S.hrColEmployee,
         choices: [for (final p in people) HrFilterChoice(p.id, p.name)],
         allLabel: S.hrFilterAllEmployees,
         selected: staffId,

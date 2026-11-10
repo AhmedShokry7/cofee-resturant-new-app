@@ -45,7 +45,7 @@ class HrCellText extends StatelessWidget {
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
         color: color,
-        fontSize: AppFontSizes.size11_5,
+        fontSize: AppFontSizes.size12_5,
         fontWeight: strong ? AppFontWeights.semiBold : AppFontWeights.regular,
         height: AppTextHeights.line1_5,
       ),

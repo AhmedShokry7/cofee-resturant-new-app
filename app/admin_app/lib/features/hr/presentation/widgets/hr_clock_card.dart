@@ -58,8 +58,8 @@ class _HrClockCardState extends State<HrClockCard> {
     final theme = Theme.of(context);
     if (!widget.canClock) {
       return AdminSectionCard(
-        title: S.hrMyDay,
-        subtitle: S.hrClockHint,
+        title: S.hrClockTitle,
+        subtitle: S.hrClockPanelHint,
         child: Text(
           S.hrNoStaffProfile,
           style: TextStyle(
@@ -183,6 +183,9 @@ class _HrClockCardState extends State<HrClockCard> {
     );
   }
 
-  Widget _card(Widget child) =>
-      AdminSectionCard(title: S.hrMyDay, subtitle: S.hrClockHint, child: child);
+  Widget _card(Widget child) => AdminSectionCard(
+    title: S.hrClockTitle,
+    subtitle: S.hrClockPanelHint,
+    child: child,
+  );
 }

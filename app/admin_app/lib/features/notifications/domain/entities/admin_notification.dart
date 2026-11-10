@@ -126,12 +126,24 @@ class AdminNotificationCampaign {
     this.audience,
     this.recipientCount = 0,
     this.createdAt,
+    this.isSummary = false,
+    this.readCount = 0,
+    this.unreadCount = 0,
+    this.emailSent = 0,
+    this.emailFailed = 0,
+    this.emailSkipped = 0,
   });
 
   final String id;
   final AdminNotificationAudience? audience;
   final int recipientCount;
   final DateTime? createdAt;
+  final bool isSummary;
+  final int readCount;
+  final int unreadCount;
+  final int emailSent;
+  final int emailFailed;
+  final int emailSkipped;
 
   factory AdminNotificationCampaign.fromJson(Map<String, dynamic> json) =>
       AdminNotificationCampaign(
@@ -139,6 +151,12 @@ class AdminNotificationCampaign {
         audience: AdminNotificationAudience.fromValue(json['audience']),
         recipientCount: notificationInt(json['recipient_count']),
         createdAt: notificationDate(json['created_at']),
+        isSummary: json['is_summary'] == true,
+        readCount: notificationInt(json['read_count']),
+        unreadCount: notificationInt(json['unread_count']),
+        emailSent: notificationInt(json['email_sent']),
+        emailFailed: notificationInt(json['email_failed']),
+        emailSkipped: notificationInt(json['email_skipped']),
       );
 }
 
@@ -216,6 +234,7 @@ class AdminNotification {
   final AdminNotificationCampaign? campaign;
 
   bool get isAdminSent => campaign != null;
+  bool get isCampaignSummary => campaign?.isSummary == true;
 
   /// The picture the campaign carries, or null for a plain message.
   String? get imageUrl => notificationText(payload['image_url']);

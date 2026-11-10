@@ -13,6 +13,7 @@ import 'package:admin_app/features/notifications/presentation/manager/admin_noti
 import 'package:admin_app/features/notifications/presentation/widgets/notification_actions_menu.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_compose_dialog.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_details_dialog.dart';
+import 'package:admin_app/features/notifications/presentation/widgets/notification_campaign_summary_dialog.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_directory.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_format.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_page_body.dart';
@@ -99,6 +100,13 @@ class _NotificationsPageState extends State<NotificationsPage> {
   }
 
   Future<void> _openDetails(AdminNotification notification) async {
+    if (notification.isCampaignSummary) {
+      await showNotificationCampaignSummaryDialog(
+        context: context,
+        notification: notification,
+      );
+      return;
+    }
     final action = await showNotificationDetailsDialog(
       context: context,
       notification: notification,
@@ -306,6 +314,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
               type: state.type,
               readFilter: state.readFilter,
               pushFilter: state.pushFilter,
+              campaignFilter: state.campaignFilter,
+              dateFrom: state.dateFrom,
+              dateTo: state.dateTo,
               isRefreshingRows: state.isRefreshingRows,
               canSend: widget.canSend,
               canManage: widget.canManage,
@@ -313,6 +324,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
               onTypeChanged: _cubit.setType,
               onReadChanged: _cubit.setReadFilter,
               onPushChanged: _cubit.setPushFilter,
+              onCampaignChanged: _cubit.setCampaignFilter,
+              onDateChanged: _cubit.setDateFilter,
               onClearFilters: _clearFilters,
               onPageChanged: _cubit.setPage,
               onOpen: _openDetails,

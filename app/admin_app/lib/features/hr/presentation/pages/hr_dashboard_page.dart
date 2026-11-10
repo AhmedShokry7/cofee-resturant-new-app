@@ -11,10 +11,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 /// الفرع لا يُفتَرش على الجهاز ولا يُشتق من أي مكان آخر: من يملك كل الفروع يسأل
 /// عنها دفعة واحدة، ومن يملك فرعًا واحدًا لا يرى بابًا لا يفتح شيئًا.
 class HrDashboardPage extends StatefulWidget {
-  const HrDashboardPage({super.key, this.cubit, this.reference});
+  const HrDashboardPage({
+    super.key,
+    this.cubit,
+    this.reference,
+    this.onNavigate,
+    this.availableDestinations = const <String>{},
+  });
 
   final HrDashboardCubit? cubit;
   final HrReferenceCubit? reference;
+  final ValueChanged<String>? onNavigate;
+  final Set<String> availableDestinations;
 
   @override
   State<HrDashboardPage> createState() => _HrDashboardPageState();
@@ -58,6 +66,8 @@ class _HrDashboardPageState extends State<HrDashboardPage> {
               state: state,
               branches: reference.reference?.branches ?? const [],
               branchesFailure: reference.failure,
+              onNavigate: widget.onNavigate,
+              availableDestinations: widget.availableDestinations,
               onBranchChanged: _cubit.selectBranch,
               onRetry: () => _cubit.load(branchId: state.branchId),
             ),

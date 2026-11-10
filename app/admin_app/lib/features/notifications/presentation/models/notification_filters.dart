@@ -40,3 +40,13 @@ enum NotificationPushFilter {
     NotificationPushFilter.none => 'none',
   };
 }
+
+enum NotificationCampaignFilter {
+  all(null),
+  campaigns('campaign'),
+  automatic('automatic');
+
+  const NotificationCampaignFilter(this.value);
+
+  final String? value;
+}

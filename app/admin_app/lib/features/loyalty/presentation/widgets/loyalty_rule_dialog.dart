@@ -133,7 +133,7 @@ class _LoyaltyRuleDialogState extends State<LoyaltyRuleDialog> {
                         hint: S.loyaltyProgramValueHint,
                         helper: S.loyaltyProgramValueHelp,
                         validator: _validateValue,
-                        suffixIcon: const CurrencyIcon(size: 15),
+                        suffixIcon: const CurrencyIcon(size: 10),
                       ),
                       _preview(),
                       const SizedBox(height: AppSpacing.sm),

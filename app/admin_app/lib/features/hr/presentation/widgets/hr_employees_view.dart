@@ -1,5 +1,6 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_employee.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_reference.dart';
@@ -8,16 +9,16 @@ import 'package:admin_app/features/hr/presentation/manager/hr_employees_state.da
 import 'package:admin_app/features/hr/presentation/models/hr_load_status.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_cell_text.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_directory.dart';
-import 'package:admin_app/features/hr/presentation/widgets/hr_filter_scroll.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_format.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_labels.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_record_card.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_refusal_note.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_row_button.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_status_cell.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_value_segment.dart';
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
-import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:flutter/material.dart';
 
@@ -77,7 +78,7 @@ class HrEmployeesView extends StatelessWidget {
           AdminPageHeader(
             title: S.hrEmployees,
             subtitle: S.hrEmployeesSubtitle,
-            progress: state.isWriting ? 0 : null,
+            progress: state.isWriting || state.isLoading ? 0 : null,
             progressLabel: state.isWriting ? S.saving : null,
           ),
           HrRefusalNote(refusal: failure),
@@ -86,9 +87,7 @@ class HrEmployeesView extends StatelessWidget {
             HrReceiptNote(receipt: state.receipt!),
           ],
           const SizedBox(height: AppSpacing.sm),
-          _filters(context),
-          const SizedBox(height: AppSpacing.sm),
-          Expanded(child: _body(failure)),
+          Expanded(child: _body(context, failure)),
         ],
       ),
     );
@@ -96,54 +95,46 @@ class HrEmployeesView extends StatelessWidget {
 
   /// ترشيحات الدليل: حالة الارتباط دائمًا، والفرع والقسم مما قرأه المرجع.
   Widget _filters(BuildContext context) {
-    final branches = [
-      for (final branch in reference?.branches ?? const <HrBranch>[])
-        hrBranchName(branch),
-    ];
+    final branches = reference?.branches ?? const <HrBranch>[];
     final departments = reference?.departments ?? const <String>[];
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
+    return HrFilterStrip(
       children: [
-        _control(
-          <String>[
-            S.hrFilterAll,
-            for (final s in _statuses) hrStatusLabel(s).text,
+        HrValueSegment(
+          label: S.hrFilterStatus,
+          allLabel: S.hrFilterAll,
+          choices: [
+            for (final value in _statuses)
+              HrFilterChoice(value, hrStatusLabel(value).text),
           ],
-          status == null ? 0 : _statuses.indexOf(status!) + 1,
-          (index) => onStatusChanged(index == 0 ? null : _statuses[index - 1]),
+          selected: status,
+          onChanged: onStatusChanged,
         ),
         if (branches.isNotEmpty)
-          _control(
-            <String>[S.hrFilterAllBranches, ...branches],
-            branches.indexOf(branchId ?? '') + 1,
-            (index) => onBranchChanged(index == 0 ? null : branches[index - 1]),
+          HrValueSegment(
+            label: S.hrColBranch,
+            allLabel: S.hrFilterAllBranches,
+            choices: [
+              for (final branch in branches)
+                HrFilterChoice(branch.id, hrBranchName(branch)),
+            ],
+            selected: branchId,
+            onChanged: onBranchChanged,
           ),
         if (departments.isNotEmpty)
-          _control(
-            <String>[S.hrFilterAllDepartments, ...departments],
-            departments.indexOf(department ?? '') + 1,
-            (index) =>
-                onDepartmentChanged(index == 0 ? null : departments[index - 1]),
+          HrValueSegment(
+            label: S.hrColDepartment,
+            allLabel: S.hrFilterAllDepartments,
+            choices: [
+              for (final value in departments) HrFilterChoice(value, value),
+            ],
+            selected: department,
+            onChanged: onDepartmentChanged,
           ),
       ],
     );
   }
 
-  /// شريط ترشيح يُمرَّر أفقيًا على الشاشة الضيقة بدل أن ينكسر سطرين.
-  Widget _control(
-    List<String> labels,
-    int selected,
-    ValueChanged<int> onPicked,
-  ) => HrFilterScroll(
-    control: AdminSegmentedControl(
-      options: labels,
-      selected: labels[selected.clamp(0, labels.length - 1)],
-      onChanged: (label) => onPicked(labels.indexOf(label)),
-    ),
-  );
-
-  Widget _body(HrRefusal? failure) {
+  Widget _body(BuildContext context, HrRefusal? failure) {
     if (state.isLoading && state.employees.isEmpty) {
       return const AdminLoadingView();
     }
@@ -154,38 +145,70 @@ class HrEmployeesView extends StatelessWidget {
       );
     }
     return AdminDirectoryPanel(
-      child: HrDirectory<HrEmployee>(
-        items: state.employees,
-        columns: <String>[
-          S.hrColEmployee,
-          S.hrColEmployeeNumber,
-          S.hrColJobTitle,
-          S.hrColDepartment,
-          S.status,
-          S.hrColBranch,
-        ],
-        cellsOf: (context, employee) => [
-          HrCellText(hrPersonName(employee.fullName), strong: true),
-          HrCellText(employee.employment.employeeNumber),
-          HrCellText(employee.employment.jobTitle),
-          HrCellText(employee.employment.department),
-          HrStatusCell(employee.employment.employmentStatus),
-          HrCellText(
-            employee.branches.isEmpty
-                ? S.hrNoBranch
-                : employee.branches.join(' · '),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _filters(context),
+          const SizedBox(height: AppSpacing.sm),
+          Divider(height: 1, color: Theme.of(context).dividerColor),
+          const SizedBox(height: AppSpacing.sm),
+          Expanded(
+            child: HrDirectory<HrEmployee>(
+              items: state.employees,
+              columns: <String>[
+                S.hrColEmployee,
+                S.hrColEmployeeNumber,
+                S.hrColJobTitle,
+                S.hrColDepartment,
+                S.status,
+                S.hrAccountStatus,
+                S.hrColBranch,
+              ],
+              cellsOf: (context, employee) => [
+                _identityCell(employee),
+                HrCellText(employee.employment.employeeNumber),
+                HrCellText(employee.employment.jobTitle),
+                HrCellText(employee.employment.department),
+                HrStatusCell(employee.employment.employmentStatus),
+                HrStatusCell(employee.accountStatus),
+                HrCellText(
+                  employee.branches.isEmpty
+                      ? S.hrNoBranch
+                      : employee.branches.join(' · '),
+                ),
+              ],
+              cardOf: (context, employee) => _card(context, employee),
+              actionsOf: (context, employee) => [
+                HrRowButton(
+                  text: S.hrBtnOpenFile,
+                  onPressed: () => onOpenFile(employee.staffId),
+                ),
+              ],
+              searchOf: (employee) =>
+                  '${employee.fullName} ${employee.email} '
+                  '${employee.employment.employeeNumber} '
+                  '${employee.employment.jobTitle} ${employee.employment.department}',
+              search: search,
+              emptyLabel: S.hrEmptyEmployees,
+              emptyHint: S.hrEmptyFilterHint,
+              emptyIcon: AppIcons.userMultiple,
+              onTap: (employee) => onOpenFile(employee.staffId),
+              pageSize: state.employees.isEmpty ? 20 : state.employees.length,
+            ),
           ),
         ],
-        cardOf: (context, employee) => _card(context, employee),
-        searchOf: (employee) =>
-            '${employee.fullName} ${employee.employment.employeeNumber} '
-            '${employee.employment.jobTitle} ${employee.employment.department}',
-        search: search,
-        emptyLabel: S.hrEmptyEmployees,
-        onTap: (employee) => onOpenFile(employee.staffId),
       ),
     );
   }
+
+  Widget _identityCell(HrEmployee employee) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      HrCellText(hrPersonName(employee.fullName), strong: true),
+      if (employee.email.isNotEmpty) HrCellText(employee.email, muted: true),
+    ],
+  );
 
   /// بطاقة السطر على الشاشة الضيقة: العقد والتعيين والفروع التي يغطيها.
   ///
@@ -195,12 +218,17 @@ class HrEmployeesView extends StatelessWidget {
     final job = employee.employment;
     return HrRecordCard(
       title: hrPersonName(employee.fullName),
-      subtitle: job.jobTitle.isEmpty ? null : job.jobTitle,
+      subtitle: employee.email.isNotEmpty
+          ? employee.email
+          : (job.jobTitle.isEmpty ? null : job.jobTitle),
       badge: HrStatusCell(job.employmentStatus),
       onTap: () => onOpenFile(employee.staffId),
       fields: [
         HrCardField(S.hrColEmployeeNumber, HrCellText(job.employeeNumber)),
+        if (job.jobTitle.isNotEmpty)
+          HrCardField(S.hrColJobTitle, HrCellText(job.jobTitle)),
         HrCardField(S.hrColDepartment, HrCellText(job.department)),
+        HrCardField(S.hrAccountStatus, HrStatusCell(employee.accountStatus)),
         HrCardField(
           S.hrFieldEmploymentType,
           HrCellText(hrEmploymentTypeLabel(job.employmentType)),
@@ -215,6 +243,10 @@ class HrEmployeesView extends StatelessWidget {
           ),
         ),
       ],
+      trailing: HrRowButton(
+        text: S.hrBtnOpenFile,
+        onPressed: () => onOpenFile(employee.staffId),
+      ),
     );
   }
 }

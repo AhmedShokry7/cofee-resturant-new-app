@@ -93,6 +93,11 @@ String? notificationExcerpt(AdminNotification notification) {
 }
 
 String notificationCustomerName(AdminNotification notification) {
+  if (notification.campaign?.isSummary == true) {
+    return localizeDigits(
+      S.notificationsCampaignRecipients(notification.campaign!.recipientCount),
+    );
+  }
   final customer = notification.customer;
   final name = customer.fullName;
   if (name != null && name.isNotEmpty) return name;
@@ -104,6 +109,10 @@ String notificationCustomerName(AdminNotification notification) {
 }
 
 String? notificationCustomerDetail(AdminNotification notification) {
+  if (notification.campaign?.isSummary == true) {
+    final campaign = notification.campaign!;
+    return localizeDigits(S.notificationsCampaignRead(campaign.readCount));
+  }
   final customer = notification.customer;
   final name = customer.fullName;
   final email = customer.email;

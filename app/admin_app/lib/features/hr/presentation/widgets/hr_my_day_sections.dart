@@ -47,53 +47,71 @@ class HrMyDaySections extends StatelessWidget {
     final query = search.trim();
     bool hit(String value) =>
         query.isEmpty || value.toLowerCase().contains(query.toLowerCase());
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _section(
-          context,
-          title: S.hrMySessions,
-          loaded: sessions,
-          unread: S.hrSessionsUnread,
-          empty: S.hrNoSessionsYet,
-          rows: [
-            for (final item in _shown(
-              sessions,
-              (row) => hit(hrPersonName(row.branchName)),
-            ))
-              _session(context, item),
+    final cards = <Widget>[
+      _section(
+        context,
+        title: S.hrMySessions,
+        loaded: sessions,
+        unread: S.hrSessionsUnread,
+        empty: S.hrNoSessionsYet,
+        rows: [
+          for (final item in _shown(
+            sessions,
+            (row) => hit(hrPersonName(row.branchName)),
+          ))
+            _session(context, item),
+        ],
+      ),
+      _section(
+        context,
+        title: S.hrMyLeaves,
+        loaded: leaves,
+        unread: S.hrLeavesUnread,
+        empty: S.hrNoLeavesYet,
+        rows: [
+          for (final item in _shown(leaves, (row) => hit(row.typeName)))
+            _leave(context, item),
+        ],
+      ),
+      _section(
+        context,
+        title: S.hrMyPayslips,
+        loaded: payslips,
+        unread: S.hrPayslipsUnread,
+        empty: S.hrNoPayslipsYet,
+        rows: [
+          for (final item in _shown(
+            payslips,
+            (row) =>
+                hit('${localizedMonthName(row.periodMonth)} ${row.periodYear}'),
+          ))
+            _payslip(context, item),
+        ],
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < AppBreakpoints.wideLayout + 200) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var index = 0; index < cards.length; index++) ...[
+                if (index > 0) const SizedBox(height: AppSpacing.md),
+                cards[index],
+              ],
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (var index = 0; index < cards.length; index++) ...[
+              if (index > 0) const SizedBox(width: AppSpacing.md),
+              Expanded(child: cards[index]),
+            ],
           ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _section(
-          context,
-          title: S.hrMyPayslips,
-          loaded: payslips,
-          unread: S.hrPayslipsUnread,
-          empty: S.hrNoPayslipsYet,
-          rows: [
-            for (final item in _shown(
-              payslips,
-              (row) => hit(
-                '${localizedMonthName(row.periodMonth)} ${row.periodYear}',
-              ),
-            ))
-              _payslip(context, item),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.md),
-        _section(
-          context,
-          title: S.hrMyLeaves,
-          loaded: leaves,
-          unread: S.hrLeavesUnread,
-          empty: S.hrNoLeavesYet,
-          rows: [
-            for (final item in _shown(leaves, (row) => hit(row.typeName)))
-              _leave(context, item),
-          ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -133,22 +151,58 @@ class HrMyDaySections extends StatelessWidget {
   );
 
   Widget _session(BuildContext context, HrAttendanceSession session) {
+    final needsReview = session.workedMinutes > 16 * 60;
     return HrRecordCard(
       title: hrPersonName(session.branchName),
-      subtitle: session.note.isEmpty ? null : session.note,
+      subtitle: needsReview
+          ? S.hrSessionNeedsReview
+          : session.note.isEmpty
+          ? null
+          : session.note,
       badge: HrStatusCell(session.isOpen ? 'open' : 'closed'),
       fields: [
-        HrCardField(S.hrColStart, HrCellText(session.clockInLocal)),
+        HrCardField(
+          S.hrColStart,
+          HrCellText(_localStamp(session.clockInLocal, session.clockIn)),
+        ),
         HrCardField(
           S.hrColEnd,
-          HrCellText(session.isOpen ? S.hrStatusOpen : session.clockOutLocal),
+          HrCellText(
+            session.isOpen
+                ? S.hrStatusOpen
+                : _localStamp(session.clockOutLocal, session.clockOut),
+          ),
         ),
         HrCardField(
           S.hrColWorked,
-          HrCellText(hrDuration(session.workedMinutes), strong: true),
+          HrCellText(
+            needsReview
+                ? S.hrSessionNeedsReview
+                : hrDuration(session.workedMinutes),
+            strong: !needsReview,
+            danger: needsReview,
+          ),
         ),
       ],
     );
+  }
+
+  /// يعيد SQL الوقت كنص في منطقة العمل. بعد التعرّف على الصيغة فقط نحوّله
+  /// إلى عرض التاريخ والساعة المعتمد في الواجهة.
+  String _localStamp(String value, DateTime? fallback) {
+    final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})')
+        .firstMatch(value.trim());
+    if (match == null) {
+      return fallback == null ? value : localizedDateTime(fallback);
+    }
+    final stamp = DateTime(
+      int.parse(match[1]!),
+      int.parse(match[2]!),
+      int.parse(match[3]!),
+      int.parse(match[4]!),
+      int.parse(match[5]!),
+    );
+    return localizedDateTime(stamp);
   }
 
   Widget _payslip(BuildContext context, HrPayrollStatement statement) {

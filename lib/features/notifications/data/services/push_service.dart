@@ -104,7 +104,13 @@ class PushService {
       final granted =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional;
-      if (!granted) return false;
+      if (!granted) {
+        // The OS permission may have been revoked outside the app after the
+        // server switch was enabled. Keep the server from treating this device
+        // as push-ready until the customer grants permission again.
+        await pushRepository.setPushEnabled(false);
+        return false;
+      }
 
       // ignore: deprecated_member_use
       final token = await FirebaseMessaging.instance.getToken();
@@ -264,7 +270,12 @@ class PushService {
       final granted =
           settings.authorizationStatus == AuthorizationStatus.authorized ||
           settings.authorizationStatus == AuthorizationStatus.provisional;
-      if (!granted) return;
+      if (!granted) {
+        // Android can revoke POST_NOTIFICATIONS in system settings while the
+        // stored customer preference stays on. Reconcile it at next startup.
+        await repository.setPushEnabled(false);
+        return;
+      }
 
       // ignore: deprecated_member_use
       final token = await FirebaseMessaging.instance.getToken();

@@ -1,4 +1,5 @@
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_finance.dart';
@@ -67,6 +68,8 @@ class HrAdvanceListView extends StatelessWidget {
     state: state,
     search: search,
     emptyLabel: S.hrEmptyAdvances,
+    emptyHint: S.hrEmptyFilterHint,
+    emptyIcon: AppIcons.wallet01,
     columns: <String>[
       S.hrColEmployee,
       S.amount,
@@ -145,6 +148,7 @@ class HrAdvanceListView extends StatelessWidget {
   Widget _filters(BuildContext context) => HrFilterStrip(
     children: [
       HrValueSegment(
+        label: S.hrFilterStatus,
         choices: [
           for (final wire in _statuses)
             HrFilterChoice(wire, hrStatusLabel(wire).text),
@@ -154,6 +158,7 @@ class HrAdvanceListView extends StatelessWidget {
         onChanged: onStatusChanged,
       ),
       HrValueSegment(
+        label: S.hrColEmployee,
         choices: [for (final p in people) HrFilterChoice(p.id, p.name)],
         allLabel: S.hrFilterAllEmployees,
         selected: staffId,

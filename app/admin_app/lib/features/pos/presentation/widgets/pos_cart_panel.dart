@@ -1734,7 +1734,7 @@ class _PaymentSelector extends StatelessWidget {
                     label: S.posSplitCashLabel,
                     hint: '0',
                     suffixIcon: CurrencyIcon(
-                      size: 14,
+                      size: 10,
                       color: adminMutedColor(theme),
                     ),
                   ),
@@ -1760,7 +1760,7 @@ class _PaymentSelector extends StatelessWidget {
                     label: S.posSplitCardLabel,
                     hint: '0',
                     suffixIcon: CurrencyIcon(
-                      size: 14,
+                      size: 10,
                       color: adminMutedColor(theme),
                     ),
                   ),
@@ -1804,7 +1804,7 @@ class _PaymentSelector extends StatelessWidget {
                     label: S.posCashReceivedLabel,
                     hint: '0',
                     suffixIcon: CurrencyIcon(
-                      size: 14,
+                      size: 10,
                       color: adminMutedColor(theme),
                     ),
                   ),

@@ -34,7 +34,7 @@ class ProductOptionPriceField extends StatelessWidget {
         context,
         label: S.ownDeltaLabel,
         hint: localizeDigits(formatDelta(groupDelta)),
-      ).copyWith(suffix: const CurrencyIcon(size: 15)),
+      ).copyWith(suffix: const CurrencyIcon(size: 10)),
     );
   }
 }

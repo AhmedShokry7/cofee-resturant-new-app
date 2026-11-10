@@ -1,5 +1,6 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_attendance.dart';
@@ -10,13 +11,13 @@ import 'package:admin_app/features/hr/presentation/models/hr_load_status.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_cell_text.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_date_field.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_directory.dart';
-import 'package:admin_app/features/hr/presentation/widgets/hr_filter_scroll.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_format.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_labels.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_record_card.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_refusal_note.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_row_button.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_status_cell.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_value_segment.dart';
 import 'package:admin_app/shared/widgets/admin_directory_panel.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -95,7 +96,7 @@ class _HrAttendanceViewState extends State<HrAttendanceView> {
           AdminPageHeader(
             title: S.hrAttendance,
             subtitle: S.hrAttendanceSubtitle,
-            progress: state.isWriting ? 0 : null,
+            progress: state.isWriting || state.isLoading ? 0 : null,
             progressLabel: state.isWriting ? S.saving : null,
             actions: [
               CustomBtn(
@@ -145,25 +146,35 @@ class _HrAttendanceViewState extends State<HrAttendanceView> {
         if (branches == null)
           HrCellText(S.hrNoBranchesForMe, muted: true)
         else
-          _segmented(
-            labels: <String>[
-              S.hrFilterAllBranches,
-              for (final branch in branches) hrBranchName(branch),
+          HrFilterStrip(
+            children: [
+              HrValueSegment(
+                label: S.hrColBranch,
+                allLabel: S.hrFilterAllBranches,
+                choices: [
+                  for (final branch in branches)
+                    HrFilterChoice(branch.id, hrBranchName(branch)),
+                ],
+                selected: widget.branchId,
+                onChanged: widget.onBranchChanged,
+              ),
             ],
-            values: <String?>[null, for (final b in branches) b.id],
-            current: widget.branchId,
-            onChanged: widget.onBranchChanged,
           ),
         const SizedBox(height: AppSpacing.sm),
         if (_onCorrections)
-          _segmented(
-            labels: <String>[
-              S.hrFilterAll,
-              for (final wire in _corrections) hrStatusLabel(wire).text,
+          HrFilterStrip(
+            children: [
+              HrValueSegment(
+                label: S.hrFilterStatus,
+                allLabel: S.hrFilterAll,
+                choices: [
+                  for (final wire in _corrections)
+                    HrFilterChoice(wire, hrStatusLabel(wire).text),
+                ],
+                selected: widget.correctionStatus,
+                onChanged: widget.onCorrectionStatusChanged,
+              ),
             ],
-            values: <String?>[null, ..._corrections],
-            current: widget.correctionStatus,
-            onChanged: widget.onCorrectionStatusChanged,
           )
         else
           Row(
@@ -186,27 +197,6 @@ class _HrAttendanceViewState extends State<HrAttendanceView> {
             ],
           ),
       ],
-    );
-  }
-
-  /// شريط ترشيح واحد للفرع ولحالة التصحيح: اللفظ يُردّ إلى قيمته بالسلك بالفهرس.
-  Widget _segmented({
-    required List<String> labels,
-    required List<String?> values,
-    required String? current,
-    required ValueChanged<String?> onChanged,
-  }) {
-    final found = values.indexOf(current);
-    final index = found < 0 ? 0 : found;
-    return HrFilterScroll(
-      control: AdminSegmentedControl(
-        options: labels,
-        selected: labels[index],
-        onChanged: (label) {
-          final next = labels.indexOf(label);
-          if (next != index) onChanged(values[next]);
-        },
-      ),
     );
   }
 
@@ -241,6 +231,8 @@ class _HrAttendanceViewState extends State<HrAttendanceView> {
         searchOf: searchOf,
         search: widget.search,
         emptyLabel: emptyLabel,
+        emptyHint: S.hrEmptyFilterHint,
+        emptyIcon: AppIcons.clock01,
         onTap: onTap,
       ),
     );

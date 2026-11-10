@@ -323,7 +323,7 @@ class _InventoryMaterialDialogState extends State<InventoryMaterialDialog> {
                             decimal: true,
                           ),
                           inputFormatters: [_decimalFormatter],
-                          suffixIcon: const CurrencyIcon(size: 15),
+                          suffixIcon: const CurrencyIcon(size: 10),
                         );
                         final reorder = _MaterialField(
                           controller: _reorderController,

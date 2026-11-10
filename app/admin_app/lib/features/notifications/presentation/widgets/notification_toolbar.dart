@@ -20,6 +20,11 @@ class NotificationToolbar extends StatelessWidget {
     required this.onReadChanged,
     required this.pushFilter,
     required this.onPushChanged,
+    required this.campaignFilter,
+    required this.onCampaignChanged,
+    required this.dateFrom,
+    required this.dateTo,
+    required this.onDateChanged,
     required this.onClearFilters,
   });
 
@@ -31,12 +36,20 @@ class NotificationToolbar extends StatelessWidget {
   final ValueChanged<NotificationReadFilter> onReadChanged;
   final NotificationPushFilter pushFilter;
   final ValueChanged<NotificationPushFilter> onPushChanged;
+  final NotificationCampaignFilter campaignFilter;
+  final ValueChanged<NotificationCampaignFilter> onCampaignChanged;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
+  final void Function(DateTime? from, DateTime? to) onDateChanged;
   final VoidCallback onClearFilters;
 
   bool get _hasActiveFilters =>
       type != NotificationTypeFilter.all ||
       readFilter != NotificationReadFilter.all ||
-      pushFilter != NotificationPushFilter.all;
+      pushFilter != NotificationPushFilter.all ||
+      campaignFilter != NotificationCampaignFilter.all ||
+      dateFrom != null ||
+      dateTo != null;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +95,22 @@ class NotificationToolbar extends StatelessWidget {
               labelBuilder: _pushLabel,
               onSelected: onPushChanged,
               compact: compact,
+            ),
+            _FilterMenu<NotificationCampaignFilter>(
+              tooltip: S.notificationsFilterCampaign,
+              icon: AppIcons.promotion,
+              selected: campaignFilter,
+              active: campaignFilter != NotificationCampaignFilter.all,
+              options: NotificationCampaignFilter.values,
+              labelBuilder: _campaignLabel,
+              onSelected: onCampaignChanged,
+              compact: compact,
+            ),
+            _DateFilterButton(
+              from: dateFrom,
+              to: dateTo,
+              compact: compact,
+              onSelected: onDateChanged,
             ),
             if (_hasActiveFilters)
               IconButton(
@@ -149,6 +178,91 @@ class NotificationToolbar extends StatelessWidget {
     NotificationPushFilter.skipped => S.notificationsFilterSkipped,
     NotificationPushFilter.none => S.notificationsFilterNoPush,
   };
+
+  String _campaignLabel(NotificationCampaignFilter filter) => switch (filter) {
+    NotificationCampaignFilter.all => S.notificationsFilterAllCampaigns,
+    NotificationCampaignFilter.campaigns => S.notificationsFilterCampaignsOnly,
+    NotificationCampaignFilter.automatic => S.notificationsFilterAutomaticOnly,
+  };
+}
+
+class _DateFilterButton extends StatelessWidget {
+  const _DateFilterButton({
+    required this.from,
+    required this.to,
+    required this.compact,
+    required this.onSelected,
+  });
+
+  final DateTime? from;
+  final DateTime? to;
+  final bool compact;
+  final void Function(DateTime? from, DateTime? to) onSelected;
+
+  Future<void> _select(BuildContext context) async {
+    final today = DateTime.now();
+    final initial = from != null && to != null
+        ? DateTimeRange(start: from!, end: to!)
+        : null;
+    final range = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2010),
+      lastDate: DateTime(today.year, today.month, today.day),
+      initialDateRange: initial,
+    );
+    if (range == null) return;
+    onSelected(range.start, range.end);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final active = from != null || to != null;
+    final label = active && from != null && to != null
+        ? S.notificationsFilterDateRange(
+            notificationDateLabel(from),
+            notificationDateLabel(to),
+          )
+        : S.notificationsFilterDate;
+    return Tooltip(
+      message: S.notificationsFilterDate,
+      child: compact
+          ? IconButton(
+              onPressed: () => _select(context),
+              style: IconButton.styleFrom(
+                fixedSize: const Size(32, 32),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                padding: EdgeInsets.zero,
+              ),
+              icon: AppIcon(
+                AppIcons.calendar03,
+                size: 17,
+                color: active ? AppColor.adminAccent : AppColor.adminMuted,
+              ),
+            )
+          : OutlinedButton.icon(
+              onPressed: () => _select(context),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 32),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              icon: AppIcon(
+                AppIcons.calendar03,
+                size: 14,
+                color: active ? AppColor.adminAccent : AppColor.adminMuted,
+              ),
+              label: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: active ? AppColor.adminAccent : AppColor.adminMuted,
+                  fontSize: AppFontSizes.size9,
+                ),
+              ),
+            ),
+    );
+  }
 }
 
 class _FilterMenu<T> extends StatelessWidget {

@@ -102,9 +102,14 @@ class _HrScheduleFormDialogState extends State<_HrScheduleFormDialog> {
     _status = status != null && _statuses.contains(status)
         ? status
         : _statuses.first;
-    _start = existing?.scheduledStart;
-    _end = existing?.scheduledEnd;
-    _day = _start;
+    final start = existing?.scheduledStart?.toLocal();
+    final end = existing?.scheduledEnd?.toLocal();
+    _start = start;
+    _day = start;
+    // A shift belongs to one local workday. Rebuild the loaded end stamp on
+    // that day while keeping its local clock time; old rows may carry a UTC
+    // date boundary that differs from the business-local date.
+    _end = _retime(end, start);
     _break.text = '${existing?.breakMinutes ?? 0}';
   }
 
@@ -131,7 +136,13 @@ class _HrScheduleFormDialogState extends State<_HrScheduleFormDialog> {
   DateTime? _retime(DateTime? stamp, DateTime? day) =>
       stamp == null || day == null
       ? stamp
-      : DateTime(day.year, day.month, day.day, stamp.hour, stamp.minute);
+      : DateTime(
+          day.year,
+          day.month,
+          day.day,
+          stamp.toLocal().hour,
+          stamp.toLocal().minute,
+        );
 
   void _submit() {
     final staff = _staffId;

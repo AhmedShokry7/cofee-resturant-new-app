@@ -2,8 +2,11 @@ import 'dart:math' as math;
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/shared/widgets/admin_pagination.dart';
+import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:flutter/material.dart';
 
@@ -26,6 +29,9 @@ class HrDirectory<T> extends StatefulWidget {
     this.onTap,
     this.pageSize = 8,
     this.actionsOf,
+    this.emptyHint,
+    this.emptyIcon = AppIcons.folder01,
+    this.emptyAction,
   });
 
   final List<T> items;
@@ -51,6 +57,9 @@ class HrDirectory<T> extends StatefulWidget {
   final String emptyLabel;
   final ValueChanged<T>? onTap;
   final int pageSize;
+  final String? emptyHint;
+  final IconData emptyIcon;
+  final Widget? emptyAction;
 
   @override
   State<HrDirectory<T>> createState() => _HrDirectoryState<T>();
@@ -62,8 +71,12 @@ class _HrDirectoryState<T> extends State<HrDirectory<T>> {
   List<T> get _matches {
     final query = widget.search.trim();
     if (query.isEmpty) return widget.items;
+    final normalizedQuery = query.toLowerCase();
     return widget.items
-        .where((item) => widget.searchOf(item).contains(query))
+        .where(
+          (item) =>
+              widget.searchOf(item).toLowerCase().contains(normalizedQuery),
+        )
         .toList(growable: false);
   }
 
@@ -81,38 +94,64 @@ class _HrDirectoryState<T> extends State<HrDirectory<T>> {
     if (_page >= pages) _page = pages - 1;
     final start = _page * widget.pageSize;
     final visible = matches.skip(start).take(widget.pageSize).toList();
-    final narrow = MediaQuery.sizeOf(context).width < AppBreakpoints.wideLayout;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (!narrow && matches.isNotEmpty) _header(theme),
-        Expanded(
-          child: matches.isEmpty
-              ? Center(child: Text(widget.emptyLabel))
-              : narrow
-              ? ListView.separated(
-                  itemCount: visible.length,
-                  separatorBuilder: (_, index) =>
-                      const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (context, index) =>
-                      widget.cardOf(context, visible[index]),
-                )
-              : ListView.builder(
-                  itemCount: visible.length,
-                  itemBuilder: (context, index) => _row(theme, visible[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final narrow = constraints.maxWidth < AppBreakpoints.wideLayout;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (!narrow && matches.isNotEmpty) _header(theme),
+            Expanded(
+              child: matches.isEmpty
+                  ? AdminEmptyState(
+                      icon: widget.emptyIcon,
+                      message: widget.emptyLabel,
+                      hint: widget.emptyHint ?? S.hrEmptyFilterHint,
+                      action: widget.emptyAction,
+                    )
+                  : narrow
+                  ? ListView.separated(
+                      itemCount: visible.length,
+                      separatorBuilder: (_, index) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) =>
+                          widget.cardOf(context, visible[index]),
+                    )
+                  : ListView.builder(
+                      itemCount: visible.length,
+                      itemBuilder: (context, index) =>
+                          _row(theme, visible[index]),
+                    ),
+            ),
+            if (matches.isNotEmpty && pages > 1)
+              AdminPagination(
+                page: _page,
+                pages: pages,
+                count: matches.length,
+                pageSize: widget.pageSize,
+                labelBuilder: S.hrRowsLabel,
+                onChanged: (value) => setState(() => _page = value),
+              )
+            else if (matches.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.md),
+                child: Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: Text(
+                    localizeDigits(
+                      S.hrRowsLabel(1, matches.length, matches.length),
+                    ),
+                    style: TextStyle(
+                      color: adminMutedColor(theme),
+                      fontSize: AppFontSizes.size10,
+                      height: AppTextHeights.line1_5,
+                    ),
+                  ),
                 ),
-        ),
-        if (matches.isNotEmpty)
-          AdminPagination(
-            page: _page,
-            pages: pages,
-            count: matches.length,
-            pageSize: widget.pageSize,
-            labelBuilder: S.hrRowsLabel,
-            onChanged: (value) => setState(() => _page = value),
-          ),
-      ],
+              ),
+          ],
+        );
+      },
     );
   }
 
@@ -130,7 +169,7 @@ class _HrDirectoryState<T> extends State<HrDirectory<T>> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: adminMutedColor(theme),
-                  fontSize: AppFontSizes.size9_5,
+                  fontSize: AppFontSizes.size11,
                   fontWeight: AppFontWeights.semiBold,
                   height: AppTextHeights.line1_5,
                 ),
@@ -150,7 +189,7 @@ class _HrDirectoryState<T> extends State<HrDirectory<T>> {
     return InkWell(
       onTap: widget.onTap == null ? null : () => widget.onTap!(item),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: adminRowBorderColor(theme))),
         ),

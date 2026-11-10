@@ -231,7 +231,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                           ),
                           inputFormatters: [_decimalFormatter],
                           validator: _validatePrice,
-                          suffixIcon: const CurrencyIcon(size: 15),
+                          suffixIcon: const CurrencyIcon(size: 10),
                         ),
                         _field(
                           fieldKey: const Key('plan-currency'),
@@ -305,7 +305,7 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                             inputFormatters: [_decimalFormatter],
                             validator: _validateBonusValue,
                             suffixIcon: _bonusType == 'fixed'
-                                ? const CurrencyIcon(size: 15)
+                                ? const CurrencyIcon(size: 10)
                                 : null,
                           ),
                         ]),

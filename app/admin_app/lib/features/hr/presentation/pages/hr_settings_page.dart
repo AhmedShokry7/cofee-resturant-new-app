@@ -86,7 +86,7 @@ class _HrSettingsPageState extends State<HrSettingsPage> {
               AdminPageHeader(
                 title: S.hrSettings,
                 subtitle: S.hrSettingsSubtitle,
-                progress: state.isWriting ? 0 : null,
+                progress: state.isWriting || state.isLoading ? 0 : null,
                 progressLabel: state.isWriting ? S.saving : null,
               ),
               HrRefusalNote(refusal: state.failure),

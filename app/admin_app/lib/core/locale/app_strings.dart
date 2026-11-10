@@ -2135,6 +2135,11 @@ class S {
 
   static String get notificationsEmailTitle =>
       _ar ? 'قناة البريد الإلكتروني' : 'Email channel';
+  static String get notificationsChannelsTitle =>
+      _ar ? 'قنوات الإشعارات' : 'Notification channels';
+  static String get notificationsChannelsSubtitle => _ar
+      ? 'اضغط على القناة لعرض حالتها وتفاصيل محاولات الإرسال.'
+      : 'Open a channel to view its health and delivery details.';
   static String get notificationsEmailSubtitle => _ar
       ? 'تصل رسائل البريد إلى العميل عبر دالة send-email ومقدّم البريد، وهي منفصلة تمامًا عن إشعارات الهاتف.'
       : 'Mail reaches the customer through the send-email function and the mail provider, entirely apart from phone pushes.';
@@ -2209,6 +2214,16 @@ class S {
   static String get notificationsFilterType => _ar ? 'النوع' : 'Type';
   static String get notificationsFilterRead => _ar ? 'القراءة' : 'Read state';
   static String get notificationsFilterPush => _ar ? 'الإرسال' : 'Push';
+  static String get notificationsFilterCampaign => _ar ? 'المصدر' : 'Source';
+  static String get notificationsFilterAllCampaigns =>
+      _ar ? 'كل المصادر' : 'All sources';
+  static String get notificationsFilterCampaignsOnly =>
+      _ar ? 'الحملات' : 'Campaigns';
+  static String get notificationsFilterAutomaticOnly =>
+      _ar ? 'التلقائية' : 'Automatic';
+  static String get notificationsFilterDate => _ar ? 'التاريخ' : 'Date';
+  static String notificationsFilterDateRange(String from, String to) =>
+      '$from – $to';
   static String get notificationsFilterAllTypes =>
       _ar ? 'كل الأنواع' : 'All types';
   static String get notificationsFilterAllRead =>
@@ -2227,7 +2242,8 @@ class S {
 
   static String get notificationsTableNotification =>
       _ar ? 'الإشعار' : 'Notification';
-  static String get notificationsTableCustomer => _ar ? 'العميل' : 'Customer';
+  static String get notificationsTableCustomer =>
+      _ar ? 'المستلمون' : 'Recipients';
   static String get notificationsTableType => _ar ? 'النوع' : 'Type';
   static String get notificationsTableSource => _ar ? 'المصدر' : 'Source';
   static String get notificationsTableDate => _ar ? 'التاريخ' : 'Date';
@@ -2345,6 +2361,18 @@ class S {
   static String get notificationsDetailsCampaign => _ar ? 'الحملة' : 'Campaign';
   static String get notificationsDetailsPush =>
       _ar ? 'حالة الإرسال للهاتف' : 'Push delivery';
+  static String get notificationsDetailsEmail =>
+      _ar ? 'حالة البريد الإلكتروني' : 'Email delivery';
+  static String notificationsCampaignRecipients(int count) =>
+      _ar ? '$count مستلم' : '$count recipients';
+  static String notificationsCampaignRead(int count) =>
+      _ar ? 'قُرئت: $count' : 'Read: $count';
+  static String notificationsCampaignUnread(int count) =>
+      _ar ? 'غير مقروءة: $count' : 'Unread: $count';
+  static String notificationsCampaignEmail(int sent, int failed, int skipped) =>
+      _ar
+      ? 'البريد: $sent ناجح، $failed فشل، $skipped متخطى'
+      : 'Email: $sent sent, $failed failed, $skipped skipped';
   static String get notificationsDetailsPayload =>
       _ar ? 'بيانات إضافية' : 'Payload';
   static String get notificationsDetailsNoPayload => _ar
@@ -2858,6 +2886,130 @@ class S {
       _ar ? 'مواقع العملاء' : 'Customer websites';
   static String get aiKnowledge =>
       _ar ? 'معرفة المساعد الذكي' : 'Assistant knowledge';
+  static String get aiKnowledgeSubtitle => _ar
+      ? 'إعداد مزوّد الذكاء الاصطناعي، أسلوب الرد، ومعلومات الكافيه التي يعتمد عليها المساعد.'
+      : 'Configure the AI provider, response style, and the café knowledge used by the assistant.';
+  static String get aiKnowledgeSettingsTab =>
+      _ar ? 'الاتصال والإعدادات' : 'Connection & settings';
+  static String get aiKnowledgeArticlesTab =>
+      _ar ? 'مقالات المعرفة' : 'Knowledge articles';
+  static String get aiKnowledgeRepliesTab =>
+      _ar ? 'أسلوب الردود' : 'Response behavior';
+  static String get aiKnowledgeReady =>
+      _ar ? 'المساعد جاهز للإعداد الحالي' : 'Assistant configuration is ready';
+  static String get aiKnowledgeStatus =>
+      _ar ? 'حالة المساعد' : 'Assistant status';
+  static String get aiKnowledgeNeedsSetup =>
+      _ar ? 'أكمل إعداد المساعد' : 'Finish assistant setup';
+  static String get aiKnowledgeProviderTitle =>
+      _ar ? 'مزود الذكاء الاصطناعي' : 'AI provider';
+  static String get aiKnowledgeProviderHint => _ar
+      ? 'اختر المزود وأدخل مفتاحه. المفتاح يُحفظ في الخزنة ولا يظهر بعد الحفظ.'
+      : 'Choose a provider and add its key. The key is stored in the server vault and never shown again.';
+  static String get aiKnowledgeProvider => _ar ? 'المزود' : 'Provider';
+  static String get aiKnowledgeModel => _ar ? 'اسم النموذج' : 'Model name';
+  static String get aiKnowledgeBaseUrl =>
+      _ar ? 'الرابط الأساسي للمزود' : 'Provider base URL';
+  static String get aiKnowledgeApiKey => _ar ? 'مفتاح API' : 'API key';
+  static String get aiKnowledgeApiKeyHint =>
+      _ar ? 'أدخل مفتاح المزود' : 'Enter the provider key';
+  static String get aiKnowledgeKeyReplaceHint => _ar
+      ? 'اتركه فارغًا للاحتفاظ بالمفتاح الحالي'
+      : 'Leave blank to keep the current key';
+  static String get aiKnowledgeKeyConfigured =>
+      _ar ? 'المفتاح محفوظ بأمان' : 'Key is stored securely';
+  static String get aiKnowledgeKeyMissing =>
+      _ar ? 'لم يُضف مفتاح للمزود بعد' : 'No provider key has been added';
+  static String get aiKnowledgeBehaviorTitle =>
+      _ar ? 'طريقة عمل المساعد' : 'Assistant behavior';
+  static String get aiKnowledgeBehaviorHint => _ar
+      ? 'اكتب تعليمات واضحة لما يقوله المساعد، وحدد نبرة الرد وطوله والرد الاحتياطي.'
+      : 'Set clear instructions, response tone and length, and the fallback reply.';
+  static String get aiKnowledgeTone => _ar ? 'نبرة الرد' : 'Response tone';
+  static String get aiKnowledgeReplyLength =>
+      _ar ? 'الحد الأقصى لطول الرد' : 'Maximum reply length';
+  static String get aiKnowledgeSystemPrompt =>
+      _ar ? 'تعليمات المساعد الأساسية' : 'Assistant instructions';
+  static String get aiKnowledgeFallbackReply =>
+      _ar ? 'الرد عند تعذر الإجابة' : 'Fallback reply';
+  static String get aiKnowledgeSaveSettings =>
+      _ar ? 'حفظ إعدادات المساعد' : 'Save assistant settings';
+  static String get aiKnowledgeSaved =>
+      _ar ? 'تم حفظ إعدادات المساعد' : 'Assistant settings saved';
+  static String get aiKnowledgeArticleSaved =>
+      _ar ? 'تم حفظ المقال' : 'Article saved';
+  static String get aiKnowledgeAddArticle =>
+      _ar ? 'إضافة معلومة' : 'Add knowledge';
+  static String get aiKnowledgeEditArticle =>
+      _ar ? 'تعديل المعلومة' : 'Edit knowledge';
+  static String get aiKnowledgeDeleteTitle =>
+      _ar ? 'حذف المعلومة؟' : 'Delete this article?';
+  static String get aiKnowledgeArticlesHint => _ar
+      ? 'مقالات معتمدة يعتمد عليها المساعد في الأسئلة عن الكافيه وخدماته.'
+      : 'Approved articles that ground answers about the café and its services.';
+  static String get aiKnowledgeNoArticles =>
+      _ar ? 'لا توجد مقالات معرفة بعد' : 'No knowledge articles yet';
+  static String get aiKnowledgeArticlesCount => _ar ? 'معلومة' : 'articles';
+  static String get aiKnowledgeRepliesTitle =>
+      _ar ? 'تخصيص ردود المساعد' : 'Customize assistant replies';
+  static String get aiKnowledgeRepliesHint => _ar
+      ? 'هذه التعليمات تغيّر طريقة صياغة الرد، أما الأسعار والتوفر فتأتي من بيانات المتجر.'
+      : 'These settings guide phrasing; prices and availability still come from live store data.';
+  static String get aiKnowledgeExamplesTitle =>
+      _ar ? 'أمثلة الردود' : 'Reply examples';
+  static String get aiKnowledgeExamplesHint => _ar
+      ? 'أمثلة عربية تساعد المساعد على الالتزام بصوت علامتك التجارية.'
+      : 'Arabic examples help the assistant follow your brand voice.';
+  static String get aiKnowledgeExamplesNotice => _ar
+      ? 'إدارة أمثلة الردود ستُربط بمكتبة أنماط المحادثة في قاعدة البيانات.'
+      : 'Reply examples will be connected to the conversation pattern library.';
+  static String get aiKnowledgeAddExample =>
+      _ar ? 'إضافة مثال رد' : 'Add reply example';
+  static String get aiKnowledgeEditExample =>
+      _ar ? 'تعديل مثال الرد' : 'Edit reply example';
+  static String get aiKnowledgeExampleSaved =>
+      _ar ? 'تم حفظ مثال الرد' : 'Reply example saved';
+  static String get aiKnowledgeNoExamples =>
+      _ar ? 'لا توجد أمثلة رد مخصصة' : 'No custom reply examples yet';
+  static String get aiKnowledgeIntent => _ar ? 'نوع الموقف' : 'Intent';
+  static String get aiKnowledgeQuestionAr =>
+      _ar ? 'مثال سؤال بالعربية' : 'Example question in Arabic';
+  static String get aiKnowledgeQuestionEn =>
+      _ar ? 'مثال سؤال بالإنجليزية' : 'Example question in English';
+  static String get aiKnowledgeExampleReplyAr =>
+      _ar ? 'الرد المقترح بالعربية' : 'Suggested reply in Arabic';
+  static String get aiKnowledgeExampleReplyEn =>
+      _ar ? 'الرد المقترح بالإنجليزية' : 'Suggested reply in English';
+  static String get aiKnowledgePinExample =>
+      _ar ? 'تثبيت المثال في مكتبة الردود' : 'Pin this reply example';
+  static String get aiKnowledgeRequiredFields => _ar
+      ? 'أكمل الحقول المطلوبة قبل الحفظ.'
+      : 'Complete all required fields before saving.';
+  static String get aiKnowledgeSlug =>
+      _ar ? 'معرّف المقال بالإنجليزية' : 'Article slug';
+  static String get aiKnowledgeCategory => _ar ? 'التصنيف' : 'Category';
+  static String get aiKnowledgeTitleAr =>
+      _ar ? 'العنوان بالعربية' : 'Arabic title';
+  static String get aiKnowledgeTitleEn =>
+      _ar ? 'العنوان بالإنجليزية' : 'English title';
+  static String get aiKnowledgeBodyAr =>
+      _ar ? 'المحتوى بالعربية' : 'Arabic content';
+  static String get aiKnowledgeBodyEn =>
+      _ar ? 'المحتوى بالإنجليزية' : 'English content';
+  static String get aiKnowledgeKeywords => _ar
+      ? 'كلمات مفتاحية، افصل بينها بفاصلة'
+      : 'Keywords, separated by commas';
+  static String get aiKnowledgeArticleActive =>
+      _ar ? 'مفعّل ويستخدمه المساعد' : 'Active and available to the assistant';
+  static String get aiProviderGemini => 'Google Gemini';
+  static String get aiProviderGroq => 'Groq';
+  static String get aiProviderOpenRouter => 'OpenRouter';
+  static String get aiProviderOpenAI => 'OpenAI';
+  static String get aiProviderCustom =>
+      _ar ? 'مزود متوافق مع OpenAI' : 'OpenAI-compatible provider';
+  static String get aiToneFriendly => _ar ? 'ودودة' : 'Friendly';
+  static String get aiToneProfessional => _ar ? 'احترافية' : 'Professional';
+  static String get aiToneCasual => _ar ? 'مصرية بسيطة' : 'Casual';
 
   static String get searchBundlesHint =>
       _ar ? 'ابحث في الباقات...' : 'Search bundles...';
@@ -5456,10 +5608,10 @@ class S {
 
   /// عنوان قسم الموارد البشرية في الشريط الجانبي.
   static String get sectionHr => _ar ? 'الموارد البشرية' : 'HR & Workforce';
-  static String get hrMyDay => _ar ? 'يومي' : 'My day';
+  static String get hrMyDay => _ar ? 'دوامي وطلباتي' : 'My work & requests';
   static String get hrDashboard =>
       _ar ? 'لوحة القوى العاملة' : 'Workforce board';
-  static String get hrEmployees => _ar ? 'الملفات الوظيفية' : 'Employee files';
+  static String get hrEmployees => _ar ? 'دليل الموظفين' : 'Employees';
   static String get hrAttendance => _ar ? 'الحضور والانصراف' : 'Attendance';
   static String get hrSchedules => _ar ? 'جداول العمل' : 'Work schedules';
   static String get hrLeave => _ar ? 'الإجازات' : 'Leave';
@@ -5478,8 +5630,8 @@ class S {
       ? 'الحضور والرواتب والسلف المفتوحة'
       : 'Attendance, payroll and open advances';
   static String get searchHrEmployeesHint => _ar
-      ? 'ابحث باسم الموظف أو رقمه الوظيفي'
-      : 'Search by name or employee number';
+      ? 'ابحث بالاسم أو البريد أو الرقم الوظيفي'
+      : 'Search by name, email or employee number';
   static String get searchHrAttendanceHint => _ar
       ? 'ابحث في جلسات الحضور بالتاريخ والفرع'
       : 'Search attendance by date and branch';
@@ -5978,6 +6130,9 @@ class S {
   static String hrRowsLabel(int from, int to, int count) => _ar
       ? 'عرض $from–$to من $count سجلًا'
       : 'Showing $from–$to of $count records';
+  static String get hrEmptyFilterHint => _ar
+      ? 'جرّب تغيير البحث أو الفلاتر لعرض نتائج أخرى.'
+      : 'Try changing the search or filters to see other results.';
 
   /// رمز خطأ القاعدة المعروض تحت رسالة الرفض: الشاشة لا تفسّر وحدها ما رفضته
   /// الدالة، والرمز هو ما يفتش به من يراجع السجل لاحقًا.
@@ -5994,25 +6149,31 @@ class S {
   // ---------- HR — page subtitles ----------
 
   static String get hrMyDaySubtitle => _ar
-      ? 'بصمتك وجلساتك وقسائمك: ما يخصّك وحدك'
-      : 'Your own clock, sessions and payslips';
+      ? 'سجّل حضورك، وتابع الإجازات والسلف وقسائم راتبك.'
+      : 'Clock in, follow leave and advance requests, and review payslips.';
   static String get hrDashboardSubtitle => _ar
       ? 'عدد الفريق وحضور اليوم وما ينتظر قرارك'
       : 'Headcount, today attendance and what waits on you';
   static String get hrEmployeesSubtitle => _ar
-      ? 'ملفات الموظفين وارتباطهم الوظيفي ضمن نطاقك'
-      : 'Employee files within your scope';
+      ? 'كل الموظفين وبياناتهم الوظيفية وحساباتهم ضمن نطاقك'
+      : 'Employee details, employment and account status within your scope';
   static String get hrAttendanceSubtitle => _ar
       ? 'جلسات البصمة وتصحيحاتها المراجعة'
       : 'Clock sessions and their corrections';
   static String get hrSchedulesSubtitle => _ar
       ? 'جدول العمل المنشور ومسوداته قبل الاعتماد'
       : 'Published shifts and drafts before approval';
+  static String get hrNoSchedulesHint => _ar
+      ? 'غيّر الفترة أو الفرع، أو أنشئ جدول عمل جديدًا.'
+      : 'Change the date range or branch, or create a work schedule.';
   static String get hrLeaveSubtitle =>
       _ar ? 'طلبات الإجازة وأرصدة السنة' : 'Leave requests and yearly balances';
   static String get hrPayrollSubtitle => _ar
       ? 'دورات الرواتب من الاحتساب إلى الدفع'
       : 'Payroll runs from calculation to payment';
+  static String get hrNoPayrollHint => _ar
+      ? 'أنشئ دورة رواتب للفترة المطلوبة لبدء مراجعتها.'
+      : 'Generate a payroll run for the period to begin reviewing it.';
   static String get hrAdvancesSubtitle => _ar
       ? 'السلف والتسويات المالية وكل قرار عليها'
       : 'Advances, adjustments and every decision on them';
@@ -6052,6 +6213,7 @@ class S {
   static String get hrColInstallment => _ar ? 'القسط' : 'Installment';
   static String get hrColEmployeeNumber =>
       _ar ? 'الرقم الوظيفي' : 'Employee number';
+  static String get hrAccountStatus => _ar ? 'حالة الحساب' : 'Account status';
   static String get hrColSession => _ar ? 'الجلسة' : 'Session';
   static String get hrColRequestedBy => _ar ? 'مقدّم الطلب' : 'Requested by';
   static String get hrColReviewedBy => _ar ? 'المراجع' : 'Reviewed by';
@@ -6122,19 +6284,26 @@ class S {
   static String get hrMyNoOpenSession =>
       _ar ? 'لا جلسة مفتوحة عليك' : 'You have no open session';
   static String get hrWorkedToday => _ar ? 'ساعات اليوم' : 'Hours today';
-  static String get hrMyPayslips => _ar ? 'قسائمي' : 'My payslips';
-  static String get hrMySessions => _ar ? 'جلساتي' : 'My sessions';
-  static String get hrMyLeaves => _ar ? 'طلبات إجازتي' : 'My leave requests';
+  static String get hrMyPayslips => _ar ? 'قسائم الراتب' : 'Payslips';
+  static String get hrMySessions => _ar ? 'سجل الحضور' : 'Attendance history';
+  static String get hrMyLeaves => _ar ? 'طلبات الإجازة' : 'Leave requests';
   static String get hrPendingSection =>
       _ar ? 'بانتظار قرارك' : 'Waiting on you';
   static String get hrHeadcount => _ar ? 'عدد الفريق' : 'Headcount';
   static String get hrPresentToday => _ar ? 'حاضر اليوم' : 'Present today';
+  static String get hrMyAttendanceCount =>
+      _ar ? 'ورديات حضرتها' : 'Shifts attended';
+  static String get hrMyAttendancePeriod =>
+      _ar ? 'آخر ٣١ يومًا' : 'Last 31 days';
+  static String get hrSessionNeedsReview => _ar
+      ? 'مدة غير معتادة — تحتاج مراجعة'
+      : 'Unusual duration — review needed';
 
   /// مصدر كل عدّاد في «يومي»: `hr.attendance_metrics` تحسب الحضور والتأخير من
   /// الجداول المنشورة والمدة من البصمة نفسها، فاختلاف الرقمين ليس عطلًا.
   static String get hrMetricsSources => _ar
-      ? 'الحضور والتأخير من جداولك المنشورة، والمدة من بصمتك'
-      : 'Present and late come from your published schedules; the duration comes from your punches';
+      ? 'الإحصاءات لآخر ٣١ يومًا: الحضور والتأخير من جداولك، والمدة من البصمة.'
+      : 'Stats cover the last 31 days: attendance and lateness use your schedule; work time uses your punches.';
   static String get hrSectionAdvances => _ar ? 'السلف' : 'Advances';
   static String get hrSectionAdjustments => _ar ? 'التسويات' : 'Adjustments';
   static String get hrSectionCorrections => _ar ? 'التصحيحات' : 'Corrections';
@@ -6166,6 +6335,10 @@ class S {
   static String get hrUnknownPerson => _ar ? 'غير مسمّى' : 'Unnamed';
   static String get hrNoValue => _ar ? '—' : '—';
   static String get hrOnBreak => _ar ? 'على استراحة' : 'On break';
+  static String get hrClockTitle => _ar ? 'دوامي الآن' : 'My current shift';
+  static String get hrClockPanelHint => _ar
+      ? 'اختر فرع عملك وسجّل بداية الدوام، أو أنهِ ورديتك المفتوحة.'
+      : 'Choose your work branch to clock in, or manage your open shift.';
   static String get hrSinceLabel => _ar ? 'منذ' : 'Since';
   static String get hrClockHint => _ar
       ? 'البصمة تُختم في الفرع الذي تعمل فيه الآن'

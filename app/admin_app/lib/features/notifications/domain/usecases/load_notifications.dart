@@ -13,6 +13,9 @@ class LoadNotificationsUseCase {
     AdminNotificationType? type,
     bool? isRead,
     String? pushState,
+    String? source,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int page = 0,
     int pageSize = AdminNotificationsPaging.pageSize,
   }) => _repository.loadNotifications(
@@ -20,6 +23,9 @@ class LoadNotificationsUseCase {
     type: type,
     isRead: isRead,
     pushState: pushState,
+    source: source,
+    dateFrom: dateFrom,
+    dateTo: dateTo,
     page: page,
     pageSize: pageSize,
   );

@@ -1,5 +1,6 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
@@ -73,7 +74,7 @@ class HrPayrollView extends StatelessWidget {
             subtitle: last == null
                 ? S.hrPayrollSubtitle
                 : '${S.hrPayrollSubtitle} • ${S.hrLatestRun}: ${_period(last)}',
-            progress: state.isWriting ? 0 : null,
+            progress: state.isWriting || state.isLoading ? 0 : null,
             progressLabel: state.isWriting ? S.saving : null,
             actions: [
               if (canManage)
@@ -113,6 +114,15 @@ class HrPayrollView extends StatelessWidget {
         items: state.runs,
         search: search,
         emptyLabel: S.hrEmptyPayroll,
+        emptyHint: S.hrNoPayrollHint,
+        emptyIcon: AppIcons.receiptDollar,
+        emptyAction: canManage
+            ? CustomBtn(
+                text: S.hrBtnGeneratePayroll,
+                variant: BtnVariant.outlined,
+                onPressed: onGenerate,
+              )
+            : null,
         searchOf: (run) => _period(run),
         columns: <String>[
           S.hrColPeriod,

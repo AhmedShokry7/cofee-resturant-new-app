@@ -1,19 +1,18 @@
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/utils/formatters.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_discrepancy.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_reference.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_list_state.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_cell_text.dart';
-import 'package:admin_app/features/hr/presentation/widgets/hr_filter_scroll.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_format.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_labels.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_page_scaffold.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_record_card.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_row_button.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_status_cell.dart';
-import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_value_segment.dart';
 import 'package:admin_app/shared/widgets/admin_stat_tile.dart';
 import 'package:flutter/material.dart';
 
@@ -70,6 +69,8 @@ class HrDiscrepancyView extends StatelessWidget {
       state: state,
       search: search,
       emptyLabel: S.hrEmptyDiscrepancies,
+      emptyHint: S.hrEmptyFilterHint,
+      emptyIcon: AppIcons.cashier,
       columns: <String>[
         S.hrColEmployee,
         S.hrColBranch,
@@ -100,49 +101,31 @@ class HrDiscrepancyView extends StatelessWidget {
   Widget _filters(BuildContext context) {
     final options = branches ?? const <HrBranch>[];
     final unread = branches == null;
-    final branchLabels = <String>[
-      S.hrFilterAllBranches,
-      for (final branch in options) hrBranchName(branch),
-    ];
-    final branchSelected = branchId == null
-        ? branchLabels.first
-        : branchLabels[options.indexWhere((b) => b.id == branchId) + 1];
-    final statusLabels = <String>[
-      S.hrFilterAll,
-      for (final wire in _statuses) hrStatusLabel(wire).text,
-    ];
-    final statusSelected = status == null
-        ? statusLabels.first
-        : statusLabels[_statuses.indexOf(status!) + 1];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return HrFilterStrip(
       children: [
-        // مرجعٌ لم يُقرأ ليس «فرعًا واحدًا»: الشريط نفسه يُستبدل بجملة الغياب.
+        // An unread reference is never represented as an empty/all-branches filter.
         if (unread)
           HrCellText(S.hrNoBranchesForMe, muted: true)
         else
-          HrFilterScroll(
-            control: AdminSegmentedControl(
-              options: branchLabels,
-              selected: branchSelected,
-              onChanged: (label) {
-                if (label == branchSelected) return;
-                final index = branchLabels.indexOf(label);
-                onBranchChanged(index <= 0 ? null : options[index - 1].id);
-              },
-            ),
+          HrValueSegment(
+            label: S.hrColBranch,
+            allLabel: S.hrFilterAllBranches,
+            choices: [
+              for (final branch in options)
+                HrFilterChoice(branch.id, hrBranchName(branch)),
+            ],
+            selected: branchId,
+            onChanged: onBranchChanged,
           ),
-        const SizedBox(height: AppSpacing.sm),
-        HrFilterScroll(
-          control: AdminSegmentedControl(
-            options: statusLabels,
-            selected: statusSelected,
-            onChanged: (label) {
-              if (label == statusSelected) return;
-              final index = statusLabels.indexOf(label);
-              onStatusChanged(index <= 0 ? null : _statuses[index - 1]);
-            },
-          ),
+        HrValueSegment(
+          label: S.hrFilterStatus,
+          allLabel: S.hrFilterAll,
+          choices: [
+            for (final wire in _statuses)
+              HrFilterChoice(wire, hrStatusLabel(wire).text),
+          ],
+          selected: status,
+          onChanged: onStatusChanged,
         ),
       ],
     );

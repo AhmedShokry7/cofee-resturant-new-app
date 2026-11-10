@@ -42,7 +42,7 @@ class NotificationActionsMenu extends StatelessWidget {
             rtl: rtl,
           ),
         ),
-        if (canManage)
+        if (!notification.isCampaignSummary && canManage)
           PopupMenuItem<NotificationAction>(
             value: NotificationAction.toggleRead,
             child: _item(
@@ -56,7 +56,7 @@ class NotificationActionsMenu extends StatelessWidget {
               rtl: rtl,
             ),
           ),
-        if (canSend)
+        if (!notification.isCampaignSummary && canSend)
           PopupMenuItem<NotificationAction>(
             value: NotificationAction.resend,
             child: _item(
@@ -66,8 +66,9 @@ class NotificationActionsMenu extends StatelessWidget {
               rtl: rtl,
             ),
           ),
-        if (canManage) const PopupMenuDivider(),
-        if (canManage)
+        if (!notification.isCampaignSummary && canManage)
+          const PopupMenuDivider(),
+        if (!notification.isCampaignSummary && canManage)
           PopupMenuItem<NotificationAction>(
             value: NotificationAction.delete,
             child: _item(

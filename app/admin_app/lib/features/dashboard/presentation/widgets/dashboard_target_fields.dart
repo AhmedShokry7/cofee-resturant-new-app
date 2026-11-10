@@ -41,7 +41,7 @@ class DashboardTargetFields extends StatelessWidget {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textInputAction: TextInputAction.done,
             onFieldSubmitted: onSubmitted,
-            suffixIcon: const CurrencyIcon(size: 15),
+            suffixIcon: const CurrencyIcon(size: 10),
             bottomPadding: AppSpacing.xs,
           ),
           if (error != null) AdminInlineError(message: error!),

@@ -448,7 +448,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                           decimal: true,
                                         ),
                                     inputFormatters: [_quantityFormatter],
-                                    suffixIcon: const CurrencyIcon(size: 15),
+                                    suffixIcon: const CurrencyIcon(size: 10),
                                   ),
                                 ],
                               )
@@ -467,7 +467,7 @@ class _InventoryMovementDialogState extends State<InventoryMovementDialog> {
                                             decimal: true,
                                           ),
                                       inputFormatters: [_quantityFormatter],
-                                      suffixIcon: const CurrencyIcon(size: 15),
+                                      suffixIcon: const CurrencyIcon(size: 10),
                                     ),
                                   ),
                                 ],

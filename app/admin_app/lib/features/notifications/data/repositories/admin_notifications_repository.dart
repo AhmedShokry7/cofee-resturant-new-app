@@ -29,17 +29,31 @@ class AdminNotificationsRepository implements NotificationsRepository {
     AdminNotificationType? type,
     bool? isRead,
     String? pushState,
+    String? source,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int page = 0,
     int pageSize = AdminNotificationsPaging.pageSize,
   }) async {
     final response = await AdminAvatarLinks.signTree(
       await _supabase.rpc(
-        'admin_notifications',
+        'admin_notifications_filtered',
         params: {
           'p_search': _blankToNull(search),
           'p_type': type?.value,
           'p_read': isRead,
           'p_push': pushState,
+          'p_source': source,
+          'p_created_from': dateFrom == null
+              ? null
+              : DateTime(dateFrom.year, dateFrom.month, dateFrom.day)
+                    .toUtc()
+                    .toIso8601String(),
+          'p_created_before': dateTo == null
+              ? null
+              : DateTime(dateTo.year, dateTo.month, dateTo.day + 1)
+                    .toUtc()
+                    .toIso8601String(),
           'p_limit': pageSize,
           'p_offset': page * pageSize,
         },

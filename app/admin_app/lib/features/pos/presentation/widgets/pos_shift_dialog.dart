@@ -1062,7 +1062,7 @@ class _OpenShiftFormState extends State<_OpenShiftForm> {
               label: S.posShiftOpeningFloat,
               hint: S.posShiftOpeningFloatHint,
               required: true,
-            ).copyWith(suffixIcon: const CurrencyIcon(size: 15)),
+            ).copyWith(suffixIcon: const CurrencyIcon(size: 10)),
           ),
           const SizedBox(height: AppSpacing.md),
           _CashierPicker(
@@ -1329,7 +1329,7 @@ class _MovementDialogState extends State<_MovementDialog> {
                             label: S.posShiftMovementAmount,
                             hint: S.posShiftOpeningFloatHint,
                             required: true,
-                          ).copyWith(suffixIcon: const CurrencyIcon(size: 15)),
+                          ).copyWith(suffixIcon: const CurrencyIcon(size: 10)),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextField(
@@ -1483,7 +1483,7 @@ class _CloseShiftDialogState extends State<_CloseShiftDialog> {
                             label: S.posShiftCountPrompt,
                             hint: S.posShiftCountHint,
                             required: true,
-                          ).copyWith(suffixIcon: const CurrencyIcon(size: 15)),
+                          ).copyWith(suffixIcon: const CurrencyIcon(size: 10)),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         _VarianceStrip(variance: variance),

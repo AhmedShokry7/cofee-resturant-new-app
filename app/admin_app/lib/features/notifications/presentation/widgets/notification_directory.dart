@@ -26,6 +26,9 @@ class NotificationDirectory extends StatefulWidget {
     required this.type,
     required this.readFilter,
     required this.pushFilter,
+    required this.campaignFilter,
+    required this.dateFrom,
+    required this.dateTo,
     required this.isRefreshingRows,
     required this.canSend,
     required this.canManage,
@@ -33,6 +36,8 @@ class NotificationDirectory extends StatefulWidget {
     required this.onTypeChanged,
     required this.onReadChanged,
     required this.onPushChanged,
+    required this.onCampaignChanged,
+    required this.onDateChanged,
     required this.onClearFilters,
     required this.onPageChanged,
     required this.onOpen,
@@ -50,6 +55,9 @@ class NotificationDirectory extends StatefulWidget {
   final NotificationTypeFilter type;
   final NotificationReadFilter readFilter;
   final NotificationPushFilter pushFilter;
+  final NotificationCampaignFilter campaignFilter;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
   final bool isRefreshingRows;
   final bool canSend;
   final bool canManage;
@@ -57,6 +65,8 @@ class NotificationDirectory extends StatefulWidget {
   final ValueChanged<NotificationTypeFilter> onTypeChanged;
   final ValueChanged<NotificationReadFilter> onReadChanged;
   final ValueChanged<NotificationPushFilter> onPushChanged;
+  final ValueChanged<NotificationCampaignFilter> onCampaignChanged;
+  final void Function(DateTime? from, DateTime? to) onDateChanged;
   final VoidCallback onClearFilters;
   final ValueChanged<int> onPageChanged;
   final ValueChanged<AdminNotification> onOpen;
@@ -100,7 +110,10 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
       widget.search.trim().isNotEmpty ||
       widget.type != NotificationTypeFilter.all ||
       widget.readFilter != NotificationReadFilter.all ||
-      widget.pushFilter != NotificationPushFilter.all;
+      widget.pushFilter != NotificationPushFilter.all ||
+      widget.campaignFilter != NotificationCampaignFilter.all ||
+      widget.dateFrom != null ||
+      widget.dateTo != null;
 
   void _clearAll() {
     _searchController.clear();
@@ -116,6 +129,7 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
         vertical: AppSpacing.lg,
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           NotificationToolbar(
@@ -127,6 +141,11 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
             onReadChanged: widget.onReadChanged,
             pushFilter: widget.pushFilter,
             onPushChanged: widget.onPushChanged,
+            campaignFilter: widget.campaignFilter,
+            onCampaignChanged: widget.onCampaignChanged,
+            dateFrom: widget.dateFrom,
+            dateTo: widget.dateTo,
+            onDateChanged: widget.onDateChanged,
             onClearFilters: widget.onClearFilters,
           ),
           const SizedBox(height: AppSizes.px10),
@@ -147,30 +166,29 @@ class _NotificationDirectoryState extends State<NotificationDirectory> {
                 : null,
           ),
           const SizedBox(height: AppSizes.px10),
-          Expanded(
-            child: widget.total == 0
-                ? _emptyState()
-                : LayoutBuilder(
-                    builder: (context, constraints) {
-                      if (constraints.maxWidth < _cardsBreakpoint) {
-                        return NotificationCards(
-                          notifications: widget.notifications,
-                          canSend: widget.canSend,
-                          canManage: widget.canManage,
-                          onOpen: widget.onOpen,
-                          onAction: widget.onAction,
-                        );
-                      }
-                      return NotificationTable(
-                        notifications: widget.notifications,
-                        canSend: widget.canSend,
-                        canManage: widget.canManage,
-                        onOpen: widget.onOpen,
-                        onAction: widget.onAction,
-                      );
-                    },
-                  ),
-          ),
+          if (widget.total == 0)
+            _emptyState()
+          else
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (constraints.maxWidth < _cardsBreakpoint) {
+                  return NotificationCards(
+                    notifications: widget.notifications,
+                    canSend: widget.canSend,
+                    canManage: widget.canManage,
+                    onOpen: widget.onOpen,
+                    onAction: widget.onAction,
+                  );
+                }
+                return NotificationTable(
+                  notifications: widget.notifications,
+                  canSend: widget.canSend,
+                  canManage: widget.canManage,
+                  onOpen: widget.onOpen,
+                  onAction: widget.onAction,
+                );
+              },
+            ),
           if (widget.total > 0)
             AdminPagination(
               page: widget.page,

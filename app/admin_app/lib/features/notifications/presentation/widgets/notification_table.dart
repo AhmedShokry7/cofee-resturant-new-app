@@ -49,21 +49,20 @@ class NotificationTable extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         child: SizedBox(
           width: width,
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                const _Header(),
-                for (final notification in notifications)
-                  _Row(
-                    key: Key('notification-row-${notification.id}'),
-                    notification: notification,
-                    canSend: canSend,
-                    canManage: canManage,
-                    onOpen: () => onOpen(notification),
-                    onAction: (action) => onAction(notification, action),
-                  ),
-              ],
-            ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const _Header(),
+              for (final notification in notifications)
+                _Row(
+                  key: Key('notification-row-${notification.id}'),
+                  notification: notification,
+                  canSend: canSend,
+                  canManage: canManage,
+                  onOpen: () => onOpen(notification),
+                  onAction: (action) => onAction(notification, action),
+                ),
+            ],
           ),
         ),
       );

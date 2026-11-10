@@ -1,16 +1,16 @@
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/utils/localized_date.dart';
 import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_leave.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_list_state.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_cell_text.dart';
-import 'package:admin_app/features/hr/presentation/widgets/hr_filter_scroll.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_labels.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_page_scaffold.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_record_card.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_row_button.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_status_cell.dart';
-import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_value_segment.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 import 'package:flutter/material.dart';
 
@@ -59,6 +59,8 @@ class HrLeaveView extends StatelessWidget {
       state: state,
       search: search,
       emptyLabel: S.hrEmptyLeave,
+      emptyHint: S.hrEmptyFilterHint,
+      emptyIcon: AppIcons.calendarAdd01,
       columns: <String>[
         S.hrColEmployee,
         S.hrColType,
@@ -92,23 +94,19 @@ class HrLeaveView extends StatelessWidget {
   }
 
   Widget _filters(BuildContext context) {
-    final labels = <String>[
-      S.hrFilterAll,
-      for (final wire in _statuses) hrStatusLabel(wire).text,
-    ];
-    final selected = status == null
-        ? labels.first
-        : labels[_statuses.indexOf(status!) + 1];
-    return HrFilterScroll(
-      control: AdminSegmentedControl(
-        options: labels,
-        selected: selected,
-        onChanged: (label) {
-          if (label == selected) return;
-          final index = labels.indexOf(label);
-          onStatusChanged(index <= 0 ? null : _statuses[index - 1]);
-        },
-      ),
+    return HrFilterStrip(
+      children: [
+        HrValueSegment(
+          label: S.hrFilterStatus,
+          allLabel: S.hrFilterAll,
+          choices: [
+            for (final wire in _statuses)
+              HrFilterChoice(wire, hrStatusLabel(wire).text),
+          ],
+          selected: status,
+          onChanged: onStatusChanged,
+        ),
+      ],
     );
   }
 

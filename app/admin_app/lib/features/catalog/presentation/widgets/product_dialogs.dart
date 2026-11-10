@@ -600,7 +600,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
           labelText: label,
           labelStyle: Theme.of(context).textTheme.bodyMedium
               ?.copyWith(color: AppColor.greyColor),
-          suffixIcon: currency ? const CurrencyIcon(size: 15) : null,
+          suffixIcon: currency ? const CurrencyIcon(size: 10) : null,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.md,
             vertical: AppSpacing.md,

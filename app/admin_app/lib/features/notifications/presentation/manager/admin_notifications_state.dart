@@ -17,6 +17,9 @@ class AdminNotificationsState {
     this.type = NotificationTypeFilter.all,
     this.readFilter = NotificationReadFilter.all,
     this.pushFilter = NotificationPushFilter.all,
+    this.campaignFilter = NotificationCampaignFilter.all,
+    this.dateFrom,
+    this.dateTo,
     this.page = 0,
     this.pageSize = AdminNotificationsPaging.pageSize,
     this.isRefreshingRows = false,
@@ -34,6 +37,9 @@ class AdminNotificationsState {
   final NotificationTypeFilter type;
   final NotificationReadFilter readFilter;
   final NotificationPushFilter pushFilter;
+  final NotificationCampaignFilter campaignFilter;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
   final int page;
   final int pageSize;
   final bool isRefreshingRows;
@@ -51,7 +57,10 @@ class AdminNotificationsState {
       search.trim().isNotEmpty ||
       type != NotificationTypeFilter.all ||
       readFilter != NotificationReadFilter.all ||
-      pushFilter != NotificationPushFilter.all;
+      pushFilter != NotificationPushFilter.all ||
+      campaignFilter != NotificationCampaignFilter.all ||
+      dateFrom != null ||
+      dateTo != null;
 
   AdminNotificationsState copyWith({
     AdminNotificationsPageStatus? status,
@@ -63,10 +72,14 @@ class AdminNotificationsState {
     NotificationTypeFilter? type,
     NotificationReadFilter? readFilter,
     NotificationPushFilter? pushFilter,
+    NotificationCampaignFilter? campaignFilter,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int? page,
     bool? isRefreshingRows,
     String? errorMessage,
     bool clearError = false,
+    bool clearDateFilter = false,
   }) {
     return AdminNotificationsState(
       status: status ?? this.status,
@@ -78,6 +91,9 @@ class AdminNotificationsState {
       type: type ?? this.type,
       readFilter: readFilter ?? this.readFilter,
       pushFilter: pushFilter ?? this.pushFilter,
+      campaignFilter: campaignFilter ?? this.campaignFilter,
+      dateFrom: clearDateFilter ? null : (dateFrom ?? this.dateFrom),
+      dateTo: clearDateFilter ? null : (dateTo ?? this.dateTo),
       page: page ?? this.page,
       pageSize: pageSize,
       isRefreshingRows: isRefreshingRows ?? this.isRefreshingRows,

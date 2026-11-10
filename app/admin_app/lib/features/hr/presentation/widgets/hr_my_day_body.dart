@@ -54,32 +54,36 @@ class HrMyDayBody extends StatelessWidget {
           AdminPageHeader(
             title: S.hrMyDay,
             subtitle: S.hrMyDaySubtitle,
-            progress: state.isWriting ? 0 : null,
+            progress: state.isWriting || state.isLoading ? 0 : null,
             progressLabel: state.isWriting ? S.saving : null,
             actions: [
               CustomBtn(
                 text: S.hrBtnRequestLeave,
                 variant: BtnVariant.outlined,
-                enabled: reference != null && reference.leaveTypes.isNotEmpty,
+                enabled:
+                    state.canClock &&
+                    reference != null &&
+                    reference.leaveTypes.isNotEmpty,
                 onPressed: onRequestLeave,
               ),
               CustomBtn(
                 text: S.hrBtnRequestAdvance,
                 variant: BtnVariant.outlined,
+                enabled: state.canClock,
                 onPressed: onRequestAdvance,
               ),
             ],
           ),
           Expanded(
             child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HrRefusalNote(refusal: state.failure),
-                  const SizedBox(height: AppSpacing.md),
-                  HrMyDayMetricsStrip(metrics: state.attendance.metrics),
-                  const SizedBox(height: AppSpacing.md),
-                  HrClockCard(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final wide =
+                      constraints.maxWidth >= AppBreakpoints.wideLayout + 200;
+                  final metrics = HrMyDayMetricsStrip(
+                    metrics: state.attendance.metrics,
+                  );
+                  final clock = HrClockCard(
                     branches: reference?.branches ?? const [],
                     session: state.openSession,
                     canClock: state.canClock,
@@ -88,16 +92,37 @@ class HrMyDayBody extends StatelessWidget {
                     onClockOut: onClockOut,
                     onBreakStart: onBreakStart,
                     onBreakEnd: onBreakEnd,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  HrMyDaySections(
-                    sessions: state.attendance.sessions,
-                    payslips: state.payslips,
-                    leaves: state.leaves,
-                    search: search,
-                    onCancelLeave: onCancelLeave,
-                  ),
-                ],
+                  );
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      HrRefusalNote(refusal: state.failure),
+                      const SizedBox(height: AppSpacing.md),
+                      if (wide)
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(flex: 2, child: clock),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(flex: 3, child: metrics),
+                          ],
+                        )
+                      else ...[
+                        clock,
+                        const SizedBox(height: AppSpacing.md),
+                        metrics,
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      HrMyDaySections(
+                        sessions: state.attendance.sessions,
+                        payslips: state.payslips,
+                        leaves: state.leaves,
+                        search: search,
+                        onCancelLeave: onCancelLeave,
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

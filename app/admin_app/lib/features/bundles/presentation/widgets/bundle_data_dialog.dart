@@ -461,7 +461,7 @@ class _BundleDataDialogState extends State<BundleDataDialog> {
                       decoration: InputDecoration(
                         labelText: S.bundlePrice,
                         hintText: S.bundlePriceHint,
-                        suffixIcon: const CurrencyIcon(size: 15),
+                        suffixIcon: const CurrencyIcon(size: 10),
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,

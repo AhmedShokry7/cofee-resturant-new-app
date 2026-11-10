@@ -1,5 +1,6 @@
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
+import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_refusal.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_list_state.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_load_status.dart';
@@ -33,6 +34,9 @@ class HrPageScaffold<T> extends StatelessWidget {
     this.onTap,
     this.pageSize = 8,
     this.actionsOf,
+    this.emptyHint,
+    this.emptyIcon = AppIcons.folder01,
+    this.emptyAction,
   });
 
   final String title;
@@ -58,6 +62,9 @@ class HrPageScaffold<T> extends StatelessWidget {
 
   /// أزرار قرار الصف الواسع، ونفسها ما ترسمه البطاقة في `cardOf`.
   final List<Widget> Function(BuildContext context, T item)? actionsOf;
+  final String? emptyHint;
+  final IconData emptyIcon;
+  final Widget? emptyAction;
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +77,7 @@ class HrPageScaffold<T> extends StatelessWidget {
             title: title,
             subtitle: subtitle,
             actions: actions,
-            progress: state.isWriting ? 0 : null,
+            progress: state.isWriting || state.isLoading ? 0 : null,
             progressLabel: state.isWriting ? S.saving : null,
           ),
           HrRefusalNote(refusal: failure),
@@ -78,18 +85,13 @@ class HrPageScaffold<T> extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             HrReceiptNote(receipt: state.receipt!),
           ],
-          if (filters != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            filters!,
-          ],
-          const SizedBox(height: AppSpacing.sm),
-          Expanded(child: _body(failure)),
+          Expanded(child: _body(context, failure)),
         ],
       ),
     );
   }
 
-  Widget _body(HrRefusal? failure) {
+  Widget _body(BuildContext context, HrRefusal? failure) {
     if (state.status == HrLoadStatus.loading && !state.hasItems) {
       return const AdminLoadingView();
     }
@@ -100,17 +102,33 @@ class HrPageScaffold<T> extends StatelessWidget {
       );
     }
     return AdminDirectoryPanel(
-      child: HrDirectory<T>(
-        items: state.items,
-        columns: columns,
-        cellsOf: cellsOf,
-        cardOf: cardOf,
-        searchOf: searchOf,
-        search: search,
-        emptyLabel: emptyLabel,
-        onTap: onTap,
-        pageSize: pageSize,
-        actionsOf: actionsOf,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (filters != null) ...[
+            filters!,
+            const SizedBox(height: AppSpacing.sm),
+            Divider(height: 1, color: Theme.of(context).dividerColor),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          Expanded(
+            child: HrDirectory<T>(
+              items: state.items,
+              columns: columns,
+              cellsOf: cellsOf,
+              cardOf: cardOf,
+              searchOf: searchOf,
+              search: search,
+              emptyLabel: emptyLabel,
+              onTap: onTap,
+              pageSize: pageSize,
+              actionsOf: actionsOf,
+              emptyHint: emptyHint,
+              emptyIcon: emptyIcon,
+              emptyAction: emptyAction,
+            ),
+          ),
+        ],
       ),
     );
   }

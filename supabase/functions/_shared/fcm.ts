@@ -219,6 +219,22 @@ export async function sendToToken(
               priority: "high",
               notification: {
                 channel_id: "default_notification_channel",
+                // Android defaults lock-screen visibility to PRIVATE, which
+                // conceals the campaign picture on a secure lock screen. The
+                // admin explicitly attached this public campaign image, so
+                // show that image notification in full while the phone is
+                // locked. Text-only notifications retain Android's private
+                // default.
+                ...(imageUrl
+                  ? {
+                    visibility: "PUBLIC",
+                    // HTTP v1 notifications can be delegated to Google Play
+                    // services, unlike messages sent from Firebase Console.
+                    // Keep image messages in the app's FCM SDK so Android can
+                    // fetch the attachment and build the BigPicture style.
+                    proxy: "DENY",
+                  }
+                  : {}),
                 ...(imageUrl ? { image: imageUrl } : {}),
               },
             },

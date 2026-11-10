@@ -37,7 +37,7 @@ class HrAmountField extends StatelessWidget {
           ).copyWith(
             suffixIcon: Padding(
               padding: const EdgeInsetsDirectional.only(end: AppSizes.px10),
-              child: const CurrencyIcon(size: AppSizes.px14),
+              child: const CurrencyIcon(size: AppSizes.px10),
             ),
             suffixIconConstraints: const BoxConstraints(),
           ),

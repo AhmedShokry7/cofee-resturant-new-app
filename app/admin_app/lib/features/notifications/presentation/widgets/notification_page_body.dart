@@ -7,9 +7,8 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_notification_metrics.dart';
 import 'package:admin_app/features/notifications/domain/entities/admin_push_health.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_directory.dart';
-import 'package:admin_app/features/notifications/presentation/widgets/notification_email_channel_panel.dart';
+import 'package:admin_app/features/notifications/presentation/widgets/notification_channels_summary.dart';
 import 'package:admin_app/features/notifications/presentation/widgets/notification_metrics_cards.dart';
-import 'package:admin_app/features/notifications/presentation/widgets/notification_push_health_panel.dart';
 import 'package:admin_app/shared/widgets/admin_inline_error.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
@@ -47,11 +46,10 @@ class NotificationPageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AdminPageFrame(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final compact =
-              constraints.maxWidth < 840 || constraints.maxHeight < 820;
-          final sections = <Widget>[
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             AdminPageHeader(
               title: S.notifications,
               subtitle: S.notificationsDescription,
@@ -77,38 +75,17 @@ class NotificationPageBody extends StatelessWidget {
             const SizedBox(height: AppSizes.px8),
             NotificationMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px14),
-            NotificationPushHealthPanel(
+            NotificationChannelsSummary(
+              metrics: metrics,
               health: health,
               refreshing: refreshingHealth,
               onRecheck: onRecheck,
               onSetup: onSetup,
             ),
             const SizedBox(height: AppSizes.px14),
-            NotificationEmailChannelPanel(metrics: metrics),
-            const SizedBox(height: AppSizes.px14),
-          ];
-          if (compact) {
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ...sections,
-                  SizedBox(
-                    height: AppDimensions.directoryCanvasHeightXxxl,
-                    child: directory,
-                  ),
-                ],
-              ),
-            );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...sections,
-              Expanded(child: directory),
-            ],
-          );
-        },
+            directory,
+          ],
+        ),
       ),
     );
   }

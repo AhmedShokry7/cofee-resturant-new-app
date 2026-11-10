@@ -68,6 +68,9 @@ class _FakeNotificationsRepository extends AdminNotificationsRepository {
     AdminNotificationType? type,
     bool? isRead,
     String? pushState,
+    String? source,
+    DateTime? dateFrom,
+    DateTime? dateTo,
     int page = 0,
     int pageSize = 10,
   }) async {

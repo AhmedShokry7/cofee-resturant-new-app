@@ -242,7 +242,7 @@ class _DeliveryZoneFormDialogState extends State<DeliveryZoneFormDialog> {
         controller: controller,
         decoration: InputDecoration(
           labelText: label,
-          suffixIcon: money ? const CurrencyIcon(size: 15) : null,
+          suffixIcon: money ? const CurrencyIcon(size: 10) : null,
         ),
         keyboardType: TextInputType.numberWithOptions(decimal: decimal),
         onChanged: onChanged,

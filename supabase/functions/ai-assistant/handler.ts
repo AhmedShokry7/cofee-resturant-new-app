@@ -54,6 +54,19 @@ export type Provider = {
 
 export type Message = { role: string; content: string };
 
+/** Server-only assistant settings; the provider key never crosses to the app. */
+export type AssistantRuntimeConfig = {
+  enabled: boolean;
+  provider: string;
+  model: string;
+  base_url: string;
+  system_prompt: string;
+  tone: string;
+  max_reply_chars: number;
+  fallback_reply: string;
+  api_key: string;
+};
+
 type ProviderAnswer =
   | { text: string }
   | {
@@ -399,6 +412,63 @@ function resolveProviders(env: (name: string) => string | undefined): Provider[]
   return providers;
 }
 
+function providerFromAdminConfig(config: AssistantRuntimeConfig | null): Provider | null {
+  if (!config || !config.enabled || !config.api_key?.trim()) return null;
+  const name = config.provider.trim().toLowerCase();
+  const defaultBaseUrls: Record<string, string> = {
+    gemini: "https://generativelanguage.googleapis.com/v1beta/openai",
+    groq: "https://api.groq.com/openai/v1",
+    openrouter: "https://openrouter.ai/api/v1",
+    openai: "https://api.openai.com/v1",
+  };
+  const baseUrl = normalizeBaseUrl(config.base_url || defaultBaseUrls[name] || "");
+  if (!baseUrl || !config.model?.trim()) return null;
+  return { name, baseUrl, apiKey: config.api_key.trim(), model: config.model.trim() };
+}
+
+function applyAdminInstructions(
+  messages: Message[],
+  config: AssistantRuntimeConfig | null,
+): Message[] {
+  if (!config || !config.enabled) return messages;
+  const rules: string[] = [];
+  if (config.system_prompt?.trim()) rules.push(config.system_prompt.trim());
+  const tones: Record<string, string> = {
+    friendly: "استخدم نبرة ودودة ودافئة.",
+    professional: "استخدم نبرة احترافية وواضحة.",
+    casual: "استخدم لهجة مصرية بسيطة وطبيعية.",
+  };
+  if (tones[config.tone]) rules.push(tones[config.tone]);
+  if (config.max_reply_chars > 0) {
+    rules.push(`اجعل الرد مختصرًا، بحد أقصى يقارب ${config.max_reply_chars} حرفًا.`);
+  }
+  if (rules.length === 0) return messages;
+  const result = [...messages];
+  const systemIndex = result.findIndex((message) => message.role === "system");
+  if (systemIndex < 0) {
+    result.unshift({ role: "system", content: rules.join("\n\n") });
+  } else {
+    result[systemIndex] = {
+      ...result[systemIndex],
+      content: `${result[systemIndex].content}\n\n${rules.join("\n\n")}`,
+    };
+  }
+  return result;
+}
+
+function limitAssistantReply(text: string, maxChars: number): string {
+  const value = text.trim();
+  if (!Number.isFinite(maxChars) || maxChars <= 0 || value.length <= maxChars) return value;
+  const limit = Math.max(1, Math.floor(maxChars));
+  const cut = value.slice(0, limit);
+  const punctuation = Math.max(
+    cut.lastIndexOf(" "), cut.lastIndexOf("،"), cut.lastIndexOf("."),
+    cut.lastIndexOf("؟"), cut.lastIndexOf("!"), cut.lastIndexOf("\\n"),
+  );
+  const boundary = punctuation >= Math.floor(limit * 0.75) ? punctuation : limit;
+  return `${value.slice(0, boundary).trimEnd()}…`;
+}
+
 function validMessage(value: unknown): value is Message {
   if (!value || typeof value !== "object") return false;
   const role = (value as any).role;
@@ -687,6 +757,8 @@ export type AssistantDeps = {
   searchWeb: WebSearchCall;
   recordKnowledgeGap?: KnowledgeGapCall;
   providers: () => Provider[];
+  /** Loads Vault-backed settings using the service role, when available. */
+  loadRuntimeConfig?: () => Promise<AssistantRuntimeConfig | null>;
   askProvider: (provider: Provider, messages: Message[]) => Promise<ProviderAnswer>;
   log: (entry: Diagnostic) => void;
   quotaTimeoutMs: number;
@@ -714,6 +786,21 @@ function defaultDeps(): AssistantDeps {
       return { data, error: error as any };
     },
     providers: () => resolveProviders((name) => Deno.env.get(name)),
+    loadRuntimeConfig: async () => {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+      if (!supabaseUrl || !serviceKey) return null;
+      try {
+        const supabase = createClient(supabaseUrl, serviceKey, {
+          auth: { persistSession: false },
+        });
+        const { data, error } = await supabase.rpc("assistant_runtime_config");
+        if (error || !data || typeof data !== "object") return null;
+        return data as AssistantRuntimeConfig;
+      } catch {
+        return null;
+      }
+    },
     askProvider,
     searchWeb: (messages) =>
       searchGeminiWeb((name) => Deno.env.get(name), messages),
@@ -987,7 +1074,9 @@ export async function handleRequest(
 ): Promise<Response> {
   // A health check: which providers are configured, without their keys.
   if (req.method === "GET") {
-    const providers = deps.providers().map((provider) => ({
+    const config = await deps.loadRuntimeConfig?.() ?? null;
+    const configured = providerFromAdminConfig(config);
+    const providers = (config && !config.enabled ? [] : configured ? [configured] : deps.providers()).map((provider) => ({
       name: provider.name,
       baseUrl: provider.baseUrl,
       model: provider.model,
@@ -1016,6 +1105,7 @@ export async function handleRequest(
   if (!rawMessages.every(validMessage)) {
     return jsonResponse({ error: "Invalid message shape or size" }, 400);
   }
+  const runtimeConfig = await deps.loadRuntimeConfig?.() ?? null;
   const totalChars = rawMessages.reduce((sum: number, m: any) => sum + String(m.content).length, 0);
   if (totalChars > MAX_TOTAL_CHARS) {
     return jsonResponse({ error: "Request too large" }, 413);
@@ -1118,8 +1208,15 @@ export async function handleRequest(
     );
   }
 
-  const providers = deps.providers();
+  const adminProvider = providerFromAdminConfig(runtimeConfig);
+  const providers = runtimeConfig && !runtimeConfig.enabled ? [] : adminProvider ? [adminProvider] : deps.providers();
   if (providers.length === 0) {
+    if (runtimeConfig?.fallback_reply?.trim()) {
+      return jsonResponse(
+        { text: limitAssistantReply(runtimeConfig.fallback_reply, runtimeConfig.max_reply_chars), topic: "fallback", provider: "fallback" },
+        200,
+      );
+    }
     return jsonResponse({ error: "LLM provider is not configured" }, 503);
   }
 
@@ -1189,10 +1286,12 @@ export async function handleRequest(
   }
 
   const failures: Array<{ provider: string; status: number }> = [];
-  const modelMessages = await addConversationExamples(rawMessages);
+  const configuredMessages = applyAdminInstructions(rawMessages, runtimeConfig);
+  const modelMessages = await addConversationExamples(configuredMessages);
   for (const provider of providers) {
     const result = await deps.askProvider(provider, modelMessages);
     if ("text" in result) {
+      const answerText = limitAssistantReply(result.text, runtimeConfig?.max_reply_chars ?? 0);
       // The answer is remembered so the next customer who asks the same
       // question gets it without a model call. A question about the
       // customer's own order is never learned: its answer goes stale.
@@ -1202,7 +1301,7 @@ export async function handleRequest(
           await deps.remember({
             questionKey,
             questionText: lastUser?.content ?? questionKey,
-            answer: result.text,
+            answer: answerText,
             provider: provider.name,
             topic: "learned",
           });
@@ -1223,7 +1322,7 @@ export async function handleRequest(
         }
       }
       return jsonResponse(
-        { text: result.text, topic: "llm", provider: provider.name },
+        { text: answerText, topic: "llm", provider: provider.name },
         200,
       );
     }
@@ -1245,5 +1344,11 @@ export async function handleRequest(
     category: "provider",
     status: 502,
   });
+  if (runtimeConfig?.fallback_reply?.trim()) {
+    return jsonResponse(
+      { text: limitAssistantReply(runtimeConfig.fallback_reply, runtimeConfig.max_reply_chars), topic: "fallback", provider: "fallback" },
+      200,
+    );
+  }
   return jsonResponse({ error: "The assistant is temporarily unavailable. Please try again shortly." }, 502);
 }

@@ -140,60 +140,92 @@ class _HrPolicyFormState extends State<HrPolicyForm> {
     return AdminSectionCard(
       title: S.hrPolicyTitle,
       subtitle: S.hrPolicySubtitle,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _textField(_timeZone, S.hrPolicyTimezone),
-          _gap(_textField(_grace, S.hrPolicyLateGrace, numeric: true)),
-          _gap(
-            HrAmountField(
-              label: S.hrPolicyLateRate,
-              hint: S.hrAmountHint,
-              controller: _late,
-            ),
-          ),
-          _gap(
-            HrAmountField(
-              label: S.hrPolicyEarlyRate,
-              hint: S.hrAmountHint,
-              controller: _early,
-            ),
-          ),
-          _gap(
-            HrAmountField(
-              label: S.hrPolicyAbsenceRate,
-              hint: S.hrAmountHint,
-              controller: _absence,
-            ),
-          ),
-          _gap(_textField(_cap, S.hrPolicyDeductionCap, numeric: true)),
-          _gap(
-            Row(
-              children: [
-                Expanded(child: Text(S.hrPolicyCashierSwitch)),
-                Switch(
-                  value: _cashier,
-                  onChanged: widget.busy
-                      ? null
-                      : (value) => setState(() => _cashier = value),
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final fieldWidth = constraints.maxWidth < 720
+              ? constraints.maxWidth
+              : (constraints.maxWidth - AppSpacing.sm) / 2;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  SizedBox(
+                    width: fieldWidth,
+                    child: _textField(_timeZone, S.hrPolicyTimezone),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: _textField(
+                      _grace,
+                      S.hrPolicyLateGrace,
+                      numeric: true,
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: HrAmountField(
+                      label: S.hrPolicyLateRate,
+                      hint: S.hrAmountHint,
+                      controller: _late,
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: HrAmountField(
+                      label: S.hrPolicyEarlyRate,
+                      hint: S.hrAmountHint,
+                      controller: _early,
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: HrAmountField(
+                      label: S.hrPolicyAbsenceRate,
+                      hint: S.hrAmountHint,
+                      controller: _absence,
+                    ),
+                  ),
+                  SizedBox(
+                    width: fieldWidth,
+                    child: _textField(
+                      _cap,
+                      S.hrPolicyDeductionCap,
+                      numeric: true,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(child: Text(S.hrPolicyCashierSwitch)),
+                  Switch(
+                    value: _cashier,
+                    onChanged: widget.busy
+                        ? null
+                        : (value) => setState(() => _cashier = value),
+                  ),
+                ],
+              ),
+              _note(theme, S.hrPolicyCashierHint),
+              if (_error != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                AdminErrorBanner(message: _error!),
               ],
-            ),
-          ),
-          _gap(_note(theme, S.hrPolicyCashierHint)),
-          if (_error != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            AdminErrorBanner(message: _error!),
-          ],
-          const SizedBox(height: AppSpacing.md),
-          CustomBtn(
-            text: S.hrBtnSavePolicy,
-            enabled: !widget.busy,
-            isLoading: widget.busy,
-            loadingText: S.saving,
-            onPressed: _submit,
-          ),
-        ],
+              const SizedBox(height: AppSpacing.md),
+              CustomBtn(
+                text: S.hrBtnSavePolicy,
+                enabled: !widget.busy,
+                isLoading: widget.busy,
+                loadingText: S.saving,
+                onPressed: _submit,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -219,10 +251,5 @@ class _HrPolicyFormState extends State<HrPolicyForm> {
       fontSize: AppFontSizes.size10_5,
       height: AppTextHeights.line1_5,
     ),
-  );
-
-  Widget _gap(Widget child) => Padding(
-    padding: const EdgeInsets.only(top: AppSpacing.sm),
-    child: child,
   );
 }

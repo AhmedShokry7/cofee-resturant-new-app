@@ -14,9 +14,16 @@ import 'package:flutter/material.dart';
 /// كل باب يُرسم بما أرسلته القاعدة فقط: ما لم يُرسل يُقال إنه غير متاح، ولا
 /// يُعدّ صفرًا ولا يُحذف فيُظن أن الباب أُغلق.
 class HrDashboardPeople extends StatelessWidget {
-  const HrDashboardPeople({super.key, required this.dashboard});
+  const HrDashboardPeople({
+    super.key,
+    required this.dashboard,
+    required this.availableDestinations,
+    this.onNavigate,
+  });
 
   final HrDashboard dashboard;
+  final Set<String> availableDestinations;
+  final ValueChanged<String>? onNavigate;
 
   @override
   Widget build(BuildContext context) => Column(
@@ -118,39 +125,66 @@ class HrDashboardPeople extends StatelessWidget {
           S.hrPendingLeaves,
           pending.leaveRequests,
           AppIcons.calendar01,
+          'hrLeave',
         ),
       if (pending.attendanceCorrections != null)
         _doorTile(
           S.hrPendingCorrections,
           pending.attendanceCorrections,
           AppIcons.note01,
+          'hrAttendance',
         ),
       if (pending.advances != null)
-        _doorTile(S.hrPendingAdvances, pending.advances, AppIcons.wallet01),
+        _doorTile(
+          S.hrPendingAdvances,
+          pending.advances,
+          AppIcons.wallet01,
+          'hrAdvances',
+        ),
       if (pending.adjustments != null)
         _doorTile(
           S.hrSectionAdjustments,
           pending.adjustments,
           AppIcons.coins01,
+          'hrAdvances',
         ),
       if (pending.discrepancies != null)
         _doorTile(
           S.hrPendingDiscrepancies,
           pending.discrepancies,
           AppIcons.cashier,
+          'hrDiscrepancies',
         ),
     ];
     if (doors.isEmpty) return _unavailable();
     return AdminMetricGrid(children: doors);
   }
 
-  Widget _doorTile(String label, int? count, IconData icon) => hrCountTile(
-    icon: icon,
-    tint: AppColor.adminWarning,
-    surface: AppColor.adminWarningSurface,
-    label: label,
-    count: count,
-  );
+  Widget _doorTile(
+    String label,
+    int? count,
+    IconData icon,
+    String destination,
+  ) {
+    final tile = hrCountTile(
+      icon: icon,
+      tint: AppColor.adminWarning,
+      surface: AppColor.adminWarningSurface,
+      label: label,
+      count: count,
+    );
+    if (onNavigate == null || !availableDestinations.contains(destination)) {
+      return tile;
+    }
+    return Tooltip(
+      message: label,
+      child: InkWell(
+        onTap: () => onNavigate!(destination),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        child: tile,
+      ),
+    );
+  }
 
   Widget _section(String title, Widget child) =>
       AdminSectionCard(title: title, child: child);

@@ -8,6 +8,7 @@ import 'package:admin_app/core/navigation/admin_product_options_host.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/audit/presentation/pages/audit_log_page.dart';
+import 'package:admin_app/features/ai_knowledge/presentation/pages/ai_knowledge_page.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:admin_app/features/auth/presentation/bloc/auth_event.dart';
 import 'package:admin_app/features/banners/presentation/pages/banner_page.dart';
@@ -339,7 +340,10 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         // تعرف القاعدة من أنت من الجلسة نفسها.
         return HrMyDayPage(searchController: _searchController);
       case 'hrDashboard':
-        return const HrDashboardPage();
+        return HrDashboardPage(
+          onNavigate: _select,
+          availableDestinations: _destinations.map((item) => item.id).toSet(),
+        );
       case 'hrEmployees':
         return HrEmployeesPage(
           searchController: _searchController,
@@ -385,6 +389,11 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         );
       case 'hrSettings':
         return const HrSettingsPage();
+      case 'aiKnowledge':
+        return AiKnowledgePage(
+          searchController: _searchController,
+          canManage: widget.session.hasPermission('settings.write'),
+        );
       default:
         return AdminFeaturePlaceholder(destination: destination);
     }
@@ -400,7 +409,11 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
       onSignOut: _confirmSignOut,
       searchController: _searchController,
       searchTextController: _searchTextController,
-      title: destination?.label ?? S.noAccessTitle,
+      // HR pages render their own descriptive page header; repeating the same
+      // title in the toolbar made the screens feel crowded and ambiguous.
+      title: destination?.id.startsWith('hr') == true
+          ? ''
+          : destination?.label ?? S.noAccessTitle,
       // بلا قسم لا شيء يُبحث، فيتراجع شريط الأدوات عن حقل البحث.
       searchHint: destination?.searchHint ?? '',
       badges: <String, int>{

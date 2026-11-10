@@ -120,6 +120,30 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
     _fetch(withSummary: false);
   }
 
+  void setCampaignFilter(NotificationCampaignFilter filter) {
+    if (filter == state.campaignFilter) return;
+    emit(state.copyWith(campaignFilter: filter, page: 0));
+    _fetch(withSummary: false);
+  }
+
+  void setDateFilter(DateTime? from, DateTime? to) {
+    if (_sameDate(state.dateFrom, from) && _sameDate(state.dateTo, to)) return;
+    emit(
+      state.copyWith(
+        dateFrom: from,
+        dateTo: to,
+        clearDateFilter: from == null && to == null,
+        page: 0,
+      ),
+    );
+    _fetch(withSummary: false);
+  }
+
+  bool _sameDate(DateTime? left, DateTime? right) =>
+      left?.year == right?.year &&
+      left?.month == right?.month &&
+      left?.day == right?.day;
+
   void setPage(int page) {
     final maxPage = state.pages == 0 ? 0 : state.pages - 1;
     final target = page.clamp(0, maxPage);
@@ -137,6 +161,8 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
         type: NotificationTypeFilter.all,
         readFilter: NotificationReadFilter.all,
         pushFilter: NotificationPushFilter.all,
+        campaignFilter: NotificationCampaignFilter.all,
+        clearDateFilter: true,
         page: 0,
       ),
     );
@@ -238,6 +264,9 @@ class AdminNotificationsCubit extends Cubit<AdminNotificationsState> {
       type: state.type.value,
       isRead: state.readFilter.value,
       pushState: state.pushFilter.value,
+      source: state.campaignFilter.value,
+      dateFrom: state.dateFrom,
+      dateTo: state.dateTo,
       page: state.page,
       pageSize: state.pageSize,
     );

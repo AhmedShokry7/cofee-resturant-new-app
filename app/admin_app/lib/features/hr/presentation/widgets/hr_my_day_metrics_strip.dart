@@ -25,41 +25,70 @@ class HrMyDayMetricsStrip extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          children: [
-            AdminStatTile(
-              icon: AppIcons.timer01,
-              tint: AppColor.adminAccent,
-              surface: AppColor.adminAccentSurface,
-              label: S.hrPresentToday,
-              value: localizeDigits('${metrics.presentShifts}'),
-            ),
-            AdminStatTile(
-              icon: AppIcons.alert01,
-              tint: AppColor.adminWarning,
-              surface: AppColor.adminWarningSurface,
-              label: S.hrColLate,
-              value: localizeDigits('${metrics.lateMinutes}'),
-            ),
-            AdminStatTile(
-              icon: AppIcons.clock01,
-              tint: AppColor.adminInfo,
-              surface: AppColor.adminInfoSurface,
-              label: S.hrColWorked,
-              value: hrDuration(metrics.workedMinutes),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 560
+                ? 3
+                : constraints.maxWidth >= 480
+                ? 2
+                : 1;
+            final gap = AppSpacing.sm;
+            final width =
+                (constraints.maxWidth - gap * (columns - 1)) / columns;
+            final tiles = <Widget>[
+              AdminStatTile(
+                icon: AppIcons.timer01,
+                tint: AppColor.adminAccent,
+                surface: AppColor.adminAccentSurface,
+                label: S.hrMyAttendanceCount,
+                value: localizeDigits('${metrics.presentShifts}'),
+              ),
+              AdminStatTile(
+                icon: AppIcons.alert01,
+                tint: AppColor.adminWarning,
+                surface: AppColor.adminWarningSurface,
+                label: S.hrColLate,
+                value: hrDuration(metrics.lateMinutes),
+              ),
+              AdminStatTile(
+                icon: AppIcons.clock01,
+                tint: AppColor.adminInfo,
+                surface: AppColor.adminInfoSurface,
+                label: S.hrColWorked,
+                value: hrDuration(metrics.workedMinutes),
+              ),
+            ];
+            return Wrap(
+              spacing: gap,
+              runSpacing: gap,
+              children: [
+                for (final tile in tiles) SizedBox(width: width, child: tile),
+              ],
+            );
+          },
         ),
         const SizedBox(height: AppSpacing.xs),
-        Text(
-          S.hrMetricsSources,
-          style: TextStyle(
-            color: adminMutedColor(Theme.of(context)),
-            fontSize: AppFontSizes.size10_5,
-            height: AppTextHeights.line1_5,
-          ),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.xs,
+          children: [
+            Text(
+              S.hrMetricsSources,
+              style: TextStyle(
+                color: adminMutedColor(Theme.of(context)),
+                fontSize: AppFontSizes.size10_5,
+                height: AppTextHeights.line1_5,
+              ),
+            ),
+            Text(
+              S.hrMyAttendancePeriod,
+              style: TextStyle(
+                color: adminMutedColor(Theme.of(context)),
+                fontSize: AppFontSizes.size10,
+                fontWeight: AppFontWeights.semiBold,
+              ),
+            ),
+          ],
         ),
       ],
     );

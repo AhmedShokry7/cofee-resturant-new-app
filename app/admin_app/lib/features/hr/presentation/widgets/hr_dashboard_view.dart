@@ -7,12 +7,11 @@ import 'package:admin_app/features/hr/presentation/manager/hr_dashboard_state.da
 import 'package:admin_app/features/hr/presentation/models/hr_load_status.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_dashboard_money.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_dashboard_people.dart';
-import 'package:admin_app/features/hr/presentation/widgets/hr_filter_scroll.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_format.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_refusal_note.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_value_segment.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
 import 'package:admin_app/shared/widgets/admin_page_header.dart';
-import 'package:admin_app/shared/widgets/admin_segmented_control.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 import 'package:flutter/material.dart';
@@ -28,6 +27,8 @@ class HrDashboardView extends StatelessWidget {
     required this.branches,
     required this.onBranchChanged,
     required this.onRetry,
+    this.onNavigate,
+    this.availableDestinations = const <String>{},
     this.branchesFailure,
   });
 
@@ -35,6 +36,8 @@ class HrDashboardView extends StatelessWidget {
   final List<HrBranch> branches;
   final ValueChanged<String?> onBranchChanged;
   final VoidCallback onRetry;
+  final ValueChanged<String>? onNavigate;
+  final Set<String> availableDestinations;
 
   /// رفض قراءة الفروع: اللوحة تُقرأ لكل ما يُراه، لكن بلا باب لتضيقه.
   final HrRefusal? branchesFailure;
@@ -53,6 +56,13 @@ class HrDashboardView extends StatelessWidget {
                 ? S.hrDashboardSubtitle
                 : '${S.hrDashboardSubtitle} • ${dashboard.dayLocal}',
             actions: [
+              if (onNavigate != null &&
+                  availableDestinations.contains('hrEmployees'))
+                CustomBtn(
+                  text: S.hrEmployees,
+                  variant: BtnVariant.outlined,
+                  onPressed: () => onNavigate!('hrEmployees'),
+                ),
               CustomBtn(
                 text: S.refresh,
                 variant: BtnVariant.outlined,
@@ -90,36 +100,53 @@ class HrDashboardView extends StatelessWidget {
     if (dashboard == null) {
       return AdminFailureView(message: S.hrDashboardUnread, onRetry: onRetry);
     }
-    return ListView(
-      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      children: [
-        HrDashboardPeople(dashboard: dashboard),
-        const SizedBox(height: AppSpacing.md),
-        HrDashboardMoney(dashboard: dashboard),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final wide = constraints.maxWidth >= AppBreakpoints.wideLayout;
+        final people = HrDashboardPeople(
+          dashboard: dashboard,
+          availableDestinations: availableDestinations,
+          onNavigate: onNavigate,
+        );
+        final money = HrDashboardMoney(dashboard: dashboard);
+        return ListView(
+          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+          children: [
+            if (wide)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: people),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: money),
+                ],
+              )
+            else ...[
+              people,
+              const SizedBox(height: AppSpacing.md),
+              money,
+            ],
+          ],
+        );
+      },
     );
   }
 
   /// سؤال الفرع: «كل فروعك» قرارٌ صريح، والفرع المحدّد يُعيد اللوحة بسؤال جديد.
   Widget _branches() {
-    final labels = <String>[
-      S.hrFilterAllBranches,
-      for (final branch in branches) hrBranchName(branch),
-    ];
-    final picked = state.branchId == null
-        ? -1
-        : branches.indexWhere((b) => b.id == state.branchId);
-    final selected = picked < 0 ? labels.first : labels[picked + 1];
-    return HrFilterScroll(
-      control: AdminSegmentedControl(
-        options: labels,
-        selected: selected,
-        onChanged: (label) {
-          if (label == selected) return;
-          final index = labels.indexOf(label);
-          onBranchChanged(index <= 0 ? null : branches[index - 1].id);
-        },
-      ),
+    return HrFilterStrip(
+      children: [
+        HrValueSegment(
+          label: S.hrColBranch,
+          allLabel: S.hrFilterAllBranches,
+          choices: [
+            for (final branch in branches)
+              HrFilterChoice(branch.id, hrBranchName(branch)),
+          ],
+          selected: state.branchId,
+          onChanged: onBranchChanged,
+        ),
+      ],
     );
   }
 }

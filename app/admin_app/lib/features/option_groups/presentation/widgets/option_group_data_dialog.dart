@@ -692,7 +692,7 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
                   keyboardType: const TextInputType.numberWithOptions(
                     decimal: true,
                   ),
-                  suffix: const CurrencyIcon(size: 15),
+                  suffix: const CurrencyIcon(size: 10),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),

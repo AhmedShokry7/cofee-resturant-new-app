@@ -429,7 +429,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                         ),
                         validator: _validateDiscountValue,
                         suffixIcon: _valueIsMoney
-                            ? const CurrencyIcon(size: 15)
+                            ? const CurrencyIcon(size: 10)
                             : null,
                         bottomPadding: 4,
                       ),
@@ -447,7 +447,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                             decimal: true,
                           ),
                           validator: _validateMaxDiscount,
-                          suffixIcon: const CurrencyIcon(size: 15),
+                          suffixIcon: const CurrencyIcon(size: 10),
                           bottomPadding: 4,
                         ),
                       ),
@@ -465,7 +465,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   ),
                   validator: _validateDiscountValue,
                   suffixIcon: _valueIsMoney
-                      ? const CurrencyIcon(size: 15)
+                      ? const CurrencyIcon(size: 10)
                       : null,
                   bottomPadding: 4,
                 ),
@@ -479,7 +479,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                       decimal: true,
                     ),
                     validator: _validateMaxDiscount,
-                    suffixIcon: const CurrencyIcon(size: 15),
+                    suffixIcon: const CurrencyIcon(size: 10),
                     bottomPadding: 4,
                   ),
               ],
@@ -494,7 +494,7 @@ class _CouponEditorDialogState extends State<CouponEditorDialog> {
                   decimal: true,
                 ),
                 validator: _validateMinOrder,
-                suffixIcon: const CurrencyIcon(size: 15),
+                suffixIcon: const CurrencyIcon(size: 10),
                 bottomPadding: 4,
               ),
               _helper(S.couponsMinOrderHelp),

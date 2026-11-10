@@ -83,7 +83,7 @@ class HrRecordCard extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               color: adminMutedColor(theme),
-                              fontSize: AppFontSizes.size9_5,
+                              fontSize: AppFontSizes.size11,
                               height: AppTextHeights.line1_5,
                             ),
                           ),
@@ -119,7 +119,7 @@ class HrRecordCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: adminMutedColor(theme),
-                fontSize: AppFontSizes.size9_5,
+                fontSize: AppFontSizes.size11,
                 height: AppTextHeights.line1_5,
               ),
             ),
