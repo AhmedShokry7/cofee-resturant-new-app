@@ -100,6 +100,23 @@ const AdminOptionGroup _sizes = AdminOptionGroup(
   ],
 );
 
+const AdminOptionGroup _addOns = AdminOptionGroup(
+  id: 'g-addons',
+  code: 'toppings',
+  nameAr: 'إضافات',
+  nameEn: 'Add-ons',
+  scope: AdminOptionGroupScope.products,
+  selectionType: AdminOptionSelectionType.multiple,
+  values: <AdminOptionValue>[
+    AdminOptionValue(
+      code: 'cheese',
+      nameAr: 'جبنة',
+      nameEn: 'Cheese',
+      priceDelta: 3,
+    ),
+  ],
+);
+
 void _setViewport(WidgetTester tester) {
   tester.view.physicalSize = const Size(1280, 1200);
   tester.view.devicePixelRatio = 1;
@@ -110,7 +127,7 @@ void _setViewport(WidgetTester tester) {
 Future<AdminOptionGroupCubit> _pumpPage(
   WidgetTester tester, {
   required bool canManage,
-  List<AdminOptionGroup> groups = const <AdminOptionGroup>[_sizes],
+  List<AdminOptionGroup> groups = const <AdminOptionGroup>[_addOns],
 }) async {
   final cubit = AdminOptionGroupCubit(
     repository: _FakeOptionGroupRepository(groups),
@@ -199,11 +216,9 @@ Future<void> _fillValue(
   WidgetTester tester,
   int index, {
   required String name,
-  required String code,
   String? price,
 }) async {
   await _type(tester, Key('option-value-name-ar-$index'), name);
-  await _type(tester, Key('option-value-code-$index'), code);
   if (price != null) {
     await _type(tester, Key('option-value-price-$index'), price);
   }
@@ -214,16 +229,18 @@ void main() {
   tearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
 
   group('search', () {
-    test('a value name finds the group that offers it', () {
+    test('search finds add-on values while keeping sizes off this page', () {
       final found = filterOptionGroups(const <AdminOptionGroup>[
         _sizes,
-      ], 'arge');
+        _addOns,
+      ], 'cheese');
       expect(found, hasLength(1));
+      expect(found.single.id, 'g-addons');
     });
 
-    test('a name that matches nothing empties the list', () {
+    test('the fixed size group is not shown on the add-ons page', () {
       expect(
-        filterOptionGroups(const <AdminOptionGroup>[_sizes], 'sugar'),
+        filterOptionGroups(const <AdminOptionGroup>[_sizes], 'large'),
         isEmpty,
       );
     });
@@ -275,8 +292,8 @@ void main() {
       _setViewport(tester);
       await _pumpPage(tester, canManage: true);
 
-      expect(find.text(S.addOptionGroup), findsOneWidget);
-      expect(find.text('Size'), findsOneWidget);
+      expect(find.text(S.addAddonGroup), findsOneWidget);
+      expect(find.text('Add-ons'), findsNWidgets(2));
       expect(find.text(S.delete), findsOneWidget);
       expect(find.text(S.edit), findsOneWidget);
     });
@@ -287,8 +304,8 @@ void main() {
       _setViewport(tester);
       await _pumpPage(tester, canManage: false);
 
-      expect(find.text('Size'), findsOneWidget);
-      expect(find.text(S.addOptionGroup), findsNothing);
+      expect(find.text('Add-ons'), findsNWidgets(2));
+      expect(find.text(S.addAddonGroup), findsNothing);
       expect(find.text(S.delete), findsNothing);
       expect(find.text(S.edit), findsNothing);
       expect(find.byType(AdminSelectionCheckBox), findsNothing);
@@ -300,7 +317,7 @@ void main() {
       _setViewport(tester);
       await _pumpPage(tester, canManage: false);
 
-      expect(find.text('Large'), findsOneWidget);
+      expect(find.text('Cheese'), findsOneWidget);
       // +3: الفارق فوق السعر الأساسي، لا سعر مطلق.
       expect(find.textContaining('3', findRichText: true), findsWidgets);
     });
@@ -313,15 +330,11 @@ void main() {
       final (saved, _) = await _pumpDialog(tester);
 
       await _type(tester, Key('option-group-name-ar'), 'Size');
-      await _type(tester, Key('option-group-code'), 'size');
       await _tap(tester, Key('option-group-required'));
 
       await _tap(tester, Key('option-group-add-value'));
-      await _fillValue(tester, 0, name: 'Small', code: 's');
-      await _fillValue(tester, 1, name: 'Large', code: 'l', price: '3');
-
-      // النطاق الافتراضي منتجات، فيُنتقى واحدًا وإلا رُفض الحفظ بلا هدف.
-      await _tap(tester, Key('admin-pickable-p1'));
+      await _fillValue(tester, 0, name: 'Small');
+      await _fillValue(tester, 1, name: 'Large', price: '3');
 
       await _tap(tester, Key('option-group-save'));
 
@@ -330,53 +343,52 @@ void main() {
       expect(group.selectionType, AdminOptionSelectionType.single);
       expect(group.minSelect, 1);
       expect(group.maxSelect, 1);
-      expect(group.productIds, <String>['p1']);
+      expect(group.productIds, isEmpty);
       expect(group.values[1].priceDelta, 3);
     });
 
-    testWidgets('a scope with nothing picked in it is refused', (tester) async {
-      final (saved, _) = await _pumpDialog(tester);
-
-      await _type(tester, Key('option-group-name-ar'), 'Size');
-      await _type(tester, Key('option-group-code'), 'size');
-      await _tap(tester, Key('option-group-add-value'));
-      await _fillValue(tester, 0, name: 'Small', code: 's');
-      await _fillValue(tester, 1, name: 'Large', code: 'l');
-
-      await _tap(tester, Key('option-group-save'));
-
-      expect(saved, isEmpty);
-      expect(find.text(S.scopeNeedsProducts), findsOneWidget);
-    });
-
-    testWidgets('an invalid code is refused before anything is written', (
+    testWidgets('a product option template can be saved before assignment', (
       tester,
     ) async {
       final (saved, _) = await _pumpDialog(tester);
 
       await _type(tester, Key('option-group-name-ar'), 'Size');
-      await _type(tester, Key('option-group-code'), 'Size 1');
+      await _tap(tester, Key('option-group-add-value'));
+      await _fillValue(tester, 0, name: 'Small');
+      await _fillValue(tester, 1, name: 'Large');
 
+      expect(find.text(S.optionGroupProductAssignmentHelper), findsOneWidget);
       await _tap(tester, Key('option-group-save'));
 
-      expect(saved, isEmpty);
-      expect(find.text(S.invalidOptionCode), findsOneWidget);
+      expect(saved, hasLength(1));
+      expect(saved.single.scope, AdminOptionGroupScope.products);
+      expect(saved.single.productIds, isEmpty);
     });
 
-    testWidgets('two values with the same code are refused', (tester) async {
+    testWidgets('codes are generated from names automatically', (tester) async {
       final (saved, _) = await _pumpDialog(tester);
 
-      await _type(tester, Key('option-group-name-ar'), 'Size');
-      await _type(tester, Key('option-group-code'), 'size');
-      await _tap(tester, Key('admin-pickable-p1'));
-      await _tap(tester, Key('option-group-add-value'));
-      await _fillValue(tester, 0, name: 'Small', code: 's');
-      await _fillValue(tester, 1, name: 'Large', code: 's');
+      await _type(tester, Key('option-group-name-ar'), 'إضافة جديدة');
+      await _fillValue(tester, 0, name: 'شوت إسبريسو');
 
       await _tap(tester, Key('option-group-save'));
 
-      expect(saved, isEmpty);
-      expect(find.text(S.duplicateOptionCode), findsOneWidget);
+      expect(saved, hasLength(1));
+      expect(saved.single.code, matches(RegExp(r'^[a-z_]+$')));
+      expect(saved.single.values.single.code, 'option_1');
+    });
+
+    testWidgets('one value is enough for a simple add-on', (tester) async {
+      final (saved, _) = await _pumpDialog(tester);
+
+      await _type(tester, Key('option-group-name-ar'), 'إضافة كريمة');
+      await _fillValue(tester, 0, name: 'كريمة', price: '2');
+
+      await _tap(tester, Key('option-group-save'));
+
+      expect(saved, hasLength(1));
+      expect(saved.single.values.single.nameAr, 'كريمة');
+      expect(saved.single.values.single.priceDelta, 2);
     });
 
     testWidgets('switching the scope keeps only the list that scope uses', (
@@ -428,12 +440,10 @@ void main() {
       final (saved, _) = await _pumpDialog(tester);
 
       await _type(tester, Key('option-group-name-ar'), 'Size');
-      await _type(tester, Key('option-group-code'), 'size');
-      await _tap(tester, Key('admin-pickable-p1'));
       await _tap(tester, Key('option-group-add-value'));
       await _tap(tester, Key('option-group-add-value'));
-      await _fillValue(tester, 0, name: 'Small', code: 's');
-      await _fillValue(tester, 1, name: 'Large', code: 'l');
+      await _fillValue(tester, 0, name: 'Small');
+      await _fillValue(tester, 1, name: 'Large');
 
       await _tap(tester, Key('option-group-save'));
 

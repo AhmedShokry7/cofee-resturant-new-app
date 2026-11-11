@@ -19,12 +19,12 @@ class OptionGroupPageHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AdminPageHeader(
-      title: S.optionGroups,
+      title: S.addonsPageTitle,
       subtitle: S.optionGroupsCount(count),
       actions: [
         if (onAdd != null)
           CustomBtn(
-            text: S.addOptionGroup,
+            text: S.addAddonGroup,
             onPressed: onAdd,
             leadingIcon: const Icon(AppIcons.add01, size: 18),
             height: 42,

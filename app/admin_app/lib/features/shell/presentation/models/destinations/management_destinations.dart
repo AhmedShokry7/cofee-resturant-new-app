@@ -74,7 +74,7 @@ List<AdminDestination> get managementDestinations => <AdminDestination>[
   // للمشروبات كلها أو لفئة أو لمنتجات بعينها، فهي لا تخصّ منتجًا واحدًا.
   AdminDestination(
     id: 'optionGroups',
-    label: S.optionGroups,
+    label: S.addonsPageTitle,
     icon: AppIcons.tag01,
     searchHint: S.searchOptionGroupsHint,
     permission: 'catalog.product.write',

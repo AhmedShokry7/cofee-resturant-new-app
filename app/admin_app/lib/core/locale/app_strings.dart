@@ -4979,16 +4979,19 @@ class S {
   // مجموعات الأحجام والإضافات: النطاق في 224، وقراءة اللوحة لما عطّله في 225.
   static String get optionGroups =>
       _ar ? 'الأحجام والإضافات' : 'Sizes & extras';
+  static String get addonsPageTitle => _ar ? 'الإضافات' : 'Add-ons';
+  static String get addAddonGroup => _ar ? 'إضافة جديدة' : 'Add an add-on';
+  static String get productSizesSection => _ar ? 'الأحجام' : 'Sizes';
+  static String get productAddonsSection => _ar ? 'الإضافات' : 'Add-ons';
   static String optionGroupsCount(int count) =>
       _ar ? '$count مجموعة' : '$count groups';
   static String get addOptionGroup => _ar ? 'إضافة مجموعة' : 'Add group';
   static String get editOptionGroup =>
-      _ar ? 'تعديل مجموعة الأحجام أو الإضافات' : 'Edit the size or extra group';
+      _ar ? 'تعديل مجموعة الإضافات' : 'Edit add-on group';
   static String get newOptionGroup =>
-      _ar ? 'مجموعة جديدة: حجم أو إضافة' : 'New group: a size or an extra';
-  static String get noOptionGroupsYet => _ar
-      ? 'لا توجد مجموعات أحجام أو إضافات بعد.'
-      : 'No size or extra groups yet.';
+      _ar ? 'مجموعة إضافات جديدة' : 'New add-on group';
+  static String get noOptionGroupsYet =>
+      _ar ? 'لم تضف أي مجموعات إضافات بعد.' : 'No add-on groups yet.';
   static String get noOptionGroupsFound =>
       _ar ? 'لا توجد مجموعات مطابقة.' : 'No matching groups.';
   static String get searchOptionGroupsHint =>
@@ -5047,9 +5050,13 @@ class S {
       _ar ? 'الاختيار منها إلزامي' : 'The customer must choose';
   static String get scopeSection =>
       _ar ? 'أين تظهر هذه المجموعة' : 'Where this group appears';
+  static String get productAssignmentSection =>
+      _ar ? 'ربط المجموعة بالمنتجات' : 'Assign this group to products';
   static String get scopeAllProducts => _ar ? 'كل المنتجات' : 'Every product';
   static String get scopeCategories => _ar ? 'فئات محددة' : 'Chosen categories';
   static String get scopeProducts => _ar ? 'منتجات محددة' : 'Chosen products';
+  static String get unassignedOptionTemplate =>
+      _ar ? 'قالب غير مربوط' : 'Unassigned template';
   static String get scopeHelper => _ar
       ? 'القاعدة هي التي تحلّ النطاق، فلا تختلف الشاشة عن طابِق نقاط البيع ولا عن سلّة العميل.'
       : 'The database resolves the scope, so the screen, the counter and the cart cannot disagree.';
@@ -5068,6 +5075,14 @@ class S {
   static String get scopeNeedsProducts => _ar
       ? 'اختر منتجًا واحدًا على الأقل، وإلا لم تظهر المجموعة لأحد.'
       : 'Pick at least one product, or the group shows nowhere.';
+  static String get optionGroupProductAssignmentHelper => _ar
+      ? 'عرّف المجموعة مرة واحدة هنا. اربطها بالمنتجات المناسبة من صفحة كل منتج.'
+      : 'Define this group once here, then attach it from each product page.';
+  static String get searchProductOptions =>
+      _ar ? 'ابحث عن حجم أو إضافة' : 'Search sizes or add-ons';
+  static String get noOptionsMatchSearch => _ar
+      ? 'لا توجد أحجام أو إضافات تطابق البحث.'
+      : 'No sizes or add-ons match your search.';
   static String scopeSelectedCount(int count) =>
       _ar ? 'المحدد: $count' : 'Selected: $count';
   static String get nothingMatchesSearch =>
@@ -5087,8 +5102,8 @@ class S {
   static String productOptionsTitle(String productName) =>
       _ar ? 'أحجام وإضافات $productName' : 'Sizes & extras — $productName';
   static String get productOptionsHelper => _ar
-      ? 'الأسعار هنا لهذا المشروب وحده؛ اترك السعر فارغًا ليُعمل سعر المجموعة.'
-      : 'Prices here apply to this drink only; leave one empty to use the group price.';
+      ? 'اختر الأحجام والإضافات التي تناسب هذا المنتج. سعر كل اختيار هنا خاص به.'
+      : 'Choose the sizes and add-ons for this product. Each price here is specific to it.';
   static String get appliesToThisProduct =>
       _ar ? 'يطبّق على هذا المشروب' : 'Applies to this drink';
   static String get groupDeltaLabel => _ar ? 'زيادة المجموعة' : 'Group add-on';

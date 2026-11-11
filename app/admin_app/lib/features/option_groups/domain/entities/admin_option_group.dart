@@ -1,4 +1,5 @@
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/features/option_groups/domain/entities/admin_default_sizes.dart';
 
 /// النطاق الذي تسري عليه مجموعة الخيارات، وهو عمود `applies_to` في 224.
 ///
@@ -170,6 +171,9 @@ class AdminOptionGroup {
   /// النطاق العام لا سقف له عند الفئة، فالرقم هنا وصفي فقط ويترك العدد الفعلي
   /// للقاعدة التي تحلّ النطاق.
   bool get isUniversal => scope == AdminOptionGroupScope.all;
+
+  bool get isSizeGroup =>
+      AdminDefaultSizes.isSizeGroup(code: code, nameAr: nameAr, nameEn: nameEn);
 
   AdminOptionGroup copyWith({
     String? id,

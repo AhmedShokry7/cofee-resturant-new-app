@@ -125,15 +125,8 @@ class OptionGroupDataDialog extends StatefulWidget {
 }
 
 class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
-  /// `^[a-z_]+$` كما يشترطه عمود `code` في 008 للمجموعة.
-  static final RegExp _groupCodePattern = RegExp(r'^[a-z_]+$');
-
-  /// `^[a-z0-9_]+$` كما يشترطه العمود نفسه لقيمة المجموعة.
-  static final RegExp _valueCodePattern = RegExp(r'^[a-z0-9_]+$');
-
   late final TextEditingController _nameArController;
   late final TextEditingController _nameEnController;
-  late final TextEditingController _codeController;
   late final TextEditingController _sortOrderController;
   late final TextEditingController _minSelectController;
   late final TextEditingController _maxSelectController;
@@ -159,7 +152,6 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
     final group = widget.initialGroup;
     _nameArController = TextEditingController(text: group?.nameAr ?? '');
     _nameEnController = TextEditingController(text: group?.nameEn ?? '');
-    _codeController = TextEditingController(text: group?.code ?? '');
     _sortOrderController = TextEditingController(
       text: (group?.sortOrder ?? 0).toString(),
     );
@@ -185,7 +177,6 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
   void dispose() {
     _nameArController.dispose();
     _nameEnController.dispose();
-    _codeController.dispose();
     _sortOrderController.dispose();
     _minSelectController.dispose();
     _maxSelectController.dispose();
@@ -224,7 +215,7 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
         (widget.initialGroup ??
                 const AdminOptionGroup(code: '', nameAr: '', nameEn: ''))
             .copyWith(
-              code: _codeController.text.trim(),
+              code: widget.initialGroup?.code ?? _newGroupCode(),
               nameAr: _nameArController.text.trim(),
               nameEn: _nameEnController.text.trim().isEmpty
                   ? _nameArController.text.trim()
@@ -266,22 +257,37 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
 
   List<AdminOptionValue> _values() {
     final rows = _drafts;
+    final usedCodes = <String>{};
     return <AdminOptionValue>[
       for (var index = 0; index < rows.length; index++)
-        AdminOptionValue(
-          id: rows[index].id,
-          code: rows[index].codeController.text.trim(),
-          nameAr: rows[index].nameArController.text.trim(),
-          nameEn: rows[index].nameEnController.text.trim().isEmpty
-              ? rows[index].nameArController.text.trim()
-              : rows[index].nameEnController.text.trim(),
-          priceDelta:
-              parseLocalizedNumber(rows[index].priceController.text) ?? 0,
-          sortOrder: index,
-          isDefault: rows[index].isDefault,
-          isActive: rows[index].isActive,
-        ),
+        _buildValue(rows[index], index, usedCodes),
     ];
+  }
+
+  AdminOptionValue _buildValue(
+    _ValueDraft draft,
+    int index,
+    Set<String> usedCodes,
+  ) {
+    final baseCode = _valueCode(draft, index);
+    var code = baseCode;
+    var suffix = 2;
+    while (!usedCodes.add(code)) {
+      code = '${baseCode}_$suffix';
+      suffix++;
+    }
+    return AdminOptionValue(
+      id: draft.id,
+      code: code,
+      nameAr: draft.nameArController.text.trim(),
+      nameEn: draft.nameEnController.text.trim().isEmpty
+          ? draft.nameArController.text.trim()
+          : draft.nameEnController.text.trim(),
+      priceDelta: parseLocalizedNumber(draft.priceController.text) ?? 0,
+      sortOrder: index,
+      isDefault: draft.isDefault,
+      isActive: draft.isActive,
+    );
   }
 
   /// يعيد جملة الخطأ أول ما يجد سببًا، أو null حين يصحّ كل شيء.
@@ -291,11 +297,6 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
   /// مخفيّ تحت الحقل الصحيح.
   String? _validate() {
     if (_nameArController.text.trim().isEmpty) return S.nameRequired;
-    final code = _codeController.text.trim();
-    if (code.isEmpty || !_groupCodePattern.hasMatch(code)) {
-      return S.invalidOptionCode;
-    }
-
     if (!_isSingle) {
       // العدد الأدنى هو المشتقّ الذي سيُكتب، فلا يُقارن به سقفٌ على رقمٍ لم
       // يُكتب: إلزام مع صفر مرفوع إلى واحد قبل الحفظ.
@@ -308,31 +309,20 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
       }
     }
 
-    // نطاق بلا هدف معناه مجموعة تُحفظ ولا يراها أحد: دالة الحلّ في 224 لا
-    // تختار منها شيئًا، فلا يُترك الحفظ ليكتشف الأدمن ذلك عند العميل.
+    // الفئة الفارغة لا تنتج أي منتج في دالة الحلّ؛ القالب product-scoped
+    // يسمح عمدًا بقائمة فارغة كي يُربط لاحقًا من صفحة المنتج.
     if (_scope == AdminOptionGroupScope.category && _categoryIds.isEmpty) {
       return S.scopeNeedsCategories;
     }
-    if (_scope == AdminOptionGroupScope.products && _productIds.isEmpty) {
-      return S.scopeNeedsProducts;
-    }
+    // مجموعة بلا منتجات تُحفظ كقالب خيارات، ثم يربطها الأدمن بالمنتجات
+    // المناسبة من حوار كل منتج.
 
-    if (_drafts.length < 2 && widget.initialGroup == null) {
-      // مجموعة بحجم واحد لا تقرر شيئًا: «صغير» وحده ليس اختيارًا يطرحه العميل.
-      return S.noOptionValuesYet;
-    }
-
-    final seenCodes = <String>{};
+    if (_drafts.isEmpty) return S.noOptionValuesYet;
     for (var index = 0; index < _drafts.length; index++) {
       final draft = _drafts[index];
       if (draft.nameArController.text.trim().isEmpty) {
         return localizeDigits(S.optionValueNeedsName(index + 1));
       }
-      final valueCode = draft.codeController.text.trim();
-      if (valueCode.isEmpty || !_valueCodePattern.hasMatch(valueCode)) {
-        return S.invalidOptionCode;
-      }
-      if (!seenCodes.add(valueCode)) return S.duplicateOptionCode;
       final priceText = draft.priceController.text.trim();
       if (priceText.isNotEmpty && parseLocalizedNumber(priceText) == null) {
         return S.invalidNumber;
@@ -340,6 +330,42 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
     }
 
     return null;
+  }
+
+  String _newGroupCode() {
+    final source = _nameEnController.text.trim().isEmpty
+        ? _nameArController.text
+        : _nameEnController.text;
+    final stem = source
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    final timestamp = DateTime.now().microsecondsSinceEpoch
+        .toRadixString(36)
+        .split('')
+        .map(
+          (digit) => '0123456789'.contains(digit)
+              ? String.fromCharCode(97 + int.parse(digit))
+              : digit,
+        )
+        .join();
+    return '${stem.isEmpty ? 'option_group' : stem}_$timestamp';
+  }
+
+  String _valueCode(_ValueDraft draft, int index) {
+    if (draft.id.isNotEmpty && draft.codeController.text.trim().isNotEmpty) {
+      return draft.codeController.text.trim();
+    }
+    final source = draft.nameEnController.text.trim().isEmpty
+        ? draft.nameArController.text
+        : draft.nameEnController.text;
+    final stem = source
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '_')
+        .replaceAll(RegExp(r'_+'), '_')
+        .replaceAll(RegExp(r'^_|_$'), '');
+    return stem.isEmpty ? 'option_${index + 1}' : stem;
   }
 
   void _addDraft() {
@@ -430,30 +456,18 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
                           ),
                         ),
                         const SizedBox(height: AppSizes.px10),
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              flex: 3,
-                              child: _field(
-                                key: const Key('option-group-code'),
-                                controller: _codeController,
-                                label: S.optionCodeLabel,
-                                hint: S.optionCodeHint,
-                                required: true,
-                              ),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: SizedBox(
+                            width: 220,
+                            child: _field(
+                              key: const Key('option-group-sort'),
+                              controller: _sortOrderController,
+                              label: S.sortOrder,
+                              hint: '0',
+                              keyboardType: TextInputType.number,
                             ),
-                            const SizedBox(width: AppSpacing.md),
-                            Expanded(
-                              child: _field(
-                                key: const Key('option-group-sort'),
-                                controller: _sortOrderController,
-                                label: S.sortOrder,
-                                hint: '0',
-                                keyboardType: TextInputType.number,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ]),
                       _section(S.selectionTypeSection, [
@@ -511,75 +525,81 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
                           ),
                         ],
                       ]),
-                      _section(S.scopeSection, [
-                        AdminSegmentedControl(
-                          options: <String>[
-                            S.scopeAllProducts,
-                            S.scopeCategories,
-                            S.scopeProducts,
-                          ],
-                          selected: switch (_scope) {
-                            AdminOptionGroupScope.all => S.scopeAllProducts,
-                            AdminOptionGroupScope.category => S.scopeCategories,
-                            AdminOptionGroupScope.products => S.scopeProducts,
-                          },
-                          onChanged: (value) => setState(() {
-                            _scope = switch (value) {
-                              _ when value == S.scopeAllProducts =>
-                                AdminOptionGroupScope.all,
-                              _ when value == S.scopeCategories =>
-                                AdminOptionGroupScope.category,
-                              _ => AdminOptionGroupScope.products,
-                            };
-                            _error = null;
-                          }),
-                        ),
-                        const SizedBox(height: AppSizes.px8),
-                        _helper(S.scopeHelper),
-                        if (_scope == AdminOptionGroupScope.category) ...[
-                          const SizedBox(height: AppSizes.px8),
-                          AdminPickableList(
-                            title: S.pickCategoriesTitle,
-                            items: [
-                              for (final category in widget.categories)
-                                AdminPickableItem(
-                                  id: category.id,
-                                  name: category.nameAr.trim().isEmpty
-                                      ? category.nameEn
-                                      : category.nameAr,
-                                  caption: S.productsCount(
-                                    category.productCount,
-                                  ),
-                                  isActive: category.isActive,
-                                ),
+                      if (widget.initialGroup == null)
+                        _section(S.productAssignmentSection, [
+                          _helper(S.optionGroupProductAssignmentHelper),
+                        ]),
+                      if (widget.initialGroup != null)
+                        _section(S.scopeSection, [
+                          AdminSegmentedControl(
+                            options: <String>[
+                              S.scopeAllProducts,
+                              S.scopeCategories,
+                              S.scopeProducts,
                             ],
-                            selectedIds: _categoryIds,
-                            onChanged: (next) =>
-                                setState(() => _categoryIds = next),
+                            selected: switch (_scope) {
+                              AdminOptionGroupScope.all => S.scopeAllProducts,
+                              AdminOptionGroupScope.category =>
+                                S.scopeCategories,
+                              AdminOptionGroupScope.products => S.scopeProducts,
+                            },
+                            onChanged: (value) => setState(() {
+                              _scope = switch (value) {
+                                _ when value == S.scopeAllProducts =>
+                                  AdminOptionGroupScope.all,
+                                _ when value == S.scopeCategories =>
+                                  AdminOptionGroupScope.category,
+                                _ => AdminOptionGroupScope.products,
+                              };
+                              _error = null;
+                            }),
                           ),
-                        ],
-                        if (_scope == AdminOptionGroupScope.products) ...[
                           const SizedBox(height: AppSizes.px8),
-                          AdminPickableList(
-                            title: S.pickProductsTitle,
-                            items: _productItems,
-                            selectedIds: _productIds,
-                            onChanged: (next) =>
-                                setState(() => _productIds = next),
-                          ),
-                        ],
-                        if (_scope != AdminOptionGroupScope.products) ...[
-                          const SizedBox(height: AppSizes.px8),
-                          AdminPickableList(
-                            title: S.excludedProductsTitle,
-                            items: _productItems,
-                            selectedIds: _excludedProductIds,
-                            onChanged: (next) =>
-                                setState(() => _excludedProductIds = next),
-                          ),
-                          _helper(S.excludedProductsHelper),
-                        ],
-                      ]),
+                          _helper(S.scopeHelper),
+                          if (_scope == AdminOptionGroupScope.category) ...[
+                            const SizedBox(height: AppSizes.px8),
+                            AdminPickableList(
+                              title: S.pickCategoriesTitle,
+                              items: [
+                                for (final category in widget.categories)
+                                  AdminPickableItem(
+                                    id: category.id,
+                                    name: category.nameAr.trim().isEmpty
+                                        ? category.nameEn
+                                        : category.nameAr,
+                                    caption: S.productsCount(
+                                      category.productCount,
+                                    ),
+                                    isActive: category.isActive,
+                                  ),
+                              ],
+                              selectedIds: _categoryIds,
+                              onChanged: (next) =>
+                                  setState(() => _categoryIds = next),
+                            ),
+                          ],
+                          if (_scope == AdminOptionGroupScope.products) ...[
+                            const SizedBox(height: AppSizes.px8),
+                            AdminPickableList(
+                              title: S.pickProductsTitle,
+                              items: _productItems,
+                              selectedIds: _productIds,
+                              onChanged: (next) =>
+                                  setState(() => _productIds = next),
+                            ),
+                          ],
+                          if (_scope != AdminOptionGroupScope.products) ...[
+                            const SizedBox(height: AppSizes.px8),
+                            AdminPickableList(
+                              title: S.excludedProductsTitle,
+                              items: _productItems,
+                              selectedIds: _excludedProductIds,
+                              onChanged: (next) =>
+                                  setState(() => _excludedProductIds = next),
+                            ),
+                            _helper(S.excludedProductsHelper),
+                          ],
+                        ]),
                       _section(S.optionValuesSection, [
                         for (var index = 0; index < _drafts.length; index++)
                           _valueRow(index),
@@ -647,18 +667,6 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                flex: 2,
-                child: _field(
-                  key: Key('option-value-code-$index'),
-                  controller: draft.codeController,
-                  label: S.optionCodeLabel,
-                  hint: 'large',
-                  required: true,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                flex: 3,
                 child: _field(
                   key: Key('option-value-name-ar-$index'),
                   controller: draft.nameArController,
@@ -670,7 +678,6 @@ class _OptionGroupDataDialogState extends State<OptionGroupDataDialog> {
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                flex: 3,
                 child: _field(
                   key: Key('option-value-name-en-$index'),
                   controller: draft.nameEnController,

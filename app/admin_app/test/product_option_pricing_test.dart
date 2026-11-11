@@ -362,6 +362,23 @@ void main() {
       expect(find.text('Halted'), findsNothing);
     });
 
+    testWidgets('search finds an option group by one of its values', (
+      tester,
+    ) async {
+      await _pumpDialog(tester, _repository());
+      final search = find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == S.searchProductOptions,
+      );
+
+      await tester.enterText(search, 'Milk');
+      await tester.pumpAndSettle();
+
+      expect(find.text('Extras'), findsOneWidget);
+      expect(find.text('Size'), findsNothing);
+    });
+
     testWidgets('typing moves the preview live', (tester) async {
       await _pumpDialog(tester, _repository());
 

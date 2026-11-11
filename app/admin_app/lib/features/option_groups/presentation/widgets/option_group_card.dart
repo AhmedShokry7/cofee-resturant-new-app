@@ -91,7 +91,7 @@ class OptionGroupCard extends StatelessWidget {
                     runSpacing: AppSizes.px4,
                     children: [
                       AdminStatusBadge(
-                        label: _scopeLabel(group.scope),
+                        label: _scopeLabel(group),
                         color: group.isActive
                             ? AppColor.adminAccent
                             : AppColor.adminWarning,
@@ -173,11 +173,17 @@ class OptionGroupCard extends StatelessWidget {
     );
   }
 
-  static String _scopeLabel(AdminOptionGroupScope scope) => switch (scope) {
-    AdminOptionGroupScope.all => S.scopeAllProducts,
-    AdminOptionGroupScope.category => S.scopeCategories,
-    AdminOptionGroupScope.products => S.scopeProducts,
-  };
+  static String _scopeLabel(AdminOptionGroup group) {
+    if (group.scope == AdminOptionGroupScope.products &&
+        group.productIds.isEmpty) {
+      return S.unassignedOptionTemplate;
+    }
+    return switch (group.scope) {
+      AdminOptionGroupScope.all => S.scopeAllProducts,
+      AdminOptionGroupScope.category => S.scopeCategories,
+      AdminOptionGroupScope.products => S.scopeProducts,
+    };
+  }
 }
 
 /// أسطر الخيارات بأسعارها، مع سطر أخير يسمّي ما لم يُعرض.

@@ -18,17 +18,18 @@ List<AdminOptionGroup> filterOptionGroups(
   String search,
 ) => [
   for (final group in groups)
-    if (matchesSearchText(
-      query: search,
-      nameAr: group.nameAr,
-      nameEn: group.nameEn,
-      descriptionAr: group.code,
-      descriptionEn: group.values.map((value) => value.nameEn).join(' '),
-    ))
+    if (!group.isSizeGroup &&
+        matchesSearchText(
+          query: search,
+          nameAr: group.nameAr,
+          nameEn: group.nameEn,
+          descriptionAr: group.code,
+          descriptionEn: group.values.map((value) => value.nameEn).join(' '),
+        ))
       group,
 ];
 
-/// شبكة بطاقات مجموعات الأحجام والإضافات.
+/// شبكة بطاقات الإضافات؛ الأحجام القياسية تُدار من صفحة المنتج.
 class OptionGroupRecords extends StatelessWidget {
   const OptionGroupRecords({
     super.key,

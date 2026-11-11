@@ -1,4 +1,5 @@
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/features/option_groups/domain/entities/admin_default_sizes.dart';
 import 'package:admin_app/features/option_groups/domain/entities/admin_option_group.dart';
 import 'package:admin_app/features/option_groups/domain/entities/admin_product_option_value.dart';
 
@@ -44,6 +45,9 @@ class AdminProductOptionGroup {
 
   /// لا عرض بلا خيارات: مجموعة فارغة لا تعطي المشروب شيئًا.
   bool get hasValues => values.isNotEmpty;
+
+  bool get isSizeGroup =>
+      AdminDefaultSizes.isSizeGroup(code: code, nameAr: nameAr, nameEn: nameEn);
 
   String nameFor(AppLanguage language) => language.isArabic ? nameAr : nameEn;
 

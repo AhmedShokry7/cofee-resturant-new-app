@@ -43,10 +43,12 @@ class ProductOptionsDialog extends StatefulWidget {
 
 class _ProductOptionsDialogState extends State<ProductOptionsDialog> {
   final ProductOptionDraft _draft = ProductOptionDraft();
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void dispose() {
     _draft.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -77,6 +79,8 @@ class _ProductOptionsDialogState extends State<ProductOptionsDialog> {
               ProductOptionsDialogBody(
                 state: state,
                 controllers: _draft.controllers,
+                searchController: _searchController,
+                onSearchChanged: (_) => setState(() {}),
                 onAttachChanged: (group, attached) =>
                     attachProductOptionGroup(context, group, attached),
                 onReset: (value) =>
