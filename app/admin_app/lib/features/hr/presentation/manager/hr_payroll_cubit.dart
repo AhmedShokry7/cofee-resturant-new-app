@@ -124,6 +124,38 @@ class HrPayrollCubit extends Cubit<HrPayrollState> {
     ),
   );
 
+  /// معاينة الفترة قبل التوليد أو على دورة قائمة: قراءة نقية من القاعدة.
+  Future<void> loadPreview({required int periodYear, required int periodMonth}) async {
+    emit(state.copyWith(
+      previewStatus: HrLoadStatus.loading,
+      clearPreviewFailure: true,
+    ));
+    try {
+      emit(
+        state.copyWith(
+          previewStatus: HrLoadStatus.ready,
+          preview: await _repository.previewPayroll(
+            periodYear: periodYear,
+            periodMonth: periodMonth,
+          ),
+          clearPreviewFailure: true,
+        ),
+      );
+    } catch (error) {
+      emit(
+        state.copyWith(
+          previewStatus: HrLoadStatus.failure,
+          previewFailure: hrRefusalOf(error),
+        ),
+      );
+    }
+  }
+
+  /// إغلاق فترة صُرفت: خاتم نهائي، ثم تُعاد الدورة المفتوحة بحالتها الجديدة.
+  Future<bool> closePeriod({required String runId, String? note}) => _write(
+        () => _repository.closePeriod(runId: runId, note: note),
+      );
+
   Future<bool> _write(Future<Object?> Function() send) async {
     emit(state.copyWith(writing: HrWriteStatus.sending, clearFailure: true));
     final failure = await hrAttempt(send);

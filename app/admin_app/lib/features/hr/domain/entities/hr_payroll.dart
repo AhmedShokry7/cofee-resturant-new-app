@@ -145,6 +145,8 @@ class HrPayrollRun {
     required this.note,
     required this.scope,
     this.statements = const <HrPayrollStatement>[],
+    this.calcSeq,
+    this.closedAt,
   });
 
   final String runId;
@@ -165,6 +167,16 @@ class HrPayrollRun {
   /// `brand` لمن يملك كل الفروع، و`branches` لمن يقرأ نطاقه فقط.
   final String scope;
   final List<HrPayrollStatement> statements;
+
+  /// إصدار الحساب الحقيقي من 242: يزيد مع كل توليد للدورة، والقسائم تحمل
+  /// `'hr-' || calc_seq`. `null` في ردّ قديم قبل المهاجرة.
+  final int? calcSeq;
+
+  /// خاتم إقفال الفترة من 242: موجب يعني التصحيح اللاحق ممنوع على قسائمها.
+  final DateTime? closedAt;
+
+  bool get isClosed => closedAt != null;
+  bool get isCloseable => isPaid && !isClosed;
 
   bool get isCalculated => status == 'calculated';
   bool get isApproved => status == 'approved';
@@ -207,5 +219,7 @@ class HrPayrollRun {
     statements: hrMaps(json['statements'])
         .map(HrPayrollStatement.fromJson)
         .toList(),
+    calcSeq: json['calc_seq'] == null ? null : hrInt(json['calc_seq']),
+    closedAt: json['closed_at'] == null ? null : hrDate(json['closed_at']),
   );
 }

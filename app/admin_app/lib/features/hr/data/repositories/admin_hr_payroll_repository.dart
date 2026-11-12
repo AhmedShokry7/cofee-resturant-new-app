@@ -1,6 +1,7 @@
 import 'package:admin_app/core/services/supabase_service.dart';
 import 'package:admin_app/features/hr/data/hr_rpc.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_payroll.dart';
+import 'package:admin_app/features/hr/domain/entities/hr_payroll_preview.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_receipt.dart';
 import 'package:admin_app/features/hr/domain/repositories/hr_payroll_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -131,6 +132,34 @@ class AdminHrPayrollRepository implements HrPayrollRepository {
           'p_reason': reason,
           'p_effective_date': HrRpc.day(effectiveDate),
         },
+      ),
+    );
+  }
+
+  @override
+  Future<HrPayrollPreview> previewPayroll({
+    required int periodYear,
+    required int periodMonth,
+  }) async {
+    return HrPayrollPreview.fromJson(
+      await HrRpc.object(
+        _supabase,
+        'admin_hr_preview_payroll',
+        params: <String, dynamic>{
+          'p_period_year': periodYear,
+          'p_period_month': periodMonth,
+        },
+      ),
+    );
+  }
+
+  @override
+  Future<HrReceipt> closePeriod({required String runId, String? note}) async {
+    return HrReceipt.fromJson(
+      await HrRpc.object(
+        _supabase,
+        'admin_hr_close_payroll_period',
+        params: <String, dynamic>{'p_run_id': runId, 'p_note': note},
       ),
     );
   }

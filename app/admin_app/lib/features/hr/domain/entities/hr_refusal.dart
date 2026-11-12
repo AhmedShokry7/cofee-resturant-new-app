@@ -131,6 +131,10 @@ final Map<String, String Function()> _hrMessages = <String, String Function()>{
   'payroll run not found': () => S.hrRunNotFound,
   'only a calculated run can be approved': () => S.hrOnlyCalculatedApprovable,
   'only an approved run can be marked paid': () => S.hrOnlyApprovedPayable,
+  'this run has no statements': () => S.hrRunEmpty,
+  'the payroll period is already closed': () => S.hrPeriodClosed,
+  'only a paid run can be closed': () => S.hrCloseNeedsPaid,
+  'the payroll preview needs all-branch scope': () => S.hrPayrollPreviewNeedsScope,
   'only a draft or calculated run can be cancelled': () =>
       S.hrRunNotCancellable,
   'the person who calculated this run cannot approve it': () =>

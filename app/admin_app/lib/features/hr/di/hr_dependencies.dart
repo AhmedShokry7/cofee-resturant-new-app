@@ -1,10 +1,12 @@
 import 'package:admin_app/features/hr/data/repositories/admin_hr_leave_repository.dart';
 import 'package:admin_app/features/hr/data/repositories/admin_hr_money_repository.dart';
+import 'package:admin_app/features/hr/data/repositories/admin_hr_offboarding_repository.dart';
 import 'package:admin_app/features/hr/data/repositories/admin_hr_payroll_repository.dart';
 import 'package:admin_app/features/hr/data/repositories/admin_hr_people_repository.dart';
 import 'package:admin_app/features/hr/data/repositories/admin_hr_time_repository.dart';
 import 'package:admin_app/features/hr/domain/repositories/hr_leave_repository.dart';
 import 'package:admin_app/features/hr/domain/repositories/hr_money_repository.dart';
+import 'package:admin_app/features/hr/domain/repositories/hr_offboarding_repository.dart';
 import 'package:admin_app/features/hr/domain/repositories/hr_payroll_repository.dart';
 import 'package:admin_app/features/hr/domain/repositories/hr_people_repository.dart';
 import 'package:admin_app/features/hr/domain/repositories/hr_time_repository.dart';
@@ -19,6 +21,7 @@ abstract final class HrDependencies {
   static HrLeaveRepository? _leave;
   static HrPayrollRepository? _payroll;
   static HrMoneyRepository? _money;
+  static HrOffboardingRepository? _offboarding;
 
   /// الأدلة والملفات ولوحة HR وسياسة `hr.settings`.
   static HrPeopleRepository get people => _people ??= AdminHrPeopleRepository();
@@ -35,4 +38,8 @@ abstract final class HrDependencies {
 
   /// السلف والتسويات وفروق صناديق الكاشير.
   static HrMoneyRepository get money => _money ??= AdminHrMoneyRepository();
+
+  /// إنهاء الخدمة: الحالة وقائمة خطواتها وقراراتها.
+  static HrOffboardingRepository get offboarding =>
+      _offboarding ??= AdminHrOffboardingRepository();
 }

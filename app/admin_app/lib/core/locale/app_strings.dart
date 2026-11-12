@@ -5190,33 +5190,6 @@ class S {
       ? 'تحديد كل الباقات المطابقة ($count)'
       : 'Select all matching bundles ($count)';
 
-  // ---------- Customer preview ----------
-  static String get customerPreview =>
-      _ar ? 'معاينة تطبيق العميل' : 'Customer preview';
-  static String get customerPreviewHint =>
-      _ar ? 'معاينة تطبيق العميل' : 'Preview the customer app';
-
-  /// لغة الهاتف المعروض: اللوحة بلغة والمعاينة بأخرى عند الحاجة.
-  static String get previewPhoneLanguage =>
-      _ar ? 'لغة الهاتف' : 'Phone language';
-
-  static String get previewBannersShown =>
-      _ar ? 'بانرات منشورة في وقتها' : 'Banners published for this time';
-  static String get previewCategoriesShown =>
-      _ar ? 'تصنيفات نشطة' : 'Active categories';
-
-  /// تسمية صف المنتجات في سكة المعاينة: الأرقام تُطبع بجانبها بأرقام اللغة،
-  /// فلا تُكتب داخل النص.
-  static String get previewProductsShown =>
-      _ar ? 'منتجات معروضة' : 'Products shown';
-  static String get previewFeaturedShown =>
-      _ar ? 'صفوف الأكثر طلبًا' : 'Featured rows';
-  static String get previewBundlesShown =>
-      _ar ? 'باقات منشورة' : 'Published bundles';
-
-  /// الفرع الذي تُقرأ عنه الأسعار والطقس: تطبيق العميل يسأل عن فرع قبل أن
-  /// يحسب سعرًا أو يقترح موسمًا.
-  static String get previewBranch => _ar ? 'فرع المعاينة' : 'Preview branch';
   static String get previewBranchNone =>
       _ar ? 'بلا فرع: الأسعار الأساسية' : 'No branch: base prices';
 
@@ -5231,393 +5204,11 @@ class S {
       ? 'الفرع بلا إحداثيات، فلا قراءة طقس'
       : 'The branch has no coordinates, so there is no weather read';
 
-  /// المقاطع التي فشلت قراءتها: الشاشة تبقى كما هي والسبب يُقال هنا.
+/// المقاطع التي فشلت قراءتها: الشاشة تبقى كما هي والسبب يُقال هنا.
   static String get previewDegradedTitle =>
       _ar ? 'مقاطع لم تُقرأ' : 'Sections that did not load';
 
-  static String get previewNotShownTitle =>
-      _ar ? 'ما لا يعرضه المحاكي' : 'What the simulator does not show';
-  static String get previewNotShownAccount => _ar
-      ? 'سلة الزبون ومفضلته وحسابه: تُقرأ من جهازه، واللوحة لا تملك نسخة منها.'
-      : 'Cart, favourites and account data live on the customer device.';
-  static String get previewNotShownPersonalisation => _ar
-      ? 'ترتيب الترشيحات يقف على الطقس وحده: مفضّلة الزبون لا تُقرأ من اللوحة.'
-      : 'Recommendations rank on weather only: a customer favourite list is not readable here.';
-  static String get previewNotShownTheme => _ar
-      ? 'ألوان تطبيق العميل وخطوطه: المحاكي يرسم الشاشات بثيم اللوحة.'
-      : 'The customer app theme and fonts: the simulator draws on the dashboard theme.';
-  static String get previewNotShownDetails => _ar
-      ? 'تفاصيل المنتج: المحاكي يسرد المنتجات ولا يفتح صفحة واحد منها.'
-      : 'Product details: the simulator lists products and does not open one.';
-
-  // ---------- App builder ----------
-
-  /// إصدار محدد في القائمة لا يقرأ المحرّر ملفّه: صف مفقود أو صلاحية ناقصة،
-  /// فيُقال السبب بدل أن يُعرض الهاتف بالمسودة كأن الرجوع تمّ.
-  static String get builderVersionMissing => _ar
-      ? 'ملفّ هذا الإصدار لم يُقرأ، فلن يُعرض ولن يُرجَع إليه.'
-      : 'That version’s file could not be read, so it is not shown or restored.';
-
-  /// وجهة الشريط الجانبي: الموضع الذي يُبنى منه تصميم تطبيق العميل.
-  static String get appBuilder =>
-      _ar ? 'مصمم تطبيق العميل' : 'Customer app builder';
-
-  static String get appBuilderHint => _ar
-      ? 'اسحب عناصر إلى شاشة الهاتف وراجع خصائصها قبل النشر'
-      : 'Drag elements onto the phone screen and review their properties before publishing';
-
-  static String get builderModeEdit => _ar ? 'تحرير' : 'Edit';
-
-  /// وضع الزبون: النقر يعمل كما في جهازه، والبناء لا يعمل.
-  static String get builderModePreview => _ar ? 'مشاهدة' : 'Preview';
-
-  static String get builderSourceDraft => _ar ? 'المسودة' : 'Draft';
-
-  static String get builderSourcePublished => _ar ? 'المنشور' : 'Published';
-
-  static String get builderSourceVersion => _ar ? 'إصدار' : 'Version';
-
-  static String get builderPage => _ar ? 'الصفحة' : 'Page';
-
-  /// اسم صفحة في قائمة المحرّر: تسميات الهاتف نفسها، فلا يسمّي الموظف شاشة
-  /// بغير ما يقرؤها الزبون في شريط التنقل.
-  static String builderPageName(String page) => switch (page) {
-    'home' => _ar ? 'الرئيسية' : 'Home',
-    'categories' => _ar ? 'التصنيفات' : 'Categories',
-    'search' => _ar ? 'البحث' : 'Search',
-    'product_details' => _ar ? 'تفاصيل المنتج' : 'Product details',
-    'cart' => _ar ? 'السلة' : 'Cart',
-    'favourites' => _ar ? 'المفضلة' : 'Favorites',
-    'settings' => _ar ? 'الإعدادات' : 'Settings',
-    _ => page,
-  };
-
-  static String get builderUndo => _ar ? 'تراجع' : 'Undo';
-
-  static String get builderRedo => _ar ? 'إعادة' : 'Redo';
-
-  static String get builderSave => _ar ? 'حفظ المسودة' : 'Save draft';
-
-  static String get builderSaving => _ar ? 'جارٍ الحفظ' : 'Saving';
-
-  static String get builderPublish => _ar ? 'نشر' : 'Publish';
-
-  static String get builderPublishing => _ar ? 'جارٍ النشر' : 'Publishing';
-
-  static String get builderDiscard =>
-      _ar ? 'تجاهل ما لم يُحفظ' : 'Discard changes';
-
-  static String get builderDirty => _ar ? 'غير محفوظ' : 'Unsaved changes';
-
-  static String get builderClean => _ar ? 'محفوظ' : 'Saved';
-
-  static String get builderZoomIn => _ar ? 'تكبير' : 'Zoom in';
-
-  static String get builderZoomOut => _ar ? 'تصغير' : 'Zoom out';
-
-  static String get builderZoomReset => _ar ? 'حجم الشاشة' : 'Reset zoom';
-
-  static String get builderLibrary => _ar ? 'مكتبة العناصر' : 'Element library';
-
-  static String get builderLibraryNote => _ar
-      ? 'اسحب عنصرًا إلى اللوحة، أو اضغطه فيُضاف في آخر الصفحة.'
-      : 'Drag an element onto the canvas, or tap it to append it to the page.';
-
-  static String get builderTree => _ar ? 'طبقات الصفحة' : 'Page layers';
-
-  /// عائلات مكتبة العناصر، بأسمائها في [WidgetCategory] لا بأصناف Dart.
-  static String builderFamily(String category) => switch (category) {
-    'layout' => _ar ? 'التخطيط' : 'Layout',
-    'content' => _ar ? 'المحتوى' : 'Content',
-    'restaurant' => _ar ? 'مقاطع المطعم' : 'Restaurant',
-    _ => _ar ? 'التنقّل' : 'Navigation',
-  };
-
-  static String get builderProperties =>
-      _ar ? 'خصائص العنصر' : 'Element properties';
-
-  static String get builderNoSelection => _ar
-      ? 'اختر عنصرًا من اللوحة أو من الطبقات لتظهر خصائصه.'
-      : 'Select an element on the canvas or in the layers to see its properties.';
-
-  static String get builderNoLayers => _ar
-      ? 'الصفحة بلا طبقات: أضف عناصر من المكتبة.'
-      : 'This page has no layers yet: add elements from the library.';
-
-  static String get builderIssues => _ar ? 'قبل النشر' : 'Before publishing';
-
-  static String get builderIssuesClean => _ar
-      ? 'لا موانع: المستند صالح للنشر.'
-      : 'Nothing blocks publishing: the document is valid.';
-
-  static String get builderVersions => _ar ? 'الإصدارات' : 'Versions';
-
-  static String get builderNoVersions =>
-      _ar ? 'لا إصدار منشور بعد.' : 'No published version yet.';
-
-  static String get builderInspect => _ar ? 'استعراض' : 'Inspect';
-
-  static String get builderRestore => _ar ? 'الرجوع إليه' : 'Restore';
-
-  static String builderVersionLabel(int number) =>
-      _ar ? 'الإصدار $number' : 'Version $number';
-
-  // ---------------------------------------------------------------------
-  // قوالب التصميم: معرض يفتح المحرّر على ترتيب جاهز، وحافظة لما أعجب صاحبه.
-  // ---------------------------------------------------------------------
-
-  static String get builderTemplates => _ar ? 'القوالب' : 'Templates';
-
-  static String get builderTemplatesNote => _ar
-      ? 'القالب ترتيبٌ وألوان على ما هو مفتوح الآن؛ لا ينشر شيئًا، والتراجع عنه زرّ التراجع.'
-      : 'A template rearranges and recolours what is open now. It publishes nothing, and undo takes it back.';
-
-  static String get builderBuiltinTemplates =>
-      _ar ? 'قوالب جاهزة' : 'Built-in templates';
-
-  static String get builderSavedTemplates => _ar ? 'قوالبك' : 'Your templates';
-
-  static String get builderNoSavedTemplates => _ar
-      ? 'لم تحفظ قالبًا بعد. رتّب الصفحة كما تعجبك ثم اضغط «حفظ كقالب».'
-      : 'No saved template yet. Arrange the page, then press “Save as template”.';
-
-  static String get builderApplyTemplate => _ar ? 'تطبيق' : 'Apply';
-
-  static String get builderSaveAsTemplate =>
-      _ar ? 'حفظ كقالب' : 'Save as template';
-
-  static String get builderTemplateNameHint =>
-      _ar ? 'اسم القالب' : 'Template name';
-
-  static String get builderDeleteTemplate =>
-      _ar ? 'حذف القالب' : 'Delete template';
-
-  /// المحرّر بلا مستند لا يُطبّق عليه شيء — لا قالب ولا قسم.
-  static String get builderNoDocument => _ar
-      ? 'لا مستند مفتوح بعد؛ احفظ أو افتح المسودة أولًا.'
-      : 'No document is open yet; load or create the draft first.';
-
-  static String get builderTemplateNameMissing => _ar
-      ? 'اكتب اسمًا للقالب قبل حفظه.'
-      : 'Give the template a name before saving.';
-
-  static String get builderTemplateMissing => _ar
-      ? 'القالب لم يصل من القاعدة: ربما حُذف بعد أن عُرض.'
-      : 'The template did not come back from the database: it may have been deleted.';
-
-  /// النشر ممنوع قبل أن يوافق المدقّق: يُقال السبب لا يُترك الزرّ معتمًا صامتًا.
-  static String get builderPublishBlocked => _ar
-      ? 'النشر ممتنع ما بقي مانع واحد في قائمة «قبل النشر».'
-      : 'Publishing stays blocked while any issue remains in “Before publishing”.';
-
-  /// صلاحيات النشر والتحرير في القاعدة، والزرّ المطفأ يسمّي الناقص منها:
-  /// الموظف الذي يرى «تحتاج صلاحية» لا يظن أن الشجرة هي المشكلة.
-  static String get builderPublishNeedsPermission => _ar
-      ? 'النشر والرجوع يحتاجان صلاحية «نشر تصميم التطبيق».'
-      : 'Publishing and rollback need the “Publish app design” permission.';
-
-  static String get builderNeedsPermission => _ar
-      ? 'هذه اللوحة تُعرض وتُقرأ، والتحرير يحتاج صلاحية «تحرير تصميم التطبيق».'
-      : 'This panel shows and reads; editing needs the “Edit app design” permission.';
-
-  /// النشر من وضع البناء وعلى صفحة تُحرَّر: من يقف على المشاهدة أو على شاشة
-  /// مقفلة يقرأ الموضع، لا أن رقم الإصدار ناقص.
-  static String get builderPublishNeedsEdit => _ar
-      ? 'النشر يكون من وضع البناء وعلى صفحة قابلة للتحرير.'
-      : 'Publishing happens from build mode on an editable page.';
-
-  /// التنقل في وضع التحرير يبدّل الصفحة المحرَّرة، والشاشات المفتوحة فوقها
-  /// تعمل عند الزبون في وضع المشاهدة.
-  static String get builderPreviewOnlyNavigation => _ar
-      ? 'هذه الضغطة تفتح شاشة عند الزبون في وضع المشاهدة؛ اللوحة تعرض صفحة واحدة لكل تحرير.'
-      : 'That tap opens a screen for the customer in preview mode; the editor keeps one page per edit.';
-
-  static String get builderHiddenBadge => _ar ? 'مخفي' : 'Hidden';
-
-  static String get builderLockedBadge => _ar ? 'أساس' : 'Fixed';
-
-  static String get builderRename => _ar ? 'إعادة تسمية' : 'Rename';
-
-  static String get builderRenameTitle =>
-      _ar ? 'اسم الطبقة في الشجرة' : 'Layer name in the tree';
-
-  /// الاسم الذي يُعدَّل هو معرّف العقدة في المستند، لا نص يقرأه الزبون.
-  static String get builderRenameNote => _ar
-      ? 'اسم داخلي يحدّد الطبقة في اللوحة وحدها، ولا يطبعه تطبيق العميل.'
-      : 'An internal name that only identifies the layer in the dashboard; the customer app never prints it.';
-
-  static String get builderDuplicate => _ar ? 'تكرار' : 'Duplicate';
-
-  static String get builderHide => _ar ? 'إخفاء' : 'Hide';
-
-  static String get builderShow => _ar ? 'إظهار' : 'Show';
-
-  static String get builderMoveUp => _ar ? 'أعلى' : 'Move up';
-
-  static String get builderMoveDown => _ar ? 'أسفل' : 'Move down';
-
-  /// خاصية يملؤها حال الهاتف، كالتصنيف الذي يقف عليه الموظف الآن.
-  static String get builderSuppliedNote => _ar
-      ? 'يحدّده ما يفعله الهاتف الآن، لا المستند.'
-      : 'Set by what the phone is doing now, not by the document.';
-
-  static String get builderCategoryField => _ar ? 'التصنيف' : 'Category';
-
-  static String get builderProductField => _ar ? 'المنتج' : 'Product';
-
-  /// حقل لا يُقبل فراغًا: نص فارغ في مستند منشور يعني سطرًا فارغًا عند الزبون.
-  static String get builderRequiredField =>
-      _ar ? 'لا يُترك هذا الحقل فارغًا.' : 'This field cannot be left empty.';
-
-  /// رقم صحيح مطلوب، لأن المكوّن عدّدتُ لا نصه.
-  static String get builderCountRequired =>
-      _ar ? 'رقم صحيح مطلوب.' : 'A whole number is required.';
-
-  /// حدّا العدد قرار المطوّر في السجل، والموظف يُخبَر بهما لا يُمنع صامتًا.
-  static String builderCountRange(String min, String max) =>
-      _ar ? 'الرقم بين $min و$max.' : 'Enter a number between $min and $max.';
-
-  /// لا قيمة للمسودة: الخاصية تُترك غائبة، والمكوّن يرسم بقيمة المطوّر.
-  static String get builderNoValue => _ar ? 'بلا قيمة' : 'No value';
-
-  static String get builderLevelEditable =>
-      _ar ? 'يُحرَّر كاملًا' : 'Fully editable';
-
-  static String get builderLevelPartial => _ar ? 'شكله فقط' : 'Appearance only';
-
-  static String get builderLevelLocked =>
-      _ar ? 'تحت سيطرة المطوّر' : 'Developer controlled';
-
-  static String get builderPageEditable => _ar ? 'تُحرَّر' : 'Editable';
-
-  /// سبب قفل الصفحة يُقال للموظف، فلا تُترك أمامه صفحة بيضاء بلا سبب.
-  static String builderPageLockReason(String lock) => switch (lock) {
-    'perCustomerSession' =>
-      _ar ? 'مقفولة: بياناتها من جلسة الزبون وحده — سلّته ومفضلته وحسابه.' : 'Locked: its data comes from the customer session alone — cart, favourites, account.',
-    'developerOnly' =>
-      _ar ? 'مقفولة: منطقها يُبنى من صفوف المنتج وخياراته، لا من شكل يُحرَّر.' : 'Locked: it is built from the product row and its options, not from an editable layout.',
-    _ => _ar ? 'مقفولة' : 'Locked',
-  };
-
-  /// سبب رفض عملية على الشجرة، بمفتاح [DesignEditRejection.name].
-  static String builderRejection(String code) => switch (code) {
-    'unknownType' => _ar ? 'عنصر لا يعرفه المحرّر، فلا رسم له ولا يُضاف.' : 'The editor does not know that element, so it has no rendering and cannot be added.',
-    'missingNode' =>
-      _ar
-          ? 'العنصر المطلوب ليس في هذه الصفحة.'
-          : 'That element is not on this page.',
-    'parentIsNotContainer' =>
-      _ar
-          ? 'هذا العنصر لا يقبل أبناء في المحرّر.'
-          : 'That element takes no children in the editor.',
-    'parentRefusesChild' =>
-      _ar
-          ? 'الأب لا يذكر هذا العنصر بين أبنائه المسموحين.'
-          : 'That parent does not allow this element as a child.',
-    'childRefusesParent' =>
-      _ar
-          ? 'العنصر لا يقبل هذا الأب.'
-          : 'That element does not accept this parent.',
-    'lockedComponent' =>
-      _ar
-          ? 'مكوّن أساس: لا يُنقل ولا يُخفى ولا يُحذف ولا يُسمَّى.'
-          : 'A fixed element: it is never moved, hidden, deleted or renamed.',
-    'intoOwnDescendant' =>
-      _ar
-          ? 'لا تُفلت حاوية داخل أحد أبنائها.'
-          : 'A container cannot be dropped inside its own child.',
-    'containerNotEmpty' =>
-      _ar
-          ? 'افرغ الحاوية أولًا: لا يختفي ابن بالحذف بلا إعلان.'
-          : 'Empty that container first: a child must not disappear by delete.',
-    'previewMode' =>
-      _ar ? 'اللوحة في وضع المشاهدة: البناء موقوف والنقر يعمل كما عند الزبون.' : 'The dashboard is in preview mode: building is paused and taps work as they do for the customer.',
-    'pageNotEditable' => _ar ? 'هذه الصفحة مقفولة.' : 'That page is locked.',
-    'emptyId' =>
-      _ar
-          ? 'اسم الطبقة لا يُترك فارغًا.'
-          : 'The layer name cannot be left empty.',
-    'duplicateId' =>
-      _ar
-          ? 'اسم أخذته طبقة أخرى في المستند.'
-          : 'Another layer in the document already has that name.',
-    _ => _ar ? 'العملية مرفوضة.' : 'The edit was rejected.',
-  };
-
-  /// مانع نشر واحد بمفتاح [DesignIssueCode.name].
-  static String builderIssue(String code) => switch (code) {
-    'unknownType' => _ar ? 'نوع لا يعرفه المحرّر' : 'Unknown element type',
-    'missingRoot' => _ar ? 'صفحة بلا جذر' : 'Page without a root',
-    'wrongRootType' => _ar ? 'نوع جذر الصفحة خطأ' : 'Wrong page root type',
-    'mandatoryMissing' =>
-      _ar ? 'مكوّن أساس مفقود' : 'A fixed element is missing',
-    'mandatoryHidden' => _ar ? 'مكوّن أساس مُخفى' : 'A fixed element is hidden',
-    'duplicateId' => _ar ? 'اسم طبقة مكرَّر' : 'Duplicated layer name',
-    'illegalNesting' => _ar ? 'تداخل غير مسموح' : 'Nesting is not allowed',
-    'emptyPage' => _ar ? 'صفحة بلا مقاطع' : 'Page with no sections',
-    'emptyContainer' => _ar ? 'حاوية فارغة' : 'Empty container',
-    'tooManyChildren' => _ar ? 'أبناء أكثر من السقف' : 'Too many children',
-    'unknownProperty' => _ar ? 'خاصية لا يعرفها المكوّن' : 'Unknown property',
-    'invalidProperty' =>
-      _ar ? 'قيمة خاصية خارج حدودها' : 'Property value out of range',
-    'missingProperty' => _ar ? 'خاصية مفقودة' : 'Missing property',
-    'unknownDataSource' =>
-      _ar ? 'مصدر بيانات غير مسجَّل' : 'Unknown data source',
-    'dataSourceRefused' =>
-      _ar ? 'المكوّن لا يقبل هذا المصدر' : 'The element refuses that source',
-    'dataSourceParameterMissing' =>
-      _ar
-          ? 'مصدر بيانات بلا معامل يحدّده'
-          : 'Data source without its parameter',
-    'unknownAction' => _ar ? 'إجراء غير مسجَّل' : 'Unknown action',
-    'actionRefused' =>
-      _ar ? 'المكوّن لا يقبل هذا الإجراء' : 'The element refuses that action',
-    'actionParameterMissing' =>
-      _ar
-          ? 'إجراء يشير شيئًا بلا معرّف'
-          : 'Action without the row it points at',
-    'linkLabelWithoutAction' =>
-      _ar ? 'تسمية رابط بلا إجراء' : 'Link label with no action',
-    'actionWithoutLabel' =>
-      _ar ? 'إجراء بلا تسمية تُضغط' : 'Action with no visible label',
-    'schemaVersionMismatch' =>
-      _ar
-          ? 'نسخة المخطط لا يطابقها هذا البناء'
-          : 'Schema version this builder does not draw',
-    'themeTextOnSameBackground' =>
-      _ar
-          ? 'نص بلون خلفيته: شاشة لا تُقرأ'
-          : 'Text the colour of its own background',
-    _ => _ar ? 'مانع غير معروف' : 'Unknown issue',
-  };
-
-  static String get builderThemeColorFormat =>
-      _ar ? 'صيغة اللون #RRGGBB' : 'Colour must be #RRGGBB';
-
-  /// عنوان بطاقة استوديو الشكل.
-  static String get builderTheme => _ar ? 'شكل التطبيق' : 'App appearance';
-
-  static String get builderThemeNote => _ar
-      ? 'ما لا تلمسه يبقى كما يراه الزبون اليوم: الألوان هنا طبقة فوق تصميمه، ولا تصل إليه إلا بحفظ ثم نشر.'
-      : 'Anything you leave untouched stays exactly as customers see it today. These colours are a layer over that design, and reach them only after a save and a publish.';
-
-  static String get builderThemeColors =>
-      _ar ? 'ألوان الشاشات' : 'Screen colours';
-
-  static String get builderThemeText => _ar ? 'النصوص' : 'Text';
-
-  static String get builderThemeTextScale => _ar ? 'حجم الخط' : 'Text size';
-
-  /// الدور بلا كتابة: يرث لون العميل، واللوحة تقول ذلك بدل أن تخترع لونًا.
-  static String get builderThemeSystemValue =>
-      _ar ? 'بلون النظام' : 'System colour';
-
-  static String builderThemeRestoreOne(String role) => _ar
-      ? 'أرجع «$role» إلى لون النظام'
-      : 'Restore $role to the system colour';
-
-  static String get builderThemeRestoreAll =>
-      _ar ? 'رجوع التصميم الأصلي' : 'Restore the original design';
+  // ---------- Customer preview strings (kept for other features) ----------
 
   // ---------- HR — sidebar ----------
 
@@ -5887,6 +5478,15 @@ class S {
   static String get hrOnlyApprovedPayable => _ar
       ? 'الدورة المعتمدة وحدها يمكن تسديدها.'
       : 'Only an approved run can be marked paid.';
+  static String get hrRunEmpty => _ar
+      ? 'لا قسائم في هذه الدورة؛ لا يُعتمد ما لم يُحتسب.'
+      : 'This run has no statements; nothing to approve.';
+  static String get hrPeriodClosed => _ar
+      ? 'فترة الرواتب مقفلة؛ التصحيح يمر بدورة لاحقة.'
+      : 'The payroll period is already closed.';
+  static String get hrCloseNeedsPaid => _ar
+      ? 'لا يُقفل إلا ما صُرف.'
+      : 'Only a paid run can be closed.';
   static String get hrRunNotCancellable => _ar
       ? 'دورة الرواتب لا تُلغى في حالتها الحالية.'
       : 'The run cannot be cancelled in its current state.';
@@ -5901,6 +5501,9 @@ class S {
   static String get hrPayslipNotFinal => _ar
       ? 'قسيمة الراتب هذه ليست نهائية بعد.'
       : 'This payslip is not final yet.';
+  static String get hrPayrollPreviewNeedsScope => _ar
+      ? 'معاينة الرواتب تحتاج نطاق كل الفروع.'
+      : 'The payroll preview needs all-branch scope.';
   static String get hrStatementImmutable => _ar
       ? 'القسيمة المعتمدة لا تُعدَّل.'
       : 'An approved payslip is immutable.';
@@ -6186,6 +5789,103 @@ class S {
   static String get hrPayrollSubtitle => _ar
       ? 'دورات الرواتب من الاحتساب إلى الدفع'
       : 'Payroll runs from calculation to payment';
+  static String get hrPayrollPreview => _ar ? 'معاينة' : 'Preview';
+  static String get hrPayrollPreviewTitle => _ar
+      ? 'معاينة الرواتب قبل التوليد'
+      : 'Payroll preview before generation';
+  static String get hrPayrollPreviewHint => _ar
+      ? 'قراءة نقية: المدخلات والنواقص ومطابقة الاحتساب لكل موظف'
+      : 'Read-only: inputs, gaps and a per-employee calculation mirror';
+  static String get hrPreviewEmployees => _ar ? 'الموظفون' : 'Employees';
+  static String get hrPreviewMissingData => _ar
+      ? 'بيانات ناقصة تُحذف من التوليد'
+      : 'Missing data dropped from generation';
+  static String get hrPreviewMissingReason => _ar
+      ? 'لا تعويض يغطي الفترة'
+      : 'No compensation covering the period';
+  static String get hrPreviewAdjustmentsDue => _ar
+      ? 'تسويات معتمدة تُطالَب بها الدورة'
+      : 'Approved adjustments due for this run';
+  static String get hrPreviewDeferred => _ar ? 'مرحّلة' : 'Deferred';
+  static String get hrPreviewCapBlocked => _ar ? 'فوق السقف' : 'Cap blocked';
+  static String get hrPreviewSuspended => _ar
+      ? 'تعليق: يتجاوز الصافي'
+      : 'Suspended: exceeds the net room';
+  static String get hrPreviewAdvance => _ar ? 'استقطاع سلفة' : 'Advance recovery';
+  static String get hrPreviewNet => _ar ? 'صافي متوقع' : 'Expected net';
+  static String get hrPreviewPrevious => _ar
+      ? 'الشهر السابق المصروف'
+      : 'Previous paid month';
+  static String get hrPreviewChangeNet => _ar ? 'فرق الصافي' : 'Net change';
+  static String get hrLeavePaidDays => _ar
+      ? 'أيام إجازة مدفوعة'
+      : 'Paid leave days';
+  static String get hrLeaveUnpaidDays => _ar
+      ? 'أيام إجازة غير مدفوعة'
+      : 'Unpaid leave days';
+  static String get hrUnpaidLeaveDeduction => _ar
+      ? 'خصم الإجازة غير المدفوعة'
+      : 'Unpaid leave deduction';
+  static String get hrClosePeriod => _ar ? 'إقفال الفترة' : 'Close period';
+  static String get hrCalcVersion => _ar
+      ? 'إصدار الحساب'
+      : 'Calculation version';
+  static String get hrOffboarding => _ar
+      ? 'إنهاء الخدمة'
+      : 'Offboarding';
+  static String get hrOffboardingHint => _ar
+      ? 'قائمة خطوات ملزمة قبل تنفيذ قرار الإنهاء'
+      : 'A binding checklist before the termination decision runs';
+  static String get hrOffboardingNone => _ar
+      ? 'لا حالة إنهاء خدمة لهذا الموظف'
+      : 'No offboarding case for this employee';
+  static String get hrOffStart => _ar
+      ? 'بدء إنهاء الخدمة'
+      : 'Start offboarding';
+  static String get hrOffLastDay => _ar
+      ? 'آخر يوم عمل'
+      : 'Last working day';
+  static String get hrOffClosed => _ar
+      ? 'تم تنفيذ الإنهاء'
+      : 'Termination executed';
+  static String get hrOffCancelled => _ar
+      ? 'الحالة ملغاة والتاريخ محفوظ'
+      : 'Case cancelled, history kept';
+  static String get hrOffStepManager => _ar
+      ? 'مراجعة المدير المباشر'
+      : 'Direct manager review';
+  static String get hrOffStepHr => _ar ? 'مراجعة الموارد البشرية' : 'HR review';
+  static String get hrOffStepFinance => _ar
+      ? 'مراجعة المالية'
+      : 'Finance review';
+  static String get hrOffStepObligations => _ar
+      ? 'الالتزامات المفتوحة'
+      : 'Open obligations';
+  static String get hrOffStepSettlement => _ar
+      ? 'التسوية النهائية'
+      : 'Final settlement';
+  static String get hrOffStepAccess => _ar
+      ? 'تعليق الدخول'
+      : 'Access suspension';
+  static String get hrOffOwner => _ar ? 'المسؤول' : 'Owner';
+  static String get hrOffOwnerNone => _ar
+      ? 'بلا مالك مسمّى'
+      : 'No named owner';
+  static String get hrOffAssign => _ar ? 'إسناد' : 'Assign';
+  static String get hrOffDone => _ar ? 'إنجاز' : 'Done';
+  static String get hrOffSkip => _ar ? 'تخطٍ' : 'Skip';
+  static String get hrOffPendingSteps => _ar
+      ? 'خطوات معلّقة تمنع التنفيذ'
+      : 'Pending steps block the finalize';
+  static String get hrOffFinalize => _ar
+      ? 'تنفيذ الإنهاء'
+      : 'Execute termination';
+  static String get hrOffCancelCase => _ar
+      ? 'إلغاء الحالة'
+      : 'Cancel case';
+  static String get hrOffSuspend => _ar
+      ? 'تعليق الدخول'
+      : 'Suspend login';
   static String get hrNoPayrollHint => _ar
       ? 'أنشئ دورة رواتب للفترة المطلوبة لبدء مراجعتها.'
       : 'Generate a payroll run for the period to begin reviewing it.';

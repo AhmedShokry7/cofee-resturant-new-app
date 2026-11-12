@@ -1,4 +1,5 @@
 import 'package:admin_app/features/hr/domain/entities/hr_payroll.dart';
+import 'package:admin_app/features/hr/domain/entities/hr_payroll_preview.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_receipt.dart';
 
 /// عقد الرواتب: التركيب، ثم الدورة، ثم قرار المراجعة.
@@ -52,4 +53,15 @@ abstract interface class HrPayrollRepository {
     required String reason,
     DateTime? effectiveDate,
   });
+
+  /// معاينة قراءة قبل التوليد: مدخلات الفترة، بياناتها الناقصة، ومطابقة
+  /// احتساب لكل موظف — بلا كتابة واحدة.
+  Future<HrPayrollPreview> previewPayroll({
+    required int periodYear,
+    required int periodMonth,
+  });
+
+  /// إقفال فترة صُرفت: خاتم نهائي يمنع التصحيح اللاحق على قسائمها، ويُدقَّق
+  /// كأي قرار مالي.
+  Future<HrReceipt> closePeriod({required String runId, String? note});
 }

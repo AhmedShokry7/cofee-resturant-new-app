@@ -23,10 +23,10 @@ class DefaultFirebaseOptions {
   /// because guessing a configuration would only hide the problem.
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions has no web configuration. Add a web app in '
-        'the Firebase console and run `flutterfire configure`.',
-      );
+      // Web configuration for preview mode - uses the same project as Android
+      // but with web-specific settings. In preview mode (iframe), Firebase
+      // features like messaging are disabled.
+      return web;
     }
 
     switch (defaultTargetPlatform) {
@@ -51,6 +51,17 @@ class DefaultFirebaseOptions {
     appId: '1:644544428760:android:bd1ecd1816b0952ba035ad',
     messagingSenderId: '644544428760',
     projectId: 'new-coffee-4d196',
+    storageBucket: 'new-coffee-4d196.firebasestorage.app',
+  );
+
+  /// Web app configuration for preview mode.
+  /// Uses the same project credentials with web-specific settings.
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDqwrx4Woa4gu26ryeG3TQ59Kt-_G_GVRk',
+    appId: '1:644544428760:web:placeholder',
+    messagingSenderId: '644544428760',
+    projectId: 'new-coffee-4d196',
+    authDomain: 'new-coffee-4d196.firebaseapp.com',
     storageBucket: 'new-coffee-4d196.firebasestorage.app',
   );
 }

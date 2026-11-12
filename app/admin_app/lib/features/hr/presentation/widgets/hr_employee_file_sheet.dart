@@ -34,6 +34,7 @@ class HrEmployeeFileSheet extends StatelessWidget {
     required this.onClose,
     this.onEdit,
     this.onEditCompensation,
+    this.onOpenOffboarding,
     this.refusal,
   });
 
@@ -46,6 +47,9 @@ class HrEmployeeFileSheet extends StatelessWidget {
   /// ولمن يملك `hr.compensation.manage` وحده؛ الصلاحيتان منفصلتان في 212،
   /// فلا يُفتح محرّر الأجر لمن يعدّل العقد ولا العكس.
   final VoidCallback? onEditCompensation;
+
+  /// لمن يملك كتابة إنهاء الخدمة: يفتح لوحة الإنهاء من الملف.
+  final VoidCallback? onOpenOffboarding;
 
   /// رفض القاعدة بعد كتابة من هذا الملف: الغطاء يحجب الدليل الذي تحته، فالحرف
   /// الذي قالته `42501` أو `23514` يُعرض هنا لا خلفه.
@@ -98,7 +102,7 @@ class HrEmployeeFileSheet extends StatelessWidget {
     );
   }
 
-  /// أقسام الملف الستة التي تُقرأ قوائمها، ثم الأجر لأنه قسم بحالة خاصة.
+/// أقسام الملف الستة التي تُقرأ قوائمها، ثم الأجر لأنه قسم بحالة خاصة.
   List<Widget> _sections(BuildContext context) {
     final f = file;
     return <Widget>[
@@ -169,6 +173,7 @@ class HrEmployeeFileSheet extends StatelessWidget {
             ],
           ),
       ]),
+      if (onOpenOffboarding != null) _offboardingButton(),
       _compensation(context),
     ];
   }
@@ -276,6 +281,19 @@ class HrEmployeeFileSheet extends StatelessWidget {
         text: S.hrBtnSetCompensation,
         variant: BtnVariant.outlined,
         onPressed: onEditCompensation,
+      ),
+    ),
+  );
+
+  /// زرّ إنهاء الخدمة: يفتح لوحة الإنهاء للموظف.
+  Widget _offboardingButton() => Align(
+    alignment: AlignmentDirectional.centerEnd,
+    child: Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: CustomBtn(
+        text: S.hrOffboarding,
+        variant: BtnVariant.outlined,
+        onPressed: onOpenOffboarding,
       ),
     ),
   );

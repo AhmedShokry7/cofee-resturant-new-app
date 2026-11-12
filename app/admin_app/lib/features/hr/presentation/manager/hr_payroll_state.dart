@@ -1,4 +1,5 @@
 import 'package:admin_app/features/hr/domain/entities/hr_payroll.dart';
+import 'package:admin_app/features/hr/domain/entities/hr_payroll_preview.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_receipt.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_refusal.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_load_status.dart';
@@ -13,6 +14,9 @@ class HrPayrollState {
     this.failure,
     this.writing = HrWriteStatus.idle,
     this.receipt,
+    this.preview,
+    this.previewStatus = HrLoadStatus.initial,
+    this.previewFailure,
   });
 
   final HrLoadStatus status;
@@ -30,6 +34,14 @@ class HrPayrollState {
   /// إيصال آخر كتابة: الحالة التي انتهى إليها السطر، وأرقامها إن أعطتها الدالة.
   final HrReceipt? receipt;
 
+  /// معاينة الفترة من `admin_hr_preview_payroll`: قراءة نقية لا تصدر عن الشاشة
+  /// أي رقم، و`null` ما لم تُطلب.
+  final HrPayrollPreview? preview;
+  final HrLoadStatus previewStatus;
+
+  /// رفض المعاينة وحدها، حتى لا يمحو رفضها قراءة القوائم ولا العكس.
+  final HrRefusal? previewFailure;
+
   bool get isLoading => status == HrLoadStatus.loading;
   bool get isWriting => writing == HrWriteStatus.sending;
 
@@ -44,6 +56,11 @@ class HrPayrollState {
     bool clearFailure = false,
     HrWriteStatus? writing,
     HrReceipt? receipt,
+    HrPayrollPreview? preview,
+    bool clearPreview = false,
+    HrLoadStatus? previewStatus,
+    HrRefusal? previewFailure,
+    bool clearPreviewFailure = false,
   }) => HrPayrollState(
     status: status ?? this.status,
     runs: runs ?? this.runs,
@@ -52,5 +69,8 @@ class HrPayrollState {
     failure: clearFailure ? null : (failure ?? this.failure),
     writing: writing ?? this.writing,
     receipt: receipt ?? this.receipt,
+    preview: clearPreview ? null : (preview ?? this.preview),
+    previewStatus: previewStatus ?? this.previewStatus,
+    previewFailure: clearPreviewFailure ? null : (previewFailure ?? this.previewFailure),
   );
 }

@@ -7,6 +7,7 @@ import 'package:admin_app/features/hr/presentation/manager/hr_payroll_cubit.dart
 import 'package:admin_app/features/hr/presentation/manager/hr_payroll_state.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_generate_payroll_dialog.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_note_dialog.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_payroll_preview.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_payroll_run_detail.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_payroll_statement_view.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_payroll_view.dart';
@@ -43,6 +44,7 @@ class _HrPayrollPageState extends State<HrPayrollPage> {
   late final HrPayrollCubit _cubit;
   late final bool _ownsCubit;
   String _search = '';
+  bool _preview = false;
 
   @override
   void initState() {
@@ -111,6 +113,29 @@ class _HrPayrollPageState extends State<HrPayrollPage> {
       '${localizedMonthName(run.periodMonth)} '
       '${localizeDigits('${run.periodYear}')}';
 
+  /// فترة المعاينة: أحدث دورة مقروءة، وإلا الفترة الجارية.
+  ({int year, int month}) get _previewPeriod {
+    final runs = _cubit.state.runs;
+    if (runs.isNotEmpty) {
+      return (year: runs.first.periodYear, month: runs.first.periodMonth);
+    }
+    final now = DateTime.now();
+    return (year: now.year, month: now.month);
+  }
+
+  void _togglePreview() {
+    final opening = !_preview;
+    setState(() => _preview = opening);
+    if (opening) {
+      final period = _previewPeriod;
+      _cubit.loadPreview(periodYear: period.year, periodMonth: period.month);
+    }
+  }
+
+  Future<void> _closePeriod(HrPayrollRun run) async {
+    await _cubit.closePeriod(runId: run.runId, note: null);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<HrPayrollCubit>.value(
@@ -124,6 +149,12 @@ class _HrPayrollPageState extends State<HrPayrollPage> {
               canManage: widget.canManage,
               onCorrection: () => _correct(statement),
               onClose: _cubit.closeStatement,
+            );
+          }
+          if (_preview && state.preview != null) {
+            return HrPayrollPreviewPanel(
+              preview: state.preview!,
+              onClose: _togglePreview,
             );
           }
           final run = state.run;
@@ -150,6 +181,9 @@ class _HrPayrollPageState extends State<HrPayrollPage> {
                 S.hrBtnCancelRequest,
                 (note) => _cubit.cancel(runId: run.runId, note: note),
               ),
+              onClosePeriod: widget.canPay && run.isCloseable
+                  ? () => _closePeriod(run)
+                  : null,
             );
           }
           return HrPayrollView(
@@ -176,6 +210,8 @@ class _HrPayrollPageState extends State<HrPayrollPage> {
               (note) => _cubit.cancel(runId: run.runId, note: note),
             ),
             onRetry: _cubit.reload,
+            onPreview: widget.canManage ? _togglePreview : null,
+            previewing: _preview,
           );
         },
       ),

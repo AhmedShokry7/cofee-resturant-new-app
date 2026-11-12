@@ -34,6 +34,7 @@ class HrPayrollRunDetail extends StatelessWidget {
     required this.onApprove,
     required this.onPay,
     required this.onCancel,
+    this.onClosePeriod,
   });
 
   final HrPayrollRun run;
@@ -52,6 +53,9 @@ class HrPayrollRunDetail extends StatelessWidget {
   final VoidCallback onPay;
   final VoidCallback onCancel;
 
+  /// إقفال الفترة الصرف: فعل المالية وحده من 242، ولا يُعرض حيث لا صلاحية.
+  final VoidCallback? onClosePeriod;
+
   String get _period =>
       '${localizedMonthName(run.periodMonth)} ${localizeDigits('${run.periodYear}')}';
 
@@ -63,7 +67,12 @@ class HrPayrollRunDetail extends StatelessWidget {
         children: [
           AdminPageHeader(
             title: _period,
-            subtitle: hrStatusLabel(run.status).text,
+            subtitle: hrStatusLabel(run.status).text
+                + (run.calcSeq == null
+                    ? ''
+                    : ' • ${S.hrCalcVersion}: '
+                        '${localizeDigits('hr-${run.calcSeq}')}')
+                + (run.isClosed ? ' • ${S.hrPeriodClosed}' : ''),
             actions: [
               CustomBtn(
                 text: S.hrActionClose,
@@ -74,6 +83,12 @@ class HrPayrollRunDetail extends StatelessWidget {
                 CustomBtn(text: S.hrBtnApprove, onPressed: onApprove),
               if (canPay && run.isApproved)
                 CustomBtn(text: S.hrBtnPay, onPressed: onPay),
+              if (canPay && run.isCloseable && onClosePeriod != null)
+                CustomBtn(
+                  text: S.hrClosePeriod,
+                  variant: BtnVariant.outlined,
+                  onPressed: onClosePeriod,
+                ),
               if (canManage && run.isCancellable)
                 CustomBtn(
                   text: S.hrBtnCancelRequest,

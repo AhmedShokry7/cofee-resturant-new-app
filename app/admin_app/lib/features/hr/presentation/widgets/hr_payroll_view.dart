@@ -41,6 +41,8 @@ class HrPayrollView extends StatelessWidget {
     required this.onPay,
     required this.onCancel,
     required this.onRetry,
+    this.onPreview,
+    this.previewing = false,
   });
 
   final HrPayrollState state;
@@ -61,6 +63,11 @@ class HrPayrollView extends StatelessWidget {
   final ValueChanged<HrPayrollRun> onCancel;
   final VoidCallback onRetry;
 
+  /// يفتح لوحة المعاينة: فعل من يملك التوليد وحده، لأن المعاينة تحرسها
+  /// القاعدة بنفس الصلاحية.
+  final VoidCallback? onPreview;
+  final bool previewing;
+
   @override
   Widget build(BuildContext context) {
     final last = state.runs.isEmpty ? null : state.runs.first;
@@ -77,6 +84,12 @@ class HrPayrollView extends StatelessWidget {
             progress: state.isWriting || state.isLoading ? 0 : null,
             progressLabel: state.isWriting ? S.saving : null,
             actions: [
+              if (canManage && onPreview != null)
+                CustomBtn(
+                  text: S.hrPayrollPreview,
+                  variant: previewing ? BtnVariant.outlined : BtnVariant.primary,
+                  onPressed: onPreview,
+                ),
               if (canManage)
                 CustomBtn(
                   text: S.hrBtnGeneratePayroll,

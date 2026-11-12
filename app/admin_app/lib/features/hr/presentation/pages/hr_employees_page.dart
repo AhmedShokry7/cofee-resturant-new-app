@@ -1,13 +1,17 @@
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/search/admin_search_controller.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_employee.dart';
 import 'package:admin_app/features/hr/domain/entities/hr_employee_file.dart';
 import 'package:admin_app/features/hr/presentation/manager/hr_employees_cubit.dart';
+import 'package:admin_app/features/hr/presentation/manager/hr_offboarding_cubit.dart';
 import 'package:admin_app/features/hr/presentation/manager/hr_employees_state.dart';
 import 'package:admin_app/features/hr/presentation/manager/hr_reference_cubit.dart';
 import 'package:admin_app/features/hr/presentation/manager/hr_reference_state.dart';
 import 'package:admin_app/features/hr/presentation/models/hr_person_option.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_compensation_form_dialog.dart';
+import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_employee_file_sheet.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_offboarding_panel.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_employees_view.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_employment_form_dialog.dart';
 import 'package:admin_app/features/hr/presentation/widgets/hr_format.dart';
@@ -47,8 +51,11 @@ class HrEmployeesPage extends StatefulWidget {
 class _HrEmployeesPageState extends State<HrEmployeesPage> {
   late final HrEmployeesCubit _cubit;
   late final HrReferenceCubit _reference;
+  late final HrOffboardingCubit _offboarding;
   late final bool _ownsCubit;
   String _search = '';
+  String? _offboardingStaffId;
+  String? _offboardingStaffName;
 
   @override
   void initState() {
@@ -56,6 +63,7 @@ class _HrEmployeesPageState extends State<HrEmployeesPage> {
     _ownsCubit = widget.cubit == null;
     _cubit = widget.cubit ?? HrEmployeesCubit();
     _reference = widget.reference ?? HrReferenceCubit();
+    _offboarding = HrOffboardingCubit();
     if (_ownsCubit) {
       _cubit.reload();
       _reference.load();
@@ -70,6 +78,7 @@ class _HrEmployeesPageState extends State<HrEmployeesPage> {
       _cubit.close();
       _reference.close();
     }
+    _offboarding.close();
     super.dispose();
   }
 
@@ -141,6 +150,23 @@ class _HrEmployeesPageState extends State<HrEmployeesPage> {
       effectiveFrom: draft.effectiveFrom,
       note: draft.note,
     );
+  }
+
+  /// لوحة إنهاء الخدمة تفتح من الملف لمن يملك الكتابة، فوق الغطاء لا داخله.
+  void _openOffboarding(HrEmployee employee) {
+    setState(() {
+      _offboardingStaffId = employee.staffId;
+      _offboardingStaffName = employee.fullName;
+    });
+    _offboarding.load(employee.staffId);
+  }
+
+  void _closeOffboarding() {
+    setState(() {
+      _offboardingStaffId = null;
+      _offboardingStaffName = null;
+    });
+    _cubit.reload();
   }
 
   @override
@@ -215,10 +241,49 @@ class _HrEmployeesPageState extends State<HrEmployeesPage> {
               onEditCompensation: widget.canManageCompensation
                   ? () => _setCompensation(file)
                   : null,
+              onOpenOffboarding: widget.canManage
+                  ? () => _openOffboarding(file.employee)
+                  : null,
               // الرفض بعد الكتابة يظهر داخل الغطاء: الدليل خلفه لا يُقرأ.
               refusal: state.failure,
             ),
           ),
+          if (_offboardingStaffId != null)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _closeOffboarding,
+                behavior: HitTestBehavior.opaque,
+                child: ColoredBox(
+                  color: theme.colorScheme.scrim.withValues(alpha: .45),
+                ),
+              ),
+            ),
+          if (_offboardingStaffId != null)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppDimensions.dialogBodyWidthExtra,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surface,
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
+                      border: Border.all(color: adminCardBorderColor(theme)),
+                    ),
+                    child: HrOffboardingPanel(
+                      staffId: _offboardingStaffId!,
+                      staffName: _offboardingStaffName ?? '',
+                      cubit: _offboarding,
+                      onClose: _closeOffboarding,
+                      people: _reference.state.people ?? const <HrPersonOption>[],
+                    ),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
