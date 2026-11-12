@@ -35,7 +35,7 @@ class RewardCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSpacing.md),
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: locked ? AppColor.lightGreyColor : AppColor.whiteColor,
+        color: locked ? AppColor.lightGreyColor : AppColor.cardSurface,
         borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
       ),

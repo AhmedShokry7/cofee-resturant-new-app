@@ -174,10 +174,10 @@ class _AssistantViewState extends State<_AssistantView> {
       listener: (context, state) =>
           context.read<AssistantCubit>().setBranch(state.selected?.id),
       child: Scaffold(
-        backgroundColor: AppColor.whiteColor,
+        backgroundColor: AppColor.background,
         appBar: AppBar(
-          backgroundColor: AppColor.whiteColor,
-          surfaceTintColor: AppColor.whiteColor,
+          backgroundColor: AppColor.background,
+          surfaceTintColor: AppColor.transparent,
           leading: Builder(
             builder: (context) => IconButton(
               onPressed: () => Scaffold.of(context).openDrawer(),

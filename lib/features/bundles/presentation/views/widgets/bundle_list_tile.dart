@@ -40,7 +40,7 @@ class BundleListTile extends StatelessWidget {
         margin: EdgeInsets.only(bottom: AppSpacing.md),
         padding: EdgeInsets.all(AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColor.whiteColor,
+          color: AppColor.cardSurface,
           borderRadius: BorderRadius.circular(AppRadius.r16),
           border: Border.all(color: AppColor.borderColor),
         ),

@@ -83,8 +83,8 @@ final RegExp _arabicScript = RegExp(
 );
 
 /// Detects the reply language LLM-style: any Arabic-script word means the
-/// user is speaking Arabic (Egyptian or otherwise) → answer in Egyptian
-/// Arabic. Pure Latin (English or Arabizi) → answer in English.
+/// user is speaking Arabic → answer in Saudi Arabic, the app's home market.
+/// Pure Latin (English or Arabizi) → answer in English.
 bool prefersArabic(String text) => _arabicScript.hasMatch(text);
 
 /// Splits normalized (or raw) text into meaningful tokens.

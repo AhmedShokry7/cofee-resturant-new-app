@@ -512,7 +512,7 @@ class _ValueTile extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: AppColor.whiteColor,
+          color: AppColor.cardSurface,
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: Border.all(
             color: selected ? AppColor.primaryColor : AppColor.borderColor,

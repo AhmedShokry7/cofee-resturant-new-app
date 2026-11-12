@@ -15,44 +15,41 @@ class AddCardTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      child: Material(
-        color: AppColor.transparent,
-        child: InkWell(
-          onTap: onTap,
-          customBorder: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.r8),
+      // No InkWell wash: its ripple read as a stained rectangle under the
+      // tile.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
           ),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(AppRadius.r8),
-              border: Border.all(color: AppColor.borderColor),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  AppIcons.creditCard,
-                  size: AppSpacing.xl,
-                  color: AppColor.greyColor,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.r8),
+            border: Border.all(color: AppColor.borderColor),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                AppIcons.creditCard,
+                size: AppSpacing.xl,
+                color: AppColor.greyColor,
+              ),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  S.addCard,
+                  style: AppFonts.regular14(context)
+                      .copyWith(color: AppColor.greyColor),
                 ),
-                SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    S.addCard,
-                    style: AppFonts.regular14(context)
-                        .copyWith(color: AppColor.greyColor),
-                  ),
-                ),
-                Icon(
-                  AppIcons.add,
-                  size: AppSizes.px20,
-                  color: AppColor.greyColor,
-                ),
-              ],
-            ),
+              ),
+              Icon(
+                AppIcons.add,
+                size: AppSizes.px20,
+                color: AppColor.greyColor,
+              ),
+            ],
           ),
         ),
       ),

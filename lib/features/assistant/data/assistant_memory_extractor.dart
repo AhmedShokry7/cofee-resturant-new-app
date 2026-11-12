@@ -70,6 +70,17 @@ class AssistantMemoryExtractor {
       'فضّل',
       'بموت على',
       'أحب',
+      // Saudi / Egyptian liking.
+      'عاجبني',
+      'عجبني',
+      'عاجبتني',
+      'عاشق',
+      'مولع',
+      'حاب',
+      'حابه',
+      'هيمان ب',
+      'بروح على',
+      'دايم اخد',
     ],
     words: [
       'i love',
@@ -79,11 +90,29 @@ class AssistantMemoryExtractor {
       'my favorite',
       'i am partial to',
       "i'm partial to",
+      'i always get',
+      'i am a fan of',
     ],
   );
 
   static final _rejection = _anyOf(
-    contains: ['مش بحب', 'ما بحبش', 'لا أحب', 'أكره', 'متكرش', 'بكره'],
+    contains: [
+      'مش بحب',
+      'ما بحبش',
+      'لا أحب',
+      'أكره',
+      'متكرش',
+      'بكره',
+      // Saudi / Egyptian rejections.
+      'مابغا',
+      'ما ابي',
+      'ماودي',
+      'مالي نفس',
+      'مش نفسي',
+      'مستهجن',
+      'ابعد عني',
+      'سيبه',
+    ],
     words: [
       'i hate',
       'i do not like',
@@ -91,6 +120,8 @@ class AssistantMemoryExtractor {
       'i am not into',
       'never order',
       'never drink',
+      'not a fan of',
+      'i avoid',
     ],
   );
 
@@ -117,7 +148,22 @@ class AssistantMemoryExtractor {
 
   /// Allergies and health are facts about a body, so they are stored encrypted.
   static final _allergy = _anyOf(
-    contains: ['حساسية', 'عندي حساسية', 'ما كليش', 'مشاكل كلي', 'بطنى', 'معدة'],
+    contains: [
+      'حساسية',
+      'عندي حساسية',
+      'حساس',
+      'حساسه',
+      'ما كليش',
+      'مشاكل كلي',
+      'بطنى',
+      'معدة',
+      // Health conditions the menu must respect.
+      'سكري',
+      'عندي سكر',
+      'عندي ضغط',
+      'دايت',
+      'حميه',
+    ],
     words: [
       'allergic',
       'allergy',
@@ -128,6 +174,9 @@ class AssistantMemoryExtractor {
       'celiac',
       'upset stomach',
       'reflux',
+      'diabetic',
+      'diabetes',
+      'on a diet',
     ],
   );
 
@@ -140,6 +189,13 @@ class AssistantMemoryExtractor {
       'المعتاد',
       'دايما',
       'روتين',
+      // Saudi / Egyptian habit talk.
+      'كل مره',
+      'عادي عليه',
+      'يوميا',
+      'بصحى علي',
+      'عند العصر',
+      'عالشغل',
     ],
     words: [
       'every day',
@@ -148,6 +204,7 @@ class AssistantMemoryExtractor {
       'normally',
       'my routine',
       'always order',
+      'habitually',
     ],
   );
 
@@ -159,8 +216,28 @@ class AssistantMemoryExtractor {
   /// The words that mean "what I just said was wrong" — the signal the
   /// assistant learns from most.
   static final _correction = _anyOf(
-    contains: ['غلط', 'مش كده', 'مش صح', 'أقصد', 'بالظبط مش', 'لا مش'],
-    words: ['that is wrong', 'i meant', 'correction'],
+    contains: [
+      'غلط',
+      'مش كده',
+      'مش صح',
+      'أقصد',
+      'بالظبط مش',
+      'لا مش',
+      // Saudi / Egyptian corrections.
+      'مقصدتش',
+      'قصدي كان',
+      'مش ده اللي',
+      'مو هو',
+      'عدلها',
+      'غيرها الله يخليك',
+    ],
+    words: [
+      'that is wrong',
+      'i meant',
+      'correction',
+      'actually i meant',
+      'not what i asked',
+    ],
   );
 
   /// The connectives that make a product name worth cutting out of a sentence.

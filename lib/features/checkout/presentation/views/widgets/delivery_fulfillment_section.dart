@@ -207,7 +207,7 @@ class _FulfillmentOption extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: AppSizes.px10),
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: selected ? AppColor.primaryColor : AppColor.whiteColor,
+            color: selected ? AppColor.primaryColor : AppColor.cardSurface,
             border: Border.all(
               color: selected ? AppColor.primaryColor : AppColor.borderColor,
             ),

@@ -17,7 +17,7 @@ import 'package:new_coffee/core/theme/tokens.dart';
 Future<void> showProfileImagePicker(BuildContext context) async {
   final source = await showModalBottomSheet<ImageSource>(
     context: context,
-    backgroundColor: AppColor.whiteColor,
+    backgroundColor: AppColor.cardSurface,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),

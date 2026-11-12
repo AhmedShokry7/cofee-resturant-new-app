@@ -123,23 +123,21 @@ class _AddressesView extends StatelessWidget {
           return ListView(
             padding: AppLayout.pageBody,
             children: [
-              for (var index = 0; index < state.addresses.length; index++) ...[
+              for (final address in state.addresses)
                 AddressTile(
-                  address: state.addresses[index],
-                  selected: state.addresses[index].isDefault,
+                  address: address,
+                  selected: address.isDefault,
                   // The row opens the editor: this screen has no address to
-                  // select, so a tap here means "change this one".
-                  onTap: () => _openEditor(context, state.addresses[index]),
+                  // select, so a tap here means "change this one". No radio:
+                  // it would promise a selection this page never makes.
+                  showSelector: false,
+                  onTap: () => _openEditor(context, address),
                   onSetDefault: () => context
                       .read<AddressesCubit>()
-                      .setDefaultAddress(state.addresses[index].id),
-                  onDelete: () => _confirmDelete(
-                    context,
-                    addressId: state.addresses[index].id,
-                  ),
+                      .setDefaultAddress(address.id),
+                  onDelete: () =>
+                      _confirmDelete(context, addressId: address.id),
                 ),
-                if (index != state.addresses.length - 1) const Divider(),
-              ],
               SizedBox(height: AppSpacing.xl),
               _AddAddressButton(
                 onTap: () =>

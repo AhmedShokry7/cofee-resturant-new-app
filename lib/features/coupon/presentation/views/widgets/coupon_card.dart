@@ -59,7 +59,7 @@ class CouponCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSpacing.lg),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(
           color: isApplied ? AppColor.primaryColor : AppColor.borderColor,

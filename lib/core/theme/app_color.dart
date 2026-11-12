@@ -18,7 +18,7 @@ class AppColor {
   static const Color primaryColorDeep = Color(0xff1E40AF);
 
   /// The brand at 6% strength: a selected row, a soft chip, a tinted header.
-  static const Color primarySoft = Color(0xffEFF6FF);
+  /// Defined as a dark-aware getter in the neutrals section below.
 
   /// The brand drawn as a ring around a tappable control, such as the bell in
   /// the home header. A getter rather than a swatch: [primaryColor] is the
@@ -28,10 +28,25 @@ class AppColor {
   static Color secondryColor = secondryDefault;
 
   // Neutrals
-  static const greyColor = Color(0xff797979);
-  static const lightGreyColor = Color(0xffF5F5F5);
+  //
+  // الوضع الداكن يقلب هذه الرموز من مكان واحد: [isDarkMode] تضبطها إدارة
+  // الوضع (ThemeModeCubit) فتنقلب كل قراءة لاحقة، فلا تبقى شاشة ترسم بحياد
+  // فاتح بعد التبديل.
+  static bool isDarkMode = false;
+
+  static const _grey = Color(0xff797979);
+  static const _lightGrey = Color(0xffF5F5F5);
+  static const _black = Color(0xff000000);
+  static Color get greyColor => isDarkMode ? darkTextSecondary : _grey;
+  static Color get lightGreyColor => isDarkMode ? darkCard : _lightGrey;
+  static Color get blackColor => isDarkMode ? darkText : _black;
   static const whiteColor = Color(0xffFFFFFF);
-  static const blackColor = Color(0xff000000);
+
+  /// الصف المحدَّد والخلفية الملوّنة الناعمة: في الداكن تصير تظليلاً من لون
+  /// العلامة بدل الغاشم الفاتح الذي يصمّ على السطح الداكن.
+  static Color get primarySoft =>
+      isDarkMode ? primaryColor.withAlpha(56) : const Color(0xffEFF6FF);
+
   static Color borderColor = borderDefault;
 
   /// Light surface color used as fallback background for product images.
@@ -55,8 +70,8 @@ class AppColor {
   static const Color borderDefault = Color(0xffE6E6E6);
   static const Color backgroundDefault = whiteColor;
   static const Color cardSurfaceDefault = whiteColor;
-  static const Color textPrimaryDefault = blackColor;
-  static const Color textSecondaryDefault = greyColor;
+  static const Color textPrimaryDefault = _black;
+  static const Color textSecondaryDefault = _grey;
 
   /// A glyph on a light surface: pure black reads too harsh next to the text.
   static const Color iconOnLight = Color(0xff242424);
@@ -96,8 +111,10 @@ class AppColor {
   static const Color unreadBadgeColor = Color(0xFFFF3B30);
 
   /// Skeleton placeholders, one step apart so the highlight sweep is visible.
-  static const Color skeletonBase = Color(0xffE9E9E9);
-  static const Color skeletonHighlight = Color(0xffF7F7F7);
+  static Color get skeletonBase =>
+      isDarkMode ? darkCard : const Color(0xffE9E9E9);
+  static Color get skeletonHighlight =>
+      isDarkMode ? darkSurface : const Color(0xffF7F7F7);
 
   // Dark mode
   static const darkBackground = Color(0xff121212);

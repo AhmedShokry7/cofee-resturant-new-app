@@ -105,12 +105,14 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                   builder: (context, favState) {
                     final isFavorite = favState.ids.contains(widget.product.id);
                     return _HeaderIconButton(
-                      icon: isFavorite
-                          ? AppIcons.favourite
-                          : AppIcons.favourite,
+                      // Active: the heart itself is coloured — a filled red
+                      // heart (hugeicons ships no filled heart, hence the
+                      // Material icon) on the same glassy circle as inactive.
+                      icon: isFavorite ? Icons.favorite : AppIcons.favourite,
                       color: isFavorite
                           ? AppColor.errorColor
                           : AppColor.greyColor,
+                      backgroundColor: null,
                       onPressed: () => context.read<FavoritesCubit>().toggle(
                         widget.product.id,
                       ),
@@ -217,13 +219,22 @@ class _HeaderIconButton extends StatelessWidget {
   const _HeaderIconButton({
     required this.icon,
     required this.onPressed,
-    this.color = AppColor.blackColor,
+    this.color,
+    this.backgroundColor,
     this.tooltip,
   });
 
   final IconData icon;
   final VoidCallback onPressed;
-  final Color color;
+
+  /// Null falls back to the current mode's primary text colour, so the header
+  /// buttons follow the dark-mode toggle instead of a frozen constant.
+  final Color? color;
+
+  /// Null keeps the glassy white circle the header overlay is made of. The
+  /// favourite button hands it a solid red when active, so the whole button
+  /// carries the colour rather than the heart alone.
+  final Color? backgroundColor;
   final String? tooltip;
 
   @override
@@ -234,7 +245,7 @@ class _HeaderIconButton extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       child: Material(
-        color: AppColor.whiteColor.withValues(alpha: 0.9),
+        color: backgroundColor ?? AppColor.whiteColor.withValues(alpha: 0.9),
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         elevation: AppElevation.raised,
@@ -245,7 +256,7 @@ class _HeaderIconButton extends StatelessWidget {
           iconSize: AppSizes.px20,
           padding: EdgeInsets.all(AppSpacing.sm),
           constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-          icon: Icon(icon, color: color),
+          icon: Icon(icon, color: color ?? AppColor.blackColor),
         ),
       ),
     );

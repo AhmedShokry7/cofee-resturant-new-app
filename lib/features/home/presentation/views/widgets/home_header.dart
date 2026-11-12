@@ -8,6 +8,7 @@ import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/current_user/current_user_cubit.dart';
 import 'package:new_coffee/features/home/data/greeting.dart';
+import 'package:new_coffee/features/loyalty/presentation/manager/loyalty/loyalty_cubit.dart';
 import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
 import 'package:new_coffee/features/notifications/presentation/manager/notifications/notifications_cubit.dart';
 import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
@@ -60,30 +61,25 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
         SizedBox(width: AppSpacing.sm),
+        // The wallet as a live pill, not a mute gift glyph: the balance is the
+        // one number that makes the customer tap, and the pill is the same
+        // height as the bell beside it so the header stays one line.
         Semantics(
           button: true,
           label: S.loyaltyPoints,
           child: Material(
-            color: AppColor.transparent,
-            shape: CircleBorder(
-              side: BorderSide(
-                color: AppColor.primaryRing,
-                width: AppSizes.px1,
-              ),
+            color: AppColor.primarySoft,
+            shape: StadiumBorder(
+              side: BorderSide(color: AppColor.primaryRing, width: 1),
             ),
             child: InkWell(
               onTap: () =>
                   Navigator.of(context).pushNamed(LoyaltyPage.routeName),
-              customBorder: const CircleBorder(),
-              child: SizedBox(
-                height: AppSizes.px44,
-                width: AppSizes.px44,
-                child: Icon(
-                  AppIcons.gift,
-                  size: AppSizes.px22,
-                  color: AppColor.primaryColor,
-                ),
-              ),
+              customBorder: const StadiumBorder(),
+              // The wallet may not be registered above this header (isolated
+              // previews and tests): a missing wallet means a gift glyph only,
+              // never an exception on screen.
+              child: _LoyaltyPillCount(),
             ),
           ),
         ),
@@ -112,6 +108,53 @@ class HomeHeader extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// The balance inside the loyalty pill, or a bare gift glyph when no
+/// [LoyaltyCubit] is provided (previews, isolated widget tests).
+class _LoyaltyPillCount extends StatelessWidget {
+  const _LoyaltyPillCount();
+
+  @override
+  Widget build(BuildContext context) {
+    final cubit = context.maybeRead<LoyaltyCubit>();
+    if (cubit == null) {
+      return Container(
+        height: AppSizes.px44,
+        padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        child: Icon(
+          AppIcons.gift,
+          size: AppSizes.px22,
+          color: AppColor.primaryColor,
+        ),
+      );
+    }
+    return BlocProvider.value(
+      value: cubit,
+      child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
+        builder: (context, loyalty) => Container(
+          height: AppSizes.px44,
+          padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                AppIcons.gift,
+                size: AppSizes.px18,
+                color: AppColor.primaryColor,
+              ),
+              SizedBox(width: AppSpacing.xs),
+              Text(
+                S.points(loyalty.balance),
+                style: AppFonts.semiBold14(context)
+                    .copyWith(color: AppColor.primaryColor),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

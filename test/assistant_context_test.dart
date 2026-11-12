@@ -82,7 +82,7 @@ void main() {
       final log = converse(['رشحلي حاجة حلوة', 'هو ده اللي رشحته؟']);
 
       expect(log.last.topic, 'suggest');
-      expect(log.last.text, contains('أيوه'));
+      expect(log.last.text, contains('ايه'));
     });
 
     test('a bare follow-up keeps talking about the menu', () {

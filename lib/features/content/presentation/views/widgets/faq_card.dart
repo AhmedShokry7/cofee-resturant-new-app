@@ -21,7 +21,7 @@ class FaqCard extends StatelessWidget {
       margin: EdgeInsets.only(bottom: AppSpacing.md),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
         border: Border.all(color: AppColor.borderColor),
       ),

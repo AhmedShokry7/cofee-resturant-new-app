@@ -30,7 +30,7 @@ class OrderActionBottomBar extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         border: Border(top: BorderSide(color: AppColor.borderColor)),
       ),
       child: Row(

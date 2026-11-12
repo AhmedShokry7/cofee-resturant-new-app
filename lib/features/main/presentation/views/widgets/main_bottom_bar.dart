@@ -23,7 +23,7 @@ class MainBottomBar extends StatelessWidget {
       currentIndex: currentIndex,
       onTap: onTap,
       type: BottomNavigationBarType.fixed,
-      backgroundColor: AppColor.whiteColor,
+      backgroundColor: AppColor.cardSurface,
       selectedItemColor: AppColor.primaryColor,
       unselectedItemColor: AppColor.greyColor,
       selectedLabelStyle: AppFonts.medium12(context),

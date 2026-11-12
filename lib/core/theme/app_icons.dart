@@ -69,6 +69,7 @@ abstract final class AppIcons {
   static const password = HugeIcons.strokeRoundedCirclePassword;
   static const settings = HugeIcons.strokeRoundedSettings01;
   static const logout = HugeIcons.strokeRoundedLogout01;
+  static const darkMode = HugeIcons.strokeRoundedMoon02;
   static const language = HugeIcons.strokeRoundedLanguageCircle;
   static const notification = HugeIcons.strokeRoundedNotification01;
   static const notificationOff = HugeIcons.strokeRoundedNotificationBlock01;

@@ -4,6 +4,7 @@ import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/features/addresses/data/model/address_model.dart';
 import 'package:new_coffee/shared/widgets/selection_radio.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -13,7 +14,9 @@ import 'package:new_coffee/core/theme/tokens.dart';
 /// The row itself is the primary tap target and its meaning belongs to the
 /// caller - checkout selects the address with it, the address book opens the
 /// editor - so the tile never guesses. [onSetDefault], [onEdit] and [onDelete]
-/// are drawn only when the caller offers them.
+/// are drawn only when the caller offers them, and the selection radio only
+/// when [showSelector] is true: a screen where a tap means "edit this one"
+/// must not show a radio that promises a selection it never makes.
 class AddressTile extends StatelessWidget {
   const AddressTile({
     super.key,
@@ -23,6 +26,7 @@ class AddressTile extends StatelessWidget {
     this.onSetDefault,
     this.onEdit,
     this.onDelete,
+    this.showSelector = true,
   });
 
   final AddressModel address;
@@ -32,30 +36,46 @@ class AddressTile extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
+  /// Whether the trailing selection radio is drawn at all.
+  final bool showSelector;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    // Selection paints the card; an edit-only row is a plain surface.
+    final isSelected = showSelector && selected;
+    return Semantics(
+      button: true,
+      selected: showSelector ? selected : null,
+      // No InkWell wash: its ripple read as a stained rectangle under the
+      // card.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: AnimatedContainer(
+          duration: MotionTokens.stateChange,
+          margin: EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.r12),
+            color: isSelected ? AppColor.primarySoft : AppColor.cardSurface,
+            border: Border.all(
+              color: isSelected ? AppColor.primaryColor : AppColor.borderColor,
+              width: isSelected ? 1.5 : 1,
+            ),
+          ),
+          // Centered: with the trailing radio middle-aligned on the right,
+          // the leading pin reads best on the same midline.
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Padding(
-                // The glyph keeps its own height but the box around it reaches
-                // the accessibility floor, so a tap aimed at the pin lands.
-                padding: EdgeInsets.only(top: AppSpacing.xxs),
-                child: Semantics(
-                  label: S.shippingAddress,
-                  child: Icon(
-                    AppIcons.location,
-                    size: AppIconSize.lg,
-                    color: selected
-                        ? AppColor.primaryColor
-                        : AppColor.greyColor,
-                  ),
+              Semantics(
+                label: S.shippingAddress,
+                child: Icon(
+                  AppIcons.location,
+                  size: AppIconSize.lg,
+                  color: isSelected
+                      ? AppColor.primaryColor
+                      : AppColor.greyColor,
                 ),
               ),
               SizedBox(width: AppSpacing.md),
@@ -73,14 +93,24 @@ class AddressTile extends StatelessWidget {
                           ),
                         ),
                         if (address.isDefault) ...[
-                          SizedBox(width: AppSpacing.sm),
+                          SizedBox(width: AppSpacing.xs),
                           Flexible(
-                            child: Text(
-                              S.defaultAddress,
-                              style: AppFonts.regular12(context)
-                                  .copyWith(color: AppColor.primaryColor),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: AppSpacing.xs,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColor.primarySoft,
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.pill,
+                                ),
+                              ),
+                              child: Text(
+                                S.defaultAddress,
+                                style: AppFonts.medium10(context)
+                                    .copyWith(color: AppColor.primaryColorDeep),
+                              ),
                             ),
                           ),
                         ],
@@ -113,7 +143,12 @@ class AddressTile extends StatelessWidget {
                   tooltip: S.deleteAddress,
                   onPressed: onDelete,
                 ),
-              SelectionRadio(selected: selected),
+              // The radio sits on the right, on the vertical middle of the
+              // card, not pinned to its top edge.
+              if (showSelector) ...[
+                SizedBox(width: AppSpacing.xs),
+                SelectionRadio(selected: selected),
+              ],
             ],
           ),
         ),
@@ -134,23 +169,21 @@ class _LinkButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: label,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: AppDimensions.tapTargetMin,
-            ),
-            child: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Padding(
-                padding: EdgeInsetsDirectional.only(end: AppSpacing.sm),
-                child: Text(
-                  label,
-                  style: AppFonts.regular12(context)
-                      .copyWith(color: AppColor.primaryColor),
-                ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppDimensions.tapTargetMin,
+          ),
+          child: Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(end: AppSpacing.sm),
+              child: Text(
+                label,
+                style: AppFonts.regular12(context)
+                    .copyWith(color: AppColor.primaryColor),
               ),
             ),
           ),

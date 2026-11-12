@@ -60,7 +60,7 @@ class _AssistantFabView extends StatelessWidget {
     // phone, and the two facts it passes are read at the moment of the tap.
     return FloatingActionButton(
       onPressed: () => _open(context, context.read<AssistantFabCubit>()),
-      backgroundColor: AppColor.whiteColor,
+      backgroundColor: AppColor.cardSurface,
       elevation: AppElevation.floating,
       shape: const CircleBorder(),
       child: Image.asset(

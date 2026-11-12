@@ -143,7 +143,7 @@ class _AddCardPageState extends State<AddCardPage> {
                 : Container(
                     padding: EdgeInsets.all(AppSpacing.lg),
                     decoration: BoxDecoration(
-                      color: AppColor.whiteColor,
+                      color: AppColor.cardSurface,
                       border: Border(
                         top: BorderSide(color: AppColor.borderColor),
                       ),

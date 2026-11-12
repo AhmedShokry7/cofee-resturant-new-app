@@ -139,7 +139,7 @@ class _CustomTextFormFieldState extends State<CustomTextFormField> {
                   ? AppColor.secondryColor.withValues(
                       alpha: AppShadows.focusTint,
                     )
-                  : AppColor.whiteColor,
+                  : AppColor.cardSurface,
               borderRadius: BorderRadius.circular(_fieldRadius),
               boxShadow: _isFocused
                   ? AppShadows.focused(AppColor.secondryColor)

@@ -62,7 +62,7 @@ void main() {
 
       expect(answer.topic, 'cart');
       expect(answer.actions, isEmpty);
-      expect(answer.text, contains('مش في السلة'));
+      expect(answer.text, contains('مو في السلة'));
     });
 
     test('asks which one when the product is not named', () {
@@ -70,7 +70,7 @@ void main() {
 
       expect(answer.topic, 'cart');
       expect(answer.actions, isEmpty);
-      expect(answer.text, contains('أشيل إيه'));
+      expect(answer.text, contains('أشيل ايش'));
     });
   });
 

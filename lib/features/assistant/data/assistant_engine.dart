@@ -99,8 +99,8 @@ class AssistantEngine {
           .join(', ');
       leadPrefix = arabic
           ? (names.isEmpty
-                ? 'تمام — مش ده. تحب تجرب إيه بدلها؟ '
-                : 'تمام — بلاش $names. تحب تجرب إيه بدلها؟ ')
+                ? 'تمام — مو هذا. تحب نستبدلها بإيش؟ '
+                : 'تمام — بلاش $names. تحب نستبدلها بإيش؟ ')
           : (names.isEmpty
                 ? 'Got it — not that one. How about these instead? '
                 : 'Got it — no $names. How about these instead? ');
@@ -325,7 +325,7 @@ class AssistantEngine {
         memory.pendingQuestion = null;
         return AssistantAnswer(
           text: arabic
-              ? 'في عروض شغالة دلوقتي. افتح صفحة العروض وانسخ الكود واستخدمه عند الدفع.'
+              ? 'في عروض شغالة الحين. افتح صفحة العروض وانسخ الكود واستخدمه عند الدفع.'
               : 'We have active coupons right now. Open the Coupon page to copy a code and apply it at checkout.',
           topic: 'faq',
           sourceId: 'faq-coupon',
@@ -339,7 +339,7 @@ class AssistantEngine {
         memory.pendingQuestion = null;
         return AssistantAnswer(
           text: arabic
-              ? 'كل اللي فاكره عنك موجود في صفحة الذاكرة. من هناك تشوف كل سطر وتمسحه، أو تمسح الكل.'
+              ? 'كل اللي أعرفه عنك موجود في صفحة الذاكرة. من هناك تشوف كل سطر وتحذفه، أو تحذف الكل.'
               : 'Everything I keep about you is on the Memory page. There you can read each item and delete it, or delete all of it.',
           topic: 'memory',
           destination: AssistantDestination.memory,
@@ -672,7 +672,7 @@ class AssistantEngine {
     final allPicks = [...picks, ?pairing];
     if (pairing != null) {
       text += arabic
-          ? ' ماشي مع اللي في السلة عندك: ${AssistantSnapshot.canonicalName(pairing)}.'
+          ? ' يناسب اللي في السلة عندك: ${AssistantSnapshot.canonicalName(pairing)}.'
           : ' It pairs well with what is in your cart: ${AssistantSnapshot.canonicalName(pairing)}.';
     }
     if (!_hasConstraints(tokens, wantedProducts, memory) &&
@@ -870,7 +870,7 @@ class AssistantEngine {
   }) {
     if (cartProductIds.isEmpty) {
       return AssistantAnswer(
-        text: arabic ? 'السلة فاضية دلوقتي.' : 'Your cart is empty right now.',
+        text: arabic ? 'السلة فاضية الحين.' : 'Your cart is empty right now.',
         topic: 'cart',
         sourceId: 'cart-empty',
       );
@@ -914,7 +914,7 @@ class AssistantEngine {
       if (inCart.isEmpty) {
         return AssistantAnswer(
           text: arabic
-              ? 'السلة فاضية دلوقتي، مفيش حاجة أشيلها.'
+              ? 'السلة فاضية الحين، ما فيه شي أشيله.'
               : 'Your cart is empty right now, there is nothing to remove.',
           topic: 'cart',
           sourceId: 'cart-empty',
@@ -922,7 +922,7 @@ class AssistantEngine {
       }
       return AssistantAnswer(
         text: arabic
-            ? 'أشيل إيه بالظبط؟ في السلة: ${inCart.map(AssistantSnapshot.canonicalName).join('، ')}.'
+            ? 'أشيل ايش بالضبط؟ في السلة: ${inCart.map(AssistantSnapshot.canonicalName).join('، ')}.'
             : 'Which one exactly? In the cart: ${inCart.map(AssistantSnapshot.canonicalName).join(', ')}.',
         topic: 'cart',
         sourceId: 'cart-clarify',
@@ -932,7 +932,7 @@ class AssistantEngine {
     if (!cartProductIds.contains(target.id)) {
       return AssistantAnswer(
         text: arabic
-            ? '${AssistantSnapshot.canonicalName(target)} مش في السلة دلوقتي.'
+            ? '${AssistantSnapshot.canonicalName(target)} مو في السلة الحين.'
             : '${AssistantSnapshot.canonicalName(target)} is not in your cart right now.',
         topic: 'cart',
         sourceId: 'cart-missing',
@@ -974,7 +974,7 @@ class AssistantEngine {
     memory.pendingQuestion = null;
     return AssistantAnswer(
       text: arabic
-          ? 'قصدك ${AssistantSnapshot.canonicalName(product)}؟ هو دا؟'
+          ? 'تقصد ${AssistantSnapshot.canonicalName(product)}؟ هذا هو؟'
           : 'Do you mean ${AssistantSnapshot.canonicalName(product)}? Is this the one?',
       topic: 'suggest',
       sourceId: 'ingredient-match',
@@ -1031,7 +1031,7 @@ class AssistantEngine {
     final label = IngredientLexicon.label(ingredient, arabic: arabic);
     return AssistantAnswer(
       text: arabic
-          ? 'مفيش حاجة عندنا فيها $label. بس عندنا $names.'
+          ? 'ما عندنا شي فيه $label. بس عندنا $names.'
           : 'We do not have anything with $label. But we do have $names.',
       topic: 'suggest',
       sourceId: 'ingredient-none',
@@ -1107,8 +1107,8 @@ class AssistantEngine {
       arabic: arabic,
       leadPrefix: arabic
           ? (priceTalk
-                ? 'معلش — تعالى ندور على حاجة حنينة على الجيب. '
-                : 'متزعلش — تعالى نلاقيلك حاجة أحسن. ')
+                ? 'عادي — خلنا نلقى شي حلو على مزاجك وعلى الميزانية. '
+                : 'متزعلش — خلنا نلقى لك شي أحسن. ')
           : (priceTalk
                 ? "Sorry about that — let's find something easier on the wallet. "
                 : "Sorry to hear that — let's find you something better. "),
@@ -1150,7 +1150,7 @@ class AssistantEngine {
     memory.pendingQuestion = null;
     return AssistantAnswer(
       text: arabic
-          ? 'اختيار موفق — ${AssistantSnapshot.canonicalName(product)}! دوس على الكارت عشان تفتحه.'
+          ? 'اختيار موفق — ${AssistantSnapshot.canonicalName(product)}! اضغط على الكارت لفتحه.'
           : 'Excellent choice — ${AssistantSnapshot.canonicalName(product)}! Tap the card to open it.',
       topic: 'suggest',
       sourceId: 'suggest-select',
@@ -1379,7 +1379,7 @@ class AssistantEngine {
         .toList();
     if (active.isEmpty && delivered.isEmpty) {
       return AssistantAnswer(
-        text: arabic ? 'لسه معندكش طلبات.' : 'You have no orders yet.',
+        text: arabic ? 'ما عندك طلبات بعد.' : 'You have no orders yet.',
         topic: 'orders',
         sourceId: 'orders-empty',
       );
@@ -1641,7 +1641,7 @@ class AssistantEngine {
     final names = context.map(AssistantSnapshot.canonicalName).join('، ');
     return AssistantAnswer(
       text: arabic
-          ? 'أيوه، دي اللي رشحتها ليك: $names.'
+          ? 'ايه، هذي اللي رشحتها لك: $names.'
           : 'Yes, those are the ones I suggested: $names.',
       topic: 'suggest',
       sourceId: 'suggest-confirm',

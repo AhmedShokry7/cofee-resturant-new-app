@@ -19,7 +19,7 @@ Future<void> showNotificationPreferencesSheet(BuildContext context) {
   final cubit = context.read<NotificationsCubit>();
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColor.whiteColor,
+    backgroundColor: AppColor.cardSurface,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),

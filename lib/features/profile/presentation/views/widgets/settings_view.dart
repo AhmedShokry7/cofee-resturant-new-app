@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
+import 'package:new_coffee/core/theme/theme_mode_cubit.dart';
 import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
 import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
@@ -22,6 +23,7 @@ import 'package:new_coffee/features/profile/presentation/views/widgets/logout_bo
 import 'package:new_coffee/features/profile/presentation/views/widgets/profile_menu_tile.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/settings_header.dart';
 import 'package:new_coffee/features/profile/presentation/views/widgets/settings_language_dialog.dart';
+import 'package:new_coffee/shared/utils/optional_provider.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -86,6 +88,11 @@ class _SettingsEntries extends StatelessWidget {
     // A memory belongs to an account. A device that is not signed in has no
     // island to review, so the door to it is not shown rather than shown empty.
     final signedIn = context.watch<CurrentUserCubit>().state.user != null;
+    // The theme cubit lives above the root; isolated previews and tests pump
+    // this tab without it. A missing wallet means the toggle is not shown,
+    // never an exception on screen.
+    final themeCubit = context.maybeRead<ThemeModeCubit>();
+    final dark = themeCubit?.state == ThemeMode.dark;
     return ListView(
       children: [
         SettingsHeader(),
@@ -162,6 +169,17 @@ class _SettingsEntries extends StatelessWidget {
           onTap: () =>
               Navigator.of(context).pushNamed(PrivacyPolicyPage.routeName),
         ),
+        // A toggle, not a page: the tap flips the mode in place and the
+        // cubit persists the choice for the next launch. It sits below the
+        // policy pair so the account rows keep their documented order.
+        if (themeCubit != null)
+          ProfileMenuTile(
+            icon: AppIcons.darkMode,
+            label: S.darkMode,
+            subtitle: dark ? S.darkModeOn : S.darkModeOff,
+            opensPage: false,
+            onTap: () => themeCubit.toggle(),
+          ),
         if (signedIn)
           ProfileMenuTile(
             icon: AppIcons.memory,

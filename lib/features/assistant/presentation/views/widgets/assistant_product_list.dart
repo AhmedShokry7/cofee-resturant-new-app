@@ -46,7 +46,7 @@ class AssistantProductList extends StatelessWidget {
               margin: EdgeInsets.only(bottom: AppSpacing.xs),
               padding: EdgeInsets.all(AppSpacing.sm),
               decoration: BoxDecoration(
-                color: AppColor.whiteColor,
+                color: AppColor.cardSurface,
                 borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
                 border: Border.all(color: AppColor.borderColor),
               ),

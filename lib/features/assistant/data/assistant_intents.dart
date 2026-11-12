@@ -1,3 +1,4 @@
+import 'package:new_coffee/features/assistant/data/assistant_examples.dart';
 import 'package:new_coffee/features/assistant/data/assistant_language.dart';
 import 'package:new_coffee/features/assistant/data/assistant_phrases.dart';
 
@@ -91,6 +92,20 @@ AssistantIntent detectIntent(
         bestScore = entry.value;
         break;
       }
+    }
+  }
+
+  // Few-shot fallback: when the keyword table scored the sentence weakly or
+  // not at all, the whole sentence is compared against the example bank —
+  // real-shaped sentences per intent across the dialects — so a paraphrase
+  // or a typo-ridden sentence still lands on the intent of the example it
+  // resembles. Only a clearly resembling example wins; a vague half-match
+  // stays unknown rather than becoming a confident wrong answer.
+  if (bestScore < 2.0) {
+    final byExample = intentByExample(normalized, tokens);
+    if (byExample != null) {
+      best = byExample;
+      bestScore = 2.0;
     }
   }
 
@@ -194,6 +209,42 @@ Map<AssistantIntent, double> scoreIntents(
     scores[intent] = score;
   }
   return scores;
+}
+
+/// The intent of the example sentence the input resembles most, or null when
+/// nothing resembles it enough to be trusted.
+///
+/// Two signals are combined:
+/// - token overlap: how much of the example's words the sentence already
+///   carries (a paraphrase shares most of its content words);
+/// - whole-sentence similarity: how close the normalized sentences are as
+///   strings, which is what catches a typo-ridden sentence against its clean
+///   example.
+/// The bar is deliberately high — only a sentence that clearly resembles one
+/// example is allowed to change the answer.
+AssistantIntent? intentByExample(String normalized, Set<String> tokens) {
+  if (normalized.length < 6 || tokens.length < 2) return null;
+  AssistantIntent? best;
+  var bestScore = 0.0;
+  AssistantExamples.byIntent.forEach((intent, examples) {
+    for (final raw in examples) {
+      final example = normalizeText(raw);
+      if (example.isEmpty) continue;
+      final exampleTokens = example.split(' ').toSet();
+      final overlap =
+          tokens.intersection(exampleTokens).length / exampleTokens.length;
+      final sim = similarity(normalized, example);
+      var score = overlap;
+      if (sim > 0.8) score += (sim - 0.8) * 3;
+      if (score > bestScore) {
+        bestScore = score;
+        best = intent;
+      }
+    }
+  });
+  // 0.55 overlap or a near-identical sentence must stand behind the match.
+  const threshold = 0.55;
+  return bestScore >= threshold ? best : null;
 }
 
 /// Last-resort recovery: the single closest known word/phrase to anything

@@ -110,6 +110,9 @@ class AssistantPhrases {
       'my regular', 'same as always', 'same as usual', 'like always',
       'usual order', 'my usual order', 'el mo3tad', 'zay kol mara',
       'nafs el talab', 'hat el mo3tad',
+      // Saudi / Egyptian habitual phrasing.
+      'كعادتي', 'زي عادتي', 'معادتي', 'زي كل مرة بطلب',
+      'اللي دايما باخده', 'المعتاد ده',
     ],
     AssistantIntent.botIdentity: [
       'انت مين',
@@ -156,6 +159,15 @@ class AssistantPhrases {
       'confirm',
       'يلا نطلب',
       'يلا اطلب',
+      // Saudi / Gulf agreement.
+      'اي والله',
+      'زين كذا',
+      'قبلت',
+      'عليه',
+      // Egyptian agreement.
+      'احنا اتفقنا',
+      'تمام يا معلم',
+      'كده تمام',
     ],
     AssistantIntent.deny: [
       'مش عايز',
@@ -167,6 +179,16 @@ class AssistantPhrases {
       'not now',
       'maybe later',
       'بلاش ده',
+      // Saudi / Gulf refusals.
+      'مابغاه',
+      'ما ابيه',
+      'ماودي ايه',
+      'لا ما ابغى',
+      'خلاص لا',
+      // Egyptian refusals.
+      'مش عايز خالص',
+      'خلاص كده',
+      'سيبه',
     ],
     AssistantIntent.placeOrder: [
       // Full order requests.
@@ -174,6 +196,9 @@ class AssistantPhrases {
       'عايز اعمل اوردر', 'عاوز اعمل اوردر', 'اطلب اوردر', 'هات اوردر',
       'اطلبلي', 'i want to order', 'place an order', 'make an order',
       'order for me', 'can i order', 'عايز اطلب اوردر', 'want to order',
+      // Saudi / Egyptian order requests.
+      'ابغى اسوي طلب', 'احط اوردر', 'عاوز احط اوردر', 'اقدر اطلب',
+      'ابغا اطلب', 'سوي لي طلب',
     ],
     AssistantIntent.addToCart: [
       'ضيف للسلة',
@@ -219,6 +244,10 @@ class AssistantPhrases {
       'tastes bad', 'did not like', "didn't like", 'dont like',
       "don't like", 'terrible', 'awful',
       'not good', 'مش قد كده', 'مو حلو', 'مو حلوه', 'مو زين',
+      // Saudi / Gulf complaints.
+      'ما عجبني زين', 'وش ذا', 'عيب', 'ما ينفع كذا',
+      // Egyptian complaints.
+      'شكلها مش حلو', 'البتاع ده فاشل', 'مش مستوي', 'نصب',
       // Price complaints.
       'السعر غالي', 'غالي اوي', 'too much money',
     ],
@@ -231,6 +260,14 @@ class AssistantPhrases {
       'the second one',
       'the third one',
       'the last one',
+      // Dialect spellings of the ordinals.
+      'الاولاني',
+      'التانية',
+      'التالتة',
+      'الاخيرة',
+      'رقم واحد',
+      'رقم اتنين',
+      'رقم تلاتة',
     ],
     AssistantIntent.memory: [
       // The customer asking what the assistant holds about them, or asking it
@@ -286,6 +323,14 @@ class AssistantPhrases {
       'اهلين',
       'شلونك',
       'شحالك',
+      // More greeting spellings across dialects.
+      'هاي',
+      'هلو',
+      'هلاك',
+      'صباحك',
+      'مساك',
+      'شخبارك',
+      'عاملين',
     ],
     AssistantIntent.suggestDrink: [
       'suggest', 'recommend', 'best', 'favorite', 'favourite', 'try',
@@ -333,6 +378,13 @@ class AssistantPhrases {
       'استلم',
       'جهز',
       'طلبيه',
+      // Dialect spellings of "where is mine / shipped".
+      'فينه',
+      'وينه',
+      'شحنه',
+      'اتشحن',
+      'متحضر',
+      'خارج للتوصيل',
     ],
     AssistantIntent.showCoupons: [
       'coupon',
@@ -352,18 +404,23 @@ class AssistantPhrases {
       'بكم',
       'سعر',
       'حسم',
+      // More dialect spellings.
+      'خصومات',
+      'بروموكود',
+      'عروضكم',
+      'تخفيضات',
     ],
     AssistantIntent.thanks: [
       'thank', 'thanks', 'thx', 'merci', 'shokran',
       'شكرا', 'متشكر', 'تسلم', 'يسلمو', 'ممنون',
       // Saudi thanks.
-      'مشكور', 'يعطيك',
+      'مشكور', 'يعطيك', 'ماقصرت', 'ما قصرت',
     ],
     AssistantIntent.usualOrder: [
       'متعود', 'معتاد', 'المعتاد', 'usual', 'regular',
       'عاده', 'معتاده', 'زي', 'نفس', 'دايما', 'علي طول',
       // Saudi: always / my habit.
-      'دايم', 'عادتي',
+      'دايم', 'عادتي', 'معادتي', 'كالعادة',
     ],
     AssistantIntent.botIdentity: ['مين', 'who', 'اسمك', 'نفسك'],
     AssistantIntent.farewell: ['باي', 'bye', 'goodbye', 'اشوفك', 'السلامه'],
@@ -373,17 +430,23 @@ class AssistantPhrases {
       // Saudi / Gulf yes-words.
       'ايه', 'طيب', 'يلا', 'سم', 'لبيه', 'تم', 'ممتاز', 'كويس',
       'اوكي', 'أوكيه', 'زين',
+      // More dialect yes-words.
+      'اها', 'اجل', 'صح', 'اهواه', 'كفو', 'وافقت',
     ],
     AssistantIntent.deny: [
       'لا', 'لاء', 'no', 'nope', 'بلاش', 'مش عايز', 'مش عاوز',
       // Saudi denials.
-      'مابي', 'ماني', 'لا مش هو', 'not this one',
+      'مابي', 'ماني', 'لا مش هو', 'مابغا', 'ماودي', 'not this one',
+      // Egyptian denials.
+      'ماعايزش', 'ماليش', 'مبحبش',
     ],
     AssistantIntent.placeOrder: [
       'اوردر', 'اطلب', 'طلب', 'اعمل', 'اعملي', 'هات',
       'order', 'ordering',
       // Saudi: "give me / bring me".
       'عطني', 'عطن', 'جيب', 'جب', 'نطلب',
+      // More dialect spellings of "order for me".
+      'اطلبلي', 'هاتلي', 'جيبلي', 'ابغاك', 'سوها',
     ],
     AssistantIntent.addToCart: [
       'ضيف',
@@ -410,6 +473,11 @@ class AssistantPhrases {
       'غاليه',
       'مقرف',
       'خايس',
+      // More dialect complaint words.
+      'قرف',
+      'بايظ',
+      'محروق',
+      'زفت',
     ],
     AssistantIntent.selectOrdinal: [
       'الاول',
@@ -444,7 +512,8 @@ class AssistantPhrases {
     'قوي': 'strong', 'قويه': 'strong', 'تقيل': 'strong', 'تقيله': 'strong',
     'مر': 'strong', 'مره': 'strong', 'مركز': 'strong', 'يفوق': 'strong',
     'افوق': 'strong', 'strong': 'strong', 'intense': 'strong',
-    'ساده': 'strong',
+    'ساده': 'strong', 'صافي': 'strong', 'مكثف': 'strong',
+    'بدون سكر': 'strong', 'من غير سكر': 'strong',
     // cheap (incl. "no money" talk)
     'رخيص': 'cheap', 'رخيصه': 'cheap', 'cheap': 'cheap', 'اقتصادي': 'cheap',
     'فلوس': 'cheap', 'قروش': 'cheap',
@@ -452,9 +521,10 @@ class AssistantPhrases {
     'خفيف': 'light', 'خفيفه': 'light', 'light': 'light',
     // hot / cold (incl. Saudi حار and ice talk)
     'سخن': 'hot', 'سخنه': 'hot', 'دافي': 'hot', 'hot': 'hot', 'حار': 'hot',
+    'دافيء': 'hot', 'حرارته': 'hot',
     'ساقع': 'cold', 'ساقعه': 'cold', 'مثلج': 'cold', 'متلج': 'cold',
     'بارد': 'cold', 'بارده': 'cold', 'cold': 'cold', 'iced': 'cold',
-    'ثلج': 'cold',
+    'ثلج': 'cold', 'بالثلج': 'cold', 'مثلجات': 'cold',
   };
 
   /// Product-name synonyms (dialects + common misspellings) mapped to the
@@ -486,23 +556,28 @@ class AssistantPhrases {
     'شاى': 'Tea',
     'اتاي': 'Tea',
     'بياله': 'Tea',
+    'شاهي': 'Tea',
+    'شاي بلدي': 'Tea',
     'شاي مسالا': 'Masala Tea',
     'مسالا': 'Masala Tea',
     'كرك': 'Masala Tea',
     'شاي حليب': 'Masala Tea',
     'حليب شاي': 'Masala Tea',
     'كرك شاي': 'Masala Tea',
+    'شاهي كرك': 'Masala Tea',
     'زنجبيل': 'Masala Tea',
     'قهوه حليب': 'Latte',
     'حليب قهوه': 'Latte',
     'نسكافيه': 'Latte',
     'تشيز كيك': 'Cheesecake',
     'تشيزكيك': 'Cheesecake',
+    'شيز كيك': 'Cheesecake',
     'براونيز': 'Chocolate Brownie',
     'براوني': 'Chocolate Brownie',
     'كوكيز': 'Chocolate Chip Cookie',
     'كوكي': 'Chocolate Chip Cookie',
     'بسكوت': 'Chocolate Chip Cookie',
+    'بسكويت': 'Chocolate Chip Cookie',
     'كرواسون': 'Butter Croissant',
     'كرواسان': 'Butter Croissant',
     'ميلك شيك': 'Chocolate Milkshake',
@@ -515,6 +590,7 @@ class AssistantPhrases {
     'عيش': 'Butter Bread',
     'دونات': 'Glazed Donut',
     'دونتس': 'Glazed Donut',
+    'دوناتس': 'Glazed Donut',
     'قهوه': 'coffee',
     'قهوة': 'coffee',
     'كوفي': 'coffee',
@@ -526,6 +602,8 @@ class AssistantPhrases {
     'كوب': 'coffee',
     'كاسه': 'coffee',
     'كاس': 'coffee',
+    'قهوه تركيه': 'coffee',
+    'قهوه بلدي': 'coffee',
   };
 
   /// Generic category words (Saudi حلا, etc.) mapped to the category slugs
@@ -569,6 +647,15 @@ class AssistantPhrases {
     'كمان',
     'بدل',
     'تانى',
+    // More dialect follow-ups.
+    'ثاني',
+    'ثانيه',
+    'شي تاني',
+    'حاجه تانيه',
+    'شي ثاني',
+    'زياده',
+    'اكثر',
+    'نفس الشي',
   ];
 
   /// Negation markers that attach to a product mention to reject it
@@ -590,6 +677,13 @@ class AssistantPhrases {
     'no',
     'without',
     'except',
+    // Saudi / Egyptian rejections.
+    'مابغا',
+    'ماودي',
+    'ما ودك',
+    'ماعايزش',
+    'مبحب',
+    'سيبه',
   ];
 
   /// Rotating clarification questions asked when a suggestion request has
@@ -601,7 +695,14 @@ class AssistantPhrases {
   ];
 
   /// Words that make a question about the cart itself.
-  static const List<String> cartWords = ['السلة', 'سلتي', 'cart', 'basket'];
+  static const List<String> cartWords = [
+    'السلة',
+    'سلتي',
+    'العربه',
+    'عربيتي',
+    'cart',
+    'basket',
+  ];
 
   /// Verbs that take something out of the cart rather than ordering it.
   static const List<String> cartRemovalWords = [
@@ -657,6 +758,13 @@ class AssistantPhrases {
     'ودي',
     'عايزك',
     'بنطلبه',
+    // More dialect action verbs.
+    'ابغا',
+    'اريد',
+    'اطلبلي',
+    'هاتلي',
+    'جيبلي',
+    'سوي',
   ];
 
   /// Fragments that make a question about price or the bill.
@@ -674,6 +782,10 @@ class AssistantPhrases {
     'هيكلف',
     'price',
     'cost',
+    // More dialect spellings of "how much".
+    'كام',
+    'الثمن',
+    'بكامها',
   ];
 
   /// Fragments that make a question about discounts.

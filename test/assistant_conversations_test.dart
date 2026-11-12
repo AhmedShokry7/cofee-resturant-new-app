@@ -342,7 +342,8 @@ void main() {
 
       expect(cubit.state.activeChatId, older);
       expect(cubit.state.messages.map((message) => message.text), [
-        contains('قولي'),
+        // The Saudi greeting asks what the customer wants.
+        contains('وش تبغى'),
         'الموكا بكام؟',
         isNot(isEmpty),
       ]);

@@ -46,7 +46,7 @@ class OrderCard extends StatelessWidget {
         button: true,
         label: S.orderNumber(order.displayNumber),
         child: Material(
-          color: AppColor.whiteColor,
+          color: AppColor.cardSurface,
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           child: InkWell(
             // The whole group travels with the route: a pushed page is built by

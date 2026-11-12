@@ -173,7 +173,7 @@ class _CartSummaryState extends State<_CartSummary> {
         return Container(
           padding: EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColor.whiteColor,
+            color: AppColor.cardSurface,
             border: Border.all(color: AppColor.borderColor),
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(AppRadius.r16),

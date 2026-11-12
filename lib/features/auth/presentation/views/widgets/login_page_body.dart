@@ -224,7 +224,7 @@ class _CodeDoorButton extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 420),
         child: Material(
-          color: AppColor.whiteColor,
+          color: AppColor.cardSurface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.pill),
             side: BorderSide(color: AppColor.primaryColor),

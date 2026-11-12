@@ -70,7 +70,7 @@ class AssistantDraftFlow {
     final total = Formatters.price(memory.draft.total());
     return AssistantAnswer(
       text: arabic
-          ? 'الاوردر بتاعك: $summary. الإجمالي $total.'
+          ? 'طلبك: $summary. الإجمالي $total.'
           : 'Your order so far: $summary. Total $total.',
       topic: 'order',
       sourceId: 'order-total',
@@ -120,7 +120,7 @@ class AssistantDraftFlow {
     }
     if (parsed.items.isEmpty && !parsed.unclearDessert) {
       return AssistantAnswer(
-        text: arabic ? 'عيني! عايز تطلب إيه بالظبط؟ قولي مثلا "2 لاتيه كبير".' : 'With pleasure! What exactly would you like? Say e.g. "2 large lattes".',
+        text: arabic ? 'هلا! تحب تطلب إيش بالضبط؟ قل لي مثلا "2 لاتيه كبير".' : 'With pleasure! What exactly would you like? Say e.g. "2 large lattes".',
         topic: 'order',
         sourceId: 'order-empty',
       );
@@ -138,7 +138,7 @@ class AssistantDraftFlow {
           .join('، ');
       return AssistantAnswer(
         text: arabic
-            ? '$knownالحلو نوع إيه بالظبط؟ عندنا $options.'
+            ? '$knownوالحلو وش نوعه بالضبط؟ عندنا $options.'
             : '${known}Which dessert exactly? We have $options.',
         topic: 'order',
         sourceId: 'order-clarify',
@@ -173,7 +173,9 @@ class AssistantDraftFlow {
           .map((product) => product.name)
           .join('، ');
       return AssistantAnswer(
-        text: arabic ? 'محددتش — تحب $options؟' : 'Pick one for me — $options?',
+        text: arabic
+            ? 'ما حددت — تبي $options؟'
+            : 'Pick one for me — $options?',
         topic: 'order',
         sourceId: 'order-clarify',
       );
@@ -192,7 +194,7 @@ class AssistantDraftFlow {
     final options = dessertOptions().map((p) => p.name).join('، ');
     return AssistantAnswer(
       text: arabic
-          ? 'ضفت ${memory.draft.describe(arabic: arabic)}. والحلو نوع إيه؟ عندنا $options.'
+          ? 'أضفت ${memory.draft.describe(arabic: arabic)}. والحلو وش نوعه؟ عندنا $options.'
           : 'Added ${memory.draft.describe(arabic: arabic)}. And which dessert? We have $options.',
       topic: 'order',
       sourceId: 'order-clarify',
@@ -209,7 +211,7 @@ class AssistantDraftFlow {
     final total = Formatters.price(memory.draft.total());
     return AssistantAnswer(
       text: arabic
-          ? 'تمام! الاوردر بتاعك: $summary. الإجمالي $total. أكد؟'
+          ? 'تمام! طلبك: $summary. الإجمالي $total. أكد؟'
           : 'Got it! Your order: $summary. Total $total. Confirm?',
       topic: 'order',
       sourceId: 'order-confirm',
@@ -226,7 +228,7 @@ class AssistantDraftFlow {
       memory.pendingQuestion = null;
       return AssistantAnswer(
         text: arabic
-            ? 'مفيش حاجة في الاوردر حالياً. قولي عايز تطلب إيه.'
+            ? 'ما فيه شي في الطلب حالياً. قل لي تحب تطلب إيش.'
             : 'Your order is empty right now. Tell me what to add.',
         topic: 'order',
         sourceId: 'order-empty-confirm',
@@ -250,7 +252,7 @@ class AssistantDraftFlow {
     memory.pendingDessertSize = null;
     return AssistantAnswer(
       text: arabic
-          ? 'تمام! حطيت طلبك في السلة: $summary. تحب تدفع دلوقتي ولا عند الاستلام؟'
+          ? 'تمام! حطيت طلبك في السلة: $summary. تبغى تدفع الحين ولا عند الاستلام؟'
           : 'Done! Added to your cart: $summary. Pay now or on delivery?',
       topic: 'order',
       sourceId: 'order-confirmed',
@@ -272,13 +274,18 @@ class AssistantDraftFlow {
     if (parsed.items.isEmpty && !parsed.unclearDessert) {
       return AssistantAnswer(
         text: arabic
-            ? 'أضيف إيه للسلة؟ قولي اسم المشروب أو الحلو.'
+            ? 'أضيف ايش للسلة؟ قل لي اسم المشروب أو الحلو.'
             : 'What should I add to the cart? Name the drink or dessert.',
         topic: 'order',
         sourceId: 'order-add-empty',
       );
     }
-    return takeOrder(query, memory: memory, now: DateTime.now(), arabic: arabic);
+    return takeOrder(
+      query,
+      memory: memory,
+      now: DateTime.now(),
+      arabic: arabic,
+    );
   }
 
   static AssistantAnswer cancelDraft(
@@ -293,7 +300,7 @@ class AssistantDraftFlow {
     if (!hadDraft && !keptInCart) {
       return AssistantAnswer(
         text: arabic
-            ? 'مفيش اوردر شغال حالياً.'
+            ? 'ما فيه طلب شغال حالياً.'
             : 'There is no active order right now.',
         topic: 'order',
         sourceId: 'order-cancel-empty',
@@ -302,8 +309,8 @@ class AssistantDraftFlow {
     return AssistantAnswer(
       text: arabic
           ? (keptInCart
-                ? 'تمام، طلبك محفوظ في السلة. وقت ما تحب تكمل قولي.'
-                : 'تمام، لغيت الاوردر بتاعك.')
+                ? 'تمام، طلبك محفوظ في السلة. وقت ما تبغى تكمل قل لي.'
+                : 'تمام، لغيت طلبك.')
           : (keptInCart
                 ? 'Done, your order is kept in the cart. Tell me when to continue.'
                 : 'Done, your order is cancelled.'),
@@ -334,7 +341,7 @@ class AssistantDraftFlow {
         topic: 'order',
         sourceId: 'order-pay-now',
         destination: AssistantDestination.checkout,
-        navigateLabel: arabic ? 'ادفع دلوقتي' : 'Pay now',
+        navigateLabel: arabic ? 'ادفع الحين' : 'Pay now',
       );
     }
     return AssistantAnswer(

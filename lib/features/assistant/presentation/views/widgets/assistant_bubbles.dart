@@ -65,7 +65,7 @@ class _AssistantBubbleShell extends StatelessWidget {
           vertical: AppSpacing.sm,
         ),
         decoration: BoxDecoration(
-          color: isUser ? AppColor.primaryColor : AppColor.whiteColor,
+          color: isUser ? AppColor.primaryColor : AppColor.cardSurface,
           borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
           border: isUser ? null : Border.all(color: AppColor.borderColor),
         ),

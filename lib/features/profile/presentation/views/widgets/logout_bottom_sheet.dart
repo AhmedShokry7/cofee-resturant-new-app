@@ -13,7 +13,7 @@ Future<void> showLogoutSheet(
 }) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColor.whiteColor,
+    backgroundColor: AppColor.cardSurface,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),
     ),

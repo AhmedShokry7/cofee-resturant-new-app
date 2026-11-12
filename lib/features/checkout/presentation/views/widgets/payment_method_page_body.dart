@@ -13,6 +13,8 @@ import 'package:new_coffee/features/payment/presentation/views/widgets/add_card_
 import 'package:new_coffee/features/payment/presentation/manager/saved_cards/saved_cards_cubit.dart';
 import 'package:new_coffee/features/checkout/presentation/views/widgets/payment_option_tile.dart';
 import 'package:new_coffee/shared/widgets/price_label.dart';
+import 'package:new_coffee/shared/widgets/selection_radio.dart';
+import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class PaymentMethodPageBody extends StatelessWidget {
@@ -123,34 +125,87 @@ class _SavedCardRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = selected ? AppColor.primaryColor : AppColor.greyColor;
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: Row(
-          children: [
-            Icon(
-              selected ? AppIcons.radioButton : AppIcons.radioButton,
-              size: AppSizes.px20,
-              color: accent,
+    return Semantics(
+      button: true,
+      selected: selected,
+      // No InkWell wash: its ripple read as a stained rectangle under the
+      // card row.
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: MotionTokens.stateChange,
+          margin: EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.md,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.r8),
+            color: selected ? AppColor.primarySoft : AppColor.transparent,
+            border: Border.all(
+              color: selected ? AppColor.primaryColor : AppColor.borderColor,
+              width: selected ? 1.5 : 1,
             ),
-            SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                '${card.displayBrand}  ${card.maskedNumber}',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppFonts.medium14(context).copyWith(color: accent),
+          ),
+          child: Row(
+            children: [
+              Icon(AppIcons.creditCard, size: AppSpacing.xl, color: accent),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            '${card.displayBrand}  ${card.maskedNumber}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppFonts.medium14(context).copyWith(
+                              color: selected
+                                  ? AppColor.primaryColor
+                                  : AppColor.textPrimary,
+                            ),
+                          ),
+                        ),
+                        if (card.isDefault) ...[
+                          SizedBox(width: AppSpacing.xs),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: AppSpacing.xs,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.primarySoft,
+                              borderRadius: BorderRadius.circular(
+                                AppRadius.pill,
+                              ),
+                            ),
+                            child: Text(
+                              S.defaultCardBadge,
+                              style: AppFonts.medium10(context)
+                                  .copyWith(color: AppColor.primaryColorDeep),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '${S.cardExpires} ${card.expiry}',
+                      style: AppFonts.regular12(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(width: AppSpacing.xs),
-            Text(
-              '${S.cardExpires} ${card.expiry}',
-              style: AppFonts.regular12(context)
-                  .copyWith(color: AppColor.greyColor),
-            ),
-          ],
+              SizedBox(width: AppSpacing.xs),
+              SelectionRadio(selected: selected),
+            ],
+          ),
         ),
       ),
     );

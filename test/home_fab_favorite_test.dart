@@ -307,8 +307,9 @@ void main() {
       await tester.tap(find.byType(ProductFavoriteButton));
       await tester.pumpAndSettle();
 
-      // Active: unmistakable filled red heart.
-      expect(icon().icon, AppIcons.favourite);
+      // Active: unmistakable filled red heart (the heart itself is the
+      // colour, not the circle around it).
+      expect(icon().icon, Icons.favorite);
       expect(icon().color, AppColor.errorColor);
 
       // Persisted to the same guest store the app already uses.

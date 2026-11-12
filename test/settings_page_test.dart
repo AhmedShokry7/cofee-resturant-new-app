@@ -215,7 +215,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final notificationsY = tester.getTopLeft(find.text(S.notifications)).dy;
+    // The settings tile shows the preferences wording, not the page title.
+    final notificationsY = tester
+        .getTopLeft(find.text(S.notificationPreferences))
+        .dy;
     final languageY = tester.getTopLeft(find.text(S.language)).dy;
     final helpY = tester.getTopLeft(find.text(S.help)).dy;
 

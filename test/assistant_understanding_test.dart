@@ -58,6 +58,16 @@ void main() {
       expect(reading.deviceIntent, AssistantIntent.orderStatus);
     });
 
+    test('a prefixed recommendation verb still searches the menu', () {
+      // "تنصحني ب ايش" hides the verb behind a prefix and ends with a
+      // question word, so the bare stems in the trigger list never matched
+      // and the sentence fell through to "I don't understand".
+      final reading = read('تنصحني ب ايش');
+      expect(reading.subject, SentenceSubject.recommendation);
+      expect(reading.owner, AnswerOwner.liveData);
+      expect(reading.deviceIntent, AssistantIntent.suggestDrink);
+    });
+
     test('the cart is answered by the app', () {
       final reading = read('غيرت رايي امسح اللي في السلة');
       expect(reading.subject, SentenceSubject.cart);

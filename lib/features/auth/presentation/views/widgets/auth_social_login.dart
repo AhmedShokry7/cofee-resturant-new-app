@@ -88,7 +88,7 @@ class _SocialButton extends StatelessWidget {
       button: true,
       enabled: !isLoading,
       child: Material(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         clipBehavior: Clip.antiAlias,
         shape: CircleBorder(
           side: BorderSide(color: AppColor.borderColor),

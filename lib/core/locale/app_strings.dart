@@ -880,6 +880,11 @@ class S {
       : 'Sign in first to save a profile photo.';
   static String get language => _ar ? 'اللغة' : 'Language';
 
+  /// الوضع الداكن، كما يظهر في صفحة الإعدادات وقيمته الحالية.
+  static String get darkMode => _ar ? 'الوضع الداكن' : 'Dark mode';
+  static String get darkModeOn => _ar ? 'مُفعّل' : 'On';
+  static String get darkModeOff => _ar ? 'مُعطّل' : 'Off';
+
   /// The selected language as the tile's own value line. The tile's label
   /// already says "Language", so the value repeats nothing: it is the name of
   /// the language the screen is drawn in.

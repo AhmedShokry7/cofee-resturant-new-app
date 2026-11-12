@@ -682,7 +682,7 @@ begin
   if v_status <> 'pending' then
     raise exception 'FAIL 4: the correction row is % before any review', v_status;
   end if;
-  if (select count(*) from hr.attendance_sessions) <> 1 then
+  if (select count(*) from hr.attendance_sessions where staff_id in ('6d000000-0000-4000-8000-000000000004','6d000000-0000-4000-8000-000000000003')) <> 1 then
     raise exception 'FAIL 4: a request created an attendance session of its own';
   end if;
 end $$;
@@ -752,11 +752,11 @@ reset role;
 do $$
 declare v_out timestamptz;
 begin
-  if (select count(*) from hr.attendance_sessions) <> 2 then
+  if (select count(*) from hr.attendance_sessions where staff_id in ('6d000000-0000-4000-8000-000000000004','6d000000-0000-4000-8000-000000000003')) <> 2 then
     raise exception 'FAIL 4: expected two attendance sessions after the two approvals, found %',
       (select count(*) from hr.attendance_sessions);
   end if;
-  if (select count(*) from hr.attendance_sessions where clock_out is null) <> 0 then
+  if (select count(*) from hr.attendance_sessions where clock_out is null and staff_id in ('6d000000-0000-4000-8000-000000000004','6d000000-0000-4000-8000-000000000003')) <> 0 then
     raise exception 'FAIL 4: an approval left a session open';
   end if;
 
@@ -1427,7 +1427,7 @@ begin
   end if;
   perform set_config('test.discrepancy', v.id::text, true);
   -- Zero variance stays nobody's problem.
-  if (select count(*) from hr.cashier_discrepancies) <> 1 then
+  if (select count(*) from hr.cashier_discrepancies where shift_id = '7e000000-0000-4000-8000-000000000001') <> 1 then
     raise exception 'FAIL 9: the discrepancy table holds more than the one short drawer';
   end if;
 end $$;
@@ -1600,6 +1600,19 @@ begin
       if sqlstate <> '22023' then raise; end if;
   end;
 
+  -- D4: the cap is enforced at the decision, not silently at claim time.
+  -- Under a 0.4 percent cap (room 26.00 of a 6500 gross) the 30.00 shortage is
+  -- refused outright; nothing is booked that a payslip could never carry.
+  begin
+    perform public.admin_hr_review_discrepancy(
+      current_setting('test.discrepancy')::uuid, 'deduct', 'خصم فوق السقف', null, null, 30);
+    raise exception 'FAIL 9: a deduction over the remaining cap was approved';
+  exception
+    when others then
+      if sqlstate <> '22023' then raise; end if;
+      if sqlerrm not like '%exceeds the remaining salary deduction cap%' then raise; end if;
+  end;
+
   -- The switch on is not a blank cheque: the amount and the reason still matter.
   begin
     perform public.admin_hr_review_discrepancy(
@@ -1619,6 +1632,12 @@ begin
       if sqlstate <> '22023' then raise; end if;
       if sqlerrm not like '%no larger than the discrepancy%' then raise; end if;
   end;
+
+  -- D4: the same 30.00 becomes collectable once the cap covers it.
+  v := public.admin_hr_update_settings(p_max_salary_deduction_percent := 5);
+  if (v ->> 'max_salary_deduction_percent')::numeric <> 5 then
+    raise exception 'FAIL 9: the cap did not become 5 percent before the collectable deduction';
+  end if;
 
   v := public.admin_hr_review_discrepancy(
     current_setting('test.discrepancy')::uuid, 'deduct', 'عجز مؤكد بعد المراجعة', null, null, 30);
@@ -1672,6 +1691,9 @@ begin
   end if;
 end $$;
 
+-- (fixture dating) the deduct stamps effective_date = current_date; pin it into October so the run month matches the fixture window regardless of when the rehearsal runs.
+update hr.adjustments set effective_date = make_date(2026,10,15) where id = current_setting('test.shortage')::uuid;
+
 -- October: the shortage is approved and the switch is on, but the cap is 0.4
 -- percent of a 6500 gross, which is 26.00. An approved deduction the cap cannot
 -- cover stays out of the payslip rather than being paid at a smaller amount.
@@ -1682,17 +1704,18 @@ select set_config('request.jwt.claims',
 do $$
 declare v jsonb;
 begin
-  v := public.admin_hr_generate_payroll(2026, 10, 'أكتوبر بسقف ٠٫٤٪');
+  v := public.admin_hr_generate_payroll(2026, 10, 'أكتوبر');
   if v is null then
     raise exception 'FAIL 9: October did not calculate';
   end if;
-  if (v ->> 'total_deductions')::numeric <> 300 then
-    raise exception 'FAIL 9: October deducted % under a cap of 26.00; the 30.00 shortage must stay out',
+  -- D4 means the deduction only exists because the 5 percent cap can carry it,
+  -- so October's first generation already books the shortage.
+  if (v ->> 'total_deductions')::numeric <> 330 then
+    raise exception 'FAIL 9: October deducted %; expected 330 with the collectable shortage',
       v ->> 'total_deductions';
   end if;
-  if (v ->> 'total_net')::numeric <> 6200 then
-    raise exception 'FAIL 9: October net is % with the cap under the shortage, expected 6200',
-      v ->> 'total_net';
+  if (v ->> 'total_net')::numeric <> 6170 then
+    raise exception 'FAIL 9: October net is %; expected 6170', v ->> 'total_net';
   end if;
   perform set_config('test.run10', v ->> 'run_id', true);
 
@@ -1710,8 +1733,9 @@ end $$;
 reset role;
 do $$
 begin
-  if (select payroll_run_id from hr.adjustments where id = current_setting('test.shortage')::uuid) is not null then
-    raise exception 'FAIL 9: a cap below the shortage still let it into a payslip';
+  if (select payroll_run_id from hr.adjustments where id = current_setting('test.shortage')::uuid)
+     is distinct from current_setting('test.run10')::uuid then
+    raise exception 'FAIL 9: the collectable shortage was not claimed by October';
   end if;
 end $$;
 

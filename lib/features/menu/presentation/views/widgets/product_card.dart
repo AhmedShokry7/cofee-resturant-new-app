@@ -312,7 +312,7 @@ class _StepButton extends StatelessWidget {
       child: Container(
         height: AppSizes.px30,
         width: AppSizes.px30,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColor.lightGreyColor,
           shape: BoxShape.circle,
         ),

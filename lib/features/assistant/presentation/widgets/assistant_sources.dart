@@ -58,7 +58,7 @@ class AssistantSourceList extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (source.isLink) ...[
-          const Icon(
+          Icon(
             AppIcons.externalLink,
             size: 12,
             color: AppColor.greyColor,

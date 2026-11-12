@@ -12,6 +12,8 @@ import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/startup/app_bootstrap.dart';
 import 'package:new_coffee/core/theme/theme_class.dart';
+import 'package:new_coffee/core/theme/theme_mode_cubit.dart';
+import 'package:new_coffee/core/theme/theme_rebuild.dart';
 import 'package:new_coffee/features/design/data/design_applier.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
@@ -51,7 +53,12 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return AppProviders(
+    // The dark-mode toggle lives on its own cubit above the providers, so it
+    // can repaint the root before the settings tab even exists.
+    return BlocProvider<ThemeModeCubit>(
+      lazy: false,
+      create: (_) => ThemeModeCubit(),
+      child: AppProviders(
       // Rebuilding MaterialApp alone does not re-localize the app: every route
       // hands the tree a `const` page (see `AppRoutes.routes`), and Flutter
       // skips the build of a child whose widget instance did not change. This
@@ -65,8 +72,19 @@ class _MyAppState extends State<MyApp> {
             // المستند وحده يبني الشاشة من جديد: قراءة لم تُغيّر دورًا ولا مقياسًا
             // ولا قسمًا لا تسأل الشجرة عن نفسها.
             buildWhen: (previous, next) => previous.design != next.design,
-            builder: (context, design) => MaterialApp(
+            builder: (context, design) => BlocBuilder<ThemeModeCubit, ThemeMode>(
+              builder: (context, themeMode) {
+                // The design document repaints the colour roles on its own
+                // load; re-assert the dark roles here so a design refresh can
+                // never undo the saved dark choice.
+                context.read<ThemeModeCubit>().syncRoles();
+                // `ThemeRebuild` walks the tree after the mode flips so the
+                // screens that read `AppColor` directly repaint too.
+                return ThemeRebuild(
+                  child: MaterialApp(
               title: S.appName,
+              themeMode: themeMode,
+              darkTheme: ThemeClass.dark(),
               locale: AppLocale.instance.locale,
               supportedLocales: const [Locale('ar'), Locale('en')],
               localizationsDelegates: const [
@@ -104,9 +122,13 @@ class _MyAppState extends State<MyApp> {
                 ),
                 ...AppRoutes.routes,
               },
+                  ),
+                );
+              },
             ),
           ),
         ),
+      ),
       ),
     );
   }

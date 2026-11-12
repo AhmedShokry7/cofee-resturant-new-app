@@ -603,7 +603,7 @@ class _LocationPickerState extends State<LocationPicker> {
     constraints: const BoxConstraints(maxHeight: 220),
     margin: EdgeInsets.symmetric(horizontal: AppSpacing.md),
     decoration: BoxDecoration(
-      color: AppColor.whiteColor,
+      color: AppColor.cardSurface,
       borderRadius: BorderRadius.circular(AppRadius.r16),
       boxShadow: AppShadows.sheet,
     ),

@@ -238,10 +238,11 @@ abstract final class AppDimensions {
   /// The home carousel slide, single banner included.
   ///
   /// The pictures the dashboard uploads are 16:9 and both slots are wider than
-  /// that, so the number is the closest the two shapes get: the inset promo
-  /// banner (screen - 2x AppSpacing.lg = 328 on a phone) is exactly 16:9 here,
-  /// and the full-bleed carousel is 1.96 instead of the 2.20 it was at 164.
-  static const double homeBannerHeight = 184.0;
+  /// that, so the number is the closest the two shapes get: on a 390pt phone
+  /// the full-bleed carousel is exactly 16:9 here, and the inset promo banner
+  /// (screen - 2x AppSpacing.lg = 328) stretches a mild 17% under `fill`.
+  /// Raised from 184 because the slot read as a thin strip.
+  static const double homeBannerHeight = 216.0;
 
   /// The success ring on the payment-success page, mark included.
   static const double paymentSuccessMark = 124.0;

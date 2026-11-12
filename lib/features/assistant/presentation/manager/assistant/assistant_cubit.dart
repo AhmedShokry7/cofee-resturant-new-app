@@ -12,6 +12,7 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/assistant/data/assistant_greetings.dart';
 import 'package:new_coffee/features/assistant/data/assistant_improvement_log.dart';
 import 'package:new_coffee/features/assistant/data/assistant_intents.dart';
+import 'package:new_coffee/features/assistant/data/assistant_learned_intents.dart';
 import 'package:new_coffee/features/assistant/data/assistant_language.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory.dart';
 import 'package:new_coffee/features/assistant/data/assistant_memory_extractor.dart';
@@ -160,6 +161,9 @@ class AssistantCubit extends Cubit<AssistantState> {
   Set<String> _lastCartIds = const {};
   AssistantImprovementLog _improvementLog = AssistantImprovementLog();
 
+  /// Lessons learned from past conversations: phrasing → intent.
+  AssistantLearnedIntents _learned = AssistantLearnedIntents();
+
   /// Guards against a second message while one is being answered.
   ///
   /// The chat's "typing" bubble is not used for this: it now means "waiting
@@ -191,6 +195,7 @@ class AssistantCubit extends Cubit<AssistantState> {
     _memory = await AssistantMemory.load();
     _log = await ConversationLog.load();
     _improvementLog = await AssistantImprovementLog.load();
+    _learned = await AssistantLearnedIntents.load();
     _chats = await AssistantConversations.load();
     await AssistantCatalog.load();
     if (isClosed) return;
@@ -437,6 +442,10 @@ class AssistantCubit extends Cubit<AssistantState> {
       snapshot: _snapshot,
       memory: _memory,
     );
+    // Training replay: an identical (or near-identical) phrasing the offline
+    // engine grounded before is answered with the intent it learned, without
+    // re-scoring. A lesson the assistant already paid for is not paid again.
+    final learned = _learned.lookup(text);
     final answer = AssistantEngine.answer(
       text,
       snapshot: _snapshot,
@@ -446,9 +455,21 @@ class AssistantCubit extends Cubit<AssistantState> {
       cartProductIds: cartProductIds,
       isReturning: _isReturning,
       firstName: _firstName,
-      deviceIntent: reading.deviceIntent,
+      deviceIntent: learned ?? reading.deviceIntent,
     );
     _memory.recordTopic(answer.topic);
+    // Learning from conversations: when the engine grounded a sentence the
+    // keyword scorer itself could not place (typo-recovery or context did
+    // it), the phrasing is filed with the intent that finally answered it.
+    // Replays then skip the miss entirely next time.
+    if (!reading.wantsLanguageModel &&
+        answer.topic != 'fallback' &&
+        detectIntent(text) == AssistantIntent.unknown) {
+      final taughtIntent = _topicToIntent(answer.topic);
+      if (taughtIntent != null) {
+        unawaited(_learned.record(text, taughtIntent));
+      }
+    }
     // Every question the app cannot ground is a hole in what the assistant
     // knows, and the list of them is what the shop reads to fill the holes.
     // It used to be gated on the engine's own 'fallback' topic — which it
@@ -602,6 +623,22 @@ class AssistantCubit extends Cubit<AssistantState> {
     _conversationId = logged.conversationId;
     return true;
   }
+
+  /// The intent whose answer carried [topic], or null for topics that are
+  /// answers of knowledge or composition rather than an intent worth
+  /// rehearsing.
+  AssistantIntent? _topicToIntent(String topic) => switch (topic) {
+    'suggest' => AssistantIntent.suggestDrink,
+    'cart' => AssistantIntent.addToCart,
+    'orders' => AssistantIntent.orderStatus,
+    'prices' => AssistantIntent.showCoupons,
+    'thanks' => AssistantIntent.thanks,
+    'greeting' => AssistantIntent.greeting,
+    'farewell' => AssistantIntent.farewell,
+    'identity' => AssistantIntent.botIdentity,
+    'memory' => AssistantIntent.memory,
+    _ => null,
+  };
 
   Future<void> _keepWhatTheySaid(String text) async {
     // The canonical name, not the one on screen: a preference filed as

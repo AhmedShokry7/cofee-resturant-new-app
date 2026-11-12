@@ -50,12 +50,40 @@ class AssistantGreetings {
       final normalizedArabic = normalizeText(query);
       if (normalizedArabic == 'السلام عليكم' ||
           normalizedArabic == 'سلام عليكم') {
-        return 'وعليكم السلام! قولي محتاج إيه.';
+        return 'وعليكم السلام! كيف أقدر أخدمك؟';
       }
       if (normalizedArabic == 'مرحبا' ||
           normalizedArabic == 'اهلا' ||
           normalizedArabic == 'هلا') {
-        return 'أهلًا بيك! قولي محتاج إيه.';
+        return 'هلا وغلا! أنا حاضر، وش تحتاج؟';
+      }
+      // Dialect greetings get a dialect answer: a bare hello is met with a
+      // warm hello, and a "how are you" is answered before the pitch.
+      const helloWords = ['هلا والله', 'هلا', 'هاي', 'هلو', 'ياهلا'];
+      for (final word in helloWords) {
+        if (normalizedArabic == normalizeText(word)) {
+          // Small talk answers without a pitch question: a hello is met
+          // with a hello, and the customer asks when they are ready.
+          return 'هلا والله! أمرّك بأي وقت.';
+        }
+      }
+      const howAreYou = [
+        'شلونك',
+        'شحالك',
+        'شخبارك',
+        'كيفك',
+        'كيف حالك',
+        'ازيك',
+        'عامل ايه',
+        'عاملين ايه',
+        'اخبارك',
+        'شحالك',
+        'واخبارك',
+      ];
+      for (final word in howAreYou) {
+        if (normalizedArabic.contains(normalizeText(word))) {
+          return 'الحمد لله بخير! أخباري تمام — وأنا تحت أمرك في أي وقت.';
+        }
       }
     }
     return arabic
@@ -89,7 +117,7 @@ class AssistantGreetings {
   // ==================== Egyptian Arabic ====================
 
   static String _dayPartAr(DateTime now) =>
-      now.hour < 12 ? 'صباح الفل' : 'مساء الفل';
+      now.hour < 12 ? 'صباح الخير' : 'مساء الخير';
 
   static String chatGreetingAr({
     required bool isReturning,
@@ -100,11 +128,11 @@ class AssistantGreetings {
     final name = (firstName ?? '').trim();
     final who = name.isEmpty ? '' : ' يا $name';
     if (isReturning) {
-      return '$day$who! وحشتني.';
+      return '$day$who! اشتقنا لك.';
     }
     // A person does not introduce themselves by listing what they can do.
     // They say hello and let the customer ask.
-    return '$day$who! قولي محتاج إيه.';
+    return '$day$who! كيف أقدر أخدمك؟';
   }
 
   /// Arabic per-order status line (طلبك بيتحضر...).
@@ -112,11 +140,11 @@ class AssistantGreetings {
     final name = AssistantSnapshot.canonicalName(order.product);
     switch (order.status.name) {
       case 'active':
-        return 'طلبك $name بيتحضر دلوقتي وهيجهز قريب.';
+        return 'طلبك $name بيجهز الحين وبيكون جاهز قريب.';
       case 'completed':
-        return 'طلبك $name وصل — بالهنا والشفا!';
+        return 'طلبك $name وصل — بالهنا والشفاء!';
       case 'cancelled':
-        return 'طلبك $name اتلغى.';
+        return 'طلبك $name اتلغت.';
       default:
         return 'حالة طلبك $name: ${order.status.label}.';
     }

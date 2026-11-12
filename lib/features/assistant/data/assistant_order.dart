@@ -16,12 +16,14 @@ class OrderVariants {
     'small': 'small',
     'وسط': 'medium',
     'ميديم': 'medium',
+    'ميديوم': 'medium',
     'متوسط': 'medium',
     'medium': 'medium',
     'ميديام': 'medium',
     'كبير': 'large',
     'كبيره': 'large',
     'جامبو': 'large',
+    'جيمبو': 'large',
     'large': 'large',
     'لارج': 'large',
   };
@@ -54,14 +56,27 @@ class OrderVariants {
     'سكر وسط': 'normal',
     'سكر عادي': 'normal',
     'عادي': 'normal',
+    // Saudi / Egyptian sweetness phrasing.
+    'بلا سكر': 'none',
+    'غير ملو': 'none',
+    'بدون تحليه': 'none',
+    'تحليه خفيف': 'less',
+    'محلي زياده': 'extra',
+    'سكر عالي': 'extra',
+    'محلي كويس': 'normal',
   };
 
   static const Map<String, int> numberWords = {
     'واحد': 1,
     'واحده': 1,
+    'وحدة': 1,
     'اتنين': 2,
     'اثنين': 2,
     'ثنين': 2,
+    // Egyptian "two".
+    'تنين': 2,
+    'جوج': 2,
+    'حبتين': 2,
     'تلاته': 3,
     'ثلاثه': 3,
     'اربعه': 4,

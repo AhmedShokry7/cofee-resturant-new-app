@@ -32,27 +32,19 @@ class ShippingAddressesPageBody extends StatelessWidget {
         return ListView(
           padding: AppLayout.pageBody,
           children: [
-            for (var index = 0; index < state.addresses.length; index++) ...[
+            for (final address in state.addresses)
               AddressTile(
-                address: state.addresses[index],
-                selected:
-                    state.selectedAddress?.id == state.addresses[index].id,
-                onTap: () => context.read<CheckoutCubit>().selectAddress(
-                  state.addresses[index],
-                ),
-                onSetDefault: () => context
-                    .read<CheckoutCubit>()
-                    .setDefaultAddress(state.addresses[index].id),
-                onEdit: () => Navigator.of(context).pushNamed(
-                  AddAddressPage.routeName,
-                  arguments: state.addresses[index],
-                ),
-                onDelete: () => context.read<CheckoutCubit>().removeAddress(
-                  state.addresses[index].id,
-                ),
+                address: address,
+                selected: state.selectedAddress?.id == address.id,
+                onTap: () =>
+                    context.read<CheckoutCubit>().selectAddress(address),
+                onSetDefault: () =>
+                    context.read<CheckoutCubit>().setDefaultAddress(address.id),
+                onEdit: () => Navigator.of(context)
+                    .pushNamed(AddAddressPage.routeName, arguments: address),
+                onDelete: () =>
+                    context.read<CheckoutCubit>().removeAddress(address.id),
               ),
-              if (index != state.addresses.length - 1) const Divider(),
-            ],
             SizedBox(height: AppSpacing.xl),
             _AddAddressButton(
               onTap: () =>

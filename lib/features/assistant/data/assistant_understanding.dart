@@ -101,10 +101,23 @@ class AssistantUnderstanding {
     'طلبته',
     'مشيت',
     'اتجهز',
+    // Saudi / Egyptian ways of asking about one's own order.
+    'اوردرى',
+    'طلبيه',
+    'طلبيتي',
+    'فينه',
+    'وينه',
+    'اتشحن',
+    'الشحنه',
+    'اتسلم',
+    'استلمتها',
+    'خرج للتوصيل',
+    'في الطريق',
     'my order',
     'delivered',
     'arrived',
     'tracking',
+    'out for delivery',
   ];
 
   /// Words that ask whether something is allowed, or when and where. They turn
@@ -123,6 +136,10 @@ class AssistantUnderstanding {
     'متى',
     'كيف',
     'ليه',
+    // Gulf / Egyptian question words.
+    'وين',
+    'ليش',
+    'وشلون',
     'why',
     'when',
     'where',
@@ -138,6 +155,15 @@ class AssistantUnderstanding {
     'ترشيح',
     'نصح',
     'اجرب',
+    // Dialect recommendation verbs. "تنصحني" and "تنصحني" put the verb
+    // behind a prefix, so the bare stems never matched as whole words.
+    'نصحني',
+    'انصحني',
+    'تنصحني',
+    'تنصحني',
+    'تنصحلي',
+    'رشحلي',
+    'اقترحلي',
     'suggest',
     'recommend',
   ];
@@ -191,8 +217,15 @@ class AssistantUnderstanding {
     'نقاطك',
     'نقطتي',
     'رصيد',
+    'رصيدي',
+    'الولاء',
+    'محفظه',
+    'المحفظه',
+    'كاش باك',
     'subscription',
     'points',
+    'wallet',
+    'loyalty',
   ];
 
   /// Words about the app itself rather than what it sells. The screen is not
@@ -210,6 +243,8 @@ class AssistantUnderstanding {
     'تطبيق',
     'التطبيق',
     'اضغط',
+    'الواجهه',
+    'السطر',
     'button',
     'screen',
     'app',
@@ -224,6 +259,14 @@ class AssistantUnderstanding {
     'مش قادر',
     'مش شايف',
     'مش ظاهر',
+    // Saudi / Egyptian "I cannot find it".
+    'مالقيتش',
+    'مش موجود',
+    'ما حصلت',
+    'ما حصلته',
+    'ما يبين لي',
+    'ما يظهر لي',
+    'ماقدر',
     'can\'t find',
     'cannot find',
   ];
@@ -555,8 +598,7 @@ class AssistantUnderstanding {
     if (namesMenuItem) return SentenceSubject.menuItem;
     // A search and a fact question share their words ("حاجة باردة" matches the
     // iced-coffee article but asks for a pick), so the ask is checked first.
-    if (
-        mentionsWord(query, recommendationWords) ||
+    if (mentionsWord(query, recommendationWords) ||
         mentionsCategory ||
         asksAboutMenu) {
       return SentenceSubject.recommendation;
@@ -577,7 +619,13 @@ class AssistantUnderstanding {
     // exactly the shape of "طلبين لاتيه واحد سادة والتاني نيس".
     if (parseOrderMessage(query).items.isEmpty) return false;
     // "فيه سكر" / "كام سعره" ask what the drink is made of or what it costs.
-    if (mentionsFragment(query, const ['فيه', 'فيها', 'بيحتوي', 'سعر', 'كام'])) {
+    if (mentionsFragment(query, const [
+      'فيه',
+      'فيها',
+      'بيحتوي',
+      'سعر',
+      'كام',
+    ])) {
       return false;
     }
     return !mentionsWord(query, interrogativeWords);

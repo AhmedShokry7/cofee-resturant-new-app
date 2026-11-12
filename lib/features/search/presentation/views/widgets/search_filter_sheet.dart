@@ -16,7 +16,7 @@ import 'package:new_coffee/core/theme/tokens.dart';
 Future<void> showSearchFilterSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
-    backgroundColor: AppColor.whiteColor,
+    backgroundColor: AppColor.cardSurface,
     isScrollControlled: true,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.r32)),

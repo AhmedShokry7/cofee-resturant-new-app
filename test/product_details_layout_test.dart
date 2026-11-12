@@ -500,7 +500,8 @@ void main() {
           (widget) =>
               widget is Icon &&
               (widget.icon == AppIcons.favourite ||
-                  widget.icon == AppIcons.favourite),
+                  // Active state uses the Material filled heart.
+                  widget.icon == Icons.favorite),
         ),
       );
       Icon headerHeart() => tester.widget<Icon>(headerHeartIcon());
@@ -514,8 +515,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Saved: completely filled red heart, same persistence as cards.
-      expect(headerHeart().icon, AppIcons.favourite);
+      // Saved: the heart itself fills red, same persistence as cards.
+      expect(headerHeart().icon, Icons.favorite);
       expect(headerHeart().color, AppColor.errorColor);
       expect(page.favorites.state.ids, contains(product.id));
     });

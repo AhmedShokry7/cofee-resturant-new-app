@@ -161,13 +161,13 @@ class _ReadFailedBanner extends StatelessWidget {
         vertical: AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             AppIcons.information,
             size: AppIconSize.lg,
             color: AppColor.greyColor,

@@ -43,7 +43,7 @@ class BundleDetailsPage extends StatelessWidget {
             bottomNavigationBar: Container(
               padding: EdgeInsets.all(AppSpacing.lg),
               decoration: BoxDecoration(
-                color: AppColor.whiteColor,
+                color: AppColor.cardSurface,
                 border: Border(top: BorderSide(color: AppColor.borderColor)),
               ),
               child: BlocBuilder<BundleDetailsCubit, BundleDetailsState>(
@@ -152,7 +152,7 @@ class _BundleDetailsBody extends StatelessWidget {
                 margin: EdgeInsets.only(bottom: AppSpacing.sm),
                 padding: EdgeInsets.all(AppSpacing.sm),
                 decoration: BoxDecoration(
-                  color: AppColor.whiteColor,
+                  color: AppColor.cardSurface,
                   borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
                   border: Border.all(color: AppColor.borderColor),
                 ),

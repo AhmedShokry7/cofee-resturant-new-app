@@ -136,7 +136,7 @@ class _InvoiceCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         borderRadius: BorderRadius.circular(AppRadius.r16),
         border: Border.all(color: AppColor.borderColor),
       ),
@@ -305,7 +305,7 @@ class _BottomAction extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: AppColor.whiteColor,
+        color: AppColor.cardSurface,
         border: Border(top: BorderSide(color: AppColor.borderColor)),
       ),
       child: CustomBtn(text: label, onPressed: onPressed),
