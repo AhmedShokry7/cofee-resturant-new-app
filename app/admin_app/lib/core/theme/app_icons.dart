@@ -154,4 +154,7 @@ abstract final class AppIcons {
   static const warehouse = HugeIcons.strokeRoundedWarehouse;
   static const zoomInArea = HugeIcons.strokeRoundedZoomInArea;
   static const zoomOutArea = HugeIcons.strokeRoundedZoomOutArea;
+  static const tune = HugeIcons.strokeRoundedSettings01;
+  static const lock = HugeIcons.strokeRoundedLock;
+  static const paintBrush = HugeIcons.strokeRoundedPaintBrush01;
 }

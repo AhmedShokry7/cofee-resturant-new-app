@@ -251,7 +251,7 @@ class EditorPages {
       allowedComponentTypes: [],
     ),
     EditorPage(
-      pageId: 'productDetails',
+      pageId: 'product_details',
       label: 'تفاصيل المنتج',
       routeName: '/product/:id',
       isEditable: false,

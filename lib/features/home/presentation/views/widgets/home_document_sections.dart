@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/preview/preview_section.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
@@ -18,7 +19,12 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_single_
 List<Widget> buildHomeDocumentSections(List<PublishedSection> document) =>
     <Widget>[
       for (final section in document)
-        if (buildHomeDocumentSection(section) case Widget widget) widget,
+        if (buildHomeDocumentSection(section) case Widget widget)
+          previewSectionWrap(
+            section,
+            pageId: 'home',
+            child: widget,
+          ),
     ];
 
 /// قسم المنشور بمكوّنه الحقيقي في هذا التطبيق، أو null.

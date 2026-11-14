@@ -4,6 +4,8 @@
 /// validation rules, and allowed operations. It is the single source of truth
 /// for the component tree, properties inspector, and component library.
 
+library;
+
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 
 /// Registry entry for a component type
@@ -195,9 +197,8 @@ class ComponentRegistry {
           options: ['start', 'center', 'end', 'stretch'],
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [
-        'header',
         'bannerCarousel',
         'promoBanner',
         'categoryList',
@@ -210,6 +211,8 @@ class ComponentRegistry {
         'spacer',
         'column',
         'button',
+        'image',
+        'searchBar',
       ],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -239,7 +242,7 @@ class ComponentRegistry {
           options: ['xs', 'sm', 'md', 'lg', 'xl', 'xxl'],
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {'size': 'md'},
@@ -280,7 +283,7 @@ class ComponentRegistry {
           defaultValue: '#E0E0E0',
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -359,7 +362,7 @@ class ComponentRegistry {
           validation: {'min': 1},
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -432,7 +435,7 @@ class ComponentRegistry {
           ],
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -519,7 +522,7 @@ class ComponentRegistry {
           defaultValue: '',
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -591,7 +594,7 @@ class ComponentRegistry {
           options: ['start', 'center', 'end'],
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -639,7 +642,7 @@ class ComponentRegistry {
           validation: {'min': 100, 'max': 400},
         ),
       },
-      allowedParentTypes: ['pageHome', 'column'],
+      allowedParentTypes: ['home', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -677,7 +680,7 @@ class ComponentRegistry {
           options: ['none', 'sm', 'md', 'lg'],
         ),
       },
-      allowedParentTypes: ['pageHome', 'column'],
+      allowedParentTypes: ['home', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -720,7 +723,7 @@ class ComponentRegistry {
           defaultValue: true,
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -784,7 +787,7 @@ class ComponentRegistry {
           defaultValue: true,
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -858,7 +861,7 @@ class ComponentRegistry {
           validation: {'min': 1, 'max': 4},
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -905,7 +908,7 @@ class ComponentRegistry {
           defaultValue: true,
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column'],
+      allowedParentTypes: ['home', 'categories', 'column'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
@@ -934,7 +937,7 @@ class ComponentRegistry {
           defaultValue: 'ابحث عن منتج...',
         ),
       },
-      allowedParentTypes: ['pageHome', 'pageCategories', 'column', 'header'],
+      allowedParentTypes: ['home', 'categories', 'column', 'header'],
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {'hint': 'ابحث عن منتج...'},
@@ -966,7 +969,7 @@ class ComponentRegistry {
           defaultValue: true,
         ),
       },
-      allowedParentTypes: ['pageHome'],
+      allowedParentTypes: ['home'],
       allowedChildTypes: ['searchBar'],
       allowedOperations: ['hide'], // Cannot delete, move, or duplicate
       defaultValues: {
@@ -987,9 +990,9 @@ class ComponentRegistry {
       displayName: 'شريط التبويب',
       description: 'شريط التنقل السفلي (ثابت، لا يُحذف)',
       category: 'navigation',
-      classification: ComponentClassification.protected,
+      classification: ComponentClassification.static_,
       properties: {},
-      allowedParentTypes: ['pageHome', 'pageCategories', 'pageCart', 'pageFavourites', 'pageSettings'],
+      allowedParentTypes: ['home', 'categories', 'cart', 'favourites', 'settings'],
       allowedChildTypes: [],
       allowedOperations: [], // Completely locked
       defaultValues: {},

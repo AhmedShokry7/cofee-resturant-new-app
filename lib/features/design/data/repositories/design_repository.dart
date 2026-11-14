@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:new_coffee/core/services/shared_pref.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/features/design/data/design_preview_store.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/shared/utils/cache_manager.dart';
 
@@ -45,6 +46,15 @@ class SupabaseDesignRepository implements DesignRepository {
 
   @override
   Future<PublishedDesign?> published({bool forceRefresh = false}) async {
+    // معاينة الأدمن تسبق كل شيء: المستند الذي دفعه المحرّر هو ما يُرسم، بلا
+    // شبكة ولا cache ولا حفظ — لأن ما يُعاد بعد المعاينة يجب أن يكون منشور
+    // اليوم لا مستند تجربة لم يُنشر بعد.
+    final override = DesignPreviewStore.instance.document;
+    if (override != null) {
+      final previewed = PublishedDesign.fromJson(override);
+      if (previewed != null) return previewed;
+      // مستند المعاينة نفسه لا يُقرأ: لا تكن نشرًا كاذبًا من تجربة تالفة.
+    }
     if (!forceRefresh) {
       final cached = CacheManager().get<PublishedDesign>(_cacheKey);
       if (cached != null) return cached;

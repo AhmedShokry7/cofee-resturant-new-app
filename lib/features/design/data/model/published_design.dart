@@ -50,6 +50,32 @@ class PublishedTheme {
 
   bool get isNeutral => colors.isEmpty && textFactor == 1;
 
+  /// طبقة كما ستُقرأ مجددًا: عقد واحد في كلا الاتجاهين. تستعمل للإرسال
+  /// الراجع إلى محرّر الأدمن (COMPONENT_TREE_UPDATED) لا للحفظ.
+  Map<String, dynamic> toJson() => {
+    if (colors.isNotEmpty)
+      'colors': {
+        for (final entry in colors.entries)
+          entry.key.key: _hex(entry.value),
+      },
+    if (textFactor != 1) 'text_scale': _scaleName(textFactor),
+  };
+
+  static String _hex(Color color) {
+    final value = color.toARGB32();
+    final rgb = value & 0xFFFFFF;
+    return '#${rgb.toRadixString(16).padLeft(6, '0').toUpperCase()}';
+  }
+
+  /// الاسم كما هو في [_textFactors]؛ غير موجود يعني طبقة من مصدر آخر —
+  /// تُرسل بدون مقياس لا باسم مختلق.
+  static String? _scaleName(double factor) {
+    for (final entry in _textFactors.entries) {
+      if (entry.value == factor) return entry.key;
+    }
+    return null;
+  }
+
   Color? color(ThemeColorRole role) => colors[role];
 
   /// تساوي بالمحتوى: إعادة قراءة أعطت الطبقة نفسها لا تُعيد بناء الشاشة كلها.
@@ -220,6 +246,36 @@ class PublishedDesign {
   /// أقسام الصفحة الرئيسية بترتيبها المنشور، وخاليًا حين لا صفحة رئيسية في
   /// المستند — عندئذ يرسم الهاتف ترتيبه المكتوب في مصدره.
   final List<PublishedSection> homeSections;
+
+  /// المستند كما يقرؤه هذا التطبيق مرة أخرى، بصيغة المنشور نفسها.
+  ///
+  /// يعيد صفحة `page.home` فقط: الهاتف يرسم هذه وحدها، وما في المستند الأصلي
+  /// من صفحات أخرى مسؤولية اللوحة لا القارئ. تستعمل للإرسال الراجع إلى
+  /// محرّر الأدمن (COMPONENT_TREE_UPDATED)؛ القراءة من JSON تبقى [fromJson].
+  Map<String, dynamic> toDocument() => {
+    'schema_version': schemaVersion,
+    'theme': theme.toJson(),
+    'pages': <Map<String, dynamic>>[
+      {
+        'page': 'home',
+        'root': {
+          'type': DesignWidgetTypes.pageHome,
+          'children': <Map<String, dynamic>>[
+            for (final section in homeSections)
+              {
+                'id': section.id,
+                'type': section.type,
+                'visible': section.visible,
+                'properties': <String, dynamic>{
+                  if (section.dataSource != null)
+                    'dataSource': section.dataSource,
+                },
+              },
+          ],
+        },
+      },
+    ],
+  };
 
   /// المستندات المنشورة التي يقرأها هذا التطبيق. 1 بلا طبقة شكل، و2 بها.
   static const int readableSchemaVersion = 2;

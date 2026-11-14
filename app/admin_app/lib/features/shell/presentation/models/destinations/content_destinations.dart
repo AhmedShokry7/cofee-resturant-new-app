@@ -5,6 +5,16 @@ import 'package:admin_app/core/theme/app_icons.dart';
 /// The content domain: the store content and the application settings.
 List<AdminDestination> get contentDestinations => <AdminDestination>[
   AdminDestination(
+    id: 'visualEditor',
+    label: S.visualEditor,
+    icon: AppIcons.paintBrush,
+    searchHint: S.searchVisualEditorHint,
+    permission: 'settings.write',
+    section: S.sectionContent,
+    immersive: true,
+    tables: <String>['app_settings'],
+  ),
+  AdminDestination(
     id: 'content',
     label: S.content,
     icon: AppIcons.note01,

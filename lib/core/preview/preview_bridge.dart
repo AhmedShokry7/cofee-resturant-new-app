@@ -1,11 +1,25 @@
-// Preview mode JavaScript interop for postMessage communication
+// Preview mode communication with the Admin App (parent window).
 //
-// This file handles the communication between the Admin App (parent)
-// and the Customer App preview (iframe).
+// This file only exists for the preview entry point (main_preview.dart) that
+// runs inside the Admin App's visual editor iframe. On Android/iOS the bridge
+// is inert: `isActive` is false, no listener is attached, and nothing sends.
+//
+// This file holds the protocol contract only — pure Dart, safe on every
+// platform. The implementation is picked conditionally: the web bridge owns
+// `dart:js_interop`, and a stub keeps the phone build free of it.
+//
+// Protocol (both sides agree, protocolVersion 1.0):
+//   { protocolVersion, messageId, sessionId, type, payload }
+// Outbound: PREVIEW_READY, ELEMENT_SELECTED, PROPERTY_UPDATED,
+//           COMPONENT_TREE_UPDATED, PREVIEW_ERROR.
+// Inbound:  PREVIEW_INITIALIZE, LOAD_PAGE, SELECT_ELEMENT, UPDATE_PROPERTY,
+//           ADD_COMPONENT, REMOVE_COMPONENT, REORDER_COMPONENT,
+//           APPLY_DESIGN_CONFIG, PREVIEW_REFRESH, PREVIEW_ERROR.
 
-import 'dart:js_interop';
-import 'dart:js_interop_unsafe';
 import 'dart:convert';
+
+export 'preview_bridge_stub.dart'
+    if (dart.library.js_interop) 'preview_bridge_web.dart';
 
 /// Message types for the preview communication protocol
 enum PreviewMessageType {
@@ -31,18 +45,20 @@ enum PreviewMessageType {
 
 /// Base message structure for preview communication
 class PreviewMessage {
-  final String protocolVersion = '1.0';
+  PreviewMessage({
+    String? messageId,
+    required this.sessionId,
+    required this.type,
+    required this.payload,
+  }) : messageId =
+            messageId ?? DateTime.now().microsecondsSinceEpoch.toString();
+
+  static const String protocolVersion = '1.0';
+
   final String messageId;
   final String sessionId;
   final PreviewMessageType type;
   final Map<String, dynamic> payload;
-
-  PreviewMessage({
-    required this.messageId,
-    required this.sessionId,
-    required this.type,
-    required this.payload,
-  });
 
   Map<String, dynamic> toJson() => {
     'protocolVersion': protocolVersion,
@@ -54,150 +70,26 @@ class PreviewMessage {
 
   String toJsonString() => jsonEncode(toJson());
 
-  static PreviewMessage? fromJsonString(String jsonString) {
-    try {
-      final map = jsonDecode(jsonString) as Map<String, dynamic>;
-      return PreviewMessage(
-        messageId: map['messageId'] as String,
-        sessionId: map['sessionId'] as String,
-        type: PreviewMessageType.values.firstWhere(
-          (e) => e.value == map['type'],
-          orElse: () => throw ArgumentError('Unknown message type: ${map['type']}'),
-        ),
-        payload: map['payload'] as Map<String, dynamic>,
-      );
-    } catch (_) {
-      return null;
+  /// null = رسالة غير مفهومة: نوع مجهول أو شكل مخالف. المستقبل يتجاهلها.
+  static PreviewMessage? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    if (raw['protocolVersion'] != protocolVersion) return null;
+    final sessionId = raw['sessionId'];
+    final type = raw['type'];
+    if (sessionId is! String || sessionId.isEmpty) return null;
+    if (type is! String) return null;
+    PreviewMessageType? kind;
+    for (final candidate in PreviewMessageType.values) {
+      if (candidate.value == type) kind = candidate;
     }
-  }
-}
-
-/// Handles postMessage communication with the parent window
-class PreviewBridge {
-  static final PreviewBridge _instance = PreviewBridge._internal();
-  factory PreviewBridge() => _instance;
-  PreviewBridge._internal();
-
-  String? _sessionId;
-  final Map<String, void Function(PreviewMessage)> _handlers = {};
-  JSObject? _messageListener;
-
-  /// Initialize the bridge with a session ID
-  void initialize(String sessionId) {
-    _sessionId = sessionId;
-    _attachMessageListener();
-    _sendReady();
-  }
-
-  void _attachMessageListener() {
-    if (JS('bool', 'typeof window === "undefined"')) return;
-
-    _messageListener = JS('Object', '''
-      (function(bridge) {
-        return function(event) {
-          if (event.origin !== window.parent.origin && event.origin !== "null") {
-            return;
-          }
-          try {
-            const message = JSON.parse(event.data);
-            if (message && message.sessionId === bridge.sessionId) {
-              bridge.handleMessage(message);
-            }
-          } catch (e) {
-            console.warn('PreviewBridge: Invalid message', e);
-          }
-        };
-      })(this)
-    '''.toJS);
-
-    JS('void', 'window.addEventListener("message", this[_messageListener])');
-  }
-
-  void _detachMessageListener() {
-    if (_messageListener != null) {
-      JS('void', 'window.removeEventListener("message", this[_messageListener])');
-      _messageListener = null;
-    }
-  }
-
-  @JS('handleMessage')
-  external void handleMessage(JSObject message);
-
-  void _sendReady() {
-    if (_sessionId == null) return;
-    final message = PreviewMessage(
-      messageId: DateTime.now().microsecondsSinceEpoch.toString(),
-      sessionId: _sessionId!,
-      type: PreviewMessageType.previewReady,
-      payload: {'userAgent': JS('String', 'navigator.userAgent')},
+    if (kind == null) return null;
+    final payload = raw['payload'];
+    return PreviewMessage(
+      sessionId: sessionId,
+      type: kind,
+      payload: payload is Map
+          ? Map<String, dynamic>.from(payload)
+          : <String, dynamic>{},
     );
-    _postMessage(message);
-  }
-
-  void _postMessage(PreviewMessage message) {
-    if (JS('bool', 'typeof window === "undefined"')) return;
-    JS('void', 'window.parent.postMessage(this, "*")', message.toJsonString().toJS);
-  }
-
-  /// Send element selected event to parent
-  void sendElementSelected({
-    required String componentId,
-    required String componentType,
-    required String pageId,
-    required Map<String, dynamic> properties,
-    required Map<String, dynamic> editableProperties,
-    String? parentId,
-    int? index,
-  }) {
-    if (_sessionId == null) return;
-    final message = PreviewMessage(
-      messageId: DateTime.now().microsecondsSinceEpoch.toString(),
-      sessionId: _sessionId!,
-      type: PreviewMessageType.elementSelected,
-      payload: {
-        'componentId': componentId,
-        'componentType': componentType,
-        'pageId': pageId,
-        'parentId': parentId,
-        'index': index,
-        'properties': properties,
-        'editableProperties': editableProperties,
-      },
-    );
-    _postMessage(message);
-  }
-
-  /// Send property updated confirmation to parent
-  void sendPropertyUpdated({
-    required String componentId,
-    required String propertyKey,
-    required dynamic value,
-    bool success = true,
-    String? error,
-  }) {
-    if (_sessionId == null) return;
-    final message = PreviewMessage(
-      messageId: DateTime.now().microsecondsSinceEpoch.toString(),
-      sessionId: _sessionId!,
-      type: PreviewMessageType.propertyUpdated,
-      payload: {
-        'componentId': componentId,
-        'propertyKey': propertyKey,
-        'value': value,
-        'success': success,
-        'error': error,
-      },
-    );
-    _postMessage(message);
-  }
-
-  /// Register a handler for incoming messages
-  void onMessage(PreviewMessageType type, void Function(PreviewMessage) handler) {
-    _handlers[type.value] = handler;
-  }
-
-  void dispose() {
-    _detachMessageListener();
-    _handlers.clear();
   }
 }

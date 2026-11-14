@@ -13,7 +13,14 @@ part 'main_state.dart';
 enum MainTab { home, categories, cart, favorites, settings }
 
 class MainCubit extends Cubit<MainState> {
-  MainCubit() : super(const MainState(index: 0));
+  /// التبويبة التي تُفتح بها الصفحة الرئيسية عند إنشائها.
+  ///
+  /// وضع المعاينة (main_preview.dart) يضبطها قبل دفع MainRoute ليفتح إطار
+  /// المعاينة على الصفحة التي طلبها المحرّر. الإنتاج لا يلمسها: تبقى 0،
+  /// وهي الرئيسية كما اليوم.
+  static int initialTab = 0;
+
+  MainCubit() : super(MainState(index: initialTab));
 
   void changeTab(int index) {
     if (index == state.index) return;

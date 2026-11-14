@@ -1,5 +1,13 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+
+# Keep Debug plugins on the matching dynamic debug CRT. Without CMP0091,
+# newer MSVC toolsets can link static debug C++ libraries without their CRT.
+if(POLICY CMP0091)
+  cmake_policy(SET CMP0091 NEW)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+endif()
+
 project(admin_app LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
@@ -65,9 +73,10 @@ include(flutter/generated_plugins.cmake)
 set(BUILD_BUNDLE_DIR "$<TARGET_FILE_DIR:${BINARY_NAME}>")
 # Make the "install" step default, as it's required to run.
 set(CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD 1)
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-  set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
-endif()
+# Flutter's install step must put runtime files beside the executable. Keep
+# this in the build output directory instead of CMake's Windows Program Files
+# default, which requires administrator permissions during a normal debug run.
+set(CMAKE_INSTALL_PREFIX "${BUILD_BUNDLE_DIR}" CACHE PATH "..." FORCE)
 
 set(INSTALL_BUNDLE_DATA_DIR "${CMAKE_INSTALL_PREFIX}/data")
 set(INSTALL_BUNDLE_LIB_DIR "${CMAKE_INSTALL_PREFIX}")

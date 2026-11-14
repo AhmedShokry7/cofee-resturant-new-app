@@ -196,7 +196,7 @@ void main() {
         'notifications',
         'websites',
         'aiKnowledge',
-        'customerPreview',
+        'visualEditor',
       ]),
     );
     expect(ids, isNot(contains('deliveryZones')));
@@ -206,7 +206,7 @@ void main() {
       expect(destination.section, isNotNull, reason: destination.id);
       if (destination.id != 'dashboard' &&
           destination.id != 'orders' &&
-          destination.id != 'customerPreview') {
+          destination.id != 'visualEditor' {
         expect(destination.tables, isNotEmpty, reason: destination.id);
       }
     }

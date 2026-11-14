@@ -1,54 +1,56 @@
-import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:ui' as ui;
+import 'package:flutter/widgets.dart';
+
 import 'dart:async';
 
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:new_coffee/app.dart';
-import 'package:new_coffee/core/startup/app_bootstrap.dart';
+import 'package:new_coffee/core/locale/app_locale.dart';
+import 'package:new_coffee/core/preview/preview_bridge.dart';
+import 'package:new_coffee/core/preview/preview_section.dart';
+import 'package:new_coffee/core/navigation/root_navigator.dart';
+import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/startup/preview_theme.dart';
-import 'package:new_coffee/features/design/data/design_applier.dart';
-import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
+import 'package:new_coffee/features/design/data/design_preview_store.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
-import 'package:new_coffee/core/services/supabase_service.dart';
-import 'package:new_coffee/core/locale/app_locale.dart';
-import 'package:new_coffee/core/theme/app_theme.dart';
-import 'package:new_coffee/core/preview/preview_bridge.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
+import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 
 /// Preview mode entry point for the Customer App.
 ///
-/// This runs inside an iframe in the Admin App's Visual Editor.
-/// It communicates with the parent via postMessage for:
-/// - Receiving design documents to preview
-/// - Sending element selection events
-/// - Receiving property updates
+/// This runs inside an iframe in the Admin App's Visual Editor — the app
+/// itself, not a copy of it. The editor drives it through [PreviewBridge]:
 ///
-/// The preview mode:
-/// - Disables Firebase messaging (not needed in iframe)
-/// - Loads design from Admin App via postMessage
-/// - Reports user interactions back to Admin App
+/// - PREVIEW_INITIALIZE / APPLY_DESIGN_CONFIG / UPDATE_PROPERTY / ADD /
+///   REMOVE / REORDER: apply the document the editor sends through
+///   [DesignPreviewStore], so the preview goes through the exact pipeline
+///   the phone uses for a published design.
+/// - LOAD_PAGE: opens the tab the editor asked for.
+/// - SELECT_ELEMENT: highlights the section the editor pointed at.
+/// - PREVIEW_READY / ELEMENT_SELECTED / PROPERTY_UPDATED / TREE_UPDATED:
+///   flow back to the editor.
+///
+/// The design never persists from here: the store is memory-only, so closing
+/// the preview leaves the published design as it is.
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize locale and theme first
+  // Locale first: the app below reads it on the first frame.
   await AppLocale.instance.initialize();
-  await AppTheme.instance.initialize();
-
-  // Initialize Supabase (required for design loading)
+  // Supabase is required by repositories the app builds (design reads, auth
+  // reconnects). Without configuration the repositories fall back the same
+  // way they do for a customer without a backend.
   await SupabaseService.init();
-
-  // Apply preview theme from URL parameters (for color preview)
   applyPreviewTheme();
-
-  // In preview mode, we don't need Firebase messaging
-  // The design will be loaded via postMessage from Admin App
 
   runApp(const PreviewApp());
 }
 
-/// The preview app root - wraps MyApp with preview-specific providers
+/// The preview root: wraps the real [MyApp] with nothing but preview wiring.
 class PreviewApp extends StatefulWidget {
   const PreviewApp({super.key});
 
@@ -57,124 +59,170 @@ class PreviewApp extends StatefulWidget {
 }
 
 class _PreviewAppState extends State<PreviewApp> {
-  late final DesignCubit _designCubit;
-  late final PreviewBridge _bridge;
+  final PreviewBridge _bridge = PreviewBridge();
   StreamSubscription<DesignState>? _designSubscription;
-  String? _sessionId;
-  bool _isInitialized = false;
 
   @override
   void initState() {
     super.initState();
-    _designCubit = DesignCubit(repository: SupabaseDesignRepository());
-    _bridge = PreviewBridge();
-
-    // Listen for design changes to send updates to parent
-    _designSubscription = _designCubit.stream.listen(_onDesignChanged);
-
-    // Initialize bridge when session ID is available from URL
     _initializeFromUrl();
-  }
-
-  void _initializeFromUrl() {
-    final uri = Uri.base;
-    final sessionId = uri.queryParameters['sessionId'];
-    if (sessionId != null && sessionId.isNotEmpty) {
-      _sessionId = sessionId;
-      _bridge.initialize(sessionId);
-      _setupMessageHandlers();
-      _isInitialized = true;
-    }
-  }
-
-  void _setupMessageHandlers() {
-    _bridge.onMessage(PreviewMessageType.previewInitialize, _handleInitialize);
-    _bridge.onMessage(PreviewMessageType.loadPage, _handleLoadPage);
-    _bridge.onMessage(PreviewMessageType.updateProperty, _handleUpdateProperty);
-    _bridge.onMessage(PreviewMessageType.applyDesignConfig, _handleApplyDesignConfig);
-    _bridge.onMessage(PreviewMessageType.previewRefresh, _handleRefresh);
-  }
-
-  void _handleInitialize(PreviewMessage message) {
-    // Acknowledge initialization
-    // The design document is in the payload
-    final designDoc = message.payload['designDocument'];
-    if (designDoc != null) {
-      _applyDesignDocument(designDoc);
-    }
-  }
-
-  void _handleLoadPage(PreviewMessage message) {
-    final pageId = message.payload['pageId'] as String?;
-    if (pageId != null) {
-      // Navigate to the page
-      // This would use the app's navigation system
-    }
-  }
-
-  void _handleUpdateProperty(PreviewMessage message) {
-    final componentId = message.payload['componentId'] as String?;
-    final propertyKey = message.payload['propertyKey'] as String?;
-    final value = message.payload['value'];
-
-    if (componentId != null && propertyKey != null) {
-      // Apply the property change to the design
-      // This would update the design cubit
-      _applyPropertyChange(componentId, propertyKey, value);
-    }
-  }
-
-  void _handleApplyDesignConfig(PreviewMessage message) {
-    final designDoc = message.payload['designDocument'];
-    if (designDoc != null) {
-      _applyDesignDocument(designDoc);
-    }
-  }
-
-  void _handleRefresh(PreviewMessage message) {
-    // Reload the published design
-    _designCubit.load(forceRefresh: true);
-  }
-
-  void _onDesignChanged(DesignState state) {
-    if (!_isInitialized) return;
-    // Send updated design to parent for sync
-    // This would serialize the design and send via bridge
-  }
-
-  void _applyDesignDocument(dynamic designDoc) {
-    // Parse and apply the design document
-    // This would update the DesignCubit with the new design
-  }
-
-  void _applyPropertyChange(String componentId, String propertyKey, dynamic value) {
-    // Apply property change to the specific component
-    // This would require finding the component in the design tree
-    // and updating its property
-    _bridge.sendPropertyUpdated(
-      componentId: componentId,
-      propertyKey: propertyKey,
-      value: value,
-      success: true,
-    );
   }
 
   @override
   void dispose() {
     _designSubscription?.cancel();
     _bridge.dispose();
-    _designCubit.close();
     super.dispose();
+  }
+
+  void _initializeFromUrl() {
+    if (!kIsWeb) return;
+    final uri = Uri.base;
+    final sessionId = uri.queryParameters['sessionId'];
+    if (sessionId == null || sessionId.isEmpty) return;
+    _bridge.initialize(
+      sessionId,
+      parentOrigin: uri.queryParameters['parentOrigin'],
+    );
+    _setupMessageHandlers();
+  }
+
+  void _setupMessageHandlers() {
+    _bridge
+      ..onMessage(PreviewMessageType.previewInitialize, _applyDocument)
+      ..onMessage(PreviewMessageType.applyDesignConfig, _applyDocument)
+      ..onMessage(PreviewMessageType.updateProperty, _applyDocument)
+      ..onMessage(PreviewMessageType.addComponent, _applyDocument)
+      ..onMessage(PreviewMessageType.removeComponent, _applyDocument)
+      ..onMessage(PreviewMessageType.reorderComponent, _applyDocument)
+      ..onMessage(PreviewMessageType.loadPage, _handleLoadPage)
+      ..onMessage(PreviewMessageType.selectElement, _handleSelectElement)
+      ..onMessage(PreviewMessageType.previewRefresh, _handleRefresh);
+    _watchDesignForTreeUpdates();
+  }
+
+  /// كل تغيّر في مستند المعاينة يُبلّغ به المحرّر (COMPONENT_TREE_UPDATED)
+  /// حتى تظل لوحة الطبقات متزامنة مع ما يرسمه الهاتف.
+  void _watchDesignForTreeUpdates() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = rootNavigatorKey.currentContext;
+      if (context == null || !mounted) return;
+      _designSubscription = context
+          .read<DesignCubit>()
+          .stream
+          .listen((_) => _sendTreeUpdate());
+    });
+  }
+
+  void _sendTreeUpdate() {
+    if (!_bridge.isActive) return;
+    final document = DesignPreviewStore.instance.document;
+    if (document == null) return;
+    final design = PublishedDesign.fromJson(document);
+    if (design == null) return;
+    final root = design.toDocument()['pages'] as List?;
+    if (root is! List || root.isEmpty) return;
+    final page = root.first;
+    if (page is! Map) return;
+    final children = page['root'] is Map
+        ? (page['root'] as Map)['children']
+        : null;
+    if (children is! List) return;
+    _bridge.sendTreeUpdated(
+      pageId: 'home',
+      nodes: [
+        for (final node in children)
+          if (node is Map)
+            Map<String, dynamic>.from(node)
+          else
+            <String, dynamic>{},
+      ],
+    );
+  }
+
+  /// أي رسالة تحرير تحمل `designDocument` في حمولتها تطبّق كاملة: المحرّر
+  /// يملك حالة الوثيقة، والهاتف يرسم ما أُرسل لا ما خمّنه.
+  void _applyDocument(PreviewMessage message) {
+    final raw = message.payload['designDocument'];
+    if (raw is! Map) {
+      _bridge.sendPropertyUpdated(
+        componentId: message.payload['componentId'] as String? ?? '',
+        propertyKey: message.payload['propertyKey'] as String? ?? '',
+        value: message.payload['value'],
+        success: false,
+        error: 'design_document_missing',
+      );
+      return;
+    }
+    final document = Map<String, dynamic>.from(raw);
+    DesignPreviewStore.instance.setDocument(document);
+    // المسار نفسه الذي يرسم به الهاتف يوم النشر: قراءة المنشور، ثم تطبيق
+    // الطبقة، ثم إعادة بناء الشاشة.
+    BlocProvider.of<DesignCubit>(rootNavigatorKey.currentContext!)
+        .load(forceRefresh: true);
+    _ack(message);
+  }
+
+  /// تأكيد رسالة تحرير واحدة — الرسالة كلها طبّقت كاملة.
+  void _ack(PreviewMessage message) {
+    _bridge.sendPropertyUpdated(
+      componentId: message.payload['componentId'] as String? ?? '',
+      propertyKey: message.payload['propertyKey'] as String? ?? '',
+      value: message.payload['value'],
+      success: true,
+    );
+  }
+
+  void _handleLoadPage(PreviewMessage message) {
+    final pageId = message.payload['pageId'];
+    if (pageId is! String) return;
+    final navigator = rootNavigatorKey.currentState;
+    if (navigator == null) return;
+    switch (pageId) {
+      case 'home':
+        MainCubit.initialTab = 0;
+      case 'categories':
+        MainCubit.initialTab = 1;
+      case 'cart':
+        MainCubit.initialTab = 2;
+      case 'favourites':
+        MainCubit.initialTab = 3;
+      case 'settings':
+        MainCubit.initialTab = 4;
+      case 'search':
+        // البحث صفحة مدفوعة لا تبويبة، كما يستدعيها التطبيق نفسه.
+        navigator.pushNamed(SearchPage.routeName);
+        return;
+      default:
+        return;
+    }
+    // MainCubit الجديد يقرأ initialTab عند الإنشاء، لذا إعادة فتح الصفحة
+    // الرئيسية مع إبقاء الجذر هي الانتقال الحقيقي بين التبويبات.
+    navigator.pushNamedAndRemoveUntil(
+      MainPage.routeName,
+      (route) => route.isFirst,
+    );
+  }
+
+  void _handleSelectElement(PreviewMessage message) {
+    final componentId = message.payload['componentId'];
+    if (componentId is String) previewSelectedSectionId.value = componentId;
+  }
+
+  void _handleRefresh(PreviewMessage message) {
+    // الرجوع إلى المنشور الحقيقي: مسح المستند المُدفع، ثم القراءة من القاعدة.
+    DesignPreviewStore.instance.setDocument(null);
+    BlocProvider.of<DesignCubit>(rootNavigatorKey.currentContext!)
+        .load(forceRefresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider<DesignCubit>.value(
-      value: _designCubit,
-      child: MyApp(
-        currentRoute: null,
-        onboardingDone: true,
-      ),
+    // يقرأ المنشور عند الإقلاع — بلا currentRoute ولا onboarding، لأن إطار
+    // المعاينة يبدأ من الشاشة الرئيسية دائمًا.
+    return MyApp(
+      currentRoute: null,
+      onboardingDone: true,
     );
   }
 }

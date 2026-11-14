@@ -51,6 +51,7 @@ dependencies:
   # فالمسار واحد على كل جهاز بلا أي إطار مخفي أو js-interop.
   printing: ^5.14.0
   pdf: ^3.13.1
+  web: ^1.1.0
 
 dev_dependencies:
   flutter_test:

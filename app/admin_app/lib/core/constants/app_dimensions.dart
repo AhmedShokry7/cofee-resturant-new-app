@@ -325,10 +325,9 @@ abstract final class AppDimensions {
   static const double directoryCanvasHeightXxxl = 720.0;
   static const double directoryCanvasHeightHuge = 760.0;
 
-  // ---------- App builder ----------
+}
 
-/// نقاط عرض النافذة التي يغيّر عندها التخطيط شكله. تُقرأ من `MediaQuery` أو
-/// من `LayoutBuilder`، والغرض منها ألا يتكرر رقم النقطة في عشرات الملفات.
+/// نقاط عرض النافذة التي يغيّر عندها التخطيط شكله.
 abstract final class AppBreakpoints {
   const AppBreakpoints._();
 

@@ -5220,6 +5220,66 @@ class S {
   static String get visualEditorSelectElement =>
       _ar ? 'اختر عنصرًا من المعاينة أو شجرة المكونات' : 'Select an element from preview or component tree';
 
+  // مفاتيح إضافية للمحرر المرئي
+  static String get visualEditorSearchHint =>
+      _ar ? 'ابحث في المحرر...' : 'Search the editor...';
+  static String get visualEditorLayers => _ar ? 'الطبقات' : 'Layers';
+  static String get visualEditorNoComponents =>
+      _ar ? 'لا مكوّنات في هذه الصفحة' : 'No components on this page';
+  static String get visualEditorHide => _ar ? 'إخفاء' : 'Hide';
+  static String get visualEditorShow => _ar ? 'إظهار' : 'Show';
+  static String get visualEditorDuplicate => _ar ? 'نسخ' : 'Duplicate';
+  static String get visualEditorDelete => _ar ? 'حذف' : 'Delete';
+  static String get visualEditorLibrary => _ar ? 'المكتبة' : 'Library';
+  static String get visualEditorNoComponentsFound =>
+      _ar ? 'لا مكوّنات مطابقة' : 'No matching components';
+  static String get visualEditorSearchComponents =>
+      _ar ? 'ابحث عن مكوّن...' : 'Search components...';
+  static String get visualEditorAddComponent => _ar ? 'إضافة' : 'Add';
+  static String get visualEditorCategoryLayout => _ar ? 'تخطيط' : 'Layout';
+  static String get visualEditorCategoryContent => _ar ? 'محتوى' : 'Content';
+  static String get visualEditorCategoryRestaurant => _ar ? 'مطعم' : 'Restaurant';
+  static String get visualEditorCategoryNavigation => _ar ? 'تنقّل' : 'Navigation';
+  static String get visualEditorProperties => _ar ? 'الخصائص' : 'Properties';
+  static String get visualEditorSelectHint =>
+      _ar ? 'اضغط على عنصر في الشجرة أو المعاينة'
+          : 'Tap an element in the tree or preview';
+  static String get visualEditorNoEditableProperties =>
+      _ar ? 'لا خصائص قابلة للتحرير' : 'No editable properties';
+  static String get visualEditorResetProperty =>
+      _ar ? 'إعادة القيمة الافتراضية' : 'Reset to default';
+  static String get visualEditorOn => _ar ? 'مفعّل' : 'On';
+  static String get visualEditorOff => _ar ? 'معطّل' : 'Off';
+  static String get visualEditorZoomIn => _ar ? 'تكبير' : 'Zoom in';
+  static String get visualEditorZoomOut => _ar ? 'تصغير' : 'Zoom out';
+  static String get visualEditorZoomReset => _ar ? 'حجم طبيعي' : 'Reset zoom';
+  static String get visualEditorSaveDraft => _ar ? 'حفظ مسودة' : 'Save draft';
+  static String get visualEditorPublish => _ar ? 'نشر' : 'Publish';
+  static String get visualEditorPublishTitle => _ar ? 'تأكيد النشر' : 'Confirm publish';
+  static String get visualEditorPublishConfirm => _ar
+      ? 'سيظهر التصميم لجميع مستخدمي التطبيق فور النشر. هل أنت متأكد؟'
+      : 'This design will be visible to all app users immediately. Are you sure?';
+  static String get visualEditorPreviewConnected =>
+      _ar ? 'المعاينة متصلة' : 'Preview connected';
+  static String get visualEditorPreviewDisconnected =>
+      _ar ? 'المعاينة غير متصلة' : 'Preview disconnected';
+  static String get visualEditorPreviewWebOnly =>
+      _ar ? 'المعاينة متاحة على الويب فقط' : 'Preview is only available on web';
+  static String get searchVisualEditorHint =>
+      _ar ? 'ابحث في المحرر المرئي...' : 'Search visual editor...';
+  static String get visualEditorUndo => _ar ? 'تراجع' : 'Undo';
+  static String get visualEditorRedo => _ar ? 'إعادة' : 'Redo';
+  static String get visualEditorVersions => _ar ? 'الإصدارات' : 'Versions';
+  static String get visualEditorVersionsTitle =>
+      _ar ? 'سجل الإصدارات المنشورة' : 'Published version history';
+  static String get visualEditorNoVersions =>
+      _ar ? 'لا إصدارات منشورة بعد' : 'No published versions yet';
+  static String get visualEditorRestore => _ar ? 'استرجاع' : 'Restore';
+  static String get visualEditorRestoreTitle => _ar ? 'استرجاع إصدار' : 'Restore version';
+  static String get visualEditorRestoreConfirm => _ar
+      ? 'سيعود التصميم إلى هذا الإصدار ويُنشر كإصدار جديد في السجل. هل أنت متأكد؟'
+      : 'The design will return to this version and be published as a new entry in the history. Are you sure?';
+
   // ---------- HR — sidebar ----------
 
   /// عنوان قسم الموارد البشرية في الشريط الجانبي.
@@ -6290,4 +6350,5 @@ class S {
   static String get hrLeaveTypeRequiresDoc =>
       _ar ? 'تطلب مستندًا' : 'Requires a document';
   static String get hrLeaveTypeActive => _ar ? 'مفعّلة' : 'Active';
+
 }

@@ -4,18 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// حرس ترتيب الأقسام على الصفحة الرئيسية.
 ///
-/// مستند التصميم الافتراضي في المحرّر يدّعي أنه «ترتيب العميل الحرفي كما هو
-/// اليوم»، وتطبيق العميل يرسم ترتيبه ثابتًا في المصدر. لا شيء يربط الادعاءين:
-/// ملفان في حزمتين لا تستورد إحداهما الأخرى، فالتدقيق على النص نفسه لا على
-/// الاستيراد.
+/// «تصميم اليوم» في المحرّر (`DesignDocumentCodec.defaultHomeNodes`) يدّعي
+/// أنه ترتيب العميل الحرفي كما هو اليوم، وتطبيق العميل يرسم ترتيبه ثابتًا في
+/// مصدره (`_defaultHomeSections`). لا شيء يربط الادعاءين: ملفان في حزمتين
+/// لا تستورد إحداهما الأخرى، فالتدقيق على النص نفسه لا على الاستيراد.
 ///
-/// تغيير أحد الطرفين دون الآخر يكسر الوعد الأول في الاستوديو — أن تصميم اليوم
-/// هو التصميم عند بدء النظام — فيفشل هذا الاختبار، لا شاشة الزبون.
+/// تغيير أحد الطرفين دون الآخر يكسر الوعد الأول في الاستوديو — أن تصميم
+/// اليوم هو التصميم عند بدء النظام — فيفشل هذا الاختبار، لا شاشة الزبون.
 void main() {
   const customerBodyPath =
       'lib/features/home/presentation/views/widgets/home_page_body.dart';
-  const registryPath =
-      'app/admin_app/lib/features/customer_preview/domain/registry/widget_registry.dart';
+  const codecPath =
+      'app/admin_app/lib/features/visual_editor/domain/design_document_codec.dart';
 
   test('ترتيب أقسام العميل في المصدر لم يتغيّر', () {
     expect(
@@ -26,8 +26,8 @@ void main() {
     );
   });
 
-  test('المستند الافتراضي يرسم أقسام العميل الثمانية بالترتيب نفسه', () {
-    final document = _documentHomeSections(_read(registryPath));
+  test('مستند تصميم اليوم يرسم أقسام العميل الثمانية بالترتيب نفسه', () {
+    final document = _documentHomeTypes(_read(codecPath));
 
     expect(document, _expectedDocumentTypes);
     expect(
@@ -39,16 +39,13 @@ void main() {
   });
 
   test('عقدتا الشريط تتمايزان بمصدر البيانات لا بالنوع', () {
-    // `HomePopularSection` و`HomeRecommendationsSection` نوع واحد في السجل،
-    // فالفرق كله في الخاصية؛ لو توحد المصدران صار القسمان نسخة واحدة.
-    final source = _read(registryPath);
+    // شريطا «الأكثر طلبًا» و«ترشيحات لك» نوع واحد في المستند، فالفرق كله
+    // في مصدر البيانات؛ لو توحد المصدران صار القسمان نسخة واحدة.
+    final sources = _documentDataSources(_read(codecPath));
     expect(
-      RegExp(r"'dataSource': DataSourceRegistry\.(\w+)")
-          .allMatches(source)
-          .map((match) => match.group(1))
-          .take(2)
-          .toList(),
+      sources,
       containsAllInOrder(<String>['featured', 'recommendations']),
+      reason: 'مصدرا الشريطين غابا أو انعكسا في تصميم اليوم.',
     );
   });
 }
@@ -64,8 +61,8 @@ const _expectedCustomerSections = <String>[
   'HomeBundlesSection',
 ];
 
-/// الأنواع المقابلة في سجل المكونات بالترتيب نفسه؛ `productStrip` يتكرر لأن
-/// الأكثر طلبًا والترشيحات شريطا منتجات يختلفان في مصدر البيانات.
+/// الأنواع بمفاتيح المحرّر بالترتيب نفسه؛ `productStrip` يتكرر لأن الأكثر
+/// طلبًا والترشيحات شريطا منتجات يختلفان في مصدر البيانات.
 const _expectedDocumentTypes = <String>[
   'header',
   'searchBar',
@@ -105,18 +102,40 @@ List<String> _customerHomeSections(String source) {
       .toList();
 }
 
-/// أنواع عقد الصفحة الرئيسية في `defaultDocument()` بترتيب بنائها.
-///
-/// المعرّف يميّز العقدة: كل عقد الصفحة الرئيسية في المستند تسمّى `home_*`.
-List<String> _documentHomeSections(String source) {
-  final start = source.indexOf('static DesignDocument defaultDocument()');
-  if (start < 0) {
-    throw StateError('لا defaultDocument() في السجل — الحرس بلا ما يقارنه.');
-  }
-  final end = source.indexOf('final categories = node(', start);
-  final home = source.substring(start, end < 0 ? source.length : end);
-  return RegExp(r"node\(\s*WidgetTypes\.(\w+),\s*'home_")
-      .allMatches(home)
+/// أنواع `defaultHomeNodes` بترتيبها في عقد «تصميم اليوم».
+List<String> _documentHomeTypes(String source) {
+  final block = _blockBetween(
+    source,
+    start: 'static const List<(String, String?)> defaultHomeNodes = [',
+    end: '];',
+  );
+  return RegExp(r"\('(\w+)'")
+      .allMatches(block)
       .map((match) => match.group(1)!)
       .toList();
+}
+
+/// مصادر البيانات في `defaultHomeNodes`، بترتيبها — مرجعية `DesignContract`.
+List<String> _documentDataSources(String source) {
+  final block = _blockBetween(
+    source,
+    start: 'static const List<(String, String?)> defaultHomeNodes = [',
+    end: '];',
+  );
+  return RegExp(r'DesignContract\.(\w+)')
+      .allMatches(block)
+      .map((match) => match.group(1)!)
+      .toList();
+}
+
+String _blockBetween(
+  String source, {
+  required String start,
+  required String end,
+}) {
+  final from = source.indexOf(start);
+  if (from < 0) throw StateError('لا `$start` في المصدر — تغيّر العقد.');
+  final to = source.indexOf(end, from);
+  if (to < 0) throw StateError('لا `$end` في المصدر — تغيّر العقد.');
+  return source.substring(from, to);
 }
