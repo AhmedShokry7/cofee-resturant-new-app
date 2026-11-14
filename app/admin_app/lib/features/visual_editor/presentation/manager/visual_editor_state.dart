@@ -73,14 +73,11 @@ class VisualEditorState {
         isDirty: isDirty ?? this.isDirty,
       );
 
-  /// جميع مكوّنات صفحة واحدة مرتبة بحسب الـ index.
-  List<EditableComponent> getComponentsForPage(String pageId) {
-    final list = List<EditableComponent>.from(
-      componentsByPage[pageId] ?? const [],
-    );
-    list.sort((a, b) => a.index.compareTo(b.index));
-    return list;
-  }
+  /// جميع مكوّنات صفحة واحدة بترتيبها العمقي كما هو مخزّن — ترتيب القائمة
+  /// المسطّحة هو ترتيب المستند نفسه (الجذر يتبعه أبناءه)، فرز إضافي بالفهرس
+  /// يكسر هذا الترتيب بيفصل الأبناء عن أبائهم.
+  List<EditableComponent> getComponentsForPage(String pageId) =>
+      List<EditableComponent>.from(componentsByPage[pageId] ?? const []);
 
   /// بحث عن مكوّن بمعرفه في جميع الصفحات.
   EditableComponent? findComponent(String componentId) {

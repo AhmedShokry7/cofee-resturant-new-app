@@ -32,6 +32,7 @@ class VisualEditorPage extends StatefulWidget {
 class _VisualEditorPageState extends State<VisualEditorPage> {
   late final VisualEditorCubit _cubit;
   double _zoom = 1.0;
+  PreviewDevice _device = PreviewDevice.phone;
   String _selectedPageId = 'home';
 
   @override
@@ -67,8 +68,11 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                   state: state,
                   cubit: _cubit,
                   zoom: _zoom,
+                  device: _device,
                   selectedPageId: _selectedPageId,
                   onZoom: (v) => setState(() => _zoom = v.clamp(0.5, 2.0)),
+                  onDeviceChanged: (device) =>
+                      setState(() => _device = device),
                   onPageChanged: (pageId) {
                     setState(() => _selectedPageId = pageId);
                     _cubit.loadPage(pageId);
@@ -180,6 +184,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
           child: PreviewPanel(
             pageId: _selectedPageId,
             zoom: _zoom,
+            device: _device,
             sessionId: state.sessionId,
             onElementSelected: _cubit.handleElementSelected,
             onPreviewReady: _cubit.handlePreviewReady,

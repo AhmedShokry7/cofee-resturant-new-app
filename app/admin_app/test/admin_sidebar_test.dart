@@ -206,7 +206,7 @@ void main() {
       expect(destination.section, isNotNull, reason: destination.id);
       if (destination.id != 'dashboard' &&
           destination.id != 'orders' &&
-          destination.id != 'visualEditor' {
+          destination.id != 'visualEditor') {
         expect(destination.tables, isNotEmpty, reason: destination.id);
       }
     }

@@ -23,6 +23,10 @@ abstract class VisualEditorRepository {
     DesignTheme theme = DesignTheme.none,
   });
 
+  /// التخلص من المسودة عبر `admin_discard_app_design_draft` — يمسح صف
+  /// المسودة فقط؛ ما يراه الزبون لا يُلمس.
+  Future<void> discardDraft();
+
   /// نشر الإصدار عبر `admin_publish_app_design` — ترجع بيانات الإصدار.
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
@@ -37,6 +41,22 @@ abstract class VisualEditorRepository {
 
   /// استرجاع إصدار سابق — إصدار جديد يحمل ملفّ القديم (لا محو في السجل).
   Future<PublishedVersionInfo> restoreVersion(String versionId);
+
+  /// القوالب المحفوظة، الأحدث أولًا (228) — أسماء وتواريخ فقط.
+  Future<List<DesignTemplateInfo>> listTemplates();
+
+  /// مستند قالب واحد (228).
+  Future<Map<String, dynamic>?> getTemplateDocument(String templateId);
+
+  /// إنشاء قالب (id: null) أو استبدال قائم (228) — بنفس تدقيق النشر.
+  Future<DesignTemplateInfo> saveTemplate({
+    String? id,
+    required String name,
+    required Map<String, dynamic> document,
+  });
+
+  /// حذف قالب (228) — لا يلمس مسودة ولا منشورًا ولا إصدارًا.
+  Future<void> deleteTemplate(String templateId);
 
   /// المفتاح الذي يقرؤه Customer App (`SupabaseDesignRepository` هناك).
   static const String publishedKey = 'app_design_published';
@@ -87,6 +107,39 @@ class PublishedVersionInfo {
           ? (raw['schema_version'] as num).round()
           : 0,
       note: raw['note'] is String ? raw['note'] as String : null,
+    );
+  }
+}
+
+/// بيانات قالب محفوظ كما تعيد الـ RPCs (228).
+class DesignTemplateInfo {
+  const DesignTemplateInfo({
+    required this.id,
+    required this.name,
+    required this.schemaVersion,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String name;
+  final int schemaVersion;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  static DesignTemplateInfo? fromJson(Object? raw) {
+    if (raw is! Map) return null;
+    final id = raw['id'];
+    final name = raw['name'];
+    if (id is! String || name is! String) return null;
+    return DesignTemplateInfo(
+      id: id,
+      name: name,
+      schemaVersion: raw['schema_version'] is num
+          ? (raw['schema_version'] as num).round()
+          : 0,
+      createdAt: DateTime.tryParse(raw['created_at']?.toString() ?? ''),
+      updatedAt: DateTime.tryParse(raw['updated_at']?.toString() ?? ''),
     );
   }
 }
@@ -201,5 +254,62 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
       throw StateError('إجابة استرجاع غير مفهومة من admin_restore_app_design_version');
     }
     return info;
+  }
+
+  @override
+  Future<void> discardDraft() async {
+    await _rpc('admin_discard_app_design_draft', const {});
+  }
+
+  @override
+  Future<List<DesignTemplateInfo>> listTemplates() async {
+    final raw = await _rpc('admin_list_app_design_templates', const {});
+    if (raw is! List) return const [];
+    return [
+      for (final item in raw)
+        if (DesignTemplateInfo.fromJson(item) case DesignTemplateInfo info)
+          info,
+    ];
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getTemplateDocument(
+    String templateId,
+  ) async {
+    final raw = await _rpc(
+      'admin_get_app_design_template',
+      {'p_id': templateId},
+    );
+    if (raw == null) return null;
+    return jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
+  }
+
+  @override
+  Future<DesignTemplateInfo> saveTemplate({
+    String? id,
+    required String name,
+    required Map<String, dynamic> document,
+  }) async {
+    final raw = await _rpc(
+      'admin_save_app_design_template',
+      {
+        'p_id': id,
+        'p_name': name.trim(),
+        'p_document': document,
+      },
+    );
+    final info = DesignTemplateInfo.fromJson(raw);
+    if (info == null) {
+      throw StateError('إجابة غير مفهومة من admin_save_app_design_template');
+    }
+    return info;
+  }
+
+  @override
+  Future<void> deleteTemplate(String templateId) async {
+    await _rpc(
+      'admin_delete_app_design_template',
+      {'p_id': templateId},
+    );
   }
 }

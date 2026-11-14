@@ -7,6 +7,9 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/templates_dialog.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/theme_studio_dialog.dart';
 
 /// شريط أدوات المحرر المرئي.
 ///
@@ -17,16 +20,20 @@ class VisualEditorToolbar extends StatelessWidget {
     required this.state,
     required this.cubit,
     required this.zoom,
+    required this.device,
     required this.selectedPageId,
     required this.onZoom,
+    required this.onDeviceChanged,
     required this.onPageChanged,
   });
 
   final VisualEditorState state;
   final VisualEditorCubit cubit;
   final double zoom;
+  final PreviewDevice device;
   final String? selectedPageId;
   final void Function(double) onZoom;
+  final void Function(PreviewDevice) onDeviceChanged;
   final void Function(String) onPageChanged;
 
   @override
@@ -41,7 +48,12 @@ class VisualEditorToolbar extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         // --- حجم الشاشة ---
-        _ScreenSizeSelector(dark: dark, muted: muted),
+        _ScreenSizeSelector(
+          dark: dark,
+          muted: muted,
+          selected: device,
+          onSelected: onDeviceChanged,
+        ),
         _Divider(),
 
         // --- تحكم التكبير ---
@@ -79,6 +91,30 @@ class VisualEditorToolbar extends StatelessWidget {
           icon: AppIcons.time01,
           tooltip: S.visualEditorVersions,
           onTap: () => _showVersions(context),
+          dark: dark,
+          muted: muted,
+        ),
+        _IconBtn(
+          icon: AppIcons.folder01,
+          tooltip: S.visualEditorTemplates,
+          onTap: () => _showTemplates(context),
+          dark: dark,
+          muted: muted,
+        ),
+        _IconBtn(
+          icon: AppIcons.paintBrush,
+          tooltip: S.visualEditorThemeStudio,
+          onTap: () => _showThemeStudio(context),
+          dark: dark,
+          muted: muted,
+        ),
+        _Divider(),
+
+        // --- التخلص من المسودة ---
+        _IconBtn(
+          icon: AppIcons.delete02,
+          tooltip: S.visualEditorDiscard,
+          onTap: () => _confirmDiscard(context),
           dark: dark,
           muted: muted,
         ),
@@ -139,6 +175,45 @@ class VisualEditorToolbar extends StatelessWidget {
       context: context,
       builder: (ctx) => _VersionsDialog(versions: versions, cubit: cubit),
     );
+  }
+
+  Future<void> _showTemplates(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (_) => const TemplatesDialog(),
+  );
+
+  Future<void> _showThemeStudio(BuildContext context) => showDialog<void>(
+    context: context,
+    builder: (_) => ThemeStudioDialog(initialTheme: cubit.theme),
+  );
+
+  /// التخلص من المسودة بتأكيد: يمسح صف المسودة فقط عبر الـ RPC، وما
+  /// يراه الزبون لا يُلمس.
+  Future<void> _confirmDiscard(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(S.visualEditorDiscardTitle),
+        content: Text(S.visualEditorDiscardConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(S.visualEditorDiscard),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    final ok = await cubit.discardDraft();
+    if (ok && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.visualEditorDiscardDone)),
+      );
+    }
   }
 }
 
@@ -237,34 +312,29 @@ class _VersionsDialog extends StatelessWidget {
   }
 }
 
-class _ScreenSizeSelector extends StatefulWidget {
-  const _ScreenSizeSelector({required this.dark, required this.muted});
+class _ScreenSizeSelector extends StatelessWidget {
+  const _ScreenSizeSelector({
+    required this.dark,
+    required this.muted,
+    required this.selected,
+    required this.onSelected,
+  });
 
   final bool dark;
   final Color muted;
-
-  @override
-  State<_ScreenSizeSelector> createState() => _ScreenSizeSelectorState();
-}
-
-class _ScreenSizeSelectorState extends State<_ScreenSizeSelector> {
-  String _selected = 'mobile';
-
-  static const _sizes = {
-    'mobile': (AppIcons.smartPhone01, 'موبايل'),
-    'tablet': (Icons.tablet_outlined, 'تابلت'),
-  };
+  final PreviewDevice selected;
+  final void Function(PreviewDevice) onSelected;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        for (final entry in _sizes.entries)
+        for (final device in PreviewDevice.values)
           Tooltip(
-            message: entry.value.$2,
+            message: device.label,
             child: InkWell(
-              onTap: () => setState(() => _selected = entry.key),
+              onTap: () => onSelected(device),
               borderRadius: BorderRadius.circular(AppRadius.sm),
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -272,21 +342,21 @@ class _ScreenSizeSelectorState extends State<_ScreenSizeSelector> {
                   vertical: AppSpacing.xs,
                 ),
                 decoration: BoxDecoration(
-                  color: _selected == entry.key
-                      ? (widget.dark
+                  color: selected == device
+                      ? (dark
                           ? AppColor.darkSurfaceContainer
                           : AppColor.adminAccentSurface)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 child: Icon(
-                  entry.value.$1,
+                  device.icon,
                   size: AppDimensions.iconSizeSm,
-                  color: _selected == entry.key
-                      ? (widget.dark
+                  color: selected == device
+                      ? (dark
                           ? AppColor.secondaryColor
                           : AppColor.adminAccent)
-                      : widget.muted,
+                      : muted,
                 ),
               ),
             ),

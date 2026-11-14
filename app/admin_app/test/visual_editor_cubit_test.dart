@@ -78,6 +78,54 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   Future<PublishedVersionInfo> restoreVersion(String versionId) async {
     throw UnimplementedError('الاسترجاع لا يُختبر على المستودع الزائف هنا');
   }
+
+  // ---- القوالب والتخلص (228) ----
+
+  int discardCalls = 0;
+  bool discardShouldFail = false;
+  final List<DesignTemplateInfo> templates = [];
+  final Map<String, Map<String, dynamic>> templateDocuments = {};
+
+  @override
+  Future<void> discardDraft() async {
+    if (discardShouldFail) {
+      throw StateError('discard failed');
+    }
+    discardCalls++;
+  }
+
+  @override
+  Future<List<DesignTemplateInfo>> listTemplates() async =>
+      List.of(templates);
+
+  @override
+  Future<Map<String, dynamic>?> getTemplateDocument(
+    String templateId,
+  ) async =>
+      templateDocuments[templateId];
+
+  @override
+  Future<DesignTemplateInfo> saveTemplate({
+    String? id,
+    required String name,
+    required Map<String, dynamic> document,
+  }) async {
+    final info = DesignTemplateInfo(
+      id: id ?? 'template-${templates.length + 1}',
+      name: name,
+      schemaVersion: 2,
+      updatedAt: DateTime(2026, 1, 3),
+    );
+    templates.insert(0, info);
+    templateDocuments[info.id] = document;
+    return info;
+  }
+
+  @override
+  Future<void> deleteTemplate(String templateId) async {
+    templates.removeWhere((t) => t.id == templateId);
+    templateDocuments.remove(templateId);
+  }
 }
 
 void main() {
@@ -225,8 +273,8 @@ void main() {
     expect(children, hasLength(9));
     expect(
       children.map((child) => child['type']),
-      contains('productGrid'),
-      reason: 'شبكة المنتجات نوع لا يرسمه الهاتف بعد — يُكتب بمفتاحه الداخلي',
+      contains('section.product_grid'),
+      reason: 'مفتاح العقد كما يرسمه الهاتف، لا المفتاح الداخلي للمحرّر',
     );
   });
 
@@ -265,5 +313,214 @@ void main() {
     final versions = await cubit.loadVersions();
     expect(versions.first.versionNumber, 2);
     expect(versions.last.versionNumber, 1);
+  });
+
+  // ---------- الأعمدة المتداخلة ----------
+
+  test('إضافة ابن داخل عمود يُدرج في موضعه العمقي', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'column');
+    final column = cubit.state.getComponentsForPage('home').last;
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'text',
+      parentId: column.componentId,
+    );
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'button',
+      parentId: column.componentId,
+    );
+    final flat = cubit.state.getComponentsForPage('home');
+    // 8 أقسام اليوم + العمود + ابناه.
+    expect(flat, hasLength(11));
+    final children = flat.where((c) => c.parentId == column.componentId);
+    expect(children.map((c) => c.componentType), ['text', 'button']);
+    expect(children.first.index, 0);
+    expect(children.last.index, 1);
+    // الترتيب العمقي: النص بعد العمود مباشرة، ثم الزر. العمود أعيد فهرسته
+    // بعد الإضافات، فنبحث عنه بمعرّفه لا بهويّته القديمة.
+    final columnInFlat = flat
+        .firstWhere((c) => c.componentId == column.componentId);
+    final columnAt = flat.indexOf(columnInFlat);
+    expect(flat[columnAt + 1].componentType, 'text');
+    expect(flat[columnAt + 2].componentType, 'button');
+  });
+
+  test('التداخل المحظور يُرفض: عمود داخل نص لا يجوز', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'text');
+    final text = cubit.state.getComponentsForPage('home').last;
+    final before = cubit.state.getComponentsForPage('home').length;
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'column',
+      parentId: text.componentId,
+    );
+    expect(cubit.state.getComponentsForPage('home'), hasLength(before));
+  });
+
+  test('حذف عمود يحذف شجرته كلها بلا أبناء أيتام', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'column');
+    final column = cubit.state.getComponentsForPage('home').last;
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'text',
+      parentId: column.componentId,
+    );
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'button',
+      parentId: column.componentId,
+    );
+    cubit.deleteComponent(column.componentId);
+    final flat = cubit.state.getComponentsForPage('home');
+    expect(flat, hasLength(8));
+    expect(flat.where((c) => c.parentId != null), isEmpty);
+  });
+
+  test('نسخ عمود ينسخ أبناءه بمعرّفات جديدة', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'column');
+    final column = cubit.state.getComponentsForPage('home').last;
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'text',
+      parentId: column.componentId,
+    );
+    cubit.duplicateComponent(column.componentId);
+    final flat = cubit.state.getComponentsForPage('home');
+    // 8 + العمود + نصه + نسخة العمود + نسخة النص.
+    expect(flat, hasLength(12));
+    final columns = flat.where((c) => c.componentType == 'column').toList();
+    expect(columns, hasLength(2));
+    final duplicatedColumn = columns.last;
+    expect(duplicatedColumn.componentId, isNot(column.componentId));
+    expect(
+      flat.where((c) => c.parentId == duplicatedColumn.componentId),
+      hasLength(1),
+    );
+  });
+
+  test('إعادة ترتيب بين الإخوة يبني القائمة العمقية من المستند', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'column');
+    final column = cubit.state.getComponentsForPage('home').last;
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'text',
+      parentId: column.componentId,
+    );
+    cubit.addComponent(
+      pageId: 'home',
+      componentType: 'button',
+      parentId: column.componentId,
+    );
+    final flatBefore = cubit.state.getComponentsForPage('home');
+    final button = flatBefore.last;
+    cubit.reorderComponent(button.componentId, 0);
+    final children = cubit.state
+        .getComponentsForPage('home')
+        .where((c) => c.parentId == column.componentId)
+        .toList();
+    expect(children.map((c) => c.componentType), ['button', 'text']);
+    expect(children.first.index, 0);
+  });
+
+  // ---------- طبقة الشكل ----------
+
+  test('updateTheme يترك أثر تراجع ويغير الطبقة الحيّة', () {
+    const theme = DesignTheme(
+      colors: {DesignColorRole.primary: '#2E7D32'},
+      textScale: 'large',
+    );
+    cubit.updateTheme(theme);
+    expect(cubit.theme.colors, theme.colors);
+    expect(cubit.theme.textScale, 'large');
+    expect(cubit.canUndo, isTrue);
+    cubit.undo();
+    expect(cubit.theme.colors, isEmpty);
+    expect(cubit.theme.textScale, isNull);
+  });
+
+  // ---------- التخلص من المسودة ----------
+
+  test('التخلص الناجح يمسح المسودة ويعيد البدء من تصميم اليوم', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    final ok = await cubit.discardDraft();
+    expect(ok, isTrue);
+    expect(repository.discardCalls, 1);
+    expect(cubit.state.getComponentsForPage('home'), hasLength(8));
+    expect(cubit.canUndo, isFalse);
+  });
+
+  test('فشل التخلص يبقي الحالة المحلية كما هي', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    repository.discardShouldFail = true;
+    final ok = await cubit.discardDraft();
+    expect(ok, isFalse);
+    expect(cubit.state.getComponentsForPage('home'), hasLength(9));
+    expect(cubit.state.errorMessage, contains('تعذر التخلص'));
+  });
+
+  // ---------- القوالب ----------
+
+  test('حفظ قالب يكتب مستندًا صالحًا ويعيد بياناته', () async {
+    await cubit.initialize();
+    final template = await cubit.saveCurrentAsTemplate('رمضان');
+    expect(template, isNotNull);
+    expect(template!.name, 'رمضان');
+    expect(repository.templateDocuments[template.id], isNotNull);
+    expect(
+      DesignDocumentCodec.validate(repository.templateDocuments[template.id]!),
+      isNull,
+    );
+  });
+
+  test('اسم قالب فارغ أو طويل يُرفض قبل الاتصال', () async {
+    await cubit.initialize();
+    expect(await cubit.saveCurrentAsTemplate('   '), isNull);
+    expect(
+      await cubit.saveCurrentAsTemplate('x' * 61),
+      isNull,
+    );
+    expect(repository.templates, isEmpty);
+  });
+
+  test('تطبيق قالب يستبدل الشجرة والشكل على المسودة فقط', () async {
+    await cubit.initialize();
+    // قالب مسجّل مسبقًا في المستودع الزائف.
+    final document = DesignDocumentCodec.document({
+      'home': DesignDocumentCodec.defaultHomeComponents(),
+    });
+    final template = await repository.saveTemplate(
+      name: 'قالب اليوم',
+      document: document,
+    );
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    final ok = await cubit.applyTemplate(template.id);
+    expect(ok, isTrue);
+    // القالب أصل 8 أقسام: الإضافة سقطت والقالب حلّ محلها.
+    expect(cubit.state.getComponentsForPage('home'), hasLength(8));
+    expect(cubit.canUndo, isTrue);
+    // المنشور لا يُلمس.
+    expect(repository.publishedDocuments, isEmpty);
+  });
+
+  test('تطبيق قالب مفقود يفشل برسالة مفهومة', () async {
+    await cubit.initialize();
+    expect(await cubit.applyTemplate('missing-template'), isFalse);
+    expect(cubit.state.errorMessage, contains('القالب غير موجود'));
+  });
+
+  test('حذف قالب يمر عبر المستودع بلا مساس بالمسودة', () async {
+    await cubit.initialize();
+    final template = await cubit.saveCurrentAsTemplate('مؤقت');
+    final ok = await cubit.deleteTemplate(template!.id);
+    expect(ok, isTrue);
+    expect(repository.templates, isEmpty);
   });
 }

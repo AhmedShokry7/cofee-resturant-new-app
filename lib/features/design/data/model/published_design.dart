@@ -159,6 +159,18 @@ abstract final class DesignWidgetTypes {
   static const String categoryList = 'section.category_list';
   static const String productStrip = 'section.product_strip';
   static const String bundleList = 'section.bundle_list';
+
+  /// أنواع المحتوى الحر والهياكل — عقد واحد مع لوحة الأدمن، وحرس التطابق
+  /// في `design_theme_contract_parity_test.dart` يمنع انزياح مفتاح في
+  /// طرف دون الآخر.
+  static const String text = 'section.text';
+  static const String heading = 'section.heading';
+  static const String button = 'section.button';
+  static const String image = 'section.image';
+  static const String divider = 'section.divider';
+  static const String spacer = 'section.spacer';
+  static const String productGrid = 'section.product_grid';
+  static const String column = 'section.column';
 }
 
 /// مصدر البيانات الذي يميّز عقدة عن أختها بالنوع نفسه.
@@ -182,6 +194,8 @@ class PublishedSection {
     required this.type,
     this.visible = true,
     this.dataSource,
+    this.properties = const <String, dynamic>{},
+    this.children = const <PublishedSection>[],
   });
 
   final String id;
@@ -194,6 +208,35 @@ class PublishedSection {
   /// قيمة خاصية `dataSource` إن كانت، لتفريق العقد المتساوية النوع.
   final String? dataSource;
 
+  /// خصائص القسم كما خرجت من المستند: أعداد أولية فقط (نصّ/رقم/منطق) —
+  /// المدقق الحي يرفض غيرها قبل النشر، والقارئ المتسامح يسقط ما فات.
+  final Map<String, dynamic> properties;
+
+  /// أبناء القسم (أبناء عمود مثلًا) بترتيبهم المنشور؛ فارغ لما لا يحمل
+  /// أبناء. القراءة متكررة، فعمود داخل عمود يعمل بلا شكل خاص.
+  final List<PublishedSection> children;
+
+  /// خاصية نصّية، أو null لغيابها أو غيرها.
+  String? property(String key) {
+    final value = properties[key];
+    return value is String ? value : null;
+  }
+
+  /// خاصية رقمية، أو null. الأدمن يخزّن أحجام الخط نصوصًا ('14')، فالقارئ
+  /// يقبلها كرقم إن قُبل تحليلها.
+  double? numberProperty(String key) {
+    final value = properties[key];
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  /// خاصية منطقية مع افتراضي.
+  bool flagProperty(String key, {bool fallback = false}) {
+    final value = properties[key];
+    return value is bool ? value : fallback;
+  }
+
   /// تساوي بالمحتوى: قارئان للمستند نفسه يعطيان القسم نفسه، فلا تُعاد بناء
   /// الشاشة لقراءة لم تغيّر حرفًا.
   @override
@@ -202,10 +245,21 @@ class PublishedSection {
       other.id == id &&
       other.type == type &&
       other.visible == visible &&
-      other.dataSource == dataSource;
+      other.dataSource == dataSource &&
+      mapEquals(other.properties, properties) &&
+      listEquals(other.children, children);
 
   @override
-  int get hashCode => Object.hash(id, type, visible, dataSource);
+  int get hashCode => Object.hash(
+    id,
+    type,
+    visible,
+    dataSource,
+    Object.hashAll(
+      properties.entries.map((e) => Object.hash(e.key, e.value)),
+    ),
+    Object.hashAll(children),
+  );
 
   /// عقدة بلا معرّف أو بلا نوع ليست قسمًا: تُتجاهل وحدها ولا يُهجر المستند،
   /// كما تُتجاهل الألوان التالفة.
@@ -215,13 +269,32 @@ class PublishedSection {
     final type = raw['type'];
     if (id is! String || id.isEmpty) return null;
     if (type is! String || type.isEmpty) return null;
-    final properties = raw['properties'];
-    final source = properties is Map ? properties['dataSource'] : null;
+    final properties = <String, dynamic>{};
+    final rawProperties = raw['properties'];
+    if (rawProperties is Map) {
+      // أعداد أولية فقط، كما تشترط `app_design_node_check`: قيمة كائن
+      // أو مصفوفة لا تصل إلى الهاتف أصلًا، فتجاهلها دورًا دورًا.
+      rawProperties.forEach((key, value) {
+        if (key is String &&
+            (value is String || value is num || value is bool)) {
+          properties[key] = value;
+        }
+      });
+    }
+    final source = properties['dataSource'];
+    final children = <PublishedSection>[
+      if (raw['children'] is List)
+        for (final child in raw['children'] as List)
+          if (PublishedSection.fromJson(child) case PublishedSection section)
+            section,
+    ];
     return PublishedSection(
       id: id,
       type: type,
       visible: raw['visible'] is bool ? raw['visible']! as bool : true,
       dataSource: source is String ? source : null,
+      properties: properties,
+      children: children,
     );
   }
 }
@@ -261,20 +334,24 @@ class PublishedDesign {
         'root': {
           'type': DesignWidgetTypes.pageHome,
           'children': <Map<String, dynamic>>[
-            for (final section in homeSections)
-              {
-                'id': section.id,
-                'type': section.type,
-                'visible': section.visible,
-                'properties': <String, dynamic>{
-                  if (section.dataSource != null)
-                    'dataSource': section.dataSource,
-                },
-              },
+            for (final section in homeSections) _sectionJson(section),
           ],
         },
       },
     ],
+  };
+
+  /// قسم كما يُقرأ مجددًا: خصائصه الأولية كلها وأبناؤه، لا مصدر بياناته
+  /// وحده — التسلسل الراجع إلى المحرّر يفقد جزءًا لو نسّي جزءًا.
+  static Map<String, dynamic> _sectionJson(PublishedSection section) => {
+    'id': section.id,
+    'type': section.type,
+    'visible': section.visible,
+    'properties': Map<String, dynamic>.from(section.properties),
+    if (section.children.isNotEmpty)
+      'children': [
+        for (final child in section.children) _sectionJson(child),
+      ],
   };
 
   /// المستندات المنشورة التي يقرأها هذا التطبيق. 1 بلا طبقة شكل، و2 بها.

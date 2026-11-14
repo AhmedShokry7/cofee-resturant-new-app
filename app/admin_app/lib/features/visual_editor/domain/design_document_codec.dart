@@ -26,6 +26,14 @@ class DesignDocumentCodec {
     'promoBanner': DesignContract.promoBanner,
     'productStrip': DesignContract.productStrip,
     'bundleList': DesignContract.bundleList,
+    'text': DesignContract.text,
+    'heading': DesignContract.heading,
+    'button': DesignContract.button,
+    'image': DesignContract.image,
+    'divider': DesignContract.divider,
+    'spacer': DesignContract.spacer,
+    'productGrid': DesignContract.productGrid,
+    'column': DesignContract.column,
   };
 
   /// مصادر البيانات: المفاتيح الداخلية → مفاتيح العقد.
@@ -62,9 +70,32 @@ class DesignDocumentCodec {
 
   // ------------------------------------------------------------------ كتابة
 
+  /// عقد الجذر بمفاتيح القائمة المسطّحة: الجذور بترتيبها، وكل عقدة تحمل
+  /// أبناءها من القائمة نفسها.
+  static List<Map<String, dynamic>> _topLevelNodes(
+    List<EditableComponent> components,
+  ) {
+    final byParent = <String, List<EditableComponent>>{};
+    for (final component in components) {
+      final parent = component.parentId;
+      if (parent == null) continue;
+      (byParent[parent] ??= []).add(component);
+    }
+    byParent.forEach((_, children) {
+      children.sort((a, b) => a.index.compareTo(b.index));
+    });
+    final roots = components.where((c) => c.parentId == null).toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    return [for (final root in roots) node(root, byParent)];
+  }
+
   /// عقدة مستند لمكوّن واحد: معرفّه ثابتًا، ونوعه بمفتاح العقد، وخصائصه
-  /// أعدادًا أولية فقط — كما تشترط `app_design_node_check` (226).
-  static Map<String, dynamic> node(EditableComponent component) {
+  /// أعدادًا أولية فقط — كما تشترط `app_design_node_check` (226). الأبناء
+  /// المتداخلون يُسلسلون تحت أبيهم، بمفاتيحهم ومفاتيحهم.
+  static Map<String, dynamic> node(
+    EditableComponent component, [
+    Map<String, List<EditableComponent>>? childrenByParent,
+  ]) {
     final properties = <String, dynamic>{};
     component.properties.forEach((key, value) {
       if (!_isScalar(value)) return;
@@ -83,6 +114,12 @@ class DesignDocumentCodec {
           ? component.properties['visible'] as bool
           : true,
       'properties': properties,
+      if (childrenByParent != null &&
+          childrenByParent[component.componentId] != null)
+        'children': [
+          for (final child in childrenByParent[component.componentId]!)
+            node(child, childrenByParent),
+        ],
     };
   }
 
@@ -108,9 +145,7 @@ class DesignDocumentCodec {
                 // الجذر عقدة كاملة لدى المدقق الحي: بمعرفّ فريد عبر المستند.
                 'id': 'root_${entry.key}',
                 'type': DesignContract.pageHome,
-                'children': [
-                  for (final component in entry.value) node(component),
-                ],
+                'children': _topLevelNodes(entry.value),
               },
             },
       ],
@@ -152,6 +187,7 @@ class DesignDocumentCodec {
           componentId: id,
           componentType: internal,
           pageId: pageId,
+          parentId: null,
           index: index,
           classification:
               entry?.classification ?? ComponentClassification.editable,
@@ -163,8 +199,64 @@ class DesignDocumentCodec {
           version: 1,
         ),
       );
+      // الأبناء المتداخلون يُقرؤون بعدهم في القائمة المسطّحة نفسها، بحامل
+      // `parentId` و`index` موضعهم بين إخوتهم — ترتيب المستند العمقي محفوظ
+      // في ترتيب القائمة.
+      if (raw['children'] is List) {
+        final childrenOut = <EditableComponent>[];
+        _parseNested(pageId, raw['children'], id, childrenOut);
+        // الأب يبقى في مكانه، وأبناؤه يُدرجون بعده مباشرة.
+        components.addAll(childrenOut);
+      }
     }
     return components;
+  }
+
+  static void _parseNested(
+    String pageId,
+    Object? children,
+    String parentId,
+    List<EditableComponent> out,
+  ) {
+    if (children is! List) return;
+    for (var index = 0; index < children.length; index++) {
+      final raw = children[index];
+      if (raw is! Map) continue;
+      final id = raw['id'];
+      final type = raw['type'];
+      if (id is! String || id.isEmpty) continue;
+      if (type is! String || type.isEmpty) continue;
+      final internal = internalType(type);
+      final entry = _registry[internal];
+      final properties = raw['properties'] is Map
+          ? Map<String, dynamic>.from(raw['properties'] as Map)
+          : <String, dynamic>{};
+      if (properties['dataSource'] != null) {
+        properties['dataSource'] =
+            internalDataSource(properties['dataSource']) ?? '';
+      }
+      properties['visible'] = raw['visible'] is bool
+          ? raw['visible'] as bool
+          : true;
+      out.add(
+        EditableComponent(
+          componentId: id,
+          componentType: internal,
+          pageId: pageId,
+          parentId: parentId,
+          index: index,
+          classification:
+              entry?.classification ?? ComponentClassification.editable,
+          properties: properties,
+          defaultValues: entry?.defaultValues ?? const {},
+          validationRules: entry?.validationRules ?? const {},
+          allowedOperations: entry?.allowedOperations ??
+              const ['reorder', 'hide'],
+          version: 1,
+        ),
+      );
+      _parseNested(pageId, raw['children'], id, out);
+    }
   }
 
   /// صفحات مستند كامل → مكوّنات لكل صفحة.
@@ -234,6 +326,15 @@ class DesignDocumentCodec {
           registryEntry?.allowedOperations ?? const ['reorder', 'hide'],
       version: 1,
     );
+  }
+
+  /// هل يُسمح بوضع ابن من نوع داخلي داخل أب من نوع داخلي — بوابة تركيب
+  /// الشجرة: لا إضافة ولا نقل يمرّ منها.
+  static bool canNest({required String childType, String? parentType}) {
+    if (parentType == null) return true;
+    final parent = _registry[parentType];
+    if (parent == null) return false;
+    return parent.allowedChildTypes.contains(childType);
   }
 
   // ------------------------------------------------------------ التحقق الحي

@@ -5280,6 +5280,87 @@ class S {
       ? 'سيعود التصميم إلى هذا الإصدار ويُنشر كإصدار جديد في السجل. هل أنت متأكد؟'
       : 'The design will return to this version and be published as a new entry in the history. Are you sure?';
 
+  // ---------- Visual Editor — التخلص والقوالب واستوديو الشكل ----------
+
+  /// زر التخلص من المسودة في شريط الأدوات.
+  static String get visualEditorDiscard =>
+      _ar ? 'التخلص من المسودة' : 'Discard draft';
+
+  static String get visualEditorDiscardTitle =>
+      _ar ? 'تأكيد التخلص' : 'Confirm discard';
+
+  static String get visualEditorDiscardConfirm => _ar
+      ? 'ستُحذف المسودة المحفوظة وتعود اللوحة إلى «تصميم اليوم». ما يراه الزبون من التصميم المنشور لا يُلمس. هل أنت متأكد؟'
+      : 'The saved draft will be deleted and the editor returns to the default design. What the customer sees of the published design is untouched. Are you sure?';
+
+  static String get visualEditorDiscardDone =>
+      _ar ? 'تخلّصت من المسودة' : 'Draft discarded';
+
+  static String get visualEditorTemplates =>
+      _ar ? 'القوالب' : 'Templates';
+
+  static String get visualEditorTemplatesTitle =>
+      _ar ? 'معرض القوالب' : 'Templates gallery';
+
+  static String get visualEditorNoTemplates =>
+      _ar ? 'لا قوالب محفوظة بعد' : 'No saved templates yet';
+
+  static String get visualEditorApplyTemplate =>
+      _ar ? 'تطبيق' : 'Apply';
+
+  static String get visualEditorTemplateApplied =>
+      _ar ? 'طُبّق القالب على المسودة' : 'Template applied to the draft';
+
+  static String get visualEditorTemplateDeleted =>
+      _ar ? 'حُذف القالب' : 'Template deleted';
+
+  static String get visualEditorSaveTemplate =>
+      _ar ? 'حفظ كقالب' : 'Save as template';
+
+  static String get visualEditorTemplateNameLabel =>
+      _ar ? 'اسم القالب' : 'Template name';
+
+  static String get visualEditorTemplateNameHint => _ar
+      ? 'مثال: تصميم رمضان'
+      : 'e.g. Ramadan design';
+
+  static String get visualEditorTemplateSaved =>
+      _ar ? 'حُفظ القالب' : 'Template saved';
+
+  static String get visualEditorDeleteTemplate =>
+      _ar ? 'حذف القالب' : 'Delete template';
+
+  static String get visualEditorDeleteTemplateConfirm => _ar
+      ? 'يُحذف القالب نهائيًا ولا يلمس مسودة أو منشورًا. هل أنت متأكد؟'
+      : 'The template is deleted permanently; drafts and the published design are untouched. Are you sure?';
+
+  static String get visualEditorThemeStudio =>
+      _ar ? 'استوديو الشكل' : 'Theme Studio';
+
+  static String get visualEditorThemeColors =>
+      _ar ? 'ألوان الأدوار' : 'Role colors';
+
+  static String get visualEditorThemeScales =>
+      _ar ? 'المقاييس' : 'Scales';
+
+  static String get visualEditorTextScale =>
+      _ar ? 'مقياس النص' : 'Text scale';
+
+  static String get visualEditorRadiusScale =>
+      _ar ? 'مقياس التقويس' : 'Radius scale';
+
+  static String get visualEditorThemeNone =>
+      _ar ? 'بدون (أصل التطبيق)' : 'None (app default)';
+
+  static String get visualEditorThemeApplied =>
+      _ar ? 'طُبّقت طبقة الشكل' : 'Theme applied';
+
+  static String get visualEditorColorHint =>
+      _ar ? '#RRGGBB مثل #2E7D32' : '#RRGGBB e.g. #2E7D32';
+
+  static String get visualEditorColorInvalid =>
+      _ar ? 'قيمة غير صالحة' : 'Invalid value';
+
   // ---------- HR — sidebar ----------
 
   /// عنوان قسم الموارد البشرية في الشريط الجانبي.

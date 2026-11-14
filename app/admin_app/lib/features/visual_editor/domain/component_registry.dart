@@ -983,22 +983,7 @@ class ComponentRegistry {
   }
 
   static void _registerNavigationComponents() {
-    // Bottom navigation is handled by the app, not editable
-    // But we can have a placeholder for tab bar customization
-    register(ComponentRegistryEntry(
-      componentType: 'tabBar',
-      displayName: 'شريط التبويب',
-      description: 'شريط التنقل السفلي (ثابت، لا يُحذف)',
-      category: 'navigation',
-      classification: ComponentClassification.static_,
-      properties: {},
-      allowedParentTypes: ['home', 'categories', 'cart', 'favourites', 'settings'],
-      allowedChildTypes: [],
-      allowedOperations: [], // Completely locked
-      defaultValues: {},
-      validationRules: {},
-      iconName: 'bottomNavigation',
-      version: 1,
-    ));
+    // شريط التنقل السفلي يملكه التطبيق لا المستند: لا نوع له في العقد ولا
+    // عمليات، فلا يسجل — مكوّن بلا رسم وبلا تحرير لا معنى له في الشجرة.
   }
 }

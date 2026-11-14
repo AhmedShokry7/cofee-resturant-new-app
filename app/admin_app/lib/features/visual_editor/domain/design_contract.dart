@@ -63,11 +63,29 @@ abstract final class DesignContract {
     'section.promo_banner',
     'section.product_strip',
     'section.bundle_list',
+    'section.text',
+    'section.heading',
+    'section.button',
+    'section.image',
+    'section.divider',
+    'section.spacer',
+    'section.product_grid',
+    'section.column',
   ];
 
   /// مصادر البيانات المميزة للأقسام المتشابهة (DesignDataSources لدى العميل).
   static const String featured = 'catalog.featured';
   static const String recommendations = 'catalog.recommendations';
+
+  /// أنواع المحتوى الحر والهياكل، بمفاتيح العقد كما يرسمها الهاتف.
+  static const String text = 'section.text';
+  static const String heading = 'section.heading';
+  static const String button = 'section.button';
+  static const String image = 'section.image';
+  static const String divider = 'section.divider';
+  static const String spacer = 'section.spacer';
+  static const String productGrid = 'section.product_grid';
+  static const String column = 'section.column';
 
   /// أسماء مقاييس النص التي تعيدها `app_design_is_valid`.
   static const List<String> textScales = [

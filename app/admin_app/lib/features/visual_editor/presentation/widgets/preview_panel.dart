@@ -12,6 +12,28 @@ import 'preview_panel_stub.dart'
     if (dart.library.js_interop) 'preview_panel_web.dart'
     as preview_platform;
 
+/// أحجام المعاينة: خمسة أجهزة، عرضها وارتفاعها المنطقي هو المرسوم، فما
+/// يراه الموظف في المحرّر هو ما سيراه الزبون على جهاز مثله.
+enum PreviewDevice {
+  phoneSmall('موبايل صغير', AppIcons.smartPhone01, 360, 740),
+  phone('موبايل', AppIcons.smartPhone01, 390, 844),
+  phoneLarge('موبايل كبير', AppIcons.smartPhone01, 430, 932),
+  tabletPortrait('تابلت عمودي', Icons.tablet_outlined, 768, 1024),
+  tabletLandscape('تابلت أفقي', Icons.tablet, 1024, 768);
+
+  const PreviewDevice(
+    this.label,
+    this.icon,
+    this.width,
+    this.height,
+  );
+
+  final String label;
+  final IconData icon;
+  final double width;
+  final double height;
+}
+
 /// حاوية المعاينة المركزية.
 ///
 /// على Web تعرض Customer Flutter Web داخل HtmlElementView (iframe).
@@ -25,6 +47,7 @@ class PreviewPanel extends StatefulWidget {
     required this.pageId,
     required this.sessionId,
     required this.zoom,
+    this.device = PreviewDevice.phone,
     required this.onElementSelected,
     required this.onPreviewReady,
     required this.onPreviewError,
@@ -38,6 +61,9 @@ class PreviewPanel extends StatefulWidget {
   final String pageId;
   final String? sessionId;
   final double zoom;
+
+  /// الجهاز المعروض — يحكم عرض الإطار وارتفاعه لا رقم مخفي.
+  final PreviewDevice device;
   final void Function(dynamic data) onElementSelected;
   final void Function(dynamic data) onPreviewReady;
   final void Function(dynamic data) onPreviewError;
@@ -132,6 +158,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return _PreviewFrame(
       zoom: widget.zoom,
+      device: widget.device,
       dark: dark,
       child: kIsWeb ? _buildWebPreview() : _buildNonWebPlaceholder(context),
     );
@@ -169,49 +196,54 @@ class _PreviewPanelState extends State<PreviewPanel> {
 class _PreviewFrame extends StatelessWidget {
   const _PreviewFrame({
     required this.zoom,
+    required this.device,
     required this.dark,
     required this.child,
   });
 
   final double zoom;
+  final PreviewDevice device;
   final bool dark;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    // عرض الموبايل الافتراضي 390 (iPhone 14 Pro)
-    const double mobileWidth = 390.0;
-    const double mobileHeight = 844.0;
-
     return Container(
       decoration: BoxDecoration(
         color: dark ? AppColor.darkBackground : AppColor.lightGreyColor,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       alignment: Alignment.center,
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xxl),
-        child: Transform.scale(
-          scale: zoom,
-          child: Container(
-            width: mobileWidth,
-            height: mobileHeight,
-            decoration: BoxDecoration(
-              color: AppColor.deviceChrome,
-              borderRadius: BorderRadius.circular(AppRadius.phoneBody),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColor.black20,
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+      child: SingleChildScrollView(
+        // جهاز أكبر من اللوحة أو تكبير فوق الواحد يُقلّب لا يُقتطع.
+        scrollDirection: Axis.horizontal,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Transform.scale(
+              scale: zoom,
+              child: Container(
+                width: device.width,
+                height: device.height,
+                decoration: BoxDecoration(
+                  color: AppColor.deviceChrome,
+                  borderRadius: BorderRadius.circular(AppRadius.phoneBody),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.black20,
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(AppRadius.phoneScreen),
-                child: child,
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.phoneScreen),
+                    child: child,
+                  ),
+                ),
               ),
             ),
           ),

@@ -232,6 +232,101 @@ void main() {
       );
     });
   });
+
+  group('المحتوى الحر في المستند المنشور', () {
+    testWidgets('نص مكتمل الخصائص يرسم نصه وصفّه وحجمه', (tester) async {
+      await _pumpHome(tester, [
+        _node(
+          't1',
+          DesignWidgetTypes.text,
+          properties: {
+            'text': 'أهلًا بك',
+            'size': 16,
+            'weight': 'bold',
+            'alignment': 'center',
+          },
+        ),
+      ]);
+      expect(find.text('أهلًا بك'), findsOneWidget);
+    });
+
+    testWidgets('نص بلا خصائص لا يرسم شيئًا', (tester) async {
+      await _pumpHome(tester, [_node('t2', DesignWidgetTypes.text)]);
+      expect(find.byType(Text), findsNothing);
+    });
+
+    testWidgets('فاصل يرسم فاصلًا، ومسافة ترسم ارتفاعها', (tester) async {
+      await _pumpHome(tester, [
+        _node('d1', DesignWidgetTypes.divider),
+        _node('s1', DesignWidgetTypes.spacer, properties: {'size': 'xl'}),
+      ]);
+      expect(find.byType(Divider), findsOneWidget);
+    });
+
+    testWidgets('عمود يرسم أبناءه بترتيبهم المنشور', (tester) async {
+      await _pumpHome(tester, [
+        _nestedNode(
+          'c1',
+          DesignWidgetTypes.column,
+          <Object?>[
+            _node('t1', DesignWidgetTypes.text, properties: {'text': 'اول'}),
+            _node('t2', DesignWidgetTypes.text, properties: {'text': 'ثاني'}),
+          ],
+        ),
+      ]);
+      expect(find.text('اول'), findsOneWidget);
+      expect(find.text('ثاني'), findsOneWidget);
+    });
+
+    testWidgets('عمود فارغ أو بلا أبناء يرسمين لا يرسم', (tester) async {
+      await _pumpHome(tester, [
+        _node('c2', DesignWidgetTypes.column),
+      ]);
+      expect(find.byType(Text), findsNothing);
+    });
+
+    test('عمود بابن حقيقي يرسم ابنه الحقيقي لا بديلًا', () {
+      // عمود يحمل شريط بانر: الشريط نفسه، لا صندوق بديل.
+      final column = PublishedSection.fromJson(_nestedNode(
+        'c3',
+        DesignWidgetTypes.column,
+        <Object?>[_node('b1', DesignWidgetTypes.bannerCarousel)],
+      ))!;
+      expect(
+        _rendered(buildHomeDocumentSection(column.children.first)),
+        HomeBannerSection,
+      );
+    });
+
+    test('شبكة منتجات بمصدر مجهول لا تُرسم ولا تُخمّن', () {
+      expect(
+        buildHomeDocumentSection(
+          _section(
+            DesignWidgetTypes.productGrid,
+            dataSource: 'categoryProducts',
+          ),
+        ),
+        isNotNull,
+        reason: 'مكوّن الشبكة يُرسم ثم يفرغ داخله؛ المصدر المجهول صف لا شيء',
+      );
+    });
+
+    test('الخصائص والأبناء تحفظ في التسلسل الراجع', () {
+      final design = PublishedDesign.fromJson(_document([
+        _nestedNode(
+          'c1',
+          DesignWidgetTypes.column,
+          <Object?>[
+            _node('t1', DesignWidgetTypes.text, properties: {'text': 'سطر'}),
+          ],
+        ),
+      ]));
+      final roundTrip = PublishedDesign.fromJson(design!.toDocument())!;
+      final column = roundTrip.homeSections.single;
+      expect(column.type, DesignWidgetTypes.column);
+      expect(column.children.single.property('text'), 'سطر');
+    });
+  });
 }
 
 /// ترتيب الصفحة كما يرسمه الهاتف اليوم، بلا مستند.
@@ -275,13 +370,49 @@ Map<String, Object?> _node(
   String type, {
   String? dataSource,
   bool visible = true,
+  Map<String, Object?>? properties,
 }) => <String, Object?>{
   'id': id,
   'type': type,
   'visible': visible,
-  'properties': <String, Object?>{'dataSource': ?dataSource},
+  'properties': <String, Object?>{
+    if (dataSource != null) 'dataSource': dataSource,
+    ...?properties,
+  },
   'children': <Object?>[],
 };
+
+/// عقدة بأبناء: عمودًا أو غيره.
+Map<String, Object?> _nestedNode(
+  String id,
+  String type,
+  List<Object?> children,
+) => <String, Object?>{
+  ..._node(id, type),
+  'children': children,
+};
+
+/// ضخ أقسام المستند في شاشة حقيقية: الرسم الكامل لا الاستدعاء الجاف،
+/// فالمحرّك قد يبدأ ويدرك أن لا شيء يرسم.
+Future<void> _pumpHome(
+  WidgetTester tester,
+  List<Map<String, Object?>> nodes,
+) async {
+  final design = PublishedDesign.fromJson(_document(nodes))!;
+  await tester.pumpWidget(
+    MaterialApp(
+      home: Scaffold(
+        body: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: buildHomeDocumentSections(design.homeSections),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pump();
+}
 
 Map<String, Object?> _rootNode(List<Object?> children) => <String, Object?>{
   'id': 'home_root',

@@ -15,8 +15,9 @@ export 'visual_editor_state.dart';
 /// يدير حالة المحرر المرئي ويرسل الأوامر إلى معاينة Customer App عبر الـ Bridge.
 ///
 /// لا يصدر أوامر مباشرة للـ iframe؛ بل يغيّر الحالة وتلتقطها [PreviewPanel]
-/// لترسلها عبر postMessage. كل تعديل تركيبي يترك أثرًا في مكدس التراجع،
-/// ويُحفظ مؤجلًا كمسودة عبر الـ RPC، ويُنشر بعد تدقيق محلي ثم تدقيق القاعدة.
+/// لترسلها عبر postMessage. كل تعديل تركيبي أو في طبقة الشكل يترك أثرًا في
+/// مكدس التراجع، ويُحفظ مؤجلًا كمسودة عبر الـ RPC، ويُنشر بعد تدقيق محلي ثم
+/// تدقيق القاعدة. القوالب تطبَّق على المسودة لا على المنشور أبدًا.
 class VisualEditorCubit extends Cubit<VisualEditorState> {
   VisualEditorCubit({VisualEditorRepository? repository})
       : super(
@@ -36,11 +37,10 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   OutboundMessage? get pendingMessage => _pendingMessage;
 
-  /// مكدسا التراجع والإعادة: لقطات كاملة لـ componentsByPage. حجم الشجرة
-  /// صغير (سقف 400 عقدة بصفحة في العقد الحي)، واللقطات الكاملة أصدق من
-  /// diffs هشّة على الحقول.
-  final List<Map<String, List<EditableComponent>>> _undoStack = [];
-  final List<Map<String, List<EditableComponent>>> _redoStack = [];
+  /// لقطة تراجع كاملة: المكوّنات وطبقة الشكل معًا — التراجع عن لون بلا
+  /// ترتيب نصف تراجع، والاثنان يُنشران في مستند واحد.
+  final List<_EditorSnapshot> _undoStack = [];
+  final List<_EditorSnapshot> _redoStack = [];
 
   /// طبقة الشكل الحالية للمسودة.
   DesignTheme _theme = DesignTheme.none;
@@ -118,7 +118,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
   }
 
-  /// المستخدم ضغط على عنصر داخل المعاينة.
+  /// المستخدم ضغط على عنصر داخل المعاينة — أبناء الأعمدة تحدد كأبنائها.
   void handleElementSelected(dynamic data) {
     if (data is! Map) return;
     final componentId = data['componentId'] as String?;
@@ -157,57 +157,43 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   static const int _maxUndoDepth = 50;
 
-  Map<String, List<EditableComponent>> _snapshot() => {
-    for (final entry in state.componentsByPage.entries)
-      entry.key: List<EditableComponent>.from(entry.value),
-  };
+  _EditorSnapshot _snapshot() => _EditorSnapshot(
+    componentsByPage: {
+      for (final entry in state.componentsByPage.entries)
+        entry.key: List<EditableComponent>.from(entry.value),
+    },
+    theme: _theme,
+  );
 
-  void undo() {
-    if (_undoStack.isEmpty) return;
-    _redoStack.add(_snapshot());
-    final previous = _undoStack.removeLast();
+  void _restore(_EditorSnapshot snapshot) {
+    _theme = snapshot.theme;
     emit(
       state.copyWith(
-        componentsByPage: previous,
+        componentsByPage: snapshot.componentsByPage,
         isDirty: true,
       ),
     );
     _syncPreview();
     _scheduleSave();
+  }
+
+  void undo() {
+    if (_undoStack.isEmpty) return;
+    _redoStack.add(_snapshot());
+    _restore(_undoStack.removeLast());
   }
 
   void redo() {
     if (_redoStack.isEmpty) return;
     _undoStack.add(_snapshot());
-    final next = _redoStack.removeLast();
-    emit(
-      state.copyWith(
-        componentsByPage: next,
-        isDirty: true,
-      ),
-    );
-    _syncPreview();
-    _scheduleSave();
-  }
-
-  /// تراجع عن كل ما لم يُنشر: الرجوع إلى ما يراه الزبون اليوم.
-  Future<void> discardDraft() async {
-    _undoStack.clear();
-    _redoStack.clear();
-    _saveDebounce?.cancel();
-    emit(
-      state.copyWith(
-        status: VisualEditorStatus.loading,
-        clearError: true,
-      ),
-    );
-    await initialize();
+    _restore(_redoStack.removeLast());
   }
 
   // ---------- تحديث طبقة الشكل ----------
 
-  /// تحديث دور لون أو مقياس في طبقة المسودة.
+  /// تحديث طبقة الشكل كاملة — لون أو مقياس. أثر التراجع يسبق التطبيق.
   void updateTheme(DesignTheme theme) {
+    _pushUndo();
     _theme = theme;
     emit(state.copyWith(isDirty: true));
     _syncPreview();
@@ -243,7 +229,18 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   // ---------- إضافة وحذف ونسخ ----------
 
-  /// إضافة مكوّن جديد من المكتبة.
+  /// إخوة المكوّن: نفس الصفحة ونفس الأب، بترتيبهم.
+  List<EditableComponent> _siblings(
+    Map<String, List<EditableComponent>> byPage,
+    String pageId,
+    String? parentId,
+  ) =>
+      (byPage[pageId] ?? const [])
+          .where((c) => c.parentId == parentId)
+          .toList()
+        ..sort((a, b) => a.index.compareTo(b.index));
+
+  /// إضافة مكوّن جديد من المكتبة — إلى صفحة أو داخل حاوية (`parentId`).
   void addComponent({
     required String pageId,
     required String componentType,
@@ -252,16 +249,22 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   }) {
     final entry = ComponentRegistry.get(componentType);
     if (entry == null) return;
-    final pageComponents = List<EditableComponent>.from(
-      state.componentsByPage[pageId] ?? [],
-    );
+    if (parentId != null &&
+        !DesignDocumentCodec.canNest(
+          childType: componentType,
+          parentType: state.findComponent(parentId)?.componentType,
+        )) {
+      return;
+    }
+    final siblings = _siblings(state.componentsByPage, pageId, parentId);
+    final insertAt = (index ?? siblings.length).clamp(0, siblings.length);
     final newComponent = EditableComponent(
       componentId:
           '${pageId}_${componentType}_${DateTime.now().millisecondsSinceEpoch}',
       componentType: componentType,
       pageId: pageId,
       parentId: parentId,
-      index: index ?? pageComponents.length,
+      index: insertAt,
       classification: entry.classification,
       properties: Map<String, dynamic>.from(entry.defaultValues)
         ..['visible'] = true,
@@ -271,31 +274,125 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       version: 1,
     );
     _pushUndo();
-    final updated = [...pageComponents, newComponent];
-    _updatePage(pageId, updated);
+    // الأبناء يُدرجون في القائمة المسطّحة بعد آخر أبناء الأب مباشرة: ترتيب
+    // القائمة هو الترتيب العمقي للمستند.
+    final pageComponents = List<EditableComponent>.from(
+      state.componentsByPage[pageId] ?? [],
+    );
+    final insertPosition = _flatInsertPosition(
+      pageComponents,
+      parentId,
+      insertAt,
+    );
+    pageComponents.insert(insertPosition, newComponent);
+    _updatePage(pageId, _reindexSiblings(pageComponents));
     _dispatchToPreview(
       VisualEditorMessageType.addComponent,
       {
         'pageId': pageId,
-        'component': DesignDocumentCodec.node(newComponent),
+        'component': DesignDocumentCodec.node(
+          newComponent,
+          _childrenByParent(pageComponents),
+        ),
         'designDocument': _currentDocumentOrNull(),
       },
     );
     _scheduleSave();
   }
 
-  /// حذف مكوّن — محمي من حذف العناصر التي لا تحمل 'delete' في allowedOperations.
+  /// موضع الإدراج في القائمة المسطّحة: آخر موضع يغطيه الأبناء السابقون
+  /// للأب المطلوب، بترتيب المستند العمقي.
+  int _flatInsertPosition(
+    List<EditableComponent> components,
+    String? parentId,
+    int siblingIndex,
+  ) {
+    if (parentId == null) {
+      // جذر الصفحة: بعد آخر مكون جذر وجميع أبنائه — أي نهاية القائمة.
+      return components.length;
+    }
+    final siblings = components
+        .where((c) => c.parentId == parentId)
+        .toList()
+      ..sort((a, b) => a.index.compareTo(b.index));
+    if (siblings.isEmpty) return components.length;
+    if (siblingIndex >= siblings.length) {
+      // بعد آخر ابن: قبل الأخ الأبناء؟ لا — الأب قد يكون وسط قائمة أبيه،
+      // فالإدراج بعد آخر ابن هو نهاية شجرة الأب في القائمة العمقية.
+      final lastSibling = siblings.last;
+      final lastPosition = components.indexOf(lastSibling);
+      return _subtreeEnd(components, lastPosition) + 1;
+    }
+    final position = components.indexOf(siblings[siblingIndex]);
+    return position;
+  }
+
+  /// نهاية شجرة مكوّن في القائمة المسطّحة: آخر سليل له قبل أول عنصر لا
+  /// يخصّه. القائمة المسطّحة تحفظ الترتيب العمقي، فالشجرة متتالية دائمًا.
+  int _subtreeEnd(List<EditableComponent> components, int start) {
+    var end = start;
+    final ancestors = <String>{components[start].componentId};
+    for (var i = start + 1; i < components.length; i++) {
+      final parent = components[i].parentId;
+      if (parent != null && ancestors.contains(parent)) {
+        ancestors.add(components[i].componentId);
+        end = i;
+        continue;
+      }
+      // عنصر ليس سليلًا للجذر: إذا لم يكن سليلًا لأي سجل في الأنساب، انتهت
+      // الشجرة. بما أن القائمة عمقية، أول انقطاع هو النهاية.
+      break;
+    }
+    return end;
+  }
+
+  Map<String, List<EditableComponent>> _childrenByParent(
+    List<EditableComponent> components,
+  ) {
+    final byParent = <String, List<EditableComponent>>{};
+    for (final component in components) {
+      final parent = component.parentId;
+      if (parent == null) continue;
+      (byParent[parent] ??= []).add(component);
+    }
+    byParent.forEach((_, children) {
+      children.sort((a, b) => a.index.compareTo(b.index));
+    });
+    return byParent;
+  }
+
+  /// حذف مكوّن — محمي من حذف العناصر التي لا تحمل 'delete' في
+  /// allowedOperations، ويحذف أبناءه معه: عمود بلا أبناء يتيم أحسن من شجرة
+  /// مكسورة، والحذف كله أو لا شيء.
   void deleteComponent(String componentId) {
     final component = state.findComponent(componentId);
     if (component == null) return;
     if (!component.canDelete) return;
     _pushUndo();
+    final doomed = <String>{componentId};
+    // جولة على الشجرة: أي ابن لأي محذوف يُحذف معه.
+    var grew = true;
+    while (grew) {
+      grew = false;
+      for (final pageComponents in state.componentsByPage.values) {
+        for (final candidate in pageComponents) {
+          if (candidate.parentId != null &&
+              doomed.contains(candidate.parentId) &&
+              doomed.add(candidate.componentId)) {
+            grew = true;
+          }
+        }
+      }
+    }
     final updatedPages = <String, List<EditableComponent>>{};
     state.componentsByPage.forEach((pageId, components) {
-      updatedPages[pageId] =
-          components.where((c) => c.componentId != componentId).toList();
+      updatedPages[pageId] = _reindexSiblings(
+        components
+            .where((c) => !doomed.contains(c.componentId))
+            .toList(),
+      );
     });
-    final wasSelected = state.selectedComponentId == componentId;
+    final wasSelected = doomed.contains(state.selectedComponentId);
     emit(
       state.copyWith(
         componentsByPage: updatedPages,
@@ -313,52 +410,114 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     _scheduleSave();
   }
 
-  /// نسخ مكوّن وإدراجه بعده مباشرة.
+  /// نسخ مكوّن وإدراجه بعده مباشرة، مع كل أبنائه بمعرفّات جديدة.
   void duplicateComponent(String componentId) {
     final component = state.findComponent(componentId);
     if (component == null || !component.canDuplicate) return;
+    _pushUndo();
     final pageComponents = List<EditableComponent>.from(
       state.componentsByPage[component.pageId] ?? [],
     );
-    final oldIndex =
-        pageComponents.indexWhere((c) => c.componentId == componentId);
-    if (oldIndex < 0) return;
-    _pushUndo();
-    final newComponent = component.copyWith(
-      componentId:
-          '${component.pageId}_${component.componentType}_${DateTime.now().millisecondsSinceEpoch}',
-      index: oldIndex + 1,
-      version: component.version + 1,
-    );
-    final updated = List<EditableComponent>.from(pageComponents)
-      ..insert(oldIndex + 1, newComponent);
-    _updatePage(component.pageId, _reindex(updated));
+    final subtree = _subtreeOf(pageComponents, componentId);
+    if (subtree.isEmpty) return;
+    final suffix = DateTime.now().millisecondsSinceEpoch.toString();
+    final idMap = <String, String>{};
+    for (final node in subtree) {
+      idMap[node.componentId] =
+          '${node.pageId}_${node.componentType}_$suffix'
+          '_${idMap.length}';
+    }
+    final position = pageComponents.indexOf(subtree.last) + 1;
+    final duplicates = <EditableComponent>[
+      for (final node in subtree)
+        node.copyWith(
+          componentId: idMap[node.componentId]!,
+          parentId: node.parentId == null
+              ? null
+              : idMap[node.parentId!] ?? node.parentId,
+          index: node.index,
+          version: node.version + 1,
+        ),
+    ];
+    pageComponents.insertAll(position, duplicates);
+    _updatePage(component.pageId, _reindexSiblings(pageComponents));
+    final duplicateRoot = duplicates.first;
     _dispatchToPreview(VisualEditorMessageType.addComponent, {
       'pageId': component.pageId,
-      'component': DesignDocumentCodec.node(newComponent),
-      'index': oldIndex + 1,
+      'component': DesignDocumentCodec.node(
+        duplicateRoot,
+        _childrenByParent(pageComponents),
+      ),
       'designDocument': _currentDocumentOrNull(),
     });
     _scheduleSave();
   }
 
+  List<EditableComponent> _subtreeOf(
+    List<EditableComponent> components,
+    String rootId,
+  ) {
+    final root = components
+        .where((c) => c.componentId == rootId)
+        .firstOrNull;
+    if (root == null) return const [];
+    final subtree = <EditableComponent>[root];
+    final ancestors = <String>{rootId};
+    // القائمة عمقية: كل سليل للجذر متتالٍ بعده.
+    for (final candidate in components) {
+      if (candidate.componentId == rootId) continue;
+      if (candidate.parentId != null &&
+          ancestors.contains(candidate.parentId)) {
+        ancestors.add(candidate.componentId);
+        subtree.add(candidate);
+      }
+    }
+    return subtree;
+  }
+
   // ---------- إعادة الترتيب ----------
 
-  /// إعادة ترتيب مكوّن إلى موضع جديد.
+  /// إعادة ترتيب مكوّن داخل مجموعة إخوته فقط — لا ينتقل بين الآباء إلا
+  /// بقواعد السجل (canMoveToParent عبر السحب لاحقًا).
   void reorderComponent(String componentId, int newIndex) {
     final component = state.findComponent(componentId);
     if (component == null || !component.canReorder) return;
-    final pageComponents = List<EditableComponent>.from(
-      state.componentsByPage[component.pageId] ?? [],
+    final siblings = _siblings(
+      state.componentsByPage,
+      component.pageId,
+      component.parentId,
     );
-    final oldIndex =
-        pageComponents.indexWhere((c) => c.componentId == componentId);
-    if (oldIndex < 0) return;
+    final oldSiblingIndex = siblings
+        .indexWhere((c) => c.componentId == componentId);
+    if (oldSiblingIndex < 0) return;
     _pushUndo();
-    final item = pageComponents.removeAt(oldIndex);
-    final clamped = newIndex.clamp(0, pageComponents.length);
-    pageComponents.insert(clamped, item);
-    _updatePage(component.pageId, _reindex(pageComponents));
+    final clamped = newIndex.clamp(0, siblings.length - 1);
+    final reordered = List<EditableComponent>.from(siblings)
+      ..removeAt(oldSiblingIndex)
+      ..insert(clamped, component);
+    // إعادة كتابة الفهارس بين الإخوة داخل القائمة المسطّحة بالترتيب الجديد.
+    final siblingOrder = <String, int>{
+      for (var i = 0; i < reordered.length; i++) reordered[i].componentId: i,
+    };
+    final pageComponents = state.componentsByPage[component.pageId]!
+        .map(
+          (c) => siblingOrder.containsKey(c.componentId)
+              ? c.copyWith(index: siblingOrder[c.componentId]!)
+              : c,
+        )
+        .toList();
+    // ترتيب القائمة المسطّحة نفسه يتبع الترتيب العمقي الجديد: أعد بناءها
+    // من المستند حتى تظل متتالية.
+    final document = DesignDocumentCodec.document({
+      component.pageId: pageComponents,
+    });
+    final pages = document['pages'] as List;
+    if (pages.isEmpty) return;
+    final reparsed = DesignDocumentCodec.parsePage(
+      component.pageId,
+      (pages.first as Map)['root']['children'],
+    );
+    _updatePage(component.pageId, reparsed);
     _dispatchToPreview(VisualEditorMessageType.reorderComponent, {
       'componentId': componentId,
       'newIndex': clamped,
@@ -444,6 +603,149 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       propertyKey: propertyKey,
       value: defaultValue,
     );
+  }
+
+  // ---------- التخلص من المسودة ----------
+
+  /// التخلص من المسودة عبر RPC — يمسح صف المسودة فقط، وما يراه الزبون
+  /// لا يُلمس. عند الفشل تبقى الحالة المحلية كما هي: فقدان محلي عند عطل
+  /// شبكة يخلق انطباعًا كاذبًا بأن المسودة ماتت.
+  Future<bool> discardDraft() async {
+    _saveDebounce?.cancel();
+    try {
+      await _repository.discardDraft();
+    } catch (e) {
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          errorMessage: 'تعذر التخلص من المسودة: $e',
+        ),
+      );
+      return false;
+    }
+    _undoStack.clear();
+    _redoStack.clear();
+    await initialize();
+    return true;
+  }
+
+  // ---------- القوالب ----------
+
+  /// القوالب المحفوظة (228)، الأحدث أولًا.
+  Future<List<DesignTemplateInfo>> loadTemplates() =>
+      _repository.listTemplates();
+
+  /// مستند قالب، لمعاينته قبل تطبيقه.
+  Future<Map<String, dynamic>?> templateDocument(String templateId) =>
+      _repository.getTemplateDocument(templateId);
+
+  /// تطبيق قالب على المسودة فقط — بلمسة تراجع واحدة، ولا يلمس المنشور.
+  Future<bool> applyTemplate(String templateId) async {
+    try {
+      final document = await _repository.getTemplateDocument(templateId);
+      if (isClosed) return false;
+      if (document == null) {
+        emit(
+          state.copyWith(
+            errorMessage: 'القالب غير موجود',
+          ),
+        );
+        return false;
+      }
+      final invalid = DesignDocumentCodec.validate(document);
+      if (invalid != null) {
+        emit(
+          state.copyWith(
+            errorMessage: 'قالب غير صالح للتطبيق: $invalid',
+          ),
+        );
+        return false;
+      }
+      _pushUndo();
+      _theme = DesignDocumentCodec.themeOf(document);
+      emit(
+        state.copyWith(
+          componentsByPage: DesignDocumentCodec.parseDocument(document),
+          isDirty: true,
+          clearError: true,
+        ),
+      );
+      _syncPreview();
+      _scheduleSave();
+      return true;
+    } catch (e) {
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          errorMessage: 'تعذر تطبيق القالب: $e',
+        ),
+      );
+      return false;
+    }
+  }
+
+  /// حفظ المسودة الحالية كقالب جديد (228) — بنفس تدقيق النشر.
+  Future<DesignTemplateInfo?> saveCurrentAsTemplate(String name) async {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty || trimmed.length > 60) {
+      emit(
+        state.copyWith(
+          errorMessage: 'اسم القالب مطلوب (1..60 حرفًا)',
+        ),
+      );
+      return null;
+    }
+    final document = _currentDocumentOrNull();
+    if (document == null) {
+      emit(
+        state.copyWith(
+          errorMessage: 'لا يوجد تصميم لحفظه كقالب',
+        ),
+      );
+      return null;
+    }
+    final invalid = DesignDocumentCodec.validate(document);
+    if (invalid != null) {
+      emit(
+        state.copyWith(
+          errorMessage: 'التصميم غير صالح للحفظ كقالب: $invalid',
+        ),
+      );
+      return null;
+    }
+    try {
+      final template = await _repository.saveTemplate(
+        name: trimmed,
+        document: document,
+      );
+      if (isClosed) return template;
+      emit(state.copyWith(clearError: true));
+      return template;
+    } catch (e) {
+      if (isClosed) return null;
+      emit(
+        state.copyWith(
+          errorMessage: 'تعذر حفظ القالب: $e',
+        ),
+      );
+      return null;
+    }
+  }
+
+  /// حذف قالب (228) — لا يلمس مسودة ولا منشورًا.
+  Future<bool> deleteTemplate(String templateId) async {
+    try {
+      await _repository.deleteTemplate(templateId);
+      return true;
+    } catch (e) {
+      if (isClosed) return false;
+      emit(
+        state.copyWith(
+          errorMessage: 'تعذر حذف القالب: $e',
+        ),
+      );
+      return false;
+    }
   }
 
   // ---------- حفظ ونشر ----------
@@ -586,10 +888,22 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
   }
 
-  List<EditableComponent> _reindex(List<EditableComponent> components) {
+  /// إعادة فهرسة كل مجموعة إخوة داخل القائمة المسطّحة (لا القائمة كلها):
+  /// الجذور تسلسل من 0، وأبناء كل أب تسلسل من 0.
+  List<EditableComponent> _reindexSiblings(
+    List<EditableComponent> components,
+  ) {
+    final rootCounter = _Counter();
+    final childCounters = <String, _Counter>{};
     return [
-      for (var i = 0; i < components.length; i++)
-        components[i].copyWith(index: i),
+      for (final component in components)
+        component.copyWith(
+          index: component.parentId == null
+              ? rootCounter.next()
+              : childCounters
+                  .putIfAbsent(component.parentId!, _Counter.new)
+                  .next(),
+        ),
     ];
   }
 
@@ -644,4 +958,26 @@ class OutboundMessage {
   final Map<String, dynamic> payload;
   final String sessionId;
   final String messageId;
+}
+
+/// عدّاد صغير لإعادة الفهرسة.
+class _Counter {
+  int _value = 0;
+
+  int next() => _value++;
+}
+
+/// لقطة تراجع: المكوّنات وطبقة الشكل معًا.
+class _EditorSnapshot {
+  const _EditorSnapshot({
+    required this.componentsByPage,
+    required this.theme,
+  });
+
+  final Map<String, List<EditableComponent>> componentsByPage;
+  final DesignTheme theme;
+}
+
+extension _FirstOrNull<T> on Iterable<T> {
+  T? get firstOrNull => isEmpty ? null : first;
 }

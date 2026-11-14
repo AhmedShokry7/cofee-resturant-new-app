@@ -8,6 +8,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_categor
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_recommendations_section.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/design_sections.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_single_banner_section.dart';
@@ -23,9 +24,25 @@ List<Widget> buildHomeDocumentSections(List<PublishedSection> document) =>
           previewSectionWrap(
             section,
             pageId: 'home',
-            child: widget,
+            // أقسام المحتوى الحر لا تحشو نفسها: أعلى الصفحة يغلّفها
+            // بحشو الصفحة. العمود وحده يستثنى، لأنه يحشو نفسه بـ inset.
+            child: _isFreeContent(section.type)
+                ? HomeSection(child: widget)
+                : widget,
           ),
     ];
+
+/// هل النوع من محتوى حر يرسم عاريًا ولا يحشو نفسه.
+bool _isFreeContent(String type) => switch (type) {
+  DesignWidgetTypes.text ||
+  DesignWidgetTypes.heading ||
+  DesignWidgetTypes.button ||
+  DesignWidgetTypes.image ||
+  DesignWidgetTypes.divider ||
+  DesignWidgetTypes.spacer ||
+  DesignWidgetTypes.productGrid => true,
+  _ => false,
+};
 
 /// قسم المنشور بمكوّنه الحقيقي في هذا التطبيق، أو null.
 ///
@@ -52,6 +69,27 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
       return const HomeSection(child: HomeBundlesSection());
     case DesignWidgetTypes.productStrip:
       return _productStrip(section.dataSource);
+    case DesignWidgetTypes.productGrid:
+      // شبكة المنتجات ترسم عارية مثل المحتوى الحر، فتُغلّف أعلى الصفحة
+      // أو يحشوها عمودها بـ inset.
+      return DesignSectionRenderers.build(section);
+    case DesignWidgetTypes.column:
+      // العمود يحشو نفسه بخاصيته `inset` (افتراض الأدمن md)، وابناه
+      // يبنون بنفس دالة رسم الأقسام فتتكرر الأعمدة داخل أعمدة بلا شكل
+      // خاص، وابن حقيقي (شريط بانر) يبقى بنفس تخطيطه.
+      return DesignSectionRenderers.column(
+        section,
+        childBuilder: buildHomeDocumentSection,
+      );
+    case DesignWidgetTypes.text:
+    case DesignWidgetTypes.heading:
+    case DesignWidgetTypes.button:
+    case DesignWidgetTypes.image:
+    case DesignWidgetTypes.divider:
+    case DesignWidgetTypes.spacer:
+      // عارية: الحشو قرار من يجمعها. في أعلى الصفحة يغلّفها
+      // buildHomeDocumentSections، وابن عمود يحشوها عموده بـ inset.
+      return DesignSectionRenderers.build(section);
     default:
       return null;
   }
