@@ -5210,6 +5210,16 @@ class S {
 
   // ---------- Customer preview strings (kept for other features) ----------
 
+  // ---------- Visual Editor ----------
+  static String get visualEditor => _ar ? 'المحرر المرئي' : 'Visual Editor';
+  static String get visualEditorHint =>
+      _ar ? 'صمّم تطبيق العميل مباشرة بمعاينة حية وتحرير فوري'
+          : 'Design the customer app with live preview and instant editing';
+  static String get visualEditorNoSelection =>
+      _ar ? 'لم يتم اختيار أي عنصر' : 'No element selected';
+  static String get visualEditorSelectElement =>
+      _ar ? 'اختر عنصرًا من المعاينة أو شجرة المكونات' : 'Select an element from preview or component tree';
+
   // ---------- HR — sidebar ----------
 
   /// عنوان قسم الموارد البشرية في الشريط الجانبي.
