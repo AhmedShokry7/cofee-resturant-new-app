@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<title>فحص قناة المعاينة (أداة تشخيص مؤقتة)</title>
+<style>body{font-family:sans-serif;direction:rtl;padding:12px}iframe{width:390px;height:740px;border:2px solid #2E7D32;border-radius:24px}</style>
+</head>
+<body>
+<h3>بروتوكول المعاينة: إثبات الاتجاهين</h3>
+<div id="status">جارٍ التحميل…</div>
+<ol id="log"></ol>
+<iframe id="preview"></iframe>
+<script>
+window.__probeResults = [];
+const log = (msg) => {
+  window.__probeResults.push(msg);
+  const li = document.createElement('li');
+  li.textContent = msg;
+  document.getElementById('log').appendChild(li);
+};
+document.getElementById('status').textContent = 'origin الأدمن: ' + location.origin;
+
+const SESSION = 'probe-1';
+const PREVIEW_URL = 'http://localhost:5000/?mode=preview&sessionId=' + SESSION +
+  '&parentOrigin=' + encodeURIComponent(location.origin);
+const PREVIEW_ORIGIN = new URL(PREVIEW_URL).origin;
+
+// مستند تصميم صالح البنية: رأس + نص بحامل بروب — ما يقرؤه الهاتف.
+const DOC = {
+  schema_version: 2,
+  pages: [{
+    page: 'home',
+    root: {
+      id: 'root_home',
+      type: 'page.home',
+      children: [
+        { id: 'probe_header', type: 'section.header', visible: true, properties: {} },
+        { id: 'probe_text', type: 'section.text', visible: true,
+          properties: { text: 'PROBE_MARKER_123', size: '14' } }
+      ]
+    }
+  }]
+};
+
+function send(msg) {
+  document.getElementById('preview').contentWindow.postMessage(JSON.stringify(msg), PREVIEW_ORIGIN);
+}
+
+let readySeen = false;
+window.addEventListener('message', (e) => {
+  if (e.origin !== PREVIEW_ORIGIN) { log('❌ REJECTED origin=' + e.origin); return; }
+  let data;
+  try { data = JSON.parse(e.data); } catch { log('❌ REJECTED payload غير JSON'); return; }
+  if (data.sessionId !== SESSION) { log('❌ REJECTED sessionId=' + data.sessionId); return; }
+  switch (data.type) {
+    case 'PREVIEW_READY': {
+      if (readySeen) { log('ℹ️ PREVIEW_READY (إعادة اتصال)'); return; }
+      readySeen = true;
+      log('✅ 1) PREVIEW_READY وصل من تطبيق العميل (ال inbound يعمل)');
+      // اختبار الجلسة الخاطئة أولًا: لا ACK متوقع.
+      send({ protocolVersion: '1.0', messageId: 'bad-1', sessionId: 'WRONG-SESSION',
+             type: 'APPLY_DESIGN_CONFIG', payload: { designDocument: DOC } });
+      log('↗️ 2) أرسلنا APPLY_DESIGN_CONFIG بجلسة خاطئة (يجب تجاهلها)');
+      setTimeout(() => {
+        const ignored = !window.__probeResults.some(r => r.includes('ACK جلسة'));
+        log(ignored ? '✅ 3) الرسالة بجلسة خاطئة تجاهلت فعلاً' : '❌ الرسالة بجلسة خاطئة لم تُتجاهل!');
+        // الرسالة الصحيحة: مستند كامل.
+        send({ protocolVersion: '1.0', messageId: 'good-1', sessionId: SESSION,
+               type: 'APPLY_DESIGN_CONFIG', payload: { designDocument: DOC } });
+        log('↗️ 4) أرسلنا APPLY_DESIGN_CONFIG بمستند كامل (PROBE_MARKER_123)');
+      }, 1500);
+      break;
+    }
+    case 'PROPERTY_UPDATED':
+      log((data.payload && data.payload.success ? '✅' : '❌') + ' ACK جلسة=' +
+          data.sessionId.slice(0, 20) + ' نجاح=' + data.payload.success);
+      break;
+    case 'COMPONENT_TREE_UPDATED':
+      log('✅ 5) COMPONENT_TREE_UPDATED عاد من التطبيق بعد تطبيق المستند ' +
+          '(nodes=' + (data.payload.nodes || []).length + ') — الدورة كاملة: ' +
+          'الأدمن→الجسر→DesignPreviewStore→DesignCubit→الواجهة');
+      break;
+    case 'PREVIEW_ERROR':
+      log('❌ PREVIEW_ERROR: ' + JSON.stringify(data.payload));
+      break;
+  }
+});
+document.getElementById('preview').src = PREVIEW_URL;
+log('↗️ 0) iframe → ' + PREVIEW_URL);
+setTimeout(() => {
+  const r = window.__probeResults;
+  const ok = r.some(x => x.includes('5)')) && r.some(x => x.includes('3)'));
+  log(ok ? '=== النتيجة: بروتوكول المعاينة يعمل في الاتجاهين ===' : '=== النتيجة: قناة غير مكتملة ===');
+}, 20000);
+</script>
+</body>
+</html>
