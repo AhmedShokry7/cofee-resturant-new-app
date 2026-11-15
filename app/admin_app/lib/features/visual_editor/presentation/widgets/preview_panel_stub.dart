@@ -2,6 +2,7 @@
 
 import 'package:flutter/widgets.dart';
 
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 
 void registerPreviewView({
@@ -14,6 +15,8 @@ void registerPreviewView({
   required void Function(dynamic) onPreviewError,
   required void Function(dynamic) onPropertyUpdated,
   required void Function(dynamic) onTreeUpdated,
+  void Function(PreviewConnection connection, String? reason)?
+      onConnectionState,
 }) {}
 
 Widget buildPreviewView({required String viewType}) => const SizedBox.shrink();
@@ -26,3 +29,6 @@ void sendOutboundMessage({
   required String messageId,
   required String? parentOrigin,
 }) {}
+
+/// لا إطار على المنصات الأصلية — المعاينة الأصلية ترسم من الحالة مباشرة.
+void reloadPreviewView({required String viewType, required String url}) {}

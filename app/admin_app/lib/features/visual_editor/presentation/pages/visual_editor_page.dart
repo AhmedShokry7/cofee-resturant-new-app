@@ -35,6 +35,10 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   PreviewDevice _device = PreviewDevice.phone;
   String _selectedPageId = 'home';
 
+  /// إعادة تحميل المعاينة: يرتفع بمقدار واحد كل ضغطة على زر Reload —
+  /// لوحة المعاينة تلتقط التغيّر وتعيد تحميل الإطار دون فقدان المسودة.
+  int _previewReloadToken = 0;
+
   @override
   void initState() {
     super.initState();
@@ -77,6 +81,9 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                     setState(() => _selectedPageId = pageId);
                     _cubit.loadPage(pageId);
                   },
+                  onReloadPreview: () => setState(
+                    () => _previewReloadToken++,
+                  ),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -189,6 +196,9 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
             components: state.getComponentsForPage(_selectedPageId),
             theme: _cubit.theme,
             selectedComponentId: state.selectedComponentId,
+            reloadToken: _previewReloadToken,
+            onConnectionChanged: (connection, reason) =>
+                _cubit.updatePreviewConnection(connection, reason: reason),
             onElementSelected: _cubit.handleElementSelected,
             onPreviewReady: _cubit.handlePreviewReady,
             onPreviewError: _cubit.handlePreviewError,

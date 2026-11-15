@@ -1,3 +1,4 @@
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 
 /// حالات دورة حياة المحرر المرئي.
@@ -18,6 +19,8 @@ class VisualEditorState {
     this.previewReady = false,
     this.previewUrl,
     this.isDirty = false,
+    this.previewConnection = PreviewConnection.connecting,
+    this.previewStatusMessage,
   });
 
   final VisualEditorStatus status;
@@ -38,6 +41,12 @@ class VisualEditorState {
   /// هل أرسل الـ iframe رسالة PREVIEW_READY.
   final bool previewReady;
 
+  /// حالة قناة المعاينة كما يراها الموظف — أصدق من مؤشر ثنائي.
+  final PreviewConnection previewConnection;
+
+  /// سبب آخر انتقال، لرسالة تشخيص مفهومة تحت المؤشر.
+  final String? previewStatusMessage;
+
   /// عنوان URL للـ iframe (يُبنى وقت التهيئة).
   final String? previewUrl;
 
@@ -54,8 +63,11 @@ class VisualEditorState {
     bool? previewReady,
     String? previewUrl,
     bool? isDirty,
+    PreviewConnection? previewConnection,
+    String? previewStatusMessage,
     bool clearError = false,
     bool clearSelectedComponent = false,
+    bool clearPreviewStatusMessage = false,
   }) =>
       VisualEditorState(
         status: status ?? this.status,
@@ -71,6 +83,10 @@ class VisualEditorState {
         previewReady: previewReady ?? this.previewReady,
         previewUrl: previewUrl ?? this.previewUrl,
         isDirty: isDirty ?? this.isDirty,
+        previewConnection: previewConnection ?? this.previewConnection,
+        previewStatusMessage: clearPreviewStatusMessage
+            ? null
+            : (previewStatusMessage ?? this.previewStatusMessage),
       );
 
   /// جميع مكوّنات صفحة واحدة بترتيبها العمقي كما هو مخزّن — ترتيب القائمة

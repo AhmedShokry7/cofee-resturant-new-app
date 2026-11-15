@@ -6,6 +6,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
@@ -26,6 +27,7 @@ class VisualEditorToolbar extends StatelessWidget {
     required this.onZoom,
     required this.onDeviceChanged,
     required this.onPageChanged,
+    required this.onReloadPreview,
   });
 
   final VisualEditorState state;
@@ -36,6 +38,10 @@ class VisualEditorToolbar extends StatelessWidget {
   final void Function(double) onZoom;
   final void Function(PreviewDevice) onDeviceChanged;
   final void Function(String) onPageChanged;
+
+  /// إعادة تحميل المعاينة بيد الموظف — الإطار يعاد تحميله والطابور يحفظ
+  /// آخر مستند حتى تعلن المعاينة الجديدة جاهزيتها.
+  final VoidCallback onReloadPreview;
 
   @override
   Widget build(BuildContext context) {
@@ -66,12 +72,21 @@ class VisualEditorToolbar extends StatelessWidget {
         ),
         _Divider(),
 
-        // --- حالة الاتصال ---
+        // --- حالة الاتصال وإعادة التحميل ---
         // على غير الويب لا يوجد iframe: المعاينة الأصلية ترسم من الحالة نفسها
         // فهي حيّة دائمًا، ولا معنى لضوء «غير متصلة» كاذب.
         _ConnectionStatus(
-          previewReady: state.previewReady || !kIsWeb,
+          connection: state.previewConnection,
+          reason: state.previewStatusMessage,
           dark: dark,
+        ),
+        _IconBtn(
+          icon: AppIcons.refresh,
+          tooltip: 'إعادة تحميل المعاينة'
+              '${state.previewStatusMessage == null ? '' : ' — ${state.previewStatusMessage}'}',
+          onTap: onReloadPreview,
+          dark: dark,
+          muted: muted,
         ),
         _Divider(),
 
@@ -429,16 +444,36 @@ class _ZoomControls extends StatelessWidget {
 }
 
 class _ConnectionStatus extends StatelessWidget {
-  const _ConnectionStatus({required this.previewReady, required this.dark});
+  const _ConnectionStatus({
+    required this.connection,
+    this.reason,
+    required this.dark,
+  });
 
-  final bool previewReady;
+  final PreviewConnection connection;
+  final String? reason;
   final bool dark;
 
   @override
   Widget build(BuildContext context) {
-    final color = previewReady
-        ? AppColor.trendPositive
-        : (dark ? AppColor.darkTextSecondary : AppColor.adminMuted);
+    final (color, label) = switch (connection) {
+      PreviewConnection.connected => (
+        AppColor.trendPositive,
+        S.visualEditorPreviewConnected,
+      ),
+      PreviewConnection.connecting => (
+        AppColor.adminAccent,
+        'جارٍ الاتصال بالمعاينة…',
+      ),
+      PreviewConnection.disconnected => (
+        AppColor.trendNegative,
+        'انقطع الاتصال بالمعاينة',
+      ),
+      PreviewConnection.error => (
+        AppColor.errorColor,
+        'خطأ في المعاينة',
+      ),
+    };
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -448,11 +483,12 @@ class _ConnectionStatus extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: AppSpacing.xs),
-        Text(
-          previewReady
-              ? S.visualEditorPreviewConnected
-              : S.visualEditorPreviewDisconnected,
-          style: TextStyle(fontSize: AppFontSizes.size11, color: color),
+        Tooltip(
+          message: reason ?? label,
+          child: Text(
+            label,
+            style: TextStyle(fontSize: AppFontSizes.size11, color: color),
+          ),
         ),
       ],
     );

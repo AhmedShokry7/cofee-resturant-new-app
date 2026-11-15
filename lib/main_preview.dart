@@ -6,6 +6,7 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/app.dart';
+import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/preview/preview_bridge.dart';
 import 'package:new_coffee/core/preview/preview_section.dart';
@@ -219,9 +220,11 @@ class _PreviewAppState extends State<PreviewApp> {
   @override
   Widget build(BuildContext context) {
     // يقرأ المنشور عند الإقلاع — بلا currentRoute ولا onboarding، لأن إطار
-    // المعاينة يبدأ من الشاشة الرئيسية دائمًا.
+    // المعاينة يبدأ من الشاشة الرئيسية دائمًا. التوجيه نفسه في الكود الحقيقي:
+    // الزائر المجهول يُوجّه لتسجيل الدخول، أما المعاينة فتجتاز ذلك بمسار
+    // الرئيسية صراحة — نفس MyApp ونفس MainPage، بلا شاشة دخول داخل الإطار.
     return MyApp(
-      currentRoute: null,
+      currentRoute: AppConstant.homeRoute,
       onboardingDone: true,
     );
   }

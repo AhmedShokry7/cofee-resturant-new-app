@@ -7,6 +7,7 @@ import 'package:admin_app/features/visual_editor/data/visual_editor_repository.d
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_state.dart';
 
@@ -96,7 +97,13 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// المعاينة أعلنت جاهزيتها: نسلّمها المستند الحالي (إن وُجد) لترسم فورًا.
   void handlePreviewReady(dynamic data) {
-    emit(state.copyWith(previewReady: true));
+    emit(
+      state.copyWith(
+        previewReady: true,
+        previewConnection: PreviewConnection.connected,
+        clearPreviewStatusMessage: true,
+      ),
+    );
     final document = _currentDocumentOrNull();
     _dispatchToPreview(
       VisualEditorMessageType.previewInitialize,
@@ -107,13 +114,28 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
   }
 
+  /// لوحة المعاينة بلّغت بحالة قناة الاتصال: وصل/جارٍ الاتصال/انقطع/خطأ.
+  void updatePreviewConnection(PreviewConnection connection, {String? reason}) {
+    if (isClosed) return;
+    emit(
+      state.copyWith(
+        previewReady: connection == PreviewConnection.connected,
+        previewConnection: connection,
+        previewStatusMessage: reason,
+      ),
+    );
+  }
+
   /// خطأ من المعاينة.
   void handlePreviewError(dynamic data) {
-    final msg = data is Map ? data['error'] ?? 'خطأ في المعاينة' : 'خطأ في المعاينة';
+    final msg =
+        data is Map ? data['error'] ?? 'خطأ في المعاينة' : 'خطأ في المعاينة';
     emit(
       state.copyWith(
         status: VisualEditorStatus.failure,
         errorMessage: msg.toString(),
+        previewConnection: PreviewConnection.error,
+        previewStatusMessage: msg.toString(),
       ),
     );
   }

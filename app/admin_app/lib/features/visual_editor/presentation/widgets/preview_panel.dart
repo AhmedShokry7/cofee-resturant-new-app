@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -5,6 +7,8 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
+import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/native_design_preview.dart';
 
@@ -59,6 +63,8 @@ class PreviewPanel extends StatefulWidget {
     this.components = const [],
     this.theme = DesignTheme.none,
     this.selectedComponentId,
+    this.reloadToken = 0,
+    this.onConnectionChanged,
   });
 
   final String pageId;
@@ -87,6 +93,15 @@ class PreviewPanel extends StatefulWidget {
   /// المكوّن المحدد — يُبرز في المعاينة الأصلية.
   final String? selectedComponentId;
 
+  /// يرتفع بمقدار واحد عند طلب إعادة تحميل المعاينة (زر Reload أو ساعة
+  /// الانقطاع) — التغيّر بينه وبين القديم هو الإشارة الوحيدة.
+  final int reloadToken;
+
+  /// كل انتقال في حالة قناة المعاينة يُبلّغ به المالك (الـ Cubit) ليصل
+  /// للمؤشر والرسالة التشخيصية.
+  final void Function(PreviewConnection connection, String? reason)?
+      onConnectionChanged;
+
   @override
   State<PreviewPanel> createState() => _PreviewPanelState();
 }
@@ -97,6 +112,18 @@ class _PreviewPanelState extends State<PreviewPanel> {
 
   /// origin لوحة الأدمن: الأب المتوقع للمعاينة في الاتجاهين.
   String? _parentOrigin;
+
+  /// ساعة الانقطاع: بلا PREVIEW_READY خلال مهلة تعيد المحاولة تلقائيًا.
+  Timer? _watchdog;
+  int _autoReloads = 0;
+  static const int _maxAutoReloads = 2;
+  static const Duration _firstWatchdog = Duration(seconds: 45);
+  static const Duration _retryWatchdog = Duration(seconds: 25);
+
+  /// حالة القناة للغطاء المرئي فوق الإطار، وآخر رسالة تشخيص.
+  final ValueNotifier<PreviewConnection> _connection =
+      ValueNotifier(PreviewConnection.connecting);
+  String? _statusMessage;
 
   /// عنوان URL لـ Customer Flutter Web في وضع المعاينة.
   ///
@@ -120,11 +147,50 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb && !_viewRegistered) {
-      _parentOrigin = Uri.base.origin;
-      _registerIframeView();
-      _viewRegistered = true;
+    if (kIsWeb) {
+      if (!_viewRegistered) {
+        _parentOrigin = Uri.base.origin;
+        _registerIframeView();
+        _viewRegistered = true;
+      }
+      _armWatchdog(first: true);
+    } else {
+      // المعاينة الأصلية ترسم من الحالة مباشرة — القناة حيّة بلا إطار.
+      widget.onConnectionChanged?.call(PreviewConnection.connected, null);
     }
+  }
+
+  void _armWatchdog({bool first = false}) {
+    if (!kIsWeb) return;
+    _watchdog?.cancel();
+    _watchdog = Timer(
+      first ? _firstWatchdog : _retryWatchdog,
+      _onWatchdogExpired,
+    );
+  }
+
+  /// بلا جاهزية خلال المهلة: محاولتان تلقائيّتان بإعادة تحميل الإطار ثم
+  /// حالة Error برسالة مفهومة — بدل شاشة بيضاء صامتة.
+  void _onWatchdogExpired() {
+    if (!mounted || !kIsWeb) return;
+    if (_autoReloads >= _maxAutoReloads) {
+      widget.onConnectionChanged?.call(
+        PreviewConnection.error,
+        'لم تستجب المعاينة بعد عدة محاولات — تأكد أن تطبيق العميل يعمل '
+        'على منفذ المعاينة ثم اضغط إعادة التحميل',
+      );
+      return;
+    }
+    _autoReloads++;
+    widget.onConnectionChanged?.call(
+      PreviewConnection.connecting,
+      'المعاينة لم تستجب — إعادة اتصال تلقائية ($_autoReloads/$_maxAutoReloads)',
+    );
+    preview_platform.reloadPreviewView(
+      viewType: _iframeViewType,
+      url: _buildPreviewUrl(widget.sessionId, _parentOrigin),
+    );
+    _armWatchdog();
   }
 
   void _registerIframeView() {
@@ -138,17 +204,83 @@ class _PreviewPanelState extends State<PreviewPanel> {
       onPreviewError: widget.onPreviewError,
       onPropertyUpdated: widget.onPropertyUpdated,
       onTreeUpdated: widget.onTreeUpdated,
+      onConnectionState: (connection, reason) {
+        // الغطاء والمؤشر يقرآن نفس الحالة: تحديث موحّد بلا مسارين.
+        if (_connection.value != connection) {
+          _statusMessage = reason;
+          _connection.value = connection;
+        } else if (reason != null) {
+          _statusMessage = reason;
+          _connection.value = connection;
+        }
+        if (connection == PreviewConnection.connected) {
+          // وصلت إشارة حياة: الساعة تُفصل والمحاولات تعود صفر.
+          _watchdog?.cancel();
+          _autoReloads = 0;
+        }
+        widget.onConnectionChanged?.call(connection, reason);
+      },
     );
   }
 
   @override
   void didUpdateWidget(PreviewPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.reloadToken != oldWidget.reloadToken) {
+      if (kIsWeb) {
+        _autoReloads = 0;
+        _reloadManually();
+      }
+    }
     _deliverOutbound();
+  }
+
+  /// إعادة التحميل بيد الموظف (زر Reload) — الطابور يُحفظ فآخر مستند
+  /// يعود أول ما تعلن المعاينة الجديدة جاهزيتها.
+  void _reloadManually() {
+    _statusMessage = 'إعادة تحميل المعاينة…';
+    _connection.value = PreviewConnection.connecting;
+    preview_platform.reloadPreviewView(
+      viewType: _iframeViewType,
+      url: _buildPreviewUrl(widget.sessionId, _parentOrigin),
+    );
+    _armWatchdog();
+  }
+
+  @override
+  void dispose() {
+    _watchdog?.cancel();
+    _connection.dispose();
+    super.dispose();
   }
 
   /// رسالة صادرة واحدة لكل معرّف: اللقطة نفسها قد تُبني عدة مرات دون أن
   /// تعني إرسالًا جديدًا.
+  /// الإطار مع غطاء الحالة: أثناء الاتصال أو عند الخطأ يظهر تفسير مفهوم
+  /// فوق الإطار بدل شاشة بيضاء صامتة، ويختفي أول ما تصل المعاينة.
+  Widget _buildWebPreviewWithStatus(bool dark) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        preview_platform.buildPreviewView(viewType: _iframeViewType),
+        ValueListenableBuilder<PreviewConnection>(
+          valueListenable: _connection,
+          builder: (context, connection, _) {
+            if (connection == PreviewConnection.connected) {
+              return const SizedBox.shrink();
+            }
+            return _PreviewStatusOverlay(
+              connection: connection,
+              message: _statusMessage,
+              dark: dark,
+              onRetry: _reloadManually,
+            );
+          },
+        ),
+      ],
+    );
+  }
+
   void _deliverOutbound() {
     final messageId = widget.outboundMessageId;
     final type = widget.outboundMessageType;
@@ -172,13 +304,10 @@ class _PreviewPanelState extends State<PreviewPanel> {
       zoom: widget.zoom,
       device: widget.device,
       dark: dark,
-      child: kIsWeb ? _buildWebPreview() : _buildNativePreview(),
+      child: kIsWeb ? _buildWebPreviewWithStatus(dark) : _buildNativePreview(),
     );
   }
 
-  Widget _buildWebPreview() {
-    return preview_platform.buildPreviewView(viewType: _iframeViewType);
-  }
 
   /// على غير الويب لا يوجد iframe: يرسم المحرّر مستند التصميم نفسه بمكوّنات
   /// Flutter — نفس التسلسل والخصائص وطبقة الشكل، والنقر يحدد العنصر.
@@ -249,6 +378,90 @@ class _PreviewFrame extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// غطاء حالة المعاينة فوق الإطار: جارٍ الاتصال/انقطاع/خطأ برسالة مفهومة
+/// وزر إعادة — لا شاشة بيضاء صامتة مهما كان العطل.
+class _PreviewStatusOverlay extends StatelessWidget {
+  const _PreviewStatusOverlay({
+    required this.connection,
+    required this.message,
+    required this.dark,
+    required this.onRetry,
+  });
+
+  final PreviewConnection connection;
+  final String? message;
+  final bool dark;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
+    final (icon, title) = switch (connection) {
+      PreviewConnection.connecting => (Icons.hourglass_top, 'جارٍ تحميل تطبيق العميل…'),
+      PreviewConnection.disconnected => (Icons.cloud_off, 'انقطع الاتصال بالمعاينة'),
+      PreviewConnection.error => (Icons.error_outline, 'تعذر إكمال الاتصال بالمعاينة'),
+      PreviewConnection.connected => (Icons.check_circle, ''),
+    };
+    return Container(
+      color: dark
+          ? AppColor.darkBackground.withAlpha(230)
+          : AppColor.whiteColor.withAlpha(240),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (connection == PreviewConnection.connecting)
+            const SizedBox(
+              width: 28,
+              height: 28,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            )
+          else
+            Icon(icon, size: 40, color: muted),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: AppFontSizes.size13,
+              fontWeight: AppFontWeights.semiBold,
+              color: dark ? AppColor.darkText : AppColor.adminBody,
+            ),
+          ),
+          if (message != null && message!.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              message!,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: AppFontSizes.size11,
+                height: AppTextHeights.line1_5,
+                color: muted,
+              ),
+            ),
+          ],
+          if (connection != PreviewConnection.connecting) ...[
+            const SizedBox(height: AppSpacing.lg),
+            TextButton.icon(
+              onPressed: onRetry,
+              icon: Icon(Icons.refresh, size: 16, color: accent),
+              label: Text(
+                'إعادة تحميل المعاينة',
+                style: TextStyle(
+                  fontSize: AppFontSizes.size12,
+                  color: accent,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

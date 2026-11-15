@@ -92,4 +92,20 @@ class PreviewMessage {
           : <String, dynamic>{},
     );
   }
+
+  /// فكّ الحمولة الواردة كما يسلّمها المتصفح: الطرفان يبعثان نص JSON
+  /// (toJSONString)، فيصل Dart سلسلة — من يقرأ `is Map` فقط يسقط كل ما
+  /// يصل. النص الصالح يُفكّ، والتالف وغيره تعود null.
+  static Map<String, dynamic>? decodePayload(Object? raw) {
+    Object? decoded = raw;
+    if (raw is String) {
+      try {
+        decoded = jsonDecode(raw);
+      } catch (_) {
+        return null;
+      }
+    }
+    if (decoded is! Map) return null;
+    return Map<String, dynamic>.from(decoded);
+  }
 }

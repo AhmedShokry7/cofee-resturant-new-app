@@ -48,7 +48,10 @@ class PreviewBridge {
         if (_parentOrigin != null && event.origin != _parentOrigin) {
           return;
         }
-        final message = PreviewMessage.fromJson(event.data.dartify());
+        // المرسل يبعث نص JSON (toJSONString) — المتصفح يسلّمه Dart كسلسلة،
+        // فالتحليل هنا قبل فحص الشكل وإلا سقط كل ما يصل.
+        final data = PreviewMessage.decodePayload(event.data.dartify());
+        final message = data == null ? null : PreviewMessage.fromJson(data);
         if (message == null || message.sessionId != _sessionId) return;
         _handlers[message.type.value]?.call(message);
       } catch (error) {
