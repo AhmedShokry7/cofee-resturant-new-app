@@ -373,52 +373,61 @@ class _PreviewFrame extends StatelessWidget {
           final scale = math.max(fitScale * zoom, 0.05);
           final frameWidth = device.width * scale;
           final frameHeight = device.height * scale;
-          return SingleChildScrollView(
-            // تكبير فوق الملاءمة فقط هو ما يفتح تمرير الإطار؛ لا يُقتطع أبدا.
-            scrollDirection: Axis.vertical,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xxl),
-                  child: SizedBox(
-                    width: frameWidth,
-                    height: frameHeight,
-                    child: OverflowBox(
-                      maxWidth: device.width,
-                      maxHeight: device.height,
-                      child: Transform.scale(
-                        scale: scale,
-                        alignment: Alignment.center,
-                        child: Container(
-                          width: device.width,
-                          height: device.height,
-                          decoration: BoxDecoration(
-                            color: AppColor.deviceChrome,
-                            borderRadius:
-                                BorderRadius.circular(AppRadius.phoneBody),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColor.black20,
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppSpacing.sm),
-                            child: ClipRRect(
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.phoneScreen),
-                              child: child,
-                            ),
-                          ),
-                        ),
+          // الإطار نفسه بحجم الجهاز الطبيعي، موسّطًا ومصغّرًا بالتحويل —
+          // OverflowBox يُبقي قيود الرسم الطبيعية داخل بصمة الحجم المرئي.
+          Widget frame = SizedBox(
+            width: frameWidth,
+            height: frameHeight,
+            child: OverflowBox(
+              maxWidth: device.width,
+              maxHeight: device.height,
+              child: Transform.scale(
+                scale: scale,
+                alignment: Alignment.center,
+                child: Container(
+                  width: device.width,
+                  height: device.height,
+                  decoration: BoxDecoration(
+                    color: AppColor.deviceChrome,
+                    borderRadius:
+                        BorderRadius.circular(AppRadius.phoneBody),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.black20,
+                        blurRadius: 24,
+                        offset: const Offset(0, 8),
                       ),
+                    ],
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    child: ClipRRect(
+                      borderRadius:
+                          BorderRadius.circular(AppRadius.phoneScreen),
+                      child: child,
                     ),
                   ),
                 ),
               ),
+            ),
+          );
+          final padded = Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: frame,
+          );
+          // التمركز الحقيقي في المنتصف: لا تمرير ما دام الإطار يسع
+          // المساحة — داخل التمرير يفقد Center معناه ويتموضع المحتوى
+          // في أول الاتجاه (يمين الشاشة في RTL).
+          if (frameWidth <= available.width &&
+              frameHeight <= available.height) {
+            return Center(child: padded);
+          }
+          // التكبير فوق الملاءمة فقط يفتح تمرير الإطار؛ لا يُقتطع أبدًا.
+          return SingleChildScrollView(
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: padded,
             ),
           );
         },
