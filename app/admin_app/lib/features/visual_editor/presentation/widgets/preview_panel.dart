@@ -379,6 +379,11 @@ class _PreviewFrame extends StatelessWidget {
             width: frameWidth,
             height: frameHeight,
             child: OverflowBox(
+              // القيود الدنيا صفر حتى لا يرث الأب الحجم المُكيّف كحد أدنى
+              // فوق أبعاد جهاز أصغر — كان يكسر التخطيط عند التكبير > 1
+              // مع الأجهزة الأصغر من الموبايل الافتراضي.
+              minWidth: 0,
+              minHeight: 0,
               maxWidth: device.width,
               maxHeight: device.height,
               child: Transform.scale(
