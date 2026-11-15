@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
-import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/native_design_preview.dart';
 
 import 'preview_panel_stub.dart'
     if (dart.library.js_interop) 'preview_panel_web.dart'
@@ -56,6 +56,9 @@ class PreviewPanel extends StatefulWidget {
     this.outboundMessageType,
     this.outboundPayload,
     this.outboundMessageId,
+    this.components = const [],
+    this.theme = DesignTheme.none,
+    this.selectedComponentId,
   });
 
   final String pageId;
@@ -74,6 +77,15 @@ class PreviewPanel extends StatefulWidget {
   final VisualEditorMessageType? outboundMessageType;
   final Map<String, dynamic>? outboundPayload;
   final String? outboundMessageId;
+
+  /// مكوّنات الصفحة الحالية لرسم المعاينة الأصلية على غير الويب.
+  final List<EditableComponent> components;
+
+  /// طبقة الشكل الحالية للمعاينة الأصلية.
+  final DesignTheme theme;
+
+  /// المكوّن المحدد — يُبرز في المعاينة الأصلية.
+  final String? selectedComponentId;
 
   @override
   State<PreviewPanel> createState() => _PreviewPanelState();
@@ -160,7 +172,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
       zoom: widget.zoom,
       device: widget.device,
       dark: dark,
-      child: kIsWeb ? _buildWebPreview() : _buildNonWebPlaceholder(context),
+      child: kIsWeb ? _buildWebPreview() : _buildNativePreview(),
     );
   }
 
@@ -168,26 +180,15 @@ class _PreviewPanelState extends State<PreviewPanel> {
     return preview_platform.buildPreviewView(viewType: _iframeViewType);
   }
 
-  Widget _buildNonWebPlaceholder(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(AppIcons.smartPhone01, size: 48, color: muted),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            S.visualEditorPreviewWebOnly,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: muted,
-              fontSize: AppFontSizes.size13,
-              height: AppTextHeights.line1_5,
-            ),
-          ),
-        ],
-      ),
+  /// على غير الويب لا يوجد iframe: يرسم المحرّر مستند التصميم نفسه بمكوّنات
+  /// Flutter — نفس التسلسل والخصائص وطبقة الشكل، والنقر يحدد العنصر.
+  Widget _buildNativePreview() {
+    return NativeDesignPreview(
+      components: widget.components,
+      theme: widget.theme,
+      selectedComponentId: widget.selectedComponentId,
+      onElementSelected: (componentId) =>
+          widget.onElementSelected({'componentId': componentId}),
     );
   }
 }

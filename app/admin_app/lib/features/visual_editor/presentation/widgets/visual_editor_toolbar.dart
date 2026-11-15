@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
@@ -66,7 +67,12 @@ class VisualEditorToolbar extends StatelessWidget {
         _Divider(),
 
         // --- حالة الاتصال ---
-        _ConnectionStatus(previewReady: state.previewReady, dark: dark),
+        // على غير الويب لا يوجد iframe: المعاينة الأصلية ترسم من الحالة نفسها
+        // فهي حيّة دائمًا، ولا معنى لضوء «غير متصلة» كاذب.
+        _ConnectionStatus(
+          previewReady: state.previewReady || !kIsWeb,
+          dark: dark,
+        ),
         _Divider(),
 
         // --- تراجع وإعادة ---
