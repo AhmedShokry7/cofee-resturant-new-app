@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/core/preview/preview_bridge.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 
 /// The app splash.
@@ -40,6 +41,9 @@ class _SplashViewState extends State<SplashView> {
   @override
   void initState() {
     super.initState();
+    // في وضع معاينة الأدمن تبقى الافتتاحية معروضة: سلايدر المحرر يفتحها
+    // ليراها الموظف، والانتقال التلقائي لوجهة الجلسة يكسر المعاينة فورًا.
+    if (PreviewBridge().isActive) return;
     _timer = Timer(SplashView.displayDuration, _openTargetRoute);
   }
 

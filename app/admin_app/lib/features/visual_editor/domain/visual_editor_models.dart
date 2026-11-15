@@ -290,3 +290,132 @@ class EditorPages {
   static List<EditorPage> get editablePages =>
       pages.where((p) => p.isEditable).toList();
 }
+/// وجهة معاينة في تطبيق العميل: صفحة يفتحها الموظف في المحاكي.
+///
+/// منفصلة عن [EditorPages] عمدًا: صفحات المستند مفاتيح يشدّقها النشر
+/// (`app_design_is_valid`)، أما وجهات المعاينة فكل شاشة في التطبيق —
+/// يُفتح بعضها للتحرير (الرئيسية والتصنيفات) والبقية معاينة قراءة فقط.
+class PreviewPage {
+  const PreviewPage({
+    required this.pageId,
+    required this.label,
+    required this.isEditable,
+  });
+
+  /// المعرّف الذي يُرسل للمعاينة في رسالة LOAD_PAGE.
+  final String pageId;
+  final String label;
+
+  /// هل تُفتح هذه الصفحة للتحرير في المحرر، أم معاينة قراءة فقط.
+  final bool isEditable;
+}
+
+/// جرد شاشات تطبيق العميل بالترتيب الذي يراه الزبون: من الافتتاحية
+/// إلى آخر شاشة — كل شاشة بلا وسيطات تُبنى بمسارها الثابت.
+///
+/// الشاشات التي تحتاج كائنات (تفاصيل منتج، باقة، طلب…) تُفتح من داخل
+/// شاشاتها ولا تُبنى من مسار مجهول الحمولة، فليست هنا.
+class PreviewPages {
+  PreviewPages._();
+
+  static const List<PreviewPage> all = [
+    // ---- الإقلاع والدخول ----
+    PreviewPage(pageId: 'splash', label: 'الافتتاحية', isEditable: false),
+    PreviewPage(pageId: 'welcome', label: 'الترحيب', isEditable: false),
+    PreviewPage(pageId: 'onboarding', label: 'التعريف', isEditable: false),
+    PreviewPage(pageId: 'auth', label: 'تسجيل الدخول', isEditable: false),
+    PreviewPage(pageId: 'sign_up', label: 'حساب جديد', isEditable: false),
+    PreviewPage(
+      pageId: 'forget_password',
+      label: 'نسيت كلمة المرور',
+      isEditable: false,
+    ),
+    PreviewPage(
+      pageId: 'reset_password',
+      label: 'إعادة التعيين',
+      isEditable: false,
+    ),
+    PreviewPage(pageId: 'phone_auth', label: 'دخول بالهاتف', isEditable: false),
+    PreviewPage(pageId: 'email_auth', label: 'دخول بالبريد', isEditable: false),
+    // ---- التبويبات الرئيسية (قابلة للتحرير: home/categories) ----
+    PreviewPage(pageId: 'home', label: 'الرئيسية', isEditable: true),
+    PreviewPage(pageId: 'categories', label: 'التصنيفات', isEditable: true),
+    PreviewPage(pageId: 'search', label: 'البحث', isEditable: false),
+    PreviewPage(pageId: 'cart', label: 'السلة', isEditable: false),
+    PreviewPage(pageId: 'favourites', label: 'المفضلة', isEditable: false),
+    PreviewPage(pageId: 'settings', label: 'الإعدادات', isEditable: false),
+    // ---- شراء ----
+    PreviewPage(pageId: 'checkout', label: 'إتمام الطلب', isEditable: false),
+    PreviewPage(
+      pageId: 'shipping_addresses',
+      label: 'عناوين الشحن',
+      isEditable: false,
+    ),
+    PreviewPage(
+      pageId: 'add_address',
+      label: 'إضافة عنوان',
+      isEditable: false,
+    ),
+    PreviewPage(
+      pageId: 'payment_method',
+      label: 'طريقة الدفع',
+      isEditable: false,
+    ),
+    PreviewPage(pageId: 'add_card', label: 'إضافة بطاقة', isEditable: false),
+    PreviewPage(
+      pageId: 'payment_success',
+      label: 'نجاح الدفع',
+      isEditable: false,
+    ),
+    PreviewPage(pageId: 'e_receipt', label: 'الإيصال', isEditable: false),
+    PreviewPage(pageId: 'coupon', label: 'الكوبونات', isEditable: false),
+    // ---- الحساب ----
+    PreviewPage(pageId: 'orders', label: 'الطلبات', isEditable: false),
+    PreviewPage(
+      pageId: 'edit_profile',
+      label: 'تعديل الملف',
+      isEditable: false,
+    ),
+    PreviewPage(
+      pageId: 'saved_cards',
+      label: 'البطاقات المحفوظة',
+      isEditable: false,
+    ),
+    PreviewPage(pageId: 'addresses', label: 'العناوين', isEditable: false),
+    PreviewPage(
+      pageId: 'address_form',
+      label: 'نموذج عنوان',
+      isEditable: false,
+    ),
+    PreviewPage(pageId: 'loyalty', label: 'الولاء', isEditable: false),
+    PreviewPage(
+      pageId: 'subscription_plans',
+      label: 'الاشتراكات',
+      isEditable: false,
+    ),
+    PreviewPage(
+      pageId: 'subscription_details',
+      label: 'تفاصيل الاشتراك',
+      isEditable: false,
+    ),
+    PreviewPage(
+      pageId: 'cashier_subscription',
+      label: 'استهلاك كاشير',
+      isEditable: false,
+    ),
+    // ---- محتوى وإعدادات ----
+    PreviewPage(pageId: 'notifications', label: 'الإشعارات', isEditable: false),
+    PreviewPage(
+      pageId: 'notification_settings',
+      label: 'إعدادات الإشعارات',
+      isEditable: false,
+    ),
+    PreviewPage(pageId: 'help', label: 'المساعدة', isEditable: false),
+    PreviewPage(pageId: 'privacy', label: 'الخصوصية', isEditable: false),
+    PreviewPage(
+      pageId: 'assistant_memory',
+      label: 'ذاكرة المساعد',
+      isEditable: false,
+    ),
+  ];
+}

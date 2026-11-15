@@ -44,7 +44,7 @@ if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
 
 Write-Host '▶ تشغيل تطبيق العميل (وضع المعاينة) على 5000…'
 $customer = Start-Process -FilePath 'flutter' `
-  -ArgumentList 'run','-d','web-server','--web-port','5000','--web-hostname','127.0.0.1','-t','lib/main_preview.dart' `
+  -ArgumentList 'run','--release','-d','web-server','--web-port','5000','--web-hostname','127.0.0.1','-t','lib/main_preview.dart' `
   -WorkingDirectory $repoRoot `
   -RedirectStandardOutput (Join-Path $logsDir 'customer.log') `
   -RedirectStandardError (Join-Path $logsDir 'customer.err.log') `
@@ -52,7 +52,7 @@ $customer = Start-Process -FilePath 'flutter' `
 
 Write-Host '▶ تشغيل لوحة التحكم على 8080…'
 $admin = Start-Process -FilePath 'flutter' `
-  -ArgumentList 'run','-d','web-server','--web-port','8080','--web-hostname','127.0.0.1' `
+  -ArgumentList 'run','--release','-d','web-server','--web-port','8080','--web-hostname','127.0.0.1' `
   -WorkingDirectory (Join-Path $repoRoot 'app\admin_app') `
   -RedirectStandardOutput (Join-Path $logsDir 'admin.log') `
   -RedirectStandardError (Join-Path $logsDir 'admin.err.log') `

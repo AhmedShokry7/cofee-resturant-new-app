@@ -19,7 +19,37 @@ import 'package:new_coffee/features/design/presentation/manager/design/design_cu
 import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
-import 'package:new_coffee/features/search/presentation/views/search_page.dart';
+import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
+import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
+import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
+import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
+import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
+import 'package:new_coffee/features/checkout/presentation/views/shipping_addresses_page.dart';
+import 'package:new_coffee/features/checkout/presentation/views/add_address_page.dart';
+import 'package:new_coffee/features/checkout/presentation/views/payment_method_page.dart';
+import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
+import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
+import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
+import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
+import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
+import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
+import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
+import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
+import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
+import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
+import 'package:new_coffee/features/content/presentation/views/help_page.dart';
+import 'package:new_coffee/features/content/presentation/views/privacy_policy_page.dart';
+import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
+import 'package:new_coffee/features/notifications/presentation/views/notification_settings_page.dart';
+import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
+import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
 
 /// Preview mode entry point for the Customer App.
 ///
@@ -179,6 +209,8 @@ class _PreviewAppState extends State<PreviewApp> {
     if (pageId is! String) return;
     final navigator = rootNavigatorKey.currentState;
     if (navigator == null) return;
+    // التبويبات الخمسة تُفتح بإعادة فتح MainPage بتبويبها — نفس ما يستدعي
+    // التطبيق نفسه، وinitialTab يقرأه MainPage الجديد عند إنشائه.
     switch (pageId) {
       case 'home':
         MainCubit.initialTab = 0;
@@ -190,11 +222,13 @@ class _PreviewAppState extends State<PreviewApp> {
         MainCubit.initialTab = 3;
       case 'settings':
         MainCubit.initialTab = 4;
-      case 'search':
-        // البحث صفحة مدفوعة لا تبويبة، كما يستدعيها التطبيق نفسه.
-        navigator.pushNamed(SearchPage.routeName);
-        return;
       default:
+        // كل شاشة أخرى لها مسار ثابت بلا وسيطات — يُفتح من جديد فوق
+        // الجذر، فلا تتراكم رصة من معاينة إلى أخرى، وتبقى زر الرجوع
+        // يصل للجذر لا لشاشة سابقة في المعاينة.
+        final routeName = pageRoutes[pageId];
+        if (routeName == null) return;
+        navigator.pushNamedAndRemoveUntil(routeName, (route) => route.isFirst);
         return;
     }
     // MainCubit الجديد يقرأ initialTab عند الإنشاء، لذا إعادة فتح الصفحة
@@ -204,6 +238,43 @@ class _PreviewAppState extends State<PreviewApp> {
       (route) => route.isFirst,
     );
   }
+
+  /// كل شاشات التطبيق التي تُبنى بمسارها الثابت بلا كائنات — كما في
+  /// `AppRoutes.routes`. الشاشات ذات الوسيطات (تفاصيل منتج، طلب، باقة…)
+  /// تُفتح من داخل شاشاتها ولا تُبنى من مسار مجهول الحمولة.
+  static const Map<String, String> pageRoutes = {
+    'splash': SplashView.routeName,
+    'welcome': WelcomePage.routeName,
+    'onboarding': OnBoardingView.routeName,
+    'auth': AuthPage.routeName,
+    'sign_up': SignUpPage.routeName,
+    'forget_password': ForgetPasswordPage.routeName,
+    'reset_password': ResetPasswordPage.routeName,
+    'phone_auth': PhoneAuthPage.routeName,
+    'email_auth': EmailAuthPage.routeName,
+    'checkout': CheckoutPage.routeName,
+    'shipping_addresses': ShippingAddressesPage.routeName,
+    'add_address': AddAddressPage.routeName,
+    'payment_method': PaymentMethodPage.routeName,
+    'add_card': AddCardPage.routeName,
+    'payment_success': PaymentSuccessPage.routeName,
+    'e_receipt': EReceiptPage.routeName,
+    'coupon': CouponPage.routeName,
+    'loyalty': LoyaltyPage.routeName,
+    'orders': OrdersPage.routeName,
+    'edit_profile': EditProfilePage.routeName,
+    'saved_cards': SavedCardsPage.routeName,
+    'addresses': AddressesPage.routeName,
+    'address_form': AddressFormPage.routeName,
+    'help': HelpPage.routeName,
+    'privacy': PrivacyPolicyPage.routeName,
+    'notifications': NotificationsPage.routeName,
+    'notification_settings': NotificationSettingsPage.routeName,
+    'assistant_memory': AssistantMemoryPage.routeName,
+    'subscription_plans': SubscriptionPlansPage.routeName,
+    'subscription_details': SubscriptionDetailsPage.routeName,
+    'cashier_subscription': CashierSubscriptionConsumePage.routeName,
+  };
 
   void _handleSelectElement(PreviewMessage message) {
     final componentId = message.payload['componentId'];

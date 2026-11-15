@@ -298,15 +298,16 @@ class _PageTabs extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          for (final page in EditorPages.pages)
+          // كل شاشات تطبيق العميل بالترتيب: من الافتتاحية إلى آخر شاشة.
+          // غير القابلة للتحرير تُفتح للمعاينة أيضًا، وقفلها يعلن أن
+          // التحريك متاح للرئيسية والتصنيفات فقط.
+          for (final page in PreviewPages.all)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: AppSpacing.xs),
               child: ChoiceChip(
                 label: Text(page.label),
                 selected: selectedPageId == page.pageId,
-                onSelected: page.isEditable
-                    ? (_) => onChanged(page.pageId)
-                    : null,
+                onSelected: (_) => onChanged(page.pageId),
                 avatar: page.isEditable
                     ? null
                     : Icon(AppIcons.lock, size: 12),
