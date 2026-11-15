@@ -113,7 +113,12 @@ web.HTMLElement createPreviewIframe({
 
   _iframes[viewType] = iframe;
 
-  _listeners.remove(viewType)?.callAsFunction();
+  // إزالة المستمع القديم بإزالته من النافذة لا باستدعائه: استدعاء دالة
+  // معالج بلا وسيط يرمي NoSuchMethodError في ddc ويُسقط إنشاء الإطار كله —
+  // فتظهر المعاينة بيضاء في المحرر بلا سبب ظاهر.
+  if (_listeners.remove(viewType) case final oldListener?) {
+    web.window.removeEventListener('message', oldListener);
+  }
   void handler(web.Event event) {
     if (!event.isA<web.MessageEvent>()) return;
     try {

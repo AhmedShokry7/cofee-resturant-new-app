@@ -60,6 +60,11 @@ class _PreviewSectionTapState extends State<PreviewSectionTap> {
 
     return ValueListenableBuilder<String?>(
       valueListenable: previewSelectedSectionId,
+      // القسم نفسه يمر هنا كـ `child` ثابت لا يعاد بناؤه مع كل تحديد،
+      // والمعالج يبني الغلاف حوله — إغفال تمريره يجعل الطفل null،
+      // وGestureDetector بلا طفل يأخذ قيود أبيه كاملة، وفي قائمة تمرير
+      // قيودها لانهائية فينهار التخطيط كلها في وضع المعاينة.
+      child: widget.child,
       builder: (context, selectedId, child) {
         final selected =
             selectedId != null && selectedId == widget.section.id;
