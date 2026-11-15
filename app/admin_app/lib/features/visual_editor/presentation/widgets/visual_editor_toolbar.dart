@@ -55,32 +55,32 @@ class VisualEditorToolbar extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         // --- حجم الشاشة ---
-        _ScreenSizeSelector(
+        EditorScreenSizeSelector(
           dark: dark,
           muted: muted,
           selected: device,
           onSelected: onDeviceChanged,
         ),
-        _Divider(),
+        EditorDivider(),
 
         // --- تحكم التكبير ---
-        _ZoomControls(
+        EditorZoomControls(
           zoom: zoom,
           dark: dark,
           muted: muted,
           onZoom: onZoom,
         ),
-        _Divider(),
+        EditorDivider(),
 
         // --- حالة الاتصال وإعادة التحميل ---
         // على غير الويب لا يوجد iframe: المعاينة الأصلية ترسم من الحالة نفسها
         // فهي حيّة دائمًا، ولا معنى لضوء «غير متصلة» كاذب.
-        _ConnectionStatus(
+        EditorConnectionStatus(
           connection: state.previewConnection,
           reason: state.previewStatusMessage,
           dark: dark,
         ),
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.refresh,
           tooltip: 'إعادة تحميل المعاينة'
               '${state.previewStatusMessage == null ? '' : ' — ${state.previewStatusMessage}'}',
@@ -88,70 +88,70 @@ class VisualEditorToolbar extends StatelessWidget {
           dark: dark,
           muted: muted,
         ),
-        _Divider(),
+        EditorDivider(),
 
         // --- تراجع وإعادة ---
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.undo,
           tooltip: S.visualEditorUndo,
           onTap: cubit.canUndo ? cubit.undo : null,
           dark: dark,
           muted: muted,
         ),
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.redo,
           tooltip: S.visualEditorRedo,
           onTap: cubit.canRedo ? cubit.redo : null,
           dark: dark,
           muted: muted,
         ),
-        _Divider(),
+        EditorDivider(),
 
         // --- سجل الإصدارات ---
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.time01,
           tooltip: S.visualEditorVersions,
-          onTap: () => _showVersions(context),
+          onTap: () => showVisualEditorVersions(context, cubit),
           dark: dark,
           muted: muted,
         ),
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.folder01,
           tooltip: S.visualEditorTemplates,
-          onTap: () => _showTemplates(context),
+          onTap: () => showVisualEditorTemplates(context),
           dark: dark,
           muted: muted,
         ),
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.paintBrush,
           tooltip: S.visualEditorThemeStudio,
-          onTap: () => _showThemeStudio(context),
+          onTap: () => showVisualEditorThemeStudio(context, cubit),
           dark: dark,
           muted: muted,
         ),
-        _Divider(),
+        EditorDivider(),
 
         // --- التخلص من المسودة ---
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.delete02,
           tooltip: S.visualEditorDiscard,
-          onTap: () => _confirmDiscard(context),
+          onTap: () => confirmVisualEditorDiscard(context, cubit),
           dark: dark,
           muted: muted,
         ),
-        _Divider(),
+        EditorDivider(),
 
         // --- حفظ ونشر ---
-        _ToolbarButton(
+        EditorToolbarButton(
           icon: AppIcons.upload01,
           label: S.visualEditorSaveDraft,
           onTap: state.isDirty ? cubit.saveDraft : null,
           dark: dark,
         ),
-        _ToolbarButton(
+        EditorToolbarButton(
           icon: AppIcons.sent,
           label: S.visualEditorPublish,
-          onTap: () => _confirmPublish(context),
+          onTap: () => confirmVisualEditorPublish(context, cubit),
           dark: dark,
           accent: true,
           accentColor: accent,
@@ -159,8 +159,17 @@ class VisualEditorToolbar extends StatelessWidget {
       ],
     );
   }
+}
 
-  Future<void> _confirmPublish(BuildContext context) async {
+// ------------------------------------------------------------------ حوارات مشتركة
+
+/// حوارات الأدوات مشتركة بين الشريط الأفقي (العرض الضيق) والعمود الجانبي
+/// (العرض الواسع) — نفس الوظائف، لا نسخ للمنطق.
+
+Future<void> confirmVisualEditorPublish(
+  BuildContext context,
+  VisualEditorCubit cubit,
+) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -186,31 +195,40 @@ class VisualEditorToolbar extends StatelessWidget {
         );
       }
     }
-  }
+}
 
-  /// سجل الإصدارات: قائمة بأرقام الإصدارات وأوقاتها مع استرجاع.
-  Future<void> _showVersions(BuildContext context) async {
+/// سجل الإصدارات: قائمة بأرقام الإصدارات وأوقاتها مع استرجاع.
+Future<void> showVisualEditorVersions(
+  BuildContext context,
+  VisualEditorCubit cubit,
+) async {
     final versions = await cubit.loadVersions();
     if (!context.mounted) return;
     await showDialog<void>(
       context: context,
       builder: (ctx) => _VersionsDialog(versions: versions, cubit: cubit),
     );
-  }
+}
 
-  Future<void> _showTemplates(BuildContext context) => showDialog<void>(
-    context: context,
-    builder: (_) => const TemplatesDialog(),
-  );
+Future<void> showVisualEditorTemplates(BuildContext context) => showDialog<void>(
+  context: context,
+  builder: (_) => const TemplatesDialog(),
+);
 
-  Future<void> _showThemeStudio(BuildContext context) => showDialog<void>(
-    context: context,
-    builder: (_) => ThemeStudioDialog(initialTheme: cubit.theme),
-  );
+Future<void> showVisualEditorThemeStudio(
+  BuildContext context,
+  VisualEditorCubit cubit,
+) => showDialog<void>(
+  context: context,
+  builder: (_) => ThemeStudioDialog(initialTheme: cubit.theme),
+);
 
-  /// التخلص من المسودة بتأكيد: يمسح صف المسودة فقط عبر الـ RPC، وما
-  /// يراه الزبون لا يُلمس.
-  Future<void> _confirmDiscard(BuildContext context) async {
+/// التخلص من المسودة بتأكيد: يمسح صف المسودة فقط عبر الـ RPC، وما
+/// يراه الزبون لا يُلمس.
+Future<void> confirmVisualEditorDiscard(
+  BuildContext context,
+  VisualEditorCubit cubit,
+) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -235,7 +253,6 @@ class VisualEditorToolbar extends StatelessWidget {
         SnackBar(content: Text(S.visualEditorDiscardDone)),
       );
     }
-  }
 }
 
 class _VersionsDialog extends StatelessWidget {
@@ -333,8 +350,8 @@ class _VersionsDialog extends StatelessWidget {
   }
 }
 
-class _ScreenSizeSelector extends StatelessWidget {
-  const _ScreenSizeSelector({
+class EditorScreenSizeSelector extends StatelessWidget {
+  const EditorScreenSizeSelector({
     required this.dark,
     required this.muted,
     required this.selected,
@@ -387,8 +404,8 @@ class _ScreenSizeSelector extends StatelessWidget {
   }
 }
 
-class _ZoomControls extends StatelessWidget {
-  const _ZoomControls({
+class EditorZoomControls extends StatelessWidget {
+  const EditorZoomControls({
     required this.zoom,
     required this.dark,
     required this.muted,
@@ -405,7 +422,7 @@ class _ZoomControls extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.zoomOutArea,
           tooltip: S.visualEditorZoomOut,
           onTap: zoom > 0.5 ? () => onZoom(zoom - 0.1) : null,
@@ -424,14 +441,14 @@ class _ZoomControls extends StatelessWidget {
             ),
           ),
         ),
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.zoomInArea,
           tooltip: S.visualEditorZoomIn,
           onTap: zoom < 2.0 ? () => onZoom(zoom + 0.1) : null,
           dark: dark,
           muted: muted,
         ),
-        _IconBtn(
+        EditorIconBtn(
           icon: AppIcons.refresh,
           tooltip: S.visualEditorZoomReset,
           onTap: () => onZoom(1.0),
@@ -443,8 +460,8 @@ class _ZoomControls extends StatelessWidget {
   }
 }
 
-class _ConnectionStatus extends StatelessWidget {
-  const _ConnectionStatus({
+class EditorConnectionStatus extends StatelessWidget {
+  const EditorConnectionStatus({
     required this.connection,
     this.reason,
     required this.dark,
@@ -483,11 +500,15 @@ class _ConnectionStatus extends StatelessWidget {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: AppSpacing.xs),
-        Tooltip(
-          message: reason ?? label,
-          child: Text(
-            label,
-            style: TextStyle(fontSize: AppFontSizes.size11, color: color),
+        Flexible(
+          child: Tooltip(
+            message: reason ?? label,
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: AppFontSizes.size11, color: color),
+            ),
           ),
         ),
       ],
@@ -495,8 +516,8 @@ class _ConnectionStatus extends StatelessWidget {
   }
 }
 
-class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({
+class EditorToolbarButton extends StatelessWidget {
+  const EditorToolbarButton({
     required this.icon,
     required this.label,
     required this.onTap,
@@ -560,8 +581,8 @@ class _ToolbarButton extends StatelessWidget {
   }
 }
 
-class _IconBtn extends StatelessWidget {
-  const _IconBtn({
+class EditorIconBtn extends StatelessWidget {
+  const EditorIconBtn({
     required this.icon,
     required this.tooltip,
     required this.onTap,
@@ -595,7 +616,7 @@ class _IconBtn extends StatelessWidget {
   }
 }
 
-class _Divider extends StatelessWidget {
+class EditorDivider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;

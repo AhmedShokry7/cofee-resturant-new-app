@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -332,6 +333,11 @@ class _PreviewPanelState extends State<PreviewPanel> {
 }
 
 /// الإطار المرئي حول المعاينة: خلفية محايدة + ظل + تحكم بالتكبير.
+///
+/// الإطار يُضبط تلقائيًا ليملأ المساحة المتاحة دون قص: نحسب نسبة
+/// الملاءمة من أبعاد الجهاز مقابل المساحة الفعلية، ثم نضربها في تكبير
+/// الموظف. عند التكبير 1 تبقى شاشة التطبيق كاملة ظاهرة ومتوسطة دومًا،
+/// وحجم الجهاز الأكبر من اللوحة يُصغّر تلقائيًا بدل التمرير إليه.
 class _PreviewFrame extends StatelessWidget {
   const _PreviewFrame({
     required this.zoom,
@@ -352,41 +358,70 @@ class _PreviewFrame extends StatelessWidget {
         color: dark ? AppColor.darkBackground : AppColor.lightGreyColor,
         borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
-      alignment: Alignment.center,
-      child: SingleChildScrollView(
-        // جهاز أكبر من اللوحة أو تكبير فوق الواحد يُقلّب لا يُقتطع.
-        scrollDirection: Axis.horizontal,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
-            child: Transform.scale(
-              scale: zoom,
-              child: Container(
-                width: device.width,
-                height: device.height,
-                decoration: BoxDecoration(
-                  color: AppColor.deviceChrome,
-                  borderRadius: BorderRadius.circular(AppRadius.phoneBody),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.black20,
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // المساحة الفعلية للوحة بعد الحواف الداخلية.
+          final available = Size(
+            (constraints.maxWidth - AppSpacing.xxl * 2).clamp(1.0, 100000.0),
+            (constraints.maxHeight - AppSpacing.xxl * 2).clamp(1.0, 100000.0),
+          );
+          // نسبة الملاءمة: أصغر عامل يجعل الإطار كاملًا داخل المساحة.
+          final fitScale = math.min(
+            available.width / device.width,
+            available.height / device.height,
+          );
+          final scale = math.max(fitScale * zoom, 0.05);
+          final frameWidth = device.width * scale;
+          final frameHeight = device.height * scale;
+          return SingleChildScrollView(
+            // تكبير فوق الملاءمة فقط هو ما يفتح تمرير الإطار؛ لا يُقتطع أبدا.
+            scrollDirection: Axis.vertical,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.phoneScreen),
-                    child: child,
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  child: SizedBox(
+                    width: frameWidth,
+                    height: frameHeight,
+                    child: OverflowBox(
+                      maxWidth: device.width,
+                      maxHeight: device.height,
+                      child: Transform.scale(
+                        scale: scale,
+                        alignment: Alignment.center,
+                        child: Container(
+                          width: device.width,
+                          height: device.height,
+                          decoration: BoxDecoration(
+                            color: AppColor.deviceChrome,
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.phoneBody),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColor.black20,
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.sm),
+                            child: ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.phoneScreen),
+                              child: child,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }

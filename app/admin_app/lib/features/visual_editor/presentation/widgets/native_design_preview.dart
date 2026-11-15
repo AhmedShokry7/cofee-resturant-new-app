@@ -143,9 +143,13 @@ class NativeDesignPreview extends StatelessWidget {
                 ),
               ),
             )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: sections,
+          // المعاينة الأصلية تمرر محتواها داخل الشاشة كما يفعل التطبيق
+          // الحقيقي، بدل القصّ حين يتجاوز المحتوى ارتفاع الجهاز.
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: sections,
+              ),
             ),
     );
   }
