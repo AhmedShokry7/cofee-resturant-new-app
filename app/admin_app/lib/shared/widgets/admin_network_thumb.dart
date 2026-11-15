@@ -42,6 +42,11 @@ class AdminNetworkThumb extends StatelessWidget {
       color: adminTintedSurfaceColor(theme),
       child: AppIcon(icon, size: shortest * .4, color: adminMutedColor(theme)),
     );
+    // The picture is decoded at the size it is drawn at, not at the size of
+    // the file: a list of thumbnails must not hold full originals in memory.
+    final dpr = MediaQuery.devicePixelRatioOf(context);
+    final memWidth = (resolvedWidth * dpr).round().clamp(64, 512);
+    final memHeight = (resolvedHeight * dpr).round().clamp(64, 512);
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.circular(size * .2),
       child: SizedBox(
@@ -51,6 +56,8 @@ class AdminNetworkThumb extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: url,
                 fit: fit,
+                memCacheWidth: memWidth,
+                memCacheHeight: memHeight,
                 placeholder: (_, _) => fallback,
                 errorWidget: (_, _, _) => fallback,
               )

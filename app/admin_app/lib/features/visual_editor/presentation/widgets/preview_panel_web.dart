@@ -10,6 +10,9 @@ import 'package:flutter/widgets.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 
+/// على الويب قناة المعاينة الحية (iframe + postMessage) مدارة دائمًا.
+const bool supportsLiveWebview = true;
+
 /// الإطارات الحية حسب viewType — المنفذ الذي تمر عبره الرسائل الصادرة.
 final Map<String, web.HTMLIFrameElement> _iframes = {};
 

@@ -61,6 +61,15 @@ class _KitchenPageState extends State<KitchenPage> with WidgetsBindingObserver {
     }
   }
 
+  /// The shell keeps this page alive: when it is shown again it
+  /// receives a fresh widget, so it rebinds the search of the shell
+  /// here instead of on a remount that would refetch everything.
+  @override
+  void didUpdateWidget(KitchenPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    widget.searchController.bind(_onShellSearch);
+  }
+
   @override
   void dispose() {
     _clockTimer?.cancel();

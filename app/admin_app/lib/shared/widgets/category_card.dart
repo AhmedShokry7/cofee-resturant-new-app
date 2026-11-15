@@ -174,6 +174,7 @@ class _CategoryImage extends StatelessWidget {
     return CachedNetworkImage(
       imageUrl: image,
       fit: BoxFit.fill,
+      memCacheWidth: 480,
       placeholder: (context, url) => ColoredBox(
         color: background,
         child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),

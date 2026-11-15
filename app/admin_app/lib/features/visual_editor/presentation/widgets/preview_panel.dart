@@ -15,6 +15,7 @@ import 'package:admin_app/features/visual_editor/presentation/widgets/native_des
 
 import 'preview_panel_stub.dart'
     if (dart.library.js_interop) 'preview_panel_web.dart'
+    if (dart.library.io) 'preview_panel_windows.dart'
     as preview_platform;
 
 /// أحجام المعاينة: خمسة أجهزة، عرضها وارتفاعها المنطقي هو المرسوم، فما
@@ -155,9 +156,17 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      if (!_viewRegistered) {
+    if (preview_platform.supportsLiveWebview) {
+      if (kIsWeb) {
         _parentOrigin = Uri.base.origin;
+      } else {
+        // داخل WebView2 لا يوجد أب حقيقي: origin العميل نفسه هو مصدر
+        // الرسائل في الاتجاهين، فنمرّه ليتحقق جسر العميل منه كما على الويب.
+        _parentOrigin = previewOriginOf(
+          _buildPreviewUrl(widget.sessionId, null),
+        );
+      }
+      if (!_viewRegistered) {
         _registerIframeView();
         _viewRegistered = true;
       }
@@ -169,7 +178,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   }
 
   void _armWatchdog({bool first = false}) {
-    if (!kIsWeb) return;
+    if (!preview_platform.supportsLiveWebview) return;
     _watchdog?.cancel();
     _watchdog = Timer(
       first ? _firstWatchdog : _retryWatchdog,
@@ -180,7 +189,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   /// بلا جاهزية خلال المهلة: محاولتان تلقائيّتان بإعادة تحميل الإطار ثم
   /// حالة Error برسالة مفهومة — بدل شاشة بيضاء صامتة.
   void _onWatchdogExpired() {
-    if (!mounted || !kIsWeb) return;
+    if (!mounted || !preview_platform.supportsLiveWebview) return;
     if (_autoReloads >= _maxAutoReloads) {
       widget.onConnectionChanged?.call(
         PreviewConnection.error,
@@ -235,7 +244,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   void didUpdateWidget(PreviewPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.reloadToken != oldWidget.reloadToken) {
-      if (kIsWeb) {
+      if (preview_platform.supportsLiveWebview) {
         _autoReloads = 0;
         _reloadManually();
       }
@@ -294,7 +303,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
     final type = widget.outboundMessageType;
     final payload = widget.outboundPayload;
     if (messageId == null || type == null || payload == null) return;
-    if (!kIsWeb) return;
+    if (!preview_platform.supportsLiveWebview) return;
     if (messageId == _lastSentMessageId) return;
     _lastSentMessageId = messageId;
     preview_platform.sendOutboundMessage(
@@ -314,7 +323,9 @@ class _PreviewPanelState extends State<PreviewPanel> {
       zoom: widget.zoom,
       device: widget.device,
       dark: dark,
-      child: kIsWeb ? _buildWebPreviewWithStatus(dark) : _buildNativePreview(),
+      child: preview_platform.supportsLiveWebview
+          ? _buildWebPreviewWithStatus(dark)
+          : _buildNativePreview(),
     );
   }
 

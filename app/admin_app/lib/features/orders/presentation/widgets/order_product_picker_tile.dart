@@ -29,6 +29,7 @@ class OrderProductPickerTile extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: product.imageUrl!,
                 fit: BoxFit.fill,
+                memCacheWidth: 128,
                 errorWidget: (_, _, _) => _placeholder(),
               )
             : _placeholder(),

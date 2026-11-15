@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/app_dependencies.dart';
 import 'package:admin_app/core/catalog/catalog_data.dart';

@@ -22,6 +22,7 @@ class OrderItemImage extends StatelessWidget {
           ? CachedNetworkImage(
               imageUrl: item.imageUrl!,
               fit: BoxFit.fill,
+              memCacheWidth: 128,
               errorWidget: (_, _, _) => _placeholder(context),
             )
           : _placeholder(context),

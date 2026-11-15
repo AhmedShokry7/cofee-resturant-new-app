@@ -52,6 +52,15 @@ class _PosPageState extends State<PosPage> {
     if (_ownsCubit) _cubit.load();
   }
 
+  /// The shell keeps this page alive: when it is shown again it
+  /// receives a fresh widget, so it rebinds the search of the shell
+  /// here instead of on a remount that would refetch everything.
+  @override
+  void didUpdateWidget(PosPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    widget.searchController.bind(_onShellSearch);
+  }
+
   @override
   void dispose() {
     widget.searchController.bind(null);

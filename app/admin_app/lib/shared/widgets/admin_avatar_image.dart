@@ -78,6 +78,8 @@ class AdminAvatarImage extends StatelessWidget {
             ? CachedNetworkImage(
                 imageUrl: url!.trim(),
                 fit: BoxFit.fill,
+                memCacheWidth: 128,
+                memCacheHeight: 128,
                 placeholder: (_, _) => placeholder,
                 errorWidget: (_, _, _) => placeholder,
               )

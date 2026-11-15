@@ -120,6 +120,7 @@ class _BannerCard extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: banner.imageUrl,
                         fit: BoxFit.fill,
+                        memCacheWidth: 480,
                         errorWidget: (_, _, _) => const ColoredBox(
                           color: AppColor.secondaryColor,
                           child: Icon(AppIcons.imageAdd01),

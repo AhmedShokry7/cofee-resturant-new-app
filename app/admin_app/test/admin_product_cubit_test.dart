@@ -406,11 +406,17 @@ void main() {
     final repository = _FakeProductRepository(
       products: const <AdminProduct>[_product],
     );
-    final cubit = AdminProductCubit(repository: repository);
+    final cubit = AdminProductCubit(
+      repository: repository,
+      // The test reads the result right away: typing waits, this does not.
+      searchDebounce: Duration.zero,
+    );
     addTearDown(cubit.close);
 
     await cubit.load();
     await cubit.search('First');
+    // The zero-length debounce still fires one event loop turn later.
+    await Future<void>.delayed(Duration.zero);
 
     expect(repository.searches.last, 'First');
     expect(cubit.state.products, hasLength(1));

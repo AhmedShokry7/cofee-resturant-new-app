@@ -10,6 +10,10 @@ endif()
 
 project(admin_app LANGUAGES CXX)
 
+# حزمة webview_windows تستخدم coroutines التجريبية القديمة (/await)،
+# وMSVC الحديث يرفضها إلا مع هذا التعريف — مطلوب لبناء إضافة المعاينة الحية.
+add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "admin_app")

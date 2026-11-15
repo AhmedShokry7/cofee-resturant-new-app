@@ -45,6 +45,15 @@ class _StockMovementsPageState extends State<StockMovementsPage> {
     widget.searchController.bind(_onSearch);
   }
 
+  /// The shell keeps this page alive: when it is shown again it
+  /// receives a fresh widget, so it rebinds the search of the shell
+  /// here instead of on a remount that would refetch everything.
+  @override
+  void didUpdateWidget(StockMovementsPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    widget.searchController.bind(_onSearch);
+  }
+
   @override
   void dispose() {
     widget.searchController.bind(null);

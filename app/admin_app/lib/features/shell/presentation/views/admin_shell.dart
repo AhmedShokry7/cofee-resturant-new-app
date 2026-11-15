@@ -21,16 +21,6 @@ import 'package:admin_app/features/coupons/presentation/pages/coupons_page.dart'
 
 import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
 import 'package:admin_app/features/dashboard/presentation/pages/dashboard_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_advances_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_attendance_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_dashboard_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_discrepancies_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_employees_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_leave_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_my_day_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_payroll_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_schedules_page.dart';
-import 'package:admin_app/features/hr/presentation/pages/hr_settings_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/stock_movements_page.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
@@ -85,6 +75,19 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
   final TextEditingController _searchTextController = TextEditingController();
   final AdminSearchController _searchController = AdminSearchController();
   late final AdminNavCubit _navCubit;
+
+  /// The destinations a visit built already, in the order they were opened.
+  ///
+  /// A page that was opened once stays mounted behind an `Offstage`: going
+  /// back to it is a paint switch, not a network round trip. Its cubit keeps
+  /// the data, its live feed keeps it fresh, and the shell hands it a fresh
+  /// widget only when it becomes the visible one again.
+  final Set<String> _visitedIds = <String>{};
+
+  /// The page a destination built last, and the locale it was built under.
+  /// A cached page is reused untouched while its locale stands, so counter
+  /// updates and language-independent shell rebuilds never re-walk a page.
+  final Map<String, (Widget, Locale)> _pageCache = <String, (Widget, Locale)>{};
 
   @override
   void initState() {
@@ -323,60 +326,6 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
               widget.session.hasPermission('notifications.manage') ||
               widget.session.isOwner,
         );
-      case 'hrMyDay':
-        // البصمة وقسيممة الأجر وطلب الإجازة حقٌّ لكل موظف، فلا إذن هنا:
-        // تعرف القاعدة من أنت من الجلسة نفسها.
-        return HrMyDayPage(searchController: _searchController);
-      case 'hrDashboard':
-        return HrDashboardPage(
-          onNavigate: _select,
-          availableDestinations: _destinations.map((item) => item.id).toSet(),
-        );
-      case 'hrEmployees':
-        return HrEmployeesPage(
-          searchController: _searchController,
-          canManage: widget.session.hasPermission('hr.employee.write'),
-          // الأجر صلاحية مستقلة في 212، فلا تُوهَب لمن يعدّل العقد.
-          canManageCompensation: widget.session.hasPermission(
-            'hr.compensation.manage',
-          ),
-        );
-      case 'hrAttendance':
-        // مراجعة التصحيح في `hr.attendance.manage` لا في قراءة السطور.
-        return HrAttendancePage(
-          searchController: _searchController,
-          canReview: widget.session.hasPermission('hr.attendance.manage'),
-        );
-      case 'hrSchedules':
-        return HrSchedulesPage(
-          searchController: _searchController,
-          canManage: widget.session.hasPermission('hr.schedule.manage'),
-        );
-      case 'hrLeave':
-        return HrLeavePage(
-          searchController: _searchController,
-          canReview: widget.session.hasPermission('hr.leave.review'),
-        );
-      case 'hrPayroll':
-        // ثلاثة أدوار لثلاثة أزرار: من يولّد لا يعتمد، ومن يعتمد لا يصرف.
-        return HrPayrollPage(
-          searchController: _searchController,
-          canManage: widget.session.hasPermission('hr.payroll.manage'),
-          canApprove: widget.session.hasPermission('hr.payroll.approve'),
-          canPay: widget.session.hasPermission('hr.payroll.pay'),
-        );
-      case 'hrAdvances':
-        return HrAdvancesPage(
-          searchController: _searchController,
-          canReview: widget.session.hasPermission('hr.finance.adjust'),
-        );
-      case 'hrDiscrepancies':
-        return HrDiscrepanciesPage(
-          searchController: _searchController,
-          canReview: widget.session.hasPermission('hr.finance.adjust'),
-        );
-      case 'hrSettings':
-        return const HrSettingsPage();
       case 'aiKnowledge':
         return AiKnowledgePage(
           searchController: _searchController,

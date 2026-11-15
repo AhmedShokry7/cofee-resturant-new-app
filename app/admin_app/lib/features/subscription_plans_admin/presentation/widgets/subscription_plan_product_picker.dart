@@ -405,6 +405,7 @@ class _Thumb extends StatelessWidget {
             : CachedNetworkImage(
                 imageUrl: url,
                 fit: BoxFit.fill,
+                memCacheWidth: 112,
                 errorWidget: (_, _, _) => fallback,
               ),
       ),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/features/catalog/presentation/manager/admin_category_cubit.dart';
@@ -36,6 +36,15 @@ class _CategoryPageState extends State<CategoryPage> {
     _cubit = widget.cubit ?? AdminCategoryCubit();
     if (_ownsCubit) _cubit.load();
     _excel = CategoryExcelController(cubit: _cubit, onProgress: _onProgress);
+    widget.searchController.bind(_onSearch);
+  }
+
+  /// The shell keeps this page alive: when it is shown again it
+  /// receives a fresh widget, so it rebinds the search of the shell
+  /// here instead of on a remount that would refetch everything.
+  @override
+  void didUpdateWidget(CategoryPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
     widget.searchController.bind(_onSearch);
   }
 

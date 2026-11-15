@@ -99,11 +99,13 @@ class _CoverImage extends StatelessWidget {
     }
 
     // The picture is cached on the device: the catalogue shows the same
-    // pictures again and again, so they are fetched once.
+    // pictures again and again, so they are fetched once. It is also decoded
+    // small: a square card never needs the original in memory.
     return CachedNetworkImage(
       imageUrl: image,
       fit: fit,
       alignment: alignment,
+      memCacheWidth: 560,
       placeholder: (context, url) => const _ImagePlaceholder(),
       errorWidget: (context, url, error) => const _ImagePlaceholder(),
     );

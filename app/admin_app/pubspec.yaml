@@ -32,6 +32,9 @@ dependencies:
   # The editor of a picture crops and rotates the real file, not only the
   # preview. The processing runs in Dart, so it works on the web too.
   image: ^4.12.0
+  # معاينة المحرر المرئي الحية على ويندوز: WebView2 يعرض تطبيق العميل
+  # الحقيقي داخل لوحة المعاينة بنفس قناة البروتوكول التي تعمل على الويب.
+  webview_windows: ^0.4.0
   # The editor reads the file of a picture to cut it. The package is already in
   # the tree of the Supabase client, so it costs nothing extra.
   http: ^1.6.0
@@ -52,6 +55,7 @@ dependencies:
   printing: ^5.14.0
   pdf: ^3.13.1
   web: ^1.1.0
+  material_ui: ^1.11.0
 
 dev_dependencies:
   flutter_test:

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'dart:async';
+
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/core/models/admin_product.dart';
@@ -34,10 +36,21 @@ import 'package:admin_app/features/catalog/presentation/manager/admin_product_st
 /// Every change of the catalogue goes through this cubit, so the widgets only
 /// read the state and ask for an action.
 class AdminProductCubit extends Cubit<AdminProductState> {
-  AdminProductCubit({CatalogData? repository})
-    : this._withUseCases(repository ?? CatalogDependencies.catalog);
+  factory AdminProductCubit({CatalogData? repository, Duration? searchDebounce}) =>
+      AdminProductCubit._withUseCases(
+        repository ?? CatalogDependencies.catalog,
+        searchDebounce ?? const Duration(milliseconds: 350),
+      );
 
-  AdminProductCubit._withUseCases(CatalogData repository)
+  /// How long typing may continue before the search reaches the database.
+  ///
+  /// Without it every letter fires a query of its own and the catalogue page
+  /// stutters while the requests pile up behind each other.
+  final Duration searchDebounce;
+
+  Timer? _searchTimer;
+
+  AdminProductCubit._withUseCases(CatalogData repository, this.searchDebounce)
     : _loadCatalog = LoadCatalogUseCase(repository),
       _saveProduct = SaveProductUseCase(repository),
       _deleteProduct = DeleteProductUseCase(repository),
@@ -101,6 +114,9 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   /// Loads the first page of the catalogue of the branch the dashboard
   /// reviews.
   Future<void> load({String search = ''}) async {
+    // A typed search that never ran must not land after this load and
+    // overwrite the page the caller asked for.
+    _searchTimer?.cancel();
     emit(state.copyWith(status: AdminProductStatus.loading, clearError: true));
     try {
       final snapshot = await _loadCatalog(limit: pageSize, search: search);
@@ -165,7 +181,8 @@ class AdminProductCubit extends Cubit<AdminProductState> {
   /// Looks for the products that carry the word of the admin.
   ///
   /// The search runs on the database, so it also reaches the products that
-  /// are not on the page yet.
+  /// are not on the page yet. Typing waits [searchDebounce] first: one query
+  /// per word, not one per letter.
   Future<void> search(String query) async {
     final term = query.trim();
     if (term == state.search && state.status == AdminProductStatus.ready) {
@@ -173,6 +190,15 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     }
 
     emit(state.copyWith(clearError: true));
+    _searchTimer?.cancel();
+    if (term.isEmpty) {
+      await _fetchSearch(term);
+      return;
+    }
+    _searchTimer = Timer(searchDebounce, () => _fetchSearch(term));
+  }
+
+  Future<void> _fetchSearch(String term) async {
     try {
       final snapshot = await _loadCatalog(limit: pageSize, search: term);
       emit(
@@ -624,5 +650,11 @@ class AdminProductCubit extends Cubit<AdminProductState> {
     if (lower.contains('compare price')) return S.compareAtMustBeHigher;
     if (lower.contains('permission')) return S.couldNotSaveProduct;
     return S.couldNotSaveProduct;
+  }
+
+  @override
+  Future<void> close() {
+    _searchTimer?.cancel();
+    return super.close();
   }
 }

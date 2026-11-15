@@ -5,6 +5,9 @@ import 'package:flutter/widgets.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 
+/// لا إطار حي على المنصات الأصلية بلا WebView2 — الرسم الأصلي هو المعاينة.
+const bool supportsLiveWebview = false;
+
 void registerPreviewView({
   required String viewType,
   required String url,

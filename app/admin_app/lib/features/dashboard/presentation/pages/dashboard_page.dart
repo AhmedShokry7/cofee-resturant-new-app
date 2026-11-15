@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -48,6 +48,15 @@ class _DashboardPageState extends State<DashboardPage> {
     _ownsCubit = widget.cubit == null;
     _cubit = widget.cubit ?? AdminDashboardCubit();
     if (_ownsCubit) _cubit.load();
+    widget.searchController.bind(_cubit.search);
+  }
+
+  /// The shell keeps this page alive: when it is shown again it
+  /// receives a fresh widget, so it rebinds the search of the shell
+  /// here instead of on a remount that would refetch everything.
+  @override
+  void didUpdateWidget(DashboardPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
     widget.searchController.bind(_cubit.search);
   }
 
