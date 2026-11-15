@@ -23,10 +23,9 @@ final Map<String, JSFunction> _listeners = {};
 /// طابور كل إطار: ما يُرسل قبل PREVIEW_READY ينتظر بالترتيب.
 final Map<String, PreviewOutboundQueue<String>> _queues = {};
 
-/// ساعات الانقطاع حسب الإطار: بلا إشارة حياة تُعلن Disconnect ثم يعاد
-/// الاتصال تلقائيًا، وبعد المحاولات تُعلن Error.
-final Map<String, PreviewWatchdog> _watchdogs = {};
-
+/// ساعة الانقطاع مصدر واحد: لوحة المعاينة نفسها (بمحاولات إعادة اتصال
+/// تلقائية مهلة أطول تناسب الإقلاع البارد). طبقة الويب لا تعلن خطأ مستقل
+/// كي لا يتنافس مصدرا خطأ على الغطاء.
 void registerPreviewView({
   required String viewType,
   required String url,
@@ -61,21 +60,6 @@ void registerPreviewView({
       (_queues[viewType] ??= PreviewOutboundQueue<String>())
         ..reset(keepPending: true);
 
-  void armWatchdog() {
-    (_watchdogs[viewType] ??= PreviewWatchdog(
-      timeout: const Duration(seconds: 45),
-      onExpired: () {
-        if (queue.isReady) return;
-        report(
-          PreviewConnection.error,
-          'لم تعلن المعاينة جاهزيتها — تأكد أن تطبيق العميل يعمل على '
-          '$previewOrigin ثم أعد تحميل المعاينة',
-        );
-      },
-    ))
-      ..arm();
-  }
-
   ui_web.platformViewRegistry.registerViewFactory(
     viewType,
     (int viewId) => createPreviewIframe(
@@ -86,7 +70,6 @@ void registerPreviewView({
       previewOrigin: previewOrigin,
       queue: queue,
       report: report,
-      armWatchdog: armWatchdog,
       onElementSelected: onElementSelected,
       onPreviewReady: onPreviewReady,
       onPreviewError: onPreviewError,
@@ -115,7 +98,6 @@ web.HTMLElement createPreviewIframe({
   required String previewOrigin,
   required PreviewOutboundQueue<String> queue,
   required void Function(PreviewConnection, [String?]) report,
-  required void Function() armWatchdog,
   required void Function(dynamic data) onElementSelected,
   required void Function(dynamic data) onPreviewReady,
   required void Function(dynamic data) onPreviewError,
@@ -188,7 +170,6 @@ web.HTMLElement createPreviewIframe({
   _listeners[viewType] = handler.toJS;
   web.window.addEventListener('message', _listeners[viewType]!);
 
-  armWatchdog();
   report(PreviewConnection.connecting);
   return iframe;
 }
@@ -239,16 +220,8 @@ void reloadPreviewView({
 }) {
   final iframe = _iframes[viewType];
   if (iframe == null) return;
-  final queue =
-      (_queues[viewType] ??= PreviewOutboundQueue<String>())
-        ..reset(keepPending: true);
-  (_watchdogs[viewType] ??= PreviewWatchdog(
-    timeout: const Duration(seconds: 45),
-    onExpired: () {
-      if (queue.isReady) return;
-    },
-  ))
-    ..arm();
+  (_queues[viewType] ??= PreviewOutboundQueue<String>())
+      .reset(keepPending: true);
   // معلمة تحطيم الكاش: نفس الرابط قد لا يعيد المتصفح تحميله، والمعلمة
   // الجديدة لا تلمس الجلسة ولا الأصل.
   final separator = url.contains('?') ? '&' : '?';

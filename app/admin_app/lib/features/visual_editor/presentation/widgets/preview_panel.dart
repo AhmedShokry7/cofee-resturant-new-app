@@ -116,14 +116,21 @@ class _PreviewPanelState extends State<PreviewPanel> {
   /// ساعة الانقطاع: بلا PREVIEW_READY خلال مهلة تعيد المحاولة تلقائيًا.
   Timer? _watchdog;
   int _autoReloads = 0;
-  static const int _maxAutoReloads = 2;
-  static const Duration _firstWatchdog = Duration(seconds: 45);
-  static const Duration _retryWatchdog = Duration(seconds: 25);
+  static const int _maxAutoReloads = 3;
+  // أول إقلاع لتطبيق العميل في وضع debug يحمّل آلاف وحدات DDC وقد يتجاوز
+  // الدقيقة — إقلاع أسرع من ذلك يُقتل بالساعة قبل أن يعلم جاهزيته. المحاولات
+  // اللاحقة أقصر لأن الوحدات مخبّأة.
+  static const Duration _firstWatchdog = Duration(seconds: 90);
+  static const Duration _retryWatchdog = Duration(seconds: 30);
 
   /// حالة القناة للغطاء المرئي فوق الإطار، وآخر رسالة تشخيص.
   final ValueNotifier<PreviewConnection> _connection =
       ValueNotifier(PreviewConnection.connecting);
   String? _statusMessage;
+
+  /// آخر رسالة صادرة مُرسلة فعليًا — إعادة البناء المتكرر للوحة لا يعني
+  /// رسالة جديدة، والمعرّف نفسه يُرسل مرة واحدة لا في كل إطار.
+  String? _lastSentMessageId;
 
   /// عنوان URL لـ Customer Flutter Web في وضع المعاينة.
   ///
@@ -287,6 +294,8 @@ class _PreviewPanelState extends State<PreviewPanel> {
     final payload = widget.outboundPayload;
     if (messageId == null || type == null || payload == null) return;
     if (!kIsWeb) return;
+    if (messageId == _lastSentMessageId) return;
+    _lastSentMessageId = messageId;
     preview_platform.sendOutboundMessage(
       viewType: _iframeViewType,
       type: type,
