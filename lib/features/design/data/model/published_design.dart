@@ -308,6 +308,7 @@ class PublishedDesign {
     this.schemaVersion = 0,
     this.theme = PublishedTheme.none,
     this.homeSections = const <PublishedSection>[],
+    this.categoriesSections = const <PublishedSection>[],
   });
 
   /// لا مستند: لا رقم مخطط ولا طبقة ولا أقسام، ترسم الشاشة كما كانت اليوم.
@@ -320,11 +321,16 @@ class PublishedDesign {
   /// المستند — عندئذ يرسم الهاتف ترتيبه المكتوب في مصدره.
   final List<PublishedSection> homeSections;
 
+  /// أقسام صفحة التصنيفات المنشورة، وخاليًا حين لا صفحة لها — عندئذ ترسم
+  /// شاشة التصنيفات نفسها كما هي بلا محتوى مضاف.
+  final List<PublishedSection> categoriesSections;
+
   /// المستند كما يقرؤه هذا التطبيق مرة أخرى، بصيغة المنشور نفسها.
   ///
-  /// يعيد صفحة `page.home` فقط: الهاتف يرسم هذه وحدها، وما في المستند الأصلي
-  /// من صفحات أخرى مسؤولية اللوحة لا القارئ. تستعمل للإرسال الراجع إلى
-  /// محرّر الأدمن (COMPONENT_TREE_UPDATED)؛ القراءة من JSON تبقى [fromJson].
+  /// يعيد الصفحات التي يرسمها هذا التطبيق (الرئيسية والتصنيفات): ما في
+  /// المستند الأصلي من صفحات أخرى مسؤولية اللوحة لا القارئ. تستعمل
+  /// للإرسال الراجع إلى محرّر الأدمن (COMPONENT_TREE_UPDATED)؛ القراءة من
+  /// JSON تبقى [fromJson].
   Map<String, dynamic> toDocument() => {
     'schema_version': schemaVersion,
     'theme': theme.toJson(),
@@ -338,6 +344,16 @@ class PublishedDesign {
           ],
         },
       },
+      if (categoriesSections.isNotEmpty)
+        {
+          'page': 'categories',
+          'root': {
+            'type': DesignWidgetTypes.pageHome,
+            'children': <Map<String, dynamic>>[
+              for (final section in categoriesSections) _sectionJson(section),
+            ],
+          },
+        },
     ],
   };
 
@@ -363,11 +379,16 @@ class PublishedDesign {
       other is PublishedDesign &&
       other.schemaVersion == schemaVersion &&
       other.theme == theme &&
-      listEquals(other.homeSections, homeSections);
+      listEquals(other.homeSections, homeSections) &&
+      listEquals(other.categoriesSections, categoriesSections);
 
   @override
-  int get hashCode =>
-      Object.hash(schemaVersion, theme, Object.hashAll(homeSections));
+  int get hashCode => Object.hash(
+    schemaVersion,
+    theme,
+    Object.hashAll(homeSections),
+    Object.hashAll(categoriesSections),
+  );
 
   /// null عند صف غير موجود، أو كائن غير مستند، أو مخطط أحدث من التطبيق.
   static PublishedDesign? fromJson(Object? raw) {
@@ -378,16 +399,18 @@ class PublishedDesign {
     return PublishedDesign(
       schemaVersion: version.round(),
       theme: PublishedTheme.fromJson(raw['theme']),
-      homeSections: _homeSections(raw['pages']),
+      homeSections: _pageSections(raw['pages'], 'home'),
+      categoriesSections: _pageSections(raw['pages'], 'categories'),
     );
   }
 
-  /// جذر صفحة `page.home` وأبناؤه بترتيبهم؛ صفحة أخرى أو مستند بلا صفحات لا
-  /// يغيّران شيئًا.
-  static List<PublishedSection> _homeSections(Object? pages) {
+  /// جذر صفحة `page.<name>` وأبناؤه بترتيبهم؛ صفحة أخرى أو مستند بلا صفحات
+  /// لا يغيّران شيئًا. جذور الصفحات كلها من النوع `page.home` في المستند،
+  /// والفصل بين الصفحات بحقل `page` الحامل لاسمها.
+  static List<PublishedSection> _pageSections(Object? pages, String name) {
     if (pages is! List) return const <PublishedSection>[];
     for (final page in pages) {
-      if (page is! Map || page['page'] != 'home') continue;
+      if (page is! Map || page['page'] != name) continue;
       final root = page['root'];
       if (root is! Map || root['type'] != DesignWidgetTypes.pageHome) {
         continue;

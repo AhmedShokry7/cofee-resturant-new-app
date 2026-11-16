@@ -140,17 +140,28 @@ class _PreviewPanelState extends State<PreviewPanel> {
   /// `--dart-define=PREVIEW_BASE_URL=...`)، ومنه تُبنى معلمات الجلسة:
   /// `mode=preview` يفعّل نقطة الدخول، و`sessionId` يربط الجلسة، و
   /// `parentOrigin` هو الأصل الوحيد الذي يثق به الطرفان.
+  ///
+  /// الافتراضي هو النسخة المنشورة من تطبيق العميل (GitHub Pages): هي التي
+  /// تقلع داخل WebView2 على ويندوز — خادم `flutter run` المحلي على 5000
+  /// أثبتَت المعاينة أن صفحته لا تُكمل إقلاعها داخل WebView2 أبدًا. من يريد
+  /// معاينة محلية يمرّر الرابط بنفسه عبر dart-define.
   static String _buildPreviewUrl(String? sessionId, String? parentOrigin) {
     const baseUrl = String.fromEnvironment(
       'PREVIEW_BASE_URL',
-      defaultValue: 'http://localhost:5000',
+      defaultValue:
+          'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview',
     );
+    // قاعدة قد تنتهي بـ '/' (رابط صفحة GitHub Pages) لا تجوز أن تتضاعف:
+    // `…/preview//?…` رابط مشوّه يُربك الجلسة.
+    final trimmed = baseUrl.endsWith('/')
+        ? baseUrl.substring(0, baseUrl.length - 1)
+        : baseUrl;
     final params = {
       'mode': 'preview',
       'sessionId': ?sessionId,
       'parentOrigin': ?parentOrigin,
     };
-    return '$baseUrl/?${Uri(queryParameters: params).query}';
+    return '$trimmed/?${Uri(queryParameters: params).query}';
   }
 
   @override

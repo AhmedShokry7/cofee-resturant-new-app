@@ -27,6 +27,9 @@ class DesignState {
   /// فت رسمُها ترتيبَ الصفحة المكتوب في مصدرها.
   List<PublishedSection> get homeSections => design.homeSections;
 
+  /// أقسام صفحة التصنيفات المنشورة؛ فارغة حين لا صفحة لها في المستند.
+  List<PublishedSection> get categoriesSections => design.categoriesSections;
+
   DesignState copyWith({PublishedDesign? design, bool? isLoaded}) => DesignState(
     design: design ?? this.design,
     isLoaded: isLoaded ?? this.isLoaded,

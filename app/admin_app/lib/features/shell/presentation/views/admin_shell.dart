@@ -138,8 +138,15 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
 
   void _select(String id) {
     setState(() {
-      _selectedId = id;
-      _searchController.bind(null);
+      if (id != _selectedId) {
+        _selectedId = id;
+        // The kept-alive page shows again: its state survives, and the fresh
+        // widget makes it rebind the search of the shell inside
+        // `didUpdateWidget` — no remount, no refetch.
+        _pageCache.remove(id);
+      }
+      // The page that is leaving receives the empty query while it is still
+      // bound, so its own filter state matches the cleared app bar.
       _searchController.clear();
       _searchTextController.clear();
     });
@@ -161,14 +168,53 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     }
   }
 
+  /// Every visited page, one on top of the other, only the selected one
+  /// visible.
+  ///
+  /// The stack keeps the element tree of each visited page alive: switching
+  /// destinations is instant, and the identical cached widget lets a shell
+  /// rebuild — a new badge count, a theme flip — skip the hidden pages and
+  /// the visible one entirely.
   Widget _buildContent() {
     // Every feature is listed from the database. The ones that are built show
     // their page, the rest show the shared placeholder with their tables.
     final destination = _selected;
     if (destination == null) return const _NoAccessPage();
-    final page = _pageFor(destination);
+    _visitedIds.add(destination.id);
+    final locale = AppLocale.instance.locale;
 
-    return KeyedSubtree(key: ValueKey(destination.id), child: page);
+    return Stack(
+      fit: StackFit.expand,
+      children: <Widget>[
+        for (final id in _visitedIds)
+          Offstage(
+            offstage: id != _selectedId,
+            child: KeyedSubtree(
+              key: ValueKey(id),
+              child: _cachedPage(id, locale),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// The page of a visited destination, rebuilt only when it has to be.
+  ///
+  /// A fresh widget is made when the destination is opened for the first
+  /// time, when the panel language changed since it was built, or when the
+  /// destination becomes the visible one again — the last one lets the page
+  /// rebind the search in `didUpdateWidget` without refetching its data.
+  Widget _cachedPage(String id, Locale locale) {
+    final cached = _pageCache[id];
+    if (cached != null && cached.$2 == locale) return cached.$1;
+    final destinations = _destinations;
+    final destination = destinations.firstWhere(
+      (candidate) => candidate.id == id,
+      orElse: () => destinations.first,
+    );
+    final page = _pageFor(destination);
+    _pageCache[id] = (page, locale);
+    return page;
   }
 
   /// The page of a destination.

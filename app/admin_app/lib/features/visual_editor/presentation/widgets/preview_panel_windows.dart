@@ -23,7 +23,12 @@ import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dar
 
 /// هل تدار قناة المعاينة الحية (WebView2) على هذه المنصة؟
 /// ويندوز فقط: ماك ولينكس والموبايل تبقى على الرسم الأصلي.
-final bool supportsLiveWebview = Platform.isWindows;
+/// داخل اختبارات الوحدات تُعطّل القناة الحية: محاولات تهيئة WebView2 تُكرّس
+/// مؤقتات إعادة المحاولة والغطاء المتحرك فوق الإطار فلا يستقرّ `pumpAndSettle`
+/// أبدًا — مسار WebView2 الحقيقي مُغطّى باختبارات التكامل في
+/// `integration_test/preview_transport_test.dart`.
+final bool supportsLiveWebview =
+    Platform.isWindows && !Platform.environment.containsKey('FLUTTER_TEST');
 
 /// متحكمات WebView2 لكل viewType — تُنشأ مرة وتُعاد استخدامها مع كل زيارة
 /// للوحة المعاينة، كما عنصر iframe يبقى على الويب.
@@ -159,9 +164,13 @@ Future<void> _initController(
       (value) => _onWebMessage(viewType, value),
     );
     ready.value = true;
-    // رابط طُلب أثناء التهيئة؟ يُحمّل الآن مكانه.
+    // رابط طُلب أثناء التهيئة؟ يُحمّل الآن مكانه. بلا طلب أثناء التهيئة
+    // لا تُعاد التحميل: الصفحة المحمّلة أعلاه هي الوجهة نفسها، وإعادة
+    // تحميلها بمُكسر كاش جديد يعني إقلاعًا كاملًا مضاعفًا بلا سبب.
     final pending = _pendingUrls.remove(viewType);
-    await controller.loadUrl(pending ?? _cacheBusted(url));
+    if (pending != null) {
+      await controller.loadUrl(pending);
+    }
     report?.call(PreviewConnection.connecting);
   } catch (error) {
     report?.call(

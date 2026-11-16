@@ -21,6 +21,9 @@ import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.da
 import 'package:new_coffee/features/categories/data/model/category_model.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/categories_page.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+import 'support/fake_design_repository.dart';
+
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_scoped_header.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
@@ -171,6 +174,15 @@ Future<void> _pumpPage(
                 BlocProvider<CategoriesCubit>.value(value: cubit),
                 BlocProvider<CartCubit>.value(value: cart),
                 BlocProvider<FavoritesCubit>.value(value: favorites),
+                // شاشة التصنيفات تقرأ مستند التصميم المنشور أيضًا؛ بلا مستند
+                // ترسم نفسها كما كانت قبل الاستوديو حرفيًا.
+                BlocProvider<DesignCubit>(
+                  create: (_) => DesignCubit(
+                    repository: FakeDesignRepository(
+                      null,
+                    ),
+                  ),
+                ),
               ],
               child: CategoriesPage(initialCategoryId: initialCategoryId),
             ),
@@ -210,6 +222,13 @@ class _PushedPage extends StatelessWidget {
                   BlocProvider<CategoriesCubit>.value(value: categories),
                   BlocProvider<CartCubit>.value(value: cart),
                   BlocProvider<FavoritesCubit>.value(value: favorites),
+                  BlocProvider<DesignCubit>(
+                    create: (_) => DesignCubit(
+                      repository: FakeDesignRepository(
+                        null,
+                      ),
+                    ),
+                  ),
                 ],
                 child: page,
               ),

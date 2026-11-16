@@ -93,6 +93,10 @@ class _PreviewAppState extends State<PreviewApp> {
   final PreviewBridge _bridge = PreviewBridge();
   StreamSubscription<DesignState>? _designSubscription;
 
+  /// الصفحة التي يشاهدها الموظف في المحاكي الآن — شجرتها هي التي تُرسل
+  /// راجعة إلى لوحة الطبقات. الافتتاحية دائمًا الرئيسية.
+  String _currentPreviewPage = 'home';
+
   @override
   void initState() {
     super.initState();
@@ -151,16 +155,22 @@ class _PreviewAppState extends State<PreviewApp> {
     if (document == null) return;
     final design = PublishedDesign.fromJson(document);
     if (design == null) return;
+    // الشجرة تُرسل للصفحة التي يشاهدها الموظف في المحاكي، لا الرئيسية دائمًا:
+    // لوحة الطبقات تتزامن مع ما يرسم الهاتف فعليًا لكل صفحة على حدة.
+    final pageId = _currentPreviewPage;
     final root = design.toDocument()['pages'] as List?;
     if (root is! List || root.isEmpty) return;
-    final page = root.first;
+    final page = root.firstWhere(
+      (entry) => entry is Map && entry['page'] == pageId,
+      orElse: () => null,
+    );
     if (page is! Map) return;
     final children = page['root'] is Map
         ? (page['root'] as Map)['children']
         : null;
     if (children is! List) return;
     _bridge.sendTreeUpdated(
-      pageId: 'home',
+      pageId: pageId,
       nodes: [
         for (final node in children)
           if (node is Map)
@@ -207,6 +217,8 @@ class _PreviewAppState extends State<PreviewApp> {
   void _handleLoadPage(PreviewMessage message) {
     final pageId = message.payload['pageId'];
     if (pageId is! String) return;
+    // الصفحة المعروضة الآن هي التي تُبلّغ شجرتها الراجعة إلى المحرّر.
+    _currentPreviewPage = pageId;
     final navigator = rootNavigatorKey.currentState;
     if (navigator == null) return;
     // التبويبات الخمسة تُفتح بإعادة فتح MainPage بتبويبها — نفس ما يستدعي
