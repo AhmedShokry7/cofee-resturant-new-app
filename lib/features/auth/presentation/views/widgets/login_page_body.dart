@@ -11,9 +11,11 @@ import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart
 import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -97,6 +99,21 @@ class _LoginPageBodyState extends State<LoginPageBody> {
               },
               builder: (context, state) {
                 final isLoading = state is AuthLoading;
+                // الطبقة المنشورة فوق أصل الشاشة: نصّ منشور يعلو، وإخفاء
+                // منشور يُسقط المكوّن. غياب الطبقة يعني الشاشة كما رسمها
+                // المصدر.
+                final title = AuthNative.title(context, 'auth');
+                final subtitle = AuthNative.subtitle(context, 'auth');
+                final social = AuthNative.of(
+                  context,
+                  'auth',
+                  DesignWidgetTypes.authSocial,
+                );
+                final switchPrompt = AuthNative.of(
+                  context,
+                  'auth',
+                  DesignWidgetTypes.authSwitchPrompt,
+                );
                 return Form(
                   key: _formKey,
                   child: Column(
@@ -104,18 +121,20 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                     children: [
                       // The pinned skip control owns this band.
                       const SizedBox(height: AppDimensions.skipReservedHeight),
-                      Text(
-                        S.signIn,
-                        textAlign: TextAlign.center,
-                        style: AppFonts.semiBold24(context),
-                      ),
+                      if (title?.visible ?? true)
+                        Text(
+                          title?.text ?? S.signIn,
+                          textAlign: TextAlign.center,
+                          style: AppFonts.semiBold24(context),
+                        ),
                       SizedBox(height: AuthSpacings.titleGap),
-                      Text(
-                        S.welcomeBackSubtitle,
-                        textAlign: TextAlign.center,
-                        style: AppFonts.regular14(context)
-                            .copyWith(color: AppColor.greyColor),
-                      ),
+                      if (subtitle?.visible ?? true)
+                        Text(
+                          subtitle?.text ?? S.welcomeBackSubtitle,
+                          textAlign: TextAlign.center,
+                          style: AppFonts.regular14(context)
+                              .copyWith(color: AppColor.greyColor),
+                        ),
                       SizedBox(height: AuthSpacings.headerGap),
                       CustomTextFormField(
                         controller: _emailController,
@@ -155,8 +174,10 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                         onPressed: _submit,
                       ),
                       SizedBox(height: AuthSpacings.buttonGap),
-                      AuthSocialLogin(isLoading: isLoading),
-                      SizedBox(height: AuthSpacings.sectionGap),
+                      if (social?.visible ?? true) ...[
+                        AuthSocialLogin(isLoading: isLoading),
+                        SizedBox(height: AuthSpacings.sectionGap),
+                      ],
                       _CodeDoorButton(
                         icon: AppIcons.smartphone,
                         label: S.continueWithPhone,
@@ -173,18 +194,19 @@ class _LoginPageBodyState extends State<LoginPageBody> {
                         route: EmailAuthPage.routeName,
                       ),
                       SizedBox(height: AuthSpacings.sectionGap),
-                      AuthSwitchPrompt(
-                        question: S.dontHaveAccount,
-                        actionText: S.signUp,
-                        // The page that asked for sign-in is passed on, so a
-                        // customer who picks "create an account" instead of
-                        // signing in still ends up back at checkout rather than
-                        // dumped on the store home.
-                        onTap: () => Navigator.of(context).pushReplacementNamed(
-                          SignUpPage.routeName,
-                          arguments: ModalRoute.of(context)?.settings.arguments,
+                      if (switchPrompt?.visible ?? true)
+                        AuthSwitchPrompt(
+                          question: S.dontHaveAccount,
+                          actionText: S.signUp,
+                          // The page that asked for sign-in is passed on, so a
+                          // customer who picks "create an account" instead of
+                          // signing in still ends up back at checkout rather than
+                          // dumped on the store home.
+                          onTap: () => Navigator.of(context).pushReplacementNamed(
+                            SignUpPage.routeName,
+                            arguments: ModalRoute.of(context)?.settings.arguments,
+                          ),
                         ),
-                      ),
                       SizedBox(height: AuthSpacings.bottom),
                     ],
                   ),

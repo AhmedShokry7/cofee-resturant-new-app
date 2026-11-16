@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,6 +8,7 @@ import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/on_boarding/data/on_boarding_list.dart';
 import 'package:new_coffee/features/on_boarding/presentation/manager/on_boarding/on_boarding_cubit.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
@@ -15,6 +17,7 @@ import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_bo
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_next_btn.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/widgets/on_boarding_slide.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/pump_harness.dart';
 
 /// The session that cannot confirm a write, so the screen's reaction to a
@@ -35,6 +38,33 @@ void main() {
   });
 
   group('what the cubit decides', () {
+    test('a new design replaces the slides live, same session', () async {
+      final cubit = OnBoardingCubit();
+      addTearDown(cubit.close);
+      final before = cubit.slides.first.title;
+      cubit.updateDesign(
+        slides: [
+          OnBoardingModel(
+            image: 'https://cdn.example.com/new.jpg',
+            title: 'شريحة جديدة',
+            body: 'وصف جديد',
+          ),
+        ],
+        slideDuration: const Duration(milliseconds: 900),
+        autoAdvance: const Duration(seconds: 7),
+      );
+      expect(cubit.slides.first.title, 'شريحة جديدة');
+      expect(cubit.slides.first.title, isNot(before));
+      expect(cubit.slideDuration, const Duration(milliseconds: 900));
+      // التعديل نفسه مرة ثانية لا يعيد التوقيت ولا يحرّك الصفحة.
+      cubit.updateDesign(
+        slides: cubit.slides,
+        slideDuration: const Duration(milliseconds: 900),
+        autoAdvance: const Duration(seconds: 7),
+      );
+      expect(cubit.currentPage, 0);
+    });
+
     test(
       'the last slide completes the onboarding instead of stepping',
       () async {
@@ -132,15 +162,21 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        MaterialApp(
-          initialRoute: OnBoardingView.routeName,
-          routes: {
-            OnBoardingView.routeName: (context) => const OnBoardingView(),
-            // Sign-in needs the whole provider tree; the flow only cares
-            // that this route took the screen.
-            AuthPage.routeName: (context) =>
-                const Scaffold(body: Text('sign-in-stub')),
-          },
+        // تطبيق العميل يزوّد الشاشات بـ DesignCubit من جذره: الشاشة تقرأ
+        // شرائحها ووقت انتقالها من المستند، والاختبار يقلّد ذلك بمستودع
+        // زائف يجيب بلا مستند.
+        BlocProvider<DesignCubit>(
+          create: (context) => DesignCubit(repository: FakeDesignRepository()),
+          child: MaterialApp(
+            initialRoute: OnBoardingView.routeName,
+            routes: {
+              OnBoardingView.routeName: (context) => const OnBoardingView(),
+              // Sign-in needs the whole provider tree; the flow only cares
+              // that this route took the screen.
+              AuthPage.routeName: (context) =>
+                  const Scaffold(body: Text('sign-in-stub')),
+            },
+          ),
         ),
       );
       await tester.pumpAndSettle();

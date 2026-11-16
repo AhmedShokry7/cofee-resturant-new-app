@@ -9,8 +9,10 @@ import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
 import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:new_coffee/shared/widgets/custom_text_form_field.dart';
@@ -68,24 +70,33 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
           },
           builder: (context, state) {
             final isLoading = state is PasswordResetLoading;
+            final title = AuthNative.title(context, 'forget_password');
+            final subtitle = AuthNative.subtitle(context, 'forget_password');
+            final switchPrompt = AuthNative.of(
+              context,
+              'forget_password',
+              DesignWidgetTypes.authSwitchPrompt,
+            );
             return Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: AuthSpacings.top),
-                  Text(
-                    S.forgetPassword,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.semiBold24(context),
-                  ),
+                  if (title?.visible ?? true)
+                    Text(
+                      title?.text ?? S.forgetPassword,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.semiBold24(context),
+                    ),
                   SizedBox(height: AuthSpacings.titleGap),
-                  Text(
-                    S.forgotPasswordSubtitle,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.regular14(context)
-                        .copyWith(color: AppColor.greyColor),
-                  ),
+                  if (subtitle?.visible ?? true)
+                    Text(
+                      subtitle?.text ?? S.forgotPasswordSubtitle,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.regular14(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
                     controller: _emailController,
@@ -102,14 +113,15 @@ class _ForgetPasswordPageBodyState extends State<ForgetPasswordPageBody> {
                     onPressed: _submit,
                   ),
                   SizedBox(height: AuthSpacings.buttonGap),
-                  AuthSwitchPrompt(
-                    question: S.rememberPasswordQ,
-                    actionText: S.signIn,
-                    onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(
-                      AuthPage.routeName,
-                      (route) => false,
+                  if (switchPrompt?.visible ?? true)
+                    AuthSwitchPrompt(
+                      question: S.rememberPasswordQ,
+                      actionText: S.signIn,
+                      onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                        AuthPage.routeName,
+                        (route) => false,
+                      ),
                     ),
-                  ),
                   SizedBox(height: AuthSpacings.bottom),
                 ],
               ),

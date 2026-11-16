@@ -127,7 +127,7 @@ class _DesignText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = section.property('text');
+    final text = section.localizedText('text');
     if (text == null || text.isEmpty) return const SizedBox.shrink();
     final size =
         section.numberProperty('size') ?? AppFontSizes.size14;
@@ -158,10 +158,10 @@ class _DesignHeading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = section.property('title');
+    final title = section.localizedText('title');
     if (title == null || title.isEmpty) return const SizedBox.shrink();
-    final subtitle = section.property('subtitle');
-    final linkLabel = section.property('linkLabel');
+    final subtitle = section.localizedText('subtitle');
+    final linkLabel = section.localizedText('linkLabel');
     // titleSize يُحترم عبر نمط العنوان نفسه لا بمخالفة النظام: نمط
     // عناوين الأقسام مع تعديل الحجم وحده إن طلبه الموظف.
     final titleSize = section.numberProperty('titleSize');
@@ -205,7 +205,7 @@ class _DesignButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = section.property('label');
+    final label = section.localizedText('label');
     if (label == null || label.isEmpty) return const SizedBox.shrink();
     final style = section.property('style') ?? 'primary';
     final background =

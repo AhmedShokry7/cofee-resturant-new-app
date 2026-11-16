@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/phone_auth_page_body.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 class PhoneAuthPage extends StatelessWidget {
   const PhoneAuthPage({super.key});
@@ -14,9 +15,12 @@ class PhoneAuthPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: BlocProvider(
-        create: (context) => PhoneAuthCubit(context.read<AuthRepository>()),
-        child: const PhoneAuthPageBody(),
+      body: DesignPageSectionsAbove(
+        pageId: 'phone_auth',
+        child: BlocProvider(
+          create: (context) => PhoneAuthCubit(context.read<AuthRepository>()),
+          child: const PhoneAuthPageBody(),
+        ),
       ),
     );
   }

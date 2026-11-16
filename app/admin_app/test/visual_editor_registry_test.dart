@@ -1,4 +1,5 @@
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
+import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -61,20 +62,18 @@ void main() {
   });
 
   test('الصفحات بمفاتيح العقد التي يقبلها المدقق الحي', () {
-    const pageKeys = [
-      'home',
-      'categories',
-      'search',
-      'product_details',
-      'cart',
-      'favourites',
-      'settings',
-    ];
     expect(
-      EditorPages.pages.map((p) => p.pageId),
-      pageKeys,
+      EditorPages.pages.map((p) => p.pageId).toSet(),
+      DesignContract.pageKeys.toSet(),
       reason: 'مفتاح صفحة خارج قائمة app_design_is_valid يُرفض عند النشر',
     );
+    for (final page in EditorPages.pages) {
+      expect(
+        page.isEditable,
+        isTrue,
+        reason: 'كل صفحة تطبيق العميل يجب أن تكون قابلة للتحرير',
+      );
+    }
   });
 
   test('المكوّنات المحمية لا تُحذف', () {
@@ -91,8 +90,17 @@ void main() {
 
   test('مقارنة الأب/الابن متسقة في الاتجاهين', () {
     // الجذر ليس مكوّنًا في السجل: الصفحات نفسها هي الحاويات الأولى.
-    const pageKeys = {'home', 'categories', 'search', 'product_details',
-      'cart', 'favourites', 'settings'};
+    const pageKeys = {
+      'splash', 'welcome', 'onboarding', 'auth', 'sign_up', 'forget_password',
+      'reset_password', 'phone_auth', 'email_auth', 'home', 'categories',
+      'search', 'product_details', 'cart', 'favourites', 'settings',
+      'checkout', 'shipping_addresses', 'add_address', 'payment_method',
+      'add_card', 'payment_success', 'e_receipt', 'coupon', 'orders',
+      'edit_profile', 'saved_cards', 'addresses', 'address_form', 'loyalty',
+      'subscription_plans', 'subscription_details', 'cashier_subscription',
+      'notifications', 'notification_settings', 'help', 'privacy',
+      'assistant_memory',
+    };
     for (final entry in ComponentRegistry.all) {
       for (final parentType in entry.allowedParentTypes) {
         if (pageKeys.contains(parentType)) continue;

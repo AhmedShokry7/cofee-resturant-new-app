@@ -25,6 +25,7 @@ import 'package:new_coffee/features/checkout/data/repositories/payment_method_re
 import 'package:new_coffee/features/checkout/presentation/manager/checkout/checkout_cubit.dart';
 import 'package:new_coffee/features/auth/data/model/auth_user.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/manager/profile/profile_cubit.dart';
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
 import 'package:new_coffee/features/coupon/data/model/coupon_model.dart';
@@ -32,6 +33,7 @@ import 'package:new_coffee/features/coupon/data/repositories/coupon_repository.d
 import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
 import 'package:new_coffee/features/orders/data/repositories/order_repository.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/in_memory_profile_photo_repository.dart';
 
 class _FakeCoupons implements CouponRepository {
@@ -80,23 +82,28 @@ class _FakeAuthRepository implements AuthRepository {
 /// The root of `app.dart`, production widget included: [LocaleRebuild] walks
 /// the tree on a language change and `MaterialApp` carries the new locale.
 Widget _appLikeRoot({required WidgetBuilder pageBuilder}) {
-  return LocaleRebuild(
-    child: AnimatedBuilder(
-      animation: AppLocale.instance,
-      builder: (context, _) => MaterialApp(
-        locale: AppLocale.instance.locale,
-        supportedLocales: const [Locale('ar'), Locale('en')],
-        localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        debugShowCheckedModeBanner: false,
-        builder: (context, inner) => Directionality(
-          textDirection: AppLocale.instance.textDirection,
-          child: inner ?? const SizedBox.shrink(),
+  // الصفحات تقرأ طبقتها المنشورة من DesignCubit كما في التطبيق الحقيقي،
+  // والاختبار يزوّده بمستودع زائف يجيب بلا مستند.
+  return BlocProvider<DesignCubit>(
+    create: (context) => DesignCubit(repository: FakeDesignRepository()),
+    child: LocaleRebuild(
+      child: AnimatedBuilder(
+        animation: AppLocale.instance,
+        builder: (context, _) => MaterialApp(
+          locale: AppLocale.instance.locale,
+          supportedLocales: const [Locale('ar'), Locale('en')],
+          localizationsDelegates: const [
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          debugShowCheckedModeBanner: false,
+          builder: (context, inner) => Directionality(
+            textDirection: AppLocale.instance.textDirection,
+            child: inner ?? const SizedBox.shrink(),
+          ),
+          home: Builder(builder: pageBuilder),
         ),
-        home: Builder(builder: pageBuilder),
       ),
     ),
   );

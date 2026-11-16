@@ -10,6 +10,7 @@ import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/email_auth/email_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/email_auth/email_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/email_otp_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -74,24 +75,29 @@ class _EmailAuthPageBodyState extends State<EmailAuthPageBody> {
           },
           builder: (context, state) {
             final isLoading = state is EmailAuthLoading;
+            // الطبقة المنشورة فوق أصل الشاشة، كما في شاشة الدخول.
+            final title = AuthNative.title(context, 'email_auth');
+            final subtitle = AuthNative.subtitle(context, 'email_auth');
             return Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: AuthSpacings.top),
-                  Text(
-                    S.signInWithEmailCode,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.semiBold24(context),
-                  ),
+                  if (title?.visible ?? true)
+                    Text(
+                      title?.text ?? S.signInWithEmailCode,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.semiBold24(context),
+                    ),
                   SizedBox(height: AuthSpacings.titleGap),
-                  Text(
-                    S.emailAuthSubtitle,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.regular14(context)
-                        .copyWith(color: AppColor.greyColor),
-                  ),
+                  if (subtitle?.visible ?? true)
+                    Text(
+                      subtitle?.text ?? S.emailAuthSubtitle,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.regular14(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
                     controller: _emailController,

@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/features/design/data/model/native_section.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_hero_image.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_panel_content.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/wavy_container.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 /// The photograph and the panel that overlaps its bottom edge.
 ///
@@ -36,6 +41,16 @@ class WelcomePageBody extends StatelessWidget {
     final imageHeight =
         size.height * (isCompact ? _compactImageRatio : _imageRatio);
 
+    // المسافات المنشورة تعلو على الأصل: `top` بين الموجة والنصّ، و`gap`
+    // بين العنوان ووصفه. غياب عقدة `welcome.spacing` يعني المسافات المرسومة.
+    final spacing = context.select(
+      (DesignCubit cubit) => nativeSection(
+        cubit.state.pageSections('welcome'),
+        DesignWidgetTypes.welcomeSpacing,
+      ),
+    );
+    final clearance = spacing?.numberProperty('top') ?? _clearance;
+
     return Stack(
       children: [
         Positioned(
@@ -54,11 +69,17 @@ class WelcomePageBody extends StatelessWidget {
             curveHeight: _curveDepth,
             padding: EdgeInsets.fromLTRB(
               AppSpacing.xxl,
-              _clearance,
+              clearance,
               AppSpacing.xl,
               AppSpacing.xxl,
             ),
-            child: const SafeArea(top: false, child: WelcomePanelContent()),
+            child: SafeArea(
+              top: false,
+              child: DesignPageSectionsInline(
+                pageId: 'welcome',
+                child: const WelcomePanelContent(),
+              ),
+            ),
           ),
         ),
       ],

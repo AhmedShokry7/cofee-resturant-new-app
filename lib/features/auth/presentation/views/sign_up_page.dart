@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/sign_up_page_body.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
@@ -12,9 +13,12 @@ class SignUpPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: BlocProvider(
-        create: (context) => AuthCubit(context.read<AuthRepository>()),
-        child: const SignUpPageBody(),
+      body: DesignPageSectionsAbove(
+        pageId: 'sign_up',
+        child: BlocProvider(
+          create: (context) => AuthCubit(context.read<AuthRepository>()),
+          child: const SignUpPageBody(),
+        ),
       ),
     );
   }

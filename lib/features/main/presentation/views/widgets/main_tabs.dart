@@ -9,6 +9,7 @@ import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.da
 import 'package:new_coffee/features/main/presentation/views/widgets/cart_tab_icon.dart';
 import 'package:new_coffee/features/cart/presentation/views/cart_page.dart';
 import 'package:new_coffee/features/profile/presentation/views/profile_page.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 /// What the bar shows for a tab, and what the body holds when it is open.
 typedef MainTabView = ({String label, Widget icon, Widget page});
@@ -36,9 +37,9 @@ List<MainTabView> buildMainTabs() => [
       page: switch (tab) {
         MainTab.home => const HomePage(),
         MainTab.categories => const CategoriesPage(),
-        MainTab.cart => const CartPage(),
-        MainTab.favorites => const FavoritesPage(),
-        MainTab.settings => const SettingsPage(),
+        MainTab.cart => DesignPageSectionsAbove(pageId: 'cart', child: const CartPage()),
+        MainTab.favorites => DesignPageSectionsAbove(pageId: 'favourites', child: const FavoritesPage()),
+        MainTab.settings => DesignPageSectionsAbove(pageId: 'settings', child: const SettingsPage()),
       },
     ),
 ];

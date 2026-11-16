@@ -9,9 +9,11 @@ import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart'
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/login_page_body.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/sign_up_page_body.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
 import 'package:new_coffee/shared/widgets/skip_btn.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/pump_harness.dart';
 
 /// These screens are looked at, never pressed, so the repository is only asked
@@ -42,12 +44,18 @@ void main() {
     return tester.getRect(skipButton());
   }
 
-  Widget authScreen(Widget body) => BlocProvider<AuthCubit>(
-    create: (context) => AuthCubit(_UnusedAuthRepository()),
-    child: MaterialApp(home: Scaffold(body: body)),
+  Widget authScreen(Widget body) => BlocProvider<DesignCubit>(
+    create: (context) => DesignCubit(repository: FakeDesignRepository()),
+    child: BlocProvider<AuthCubit>(
+      create: (context) => AuthCubit(_UnusedAuthRepository()),
+      child: MaterialApp(home: Scaffold(body: body)),
+    ),
   );
 
-  Widget onBoardingScreen() => MaterialApp(home: const OnBoardingView());
+  Widget onBoardingScreen() => BlocProvider<DesignCubit>(
+    create: (context) => DesignCubit(repository: FakeDesignRepository()),
+    child: MaterialApp(home: const OnBoardingView()),
+  );
 
   group('the one skip control', () {
     testWidgets(

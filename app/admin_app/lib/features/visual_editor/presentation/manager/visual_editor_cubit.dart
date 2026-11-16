@@ -68,8 +68,16 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     try {
       final draft = await _repository.loadDraft();
       _theme = draft?.theme ?? DesignTheme.none;
-      final components = draft?.componentsByPage ??
-          {'home': DesignDocumentCodec.defaultHomeComponents()};
+      final saved = draft?.componentsByPage ?? const {};
+      // الصفحات الغائبة عن المسودة تبدأ من «تصميم اليوم»: شاشات مدمجة
+      // بعقدها الأصلية، وبقية الصفحات بشجرة فارغة يبني عليها الموظف. صفحة
+      // في المسودة تبقى كما كُتبت — لا يعاد خلق عقد محوّل عليها.
+      final components = <String, List<EditableComponent>>{
+        for (final page in EditorPages.pages)
+          page.pageId:
+              saved[page.pageId] ??
+              DesignDocumentCodec.defaultComponentsFor(page.pageId),
+      };
       emit(
         state.copyWith(
           componentsByPage: components,
@@ -829,11 +837,67 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       if (isClosed) return null;
       emit(
         state.copyWith(
-          errorMessage: 'تعذر النشر: $e',
+          errorMessage: _readablePublishError(e),
         ),
       );
       return null;
     }
+  }
+
+  /// رسالة نشر مفهومة من ردّ القاعدة.
+  ///
+  /// RPC النشر يرفض المستند برمز أوّل عيب (`page_key`، `node_duplicate`…).
+  /// الرمز الخام يقول للموظف لا شيء؛ هذه ترجمة الأخطاء التي يراها فعلًا،
+  /// ومعها ما يفعله. رموز لا تُعرف تُعرض كما هي مع نصّ الردّ — لا شاشة
+  /// صامتة ولا رسالة تخمّن سببًا لم تقله القاعدة.
+  String _readablePublishError(Object error) {
+    final raw = error.toString();
+    String? code;
+    for (final candidate in const [
+      'page_key',
+      'page_duplicate',
+      'page_count',
+      'depth',
+      'node_duplicate',
+      'node_count',
+      'property_value',
+      'theme_key',
+      'theme_color_role',
+      'theme_color_value',
+      'theme_text_scale',
+      'theme_radius_scale',
+      'brand_key',
+      'brand_logo_url',
+      'brand_name',
+    ]) {
+      if (raw.contains(candidate)) {
+        code = candidate;
+        break;
+      }
+    }
+    return switch (code) {
+      'page_key' =>
+        'هذه الصفحة غير معروفة لقاعدة البيانات بعد — طبّق migration 244 '
+        '(app_design_all_pages) على مشروع Supabase ثم أعد النشر.',
+      'page_duplicate' => 'الصفحة مكرّرة في المستند — احذف التكرار ثم أعد النشر.',
+      'page_count' =>
+        'عدد الصفحات تجاوز الحد (40) — احذف أقسامًا من صفحات لا تستعملها.',
+      'depth' => 'التداخل أعمق من المسموح به — أخرج العناصر من الأعمدة المتداخلة.',
+      'node_duplicate' =>
+        'معرّف عنصر مكرّر — احذف العنصر المنسوخ يدويًا أو أعد إنشاءه.',
+      'node_count' => 'عدد العناصر تجاوز الحد (400) — قلّل الأقسام.',
+      'property_value' =>
+        'خصيصة تحمل قيمة غير مسموحة — أعد ضبطها من لوحة الخصائص.',
+      'theme_key' ||
+      'theme_color_role' ||
+      'theme_color_value' ||
+      'theme_text_scale' ||
+      'theme_radius_scale' =>
+        'طبقة الشكل تحتوي قيمة لا يعرفها المدقق — راجع استوديو الثيم.',
+      'brand_key' || 'brand_logo_url' || 'brand_name' =>
+        'بيانات الهوية غير صالحة — الاسم حتى 80 حرفًا واللوجو رابط http(s).',
+      _ => 'تعذر النشر: $raw',
+    };
   }
 
   // ---------- سجل الإصدارات ----------

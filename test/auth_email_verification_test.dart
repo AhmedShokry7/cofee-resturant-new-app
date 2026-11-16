@@ -9,9 +9,12 @@ import 'package:new_coffee/features/auth/data/repositories/resilient_auth_reposi
 import 'package:new_coffee/features/auth/data/repositories/supabase_auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/sign_up_page_body.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/fake_design_repository.dart';
 
 /// A backend that answers whether the address it just signed up still has to
 /// confirm its email.
@@ -106,19 +109,24 @@ void main() {
     Future<void> signUp(WidgetTester tester, {required bool needs}) async {
       final repository = _FakeAuthRepository(needsEmailConfirmation: needs);
       await tester.pumpWidget(
-        RepositoryProvider<AuthRepository>(
-          create: (_) => repository,
-          child: BlocProvider(
-            create: (_) => AuthCubit(repository),
-            child: MaterialApp(
-              routes: {
-                // The handover target. The real home page needs the whole
-                // provider tree, which is irrelevant to the question this
-                // group asks.
-                MainPage.routeName: (context) =>
-                    const Scaffold(body: Text('home-stub')),
-              },
-              home: const Scaffold(body: SignUpPageBody()),
+        // شاشة إنشاء الحساب تقرأ طبقتها المنشورة من DesignCubit، والاختبار
+        // يزوّده بمستودع زائف يجيب بلا مستند.
+        BlocProvider<DesignCubit>(
+          create: (context) => DesignCubit(repository: FakeDesignRepository()),
+          child: RepositoryProvider<AuthRepository>(
+            create: (_) => repository,
+            child: BlocProvider(
+              create: (_) => AuthCubit(repository),
+              child: MaterialApp(
+                routes: {
+                  // The handover target. The real home page needs the whole
+                  // provider tree, which is irrelevant to the question this
+                  // group asks.
+                  MainPage.routeName: (context) =>
+                      const Scaffold(body: Text('home-stub')),
+                },
+                home: const Scaffold(body: SignUpPageBody()),
+              ),
             ),
           ),
         ),

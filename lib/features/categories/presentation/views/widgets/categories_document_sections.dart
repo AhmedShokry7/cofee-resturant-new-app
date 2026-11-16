@@ -40,6 +40,11 @@ bool categoriesDocumentHasBrowser(List<PublishedSection> document) =>
 
 /// المتصفّح التفاعلي (تبويبات + منتجات) داخل تركيب المستند: يملأ ما بقي من
 /// الشاشة، ويُغلف بغلاف التحديد في وضع المعاينة.
+///
+/// غلاف المعاينة يقوم على GestureDetector، وExpanded لا يجوز أن يمرّ من
+/// تحت غلاف غير Flex — لذا الغلاف داخل الـ Expanded لا خارجه: خارج
+/// المعاينة الغلاف زائل والتركيب كما هو، وداخلها يبقى الـ Expanded طفلًا
+/// مباشرًا للعمود الخارجي فلا تنهار الصفحة كلها في وضع المعاينة.
 Widget buildCategoriesDocumentBrowser(List<PublishedSection> document) {
   final node = document.firstWhere(
     (section) => section.type == DesignWidgetTypes.categoryList,
@@ -48,10 +53,10 @@ Widget buildCategoriesDocumentBrowser(List<PublishedSection> document) {
       type: DesignWidgetTypes.categoryList,
     ),
   );
-  return previewSectionWrap(
-    node,
-    pageId: 'categories',
-    child: Expanded(
+  return Expanded(
+    child: previewSectionWrap(
+      node,
+      pageId: 'categories',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: const [CategoryTabs(), Expanded(child: CategoryBody())],

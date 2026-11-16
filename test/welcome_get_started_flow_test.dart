@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,6 +7,7 @@ import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
 import 'package:new_coffee/features/welcome/presentation/manager/welcome/welcome_cubit.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/wavy_container.dart';
@@ -13,6 +15,7 @@ import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_h
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/pump_harness.dart';
 
 /// The session with its writes counted, so a tap can be told apart from two.
@@ -107,15 +110,20 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        MaterialApp(
-          initialRoute: WelcomePage.routeName,
-          routes: {
-            WelcomePage.routeName: (context) => const WelcomePage(),
-            // The onboarding screen needs the whole provider tree; the flow
-            // only cares that this route took the screen.
-            OnBoardingView.routeName: (context) =>
-                const Scaffold(body: Text('onboarding-stub')),
-          },
+        // تطبيق العميل يزوّد كل مساراته بـ DesignCubit من جذره، والشاشة
+        // تقرأ طبقتها المنشورة منه؛ الاختبار يقلّد ذلك بمستودع زائف.
+        BlocProvider<DesignCubit>(
+          create: (context) => DesignCubit(repository: FakeDesignRepository()),
+          child: MaterialApp(
+            initialRoute: WelcomePage.routeName,
+            routes: {
+              WelcomePage.routeName: (context) => const WelcomePage(),
+              // The onboarding screen needs the whole provider tree; the flow
+              // only cares that this route took the screen.
+              OnBoardingView.routeName: (context) =>
+                  const Scaffold(body: Text('onboarding-stub')),
+            },
+          ),
         ),
       );
       await tester.pumpAndSettle();

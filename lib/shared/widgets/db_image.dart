@@ -1,9 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
+import 'package:new_coffee/core/config/app_config.dart';
 import 'package:new_coffee/core/theme/app_icons.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
-import 'package:new_coffee/shared/widgets/shimmer/shimmer.dart';
+import 'package:new_coffee/shared/widgets/db_image_network.dart';
+import 'package:new_coffee/shared/widgets/db_image_network_cached_impl.dart';
 
 /// Single renderer for every image that comes from the database.
 ///
@@ -75,6 +76,15 @@ class DbImage extends StatelessWidget {
     return url.startsWith('http://') || url.startsWith('https://');
   }
 
+  /// Whether the picture's host sends the CORS header the web renderer
+  /// needs. Our own storage does (`Access-Control-Allow-Origin: *`), so its
+  /// pictures keep the cached, shimmered path on the web; every other host
+  /// goes through the picture element instead.
+  bool _isCorsFriendly(String url) =>
+      url.startsWith(AppConfig.supabaseUrl) ||
+      (AppConfig.supabaseReadUrl.isNotEmpty &&
+          url.startsWith(AppConfig.supabaseReadUrl));
+
   @override
   Widget build(BuildContext context) {
     final url = image?.trim() ?? '';
@@ -82,27 +92,29 @@ class DbImage extends StatelessWidget {
     if (url.isEmpty) {
       content = _UnavailableDbImage(iconSize: iconSize);
     } else if (_isNetwork) {
-      content = CachedNetworkImage(
-        imageUrl: url,
-        fit: fit,
-        alignment: alignment,
-        width: width,
-        height: height,
-        memCacheWidth: (width != null && width!.isFinite && width! > 0)
-            ? width!.toInt()
-            : null,
-        memCacheHeight: (height != null && height!.isFinite && height! > 0)
-            ? height!.toInt()
-            : null,
-        // Shimmer fills the exact image bounds so the layout never jumps
-        // when the photo arrives. The error/empty states stay static and
-        // neutral on purpose: a missing picture is not loading.
-        placeholder: (context, url) => Shimmer(
-          child: ShimmerBox(width: width, height: height),
-        ),
-        errorWidget: (context, url, error) =>
-            _UnavailableDbImage(iconSize: iconSize),
-      );
+      // The platform decides how the bytes are fetched: the device caches
+      // them on disk; the web build composites an `<img>` element for hosts
+      // that send no CORS headers (the browser renderer refuses their bytes
+      // otherwise). Our own storage sends `*`, so it keeps the richer cached
+      // path - which also survives masks and continuous scrollers like the
+      // home marquee, where platform views on the web cannot be trusted.
+      content = _isCorsFriendly(url)
+          ? DbCachedNetworkImage(
+              url: url,
+              fit: fit,
+              alignment: alignment,
+              width: width,
+              height: height,
+              iconSize: iconSize,
+            )
+          : DbNetworkImageImpl(
+              url: url,
+              fit: fit,
+              alignment: alignment,
+              width: width,
+              height: height,
+              iconSize: iconSize,
+            );
     } else {
       content = Image.asset(
         url,

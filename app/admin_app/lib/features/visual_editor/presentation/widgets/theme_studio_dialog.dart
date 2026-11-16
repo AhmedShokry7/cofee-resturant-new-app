@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -8,6 +7,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
+import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 
 /// استوديو طبقة الشكل: ألوان الأدوار العشرة ومقياسا النص والتقويس.
 ///
@@ -16,9 +16,13 @@ import 'package:admin_app/features/visual_editor/presentation/manager/visual_edi
 /// كل تطبيق كامل هو لمسة تراجع واحدة، لأن [VisualEditorCubit.updateTheme]
 /// يستقبل الطبقة دفعة واحدة.
 class ThemeStudioDialog extends StatefulWidget {
-  const ThemeStudioDialog({super.key, required this.initialTheme});
+  const ThemeStudioDialog({super.key, required this.initialTheme, required this.cubit});
 
   final DesignTheme initialTheme;
+
+  /// يمرّر صراحةً: الحوار في مسار showDialog لا يرث مزوّد الصفحة، فالقراءة
+  /// من سياقه تسقط بـ ProviderNotFoundException.
+  final VisualEditorCubit cubit;
 
   @override
   State<ThemeStudioDialog> createState() => _ThemeStudioDialogState();
@@ -28,6 +32,9 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
   late final Map<DesignColorRole, TextEditingController> _colors;
   late final TextEditingController _textScale;
   late final TextEditingController _radiusScale;
+  late final TextEditingController _appNameAr;
+  late final TextEditingController _appNameEn;
+  late final TextEditingController _logoUrl;
 
   @override
   void initState() {
@@ -40,6 +47,15 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
     _radiusScale = TextEditingController(
       text: widget.initialTheme.radiusScale,
     );
+    _appNameAr = TextEditingController(
+      text: widget.initialTheme.appNameAr,
+    );
+    _appNameEn = TextEditingController(
+      text: widget.initialTheme.appNameEn,
+    );
+    _logoUrl = TextEditingController(
+      text: widget.initialTheme.logoUrl,
+    );
   }
 
   @override
@@ -49,6 +65,9 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
     }
     _textScale.dispose();
     _radiusScale.dispose();
+    _appNameAr.dispose();
+    _appNameEn.dispose();
+    _logoUrl.dispose();
     super.dispose();
   }
 
@@ -62,7 +81,16 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
     radiusScale: _radiusScale.text.trim().isEmpty
         ? null
         : _radiusScale.text.trim(),
+    appNameAr: _appNameAr.text.trim().isEmpty ? null : _appNameAr.text.trim(),
+    appNameEn: _appNameEn.text.trim().isEmpty ? null : _appNameEn.text.trim(),
+    logoUrl: _logoUrl.text.trim().isEmpty ? null : _logoUrl.text.trim(),
   );
+
+  bool get _logoIsValid {
+    final value = _logoUrl.text.trim();
+    if (value.isEmpty) return true;
+    return value.startsWith('http://') || value.startsWith('https://');
+  }
 
   /// `#RRGGBB` أو `#AARRGGBB` — كما تدقق القاعدة قبل أن يصل المستند إليها.
   bool _validHex(String raw) {
@@ -103,6 +131,46 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
                   dark: dark,
                   body: body,
                 ),
+              Text(
+                S.visualEditorBrand,
+                style: TextStyle(
+                  fontSize: AppFontSizes.size12,
+                  fontWeight: AppFontWeights.semiBold,
+                  color: muted,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _appNameAr,
+                decoration: InputDecoration(labelText: S.visualEditorBrandNameAr),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _appNameEn,
+                decoration: InputDecoration(labelText: S.visualEditorBrandNameEn),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _logoUrl,
+                      onChanged: (_) => setState(() {}),
+                      decoration: InputDecoration(
+                        labelText: S.visualEditorBrandLogoUrl,
+                        helperText: _logoIsValid ? S.visualEditorBrandHint : S.visualEditorColorInvalid,
+                        errorText: _logoIsValid ? null : '',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  AdminNetworkThumb(
+                    imageUrl: _logoUrl.text.trim().isEmpty ? null : _logoUrl.text.trim(),
+                    size: 56,
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.lg),
               Text(
                 S.visualEditorThemeScales,
@@ -140,7 +208,7 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
         FilledButton(
           onPressed: () {
             final theme = _currentTheme;
-            context.read<VisualEditorCubit>().updateTheme(theme);
+            widget.cubit.updateTheme(theme);
             Navigator.of(context).pop();
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(S.visualEditorThemeApplied)),

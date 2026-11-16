@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/preview/preview_bridge.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 /// The app splash.
 ///
@@ -75,7 +76,12 @@ class _SplashViewState extends State<SplashView> {
       // has to match the native launch window exactly: white in every system
       // appearance, whatever the app's own screens decide later.
       backgroundColor: AppColor.whiteColor,
-      body: const Center(child: SplashBrandMark()),
+      body: Center(
+        child: DesignPageSectionsInline(
+          pageId: 'splash',
+          child: const SplashBrandMark(),
+        ),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,10 +7,13 @@ import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
+
+import 'support/fake_design_repository.dart';
 
 /// Regression cover for the failures that only showed up in a release build on
 /// a real device:
@@ -30,16 +34,21 @@ void main() {
       tester,
     ) async {
       await tester.pumpWidget(
-        MaterialApp(
-          routes: {
-            SplashView.routeName: (context) =>
-                const SplashView(targetRoute: MainPage.routeName),
-            // A stub for the real home page: the real one needs the whole
-            // provider tree, which is irrelevant to the handover.
-            MainPage.routeName: (context) =>
-                const Scaffold(body: Text('home-stub')),
-          },
-          initialRoute: SplashView.routeName,
+        // شاشات الإقلاع تقرأ طبقتها المنشورة من DesignCubit، والاختبار
+        // يزوّده بمستودع زائف يجيب بلا مستند.
+        BlocProvider<DesignCubit>(
+          create: (context) => DesignCubit(repository: FakeDesignRepository()),
+          child: MaterialApp(
+            routes: {
+              SplashView.routeName: (context) =>
+                  const SplashView(targetRoute: MainPage.routeName),
+              // A stub for the real home page: the real one needs the whole
+              // provider tree, which is irrelevant to the handover.
+              MainPage.routeName: (context) =>
+                  const Scaffold(body: Text('home-stub')),
+            },
+            initialRoute: SplashView.routeName,
+          ),
         ),
       );
 

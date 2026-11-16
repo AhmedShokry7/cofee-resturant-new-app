@@ -112,6 +112,7 @@ class _ComponentLibraryPanelState extends State<ComponentLibraryPanel> {
         'layout' => S.visualEditorCategoryLayout,
         'content' => S.visualEditorCategoryContent,
         'restaurant' => S.visualEditorCategoryRestaurant,
+        'screen' => S.visualEditorCategoryScreen,
         'navigation' => S.visualEditorCategoryNavigation,
         _ => category,
       };

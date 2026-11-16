@@ -1,0 +1,141 @@
+import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
+import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
+import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
+import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
+import 'package:admin_app/features/visual_editor/presentation/pages/visual_editor_page.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/templates_dialog.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/theme_studio_dialog.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+/// رفض النشر كان يُكتب في الحالة ولا يُعرض: الشاشة تبقى جاهزة والقشرة لا
+/// تقرأ إلا خطأ الحالة الكامل، فيضغط الموظف «نشر» ولا يعرف السبب أبدًا.
+class _RejectingRepository implements VisualEditorRepository {
+  _RejectingRepository(this.error);
+
+  final String error;
+
+  @override
+  Future<EditorDraft?> loadDraft() async => null;
+
+  @override
+  Future<DateTime> saveDraft(
+    Map<String, List<EditableComponent>> componentsByPage, {
+    DesignTheme theme = DesignTheme.none,
+  }) async =>
+      DateTime(2026, 1, 1);
+
+  @override
+  Future<PublishedVersionInfo> publishDesign(
+    Map<String, dynamic> designDocument, {
+    String? note,
+  }) async =>
+      throw StateError('design document cannot be published: $error');
+
+  @override
+  Future<List<PublishedVersionInfo>> listVersions({int limit = 30}) async =>
+      const [];
+
+  @override
+  Future<Map<String, dynamic>?> getVersionDocument(String versionId) async =>
+      null;
+
+  @override
+  Future<PublishedVersionInfo> restoreVersion(String versionId) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<List<DesignTemplateInfo>> listTemplates() async => const [];
+
+  @override
+  Future<Map<String, dynamic>?> getTemplateDocument(String templateId) async =>
+      null;
+
+  @override
+  Future<DesignTemplateInfo> saveTemplate({
+    String? id,
+    required String name,
+    required Map<String, dynamic> document,
+  }) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deleteTemplate(String templateId) async {}
+
+  @override
+  Future<void> discardDraft() async {}
+}
+
+Future<void> pumpEditor(WidgetTester tester, VisualEditorCubit cubit) async {
+  tester.view.physicalSize = const Size(1400, 900);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    MaterialApp(home: Scaffold(body: VisualEditorPage(cubit: cubit))),
+  );
+  await tester.pumpAndSettle();
+}
+
+void main() {
+  testWidgets('رفض النشر يظهر للموظف برسالة تشرح ما يفعله', (tester) async {
+    final cubit = VisualEditorCubit(
+      repository: _RejectingRepository('page_key'),
+    );
+    await pumpEditor(tester, cubit);
+
+    await cubit.publish();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(
+      find.textContaining('migration 244'),
+      findsOneWidget,
+      reason: 'رمز page_key الخام لا يقول للموظف شيئًا',
+    );
+  });
+
+  testWidgets('رمز رفض غير معروف يُعرض كما ردّت القاعدة', (tester) async {
+    final cubit = VisualEditorCubit(
+      repository: _RejectingRepository('some_new_code'),
+    );
+    await pumpEditor(tester, cubit);
+
+    await cubit.publish();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.textContaining('some_new_code'), findsOneWidget);
+  });
+
+  group('حوارات المحرر', () {
+    testWidgets('فتح القوالب لا يسقط بغياب المزوّد في مسار الحوار', (
+      tester,
+    ) async {
+      final cubit = VisualEditorCubit(
+        repository: _RejectingRepository('page_key'),
+      );
+      await pumpEditor(tester, cubit);
+
+      await tester.tap(find.byTooltip('Templates'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TemplatesDialog), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('فتح استوديو الثيم لا يسقط بغياب المزوّد في مسار الحوار', (
+      tester,
+    ) async {
+      final cubit = VisualEditorCubit(
+        repository: _RejectingRepository('page_key'),
+      );
+      await pumpEditor(tester, cubit);
+
+      await tester.tap(find.byTooltip('Theme Studio'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ThemeStudioDialog), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+}

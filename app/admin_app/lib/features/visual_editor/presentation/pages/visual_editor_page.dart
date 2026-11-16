@@ -43,6 +43,9 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   /// لوحة المعاينة تلتقط التغيّر وتعيد تحميل الإطار دون فقدان المسودة.
   int _previewReloadToken = 0;
 
+  /// آخر خطأ أُعلن للموظف — إعادة البناء لنفس الخطأ لا تكرر الإشعار.
+  String? _lastShownError;
+
   @override
   void initState() {
     super.initState();
@@ -60,7 +63,28 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   Widget build(BuildContext context) {
     return BlocProvider<VisualEditorCubit>.value(
       value: _cubit,
-      child: BlocBuilder<VisualEditorCubit, VisualEditorState>(
+      child: BlocConsumer<VisualEditorCubit, VisualEditorState>(
+        // خطأ الحفظ أو النشر كان يُكتب في الحالة ولا يظهر أبدًا: الشاشة
+        // تبقى `ready`، والقشرة لا تقرا إلا خطأ الحالة الكامل. فيضغط
+        // الموظف «نشر» ولا يحدث شيء ولا يعرف السبب. هنا يُعلَن كل خطأ
+        // جديد مرة واحدة، برسالة مفهومة.
+        listener: (context, state) {
+          final error = state.errorMessage;
+          if (error == null || error.isEmpty) {
+            _lastShownError = null;
+            return;
+          }
+          if (error == _lastShownError) return;
+          _lastShownError = error;
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(error),
+                duration: const Duration(seconds: 6),
+              ),
+            );
+        },
         builder: (context, state) => Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppDimensions.pageHorizontalPadding,
@@ -339,7 +363,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                 EditorIconBtn(
                   icon: AppIcons.folder01,
                   tooltip: S.visualEditorTemplates,
-                  onTap: () => showVisualEditorTemplates(context),
+                  onTap: () => showVisualEditorTemplates(context, _cubit),
                   dark: dark,
                   muted: muted,
                 ),

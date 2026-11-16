@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 
 /// The brand mark, arriving with the splash.
 ///
@@ -48,11 +52,26 @@ class SplashBrandMark extends StatelessWidget {
           child: logo,
         ),
       ),
-      child: Image.asset(
-        AppImages.logo,
-        width: width,
-        fit: BoxFit.contain,
-        filterQuality: FilterQuality.high,
+      // لوجو الهوية المنشورة يعلو على المضمّن: رابط صالح يعني اللوجو الجديد،
+      // وغيابه يعني الملف المرفق كما كان.
+      child: BlocBuilder<DesignCubit, DesignState>(
+        builder: (context, design) {
+          final logoUrl = design.logoUrl;
+          if (logoUrl != null && logoUrl.trim().isNotEmpty) {
+            return DbImage(
+              image: logoUrl,
+              fit: BoxFit.contain,
+              width: width,
+              iconSize: 32,
+            );
+          }
+          return Image.asset(
+            AppImages.logo,
+            width: width,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          );
+        },
       ),
     );
   }

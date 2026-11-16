@@ -33,6 +33,7 @@ import 'package:new_coffee/features/subscriptions/presentation/views/subscriptio
 import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
 import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 /// Static (argument-free) routes + saved-session entry point.
 class AppRoutes {
@@ -48,33 +49,36 @@ class AppRoutes {
     PhoneAuthPage.routeName: (context) => const PhoneAuthPage(),
     EmailAuthPage.routeName: (context) => const EmailAuthPage(),
     MainPage.routeName: (context) => const MainPage(),
-    CheckoutPage.routeName: (context) => const CheckoutPage(),
-    ShippingAddressesPage.routeName: (context) => const ShippingAddressesPage(),
-    AddAddressPage.routeName: (context) => const AddAddressPage(),
-    PaymentMethodPage.routeName: (context) => const PaymentMethodPage(),
-    AddCardPage.routeName: (context) => const AddCardPage(),
-    PaymentSuccessPage.routeName: (context) => const PaymentSuccessPage(),
-    EReceiptPage.routeName: (context) => const EReceiptPage(),
-    CouponPage.routeName: (context) => const CouponPage(),
-    LoyaltyPage.routeName: (context) => const LoyaltyPage(),
-    OrdersPage.routeName: (context) => const OrdersPage(),
-    EditProfilePage.routeName: (context) => const EditProfilePage(),
-    SavedCardsPage.routeName: (context) => const SavedCardsPage(),
-    HelpPage.routeName: (context) => const HelpPage(),
-    PrivacyPolicyPage.routeName: (context) => const PrivacyPolicyPage(),
-    NotificationsPage.routeName: (context) => const NotificationsPage(),
+    CheckoutPage.routeName: (context) => _designable('checkout', const CheckoutPage()),
+    ShippingAddressesPage.routeName: (context) => _designable('shipping_addresses', const ShippingAddressesPage()),
+    AddAddressPage.routeName: (context) => _designable('add_address', const AddAddressPage()),
+    PaymentMethodPage.routeName: (context) => _designable('payment_method', const PaymentMethodPage()),
+    AddCardPage.routeName: (context) => _designable('add_card', const AddCardPage()),
+    PaymentSuccessPage.routeName: (context) => _designable('payment_success', const PaymentSuccessPage()),
+    EReceiptPage.routeName: (context) => _designable('e_receipt', const EReceiptPage()),
+    CouponPage.routeName: (context) => _designable('coupon', const CouponPage()),
+    LoyaltyPage.routeName: (context) => _designable('loyalty', const LoyaltyPage()),
+    OrdersPage.routeName: (context) => _designable('orders', const OrdersPage()),
+    EditProfilePage.routeName: (context) => _designable('edit_profile', const EditProfilePage()),
+    SavedCardsPage.routeName: (context) => _designable('saved_cards', const SavedCardsPage()),
+    HelpPage.routeName: (context) => _designable('help', const HelpPage()),
+    PrivacyPolicyPage.routeName: (context) => _designable('privacy', const PrivacyPolicyPage()),
+    NotificationsPage.routeName: (context) => _designable('notifications', const NotificationsPage()),
     NotificationSettingsPage.routeName: (context) =>
-        const NotificationSettingsPage(),
-    SearchPage.routeName: (context) => const SearchPage(),
-    AddressesPage.routeName: (context) => const AddressesPage(),
-    AddressFormPage.routeName: (context) => const AddressFormPage(),
-    AssistantMemoryPage.routeName: (context) => const AssistantMemoryPage(),
-    SubscriptionPlansPage.routeName: (context) => const SubscriptionPlansPage(),
+        _designable('notification_settings', const NotificationSettingsPage()),
+    SearchPage.routeName: (context) => _designable('search', const SearchPage()),
+    AddressesPage.routeName: (context) => _designable('addresses', const AddressesPage()),
+    AddressFormPage.routeName: (context) => _designable('address_form', const AddressFormPage()),
+    AssistantMemoryPage.routeName: (context) => _designable('assistant_memory', const AssistantMemoryPage()),
+    SubscriptionPlansPage.routeName: (context) => _designable('subscription_plans', const SubscriptionPlansPage()),
     SubscriptionDetailsPage.routeName: (context) =>
-        const SubscriptionDetailsPage(),
+        _designable('subscription_details', const SubscriptionDetailsPage()),
     CashierSubscriptionConsumePage.routeName: (context) =>
-        const CashierSubscriptionConsumePage(),
+        _designable('cashier_subscription', const CashierSubscriptionConsumePage()),
   };
+
+  static Widget _designable(String pageId, Widget child) =>
+      DesignPageSectionsAbove(pageId: pageId, child: child);
 
   /// Maps the persisted session flag to the first route to show.
   ///

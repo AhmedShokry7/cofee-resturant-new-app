@@ -8,9 +8,11 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/auth/auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_social_login.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_switch_prompt.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -103,6 +105,19 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
               },
               builder: (context, state) {
                 final isLoading = state is AuthLoading;
+                // الطبقة المنشورة فوق أصل الشاشة، كما في شاشة الدخول.
+                final title = AuthNative.title(context, 'sign_up');
+                final subtitle = AuthNative.subtitle(context, 'sign_up');
+                final social = AuthNative.of(
+                  context,
+                  'sign_up',
+                  DesignWidgetTypes.authSocial,
+                );
+                final switchPrompt = AuthNative.of(
+                  context,
+                  'sign_up',
+                  DesignWidgetTypes.authSwitchPrompt,
+                );
                 return Form(
                   key: _formKey,
                   child: Column(
@@ -110,18 +125,20 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                     children: [
                       // The pinned skip control owns this band.
                       const SizedBox(height: AppDimensions.skipReservedHeight),
-                      Text(
-                        S.signUp,
-                        textAlign: TextAlign.center,
-                        style: AppFonts.semiBold24(context),
-                      ),
+                      if (title?.visible ?? true)
+                        Text(
+                          title?.text ?? S.signUp,
+                          textAlign: TextAlign.center,
+                          style: AppFonts.semiBold24(context),
+                        ),
                       SizedBox(height: AuthSpacings.titleGap),
-                      Text(
-                        S.createAccountSubtitle,
-                        textAlign: TextAlign.center,
-                        style: AppFonts.regular14(context)
-                            .copyWith(color: AppColor.greyColor),
-                      ),
+                      if (subtitle?.visible ?? true)
+                        Text(
+                          subtitle?.text ?? S.createAccountSubtitle,
+                          textAlign: TextAlign.center,
+                          style: AppFonts.regular14(context)
+                              .copyWith(color: AppColor.greyColor),
+                        ),
                       SizedBox(height: AuthSpacings.headerGap),
                       CustomTextFormField(
                         controller: _nameController,
@@ -165,21 +182,24 @@ class _SignUpPageBodyState extends State<SignUpPageBody> {
                         onPressed: _submit,
                       ),
                       SizedBox(height: AuthSpacings.buttonGap),
-                      AuthSocialLogin(
-                        label: S.orSignUpWith,
-                        isLoading: isLoading,
-                      ),
-                      SizedBox(height: AuthSpacings.sectionGap),
-                      AuthSwitchPrompt(
-                        question: S.alreadyHaveAccount,
-                        actionText: S.signIn,
-                        // Forwarded so switching screens does not lose the page
-                        // the customer was asked to authenticate for.
-                        onTap: () => Navigator.of(context).pushReplacementNamed(
-                          AuthPage.routeName,
-                          arguments: ModalRoute.of(context)?.settings.arguments,
+                      if (social?.visible ?? true) ...[
+                        AuthSocialLogin(
+                          label: S.orSignUpWith,
+                          isLoading: isLoading,
                         ),
-                      ),
+                        SizedBox(height: AuthSpacings.sectionGap),
+                      ],
+                      if (switchPrompt?.visible ?? true)
+                        AuthSwitchPrompt(
+                          question: S.alreadyHaveAccount,
+                          actionText: S.signIn,
+                          // Forwarded so switching screens does not lose the page
+                          // the customer was asked to authenticate for.
+                          onTap: () => Navigator.of(context).pushReplacementNamed(
+                            AuthPage.routeName,
+                            arguments: ModalRoute.of(context)?.settings.arguments,
+                          ),
+                        ),
                       SizedBox(height: AuthSpacings.bottom),
                     ],
                   ),

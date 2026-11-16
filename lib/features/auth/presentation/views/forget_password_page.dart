@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/forget_password_page_body.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
 class ForgetPasswordPage extends StatelessWidget {
   const ForgetPasswordPage({super.key});
@@ -13,9 +14,12 @@ class ForgetPasswordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(),
-      body: BlocProvider(
-        create: (context) => PasswordResetCubit(context.read<AuthRepository>()),
-        child: const ForgetPasswordPageBody(),
+      body: DesignPageSectionsAbove(
+        pageId: 'forget_password',
+        child: BlocProvider(
+          create: (context) => PasswordResetCubit(context.read<AuthRepository>()),
+          child: const ForgetPasswordPageBody(),
+        ),
       ),
     );
   }

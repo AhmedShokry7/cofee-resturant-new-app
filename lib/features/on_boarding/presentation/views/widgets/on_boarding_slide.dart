@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/on_boarding/data/model/on_boarding_model.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 /// One slide: its art, its headline and its line of explanation.
@@ -28,11 +29,17 @@ class OnBoardingSlide extends StatelessWidget {
         // has, the art gives way instead of the copy being cut. At the design
         // size the art was drawn for, this shortfall is a single pixel.
         Flexible(
-          child: Image.asset(
-            slide.image,
-            height: _imageHeight,
-            fit: BoxFit.fill,
-          ),
+          child: slide.image.startsWith('http')
+              ? DbImage(
+                  image: slide.image,
+                  height: double.infinity,
+                  fit: BoxFit.fill,
+                )
+              : Image.asset(
+                  slide.image,
+                  height: _imageHeight,
+                  fit: BoxFit.fill,
+                ),
         ),
         SizedBox(height: _artGap),
         Text(

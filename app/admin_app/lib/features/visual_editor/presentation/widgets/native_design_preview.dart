@@ -192,6 +192,28 @@ class NativeDesignPreview extends StatelessWidget {
         content = _spacer(component);
       case 'column':
         content = _column(component, byParent);
+      // عقد الشاشات المدمجة: تقرؤها شاشات العميل نفسها لا محرك الأقسام،
+      // فترسمها المعاينة الأصلية بنفس ما تعرضه الشاشة من صورة ونصّ، حتى
+      // يرى الموظف تعديله فورًا بلا انتظار بناء الويب.
+      case 'welcomeHero':
+        content = _welcomeHero(component);
+      case 'welcomeTitle':
+        content = _welcomeTitle(component);
+      case 'welcomeBody':
+        content = _text(component);
+      case 'welcomeSpacing':
+        content = _welcomeSpacing(component);
+      case 'onboardingSlide':
+        content = _onboardingSlide(component);
+      case 'onboardingTransition':
+        content = _onboardingTransition(component);
+      case 'authTitle':
+      case 'authSubtitle':
+        content = _text(component);
+      case 'authSocial':
+        content = _authSocial();
+      case 'authSwitchPrompt':
+        content = _authSwitchPrompt();
       default:
         return null;
     }
@@ -613,10 +635,9 @@ class NativeDesignPreview extends StatelessWidget {
       );
 
   Widget _text(EditableComponent c) {
-    final text = (c.properties['text'] as String?) ?? '';
+    final text = _loc(c, 'text');
     if (text.isEmpty) return const SizedBox.shrink();
-    final size = double.tryParse((c.properties['size'] as String?) ?? '14') ??
-        14.0;
+    final size = _numProp(c, 'size') ?? 14.0;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Text(
@@ -639,9 +660,9 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _heading(EditableComponent c) {
-    final title = (c.properties['title'] as String?) ?? '';
-    final subtitle = (c.properties['subtitle'] as String?) ?? '';
-    final linkLabel = (c.properties['linkLabel'] as String?) ?? '';
+    final title = _loc(c, 'title');
+    final subtitle = _loc(c, 'subtitle');
+    final linkLabel = _loc(c, 'linkLabel');
     if (title.isEmpty && subtitle.isEmpty) return const SizedBox.shrink();
     final titleSize =
         double.tryParse((c.properties['titleSize'] as String?) ?? '16') ?? 16.0;
@@ -686,7 +707,7 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _button(EditableComponent c) {
-    final label = (c.properties['label'] as String?) ?? '';
+    final label = _loc(c, 'label');
     if (label.isEmpty) return const SizedBox.shrink();
     final style = c.property('style') ?? 'primary';
     final bg = _hex(c.property('color')) ?? _accent;
@@ -775,6 +796,274 @@ class NativeDesignPreview extends StatelessWidget {
 
   Widget _spacer(EditableComponent c) =>
       SizedBox(height: _spacing(c.property('size'), fallback: AppSpacing.lg));
+
+  /// رقم من خاصية قد تكون عددًا أو نصًّا (لوحة الخصائص ترسل النصّين).
+  double? _numProp(EditableComponent c, String key) {
+    final value = c.properties[key];
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value.trim());
+    return null;
+  }
+
+  /// نصّ ثنائي اللغة للمعاينة: العربي أولًا ثم الإنجليزي ثم الاسم الأحادي
+  /// القديم — كما يقرؤه العميل بسقوطه من لغة الواجهة إلى الأخرى فقط.
+  String _loc(EditableComponent c, String base) {
+    String read(String key) =>
+        ((c.properties[key] as String?) ?? '').trim();
+    final preferred = read('${base}_ar');
+    if (preferred.isNotEmpty) return preferred;
+    final other = read('${base}_en');
+    if (other.isNotEmpty) return other;
+    return read(base);
+  }
+
+  // ------------------------------------------------------- الشاشات المدمجة
+
+  /// صورة الترحيب: الرابط المنشور أو الصورة المرفقة، بنفس مساحة الشاشة.
+  Widget _welcomeHero(EditableComponent c) {
+    final url = (c.properties['imageUrl'] as String?)?.trim() ?? '';
+    Widget picture;
+    if (url.isEmpty) {
+      picture = Container(
+        color: _surface,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(AppIcons.image01, size: 32, color: _textSecondary),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'صورة الترحيب المرفقة',
+              style: TextStyle(
+                fontSize: AppFontSizes.size10 * _textFactor,
+                color: _textSecondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      picture = Image.network(
+        url,
+        fit: switch (c.property('fit')) {
+          'contain' => BoxFit.contain,
+          'fill' => BoxFit.fill,
+          'fitWidth' => BoxFit.fitWidth,
+          'fitHeight' => BoxFit.fitHeight,
+          'scaleDown' => BoxFit.scaleDown,
+          _ => BoxFit.cover,
+        },
+        errorBuilder: (_, _, _) => Container(
+          color: _surface,
+          alignment: Alignment.center,
+          child: Icon(AppIcons.image01, size: 28, color: _textSecondary),
+        ),
+      );
+    }
+    return SizedBox(height: 220, width: double.infinity, child: picture);
+  }
+
+  /// عنوان الترحيب: جزؤه الملوّن وباقيه، أو نصّ الشاشة حين يُترك فارغًا.
+  Widget _welcomeTitle(EditableComponent c) {
+    final highlight = _loc(c, 'highlight');
+    final rest = _loc(c, 'rest');
+    final size = _numProp(c, 'size') ?? 24.0;
+    if (highlight.isEmpty && rest.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: Text(
+          'قهوتك… لحظتك',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: size * _textFactor,
+            fontWeight: AppFontWeights.bold,
+            color: _textSecondary,
+          ),
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Text.rich(
+        textAlign: TextAlign.center,
+        TextSpan(
+          children: [
+            if (highlight.isNotEmpty)
+              TextSpan(
+                text: highlight,
+                style: TextStyle(
+                  fontSize: size * _textFactor,
+                  fontWeight: AppFontWeights.bold,
+                  color: _accent,
+                ),
+              ),
+            if (highlight.isNotEmpty && rest.isNotEmpty)
+              const TextSpan(text: ' '),
+            if (rest.isNotEmpty)
+              TextSpan(
+                text: rest,
+                style: TextStyle(
+                  fontSize: size * _textFactor,
+                  fontWeight: AppFontWeights.semiBold,
+                  color: _textPrimary,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// مسافات لوحة الترحيب: بين الموجة والنصّ، وبين العنوان ووصفه.
+  Widget _welcomeSpacing(EditableComponent c) {
+    final top = _numProp(c, 'top') ?? 20;
+    final gap = _numProp(c, 'gap') ?? AppSpacing.md;
+    return Padding(
+      padding: EdgeInsets.only(top: top, bottom: gap),
+      child: Center(
+        child: Text(
+          'مسافة $top + $gap',
+          style: TextStyle(
+            fontSize: AppFontSizes.size9_5 * _textFactor,
+            color: _textSecondary.withAlpha(150),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// شريحة تعريف واحدة: صورتها وعنوانها ووصفها.
+  Widget _onboardingSlide(EditableComponent c) {
+    final url = (c.properties['imageUrl'] as String?)?.trim() ?? '';
+    final title = _loc(c, 'title');
+    final body = _loc(c, 'body');
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(_radius('lg')),
+        border: Border.all(color: _borderColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(_radius('md')),
+            child: SizedBox(
+              height: 120,
+              child: url.isEmpty
+                  ? Container(
+                      color: _bg,
+                      alignment: Alignment.center,
+                      child: Icon(
+                        AppIcons.image01,
+                        size: 24,
+                        color: _textSecondary,
+                      ),
+                    )
+                  : Image.network(
+                      url,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        color: _bg,
+                        alignment: Alignment.center,
+                        child: Icon(
+                          AppIcons.image01,
+                          size: 24,
+                          color: _textSecondary,
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            title.isEmpty ? 'عنوان الشريحة (من المصدر)' : title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: AppFontSizes.size16 * _textFactor,
+              fontWeight: AppFontWeights.bold,
+              color: title.isEmpty ? _textSecondary : _textPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            body.isEmpty ? 'وصف الشريحة (من المصدر)' : body,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: AppFontSizes.size12 * _textFactor,
+              color: _textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// وقت الانتقال: مدة الحركة والتقديم التلقائي كما نشرهما الموظف.
+  Widget _onboardingTransition(EditableComponent c) {
+    final duration = _numProp(c, 'durationMs');
+    final seconds = _numProp(c, 'seconds');
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Text(
+        'الانتقال: ${duration == null ? 'حركة الشاشة' : '${duration.round()}ms'}'
+        ' • ${seconds != null && seconds >= 1 ? 'تلقائي كل ${seconds.round()}ث' : 'يدوي'}',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: AppFontSizes.size10 * _textFactor,
+          color: _textSecondary,
+        ),
+      ),
+    );
+  }
+
+  Widget _authSocial() => Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          children: [
+            for (var i = 0; i < 2; i++) ...[
+              if (i > 0) const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Container(
+                  height: 40,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: _bg,
+                    borderRadius:
+                        BorderRadius.circular(_radius('pill')),
+                    border: Border.all(color: _borderColor),
+                  ),
+                  child: Text(
+                    i == 0 ? 'Google' : 'متابعة',
+                    style: TextStyle(
+                      fontSize: AppFontSizes.size12 * _textFactor,
+                      color: _textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+
+  Widget _authSwitchPrompt() => Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: Text(
+          'ليس لديك حساب؟ إنشاء حساب',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: AppFontSizes.size12 * _textFactor,
+            color: _textSecondary,
+          ),
+        ),
+      );
 
   Widget _column(
     EditableComponent c,

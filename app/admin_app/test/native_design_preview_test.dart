@@ -118,4 +118,61 @@ void main() {
     final second = tester.getTopLeft(find.text('ثاني'));
     expect(second.dy, greaterThan(first.dy));
   });
+
+  group('الشاشات المدمجة', () {
+    testWidgets('عنوان الترحيب المنشور يظهر بجزئيه', (tester) async {
+      await tester.pumpWidget(host([
+        comp('wt', 'welcomeTitle', properties: {
+          'highlight': 'قهوتك',
+          'rest': 'على كيفك',
+          'size': 30,
+        }),
+      ]));
+      expect(find.textContaining('قهوتك'), findsOneWidget);
+      expect(find.textContaining('على كيفك'), findsOneWidget);
+    });
+
+    testWidgets('وصف الترحيب المنشور ورابط الصورة يظهران', (tester) async {
+      await tester.pumpWidget(host([
+        comp('wb', 'welcomeBody', properties: {'text': 'جاهز تبدأ؟', 'size': 18}),
+        comp('wh', 'welcomeHero', index: 1, properties: {
+          'imageUrl': 'https://example.invalid/hero.jpg',
+          'fit': 'contain',
+        }),
+      ]));
+      expect(find.text('جاهز تبدأ؟'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+    });
+
+    testWidgets('شريحة التعريف ترسم عنوانها ووصفها', (tester) async {
+      await tester.pumpWidget(host([
+        comp('s', 'onboardingSlide', properties: {
+          'title': 'اطلب بسهولة',
+          'body': 'كل شيء من الهاتف',
+        }),
+      ]));
+      expect(find.text('اطلب بسهولة'), findsOneWidget);
+      expect(find.text('كل شيء من الهاتف'), findsOneWidget);
+    });
+
+    testWidgets('وقت الانتقال يُعلن مدة الحركة والتقديم التلقائي', (tester) async {
+      await tester.pumpWidget(host([
+        comp('tr', 'onboardingTransition', properties: {
+          'durationMs': '400',
+          'seconds': '4',
+        }),
+      ]));
+      expect(find.textContaining('400ms'), findsOneWidget);
+      expect(find.textContaining('تلقائي كل 4ث'), findsOneWidget);
+    });
+
+    testWidgets('عنوان الدخول المنشور يظهر وأزراره الاجتماعية', (tester) async {
+      await tester.pumpWidget(host([
+        comp('at', 'authTitle', properties: {'text': 'أهلًا بعودتك'}),
+        comp('as', 'authSocial', index: 1),
+      ]));
+      expect(find.text('أهلًا بعودتك'), findsOneWidget);
+      expect(find.text('Google'), findsOneWidget);
+    });
+  });
 }

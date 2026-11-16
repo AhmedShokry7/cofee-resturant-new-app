@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:new_coffee/core/constant/app_images.dart';
@@ -6,19 +7,27 @@ import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
+import 'support/fake_design_repository.dart';
 
 /// Mirrors app.dart: the entry route is the splash, and the destination pages
 /// render inside the same MaterialApp.
-Widget _app(String targetRoute) => MaterialApp(
-  onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-  routes: {
-    SplashView.routeName: (context) => SplashView(targetRoute: targetRoute),
-    ...AppRoutes.routes,
-  },
-  initialRoute: SplashView.routeName,
+///
+/// تطبيق العميل يزوّد كل مساراته بـ DesignCubit من جذره، وهنا يُقلّد ذلك
+/// بمستودع زائف يجيب بلا مستند — فترسم الشاشات أصولها.
+Widget _app(String targetRoute) => BlocProvider<DesignCubit>(
+  create: (context) => DesignCubit(repository: FakeDesignRepository()),
+  child: MaterialApp(
+    onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+    routes: {
+      SplashView.routeName: (context) => SplashView(targetRoute: targetRoute),
+      ...AppRoutes.routes,
+    },
+    initialRoute: SplashView.routeName,
+  ),
 );
 
 /// Renders the splash on a surface of the given logical size.
@@ -78,15 +87,18 @@ void main() {
   testWidgets('the mark scales up from its entrance size', (tester) async {
     await _pumpSplash(tester, const Size(360, 690));
 
-    // Matched by shape: the framework puts its own Transform widgets in the
+    // Matched by ancestry: the framework puts its own Transform widgets in the
     // tree, so an unscoped finder is ambiguous. The entrance wrapper is the
-    // one that directly wraps the logo.
+    // nearest Transform above the logo itself (the BlocBuilder sits between
+    // them, so child matching no longer works).
     double scale() => tester
-        .widget<Transform>(
-          find.byWidgetPredicate(
-            (widget) => widget is Transform && widget.child is Image,
+        .widgetList<Transform>(
+          find.ancestor(
+            of: find.byType(Image),
+            matching: find.byType(Transform),
           ),
         )
+        .first
         .transform
         // storage[0] is m11: the horizontal scale. getMaxScaleOnAxis is not
         // usable here because it reports the untouched z axis as 1.0.

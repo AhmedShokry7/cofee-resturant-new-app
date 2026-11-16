@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
+
 /// أدوار الألوان التي يملكها مستند التصميم المنشور.
 ///
 /// المفاتيح عقد مع لوحة الأدمن ومنشور القاعدة: ما يُطبع في `theme.colors` هو
@@ -39,6 +41,9 @@ class PublishedTheme {
   const PublishedTheme({
     this.colors = const <ThemeColorRole, Color>{},
     this.textFactor = 1,
+    this.appNameAr,
+    this.appNameEn,
+    this.logoUrl,
   });
 
   static const PublishedTheme none = PublishedTheme();
@@ -48,7 +53,28 @@ class PublishedTheme {
   /// مضاعف الخط: `default` وقيمته 1، فالنشر الذي لم يلمس المقياس لا يُكبّر حرفًا.
   final double textFactor;
 
-  bool get isNeutral => colors.isEmpty && textFactor == 1;
+  /// هوية التطبيق كما نشرها الموظف من المحرر: الاسم ورابط اللوجو.
+  /// الغائب يعني اسم ولحظة التطبيق الأصلية — لا اختلاق ولا فراغ.
+  final String? appNameAr;
+  final String? appNameEn;
+  final String? logoUrl;
+
+  /// اسم الهوية للغة المعروضة، مع السقوط على اللغة الأخرى ثم null.
+  String? brandName({required bool isArabic}) {
+    final preferred = (isArabic ? appNameAr : appNameEn)?.trim();
+    if (preferred != null && preferred.isNotEmpty) return preferred;
+    final other = (isArabic ? appNameEn : appNameAr)?.trim();
+    return (other != null && other.isNotEmpty) ? other : null;
+  }
+
+  bool get hasBrand =>
+      _nonEmpty(appNameAr) || _nonEmpty(appNameEn) || _nonEmpty(logoUrl);
+
+  bool get isNeutral =>
+      colors.isEmpty && textFactor == 1 && !hasBrand;
+
+  static bool _nonEmpty(String? value) =>
+      value != null && value.trim().isNotEmpty;
 
   /// طبقة كما ستُقرأ مجددًا: عقد واحد في كلا الاتجاهين. تستعمل للإرسال
   /// الراجع إلى محرّر الأدمن (COMPONENT_TREE_UPDATED) لا للحفظ.
@@ -59,6 +85,12 @@ class PublishedTheme {
           entry.key.key: _hex(entry.value),
       },
     if (textFactor != 1) 'text_scale': _scaleName(textFactor),
+    if (hasBrand)
+      'brand': {
+        if (_nonEmpty(appNameAr)) 'name_ar': appNameAr!.trim(),
+        if (_nonEmpty(appNameEn)) 'name_en': appNameEn!.trim(),
+        if (_nonEmpty(logoUrl)) 'logo_url': logoUrl!.trim(),
+      },
   };
 
   static String _hex(Color color) {
@@ -83,10 +115,19 @@ class PublishedTheme {
   bool operator ==(Object other) =>
       other is PublishedTheme &&
       other.textFactor == textFactor &&
+      other.appNameAr == appNameAr &&
+      other.appNameEn == appNameEn &&
+      other.logoUrl == logoUrl &&
       _sameColors(other.colors);
 
   @override
-  int get hashCode => Object.hash(textFactor, Object.hashAll(colors.entries));
+  int get hashCode => Object.hash(
+    textFactor,
+    Object.hashAll(colors.entries),
+    appNameAr,
+    appNameEn,
+    logoUrl,
+  );
 
   bool _sameColors(Map<ThemeColorRole, Color> other) {
     if (other.length != colors.length) return false;
@@ -115,11 +156,21 @@ class PublishedTheme {
     }
     final scale = raw['text_scale'];
     final factor = scale is String ? _textFactors[scale] : null;
-    if (colors.isEmpty && factor == null) return none;
-    return PublishedTheme(
+    final brand = raw['brand'] is Map ? raw['brand'] as Map : null;
+    String? text(Object? value) => value is String && value.trim().isNotEmpty
+        ? value.trim()
+        : null;
+    final appNameAr = text(brand?['name_ar']);
+    final appNameEn = text(brand?['name_en']);
+    final logoUrl = text(brand?['logo_url']);
+    final theme = PublishedTheme(
       colors: colors,
       textFactor: factor ?? 1,
+      appNameAr: appNameAr,
+      appNameEn: appNameEn,
+      logoUrl: logoUrl,
     );
+    return theme.isNeutral ? none : theme;
   }
 
   /// مضاعفات الخط: الأرقام نفسها في سجل الأدمن، فاسم المقياس عقد بين الطرفين لا
@@ -171,6 +222,22 @@ abstract final class DesignWidgetTypes {
   static const String spacer = 'section.spacer';
   static const String productGrid = 'section.product_grid';
   static const String column = 'section.column';
+
+  /// عقد شاشات مدمجة: لا يرسمها محرك الأقسام الحرّة، بل يقرؤها مكوّنات
+  /// الشاشة نفسها لتعديل ما يعرضه أصله — صورة الترحيب وعنوانه ومسافاته،
+  /// شرائح التعريف ووقت انتقالها، وعناوين الدخول وأزراره. خاصية مفقودة
+  /// أو فارغة تعني «كما هو»، و`visible: false` تعني إخفاء المكوّن الأصلي.
+  /// عقد واحد مع `sectionTypes` في عقد اللوحة، يحرسه حرس التطابق.
+  static const String welcomeHero = 'welcome.hero';
+  static const String welcomeTitle = 'welcome.title';
+  static const String welcomeBody = 'welcome.body';
+  static const String welcomeSpacing = 'welcome.spacing';
+  static const String onboardingSlide = 'onboarding.slide';
+  static const String onboardingTransition = 'onboarding.transition';
+  static const String authTitle = 'auth.title';
+  static const String authSubtitle = 'auth.subtitle';
+  static const String authSocial = 'auth.social';
+  static const String authSwitchPrompt = 'auth.switch_prompt';
 }
 
 /// مصدر البيانات الذي يميّز عقدة عن أختها بالنوع نفسه.
@@ -220,6 +287,20 @@ class PublishedSection {
   String? property(String key) {
     final value = properties[key];
     return value is String ? value : null;
+  }
+
+  /// نصّ ثنائي اللغة لخاصية پایه: يفضّل لغة الواجهة (`base_ar` للعربي،
+  /// `base_en` للإنجليزي)، ثم اللغة الأخرى، ثم الاسم الأصلي للتوافق مع
+  /// مسودات كتبت بالمفتاح الأحادي. فارغٌ يعني غياب — لا اختلاق ولا فراغ.
+  String? localizedText(String base) {
+    final isArabic = AppLocale.instance.isArabic;
+    final preferred = property(isArabic ? '${base}_ar' : '${base}_en');
+    if (preferred != null && preferred.trim().isNotEmpty) {
+      return preferred;
+    }
+    final other = property(isArabic ? '${base}_en' : '${base}_ar');
+    if (other != null && other.trim().isNotEmpty) return other;
+    return property(base);
   }
 
   /// خاصية رقمية، أو null. الأدمن يخزّن أحجام الخط نصوصًا ('14')، فالقارئ
@@ -309,6 +390,7 @@ class PublishedDesign {
     this.theme = PublishedTheme.none,
     this.homeSections = const <PublishedSection>[],
     this.categoriesSections = const <PublishedSection>[],
+    this.extraSections = const <String, List<PublishedSection>>{},
   });
 
   /// لا مستند: لا رقم مخطط ولا طبقة ولا أقسام، ترسم الشاشة كما كانت اليوم.
@@ -324,6 +406,20 @@ class PublishedDesign {
   /// أقسام صفحة التصنيفات المنشورة، وخاليًا حين لا صفحة لها — عندئذ ترسم
   /// شاشة التصنيفات نفسها كما هي بلا محتوى مضاف.
   final List<PublishedSection> categoriesSections;
+
+  /// أقسام بقية صفحات المستند (`pageId` → أقسامه بترتيبها)، وخالية حين لا
+  /// مستند يحملها. شاشة لا يملك مستندها قسمًا ترسم كما هو بلا محتوى مضاف:
+  /// كل قسم حرّ هنا إضافي فوق المحتوى الحقيقي، ولا يخفي منه شيئًا.
+  final Map<String, List<PublishedSection>> extraSections;
+
+  /// أقسام صفحة كما نشرها الموظف، فارغة حين لا صفحة لها في المستند.
+  List<PublishedSection> sectionsFor(String pageId) {
+    if (pageId == 'home') return homeSections;
+    if (pageId == 'categories') return categoriesSections;
+    return extraSections[pageId] ?? const <PublishedSection>[];
+  }
+
+  bool hasSectionsFor(String pageId) => sectionsFor(pageId).isNotEmpty;
 
   /// المستند كما يقرؤه هذا التطبيق مرة أخرى، بصيغة المنشور نفسها.
   ///
@@ -354,6 +450,19 @@ class PublishedDesign {
             ],
           },
         },
+      for (final pageId in extraSections.keys) ...[
+        if (extraSections[pageId]!.isNotEmpty)
+          {
+            'page': pageId,
+            'root': {
+              'type': DesignWidgetTypes.pageHome,
+              'children': <Map<String, dynamic>>[
+                for (final section in extraSections[pageId]!)
+                  _sectionJson(section),
+              ],
+            },
+          },
+      ],
     ],
   };
 
@@ -380,7 +489,8 @@ class PublishedDesign {
       other.schemaVersion == schemaVersion &&
       other.theme == theme &&
       listEquals(other.homeSections, homeSections) &&
-      listEquals(other.categoriesSections, categoriesSections);
+      listEquals(other.categoriesSections, categoriesSections) &&
+      _sameSections(other.extraSections, extraSections);
 
   @override
   int get hashCode => Object.hash(
@@ -388,7 +498,28 @@ class PublishedDesign {
     theme,
     Object.hashAll(homeSections),
     Object.hashAll(categoriesSections),
+    _sectionsHash(extraSections),
   );
+
+  /// تساوي خريطتين للأقسام بالمحتوى لا بالترتيب.
+  static bool _sameSections(
+    Map<String, List<PublishedSection>> a,
+    Map<String, List<PublishedSection>> b,
+  ) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      if (!b.containsKey(entry.key) ||
+          !listEquals(b[entry.key], entry.value)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static int _sectionsHash(Map<String, List<PublishedSection>> map) =>
+      Object.hashAll(
+        map.entries.map((e) => Object.hash(e.key, Object.hashAll(e.value))),
+      );
 
   /// null عند صف غير موجود، أو كائن غير مستند، أو مخطط أحدث من التطبيق.
   static PublishedDesign? fromJson(Object? raw) {
@@ -401,7 +532,32 @@ class PublishedDesign {
       theme: PublishedTheme.fromJson(raw['theme']),
       homeSections: _pageSections(raw['pages'], 'home'),
       categoriesSections: _pageSections(raw['pages'], 'categories'),
+      extraSections: _allPageSections(raw['pages']),
     );
+  }
+
+  /// كل صفحات المستند عدا الرئيسية والتصنيفات، بترتيبها.
+  static Map<String, List<PublishedSection>> _allPageSections(Object? pages) {
+    final result = <String, List<PublishedSection>>{};
+    if (pages is! List) return result;
+    for (final page in pages) {
+      if (page is! Map) continue;
+      final name = page['page'];
+      if (name is! String || name == 'home' || name == 'categories') continue;
+      final root = page['root'];
+      if (root is! Map || root['type'] != DesignWidgetTypes.pageHome) {
+        continue;
+      }
+      final children = root['children'];
+      if (children is! List || children.isEmpty) continue;
+      final sections = <PublishedSection>[
+        for (final child in children)
+          if (PublishedSection.fromJson(child) case PublishedSection section)
+            section,
+      ];
+      if (sections.isNotEmpty) result[name] = sections;
+    }
+    return result;
   }
 
   /// جذر صفحة `page.<name>` وأبناؤه بترتيبهم؛ صفحة أخرى أو مستند بلا صفحات

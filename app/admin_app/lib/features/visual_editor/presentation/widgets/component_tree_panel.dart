@@ -97,6 +97,13 @@ class _ComponentList extends StatelessWidget {
   Widget build(BuildContext context) {
     return ReorderableListView.builder(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      // بدون هذه العلم يرسم فلتر مقبض سحب افتراضيًا فوق آخر الصف —
+      // فيغطي زر الحذف ولا يمكن الضغط عليه. الصف يملك مقبضه الصريح
+      // (أيقونة السحب في أول الصف)، فنمنع التكرار.
+      // Without this flag Flutter paints its own drag handle on top of the
+      // row's trailing edge - right over the delete button. The row already
+      // carries an explicit handle, so the default one is only in the way.
+      buildDefaultDragHandles: false,
       itemCount: components.length,
       onReorderItem: (oldIndex, newIndex) {
         final adjusted = newIndex > oldIndex ? newIndex - 1 : newIndex;

@@ -59,76 +59,79 @@ class _MyAppState extends State<MyApp> {
       lazy: false,
       create: (_) => ThemeModeCubit(),
       child: AppProviders(
-      // Rebuilding MaterialApp alone does not re-localize the app: every route
-      // hands the tree a `const` page (see `AppRoutes.routes`), and Flutter
-      // skips the build of a child whose widget instance did not change. This
-      // walks the tree once per language change so the screens that are already
-      // composed read the copy the customer just chose, without losing a place
-      // in a form or a scroll position.
-      child: LocaleRebuild(
-        child: AnimatedBuilder(
-          animation: AppLocale.instance,
-          builder: (context, _) => BlocBuilder<DesignCubit, DesignState>(
-            // المستند وحده يبني الشاشة من جديد: قراءة لم تُغيّر دورًا ولا مقياسًا
-            // ولا قسمًا لا تسأل الشجرة عن نفسها.
-            buildWhen: (previous, next) => previous.design != next.design,
-            builder: (context, design) => BlocBuilder<ThemeModeCubit, ThemeMode>(
-              builder: (context, themeMode) {
-                // The design document repaints the colour roles on its own
-                // load; re-assert the dark roles here so a design refresh can
-                // never undo the saved dark choice.
-                context.read<ThemeModeCubit>().syncRoles();
-                // `ThemeRebuild` walks the tree after the mode flips so the
-                // screens that read `AppColor` directly repaint too.
-                return ThemeRebuild(
-                  child: MaterialApp(
-              title: S.appName,
-              themeMode: themeMode,
-              darkTheme: ThemeClass.dark(),
-              locale: AppLocale.instance.locale,
-              supportedLocales: const [Locale('ar'), Locale('en')],
-              localizationsDelegates: const [
-                GlobalMaterialLocalizations.delegate,
-                GlobalWidgetsLocalizations.delegate,
-                GlobalCupertinoLocalizations.delegate,
-              ],
-              debugShowCheckedModeBanner: false,
-              theme: ThemeClass.light(),
-              builder: (context, child) => applyDesignTextScale(
-                context: context,
-                factor: design.textFactor,
-                child: Directionality(
-                  textDirection: AppLocale.instance.textDirection,
-                  child: child ?? const SizedBox.shrink(),
-                ),
+        // Rebuilding MaterialApp alone does not re-localize the app: every route
+        // hands the tree a `const` page (see `AppRoutes.routes`), and Flutter
+        // skips the build of a child whose widget instance did not change. This
+        // walks the tree once per language change so the screens that are already
+        // composed read the copy the customer just chose, without losing a place
+        // in a form or a scroll position.
+        child: LocaleRebuild(
+          child: AnimatedBuilder(
+            animation: AppLocale.instance,
+            builder: (context, _) => BlocBuilder<DesignCubit, DesignState>(
+              // المستند وحده يبني الشاشة من جديد: قراءة لم تُغيّر دورًا ولا مقياسًا
+              // ولا قسمًا لا تسأل الشجرة عن نفسها.
+              buildWhen: (previous, next) => previous.design != next.design,
+              builder: (context, design) => BlocBuilder<ThemeModeCubit, ThemeMode>(
+                builder: (context, themeMode) {
+                  // The design document repaints the colour roles on its own
+                  // load; re-assert the dark roles here so a design refresh can
+                  // never undo the saved dark choice.
+                  context.read<ThemeModeCubit>().syncRoles();
+                  // `ThemeRebuild` walks the tree after the mode flips so the
+                  // screens that read `AppColor` directly repaint too.
+                  return ThemeRebuild(
+                    child: MaterialApp(
+                      // الاسم الذي نصّه الموظف يعلو على اسم الكود، ويُقرأ من لغة الهاتف.
+                      title:
+                          design.brandName(AppLocale.instance.isArabic) ??
+                          S.appName,
+                      themeMode: themeMode,
+                      darkTheme: ThemeClass.dark(),
+                      locale: AppLocale.instance.locale,
+                      supportedLocales: const [Locale('ar'), Locale('en')],
+                      localizationsDelegates: const [
+                        GlobalMaterialLocalizations.delegate,
+                        GlobalWidgetsLocalizations.delegate,
+                        GlobalCupertinoLocalizations.delegate,
+                      ],
+                      debugShowCheckedModeBanner: false,
+                      theme: ThemeClass.light(),
+                      builder: (context, child) => applyDesignTextScale(
+                        context: context,
+                        factor: design.textFactor,
+                        child: Directionality(
+                          textDirection: AppLocale.instance.textDirection,
+                          child: child ?? const SizedBox.shrink(),
+                        ),
+                      ),
+                      navigatorKey: rootNavigatorKey,
+                      scaffoldMessengerKey: rootScaffoldMessengerKey,
+                      // The assistant FAB is owned by the Home page scaffold, not by
+                      // a global overlay, so it can never duplicate or leak onto
+                      // other screens.
+                      navigatorObservers: [AppRouteObserver.instance],
+                      // The splash owns the brand mark because the Android 12+ system
+                      // splash clamps its icon to a fixed circle. It hands over to the
+                      // saved entry route once it is done.
+                      initialRoute: SplashView.routeName,
+                      onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+                      routes: {
+                        SplashView.routeName: (context) => SplashView(
+                          targetRoute: AppRoutes.initialRouteName(
+                            widget.currentRoute,
+                            onboardingDone: widget.onboardingDone,
+                          ),
+                        ),
+                        ...AppRoutes.routes,
+                      },
+                    ),
+                  );
+                },
               ),
-              navigatorKey: rootNavigatorKey,
-              scaffoldMessengerKey: rootScaffoldMessengerKey,
-              // The assistant FAB is owned by the Home page scaffold, not by
-              // a global overlay, so it can never duplicate or leak onto
-              // other screens.
-              navigatorObservers: [AppRouteObserver.instance],
-              // The splash owns the brand mark because the Android 12+ system
-              // splash clamps its icon to a fixed circle. It hands over to the
-              // saved entry route once it is done.
-              initialRoute: SplashView.routeName,
-              onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-              routes: {
-                SplashView.routeName: (context) => SplashView(
-                  targetRoute: AppRoutes.initialRouteName(
-                    widget.currentRoute,
-                    onboardingDone: widget.onboardingDone,
-                  ),
-                ),
-                ...AppRoutes.routes,
-              },
-                  ),
-                );
-              },
             ),
           ),
         ),
-      ),
       ),
     );
   }

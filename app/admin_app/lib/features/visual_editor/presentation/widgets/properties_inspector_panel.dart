@@ -5,6 +5,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/visual_editor/data/design_image_upload.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
@@ -76,7 +77,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                 for (final groupKey in grouped.keys)
                   _PropertyGroup(
                     groupLabel: groupKey,
-                    properties: grouped[groupKey]!,
+                    fields: _pairBilingualFields(grouped[groupKey]!),
                     component: component,
                     onChanged: onPropertyChanged,
                     onReset: onResetProperty,
@@ -88,6 +89,48 @@ class PropertiesInspectorPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+/// عنصر حقل بعد التجميع: خاصية واحدة، أو زوج عربي/إنجليزي في حقل واحد.
+class _FieldItem {
+  const _FieldItem.single(this.definition)
+      : arDefinition = null,
+        enDefinition = null;
+
+  const _FieldItem.bilingual(this.arDefinition, this.enDefinition)
+      : definition = null;
+
+  final ComponentPropertyDefinition? definition;
+  final ComponentPropertyDefinition? arDefinition;
+  final ComponentPropertyDefinition? enDefinition;
+}
+
+/// تجميع خصائص `x_ar`/`x_en` في حقل واحد ثنائي اللغة.
+///
+/// طبيعة النص في التطبيق أن واحدًا يُكتب فيسري في اللغتين، والترجمة
+/// المنفصلة استثناء يفتح بزر — فالحقل الواحد هو الوجه الأول لا حقلان
+/// يبدو كأن تغيير أحدهما نصف تغيير.
+List<_FieldItem> _pairBilingualFields(
+  List<MapEntry<String, ComponentPropertyDefinition>> entries,
+) {
+  final byKey = {for (final e in entries) e.key: e.value};
+  final consumed = <String>{};
+  final items = <_FieldItem>[];
+  for (final e in entries) {
+    if (consumed.contains(e.key)) continue;
+    final key = e.key;
+    if (key.endsWith('_ar')) {
+      final enKey = '${key.substring(0, key.length - 3)}_en';
+      final en = byKey[enKey];
+      if (en != null) {
+        consumed.add(enKey);
+        items.add(_FieldItem.bilingual(e.value, en));
+        continue;
+      }
+    }
+    items.add(_FieldItem.single(e.value));
+  }
+  return items;
 }
 
 class _InspectorHeader extends StatelessWidget {
@@ -153,14 +196,14 @@ class _InspectorHeader extends StatelessWidget {
 class _PropertyGroup extends StatelessWidget {
   const _PropertyGroup({
     required this.groupLabel,
-    required this.properties,
+    required this.fields,
     required this.component,
     required this.onChanged,
     required this.onReset,
   });
 
   final String? groupLabel;
-  final List<MapEntry<String, ComponentPropertyDefinition>> properties;
+  final List<_FieldItem> fields;
   final EditableComponent component;
   final void Function({
     required String componentId,
@@ -183,20 +226,51 @@ class _PropertyGroup extends StatelessWidget {
             child: _GroupLabel(label: groupLabel!),
           ),
         ],
-        for (final entry in properties)
-          _PropertyField(
-            definition: entry.value,
-            currentValue: component.properties[entry.key],
-            onChanged: (v) => onChanged(
-              componentId: component.componentId,
-              propertyKey: entry.key,
-              value: v,
+        for (final field in fields)
+          if (field.definition != null)
+            _PropertyField(
+              definition: field.definition!,
+              currentValue: component.properties[field.definition!.key],
+              onChanged: (v) => onChanged(
+                componentId: component.componentId,
+                propertyKey: field.definition!.key,
+                value: v,
+              ),
+              onReset: () => onReset(
+                componentId: component.componentId,
+                propertyKey: field.definition!.key,
+              ),
+            )
+          else
+            _BilingualPropertyField(
+              arDefinition: field.arDefinition!,
+              enDefinition: field.enDefinition!,
+              arValue: component.properties[field.arDefinition!.key],
+              enValue: component.properties[field.enDefinition!.key],
+              onChanged: (arKey, enKey, v) {
+                // الحقل الواحد يكتب اللغتين معًا: هذا هو الطبيعي —
+                // والفصل بين اللغتين يبقى متاحًا بزر داخل الحقل نفسه.
+                onChanged(
+                  componentId: component.componentId,
+                  propertyKey: arKey,
+                  value: v,
+                );
+                onChanged(
+                  componentId: component.componentId,
+                  propertyKey: enKey,
+                  value: v,
+                );
+              },
+              onSingleChanged: (key, v) => onChanged(
+                componentId: component.componentId,
+                propertyKey: key,
+                value: v,
+              ),
+              onReset: (arKey, enKey) {
+                onReset(componentId: component.componentId, propertyKey: arKey);
+                onReset(componentId: component.componentId, propertyKey: enKey);
+              },
             ),
-            onReset: () => onReset(
-              componentId: component.componentId,
-              propertyKey: entry.key,
-            ),
-          ),
       ],
     );
   }
@@ -339,9 +413,8 @@ class _PropertyField extends StatelessWidget {
               ['none', 'xs', 'sm', 'md', 'lg', 'xl'],
           onChanged: onChanged,
         ),
-      PropertyType.imageUrl => _TextInput(
+      PropertyType.imageUrl => _ImageUrlInput(
           value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '',
-          multiline: false,
           onChanged: onChanged,
         ),
       PropertyType.fontFamily => _TextInput(
@@ -355,6 +428,237 @@ class _PropertyField extends StatelessWidget {
           onChanged: onChanged,
         ),
     };
+  }
+}
+
+/// حقل نص ثنائي اللغة: حقل واحد يكتب اللغتين، أو حقلان منفصلان بزر.
+///
+/// الوجه الأول حقل واحد — تغيير النص يصل للعربي والإنجليزي معًا كما
+/// يتوقّع من نص واحد. من أراد ترجمة مختلفة فتح زر «كل لغة منفصلة»
+/// فيظهر حقلان بلغة كل منهما، والقيم كما هي بلا فقد.
+class _BilingualPropertyField extends StatefulWidget {
+  const _BilingualPropertyField({
+    required this.arDefinition,
+    required this.enDefinition,
+    required this.arValue,
+    required this.enValue,
+    required this.onChanged,
+    required this.onReset,
+    required this.onSingleChanged,
+  });
+
+  final ComponentPropertyDefinition arDefinition;
+  final ComponentPropertyDefinition enDefinition;
+  final dynamic arValue;
+  final dynamic enValue;
+
+  /// وضع الدمج: قيمة واحدة تُكتب في اللغتين.
+  final void Function(String arKey, String enKey, String value) onChanged;
+
+  /// وضع الفصل: كل حقل يكتب لغته وحده.
+  final void Function(String key, String value) onSingleChanged;
+  final void Function(String arKey, String enKey) onReset;
+
+  @override
+  State<_BilingualPropertyField> createState() =>
+      _BilingualPropertyFieldState();
+}
+
+class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
+  /// الوجه الأول: نص واحد للغتين. الفصل قرار يفتحه الموظف زرًا.
+  bool _separate = false;
+
+  String get _arText => widget.arValue?.toString() ?? '';
+
+  String get _enText => widget.enValue?.toString() ?? '';
+
+  /// ما يظهر في الحقل الموحّد: العربي إن نُطق، وإلا الإنجليزي —
+  /// والفارغ يعني «كما هو» لا نصًا مختلقًا.
+  String get _mergedText {
+    final ar = _arText.trim();
+    if (ar.isNotEmpty) return _arText;
+    final en = _enText.trim();
+    if (en.isNotEmpty) return _enText;
+    return '';
+  }
+
+  /// عنوان الحقل: تسمية العربية بلا لاحقة اللغة — «الوصف بالعربي»
+  /// تصبح «الوصف»، فالحقل الواحد لا يحتاج أن يقول أي لغة هو.
+  String get _label {
+    final label = widget.arDefinition.label;
+    const suffix = ' بالعربي';
+    final stripped =
+        label.endsWith(suffix) ? label.substring(0, label.length - suffix.length) : '';
+    final trimmed = stripped.trim();
+    return trimmed.isNotEmpty ? trimmed : label;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _label,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.size11,
+                    fontWeight: AppFontWeights.medium,
+                    color: dark ? AppColor.darkText : AppColor.adminBody,
+                  ),
+                ),
+              ),
+              Tooltip(
+                message: S.visualEditorResetProperty,
+                child: InkWell(
+                  onTap: () => widget.onReset(
+                    widget.arDefinition.key,
+                    widget.enDefinition.key,
+                  ),
+                  borderRadius: BorderRadius.circular(AppRadius.xs),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Icon(
+                      AppIcons.refresh,
+                      size: 12,
+                      color: muted,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          if (!_separate)
+            _BilingualTextInput(
+              value: _mergedText,
+              hint: S.visualEditorBilingualHint,
+              onChanged: (v) => widget.onChanged(
+                widget.arDefinition.key,
+                widget.enDefinition.key,
+                v,
+              ),
+            )
+          else ...[
+            Text(
+              S.visualEditorBilingualArabicLabel,
+              style: TextStyle(fontSize: AppFontSizes.size10, color: muted),
+            ),
+            _BilingualTextInput(
+              value: _arText,
+              onChanged: (v) => widget.onSingleChanged(
+                widget.arDefinition.key,
+                v,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              S.visualEditorBilingualEnglishLabel,
+              style: TextStyle(fontSize: AppFontSizes.size10, color: muted),
+            ),
+            _BilingualTextInput(
+              value: _enText,
+              onChanged: (v) => widget.onSingleChanged(
+                widget.enDefinition.key,
+                v,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xxs),
+          // زر الفصل/الدمج: من يريد ترجمة مختلفة يفتح حقلين، ومن عدل
+          // يغلقها على الحقل الواحد الذي يكتب اللغتين.
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: InkWell(
+              onTap: () => setState(() => _separate = !_separate),
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: 2,
+                ),
+                child: Text(
+                  _separate
+                      ? S.visualEditorBilingualBoth
+                      : S.visualEditorBilingualSeparate,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.size10,
+                    color: accent,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// حقل نص: في وضع الدمج يكتب اللغتين معًا، وفي وضع الفصل يستقبل كاتب
+/// لغة واحدة. التزامن مع القيم الخارجية (تراجع/إعادة) كما في حقول النص
+/// الأخرى: تغيّرت من الخارج فالحقل يتبعها ما لم يكتب فيها الموظف الآن.
+class _BilingualTextInput extends StatefulWidget {
+  const _BilingualTextInput({
+    required this.value,
+    required this.onChanged,
+    this.hint,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+  final String? hint;
+
+  @override
+  State<_BilingualTextInput> createState() => _BilingualTextInputState();
+}
+
+class _BilingualTextInputState extends State<_BilingualTextInput> {
+  late final TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_BilingualTextInput old) {
+    super.didUpdateWidget(old);
+    if (old.value != widget.value && _ctrl.text != widget.value) {
+      _ctrl.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return TextField(
+      controller: _ctrl,
+      maxLines: 2,
+      minLines: 1,
+      onChanged: widget.onChanged,
+      style: TextStyle(
+        fontSize: AppFontSizes.size12,
+        color: dark ? AppColor.darkText : AppColor.adminBody,
+      ),
+      decoration: _inputDecoration(dark).copyWith(
+        hintText: widget.hint,
+      ),
+    );
   }
 }
 
@@ -611,3 +915,142 @@ InputDecoration _inputDecoration(bool dark) => InputDecoration(
       filled: true,
       fillColor: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
     );
+
+/// حقل صورة: معاينة صغيرة + رابط + زر اختر من الكمبيوتر وارفع.
+///
+/// الصورة تُرفع إلى دلو التصميم فيُضع رابطها العام هنا — لا حاجة لأي
+/// خدمة خارجية. فارغ يعني صورة التطبيق الأصلية للمكان.
+class _ImageUrlInput extends StatefulWidget {
+  const _ImageUrlInput({
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_ImageUrlInput> createState() => _ImageUrlInputState();
+}
+
+class _ImageUrlInputState extends State<_ImageUrlInput> {
+  late final TextEditingController _ctrl;
+  bool _uploading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_ImageUrlInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value &&
+        widget.value != _ctrl.text) {
+      _ctrl.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickAndUpload() async {
+    setState(() {
+      _uploading = true;
+      _error = null;
+    });
+    try {
+      final url = await DesignImageUpload.pickAndUpload();
+      if (!mounted) return;
+      if (url != null && url.isNotEmpty) {
+        widget.onChanged(url);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = e.toString());
+      }
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final url = _ctrl.text.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (url.isNotEmpty)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: SizedBox(
+              height: 96,
+              child: Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Container(
+                  height: 96,
+                  color: dark
+                      ? AppColor.darkSurfaceContainer
+                      : AppColor.adminTableHeader,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    AppIcons.image01,
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.adminMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          controller: _ctrl,
+          onChanged: (v) {
+            setState(() {});
+            widget.onChanged(v);
+          },
+          style: TextStyle(
+            fontSize: AppFontSizes.size12,
+            color: dark ? AppColor.darkText : AppColor.adminBody,
+          ),
+          decoration: _inputDecoration(dark).copyWith(
+            hintText: 'https://…',
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        OutlinedButton.icon(
+          onPressed: _uploading ? null : _pickAndUpload,
+          icon: _uploading
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(AppIcons.image01, size: 14),
+          label: Text(
+            _uploading ? S.visualEditorUploadingImage : S.visualEditorPickImage,
+            style: TextStyle(fontSize: AppFontSizes.size12),
+          ),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            _error!,
+            style: TextStyle(
+              fontSize: AppFontSizes.size11,
+              color: AppColor.errorColor,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}

@@ -8,6 +8,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/data/model/auth_form_rules.dart';
 import 'package:new_coffee/features/auth/presentation/manager/password_reset/password_reset_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -63,24 +64,29 @@ class _ResetPasswordPageBodyState extends State<ResetPasswordPageBody> {
           },
           builder: (context, state) {
             final isLoading = state is PasswordResetLoading;
+            // الطبقة المنشورة فوق أصل الشاشة، كما في شاشة الدخول.
+            final title = AuthNative.title(context, 'reset_password');
+            final subtitle = AuthNative.subtitle(context, 'reset_password');
             return Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: AuthSpacings.top),
-                  Text(
-                    S.resetPassword,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.semiBold24(context),
-                  ),
+                  if (title?.visible ?? true)
+                    Text(
+                      title?.text ?? S.resetPassword,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.semiBold24(context),
+                    ),
                   SizedBox(height: AuthSpacings.titleGap),
-                  Text(
-                    S.enterNewPassword,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.regular14(context)
-                        .copyWith(color: AppColor.greyColor),
-                  ),
+                  if (subtitle?.visible ?? true)
+                    Text(
+                      subtitle?.text ?? S.enterNewPassword,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.regular14(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
                     controller: _passwordController,

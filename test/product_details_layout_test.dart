@@ -13,10 +13,12 @@ import 'package:new_coffee/features/bundles/presentation/manager/bundle_details/
 import 'package:new_coffee/features/bundles/presentation/views/bundle_details_page.dart';
 import 'package:new_coffee/features/cart/data/repositories/local_cart_repository.dart';
 import 'package:new_coffee/features/cart/presentation/manager/cart/cart_cubit.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/favorites/data/repositories/favorite_repository.dart';
 import 'package:new_coffee/features/favorites/presentation/manager/favorites/favorites_cubit.dart';
 import 'package:new_coffee/features/menu/data/model/product_model.dart';
 
+import 'support/fake_design_repository.dart';
 import 'support/mock_product_repository.dart';
 
 import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
@@ -81,17 +83,22 @@ Future<_Page> _pumpReadyDetails(
   addTearDown(branch.close);
 
   await tester.pumpWidget(
-    MaterialApp(
-      home: MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: branch),
-          BlocProvider.value(value: favorites),
-          BlocProvider.value(value: cart),
-          RepositoryProvider<CatalogRepository>.value(
-            value: catalog ?? MockProductRepository(),
-          ),
-        ],
-        child: ProductDetailsPage(product: product),
+    // الصفحة تقرأ طبقتها المنشورة من DesignCubit، والاختبار يزوّدها
+    // بمستودع زائف يجيب بلا مستند فترسم أصلها.
+    BlocProvider<DesignCubit>(
+      create: (context) => DesignCubit(repository: FakeDesignRepository()),
+      child: MaterialApp(
+        home: MultiBlocProvider(
+          providers: [
+            BlocProvider.value(value: branch),
+            BlocProvider.value(value: favorites),
+            BlocProvider.value(value: cart),
+            RepositoryProvider<CatalogRepository>.value(
+              value: catalog ?? MockProductRepository(),
+            ),
+          ],
+          child: ProductDetailsPage(product: product),
+        ),
       ),
     ),
   );

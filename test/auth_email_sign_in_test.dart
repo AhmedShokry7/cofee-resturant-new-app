@@ -24,8 +24,11 @@ import 'package:new_coffee/features/auth/presentation/manager/email_auth/email_a
 import 'package:new_coffee/features/auth/presentation/manager/email_auth/email_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/email_auth_page_body.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/email_otp_page_body.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
+
+import 'support/fake_design_repository.dart';
 
 /// The e-mail code door against the provider's answers, not a fake repository.
 ///
@@ -439,18 +442,23 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(
-          onGenerateRoute: (settings) {
-            onNavigate(settings.arguments);
-            return MaterialPageRoute<void>(
-              builder: (_) => const SizedBox.shrink(),
-              settings: settings,
-            );
-          },
-          home: Scaffold(
-            body: BlocProvider(
-              create: (context) => EmailAuthCubit(repository),
-              child: const EmailAuthPageBody(),
+        // شاشات الدخول تقرأ طبقتها المنشورة من DesignCubit، والاختبار
+        // يزوّده بمستودع زائف يجيب بلا مستند.
+        BlocProvider<DesignCubit>(
+          create: (context) => DesignCubit(repository: FakeDesignRepository()),
+          child: MaterialApp(
+            onGenerateRoute: (settings) {
+              onNavigate(settings.arguments);
+              return MaterialPageRoute<void>(
+                builder: (_) => const SizedBox.shrink(),
+                settings: settings,
+              );
+            },
+            home: Scaffold(
+              body: BlocProvider(
+                create: (context) => EmailAuthCubit(repository),
+                child: const EmailAuthPageBody(),
+              ),
             ),
           ),
         ),
@@ -526,18 +534,21 @@ void main() {
       addTearDown(tester.view.resetDevicePixelRatio);
 
       await tester.pumpWidget(
-        MaterialApp(
-          onGenerateRoute: (settings) {
-            onNavigate(settings.name, settings.arguments);
-            return MaterialPageRoute<void>(
-              builder: (_) => const SizedBox.shrink(),
-              settings: settings,
-            );
-          },
-          home: Scaffold(
-            body: BlocProvider(
-              create: (context) => EmailAuthCubit(repository),
-              child: EmailOtpPageBody(email: _address),
+        BlocProvider<DesignCubit>(
+          create: (context) => DesignCubit(repository: FakeDesignRepository()),
+          child: MaterialApp(
+            onGenerateRoute: (settings) {
+              onNavigate(settings.name, settings.arguments);
+              return MaterialPageRoute<void>(
+                builder: (_) => const SizedBox.shrink(),
+                settings: settings,
+              );
+            },
+            home: Scaffold(
+              body: BlocProvider(
+                create: (context) => EmailAuthCubit(repository),
+                child: EmailOtpPageBody(email: _address),
+              ),
             ),
           ),
         ),

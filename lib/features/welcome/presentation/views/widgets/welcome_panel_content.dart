@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/features/design/data/model/native_section.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/welcome/presentation/manager/welcome/welcome_cubit.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_view_text_body.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_view_text_title.dart';
@@ -51,6 +54,14 @@ class _WelcomeCopy extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // المسافة بين العنوان ووصفه منشورة أيضًا: عقدة `welcome.spacing`
+        // بـ `gap` تعلو على المسافة المرسومة، وغيابها يعني الأصل.
+        final gap = context.select(
+          (DesignCubit cubit) => nativeSection(
+            cubit.state.pageSections('welcome'),
+            DesignWidgetTypes.welcomeSpacing,
+          )?.numberProperty('gap'),
+        );
         return SingleChildScrollView(
           child: ConstrainedBox(
             constraints: BoxConstraints(minHeight: constraints.maxHeight),
@@ -58,7 +69,7 @@ class _WelcomeCopy extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 const WelcomeViewTextTitle(),
-                SizedBox(height: AppSpacing.md),
+                SizedBox(height: gap ?? AppSpacing.md),
                 const WelcomeViewTextBody(),
                 SizedBox(height: AppSpacing.xl),
               ],

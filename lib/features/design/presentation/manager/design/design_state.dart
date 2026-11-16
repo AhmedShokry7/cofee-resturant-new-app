@@ -23,12 +23,29 @@ class DesignState {
 
   double get textFactor => design.theme.textFactor;
 
+  /// اسم التطبيق كما نصّه الموظف من المحرر، أو null ليُسقط على اسم الكود.
+  String? get appNameAr => design.theme.appNameAr;
+
+  String? get appNameEn => design.theme.appNameEn;
+
+  /// رابط لوجو التطبيق كما رفعه الموظف، أو null للوجو المضمّن.
+  String? get logoUrl => design.theme.logoUrl;
+
+  /// اسم الهوية للغة المعروضة أو null.
+  String? brandName(bool isArabic) =>
+      design.theme.brandName(isArabic: isArabic);
+
   /// أقسام الصفحة الرئيسية بترتيبها المنشور؛ فارغة حين لا مستند يقرؤه الهاتف،
   /// فت رسمُها ترتيبَ الصفحة المكتوب في مصدرها.
   List<PublishedSection> get homeSections => design.homeSections;
 
   /// أقسام صفحة التصنيفات المنشورة؛ فارغة حين لا صفحة لها في المستند.
   List<PublishedSection> get categoriesSections => design.categoriesSections;
+
+  /// أقسام أي صفحة أخرى بترتيبها المنشور؛ فارغة حين لا مستند يحملها،
+  /// فترسم الشاشة كما هي بلا محتوى مضاف.
+  List<PublishedSection> pageSections(String pageId) =>
+      design.sectionsFor(pageId);
 
   DesignState copyWith({PublishedDesign? design, bool? isLoaded}) => DesignState(
     design: design ?? this.design,

@@ -20,7 +20,15 @@ class MainCubit extends Cubit<MainState> {
   /// وهي الرئيسية كما اليوم.
   static int initialTab = 0;
 
-  MainCubit() : super(MainState(index: initialTab));
+  /// The preview (and any future deep link into a tab) opens the shell on a
+  /// tab other than the first. The tab must count as visited from the start,
+  /// or the IndexedStack shows an empty slot while the bar highlights it —
+  /// which is exactly the blank categories page the simulator showed.
+  ///
+  /// التبويب الابتدائي يُعدّ مزورًا في المقابلة من اللحظة الأولى، وإلا رسم
+  /// الهيكل خانة فارغة والشريط مُبرزًا التبويب — وهي الشاشة البيضاء التي
+  /// ظهرت في محاكي المحرّر لصفحة التصنيفات.
+  MainCubit() : super(MainState(index: initialTab, visited: {0, initialTab}));
 
   void changeTab(int index) {
     if (index == state.index) return;

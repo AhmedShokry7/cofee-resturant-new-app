@@ -5239,6 +5239,7 @@ class S {
   static String get visualEditorCategoryLayout => _ar ? 'تخطيط' : 'Layout';
   static String get visualEditorCategoryContent => _ar ? 'محتوى' : 'Content';
   static String get visualEditorCategoryRestaurant => _ar ? 'مطعم' : 'Restaurant';
+  static String get visualEditorCategoryScreen => _ar ? 'شاشة' : 'Screen';
   static String get visualEditorCategoryNavigation => _ar ? 'تنقّل' : 'Navigation';
   static String get visualEditorProperties => _ar ? 'الخصائص' : 'Properties';
   static String get visualEditorSelectHint =>
@@ -5246,8 +5247,23 @@ class S {
           : 'Tap an element in the tree or preview';
   static String get visualEditorNoEditableProperties =>
       _ar ? 'لا خصائص قابلة للتحرير' : 'No editable properties';
+  static String get visualEditorPickImage =>
+      _ar ? 'اختيار من الكمبيوتر' : 'Pick from computer';
+  static String get visualEditorUploadingImage =>
+      _ar ? 'جاري رفع الصورة…' : 'Uploading image…';
   static String get visualEditorResetProperty =>
       _ar ? 'إعادة القيمة الافتراضية' : 'Reset to default';
+  static String get visualEditorBilingualHint => _ar
+      ? 'يُكتب للغتين معًا — العربي والإنجليزي بنفس النص'
+      : 'Written for both languages — Arabic and English at once';
+  static String get visualEditorBilingualBoth =>
+      _ar ? 'لغتين معًا' : 'Both languages';
+  static String get visualEditorBilingualSeparate =>
+      _ar ? 'كل لغة منفصلة' : 'Per language';
+  static String get visualEditorBilingualArabicLabel =>
+      _ar ? 'بالعربي' : 'Arabic';
+  static String get visualEditorBilingualEnglishLabel =>
+      _ar ? 'بالإنجليزي' : 'English';
   static String get visualEditorOn => _ar ? 'مفعّل' : 'On';
   static String get visualEditorOff => _ar ? 'معطّل' : 'Off';
   static String get visualEditorZoomIn => _ar ? 'تكبير' : 'Zoom in';
@@ -5342,6 +5358,23 @@ class S {
 
   static String get visualEditorThemeScales =>
       _ar ? 'المقاييس' : 'Scales';
+
+  static String get visualEditorBrand =>
+      _ar ? 'هوية التطبيق' : 'App brand';
+
+  static String get visualEditorBrandNameAr =>
+      _ar ? 'اسم التطبيق (عربي)' : 'App name (Arabic)';
+
+  static String get visualEditorBrandNameEn =>
+      _ar ? 'اسم التطبيق (إنجليزي)' : 'App name (English)';
+
+  static String get visualEditorBrandLogoUrl =>
+      _ar ? 'رابط اللوجو' : 'Logo URL';
+
+  static String get visualEditorBrandHint =>
+      _ar
+          ? 'الفارغ يعني هوية التطبيق الأصلية. اللوجو رابط http(s) فقط.'
+          : 'Empty means the shipped brand. The logo must be an http(s) URL.';
 
   static String get visualEditorTextScale =>
       _ar ? 'مقياس النص' : 'Text scale';

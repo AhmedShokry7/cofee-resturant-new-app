@@ -9,6 +9,7 @@ import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_cubit.dart';
 import 'package:new_coffee/features/auth/presentation/manager/phone_auth/phone_auth_state.dart';
 import 'package:new_coffee/features/auth/presentation/views/otp_page.dart';
+import 'package:new_coffee/features/auth/presentation/views/widgets/auth_design.dart';
 import 'package:new_coffee/features/auth/presentation/views/widgets/auth_spacings.dart';
 import 'package:new_coffee/shared/widgets/auth_message_dialog.dart';
 import 'package:new_coffee/shared/widgets/custom_btn.dart';
@@ -75,24 +76,29 @@ class _PhoneAuthPageBodyState extends State<PhoneAuthPageBody> {
           },
           builder: (context, state) {
             final isLoading = state is PhoneAuthLoading;
+            // الطبقة المنشورة فوق أصل الشاشة، كما في شاشة الدخول.
+            final title = AuthNative.title(context, 'phone_auth');
+            final subtitle = AuthNative.subtitle(context, 'phone_auth');
             return Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: AuthSpacings.top),
-                  Text(
-                    S.signInWithPhone,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.semiBold24(context),
-                  ),
+                  if (title?.visible ?? true)
+                    Text(
+                      title?.text ?? S.signInWithPhone,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.semiBold24(context),
+                    ),
                   SizedBox(height: AuthSpacings.titleGap),
-                  Text(
-                    S.phoneAuthSubtitle,
-                    textAlign: TextAlign.center,
-                    style: AppFonts.regular14(context)
-                        .copyWith(color: AppColor.greyColor),
-                  ),
+                  if (subtitle?.visible ?? true)
+                    Text(
+                      subtitle?.text ?? S.phoneAuthSubtitle,
+                      textAlign: TextAlign.center,
+                      style: AppFonts.regular14(context)
+                          .copyWith(color: AppColor.greyColor),
+                    ),
                   SizedBox(height: AuthSpacings.headerGap),
                   CustomTextFormField(
                     controller: _phoneController,

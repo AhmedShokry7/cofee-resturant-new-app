@@ -14,6 +14,7 @@ import 'package:new_coffee/features/menu/presentation/manager/product_details/pr
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_body.dart';
 import 'package:new_coffee/features/menu/presentation/views/widgets/product_details_bottom_bar.dart';
 import 'package:new_coffee/shared/utils/direction_aware_icons.dart';
+import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class ProductDetailsPage extends StatefulWidget {
@@ -121,7 +122,10 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
                 ),
               ],
             ),
-            body: ProductDetailsBody(controller: _scrollController),
+            body: DesignPageSectionsAbove(
+              pageId: 'product_details',
+              child: ProductDetailsBody(controller: _scrollController),
+            ),
             bottomNavigationBar: const ProductDetailsBottomBar(),
           ),
         ),

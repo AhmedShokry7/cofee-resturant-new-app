@@ -118,7 +118,7 @@ class VisualEditorToolbar extends StatelessWidget {
         EditorIconBtn(
           icon: AppIcons.folder01,
           tooltip: S.visualEditorTemplates,
-          onTap: () => showVisualEditorTemplates(context),
+          onTap: () => showVisualEditorTemplates(context, cubit),
           dark: dark,
           muted: muted,
         ),
@@ -210,9 +210,12 @@ Future<void> showVisualEditorVersions(
     );
 }
 
-Future<void> showVisualEditorTemplates(BuildContext context) => showDialog<void>(
+Future<void> showVisualEditorTemplates(
+  BuildContext context,
+  VisualEditorCubit cubit,
+) => showDialog<void>(
   context: context,
-  builder: (_) => const TemplatesDialog(),
+  builder: (_) => TemplatesDialog(cubit: cubit),
 );
 
 Future<void> showVisualEditorThemeStudio(
@@ -220,7 +223,7 @@ Future<void> showVisualEditorThemeStudio(
   VisualEditorCubit cubit,
 ) => showDialog<void>(
   context: context,
-  builder: (_) => ThemeStudioDialog(initialTheme: cubit.theme),
+  builder: (_) => ThemeStudioDialog(initialTheme: cubit.theme, cubit: cubit),
 );
 
 /// التخلص من المسودة بتأكيد: يمسح صف المسودة فقط عبر الـ RPC، وما

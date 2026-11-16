@@ -160,7 +160,376 @@ class ComponentRegistry {
     _registerLayoutComponents();
     _registerContentComponents();
     _registerRestaurantComponents();
+    _registerNativeScreenComponents();
     _registerNavigationComponents();
+  }
+
+  /// مكوّنات الشاشات المدمجة: لا يرسمها محرك الأقسام الحرّة في تطبيق
+  /// العميل، بل تقرؤها الشاشات نفسها من المستند المنشور — صورة الترحيب
+  /// وعنوانه ومسافاته، شرائح التعريف ووقت انتقالها، وعناوين شاشات الدخول
+  /// وأزرارها. كل خاصية فارغة تعني «كما هو»، والإخفاء يُسقط المكوّن الأصلي
+  /// (نوع العقدة `visible: false`)، لا يُرسم فراغًا.
+  static void _registerNativeScreenComponents() {
+    // صورة شاشة الترحيب
+    register(ComponentRegistryEntry(
+      componentType: 'welcomeHero',
+      displayName: 'صورة الترحيب',
+      description: 'الصورة الكبيرة خلف لوحة الترحيب — رابط جديد وطريقة عرض',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'imageUrl': ComponentPropertyDefinition(
+          key: 'imageUrl',
+          label: 'رابط الصورة',
+          description: 'رابط الصورة الجديدة (فارغ = الصورة المرفقة)',
+          type: PropertyType.imageUrl,
+          defaultValue: '',
+        ),
+        'fit': ComponentPropertyDefinition(
+          key: 'fit',
+          label: 'طريقة العرض',
+          description: 'كيف تملأ الصورة مساحتها',
+          type: PropertyType.enum_,
+          defaultValue: 'cover',
+          options: ['cover', 'contain', 'fill', 'fitWidth', 'fitHeight', 'scaleDown'],
+        ),
+        'alignment': ComponentPropertyDefinition(
+          key: 'alignment',
+          label: 'المحاذاة',
+          description: 'أي جزء الصورة يظهر في مساحتها',
+          type: PropertyType.alignment,
+          defaultValue: 'topCenter',
+          options: [
+            'topCenter', 'topLeft', 'topRight', 'centerLeft', 'center',
+            'centerRight', 'bottomLeft', 'bottomCenter', 'bottomRight',
+          ],
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'imageUrl': '', 'fit': 'cover', 'alignment': 'topCenter'},
+      validationRules: {},
+      iconName: 'image',
+      version: 1,
+    ));
+
+    // عنوان شاشة الترحيب
+    register(ComponentRegistryEntry(
+      componentType: 'welcomeTitle',
+      displayName: 'عنوان الترحيب',
+      description: 'العنوان الكبير: جزء ملوّن بلون الهوية وجزء عادي',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'highlight_ar': ComponentPropertyDefinition(
+          key: 'highlight_ar',
+          label: 'الملوّن بالعربي',
+          description: 'الجزء الأول من العنوان بلون الهوية للعربية (فارغ = نصّ التطبيق)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان',
+        ),
+        'highlight_en': ComponentPropertyDefinition(
+          key: 'highlight_en',
+          label: 'الملوّن بالإنجليزي',
+          description: 'الجزء الأول من العنوان بلون الهوية للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان',
+        ),
+        'rest_ar': ComponentPropertyDefinition(
+          key: 'rest_ar',
+          label: 'الباقي بالعربي',
+          description: 'باقي العنوان بلا لون للعربية (فارغ = نصّ التطبيق)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان',
+        ),
+        'rest_en': ComponentPropertyDefinition(
+          key: 'rest_en',
+          label: 'الباقي بالإنجليزي',
+          description: 'باقي العنوان بلا لون للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان',
+        ),
+        'size': ComponentPropertyDefinition(
+          key: 'size',
+          label: 'حجم الخط',
+          description: 'حجم خط العنوان (فارغ = مقاس الشاشة الأصلي)',
+          type: PropertyType.number,
+          defaultValue: null,
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'highlight_ar': '', 'highlight_en': '', 'rest_ar': '', 'rest_en': ''},
+      validationRules: {},
+      iconName: 'title',
+      version: 1,
+    ));
+
+    // وصف شاشة الترحيب
+    register(ComponentRegistryEntry(
+      componentType: 'welcomeBody',
+      displayName: 'وصف الترحيب',
+      description: 'السطر التوضيحي تحت عنوان الترحيب',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'text_ar': ComponentPropertyDefinition(
+          key: 'text_ar',
+          label: 'الوصف بالعربي',
+          description: 'نص الوصف للعربية (فارغ = نصّ التطبيق)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'الوصف',
+        ),
+        'text_en': ComponentPropertyDefinition(
+          key: 'text_en',
+          label: 'الوصف بالإنجليزي',
+          description: 'نص الوصف للإنجليزية (فارغ = الترجمة)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'الوصف',
+        ),
+        'size': ComponentPropertyDefinition(
+          key: 'size',
+          label: 'حجم الخط',
+          description: 'حجم خط الوصف (فارغ = مقاس الشاشة الأصلي)',
+          type: PropertyType.number,
+          defaultValue: null,
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'text_ar': '', 'text_en': ''},
+      validationRules: {},
+      iconName: 'text',
+      version: 1,
+    ));
+
+    // مسافات شاشة الترحيب
+    register(ComponentRegistryEntry(
+      componentType: 'welcomeSpacing',
+      displayName: 'مسافات الترحيب',
+      description: 'المسافة بين الموجة والنصّ، وبين العنوان ووصفه (بكسل)',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'top': ComponentPropertyDefinition(
+          key: 'top',
+          label: 'من الموجة إلى النص',
+          description: 'المسافة أعلى لوحة الترحيب (فارغ = الأصل)',
+          type: PropertyType.number,
+          defaultValue: null,
+        ),
+        'gap': ComponentPropertyDefinition(
+          key: 'gap',
+          label: 'بين العنوان والوصف',
+          description: 'المسافة بين العنوان والوصف (فارغ = الأصل)',
+          type: PropertyType.number,
+          defaultValue: null,
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {},
+      validationRules: {},
+      iconName: 'spacing',
+      version: 1,
+    ));
+
+    // شريحة تعريف
+    register(ComponentRegistryEntry(
+      componentType: 'onboardingSlide',
+      displayName: 'شريحة تعريف',
+      description: 'شريحة واحدة: صورة وعنوان ووصف — بترتيب الشرائح المنشور',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'imageUrl': ComponentPropertyDefinition(
+          key: 'imageUrl',
+          label: 'رابط الصورة',
+          description: 'رابط صورة الشريحة (فارغ = صورة المصدر للمكان نفسه)',
+          type: PropertyType.imageUrl,
+          defaultValue: '',
+        ),
+        'title_ar': ComponentPropertyDefinition(
+          key: 'title_ar',
+          label: 'العنوان بالعربي',
+          description: 'عنوان الشريحة للعربية (فارغ = نصّ المصدر للمكان نفسه)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان',
+        ),
+        'title_en': ComponentPropertyDefinition(
+          key: 'title_en',
+          label: 'العنوان بالإنجليزي',
+          description: 'عنوان الشريحة للإنجليزية (فارغ = الترجمة)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان',
+        ),
+        'body_ar': ComponentPropertyDefinition(
+          key: 'body_ar',
+          label: 'الوصف بالعربي',
+          description: 'وصف الشريحة للعربية (فارغ = نصّ المصدر للمكان نفسه)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'الوصف',
+        ),
+        'body_en': ComponentPropertyDefinition(
+          key: 'body_en',
+          label: 'الوصف بالإنجليزي',
+          description: 'وصف الشريحة للإنجليزية (فارغ = الترجمة)',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'الوصف',
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'imageUrl': '', 'title_ar': '', 'title_en': '', 'body_ar': '', 'body_en': ''},
+      validationRules: {},
+      iconName: 'image',
+      version: 1,
+    ));
+
+    // وقت الانتقال في التعريف
+    register(ComponentRegistryEntry(
+      componentType: 'onboardingTransition',
+      displayName: 'وقت الانتقال',
+      description: 'مدة حركة الانتقال (مللي ثانية) ووقت التقديم التلقائي (ثواني)',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'durationMs': ComponentPropertyDefinition(
+          key: 'durationMs',
+          label: 'مدة الحركة',
+          description: 'مدة حركة الانتقال بين الشرائح بالمللي ثانية (فارغ = الأصل)',
+          type: PropertyType.number,
+          defaultValue: null,
+        ),
+        'seconds': ComponentPropertyDefinition(
+          key: 'seconds',
+          label: 'تقديم تلقائي',
+          description: 'عدد الثواني بين الشرائح — صفر أو فارغ يعني بلا تقديم تلقائي',
+          type: PropertyType.number,
+          defaultValue: '0',
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'seconds': '0'},
+      validationRules: {},
+      iconName: 'timer',
+      version: 1,
+    ));
+
+    // عنوان شاشة دخول
+    register(ComponentRegistryEntry(
+      componentType: 'authTitle',
+      displayName: 'عنوان الدخول',
+      description: 'عنوان شاشة الدخول (فارغ = نصّ التطبيق)',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'text_ar': ComponentPropertyDefinition(
+          key: 'text_ar',
+          label: 'العنوان بالعربي',
+          description: 'نص العنوان للعربية',
+          type: PropertyType.string,
+          defaultValue: '',
+        ),
+        'text_en': ComponentPropertyDefinition(
+          key: 'text_en',
+          label: 'العنوان بالإنجليزي',
+          description: 'نص العنوان للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'text_ar': '', 'text_en': ''},
+      validationRules: {},
+      iconName: 'title',
+      version: 1,
+    ));
+
+    // وصف شاشة دخول
+    register(ComponentRegistryEntry(
+      componentType: 'authSubtitle',
+      displayName: 'وصف الدخول',
+      description: 'السطر التوضيحي تحت عنوان شاشة الدخول (فارغ = نصّ التطبيق)',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {
+        'text_ar': ComponentPropertyDefinition(
+          key: 'text_ar',
+          label: 'الوصف بالعربي',
+          description: 'نص الوصف للعربية',
+          type: PropertyType.string,
+          defaultValue: '',
+        ),
+        'text_en': ComponentPropertyDefinition(
+          key: 'text_en',
+          label: 'الوصف بالإنجليزي',
+          description: 'نص الوصف للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+        ),
+      },
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {'text_ar': '', 'text_en': ''},
+      validationRules: {},
+      iconName: 'text',
+      version: 1,
+    ));
+
+    // تسجيل الدخول الاجتماعي
+    register(ComponentRegistryEntry(
+      componentType: 'authSocial',
+      displayName: 'الدخول الاجتماعي',
+      description: 'صف أزرار الدخول بحساب جوجل — الإخفاء يُسقطه من الشاشة',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {},
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {},
+      validationRules: {},
+      iconName: 'star',
+      version: 1,
+    ));
+
+    // سؤال التبديل بين الدخول وإنشاء الحساب
+    register(ComponentRegistryEntry(
+      componentType: 'authSwitchPrompt',
+      displayName: 'سؤال التبديل',
+      description: 'سطر «ليس لديك حساب؟ إنشاء حساب» — الإخفاء يُسقطه من الشاشة',
+      category: 'screen',
+      classification: ComponentClassification.editable,
+      properties: {},
+      allowedParentTypes: [],
+      allowedChildTypes: [],
+      allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+      defaultValues: {},
+      validationRules: {},
+      iconName: 'arrowRight',
+      version: 1,
+    ));
   }
 
   static void _registerLayoutComponents() {
@@ -306,13 +675,21 @@ class ComponentRegistry {
       category: 'content',
       classification: ComponentClassification.editable,
       properties: {
-        'text': ComponentPropertyDefinition(
-          key: 'text',
-          label: 'النص',
-          description: 'محتوى النص',
+        'text_ar': ComponentPropertyDefinition(
+          key: 'text_ar',
+          label: 'النص بالعربي',
+          description: 'محتوى النص للواجهة العربية — فارغ يعني نصّ التطبيق',
           type: PropertyType.text,
           defaultValue: '',
-          required: true,
+          group: 'النص',
+        ),
+        'text_en': ComponentPropertyDefinition(
+          key: 'text_en',
+          label: 'النص بالإنجليزي',
+          description: 'محتوى النص للواجهة الإنجليزية — فارغ يعني الترجمة',
+          type: PropertyType.text,
+          defaultValue: '',
+          group: 'النص',
         ),
         'size': ComponentPropertyDefinition(
           key: 'size',
@@ -366,7 +743,8 @@ class ComponentRegistry {
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
-        'text': '',
+        'text_ar': '',
+        'text_en': '',
         'size': '14',
         'weight': 'regular',
         'color': '#1A1A1A',
@@ -386,20 +764,37 @@ class ComponentRegistry {
       category: 'content',
       classification: ComponentClassification.editable,
       properties: {
-        'title': ComponentPropertyDefinition(
-          key: 'title',
-          label: 'العنوان',
-          description: 'نص العنوان الرئيسي',
+        'title_ar': ComponentPropertyDefinition(
+          key: 'title_ar',
+          label: 'العنوان بالعربي',
+          description: 'العنوان الرئيسي للعربية — فارغ يعني نصّ التطبيق',
           type: PropertyType.string,
           defaultValue: '',
-          required: true,
+          group: 'العنوان',
         ),
-        'subtitle': ComponentPropertyDefinition(
-          key: 'subtitle',
-          label: 'العنوان الفرعي',
-          description: 'نص توضيحي تحت العنوان',
+        'title_en': ComponentPropertyDefinition(
+          key: 'title_en',
+          label: 'العنوان بالإنجليزي',
+          description: 'العنوان الرئيسي للإنجليزية — فارغ يعني الترجمة',
           type: PropertyType.string,
           defaultValue: '',
+          group: 'العنوان',
+        ),
+        'subtitle_ar': ComponentPropertyDefinition(
+          key: 'subtitle_ar',
+          label: 'الفرعي بالعربي',
+          description: 'نص توضيحي تحت العنوان للعربية',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان الفرعي',
+        ),
+        'subtitle_en': ComponentPropertyDefinition(
+          key: 'subtitle_en',
+          label: 'الفرعي بالإنجليزي',
+          description: 'نص توضيحي تحت العنوان للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'العنوان الفرعي',
         ),
         'titleSize': ComponentPropertyDefinition(
           key: 'titleSize',
@@ -409,12 +804,21 @@ class ComponentRegistry {
           defaultValue: '16',
           options: ['14', '16', '18', '20', '22', '24'],
         ),
-        'linkLabel': ComponentPropertyDefinition(
-          key: 'linkLabel',
-          label: 'نص الرابط',
-          description: 'نص زر "عرض المزيد"',
+        'linkLabel_ar': ComponentPropertyDefinition(
+          key: 'linkLabel_ar',
+          label: 'الرابط بالعربي',
+          description: 'نص زر "عرض المزيد" للعربية',
           type: PropertyType.string,
           defaultValue: '',
+          group: 'الرابط',
+        ),
+        'linkLabel_en': ComponentPropertyDefinition(
+          key: 'linkLabel_en',
+          label: 'الرابط بالإنجليزي',
+          description: 'نص زر "عرض المزيد" للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'الرابط',
         ),
         'action': ComponentPropertyDefinition(
           key: 'action',
@@ -439,10 +843,13 @@ class ComponentRegistry {
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
-        'title': '',
-        'subtitle': '',
+        'title_ar': '',
+        'title_en': '',
+        'subtitle_ar': '',
+        'subtitle_en': '',
         'titleSize': '16',
-        'linkLabel': '',
+        'linkLabel_ar': '',
+        'linkLabel_en': '',
         'action': 'none',
       },
       validationRules: {},
@@ -458,13 +865,21 @@ class ComponentRegistry {
       category: 'content',
       classification: ComponentClassification.editable,
       properties: {
-        'label': ComponentPropertyDefinition(
-          key: 'label',
-          label: 'نص الزر',
-          description: 'النص المعروض على الزر',
+        'label_ar': ComponentPropertyDefinition(
+          key: 'label_ar',
+          label: 'الزر بالعربي',
+          description: 'النص المعروض على الزر للعربية',
           type: PropertyType.string,
-          defaultValue: 'زر',
-          required: true,
+          defaultValue: '',
+          group: 'النص',
+        ),
+        'label_en': ComponentPropertyDefinition(
+          key: 'label_en',
+          label: 'الزر بالإنجليزي',
+          description: 'النص المعروض على الزر للإنجليزية',
+          type: PropertyType.string,
+          defaultValue: '',
+          group: 'النص',
         ),
         'action': ComponentPropertyDefinition(
           key: 'action',
@@ -526,7 +941,8 @@ class ComponentRegistry {
       allowedChildTypes: [],
       allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'move', 'hide'],
       defaultValues: {
-        'label': 'زر',
+        'label_ar': '',
+        'label_en': '',
         'action': 'none',
         'style': 'primary',
         'color': '#2E7D32',

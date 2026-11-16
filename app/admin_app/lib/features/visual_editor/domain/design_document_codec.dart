@@ -34,6 +34,16 @@ class DesignDocumentCodec {
     'spacer': DesignContract.spacer,
     'productGrid': DesignContract.productGrid,
     'column': DesignContract.column,
+    'welcomeHero': DesignContract.welcomeHero,
+    'welcomeTitle': DesignContract.welcomeTitle,
+    'welcomeBody': DesignContract.welcomeBody,
+    'welcomeSpacing': DesignContract.welcomeSpacing,
+    'onboardingSlide': DesignContract.onboardingSlide,
+    'onboardingTransition': DesignContract.onboardingTransition,
+    'authTitle': DesignContract.authTitle,
+    'authSubtitle': DesignContract.authSubtitle,
+    'authSocial': DesignContract.authSocial,
+    'authSwitchPrompt': DesignContract.authSwitchPrompt,
   };
 
   /// مصادر البيانات: المفاتيح الداخلية → مفاتيح العقد.
@@ -302,16 +312,68 @@ class DesignDocumentCodec {
       _defaultComponent(defaultHomeNodes[index], index),
   ];
 
+  /// مكوّنات «تصميم اليوم» لصفحات الشاشات المدمجة: عقد الشاشة الأصلية
+  /// بخصائصها الفارغة — التحرير يبدأ من الشاشة كما رسمها المصدر، لا من
+  /// شجرة فارغة تدّعي لا شيء. خاصية فارغة تُنشر تعني «كما هو»، فنشرها
+  /// دون تعديل لا يغيّر شاشة الزبون حرفًا.
+  static const Map<String, List<(String, String?)>> defaultPageNodes = {
+    'welcome': [
+      ('welcomeHero', null),
+      ('welcomeTitle', null),
+      ('welcomeBody', null),
+      ('welcomeSpacing', null),
+    ],
+    'onboarding': [
+      ('onboardingSlide', null),
+      ('onboardingSlide', null),
+      ('onboardingSlide', null),
+      ('onboardingTransition', null),
+    ],
+    'auth': [
+      ('authTitle', null),
+      ('authSubtitle', null),
+      ('authSocial', null),
+      ('authSwitchPrompt', null),
+    ],
+    'sign_up': [
+      ('authTitle', null),
+      ('authSubtitle', null),
+      ('authSocial', null),
+      ('authSwitchPrompt', null),
+    ],
+    'forget_password': [
+      ('authTitle', null),
+      ('authSubtitle', null),
+      ('authSwitchPrompt', null),
+    ],
+    'reset_password': [('authTitle', null), ('authSubtitle', null)],
+    'phone_auth': [('authTitle', null), ('authSubtitle', null)],
+    'email_auth': [('authTitle', null), ('authSubtitle', null)],
+  };
+
+  /// مكوّنات صفحة كما ترسمها مصادر العميل اليوم، فارغة لما لا عقد أصلية
+  /// لها — الشاشات الحرّة تبدأ من شجرة فارغة والموظف يبني ما يشاء.
+  static List<EditableComponent> defaultComponentsFor(String pageId) {
+    if (pageId == 'home') return defaultHomeComponents();
+    final nodes = defaultPageNodes[pageId];
+    if (nodes == null) return const [];
+    return [
+      for (var index = 0; index < nodes.length; index++)
+        _defaultComponent(nodes[index], index, pageId: pageId),
+    ];
+  }
+
   static EditableComponent _defaultComponent(
     (String, String?) entry,
-    int index,
-  ) {
+    int index, {
+    String pageId = 'home',
+  }) {
     final type = entry.$1;
     final registryEntry = _registry[type];
     return EditableComponent(
-      componentId: 'home_${type}_$index',
+      componentId: '${pageId}_${type}_$index',
       componentType: type,
-      pageId: 'home',
+      pageId: pageId,
       index: index,
       classification:
           registryEntry?.classification ?? ComponentClassification.editable,
@@ -348,7 +410,7 @@ class DesignDocumentCodec {
     if (version is! num || version < 1 || version > 2) return 'schema_version';
     final pages = document['pages'];
     if (pages is! List || pages.isEmpty) return 'pages';
-    if (pages.length > 7) return 'page_count';
+    if (pages.length > DesignContract.maxPages) return 'page_count';
 
     final ids = <String>{};
     for (final page in pages) {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -15,7 +14,12 @@ import 'package:admin_app/features/visual_editor/presentation/manager/visual_edi
 /// التطبيق يمس المسودة فقط — القالب يُنسخ إلى المحرّر بنفس تدقيق النشر،
 /// ولا يلمس ما يراه الزبون أبدًا.
 class TemplatesDialog extends StatefulWidget {
-  const TemplatesDialog({super.key});
+  const TemplatesDialog({super.key, required this.cubit});
+
+  /// يمرّر صراحةً لأن الحوار يُبنى في مسار showDialog — شقيق مسار الصفحة
+  /// لا ابنُه — فلا يرث مزوّد الصفحة أبدًا. القراءة من سياق الحوار تسقط بـ
+  /// ProviderNotFoundException، فلا يجوز الاعتماد على context.read هنا.
+  final VisualEditorCubit cubit;
 
   @override
   State<TemplatesDialog> createState() => _TemplatesDialogState();
@@ -35,7 +39,7 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
   Future<void> _load() async {
     try {
       final templates =
-          await context.read<VisualEditorCubit>().loadTemplates();
+          await widget.cubit.loadTemplates();
       if (!mounted) return;
       setState(() => _templates = templates);
     } catch (e) {
@@ -160,7 +164,7 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
   }
 
   Future<void> _apply(DesignTemplateInfo template) async {
-    final ok = await context.read<VisualEditorCubit>().applyTemplate(
+    final ok = await widget.cubit.applyTemplate(
           template.id,
         );
     if (!mounted) return;
@@ -192,7 +196,7 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
     );
     if (confirmed != true) return;
     final ok =
-        await context.read<VisualEditorCubit>().deleteTemplate(template.id);
+        await widget.cubit.deleteTemplate(template.id);
     if (ok && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(S.visualEditorTemplateDeleted)),
@@ -203,8 +207,7 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
 
   Future<void> _saveAsTemplate(String name) async {
     setState(() => _saving = true);
-    final template = await context
-        .read<VisualEditorCubit>()
+    final template = await widget.cubit
         .saveCurrentAsTemplate(name);
     if (!mounted) return;
     setState(() => _saving = false);
