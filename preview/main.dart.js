@@ -37739,7 +37739,7 @@ c9p(a){var s,r,q,p,o=A.a([],t.p)
 for(s=a.length,r=0;r<a.length;a.length===s||(0,A.C)(a),++r){q=a[r]
 if(q.b!=="section.category_list"){p=A.aGx(q)
 if(p instanceof A.c)o.push(A.bwD(q,new A.jm(p,null),"categories"))}}return o},
-c9o(a){return A.bwD(B.b.k_(a,new A.bv7(),new A.bv8()),A.bd(A.ar(B.acw,B.b0,B.i,B.j),1),"categories")},
+c9o(a){return A.bd(A.bwD(B.b.k_(a,new A.bv7(),new A.bv8()),A.ar(B.acw,B.b0,B.i,B.j),"categories"),1)},
 bv7:function bv7(){},
 bv8:function bv8(){},
 MG:function MG(a,b){this.c=a
