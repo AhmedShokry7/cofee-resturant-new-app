@@ -41,6 +41,9 @@ void main() {
     WidgetTester tester, {
     required ValueChanged<String> onKeyChanged,
     required void Function(String key) onReset,
+    EditableComponent? panelComponent,
+    Future<String?> Function()? onPickImage,
+    Future<String?> Function()? onBrowseImages,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
@@ -48,12 +51,16 @@ void main() {
           body: SizedBox(
             width: 400,
             child: PropertiesInspectorPanel(
-              component: component,
-              onPropertyChanged: (
-                  {required componentId, required propertyKey, required value}) =>
-                  onKeyChanged('$propertyKey=${value ?? ''}'),
+              component: panelComponent ?? component,
+              onPropertyChanged: ({
+                required componentId,
+                required propertyKey,
+                required value,
+              }) => onKeyChanged('$propertyKey=${value ?? ''}'),
               onResetProperty: ({required componentId, required propertyKey}) =>
                   onReset(propertyKey),
+              onPickImage: onPickImage,
+              onBrowseImages: onBrowseImages,
             ),
           ),
         ),
@@ -76,7 +83,9 @@ void main() {
     expect(find.text('العنوان'), findsNWidgets(2));
   });
 
-  testWidgets('typing in the merged field writes both languages', (tester) async {
+  testWidgets('typing in the merged field writes both languages', (
+    tester,
+  ) async {
     final changed = <String>[];
     await pumpPanel(tester, onKeyChanged: changed.add, onReset: (_) {});
 
@@ -85,10 +94,15 @@ void main() {
     await tester.enterText(field, 'قهوة الصباح');
     await tester.pump();
 
-    expect(changed, containsAll(['title_ar=قهوة الصباح', 'title_en=قهوة الصباح']));
+    expect(
+      changed,
+      containsAll(['title_ar=قهوة الصباح', 'title_en=قهوة الصباح']),
+    );
   });
 
-  testWidgets('the separate mode edits each language on its own', (tester) async {
+  testWidgets('the separate mode edits each language on its own', (
+    tester,
+  ) async {
     final changed = <String>[];
     await pumpPanel(tester, onKeyChanged: changed.add, onReset: (_) {});
 
@@ -111,6 +125,102 @@ void main() {
     expect(changed, isNot(contains('title_en=قهوة الصباح')));
     // العربي لم يُكتب في هذه الكتابة.
     expect(changed.where((c) => c.startsWith('title_ar=')), isEmpty);
+  });
+
+  testWidgets('an image is previewed and can be removed', (tester) async {
+    final changed = <String>[];
+    final imageComponent = component.copyWith(
+      properties: <String, dynamic>{
+        ...component.properties,
+        'imageUrl': 'https://example.invalid/current.png',
+      },
+    );
+    await pumpPanel(
+      tester,
+      onKeyChanged: changed.add,
+      onReset: (_) {},
+      panelComponent: imageComponent,
+    );
+
+    expect(find.byType(Image), findsOneWidget);
+    expect(find.text(S.visualEditorRestoreOriginalImage), findsOneWidget);
+    await tester.tap(find.text(S.visualEditorRestoreOriginalImage));
+    await tester.pump();
+
+    expect(changed, contains('imageUrl='));
+    expect(find.text(S.visualEditorRestoreOriginalImage), findsNothing);
+  });
+
+  testWidgets('an image can be replaced by a picked upload', (tester) async {
+    final changed = <String>[];
+    final imageComponent = component.copyWith(
+      properties: <String, dynamic>{
+        ...component.properties,
+        'imageUrl': 'https://example.invalid/current.png',
+      },
+    );
+    await pumpPanel(
+      tester,
+      onKeyChanged: changed.add,
+      onReset: (_) {},
+      panelComponent: imageComponent,
+      onPickImage: () async => 'https://example.invalid/replacement.png',
+    );
+
+    await tester.tap(find.text(S.visualEditorPickImage));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      changed,
+      contains('imageUrl=https://example.invalid/replacement.png'),
+    );
+  });
+
+  testWidgets('an image can be chosen from the customer image library', (
+    tester,
+  ) async {
+    final changed = <String>[];
+    await pumpPanel(
+      tester,
+      onKeyChanged: changed.add,
+      onReset: (_) {},
+      onBrowseImages: () async => 'https://example.invalid/library.png',
+    );
+
+    await tester.tap(find.text(S.visualEditorImageLibrary).first);
+    await tester.pump();
+
+    expect(changed, contains('imageUrl=https://example.invalid/library.png'));
+  });
+
+  testWidgets('splash image can be selected from its library', (tester) async {
+    final changed = <String>[];
+    final splash = EditableComponent(
+      componentId: 'splash_settings',
+      componentType: 'splashSettings',
+      pageId: 'splash',
+      index: 0,
+      classification: ComponentClassification.editable,
+      properties: const {'imageUrl': '', 'visible': true},
+      defaultValues: const {'imageUrl': ''},
+      validationRules: const {},
+      allowedOperations: const ['edit', 'hide'],
+      version: 1,
+    );
+    await pumpPanel(
+      tester,
+      onKeyChanged: changed.add,
+      onReset: (_) {},
+      panelComponent: splash,
+      onBrowseImages: () async => 'https://example.invalid/splash.png',
+    );
+
+    expect(find.text(S.visualEditorImageLibrary), findsOneWidget);
+    await tester.tap(find.text(S.visualEditorImageLibrary));
+    await tester.pump();
+
+    expect(changed, contains('imageUrl=https://example.invalid/splash.png'));
   });
 
   testWidgets('reset clears both languages at once', (tester) async {

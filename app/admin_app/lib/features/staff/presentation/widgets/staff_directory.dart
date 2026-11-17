@@ -21,6 +21,8 @@ class StaffDirectory extends StatefulWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    this.canReadEmployeeFiles = false,
+    this.onEmployeeFile,
   });
 
   final List<AdminStaffMember> staff;
@@ -29,6 +31,8 @@ class StaffDirectory extends StatefulWidget {
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final bool canReadEmployeeFiles;
+  final ValueChanged<AdminStaffMember>? onEmployeeFile;
 
   @override
   State<StaffDirectory> createState() => _StaffDirectoryState();
@@ -160,6 +164,8 @@ class _StaffDirectoryState extends State<StaffDirectory> {
                           canManagePermissions: widget.canManagePermissions,
                           onManage: widget.onManage,
                           onEdit: widget.onEdit,
+                          canReadEmployeeFiles: widget.canReadEmployeeFiles,
+                          onEmployeeFile: widget.onEmployeeFile,
                         );
                       }
                       return StaffTable(
@@ -167,6 +173,8 @@ class _StaffDirectoryState extends State<StaffDirectory> {
                         canManagePermissions: widget.canManagePermissions,
                         onManage: widget.onManage,
                         onEdit: widget.onEdit,
+                        canReadEmployeeFiles: widget.canReadEmployeeFiles,
+                        onEmployeeFile: widget.onEmployeeFile,
                       );
                     },
                   ),

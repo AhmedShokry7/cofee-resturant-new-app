@@ -8,6 +8,7 @@ class AdminSubscriptionPlan {
     this.code = '',
     this.nameAr,
     this.nameEn,
+    this.imageUrl,
     this.descriptionAr,
     this.descriptionEn,
     this.price = 0,
@@ -35,6 +36,7 @@ class AdminSubscriptionPlan {
   final String code;
   final String? nameAr;
   final String? nameEn;
+  final String? imageUrl;
   final String? descriptionAr;
   final String? descriptionEn;
   final double price;
@@ -56,6 +58,38 @@ class AdminSubscriptionPlan {
   final int activeSubscribers;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+
+  AdminSubscriptionPlan copyWith({
+    String? imageUrl,
+    bool clearImageUrl = false,
+  }) => AdminSubscriptionPlan(
+    id: id,
+    code: code,
+    nameAr: nameAr,
+    nameEn: nameEn,
+    imageUrl: clearImageUrl ? null : (imageUrl ?? this.imageUrl),
+    descriptionAr: descriptionAr,
+    descriptionEn: descriptionEn,
+    price: price,
+    currencyCode: currencyCode,
+    durationDays: durationDays,
+    cupsPerCycle: cupsPerCycle,
+    bonusType: bonusType,
+    bonusValue: bonusValue,
+    bonusExpiresWithCycle: bonusExpiresWithCycle,
+    rolloverCapCups: rolloverCapCups,
+    renewalPolicy: renewalPolicy,
+    autoRenewSupported: autoRenewSupported,
+    allBranches: allBranches,
+    productScope: productScope,
+    products: products,
+    isActive: isActive,
+    isForSale: isForSale,
+    subscribersCount: subscribersCount,
+    activeSubscribers: activeSubscribers,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 
   /// A plan customers can find in `subscriptions.list_plans`.
   bool get isOnSale => isActive && isForSale;
@@ -89,6 +123,7 @@ class AdminSubscriptionPlan {
       code: '${json['code'] ?? ''}',
       nameAr: json['name_ar'] as String?,
       nameEn: json['name_en'] as String?,
+      imageUrl: json['image_url'] as String?,
       descriptionAr: json['description_ar'] as String?,
       descriptionEn: json['description_en'] as String?,
       price: (json['price'] as num?)?.toDouble() ?? 0,

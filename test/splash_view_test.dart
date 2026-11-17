@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,28 +9,47 @@ import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
+import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
+
 import 'support/fake_design_repository.dart';
+
+class _DeferredDesignRepository implements DesignRepository {
+  final Completer<PublishedDesign?> completer = Completer<PublishedDesign?>();
+
+  @override
+  Future<PublishedDesign?> published({bool forceRefresh = false}) =>
+      completer.future;
+
+  @override
+  Future<PublishedDesign?> lastKnown() async => null;
+}
 
 /// Mirrors app.dart: the entry route is the splash, and the destination pages
 /// render inside the same MaterialApp.
 ///
 /// تطبيق العميل يزوّد كل مساراته بـ DesignCubit من جذره، وهنا يُقلّد ذلك
 /// بمستودع زائف يجيب بلا مستند — فترسم الشاشات أصولها.
-Widget _app(String targetRoute) => BlocProvider<DesignCubit>(
-  create: (context) => DesignCubit(repository: FakeDesignRepository()),
-  child: MaterialApp(
+Widget _app(String targetRoute, {PublishedDesign? design, DesignCubit? cubit}) {
+  final app = MaterialApp(
     onGenerateRoute: AppRouteGenerator.onGenerateRoute,
     routes: {
       SplashView.routeName: (context) => SplashView(targetRoute: targetRoute),
       ...AppRoutes.routes,
     },
     initialRoute: SplashView.routeName,
-  ),
-);
+  );
+  if (cubit != null) return BlocProvider.value(value: cubit, child: app);
+  return BlocProvider<DesignCubit>(
+    create: (context) => DesignCubit(repository: FakeDesignRepository(design)),
+    child: app,
+  );
+}
 
 /// Renders the splash on a surface of the given logical size.
 Future<void> _pumpSplash(
@@ -36,12 +57,14 @@ Future<void> _pumpSplash(
   Size logicalSize, {
   double pixelRatio = 1.0,
   String targetRoute = WelcomePage.routeName,
+  PublishedDesign? design,
+  DesignCubit? cubit,
 }) async {
   tester.view.physicalSize = logicalSize * pixelRatio;
   tester.view.devicePixelRatio = pixelRatio;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(_app(targetRoute));
+  await tester.pumpWidget(_app(targetRoute, design: design, cubit: cubit));
 }
 
 /// Counts every copy of the destination on the navigator stack, including the
@@ -155,6 +178,142 @@ void main() {
 
     expect(find.byType(SplashView), findsNothing);
     expect(find.byType(WelcomePage), findsOneWidget);
+  });
+
+  testWidgets('published splash image, optional text and background are used', (
+    tester,
+  ) async {
+    const design = PublishedDesign(
+      schemaVersion: 2,
+      extraSections: {
+        'splash': [
+          PublishedSection(
+            id: 'splash_settings',
+            type: 'splash.settings',
+            properties: {
+              'imageUrl': 'https://cdn.example.com/splash.png',
+              'imageFit': 'cover',
+              'imageWidth': 210,
+              'imageAlignment': 'topCenter',
+              'text_ar': 'أهلاً بك',
+              'textColor': '#123456',
+              'textSize': 20,
+              'textAlignment': 'end',
+              'backgroundColor': '#ABCDEF',
+              'durationMs': 2500,
+              'animation': 'fade',
+              'animationDurationMs': 500,
+            },
+          ),
+        ],
+      },
+    );
+    await _pumpSplash(tester, const Size(360, 690), design: design);
+    await tester.pump();
+
+    final image = tester.widget<DbImage>(find.byType(DbImage));
+    expect(image.image, 'https://cdn.example.com/splash.png');
+    expect(image.width, 210);
+    expect(image.fit, BoxFit.cover);
+    expect(find.text('أهلاً بك'), findsOneWidget);
+    final text = tester.widget<Text>(find.text('أهلاً بك'));
+    expect(text.textAlign, TextAlign.end);
+    expect(text.style?.fontSize, 20);
+    final background = tester.widget<Scaffold>(find.byType(Scaffold).first);
+    expect(background.backgroundColor, const Color(0xFFABCDEF));
+  });
+
+  testWidgets(
+    'published duration controls the handover without changing route',
+    (tester) async {
+      const design = PublishedDesign(
+        schemaVersion: 2,
+        extraSections: {
+          'splash': [
+            PublishedSection(
+              id: 'splash_settings',
+              type: 'splash.settings',
+              properties: {'durationMs': 250},
+            ),
+          ],
+        },
+      );
+      tester.view.physicalSize = const Size(360, 690);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(_app(WelcomePage.routeName, design: design));
+      await tester.pump();
+
+      await tester.pump(const Duration(milliseconds: 249));
+      expect(find.byType(SplashView), findsOneWidget);
+      expect(find.byType(WelcomePage), findsNothing);
+      await tester.pump(const Duration(milliseconds: 1));
+      await tester.pumpAndSettle();
+      expect(find.byType(WelcomePage), findsOneWidget);
+    },
+  );
+
+  testWidgets('initial handover waits for a late published splash duration', (
+    tester,
+  ) async {
+    final repository = _DeferredDesignRepository();
+    final cubit = DesignCubit(repository: repository);
+    await _pumpSplash(tester, const Size(360, 690), cubit: cubit);
+
+    await tester.pump(const Duration(seconds: 2));
+    expect(find.byType(SplashView), findsOneWidget);
+
+    repository.completer.complete(
+      const PublishedDesign(
+        schemaVersion: 2,
+        extraSections: {
+          'splash': [
+            PublishedSection(
+              id: 'splash_settings',
+              type: 'splash.settings',
+              properties: {'durationMs': 2500},
+            ),
+          ],
+        },
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    await tester.pump(const Duration(milliseconds: 2499));
+    expect(find.byType(SplashView), findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 1));
+    await tester.pumpAndSettle();
+    expect(find.byType(WelcomePage), findsOneWidget);
+
+    await cubit.close();
+  });
+
+  testWidgets('a hidden splash content leaves a blank configured surface', (
+    tester,
+  ) async {
+    const design = PublishedDesign(
+      schemaVersion: 2,
+      extraSections: {
+        'splash': [
+          PublishedSection(
+            id: 'splash_settings',
+            type: 'splash.settings',
+            visible: false,
+            properties: {'backgroundColor': '#F0F0F0', 'durationMs': 1000},
+          ),
+        ],
+      },
+    );
+    tester.view.physicalSize = const Size(360, 690);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(_app(WelcomePage.routeName, design: design));
+    await tester.pump();
+
+    expect(find.byType(SplashBrandMark), findsNothing);
+    final scaffold = tester.widget<Scaffold>(find.byType(Scaffold).first);
+    expect(scaffold.backgroundColor, const Color(0xFFF0F0F0));
   });
 
   testWidgets('the target route is opened exactly once', (tester) async {

@@ -1,6 +1,7 @@
 import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/features/shell/presentation/models/destinations/content_destinations.dart';
 import 'package:admin_app/features/shell/presentation/models/destinations/growth_destinations.dart';
+import 'package:admin_app/features/shell/presentation/models/destinations/hr_destinations.dart';
 import 'package:admin_app/features/shell/presentation/models/destinations/management_destinations.dart';
 import 'package:admin_app/features/shell/presentation/models/destinations/operations_destinations.dart';
 import 'package:admin_app/features/shell/presentation/models/destinations/people_destinations.dart';
@@ -13,6 +14,7 @@ import 'package:admin_app/features/shell/presentation/models/destinations/people
 List<AdminDestination> get adminDestinations => <AdminDestination>[
   ...managementDestinations,
   ...operationsDestinations,
+  ...hrDestinations,
   ...peopleDestinations,
   ...contentDestinations,
   ...growthDestinations,

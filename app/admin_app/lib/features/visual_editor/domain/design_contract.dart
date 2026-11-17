@@ -109,6 +109,7 @@ abstract final class DesignContract {
     /// عقد الشاشات المدمجة: لا يرسمها محرك الأقسام الحرّة، بل تقرؤها
     /// مكوّنات الشاشة نفسها (published_design لدى العميل) — خاصية فارغة
     /// تعني «كما هو»، و`visible: false` تعني إخفاء المكوّن الأصلي.
+    'splash.settings',
     'welcome.hero',
     'welcome.title',
     'welcome.body',
@@ -138,6 +139,7 @@ abstract final class DesignContract {
   /// عقد الشاشات المدمجة، بمفاتيح العقد كما تقرؤها شاشات العميل
   /// (DesignWidgetTypes لدى العميل). خاصية فارغة تعني «كما هو»، و
   /// `visible: false` تعني إخفاء المكوّن الأصلي.
+  static const String splashSettings = 'splash.settings';
   static const String welcomeHero = 'welcome.hero';
   static const String welcomeTitle = 'welcome.title';
   static const String welcomeBody = 'welcome.body';
@@ -218,10 +220,7 @@ class DesignTheme {
       _nonEmpty(appNameAr) || _nonEmpty(appNameEn) || _nonEmpty(logoUrl);
 
   bool get isEmpty =>
-      colors.isEmpty &&
-      textScale == null &&
-      radiusScale == null &&
-      !_hasBrand;
+      colors.isEmpty && textScale == null && radiusScale == null && !_hasBrand;
 
   /// كما ستقرأها القاعدة والهاتف. طبقة محايدة تُسلسل إلى null لا إلى `{}` —
   /// الفارغ غيابٌ لا طبقة، والمدقق الحي يقبل الغياب لا الطبقة الهشة.
@@ -260,9 +259,8 @@ class DesignTheme {
     final scale = raw['text_scale'];
     final radius = raw['radius_scale'];
     final brand = raw['brand'] is Map ? raw['brand'] as Map : null;
-    String? text(Object? value) => value is String && value.trim().isNotEmpty
-        ? value.trim()
-        : null;
+    String? text(Object? value) =>
+        value is String && value.trim().isNotEmpty ? value.trim() : null;
     return DesignTheme(
       colors: colors,
       textScale: scale is String ? scale : null,

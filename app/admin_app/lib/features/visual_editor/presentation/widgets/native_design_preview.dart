@@ -49,12 +49,12 @@ class NativeDesignPreview extends StatelessWidget {
       DesignContract.textFactors[theme.textScale ?? 'default'] ?? 1;
 
   double _radiusFactor() => switch (theme.radiusScale ?? 'default') {
-        'sharp' => 0.5,
-        'soft' => 1.25,
-        'round' => 1.75,
-        'pill' => 3,
-        _ => 1,
-      };
+    'sharp' => 0.5,
+    'soft' => 1.25,
+    'round' => 1.75,
+    'pill' => 3,
+    _ => 1,
+  };
 
   double _radius(String? token, {double base = AppRadius.md}) =>
       (switch (token) {
@@ -83,7 +83,8 @@ class NativeDesignPreview extends StatelessWidget {
         _ => fallback,
       };
 
-  Color get _accent => _roleColor(DesignColorRole.primary) ?? AppColor.adminAccent;
+  Color get _accent =>
+      _roleColor(DesignColorRole.primary) ?? AppColor.adminAccent;
 
   Color get _bg =>
       _roleColor(DesignColorRole.background) ?? AppColor.whiteColor;
@@ -118,9 +119,7 @@ class NativeDesignPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final byParent = _childrenByParent;
-    final roots = components
-        .where((c) => c.parentId == null)
-        .toList()
+    final roots = components.where((c) => c.parentId == null).toList()
       ..sort((a, b) => a.index.compareTo(b.index));
     final sections = <Widget>[];
     for (final root in roots) {
@@ -195,6 +194,8 @@ class NativeDesignPreview extends StatelessWidget {
       // عقد الشاشات المدمجة: تقرؤها شاشات العميل نفسها لا محرك الأقسام،
       // فترسمها المعاينة الأصلية بنفس ما تعرضه الشاشة من صورة ونصّ، حتى
       // يرى الموظف تعديله فورًا بلا انتظار بناء الويب.
+      case 'splashSettings':
+        content = _splashSettings(component);
       case 'welcomeHero':
         content = _welcomeHero(component);
       case 'welcomeTitle':
@@ -263,41 +264,39 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _searchBar(EditableComponent c) => Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.xs,
-        ),
-        child: _searchField(
-          (c.properties['hint'] as String?) ?? 'ابحث عن منتج...',
-        ),
-      );
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.xs,
+    ),
+    child: _searchField((c.properties['hint'] as String?) ?? 'ابحث عن منتج...'),
+  );
 
   Widget _searchField(String hint) => Container(
-        height: 38,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        decoration: BoxDecoration(
-          color: _bg,
-          borderRadius: BorderRadius.circular(_radius('pill')),
-          border: Border.all(color: _borderColor),
-        ),
-        child: Row(
-          children: [
-            Icon(AppIcons.search01, size: 16, color: _textSecondary),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                hint,
-                style: TextStyle(
-                  fontSize: AppFontSizes.size12 * _textFactor,
-                  color: _textSecondary,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+    height: 38,
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+    decoration: BoxDecoration(
+      color: _bg,
+      borderRadius: BorderRadius.circular(_radius('pill')),
+      border: Border.all(color: _borderColor),
+    ),
+    child: Row(
+      children: [
+        Icon(AppIcons.search01, size: 16, color: _textSecondary),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Text(
+            hint,
+            style: TextStyle(
+              fontSize: AppFontSizes.size12 * _textFactor,
+              color: _textSecondary,
             ),
-          ],
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _bannerCarousel(EditableComponent c) {
     final height = (c.properties['height'] as num?)?.toDouble() ?? 184.0;
@@ -334,24 +333,24 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _promoBanner(EditableComponent c) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-        child: Container(
-          height: 72,
-          decoration: BoxDecoration(
-            color: _roleColor(DesignColorRole.secondary) ?? _accent,
-            borderRadius: BorderRadius.circular(_radius(c.property('radius'))),
-          ),
-          alignment: Alignment.center,
-          child: Text(
-            'إعلان ترويجي',
-            style: TextStyle(
-              fontSize: AppFontSizes.size13 * _textFactor,
-              fontWeight: AppFontWeights.semiBold,
-              color: Colors.white,
-            ),
-          ),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+    child: Container(
+      height: 72,
+      decoration: BoxDecoration(
+        color: _roleColor(DesignColorRole.secondary) ?? _accent,
+        borderRadius: BorderRadius.circular(_radius(c.property('radius'))),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        'إعلان ترويجي',
+        style: TextStyle(
+          fontSize: AppFontSizes.size13 * _textFactor,
+          fontWeight: AppFontWeights.semiBold,
+          color: Colors.white,
         ),
-      );
+      ),
+    ),
+  );
 
   Widget _sectionTitle(String? raw, {required bool show}) {
     if (!show || raw == null || raw.isEmpty) return const SizedBox.shrink();
@@ -383,124 +382,120 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _categoryList(EditableComponent c) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(
-            c.property('title'),
-            show: c.properties['showTitle'] as bool? ?? true,
-          ),
-          SizedBox(
-            height: 76,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              itemCount: 8,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (_, index) => Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: _surface,
-                    child: Icon(AppIcons.folder01, size: 20, color: _accent),
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  SizedBox(
-                    width: 52,
-                    child: Text(
-                      'تصنيف ${index + 1}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: AppFontSizes.size9_5 * _textFactor,
-                        color: _textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _sectionTitle(
+        c.property('title'),
+        show: c.properties['showTitle'] as bool? ?? true,
+      ),
+      SizedBox(
+        height: 76,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          itemCount: 8,
+          separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+          itemBuilder: (_, index) => Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: _surface,
+                child: Icon(AppIcons.folder01, size: 20, color: _accent),
               ),
-            ),
-          ),
-        ],
-      );
-
-  Widget _productCard({bool showPrice = true, double? width}) => Container(
-        width: width ?? 120,
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.circular(_radius('md')),
-          border: Border.all(color: _borderColor),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _bg,
-                  borderRadius: BorderRadius.circular(_radius('sm')),
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  AppIcons.shoppingBag01,
-                  size: 24,
-                  color: _textSecondary,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Container(
-              height: 9,
-              width: 64,
-              decoration: BoxDecoration(
-                color: _textSecondary.withAlpha(70),
-                borderRadius: BorderRadius.circular(AppRadius.pill),
-              ),
-            ),
-            if (showPrice) ...[
               const SizedBox(height: AppSpacing.xxs),
-              Text(
-                '12.500 د.ك',
-                style: TextStyle(
-                  fontSize: AppFontSizes.size10 * _textFactor,
-                  fontWeight: AppFontWeights.semiBold,
-                  color: _accent,
+              SizedBox(
+                width: 52,
+                child: Text(
+                  'تصنيف ${index + 1}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.size9_5 * _textFactor,
+                    color: _textSecondary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
-          ],
-        ),
-      );
-
-  Widget _productStrip(EditableComponent c) => Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _sectionTitle(
-            c.property('title'),
-            show: true,
           ),
-          SizedBox(
-            height: 150,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              itemCount:
-                  (((c.properties['maxItems'] as num?) ?? 10).clamp(1, 50))
-                      .toInt(),
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: AppSpacing.sm),
-              itemBuilder: (_, _) => _productCard(
-                showPrice: c.properties['showPrice'] as bool? ?? true,
-              ),
+        ),
+      ),
+    ],
+  );
+
+  Widget _productCard({bool showPrice = true, double? width}) => Container(
+    width: width ?? 120,
+    padding: const EdgeInsets.all(AppSpacing.sm),
+    decoration: BoxDecoration(
+      color: _surface,
+      borderRadius: BorderRadius.circular(_radius('md')),
+      border: Border.all(color: _borderColor),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: _bg,
+              borderRadius: BorderRadius.circular(_radius('sm')),
+            ),
+            alignment: Alignment.center,
+            child: Icon(
+              AppIcons.shoppingBag01,
+              size: 24,
+              color: _textSecondary,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Container(
+          height: 9,
+          width: 64,
+          decoration: BoxDecoration(
+            color: _textSecondary.withAlpha(70),
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+        ),
+        if (showPrice) ...[
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            '12.500 د.ك',
+            style: TextStyle(
+              fontSize: AppFontSizes.size10 * _textFactor,
+              fontWeight: AppFontWeights.semiBold,
+              color: _accent,
             ),
           ),
         ],
-      );
+      ],
+    ),
+  );
+
+  Widget _productStrip(EditableComponent c) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _sectionTitle(c.property('title'), show: true),
+      SizedBox(
+        height: 150,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          itemCount: (((c.properties['maxItems'] as num?) ?? 10).clamp(
+            1,
+            50,
+          )).toInt(),
+          separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
+          itemBuilder: (_, _) => _productCard(
+            showPrice: c.properties['showPrice'] as bool? ?? true,
+          ),
+        ),
+      ),
+    ],
+  );
 
   Widget _productGrid(EditableComponent c) {
     final columns = ((c.properties['columns'] as num?) ?? 2).clamp(1, 4);
@@ -574,8 +569,9 @@ class NativeDesignPreview extends StatelessWidget {
               : ListView.separated(
                   scrollDirection: Axis.horizontal,
                   physics: const NeverScrollableScrollPhysics(),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.lg,
+                  ),
                   itemCount: 4,
                   separatorBuilder: (_, _) =>
                       const SizedBox(width: AppSpacing.sm),
@@ -587,52 +583,52 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _bundleTile({double? width}) => Container(
-        width: width,
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: _surface,
-          borderRadius: BorderRadius.circular(_radius('md')),
-          border: Border.all(color: _borderColor),
+    width: width,
+    padding: const EdgeInsets.all(AppSpacing.sm),
+    decoration: BoxDecoration(
+      color: _surface,
+      borderRadius: BorderRadius.circular(_radius('md')),
+      border: Border.all(color: _borderColor),
+    ),
+    child: Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: _accent.withAlpha(30),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(AppIcons.cube, size: 18, color: _accent),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: _accent.withAlpha(30),
-                shape: BoxShape.circle,
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                height: 9,
+                width: 80,
+                decoration: BoxDecoration(
+                  color: _textSecondary.withAlpha(70),
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
               ),
-              child: Icon(AppIcons.cube, size: 18, color: _accent),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    height: 9,
-                    width: 80,
-                    decoration: BoxDecoration(
-                      color: _textSecondary.withAlpha(70),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    '3 أصناف',
-                    style: TextStyle(
-                      fontSize: AppFontSizes.size9_5 * _textFactor,
-                      color: _textSecondary,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                '3 أصناف',
+                style: TextStyle(
+                  fontSize: AppFontSizes.size9_5 * _textFactor,
+                  color: _textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      );
+      ],
+    ),
+  );
 
   Widget _text(EditableComponent c) {
     final text = _loc(c, 'text');
@@ -751,10 +747,25 @@ class NativeDesignPreview extends StatelessWidget {
 
   Widget _image(EditableComponent c) {
     final url = (c.properties['imageUrl'] as String?) ?? '';
-    final height = (c.properties['height'] as num?)?.toDouble() ?? 160.0;
+    final width = _numProp(c, 'width');
+    final height = _numProp(c, 'height') ?? 160.0;
+    final fit = switch (c.property('fit')) {
+      'contain' => BoxFit.contain,
+      'fill' => BoxFit.fill,
+      'fitWidth' => BoxFit.fitWidth,
+      'fitHeight' => BoxFit.fitHeight,
+      'scaleDown' => BoxFit.scaleDown,
+      _ => BoxFit.cover,
+    };
+    final alignment = switch (c.property('alignment')) {
+      'start' => AlignmentDirectional.centerStart,
+      'end' => AlignmentDirectional.centerEnd,
+      _ => AlignmentDirectional.center,
+    };
     Widget child;
     if (url.isEmpty) {
       child = Container(
+        width: width,
         height: height,
         color: _surface,
         alignment: Alignment.center,
@@ -763,9 +774,12 @@ class NativeDesignPreview extends StatelessWidget {
     } else {
       child = Image.network(
         url,
+        width: width,
         height: height,
-        fit: c.property('fit') == 'contain' ? BoxFit.contain : BoxFit.cover,
+        fit: fit,
+        alignment: alignment,
         errorBuilder: (_, _, _) => Container(
+          width: width,
           height: height,
           color: _surface,
           alignment: Alignment.center,
@@ -773,26 +787,27 @@ class NativeDesignPreview extends StatelessWidget {
         ),
       );
     }
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(
-          _radius(c.property('borderRadius'), base: AppRadius.sm),
+    return Align(
+      alignment: alignment,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(
+            _radius(c.property('borderRadius'), base: AppRadius.sm),
+          ),
+          child: child,
         ),
-        child: child,
       ),
     );
   }
 
   Widget _divider(EditableComponent c) => Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: _spacing(c.property('inset')),
-        ),
-        child: Divider(
-          thickness: (c.properties['thickness'] as num?)?.toDouble() ?? 1,
-          color: _hex(c.property('color')) ?? _borderColor,
-        ),
-      );
+    padding: EdgeInsets.symmetric(horizontal: _spacing(c.property('inset'))),
+    child: Divider(
+      thickness: (c.properties['thickness'] as num?)?.toDouble() ?? 1,
+      color: _hex(c.property('color')) ?? _borderColor,
+    ),
+  );
 
   Widget _spacer(EditableComponent c) =>
       SizedBox(height: _spacing(c.property('size'), fallback: AppSpacing.lg));
@@ -808,8 +823,7 @@ class NativeDesignPreview extends StatelessWidget {
   /// نصّ ثنائي اللغة للمعاينة: العربي أولًا ثم الإنجليزي ثم الاسم الأحادي
   /// القديم — كما يقرؤه العميل بسقوطه من لغة الواجهة إلى الأخرى فقط.
   String _loc(EditableComponent c, String base) {
-    String read(String key) =>
-        ((c.properties[key] as String?) ?? '').trim();
+    String read(String key) => ((c.properties[key] as String?) ?? '').trim();
     final preferred = read('${base}_ar');
     if (preferred.isNotEmpty) return preferred;
     final other = read('${base}_en');
@@ -818,6 +832,98 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   // ------------------------------------------------------- الشاشات المدمجة
+
+  Widget _splashSettings(EditableComponent c) {
+    final url = (c.properties['imageUrl'] as String?)?.trim() ?? '';
+    final text = _loc(c, 'text');
+    final duration = _numProp(c, 'durationMs')?.round() ?? 1000;
+    final size = _numProp(c, 'textSize') ?? 16;
+    final imageWidth = _numProp(c, 'imageWidth');
+    final imageHeight = _numProp(c, 'imageHeight') ?? 110.0;
+    final imageGap = _numProp(c, 'imageGap') ?? AppSpacing.sm;
+    final fit = switch (c.property('imageFit')) {
+      'cover' => BoxFit.cover,
+      'fill' => BoxFit.fill,
+      'fitWidth' => BoxFit.fitWidth,
+      'fitHeight' => BoxFit.fitHeight,
+      'scaleDown' => BoxFit.scaleDown,
+      _ => BoxFit.contain,
+    };
+    final alignment = switch (c.property('imageAlignment')) {
+      'topLeft' => Alignment.topLeft,
+      'topRight' => Alignment.topRight,
+      'centerLeft' => Alignment.centerLeft,
+      'centerRight' => Alignment.centerRight,
+      'bottomLeft' => Alignment.bottomLeft,
+      'bottomCenter' => Alignment.bottomCenter,
+      'bottomRight' => Alignment.bottomRight,
+      _ => Alignment.center,
+    };
+    final textAlignment = switch (c.property('textAlignment')) {
+      'start' => TextAlign.start,
+      'end' => TextAlign.end,
+      _ => TextAlign.center,
+    };
+    final verticalAlignment = switch (c.property('verticalAlignment')) {
+      'top' => MainAxisAlignment.start,
+      'bottom' => MainAxisAlignment.end,
+      _ => MainAxisAlignment.center,
+    };
+    final image = url.isEmpty
+        ? Container(
+            width: imageWidth ?? 140,
+            height: imageHeight,
+            alignment: Alignment.center,
+            color: _surface,
+            child: Icon(AppIcons.image01, size: 30, color: _textSecondary),
+          )
+        : Image.network(
+            url,
+            width: imageWidth,
+            height: imageHeight,
+            fit: fit,
+            alignment: alignment,
+            errorBuilder: (_, _, _) => Container(
+              width: imageWidth ?? 140,
+              height: imageHeight,
+              color: _surface,
+              alignment: Alignment.center,
+              child: Icon(AppIcons.image01, color: _textSecondary),
+            ),
+          );
+    return Container(
+      constraints: const BoxConstraints(minHeight: 230),
+      width: double.infinity,
+      color: _hex(c.property('backgroundColor')) ?? Colors.white,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: verticalAlignment,
+        children: [
+          Align(alignment: alignment, child: image),
+          if (text.isNotEmpty) ...[
+            SizedBox(height: imageGap),
+            Text(
+              text,
+              textAlign: textAlignment,
+              style: TextStyle(
+                fontSize: size * _textFactor,
+                color: _hex(c.property('textColor')) ?? _textPrimary,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'الانتقال بعد ${duration}ms • ${c.property('animation') ?? 'fadeScale'}',
+            style: TextStyle(
+              fontSize: AppFontSizes.size9_5,
+              color: _textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   /// صورة الترحيب: الرابط المنشور أو الصورة المرفقة، بنفس مساحة الشاشة.
   Widget _welcomeHero(EditableComponent c) {
@@ -853,6 +959,17 @@ class NativeDesignPreview extends StatelessWidget {
           'scaleDown' => BoxFit.scaleDown,
           _ => BoxFit.cover,
         },
+        alignment: switch (c.property('alignment')) {
+          'topLeft' => Alignment.topLeft,
+          'topRight' => Alignment.topRight,
+          'centerLeft' => Alignment.centerLeft,
+          'centerRight' => Alignment.centerRight,
+          'bottomLeft' => Alignment.bottomLeft,
+          'bottomCenter' => Alignment.bottomCenter,
+          'bottomRight' => Alignment.bottomRight,
+          'center' => Alignment.center,
+          _ => Alignment.topCenter,
+        },
         errorBuilder: (_, _, _) => Container(
           color: _surface,
           alignment: Alignment.center,
@@ -860,7 +977,24 @@ class NativeDesignPreview extends StatelessWidget {
         ),
       );
     }
-    return SizedBox(height: 220, width: double.infinity, child: picture);
+    return SizedBox(
+      height: 220,
+      width: double.infinity,
+      child: Align(
+        alignment: switch (c.property('alignment')) {
+          'topLeft' => Alignment.topLeft,
+          'topRight' => Alignment.topRight,
+          'centerLeft' => Alignment.centerLeft,
+          'centerRight' => Alignment.centerRight,
+          'bottomLeft' => Alignment.bottomLeft,
+          'bottomCenter' => Alignment.bottomCenter,
+          'bottomRight' => Alignment.bottomRight,
+          'center' => Alignment.center,
+          _ => Alignment.topCenter,
+        },
+        child: picture,
+      ),
+    );
   }
 
   /// عنوان الترحيب: جزؤه الملوّن وباقيه، أو نصّ الشاشة حين يُترك فارغًا.
@@ -965,7 +1099,7 @@ class NativeDesignPreview extends StatelessWidget {
                     )
                   : Image.network(
                       url,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.fill,
                       errorBuilder: (_, _, _) => Container(
                         color: _bg,
                         alignment: Alignment.center,
@@ -1021,49 +1155,48 @@ class NativeDesignPreview extends StatelessWidget {
   }
 
   Widget _authSocial() => Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.sm,
-        ),
-        child: Row(
-          children: [
-            for (var i = 0; i < 2; i++) ...[
-              if (i > 0) const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Container(
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: _bg,
-                    borderRadius:
-                        BorderRadius.circular(_radius('pill')),
-                    border: Border.all(color: _borderColor),
-                  ),
-                  child: Text(
-                    i == 0 ? 'Google' : 'متابعة',
-                    style: TextStyle(
-                      fontSize: AppFontSizes.size12 * _textFactor,
-                      color: _textPrimary,
-                    ),
-                  ),
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.lg,
+      vertical: AppSpacing.sm,
+    ),
+    child: Row(
+      children: [
+        for (var i = 0; i < 2; i++) ...[
+          if (i > 0) const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Container(
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: _bg,
+                borderRadius: BorderRadius.circular(_radius('pill')),
+                border: Border.all(color: _borderColor),
+              ),
+              child: Text(
+                i == 0 ? 'Google' : 'متابعة',
+                style: TextStyle(
+                  fontSize: AppFontSizes.size12 * _textFactor,
+                  color: _textPrimary,
                 ),
               ),
-            ],
-          ],
-        ),
-      );
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 
   Widget _authSwitchPrompt() => Padding(
-        padding: const EdgeInsets.all(AppSpacing.sm),
-        child: Text(
-          'ليس لديك حساب؟ إنشاء حساب',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: AppFontSizes.size12 * _textFactor,
-            color: _textSecondary,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.all(AppSpacing.sm),
+    child: Text(
+      'ليس لديك حساب؟ إنشاء حساب',
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: AppFontSizes.size12 * _textFactor,
+        color: _textSecondary,
+      ),
+    ),
+  );
 
   Widget _column(
     EditableComponent c,
@@ -1081,9 +1214,7 @@ class NativeDesignPreview extends StatelessWidget {
     }
     if (rendered.isEmpty) return const SizedBox.shrink();
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: _spacing(c.property('inset')),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: _spacing(c.property('inset'))),
       child: Column(
         crossAxisAlignment: switch (c.property('crossAxisAlignment')) {
           'center' => CrossAxisAlignment.center,
@@ -1099,11 +1230,11 @@ class NativeDesignPreview extends StatelessWidget {
   // ---------------------------------------------------------------- أدوات
 
   static FontWeight _weight(String? name) => switch (name) {
-        'bold' => AppFontWeights.bold,
-        'semibold' => AppFontWeights.semiBold,
-        'medium' => AppFontWeights.medium,
-        _ => AppFontWeights.regular,
-      };
+    'bold' => AppFontWeights.bold,
+    'semibold' => AppFontWeights.semiBold,
+    'medium' => AppFontWeights.medium,
+    _ => AppFontWeights.regular,
+  };
 
   static Color? _hex(String? hex) {
     if (hex == null || hex.isEmpty) return null;

@@ -6,6 +6,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
@@ -13,6 +14,7 @@ import 'package:admin_app/features/visual_editor/presentation/widgets/component_
 import 'package:admin_app/features/visual_editor/presentation/widgets/component_tree_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/properties_inspector_panel.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_image_asset_picker.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
@@ -24,10 +26,20 @@ import 'package:admin_app/shared/widgets/admin_state_view.dart';
 ///   منتصف (المعاينة كاملة)، يسار (أدوات الجهاز + الطبقات/الخصائص).
 /// - ضيق: كل لوحة تحت الأخرى.
 class VisualEditorPage extends StatefulWidget {
-  const VisualEditorPage({super.key, this.cubit});
+  const VisualEditorPage({
+    super.key,
+    this.cubit,
+    this.canPublish = true,
+    this.imagePermissions = const <String>{},
+  });
 
   /// حقن اختياري للاختبارات؛ الإنتاج يبني الـ cubit الافتراضي نفسه.
   final VisualEditorCubit? cubit;
+  final bool canPublish;
+
+  /// Permission codes used to reveal only the catalogue image actions the
+  /// signed-in staff member is authorized to perform.
+  final Set<String> imagePermissions;
 
   @override
   State<VisualEditorPage> createState() => _VisualEditorPageState();
@@ -168,6 +180,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
           VisualEditorToolbar(
             state: state,
             cubit: _cubit,
+            canPublish: widget.canPublish,
             zoom: _zoom,
             device: _device,
             selectedPageId: _selectedPageId,
@@ -238,11 +251,11 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
           Text(
             S.visualEditor,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: AppFontWeights.bold,
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? AppColor.darkText
-                      : AppColor.adminHeading,
-                ),
+              fontWeight: AppFontWeights.bold,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColor.darkText
+                  : AppColor.adminHeading,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
@@ -273,10 +286,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
           const SizedBox(height: AppSpacing.sm),
           EditorDivider(),
           const SizedBox(height: AppSpacing.sm),
-          Expanded(
-            flex: 4,
-            child: _componentLibrary(context, state),
-          ),
+          Expanded(flex: 4, child: _componentLibrary(context, state)),
         ],
       ),
     );
@@ -323,7 +333,8 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                 ),
                 EditorIconBtn(
                   icon: AppIcons.refresh,
-                  tooltip: 'إعادة تحميل المعاينة'
+                  tooltip:
+                      'إعادة تحميل المعاينة'
                       '${state.previewStatusMessage == null ? '' : ' — ${state.previewStatusMessage}'}',
                   onTap: () => setState(() => _previewReloadToken++),
                   dark: dark,
@@ -356,7 +367,11 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                 EditorIconBtn(
                   icon: AppIcons.time01,
                   tooltip: S.visualEditorVersions,
-                  onTap: () => showVisualEditorVersions(context, _cubit),
+                  onTap: () => showVisualEditorVersions(
+                    context,
+                    _cubit,
+                    canPublish: widget.canPublish,
+                  ),
                   dark: dark,
                   muted: muted,
                 ),
@@ -395,7 +410,9 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
             EditorToolbarButton(
               icon: AppIcons.sent,
               label: S.visualEditorPublish,
-              onTap: () => confirmVisualEditorPublish(context, _cubit),
+              onTap: widget.canPublish
+                  ? () => confirmVisualEditorPublish(context, _cubit)
+                  : null,
               dark: dark,
               accent: true,
               accentColor: accent,
@@ -490,6 +507,11 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
       component: selected,
       onPropertyChanged: _cubit.updateProperty,
       onResetProperty: _cubit.resetProperty,
+      onBrowseImages: () => showVisualEditorImageAssetPicker(
+        context: context,
+        repository: VisualEditorImageAssetRepository(),
+        permissions: widget.imagePermissions,
+      ),
     );
   }
 }
@@ -555,9 +577,7 @@ class _PageTabs extends StatelessWidget {
                 label: Text(page.label),
                 selected: selectedPageId == page.pageId,
                 onSelected: (_) => onChanged(page.pageId),
-                avatar: page.isEditable
-                    ? null
-                    : Icon(AppIcons.lock, size: 12),
+                avatar: page.isEditable ? null : Icon(AppIcons.lock, size: 12),
                 labelStyle: const TextStyle(fontSize: 11),
               ),
             ),

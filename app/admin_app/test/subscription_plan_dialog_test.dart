@@ -23,6 +23,18 @@ class _FakePlanCubit extends AdminSubscriptionPlanCubit {
   final SubscriptionPlanSaveOutcome outcome;
   AdminSubscriptionPlanDraft? saved;
   int productOptionsLoads = 0;
+  String? changedImageUrl;
+  String? deletedImageUrl;
+
+  @override
+  Future<void> updatePlanImage(String planId, String? imageUrl) async {
+    changedImageUrl = imageUrl;
+  }
+
+  @override
+  Future<void> deletePlanImageFile(String? imageUrl) async {
+    deletedImageUrl = imageUrl;
+  }
 
   @override
   Future<SubscriptionPlanSaveOutcome> savePlan(
@@ -177,6 +189,59 @@ void main() {
     expect(draft.productScope, 'all');
     expect(draft.productIds, isEmpty);
     expect(draft.isForSale, isFalse);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an existing plan image can be changed from its dialog', (
+    tester,
+  ) async {
+    _setViewport(tester);
+    final cubit = _FakePlanCubit();
+    await _openDialog(
+      tester,
+      cubit,
+      plan: _existingPlan().copyWith(
+        imageUrl: 'https://example.invalid/old-plan.png',
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('subscription-plan-image-edit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(S.useImageLink));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextField).last,
+      'https://example.invalid/plan.png',
+    );
+    await tester.tap(find.widgetWithText(FilledButton, S.save));
+    await tester.pumpAndSettle();
+
+    expect(cubit.changedImageUrl, 'https://example.invalid/plan.png');
+    expect(cubit.deletedImageUrl, 'https://example.invalid/old-plan.png');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('an existing plan image can be removed', (tester) async {
+    _setViewport(tester);
+    final cubit = _FakePlanCubit();
+    await _openDialog(
+      tester,
+      cubit,
+      plan: _existingPlan().copyWith(
+        imageUrl: 'https://example.invalid/plan.png',
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('subscription-plan-image-edit')));
+    await tester.pumpAndSettle();
+    final removeAction = find.text(S.deleteImage);
+    await tester.ensureVisible(removeAction);
+    await tester.pumpAndSettle();
+    await tester.tap(removeAction);
+    await tester.pumpAndSettle();
+
+    expect(cubit.changedImageUrl, isNull);
+    expect(cubit.deletedImageUrl, 'https://example.invalid/plan.png');
     expect(tester.takeException(), isNull);
   });
 

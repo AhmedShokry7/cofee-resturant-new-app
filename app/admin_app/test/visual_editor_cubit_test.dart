@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
@@ -14,6 +17,8 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
 
   Map<String, List<EditableComponent>>? savedDraft;
   DesignTheme? savedTheme;
+  Completer<void>? saveGate;
+  final List<Map<String, List<EditableComponent>>> saveSnapshots = [];
   List<Map<String, dynamic>> publishedDocuments = [];
   String? failedPublishDocument;
   int publishCalls = 0;
@@ -39,7 +44,13 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
   }) async {
-    savedDraft = Map.of(componentsByPage);
+    final snapshot = {
+      for (final entry in componentsByPage.entries)
+        entry.key: List<EditableComponent>.of(entry.value),
+    };
+    saveSnapshots.add(snapshot);
+    await saveGate?.future;
+    savedDraft = snapshot;
     savedTheme = theme;
     return DateTime(2026, 1, 1);
   }
@@ -95,13 +106,10 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   }
 
   @override
-  Future<List<DesignTemplateInfo>> listTemplates() async =>
-      List.of(templates);
+  Future<List<DesignTemplateInfo>> listTemplates() async => List.of(templates);
 
   @override
-  Future<Map<String, dynamic>?> getTemplateDocument(
-    String templateId,
-  ) async =>
+  Future<Map<String, dynamic>?> getTemplateDocument(String templateId) async =>
       templateDocuments[templateId];
 
   @override
@@ -143,8 +151,20 @@ void main() {
     await cubit.initialize();
     expect(cubit.state.status, VisualEditorStatus.ready);
     expect(cubit.state.getComponentsForPage('home'), hasLength(8));
+    expect(
+      cubit.state.getComponentsForPage('splash').single.componentType,
+      'splashSettings',
+    );
     expect(cubit.state.isDirty, isFalse);
     expect(cubit.canUndo, isFalse);
+  });
+
+  test('إعدادات الافتتاحية مفردة ولا يمكن تكرارها من المكتبة', () async {
+    await cubit.initialize();
+    final before = cubit.state.getComponentsForPage('splash');
+    cubit.addComponent(pageId: 'splash', componentType: 'splashSettings');
+    expect(cubit.state.getComponentsForPage('splash'), before);
+    expect(cubit.state.selectedComponentId, before.single.componentId);
   });
 
   test('إضافة مكوّن يترك أثرًا في الشجرة والمستند ويدفع مسودة', () async {
@@ -185,8 +205,11 @@ void main() {
     final header = cubit.state.getComponentsForPage('home').last;
     expect(header.componentType, 'header');
     cubit.deleteComponent(header.componentId);
-    expect(cubit.state.getComponentsForPage('home'), hasLength(9),
-        reason: 'header محمي بلا delete في allowedOperations');
+    expect(
+      cubit.state.getComponentsForPage('home'),
+      hasLength(9),
+      reason: 'header محمي بلا delete في allowedOperations',
+    );
   });
 
   test('حذف مكوّن مسموح يحذفه فعلًا', () async {
@@ -195,6 +218,62 @@ void main() {
     final grid = cubit.state.getComponentsForPage('home').last;
     cubit.deleteComponent(grid.componentId);
     expect(cubit.state.getComponentsForPage('home'), hasLength(8));
+  });
+
+  test('خطأ المعاينة لا يحوّل حالة المحرر الجاهز إلى فشل', () async {
+    await cubit.initialize();
+    cubit.handlePreviewError({'error': 'preview unavailable'});
+    expect(cubit.state.status, VisualEditorStatus.ready);
+    expect(cubit.state.previewConnection, PreviewConnection.error);
+    expect(cubit.state.errorMessage, 'preview unavailable');
+  });
+
+  test('تبديل الصفحة يمسح التحديد والتراجع يحدّث الخصائص المحددة', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    final grid = cubit.state.getComponentsForPage('home').last;
+    cubit.selectComponent(grid.componentId);
+    cubit.updateProperty(
+      componentId: grid.componentId,
+      propertyKey: 'columns',
+      value: 3,
+    );
+    cubit.undo();
+    expect(cubit.state.selectedComponent?.componentId, grid.componentId);
+    expect(cubit.state.selectedComponent?.properties['columns'], 2);
+    cubit.loadPage('categories');
+    expect(cubit.state.selectedComponentId, isNull);
+    expect(cubit.state.selectedComponent, isNull);
+  });
+
+  test('حفظ قديم لا يمسح dirty ولا يتسابق مع حفظ أحدث', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    final grid = cubit.state.getComponentsForPage('home').last;
+    final gate = Completer<void>();
+    repository.saveGate = gate;
+
+    final firstSave = cubit.saveDraft();
+    await Future<void>.delayed(Duration.zero);
+    cubit.updateProperty(
+      componentId: grid.componentId,
+      propertyKey: 'columns',
+      value: 3,
+    );
+    final secondSave = cubit.saveDraft();
+    await Future<void>.delayed(Duration.zero);
+    expect(repository.saveSnapshots, hasLength(1));
+
+    gate.complete();
+    await Future.wait([firstSave, secondSave]);
+    expect(repository.saveSnapshots, hasLength(2));
+    expect(
+      repository.saveSnapshots.last['home']!
+          .firstWhere((component) => component.componentId == grid.componentId)
+          .properties['columns'],
+      3,
+    );
+    expect(cubit.state.isDirty, isFalse);
   });
 
   test('تراجع وإعادة يرجعان الشجرة بالحرف', () async {
@@ -222,8 +301,9 @@ void main() {
       propertyKey: 'columns',
       value: 9,
     );
-    final afterInvalid =
-        cubit.state.findComponent(grid.componentId)!.properties['columns'];
+    final afterInvalid = cubit.state
+        .findComponent(grid.componentId)!
+        .properties['columns'];
     expect(afterInvalid, 2, reason: 'القيمة الافتراضية لم تتغير');
     // قيمة داخل الحدود تُقبل.
     cubit.updateProperty(
@@ -340,8 +420,9 @@ void main() {
     expect(children.last.index, 1);
     // الترتيب العمقي: النص بعد العمود مباشرة، ثم الزر. العمود أعيد فهرسته
     // بعد الإضافات، فنبحث عنه بمعرّفه لا بهويّته القديمة.
-    final columnInFlat = flat
-        .firstWhere((c) => c.componentId == column.componentId);
+    final columnInFlat = flat.firstWhere(
+      (c) => c.componentId == column.componentId,
+    );
     final columnAt = flat.indexOf(columnInFlat);
     expect(flat[columnAt + 1].componentType, 'text');
     expect(flat[columnAt + 2].componentType, 'button');
@@ -483,10 +564,7 @@ void main() {
   test('اسم قالب فارغ أو طويل يُرفض قبل الاتصال', () async {
     await cubit.initialize();
     expect(await cubit.saveCurrentAsTemplate('   '), isNull);
-    expect(
-      await cubit.saveCurrentAsTemplate('x' * 61),
-      isNull,
-    );
+    expect(await cubit.saveCurrentAsTemplate('x' * 61), isNull);
     expect(repository.templates, isEmpty);
   });
 

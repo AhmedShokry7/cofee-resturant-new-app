@@ -11,6 +11,8 @@ import 'package:admin_app/features/staff/presentation/widgets/staff_invite_dialo
 import 'package:admin_app/features/staff/presentation/widgets/staff_invitations_dialog.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_permissions_dialog.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_page_body.dart';
+import 'package:admin_app/features/hr/presentation/strings/hr_employee_strings.dart';
+import 'package:admin_app/features/hr/presentation/widgets/hr_employee_file_dialog.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
 class StaffPage extends StatefulWidget {
@@ -19,6 +21,8 @@ class StaffPage extends StatefulWidget {
     required this.searchController,
     this.canManagePermissions = false,
     this.cubit,
+    this.canReadEmployeeFiles = false,
+    this.canWriteEmployeeFiles = false,
   });
 
   static const String routeName = '/staff';
@@ -26,6 +30,8 @@ class StaffPage extends StatefulWidget {
   final AdminSearchController searchController;
   final bool canManagePermissions;
   final AdminStaffCubit? cubit;
+  final bool canReadEmployeeFiles;
+  final bool canWriteEmployeeFiles;
 
   @override
   State<StaffPage> createState() => _StaffPageState();
@@ -104,6 +110,20 @@ class _StaffPageState extends State<StaffPage> {
         .showSnackBar(SnackBar(content: Text(S.staffInvitationCancelledDone)));
   }
 
+  Future<void> _openEmployeeFile(
+    BuildContext context,
+    AdminStaffMember member,
+  ) async {
+    final saved = await showHrEmployeeFileDialog(
+      context: context,
+      staffId: member.id,
+      canWrite: widget.canWriteEmployeeFiles,
+    );
+    if (saved != true || !context.mounted) return;
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(HrEmployeeStrings.saved)));
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<AdminStaffCubit>.value(
@@ -124,6 +144,7 @@ class _StaffPageState extends State<StaffPage> {
             search: _searchQuery,
             onSearchChanged: widget.searchController.update,
             canManagePermissions: widget.canManagePermissions,
+            canReadEmployeeFiles: widget.canReadEmployeeFiles,
             onManage: (member) => showStaffPermissionsDialog(
               context: context,
               cubit: _cubit,
@@ -131,6 +152,7 @@ class _StaffPageState extends State<StaffPage> {
               canManage: widget.canManagePermissions,
             ),
             onEdit: (member) => _editMember(context, member),
+            onEmployeeFile: (member) => _openEmployeeFile(context, member),
             onInvite: _invite,
             onShowInvitations: _showInvitations,
             errorMessage: state.status == AdminStaffStatus.failure

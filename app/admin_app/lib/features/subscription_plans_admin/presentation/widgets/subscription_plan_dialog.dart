@@ -1,9 +1,12 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/models/admin_product_image.dart';
+import 'package:admin_app/core/services/admin_image_picker.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
@@ -17,6 +20,7 @@ import 'package:admin_app/features/subscription_plans_admin/presentation/manager
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/plan_format.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/widgets/subscription_plan_product_picker.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
+import 'package:admin_app/shared/widgets/category_image_dialog.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
 import 'package:admin_app/shared/widgets/custom_text_form_field.dart';
 
@@ -219,6 +223,8 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
                         maxLines: 2,
                         textInputAction: TextInputAction.newline,
                       ),
+                      _section(S.subscriptionPlanImageSection),
+                      _planImageField(),
                       _section(S.subscriptionPlanPricingSection),
                       _row([
                         _field(
@@ -370,6 +376,103 @@ class _SubscriptionPlanDialogState extends State<SubscriptionPlanDialog> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  AdminSubscriptionPlan? get _currentPlan {
+    final initial = widget.plan;
+    if (initial == null) return null;
+    for (final plan in widget.cubit.state.plans) {
+      if (plan.id == initial.id) return plan;
+    }
+    return initial;
+  }
+
+  Widget _planImageField() {
+    final plan = _currentPlan;
+    if (plan == null) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: adminTintedSurfaceColor(theme),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: adminCardBorderColor(theme)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            child: SizedBox(
+              width: 72,
+              height: 72,
+              child: plan.imageUrl == null || plan.imageUrl!.isEmpty
+                  ? const ColoredBox(
+                      color: AppColor.adminTableHeader,
+                      child: AppIcon(AppIcons.package, size: 24),
+                    )
+                  : CachedNetworkImage(
+                      imageUrl: plan.imageUrl!,
+                      fit: BoxFit.cover,
+                      errorWidget: (_, _, _) => const ColoredBox(
+                        color: AppColor.adminTableHeader,
+                        child: AppIcon(AppIcons.package, size: 24),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              plan.imageUrl == null || plan.imageUrl!.isEmpty
+                  ? S.subscriptionPlanImageEmpty
+                  : S.subscriptionPlanImageDescription,
+              style: TextStyle(
+                color: adminMutedColor(theme),
+                fontSize: AppFontSizes.size10_5,
+              ),
+            ),
+          ),
+          OutlinedButton.icon(
+            key: const Key('subscription-plan-image-edit'),
+            onPressed: _saving ? null : _editPlanImage,
+            icon: const Icon(AppIcons.imageAdd01, size: 16),
+            label: Text(S.subscriptionPlanImageEdit),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _editPlanImage() async {
+    final plan = _currentPlan;
+    if (plan == null) return;
+    await showDialog<void>(
+      context: context,
+      builder: (context) => CategoryImageDialog(
+        currentImageUrl: plan.imageUrl,
+        onPickPicture: pickAdminImage,
+        onApply: (ProductImageSource source) async {
+          if (source.isLink) {
+            await widget.cubit.updatePlanImage(plan.id, source.url);
+          } else {
+            await widget.cubit.uploadPlanImage(
+              planId: plan.id,
+              bytes: source.bytes!,
+              fileName: source.fileName!,
+              contentType: source.contentType!,
+            );
+          }
+          if (plan.imageUrl != null && plan.imageUrl != source.url) {
+            await widget.cubit.deletePlanImageFile(plan.imageUrl);
+          }
+        },
+        onRemove: () async {
+          await widget.cubit.updatePlanImage(plan.id, null);
+          await widget.cubit.deletePlanImageFile(plan.imageUrl);
+        },
       ),
     );
   }

@@ -21,11 +21,7 @@ export 'visual_editor_state.dart';
 /// تدقيق القاعدة. القوالب تطبَّق على المسودة لا على المنشور أبدًا.
 class VisualEditorCubit extends Cubit<VisualEditorState> {
   VisualEditorCubit({VisualEditorRepository? repository})
-      : super(
-          VisualEditorState(
-            sessionId: _generateSessionId(),
-          ),
-        ) {
+    : super(VisualEditorState(sessionId: _generateSessionId())) {
     _repository = repository ?? SupabaseVisualEditorRepository();
     ComponentRegistry.initialize();
     ComponentRegistry.all.forEach(DesignDocumentCodec.registerEntry);
@@ -48,6 +44,8 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// مؤجل الحفظ: تعديلات متتالية تكتب مسودة واحدة.
   Timer? _saveDebounce;
+  Future<void> _saveQueue = Future<void>.value();
+  int _editRevision = 0;
 
   bool get canUndo => _undoStack.isNotEmpty;
   bool get canRedo => _redoStack.isNotEmpty;
@@ -113,13 +111,10 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       ),
     );
     final document = _currentDocumentOrNull();
-    _dispatchToPreview(
-      VisualEditorMessageType.previewInitialize,
-      {
-        'sessionId': state.sessionId,
-        if (document != null) 'designDocument': document,
-      },
-    );
+    _dispatchToPreview(VisualEditorMessageType.previewInitialize, {
+      'sessionId': state.sessionId,
+      if (document != null) 'designDocument': document,
+    });
   }
 
   /// لوحة المعاينة بلّغت بحالة قناة الاتصال: وصل/جارٍ الاتصال/انقطع/خطأ.
@@ -136,11 +131,13 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// خطأ من المعاينة.
   void handlePreviewError(dynamic data) {
-    final msg =
-        data is Map ? data['error'] ?? 'خطأ في المعاينة' : 'خطأ في المعاينة';
+    final msg = data is Map
+        ? data['error'] ?? 'خطأ في المعاينة'
+        : 'خطأ في المعاينة';
     emit(
       state.copyWith(
-        status: VisualEditorStatus.failure,
+        // عطل قناة المعاينة لا يعني أن تحميل المحرر نفسه فشل؛ اترك القشرة
+        // وأدوات إعادة الاتصال ظاهرة ليتمكن الموظف من المتابعة.
         errorMessage: msg.toString(),
         previewConnection: PreviewConnection.error,
         previewStatusMessage: msg.toString(),
@@ -197,9 +194,13 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   void _restore(_EditorSnapshot snapshot) {
     _theme = snapshot.theme;
+    final selected = _selectedIn(snapshot.componentsByPage);
     emit(
       state.copyWith(
         componentsByPage: snapshot.componentsByPage,
+        selectedComponentId: selected?.componentId,
+        selectedComponent: selected,
+        clearSelectedComponent: selected == null,
         isDirty: true,
       ),
     );
@@ -234,10 +235,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// تحميل صفحة جديدة في المعاينة.
   void loadPage(String pageId) {
-    _dispatchToPreview(
-      VisualEditorMessageType.loadPage,
-      {'pageId': pageId},
-    );
+    // الاختيار خاص بالصفحة؛ لا نترك المفتش يعرض خصائص عنصر من صفحة أخرى.
+    emit(state.copyWith(clearSelectedComponent: true));
+    _dispatchToPreview(VisualEditorMessageType.loadPage, {'pageId': pageId});
   }
 
   // ---------- تحديد المكوّنات ----------
@@ -251,10 +251,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         selectedComponent: component,
       ),
     );
-    _dispatchToPreview(
-      VisualEditorMessageType.selectElement,
-      {'componentId': componentId},
-    );
+    _dispatchToPreview(VisualEditorMessageType.selectElement, {
+      'componentId': componentId,
+    });
   }
 
   // ---------- إضافة وحذف ونسخ ----------
@@ -265,9 +264,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     String pageId,
     String? parentId,
   ) =>
-      (byPage[pageId] ?? const [])
-          .where((c) => c.parentId == parentId)
-          .toList()
+      (byPage[pageId] ?? const []).where((c) => c.parentId == parentId).toList()
         ..sort((a, b) => a.index.compareTo(b.index));
 
   /// إضافة مكوّن جديد من المكتبة — إلى صفحة أو داخل حاوية (`parentId`).
@@ -279,6 +276,15 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   }) {
     final entry = ComponentRegistry.get(componentType);
     if (entry == null) return;
+    if (componentType == 'splashSettings') {
+      final existing = state
+          .getComponentsForPage(pageId)
+          .where((component) => component.componentType == componentType);
+      if (existing.isNotEmpty) {
+        selectComponent(existing.first.componentId);
+        return;
+      }
+    }
     if (parentId != null &&
         !DesignDocumentCodec.canNest(
           childType: componentType,
@@ -316,17 +322,14 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
     pageComponents.insert(insertPosition, newComponent);
     _updatePage(pageId, _reindexSiblings(pageComponents));
-    _dispatchToPreview(
-      VisualEditorMessageType.addComponent,
-      {
-        'pageId': pageId,
-        'component': DesignDocumentCodec.node(
-          newComponent,
-          _childrenByParent(pageComponents),
-        ),
-        'designDocument': _currentDocumentOrNull(),
-      },
-    );
+    _dispatchToPreview(VisualEditorMessageType.addComponent, {
+      'pageId': pageId,
+      'component': DesignDocumentCodec.node(
+        newComponent,
+        _childrenByParent(pageComponents),
+      ),
+      'designDocument': _currentDocumentOrNull(),
+    });
     _scheduleSave();
   }
 
@@ -341,9 +344,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       // جذر الصفحة: بعد آخر مكون جذر وجميع أبنائه — أي نهاية القائمة.
       return components.length;
     }
-    final siblings = components
-        .where((c) => c.parentId == parentId)
-        .toList()
+    final siblings = components.where((c) => c.parentId == parentId).toList()
       ..sort((a, b) => a.index.compareTo(b.index));
     if (siblings.isEmpty) return components.length;
     if (siblingIndex >= siblings.length) {
@@ -417,9 +418,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     final updatedPages = <String, List<EditableComponent>>{};
     state.componentsByPage.forEach((pageId, components) {
       updatedPages[pageId] = _reindexSiblings(
-        components
-            .where((c) => !doomed.contains(c.componentId))
-            .toList(),
+        components.where((c) => !doomed.contains(c.componentId)).toList(),
       );
     });
     final wasSelected = doomed.contains(state.selectedComponentId);
@@ -430,13 +429,10 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         clearSelectedComponent: wasSelected,
       ),
     );
-    _dispatchToPreview(
-      VisualEditorMessageType.removeComponent,
-      {
-        'componentId': componentId,
-        'designDocument': _currentDocumentOrNull(),
-      },
-    );
+    _dispatchToPreview(VisualEditorMessageType.removeComponent, {
+      'componentId': componentId,
+      'designDocument': _currentDocumentOrNull(),
+    });
     _scheduleSave();
   }
 
@@ -487,9 +483,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     List<EditableComponent> components,
     String rootId,
   ) {
-    final root = components
-        .where((c) => c.componentId == rootId)
-        .firstOrNull;
+    final root = components.where((c) => c.componentId == rootId).firstOrNull;
     if (root == null) return const [];
     final subtree = <EditableComponent>[root];
     final ancestors = <String>{rootId};
@@ -517,8 +511,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       component.pageId,
       component.parentId,
     );
-    final oldSiblingIndex = siblings
-        .indexWhere((c) => c.componentId == componentId);
+    final oldSiblingIndex = siblings.indexWhere(
+      (c) => c.componentId == componentId,
+    );
     if (oldSiblingIndex < 0) return;
     _pushUndo();
     final clamped = newIndex.clamp(0, siblings.length - 1);
@@ -596,8 +591,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   }
 
   bool _isValidValue(EditableComponent component, String key, Object? value) {
-    final definition = ComponentRegistry
-        .getEditableProperties(component.componentType)[key];
+    final definition = ComponentRegistry.getEditableProperties(
+      component.componentType,
+    )[key];
     if (definition == null) return key == 'visible';
     final validation = definition.validation;
     if (validation == null) return true;
@@ -646,11 +642,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       await _repository.discardDraft();
     } catch (e) {
       if (isClosed) return false;
-      emit(
-        state.copyWith(
-          errorMessage: 'تعذر التخلص من المسودة: $e',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'تعذر التخلص من المسودة: $e'));
       return false;
     }
     _undoStack.clear();
@@ -675,20 +667,12 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       final document = await _repository.getTemplateDocument(templateId);
       if (isClosed) return false;
       if (document == null) {
-        emit(
-          state.copyWith(
-            errorMessage: 'القالب غير موجود',
-          ),
-        );
+        emit(state.copyWith(errorMessage: 'القالب غير موجود'));
         return false;
       }
       final invalid = DesignDocumentCodec.validate(document);
       if (invalid != null) {
-        emit(
-          state.copyWith(
-            errorMessage: 'قالب غير صالح للتطبيق: $invalid',
-          ),
-        );
+        emit(state.copyWith(errorMessage: 'قالب غير صالح للتطبيق: $invalid'));
         return false;
       }
       _pushUndo();
@@ -705,11 +689,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       return true;
     } catch (e) {
       if (isClosed) return false;
-      emit(
-        state.copyWith(
-          errorMessage: 'تعذر تطبيق القالب: $e',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'تعذر تطبيق القالب: $e'));
       return false;
     }
   }
@@ -718,28 +698,18 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   Future<DesignTemplateInfo?> saveCurrentAsTemplate(String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty || trimmed.length > 60) {
-      emit(
-        state.copyWith(
-          errorMessage: 'اسم القالب مطلوب (1..60 حرفًا)',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'اسم القالب مطلوب (1..60 حرفًا)'));
       return null;
     }
     final document = _currentDocumentOrNull();
     if (document == null) {
-      emit(
-        state.copyWith(
-          errorMessage: 'لا يوجد تصميم لحفظه كقالب',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'لا يوجد تصميم لحفظه كقالب'));
       return null;
     }
     final invalid = DesignDocumentCodec.validate(document);
     if (invalid != null) {
       emit(
-        state.copyWith(
-          errorMessage: 'التصميم غير صالح للحفظ كقالب: $invalid',
-        ),
+        state.copyWith(errorMessage: 'التصميم غير صالح للحفظ كقالب: $invalid'),
       );
       return null;
     }
@@ -753,11 +723,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       return template;
     } catch (e) {
       if (isClosed) return null;
-      emit(
-        state.copyWith(
-          errorMessage: 'تعذر حفظ القالب: $e',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'تعذر حفظ القالب: $e'));
       return null;
     }
   }
@@ -769,11 +735,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       return true;
     } catch (e) {
       if (isClosed) return false;
-      emit(
-        state.copyWith(
-          errorMessage: 'تعذر حذف القالب: $e',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'تعذر حذف القالب: $e'));
       return false;
     }
   }
@@ -782,6 +744,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// حفظ مؤجل: تعديلات متتالية تكتب مسودة واحدة بعد سكون قصير.
   void _scheduleSave() {
+    _editRevision++;
     _saveDebounce?.cancel();
     _saveDebounce = Timer(_saveDebounceDelay, () {
       if (!isClosed && state.isDirty) {
@@ -794,17 +757,27 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   Future<void> saveDraft() async {
     _saveDebounce?.cancel();
+    final revision = _editRevision;
+    final components = {
+      for (final entry in state.componentsByPage.entries)
+        entry.key: List<EditableComponent>.of(entry.value),
+    };
+    final theme = _theme;
+    final previousSave = _saveQueue;
+    final completer = Completer<void>();
+    _saveQueue = completer.future;
+    await previousSave.catchError((Object _) {});
     try {
-      await _repository.saveDraft(state.componentsByPage, theme: _theme);
-      if (isClosed) return;
-      emit(state.copyWith(isDirty: false));
+      await _repository.saveDraft(components, theme: theme);
+      if (!isClosed && revision == _editRevision) {
+        emit(state.copyWith(isDirty: false, clearError: true));
+      }
     } catch (e) {
-      if (isClosed) return;
-      emit(
-        state.copyWith(
-          errorMessage: 'تعذر حفظ المسودة: $e',
-        ),
-      );
+      if (!isClosed) {
+        emit(state.copyWith(errorMessage: 'تعذر حفظ المسودة: $e'));
+      }
+    } finally {
+      completer.complete();
     }
   }
 
@@ -813,33 +786,29 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     final document = _currentDocumentOrNull();
     if (document == null) {
       emit(
-        state.copyWith(
-          errorMessage: 'لا يوجد تصميم لنشره — أضف مكوّنًا أولًا',
-        ),
+        state.copyWith(errorMessage: 'لا يوجد تصميم لنشره — أضف مكوّنًا أولًا'),
       );
       return null;
     }
     final invalid = DesignDocumentCodec.validate(document);
     if (invalid != null) {
-      emit(
-        state.copyWith(
-          errorMessage: 'المستند غير صالح للنشر: $invalid',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'المستند غير صالح للنشر: $invalid'));
       return null;
     }
     try {
+      final revision = _editRevision;
       final version = await _repository.publishDesign(document, note: note);
       if (isClosed) return version;
-      emit(state.copyWith(isDirty: false, clearError: true));
+      emit(
+        state.copyWith(
+          isDirty: revision == _editRevision ? false : state.isDirty,
+          clearError: true,
+        ),
+      );
       return version;
     } catch (e) {
       if (isClosed) return null;
-      emit(
-        state.copyWith(
-          errorMessage: _readablePublishError(e),
-        ),
-      );
+      emit(state.copyWith(errorMessage: _readablePublishError(e)));
       return null;
     }
   }
@@ -878,11 +847,13 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     return switch (code) {
       'page_key' =>
         'هذه الصفحة غير معروفة لقاعدة البيانات بعد — طبّق migration 244 '
-        '(app_design_all_pages) على مشروع Supabase ثم أعد النشر.',
-      'page_duplicate' => 'الصفحة مكرّرة في المستند — احذف التكرار ثم أعد النشر.',
+            '(app_design_all_pages) على مشروع Supabase ثم أعد النشر.',
+      'page_duplicate' =>
+        'الصفحة مكرّرة في المستند — احذف التكرار ثم أعد النشر.',
       'page_count' =>
         'عدد الصفحات تجاوز الحد (40) — احذف أقسامًا من صفحات لا تستعملها.',
-      'depth' => 'التداخل أعمق من المسموح به — أخرج العناصر من الأعمدة المتداخلة.',
+      'depth' =>
+        'التداخل أعمق من المسموح به — أخرج العناصر من الأعمدة المتداخلة.',
       'node_duplicate' =>
         'معرّف عنصر مكرّر — احذف العنصر المنسوخ يدويًا أو أعد إنشاءه.',
       'node_count' => 'عدد العناصر تجاوز الحد (400) — قلّل الأقسام.',
@@ -921,9 +892,13 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       _theme = document == null
           ? DesignTheme.none
           : DesignDocumentCodec.themeOf(document);
+      final selected = _selectedIn(components);
       emit(
         state.copyWith(
           componentsByPage: components,
+          selectedComponentId: selected?.componentId,
+          selectedComponent: selected,
+          clearSelectedComponent: selected == null,
           isDirty: false,
           clearError: true,
         ),
@@ -932,11 +907,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       return version;
     } catch (e) {
       if (isClosed) return null;
-      emit(
-        state.copyWith(
-          errorMessage: 'تعذر استرجاع الإصدار: $e',
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'تعذر استرجاع الإصدار: $e'));
       return null;
     }
   }
@@ -944,15 +915,28 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   // ---------- الأدوات الداخلية ----------
 
   void _updatePage(String pageId, List<EditableComponent> components) {
+    final pages = {...state.componentsByPage, pageId: components};
+    final selected = _selectedIn(pages);
     emit(
       state.copyWith(
-        componentsByPage: {
-          ...state.componentsByPage,
-          pageId: components,
-        },
+        componentsByPage: pages,
+        selectedComponentId: selected?.componentId,
+        selectedComponent: selected,
+        clearSelectedComponent: selected == null,
         isDirty: true,
       ),
     );
+  }
+
+  EditableComponent? _selectedIn(Map<String, List<EditableComponent>> pages) {
+    final id = state.selectedComponentId;
+    if (id == null) return null;
+    for (final components in pages.values) {
+      for (final component in components) {
+        if (component.componentId == id) return component;
+      }
+    }
+    return null;
   }
 
   void _replaceComponent(EditableComponent updated) {
@@ -965,10 +949,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     emit(
       state.copyWith(
         componentsByPage: updatedPages,
-        selectedComponent:
-            state.selectedComponent?.componentId == updated.componentId
-                ? updated
-                : state.selectedComponent,
+        selectedComponent: state.selectedComponentId == updated.componentId
+            ? updated
+            : state.selectedComponent,
         isDirty: true,
       ),
     );
@@ -976,9 +959,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// إعادة فهرسة كل مجموعة إخوة داخل القائمة المسطّحة (لا القائمة كلها):
   /// الجذور تسلسل من 0، وأبناء كل أب تسلسل من 0.
-  List<EditableComponent> _reindexSiblings(
-    List<EditableComponent> components,
-  ) {
+  List<EditableComponent> _reindexSiblings(List<EditableComponent> components) {
     final rootCounter = _Counter();
     final childCounters = <String, _Counter>{};
     return [
@@ -987,8 +968,8 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
           index: component.parentId == null
               ? rootCounter.next()
               : childCounters
-                  .putIfAbsent(component.parentId!, _Counter.new)
-                  .next(),
+                    .putIfAbsent(component.parentId!, _Counter.new)
+                    .next(),
         ),
     ];
   }
@@ -998,10 +979,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     if (state.componentsByPage.isEmpty) return null;
     final hasContent = state.componentsByPage.values.any((c) => c.isNotEmpty);
     if (!hasContent) return null;
-    return DesignDocumentCodec.document(
-      state.componentsByPage,
-      theme: _theme,
-    );
+    return DesignDocumentCodec.document(state.componentsByPage, theme: _theme);
   }
 
   /// إعادة إرسال المستند كاملًا إلى المعاينة — استُعمل بعد تراجع/استرجاع،
@@ -1009,10 +987,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   void _syncPreview() {
     final document = _currentDocumentOrNull();
     if (document == null) return;
-    _dispatchToPreview(
-      VisualEditorMessageType.applyDesignConfig,
-      {'designDocument': document},
-    );
+    _dispatchToPreview(VisualEditorMessageType.applyDesignConfig, {
+      'designDocument': document,
+    });
   }
 
   /// يضع رسالة صادرة في الحالة حتى تلتقطها PreviewPanel وترسلها عبر postMessage.
@@ -1055,10 +1032,7 @@ class _Counter {
 
 /// لقطة تراجع: المكوّنات وطبقة الشكل معًا.
 class _EditorSnapshot {
-  const _EditorSnapshot({
-    required this.componentsByPage,
-    required this.theme,
-  });
+  const _EditorSnapshot({required this.componentsByPage, required this.theme});
 
   final Map<String, List<EditableComponent>> componentsByPage;
   final DesignTheme theme;

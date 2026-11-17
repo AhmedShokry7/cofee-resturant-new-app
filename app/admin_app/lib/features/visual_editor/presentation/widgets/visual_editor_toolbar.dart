@@ -21,6 +21,7 @@ class VisualEditorToolbar extends StatelessWidget {
     super.key,
     required this.state,
     required this.cubit,
+    this.canPublish = true,
     required this.zoom,
     required this.device,
     required this.selectedPageId,
@@ -32,6 +33,7 @@ class VisualEditorToolbar extends StatelessWidget {
 
   final VisualEditorState state;
   final VisualEditorCubit cubit;
+  final bool canPublish;
   final double zoom;
   final PreviewDevice device;
   final String? selectedPageId;
@@ -82,7 +84,8 @@ class VisualEditorToolbar extends StatelessWidget {
         ),
         EditorIconBtn(
           icon: AppIcons.refresh,
-          tooltip: 'إعادة تحميل المعاينة'
+          tooltip:
+              'إعادة تحميل المعاينة'
               '${state.previewStatusMessage == null ? '' : ' — ${state.previewStatusMessage}'}',
           onTap: onReloadPreview,
           dark: dark,
@@ -111,7 +114,8 @@ class VisualEditorToolbar extends StatelessWidget {
         EditorIconBtn(
           icon: AppIcons.time01,
           tooltip: S.visualEditorVersions,
-          onTap: () => showVisualEditorVersions(context, cubit),
+          onTap: () =>
+              showVisualEditorVersions(context, cubit, canPublish: canPublish),
           dark: dark,
           muted: muted,
         ),
@@ -151,7 +155,9 @@ class VisualEditorToolbar extends StatelessWidget {
         EditorToolbarButton(
           icon: AppIcons.sent,
           label: S.visualEditorPublish,
-          onTap: () => confirmVisualEditorPublish(context, cubit),
+          onTap: canPublish
+              ? () => confirmVisualEditorPublish(context, cubit)
+              : null,
           dark: dark,
           accent: true,
           accentColor: accent,
@@ -170,44 +176,49 @@ Future<void> confirmVisualEditorPublish(
   BuildContext context,
   VisualEditorCubit cubit,
 ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.visualEditorPublishTitle),
-        content: Text(S.visualEditorPublishConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(S.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(S.visualEditorPublish),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      final version = await cubit.publish();
-      if (version != null && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('تم النشر كإصدار ${version.versionNumber}')),
-        );
-      }
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(S.visualEditorPublishTitle),
+      content: Text(S.visualEditorPublishConfirm),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(S.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(S.visualEditorPublish),
+        ),
+      ],
+    ),
+  );
+  if (confirmed == true) {
+    final version = await cubit.publish();
+    if (version != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('تم النشر كإصدار ${version.versionNumber}')),
+      );
     }
+  }
 }
 
 /// سجل الإصدارات: قائمة بأرقام الإصدارات وأوقاتها مع استرجاع.
 Future<void> showVisualEditorVersions(
   BuildContext context,
-  VisualEditorCubit cubit,
-) async {
-    final versions = await cubit.loadVersions();
-    if (!context.mounted) return;
-    await showDialog<void>(
-      context: context,
-      builder: (ctx) => _VersionsDialog(versions: versions, cubit: cubit),
-    );
+  VisualEditorCubit cubit, {
+  bool canPublish = true,
+}) async {
+  final versions = await cubit.loadVersions();
+  if (!context.mounted) return;
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => _VersionsDialog(
+      versions: versions,
+      cubit: cubit,
+      canPublish: canPublish,
+    ),
+  );
 }
 
 Future<void> showVisualEditorTemplates(
@@ -232,37 +243,41 @@ Future<void> confirmVisualEditorDiscard(
   BuildContext context,
   VisualEditorCubit cubit,
 ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.visualEditorDiscardTitle),
-        content: Text(S.visualEditorDiscardConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(S.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(S.visualEditorDiscard),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final ok = await cubit.discardDraft();
-    if (ok && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.visualEditorDiscardDone)),
-      );
-    }
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(S.visualEditorDiscardTitle),
+      content: Text(S.visualEditorDiscardConfirm),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text(S.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text(S.visualEditorDiscard),
+        ),
+      ],
+    ),
+  );
+  if (confirmed != true) return;
+  final ok = await cubit.discardDraft();
+  if (ok && context.mounted) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(S.visualEditorDiscardDone)));
+  }
 }
 
 class _VersionsDialog extends StatelessWidget {
-  const _VersionsDialog({required this.versions, required this.cubit});
+  const _VersionsDialog({
+    required this.versions,
+    required this.cubit,
+    required this.canPublish,
+  });
 
   final List<PublishedVersionInfo> versions;
   final VisualEditorCubit cubit;
+  final bool canPublish;
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +293,9 @@ class _VersionsDialog extends StatelessWidget {
                   S.visualEditorNoVersions,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.adminMuted,
                   ),
                 ),
               )
@@ -306,7 +323,9 @@ class _VersionsDialog extends StatelessWidget {
                       style: TextStyle(fontSize: AppFontSizes.size11),
                     ),
                     trailing: TextButton(
-                      onPressed: () => _restore(context, version),
+                      onPressed: canPublish
+                          ? () => _restore(context, version)
+                          : null,
                       child: Text(S.visualEditorRestore),
                     ),
                   );
@@ -322,7 +341,10 @@ class _VersionsDialog extends StatelessWidget {
     );
   }
 
-  Future<void> _restore(BuildContext context, PublishedVersionInfo version) async {
+  Future<void> _restore(
+    BuildContext context,
+    PublishedVersionInfo version,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -345,9 +367,7 @@ class _VersionsDialog extends StatelessWidget {
     if (restored != null && context.mounted) {
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('استُرجع كإصدار ${restored.versionNumber}'),
-        ),
+        SnackBar(content: Text('استُرجع كإصدار ${restored.versionNumber}')),
       );
     }
   }
@@ -385,8 +405,8 @@ class EditorScreenSizeSelector extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: selected == device
                       ? (dark
-                          ? AppColor.darkSurfaceContainer
-                          : AppColor.adminAccentSurface)
+                            ? AppColor.darkSurfaceContainer
+                            : AppColor.adminAccentSurface)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
@@ -394,9 +414,7 @@ class EditorScreenSizeSelector extends StatelessWidget {
                   device.icon,
                   size: AppDimensions.iconSizeSm,
                   color: selected == device
-                      ? (dark
-                          ? AppColor.secondaryColor
-                          : AppColor.adminAccent)
+                      ? (dark ? AppColor.secondaryColor : AppColor.adminAccent)
                       : muted,
                 ),
               ),
@@ -489,10 +507,7 @@ class EditorConnectionStatus extends StatelessWidget {
         AppColor.trendNegative,
         'انقطع الاتصال بالمعاينة',
       ),
-      PreviewConnection.error => (
-        AppColor.errorColor,
-        'خطأ في المعاينة',
-      ),
+      PreviewConnection.error => (AppColor.errorColor, 'خطأ في المعاينة'),
     };
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -545,8 +560,9 @@ class EditorToolbarButton extends StatelessWidget {
     final bg = accent
         ? (accentColor ?? AppColor.adminAccent)
         : Colors.transparent;
-    final disabledColor =
-        dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    final disabledColor = dark
+        ? AppColor.darkTextSecondary
+        : AppColor.adminMuted;
 
     return Material(
       color: disabled ? Colors.transparent : bg,

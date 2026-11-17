@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
@@ -68,20 +69,35 @@ class _PlanCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: adminTintedSurfaceColor(theme),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: AppIcon(
-                      AppIcons.package,
-                      size: 18,
-                      color: dark
-                          ? AppColor.darkTextSecondary
-                          : AppColor.adminMuted,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: plan.imageUrl == null || plan.imageUrl!.isEmpty
+                          ? Container(
+                              alignment: Alignment.center,
+                              color: adminTintedSurfaceColor(theme),
+                              child: AppIcon(
+                                AppIcons.package,
+                                size: 18,
+                                color: dark
+                                    ? AppColor.darkTextSecondary
+                                    : AppColor.adminMuted,
+                              ),
+                            )
+                          : CachedNetworkImage(
+                              imageUrl: plan.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorWidget: (_, _, _) => Container(
+                                alignment: Alignment.center,
+                                color: adminTintedSurfaceColor(theme),
+                                child: const AppIcon(
+                                  AppIcons.package,
+                                  size: 18,
+                                ),
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(width: AppSizes.px10),

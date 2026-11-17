@@ -59,6 +59,14 @@ void main() {
         );
       }
     }
+    expect(
+      ComponentRegistry.getForPage('home').map((entry) => entry.componentType),
+      contains('image'),
+    );
+    expect(
+      ComponentRegistry.getForPage('categories').map((entry) => entry.componentType),
+      contains('image'),
+    );
   });
 
   test('الصفحات بمفاتيح العقد التي يقبلها المدقق الحي', () {

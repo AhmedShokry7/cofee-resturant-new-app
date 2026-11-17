@@ -22,6 +22,8 @@ class StaffPageBody extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    this.canReadEmployeeFiles = false,
+    this.onEmployeeFile,
     required this.onInvite,
     required this.onShowInvitations,
     this.errorMessage,
@@ -34,6 +36,8 @@ class StaffPageBody extends StatelessWidget {
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final bool canReadEmployeeFiles;
+  final ValueChanged<AdminStaffMember>? onEmployeeFile;
   final VoidCallback onInvite;
   final VoidCallback onShowInvitations;
   final String? errorMessage;
@@ -82,8 +86,10 @@ class StaffPageBody extends StatelessWidget {
               search: search,
               onSearchChanged: onSearchChanged,
               canManagePermissions: canManagePermissions,
+              canReadEmployeeFiles: canReadEmployeeFiles,
               onManage: onManage,
               onEdit: onEdit,
+              onEmployeeFile: onEmployeeFile,
             ),
           ),
         ],

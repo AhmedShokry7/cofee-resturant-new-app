@@ -1,34 +1,27 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/preview/preview_bridge.dart';
+import 'package:new_coffee/core/theme/app_color.dart';
+import 'package:new_coffee/features/design/data/model/native_section.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/features/splash/presentation/views/widgets/splash_brand_mark.dart';
 import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
-/// The app splash.
-///
-/// Android 12+ always paints a system splash before Flutter's first frame, and
-/// that one is locked to a fixed circle, so the brand mark is drawn here
-/// instead where the size is fully under our control. The native launch window
-/// is kept blank and white, so handing over to this screen is invisible.
-///
-/// Its only job is the handover: it holds the brand mark for
-/// [SplashView.displayDuration] and then replaces itself with the route the
-/// saved session asked for. Nothing is waited on in between - application
-/// initialisation finished before this widget existed, and anything that has to
-/// ask the customer for something belongs to the screen that follows.
+/// شاشة الافتتاحية: تعرض إعداداتها المنشورة ثم تسلّم للمسار الذي اختاره
+/// التطبيق كما هو. غياب إعدادات منشورة يحافظ على شكل ومدة الشاشة الأصليين.
 class SplashView extends StatefulWidget {
   const SplashView({super.key, required this.targetRoute});
 
-  static const routeName = "/splash";
+  static const routeName = '/splash';
 
-  /// Route the app continues to once the splash is done.
+  /// المسار الحالي الذي يتابع إليه التطبيق بعد الافتتاحية.
   final String targetRoute;
 
-  /// Long enough for the mark to register, short enough not to feel like a
-  /// stall. This is presentation time only and never covers slow startup work.
+  /// المدة الافتراضية للتوافق مع أي مستند قديم أو غائب.
   static const Duration displayDuration = Duration(milliseconds: 1000);
 
   @override
@@ -38,24 +31,41 @@ class SplashView extends StatefulWidget {
 class _SplashViewState extends State<SplashView> {
   Timer? _timer;
   bool _hasNavigated = false;
+  Duration? _scheduledDuration;
+  final Stopwatch _visibleTime = Stopwatch();
+
+  SplashSettings _settings(DesignState state) =>
+      SplashSettings.fromSections(state.pageSections('splash'));
 
   @override
   void initState() {
     super.initState();
-    // في وضع معاينة الأدمن تبقى الافتتاحية معروضة: سلايدر المحرر يفتحها
-    // ليراها الموظف، والانتقال التلقائي لوجهة الجلسة يكسر المعاينة فورًا.
     if (PreviewBridge().isActive) return;
-    _timer = Timer(SplashView.displayDuration, _openTargetRoute);
+    _visibleTime.start();
+    _scheduleInitialHandover(context.read<DesignCubit>());
   }
 
-  /// Hands over to the saved entry route exactly once.
-  ///
-  /// `mounted` alone is not enough: it stays true for the whole replacement
-  /// animation, and a rebuild triggered by startup state (a locale change, for
-  /// example) must not be able to schedule a second push. The guard is checked
-  /// before `mounted` so a rebuild cannot reset the decision, and the target
-  /// route is read at call time rather than captured, so a rebuilt widget
-  /// navigates to its current destination instead of a stale one.
+  Future<void> _scheduleInitialHandover(DesignCubit cubit) async {
+    try {
+      await cubit.initialLoad;
+    } catch (_) {
+      // If the first read fails, retain the documented one-second default.
+    }
+    if (!mounted || PreviewBridge().isActive) return;
+    _scheduleHandover(_settings(cubit.state).duration);
+  }
+
+  void _scheduleHandover(Duration duration) {
+    if (_hasNavigated || _scheduledDuration == duration) return;
+    _timer?.cancel();
+    _scheduledDuration = duration;
+    final remaining = duration - _visibleTime.elapsed;
+    _timer = Timer(
+      remaining.isNegative ? Duration.zero : remaining,
+      _openTargetRoute,
+    );
+  }
+
   void _openTargetRoute() {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
@@ -71,16 +81,48 @@ class _SplashViewState extends State<SplashView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // Spelled out rather than inherited from the theme, because this screen
-      // has to match the native launch window exactly: white in every system
-      // appearance, whatever the app's own screens decide later.
-      backgroundColor: AppColor.whiteColor,
-      body: Center(
-        child: DesignPageSectionsInline(
-          pageId: 'splash',
-          child: const SplashBrandMark(),
-        ),
+    return BlocListener<DesignCubit, DesignState>(
+      listenWhen: (previous, next) => previous.design != next.design,
+      listener: (context, state) {
+        if (state.isLoaded && !PreviewBridge().isActive) {
+          _scheduleHandover(_settings(state).duration);
+        }
+      },
+      child: BlocBuilder<DesignCubit, DesignState>(
+        buildWhen: (previous, next) => previous.design != next.design,
+        builder: (context, state) {
+          final settings = _settings(state);
+          return Scaffold(
+            backgroundColor: SplashSettings.colorFromHex(
+              settings.backgroundColor,
+              fallback: AppColor.whiteColor,
+            ),
+            body: SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Align(
+                      alignment: switch (settings.verticalAlignment) {
+                        'top' => Alignment.topCenter,
+                        'bottom' => Alignment.bottomCenter,
+                        _ => Alignment.center,
+                      },
+                      child: DesignPageSectionsInline(
+                        pageId: 'splash',
+                        child: settings.visible
+                            ? SplashBrandMark(settings: settings)
+                            : const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

@@ -10,6 +10,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_avatar.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_format.dart';
+import 'package:admin_app/features/hr/presentation/strings/hr_employee_strings.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -20,14 +21,19 @@ class StaffTable extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    this.canReadEmployeeFiles = false,
+    this.onEmployeeFile,
   });
 
   final List<AdminStaffMember> staff;
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final bool canReadEmployeeFiles;
+  final ValueChanged<AdminStaffMember>? onEmployeeFile;
 
-  static const _actionWidth = 76.0;
+  static const _baseActionWidth = 76.0;
+  static const _employeeActionWidth = 108.0;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -35,6 +41,9 @@ class StaffTable extends StatelessWidget {
       final width = math
           .min(math.max(constraints.maxWidth, 980), 1600)
           .toDouble();
+      final actionWidth = canReadEmployeeFiles
+          ? _employeeActionWidth
+          : _baseActionWidth;
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: SizedBox(
@@ -42,13 +51,18 @@ class StaffTable extends StatelessWidget {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                _Header(),
+                _Header(actionWidth: actionWidth),
                 for (final member in staff)
                   _Row(
                     member: member,
                     canManagePermissions: canManagePermissions,
                     onManage: () => onManage(member),
                     onEdit: () => onEdit(member),
+                    canReadEmployeeFiles: canReadEmployeeFiles,
+                    actionWidth: actionWidth,
+                    onEmployeeFile: onEmployeeFile == null
+                        ? null
+                        : () => onEmployeeFile!(member),
                   ),
               ],
             ),
@@ -60,6 +74,10 @@ class StaffTable extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
+  const _Header({required this.actionWidth});
+
+  final double actionWidth;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -80,7 +98,7 @@ class _Header extends StatelessWidget {
           Expanded(flex: 2, child: _cell(S.rolesTablePermissions, theme)),
           Expanded(flex: 2, child: _cell(S.status, theme)),
           Expanded(flex: 2, child: _cell(S.staffJoined, theme)),
-          const SizedBox(width: StaffTable._actionWidth),
+          SizedBox(width: actionWidth),
         ],
       ),
     );
@@ -105,12 +123,18 @@ class _Row extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.canReadEmployeeFiles,
+    required this.actionWidth,
+    this.onEmployeeFile,
   });
 
   final AdminStaffMember member;
   final bool canManagePermissions;
   final VoidCallback onManage;
   final VoidCallback onEdit;
+  final bool canReadEmployeeFiles;
+  final double actionWidth;
+  final VoidCallback? onEmployeeFile;
 
   @override
   Widget build(BuildContext context) {
@@ -226,12 +250,14 @@ class _Row extends StatelessWidget {
                 ),
               ),
               SizedBox(
-                width: StaffTable._actionWidth,
+                width: actionWidth,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     if (canManagePermissions)
                       StaffEditAction(onPressed: onEdit),
+                    if (canReadEmployeeFiles && onEmployeeFile != null)
+                      HrEmployeeFileAction(onPressed: onEmployeeFile!),
                     StaffPermissionAction(
                       canManage: canManagePermissions,
                       onPressed: onManage,
@@ -245,6 +271,23 @@ class _Row extends StatelessWidget {
       ),
     );
   }
+}
+
+class HrEmployeeFileAction extends StatelessWidget {
+  const HrEmployeeFileAction({super.key, required this.onPressed});
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: HrEmployeeStrings.fileAction,
+    onPressed: onPressed,
+    style: IconButton.styleFrom(
+      fixedSize: const Size(30, 30),
+      padding: EdgeInsets.zero,
+      visualDensity: VisualDensity.compact,
+    ),
+    icon: const AppIcon(AppIcons.folder01, size: 16),
+  );
 }
 
 class StaffPermissionAction extends StatelessWidget {

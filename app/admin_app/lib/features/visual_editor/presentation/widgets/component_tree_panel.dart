@@ -11,6 +11,23 @@ import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 
 /// لوحة شجرة المكوّنات — تعرض المكوّنات المسجلة في الصفحة المحددة
 /// وتتيح تحديدها وإعادة ترتيبها وإخفاءها وحذفها.
+/// يحوّل موضع الإدراج في القائمة المسطّحة إلى فهرس الإخوة؛ فالـ Cubit
+/// يعيد الترتيب داخل أبناء الأب نفسه فقط.
+int siblingIndexForFlatReorder({
+  required List<EditableComponent> components,
+  required int oldIndex,
+  required int newIndex,
+}) {
+  final moving = components[oldIndex];
+  return components.asMap().entries.where((entry) {
+    if (entry.key == oldIndex || entry.value.parentId != moving.parentId) {
+      return false;
+    }
+    final indexAfterRemoval = entry.key > oldIndex ? entry.key - 1 : entry.key;
+    return indexAfterRemoval < newIndex;
+  }).length;
+}
+
 class ComponentTreePanel extends StatelessWidget {
   const ComponentTreePanel({
     super.key,
@@ -47,10 +64,7 @@ class ComponentTreePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _PanelHeader(
-            icon: AppIcons.layers01,
-            title: S.visualEditorLayers,
-          ),
+          _PanelHeader(icon: AppIcons.layers01, title: S.visualEditorLayers),
           const Divider(height: 1),
           Expanded(
             child: components.isEmpty
@@ -106,14 +120,22 @@ class _ComponentList extends StatelessWidget {
       buildDefaultDragHandles: false,
       itemCount: components.length,
       onReorderItem: (oldIndex, newIndex) {
-        final adjusted = newIndex > oldIndex ? newIndex - 1 : newIndex;
-        onReorder(components[oldIndex].componentId, adjusted);
+        final component = components[oldIndex];
+        // ReorderableListView indices address flat rows, while the cubit
+        // reorders within this component's siblings.
+        final siblingIndex = siblingIndexForFlatReorder(
+          components: components,
+          oldIndex: oldIndex,
+          newIndex: newIndex,
+        );
+        onReorder(component.componentId, siblingIndex);
       },
       itemBuilder: (context, index) {
         final component = components[index];
         return _ComponentRow(
           key: ValueKey(component.componentId),
           component: component,
+          index: index,
           isSelected: component.componentId == selectedComponentId,
           onTap: () => onSelect(component.componentId),
           onDelete: component.canDelete
@@ -122,8 +144,7 @@ class _ComponentList extends StatelessWidget {
           onDuplicate: component.canDuplicate
               ? () => onDuplicate(component.componentId)
               : null,
-          onToggleVisibility: () =>
-              onToggleVisibility(component.componentId),
+          onToggleVisibility: () => onToggleVisibility(component.componentId),
         );
       },
     );
@@ -134,6 +155,7 @@ class _ComponentRow extends StatelessWidget {
   const _ComponentRow({
     super.key,
     required this.component,
+    required this.index,
     required this.isSelected,
     required this.onTap,
     this.onDelete,
@@ -142,6 +164,7 @@ class _ComponentRow extends StatelessWidget {
   });
 
   final EditableComponent component;
+  final int index;
   final bool isSelected;
   final VoidCallback onTap;
   final VoidCallback? onDelete;
@@ -154,7 +177,9 @@ class _ComponentRow extends StatelessWidget {
     final isVisible = component.properties['visible'] as bool? ?? true;
     final entry = ComponentRegistry.get(component.componentType);
 
-    final selectedBg = dark ? AppColor.darkSurfaceContainer : AppColor.adminAccentSurface;
+    final selectedBg = dark
+        ? AppColor.darkSurfaceContainer
+        : AppColor.adminAccentSurface;
     final rowBg = isSelected ? selectedBg : Colors.transparent;
     final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
@@ -175,9 +200,11 @@ class _ComponentRow extends StatelessWidget {
               // Drag handle — يظهر فقط للمكوّنات القابلة لإعادة الترتيب
               if (component.canReorder)
                 ReorderableDragStartListener(
-                  index: component.index,
+                  index: index,
                   child: Padding(
-                    padding: const EdgeInsetsDirectional.only(end: AppSpacing.xs),
+                    padding: const EdgeInsetsDirectional.only(
+                      end: AppSpacing.xs,
+                    ),
                     child: Icon(Icons.drag_indicator, size: 16, color: muted),
                   ),
                 )

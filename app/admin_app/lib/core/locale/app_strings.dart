@@ -869,6 +869,170 @@ class S {
   static String get sectionOperations => _ar ? 'العمليات' : 'Operations';
   static String get sectionPeople =>
       _ar ? 'الأشخاص والفروع' : 'People and branches';
+  static String get sectionHr => _ar ? 'الموارد البشرية' : 'Human resources';
+  static String get hrAttendance => _ar ? 'الحضور والانصراف' : 'Attendance';
+  static String get hrAttendanceSubtitle => _ar
+      ? 'سجلات الدوام وطلبات تصحيح الحضور ضمن نطاق صلاحيتك.'
+      : 'Attendance sessions and correction requests within your scope.';
+  static String get hrSchedules => _ar ? 'الجداول والورديات' : 'Schedules';
+  static String get hrSchedulesSubtitle => _ar
+      ? 'عرض وإدارة الورديات المنشورة والمسودات ضمن نطاق الفروع.'
+      : 'View and manage draft and published shifts within branch scope.';
+  static String get hrShiftStart => _ar ? 'بداية الوردية' : 'Shift starts';
+  static String get hrShiftEnd => _ar ? 'نهاية الوردية' : 'Shift ends';
+  static String get hrBreakMinutes =>
+      _ar ? 'الاستراحة بالدقائق' : 'Break minutes';
+  static String get hrScheduleNote => _ar ? 'ملاحظة الجدول' : 'Schedule note';
+  static String get hrCreateSchedule => _ar ? 'إضافة وردية' : 'Add shift';
+  static String get hrEditSchedule => _ar ? 'تعديل الوردية' : 'Edit shift';
+  static String get hrPublishSchedule => _ar ? 'نشر' : 'Publish';
+  static String get hrCancelSchedule => _ar ? 'إلغاء الوردية' : 'Cancel shift';
+  static String get hrScheduleDraft => _ar ? 'مسودة' : 'Draft';
+  static String get hrSchedulePublished => _ar ? 'منشورة' : 'Published';
+  static String get hrScheduleCancelled => _ar ? 'ملغاة' : 'Cancelled';
+  static String get hrScheduleNoRows =>
+      _ar ? 'لا توجد ورديات لهذه الفترة.' : 'No shifts in this period.';
+  static String get hrScheduleEmployeePickerRequired => _ar
+      ? 'تحتاج صلاحية عرض ملفات الموظفين لاختيار موظف وإسناد الوردية.'
+      : 'Employee file access is required to assign a shift.';
+  static String get hrScheduleRange => _ar ? 'فترة الجدول' : 'Schedule range';
+  static String get hrScheduleInvalidRange => _ar
+      ? 'الفترة غير صالحة أو تتجاوز ٦٣ يومًا.'
+      : 'Invalid range; schedules are limited to 63 days.';
+  static String get hrScheduleSaved => _ar ? 'تم حفظ الوردية.' : 'Shift saved.';
+  static String get hrBreakInvalid =>
+      _ar ? 'مدة الاستراحة غير صالحة.' : 'Invalid break length.';
+  static String get hrScheduleInvalidTimes => _ar
+      ? 'وقت نهاية الوردية يجب أن يكون بعد بدايتها.'
+      : 'Shift end must be after its start.';
+  static String get hrLeaveRequests => _ar ? 'الإجازات' : 'Leave';
+  static String get hrPayroll => _ar ? 'مسير الرواتب' : 'Payroll';
+  static String get hrDashboard =>
+      _ar ? 'لوحة الموارد البشرية' : 'HR dashboard';
+  static String get hrDashboardSubtitle => _ar
+      ? 'مؤشرات الموارد البشرية والمهام المعلقة ضمن صلاحياتك.'
+      : 'HR metrics and pending work within your permissions.';
+  static String get hrTotalEmployees =>
+      _ar ? 'إجمالي الموظفين' : 'Total employees';
+  static String get hrActiveEmployees => _ar ? 'على رأس العمل' : 'Active';
+  static String get hrProbationEmployees => _ar ? 'فترة التجربة' : 'Probation';
+  static String get hrOnLeaveEmployees => _ar ? 'في إجازة' : 'On leave';
+  static String get hrScheduledToday =>
+      _ar ? 'مجدولون اليوم' : 'Scheduled today';
+  static String get hrPresentToday => _ar ? 'حضروا اليوم' : 'Present today';
+  static String get hrOpenAttendance =>
+      _ar ? 'سجلات دوام مفتوحة' : 'Open sessions';
+  static String get hrLateToday => _ar ? 'متأخرون اليوم' : 'Late today';
+  static String get hrPendingLeave =>
+      _ar ? 'طلبات إجازة معلقة' : 'Pending leave';
+  static String get hrPendingCorrections =>
+      _ar ? 'تصحيحات حضور معلقة' : 'Pending corrections';
+  static String get hrPendingAdvances => _ar ? 'سلف معلقة' : 'Pending advances';
+  static String get hrPendingAdjustments =>
+      _ar ? 'تسويات معلقة' : 'Pending adjustments';
+  static String get hrPendingDiscrepancies =>
+      _ar ? 'فروقات تحتاج مراجعة' : 'Discrepancies to review';
+  static String get hrOutstandingAdvances =>
+      _ar ? 'رصيد السلف القائم' : 'Outstanding advances';
+  static String get hrOpenDiscrepancies =>
+      _ar ? 'فروقات مفتوحة' : 'Open discrepancies';
+  static String get hrPayrollCurrentPeriod =>
+      _ar ? 'مسير الفترة الحالية' : 'Current payroll run';
+  static String get hrNoPayrollRun =>
+      _ar ? 'لم يُنشأ مسير للفترة الحالية' : 'No run for the current period';
+  static String get hrDashboardNoMetrics => _ar
+      ? 'لا تتوفر مؤشرات للعرض بالصلاحيات الحالية.'
+      : 'No metrics are available for your current permissions.';
+  static String get hrFinance =>
+      _ar ? 'السلف والتسويات' : 'Advances & adjustments';
+  static String get hrOffboarding => _ar ? 'إنهاء الخدمة' : 'Offboarding';
+  static String get hrSettings =>
+      _ar ? 'إعدادات الموارد البشرية' : 'HR settings';
+  static String get hrTimeZone =>
+      _ar ? 'المنطقة الزمنية' : 'Business time zone';
+  static String get hrLateGrace =>
+      _ar ? 'سماح التأخير (دقيقة)' : 'Late grace (minutes)';
+  static String get hrLateMinuteRate =>
+      _ar ? 'معدل خصم دقيقة التأخير' : 'Late minute rate';
+  static String get hrEarlyMinuteRate =>
+      _ar ? 'معدل خصم الانصراف المبكر' : 'Early leave rate';
+  static String get hrAbsenceDayRate =>
+      _ar ? 'معدل خصم يوم الغياب' : 'Absence day rate';
+  static String get hrUnpaidLeaveRate =>
+      _ar ? 'معدل الإجازة غير المدفوعة' : 'Unpaid leave day rate';
+  static String get hrCashierDeductions => _ar
+      ? 'السماح بخصومات فروقات الصندوق'
+      : 'Allow cashier discrepancy deductions';
+  static String get hrDeductionCap =>
+      _ar ? 'الحد الأقصى للخصم من الراتب (%)' : 'Maximum salary deduction (%)';
+  static String get hrSettingsSave => _ar ? 'حفظ الإعدادات' : 'Save settings';
+  static String get hrSettingsSaved =>
+      _ar ? 'تم حفظ إعدادات الموارد البشرية.' : 'HR settings saved.';
+  static String get hrHiddenPolicyKeep => _ar
+      ? 'اتركه فارغًا للإبقاء على القيمة الحالية؛ عرض القيمة يتطلب صلاحية مالية.'
+      : 'Leave blank to keep the current value; viewing it requires a finance permission.';
+  static String get hrCompensation => _ar ? 'التعويضات' : 'Compensation';
+  static String get hrCompensationSubtitle => _ar
+      ? 'إدارة الرواتب والبدلات بتاريخ سريان مع الاحتفاظ بسجل التغييرات.'
+      : 'Manage effective-dated salary and allowances while preserving history.';
+  static String get hrChooseEmployee => _ar ? 'اختر الموظف' : 'Choose employee';
+  static String get hrCurrentCompensation =>
+      _ar ? 'التعويض الحالي' : 'Current compensation';
+  static String get hrCompensationHistory =>
+      _ar ? 'سجل التعويضات' : 'Compensation history';
+  static String get hrBasicSalary => _ar ? 'الراتب الأساسي' : 'Basic salary';
+  static String get hrHousingAllowance =>
+      _ar ? 'بدل السكن' : 'Housing allowance';
+  static String get hrTransportAllowance =>
+      _ar ? 'بدل النقل' : 'Transport allowance';
+  static String get hrOtherAllowance => _ar ? 'بدلات أخرى' : 'Other allowance';
+  static String get hrEffectiveFrom => _ar ? 'ساري من' : 'Effective from';
+  static String get hrCurrency => _ar ? 'العملة' : 'Currency';
+  static String get hrCompensationNote => _ar ? 'سبب التغيير' : 'Change reason';
+  static String get hrSaveCompensation => _ar ? 'حفظ التغيير' : 'Save change';
+  static String get hrCompensationSaved => _ar
+      ? 'تم حفظ التغيير مع الاحتفاظ بالسجل.'
+      : 'Compensation saved with history preserved.';
+  static String get hrNoCompensation =>
+      _ar ? 'لا توجد بيانات تعويضات.' : 'No compensation records.';
+  static String get hrEmployeeRequired =>
+      _ar ? 'اختر موظفًا أولًا.' : 'Choose an employee first.';
+  static String get hrAmountInvalid => _ar
+      ? 'أدخل مبلغًا صحيحًا غير سالب.'
+      : 'Enter a valid non-negative amount.';
+  static String get hrEffectiveDateDuplicateOrBackdated => _ar
+      ? 'تاريخ السريان لا يجوز أن يتعارض مع سجل سابق.'
+      : 'The effective date conflicts with an existing record.';
+  static String get hrAttendanceSessions =>
+      _ar ? 'سجلات الحضور' : 'Attendance sessions';
+  static String get hrAttendanceCorrections =>
+      _ar ? 'طلبات التصحيح' : 'Correction requests';
+  static String get hrFromDate => _ar ? 'من تاريخ' : 'From date';
+  static String get hrToDate => _ar ? 'إلى تاريخ' : 'To date';
+  static String get hrAllBranches =>
+      _ar ? 'كل الفروع المسموح بها' : 'All allowed branches';
+  static String get hrEmployeeName => _ar ? 'الموظف' : 'Employee';
+  static String get hrBranch => _ar ? 'الفرع' : 'Branch';
+  static String get hrClockIn => _ar ? 'تسجيل الحضور' : 'Clock in';
+  static String get hrClockOut => _ar ? 'تسجيل الانصراف' : 'Clock out';
+  static String get hrWorkedHours => _ar ? 'ساعات العمل' : 'Worked time';
+  static String get hrLateMinutes => _ar ? 'التأخير (دقيقة)' : 'Late (minutes)';
+  static String get hrEarlyMinutes =>
+      _ar ? 'الانصراف المبكر (دقيقة)' : 'Early leave (minutes)';
+  static String get hrCorrectionReason =>
+      _ar ? 'سبب التصحيح' : 'Correction reason';
+  static String get hrReviewNote => _ar ? 'ملاحظة المراجعة' : 'Review note';
+  static String get hrApprove => _ar ? 'اعتماد' : 'Approve';
+  static String get hrReject => _ar ? 'رفض' : 'Reject';
+  static String get hrCorrectionReviewed =>
+      _ar ? 'تمت مراجعة الطلب' : 'Request reviewed';
+  static String get hrNoAttendance => _ar
+      ? 'لا توجد سجلات حضور لهذه الفترة.'
+      : 'No attendance sessions for this period.';
+  static String get hrNoCorrections =>
+      _ar ? 'لا توجد طلبات تصحيح معلقة.' : 'No pending correction requests.';
+  static String get hrDateRangeInvalid =>
+      _ar ? 'نطاق التاريخ غير صالح.' : 'The date range is invalid.';
   static String get sectionContent =>
       _ar ? 'المحتوى والإعدادات' : 'Content and settings';
   static String get sectionGrowth =>
@@ -2879,6 +3043,15 @@ class S {
   static String get subscriptions => _ar ? 'الاشتراكات' : 'Subscriptions';
   static String get subscriptionPlans =>
       _ar ? 'باقات الاشتراكات' : 'Subscription plans';
+  static String get subscriptionPlanImageSection =>
+      _ar ? 'صورة الباقة' : 'Plan image';
+  static String get subscriptionPlanImageEmpty =>
+      _ar ? 'لم تُضف صورة لهذه الباقة' : 'No image has been added to this plan';
+  static String get subscriptionPlanImageDescription => _ar
+      ? 'تظهر هذه الصورة لعملاء التطبيق في تفاصيل الباقة.'
+      : 'This image is shown to customers in the plan details.';
+  static String get subscriptionPlanImageEdit =>
+      _ar ? 'تغيير الصورة' : 'Change image';
   static String get reviews => _ar ? 'التقييمات' : 'Reviews';
   static String get notifications => _ar ? 'الإشعارات' : 'Notifications';
   static String get favorites => _ar ? 'المفضلة' : 'Favorites';
@@ -5204,7 +5377,7 @@ class S {
       ? 'الفرع بلا إحداثيات، فلا قراءة طقس'
       : 'The branch has no coordinates, so there is no weather read';
 
-/// المقاطع التي فشلت قراءتها: الشاشة تبقى كما هي والسبب يُقال هنا.
+  /// المقاطع التي فشلت قراءتها: الشاشة تبقى كما هي والسبب يُقال هنا.
   static String get previewDegradedTitle =>
       _ar ? 'مقاطع لم تُقرأ' : 'Sections that did not load';
 
@@ -5212,13 +5385,14 @@ class S {
 
   // ---------- Visual Editor ----------
   static String get visualEditor => _ar ? 'المحرر المرئي' : 'Visual Editor';
-  static String get visualEditorHint =>
-      _ar ? 'صمّم تطبيق العميل مباشرة بمعاينة حية وتحرير فوري'
-          : 'Design the customer app with live preview and instant editing';
+  static String get visualEditorHint => _ar
+      ? 'صمّم تطبيق العميل مباشرة بمعاينة حية وتحرير فوري'
+      : 'Design the customer app with live preview and instant editing';
   static String get visualEditorNoSelection =>
       _ar ? 'لم يتم اختيار أي عنصر' : 'No element selected';
-  static String get visualEditorSelectElement =>
-      _ar ? 'اختر عنصرًا من المعاينة أو شجرة المكونات' : 'Select an element from preview or component tree';
+  static String get visualEditorSelectElement => _ar
+      ? 'اختر عنصرًا من المعاينة أو شجرة المكونات'
+      : 'Select an element from preview or component tree';
 
   // مفاتيح إضافية للمحرر المرئي
   static String get visualEditorSearchHint =>
@@ -5238,19 +5412,40 @@ class S {
   static String get visualEditorAddComponent => _ar ? 'إضافة' : 'Add';
   static String get visualEditorCategoryLayout => _ar ? 'تخطيط' : 'Layout';
   static String get visualEditorCategoryContent => _ar ? 'محتوى' : 'Content';
-  static String get visualEditorCategoryRestaurant => _ar ? 'مطعم' : 'Restaurant';
+  static String get visualEditorCategoryRestaurant =>
+      _ar ? 'مطعم' : 'Restaurant';
   static String get visualEditorCategoryScreen => _ar ? 'شاشة' : 'Screen';
-  static String get visualEditorCategoryNavigation => _ar ? 'تنقّل' : 'Navigation';
+  static String get visualEditorCategoryNavigation =>
+      _ar ? 'تنقّل' : 'Navigation';
   static String get visualEditorProperties => _ar ? 'الخصائص' : 'Properties';
-  static String get visualEditorSelectHint =>
-      _ar ? 'اضغط على عنصر في الشجرة أو المعاينة'
-          : 'Tap an element in the tree or preview';
+  static String get visualEditorSelectHint => _ar
+      ? 'اضغط على عنصر في الشجرة أو المعاينة'
+      : 'Tap an element in the tree or preview';
   static String get visualEditorNoEditableProperties =>
       _ar ? 'لا خصائص قابلة للتحرير' : 'No editable properties';
   static String get visualEditorPickImage =>
-      _ar ? 'اختيار من الكمبيوتر' : 'Pick from computer';
+      _ar ? 'اختيار صورة' : 'Choose image';
+  static String get visualEditorImageLibrary =>
+      _ar ? 'مكتبة صور التطبيق' : 'Customer app image library';
+  static String get visualEditorImageLibraryTitle =>
+      _ar ? 'صور تطبيق العميل' : 'Customer app images';
+  static String get visualEditorImageLibrarySearch =>
+      _ar ? 'ابحث باسم المنتج أو النوع' : 'Search by name or type';
+  static String get visualEditorImageLibraryEmpty =>
+      _ar ? 'لا توجد صور متاحة' : 'No images are available';
+  static String get visualEditorImageLibraryLoadFailed =>
+      _ar ? 'تعذر تحميل الصور' : 'Could not load images';
+  static String get visualEditorImageManage =>
+      _ar ? 'إدارة الصورة' : 'Manage image';
+  static String visualEditorImageRemoveConfirm(String name) => _ar
+      ? 'إزالة صورة "$name" من محتوى تطبيق العميل؟'
+      : 'Remove "$name" from customer-facing content?';
   static String get visualEditorUploadingImage =>
       _ar ? 'جاري رفع الصورة…' : 'Uploading image…';
+  static String get visualEditorRemoveImage =>
+      _ar ? 'إزالة الصورة' : 'Remove image';
+  static String get visualEditorRestoreOriginalImage =>
+      _ar ? 'استعادة الصورة الأصلية' : 'Restore original image';
   static String get visualEditorResetProperty =>
       _ar ? 'إعادة القيمة الافتراضية' : 'Reset to default';
   static String get visualEditorBilingualHint => _ar
@@ -5271,7 +5466,8 @@ class S {
   static String get visualEditorZoomReset => _ar ? 'حجم طبيعي' : 'Reset zoom';
   static String get visualEditorSaveDraft => _ar ? 'حفظ مسودة' : 'Save draft';
   static String get visualEditorPublish => _ar ? 'نشر' : 'Publish';
-  static String get visualEditorPublishTitle => _ar ? 'تأكيد النشر' : 'Confirm publish';
+  static String get visualEditorPublishTitle =>
+      _ar ? 'تأكيد النشر' : 'Confirm publish';
   static String get visualEditorPublishConfirm => _ar
       ? 'سيظهر التصميم لجميع مستخدمي التطبيق فور النشر. هل أنت متأكد؟'
       : 'This design will be visible to all app users immediately. Are you sure?';
@@ -5291,7 +5487,8 @@ class S {
   static String get visualEditorNoVersions =>
       _ar ? 'لا إصدارات منشورة بعد' : 'No published versions yet';
   static String get visualEditorRestore => _ar ? 'استرجاع' : 'Restore';
-  static String get visualEditorRestoreTitle => _ar ? 'استرجاع إصدار' : 'Restore version';
+  static String get visualEditorRestoreTitle =>
+      _ar ? 'استرجاع إصدار' : 'Restore version';
   static String get visualEditorRestoreConfirm => _ar
       ? 'سيعود التصميم إلى هذا الإصدار ويُنشر كإصدار جديد في السجل. هل أنت متأكد؟'
       : 'The design will return to this version and be published as a new entry in the history. Are you sure?';
@@ -5312,8 +5509,7 @@ class S {
   static String get visualEditorDiscardDone =>
       _ar ? 'تخلّصت من المسودة' : 'Draft discarded';
 
-  static String get visualEditorTemplates =>
-      _ar ? 'القوالب' : 'Templates';
+  static String get visualEditorTemplates => _ar ? 'القوالب' : 'Templates';
 
   static String get visualEditorTemplatesTitle =>
       _ar ? 'معرض القوالب' : 'Templates gallery';
@@ -5321,8 +5517,7 @@ class S {
   static String get visualEditorNoTemplates =>
       _ar ? 'لا قوالب محفوظة بعد' : 'No saved templates yet';
 
-  static String get visualEditorApplyTemplate =>
-      _ar ? 'تطبيق' : 'Apply';
+  static String get visualEditorApplyTemplate => _ar ? 'تطبيق' : 'Apply';
 
   static String get visualEditorTemplateApplied =>
       _ar ? 'طُبّق القالب على المسودة' : 'Template applied to the draft';
@@ -5336,9 +5531,8 @@ class S {
   static String get visualEditorTemplateNameLabel =>
       _ar ? 'اسم القالب' : 'Template name';
 
-  static String get visualEditorTemplateNameHint => _ar
-      ? 'مثال: تصميم رمضان'
-      : 'e.g. Ramadan design';
+  static String get visualEditorTemplateNameHint =>
+      _ar ? 'مثال: تصميم رمضان' : 'e.g. Ramadan design';
 
   static String get visualEditorTemplateSaved =>
       _ar ? 'حُفظ القالب' : 'Template saved';
@@ -5356,11 +5550,9 @@ class S {
   static String get visualEditorThemeColors =>
       _ar ? 'ألوان الأدوار' : 'Role colors';
 
-  static String get visualEditorThemeScales =>
-      _ar ? 'المقاييس' : 'Scales';
+  static String get visualEditorThemeScales => _ar ? 'المقاييس' : 'Scales';
 
-  static String get visualEditorBrand =>
-      _ar ? 'هوية التطبيق' : 'App brand';
+  static String get visualEditorBrand => _ar ? 'هوية التطبيق' : 'App brand';
 
   static String get visualEditorBrandNameAr =>
       _ar ? 'اسم التطبيق (عربي)' : 'App name (Arabic)';
@@ -5371,13 +5563,11 @@ class S {
   static String get visualEditorBrandLogoUrl =>
       _ar ? 'رابط اللوجو' : 'Logo URL';
 
-  static String get visualEditorBrandHint =>
-      _ar
-          ? 'الفارغ يعني هوية التطبيق الأصلية. اللوجو رابط http(s) فقط.'
-          : 'Empty means the shipped brand. The logo must be an http(s) URL.';
+  static String get visualEditorBrandHint => _ar
+      ? 'الفارغ يعني هوية التطبيق الأصلية. اللوجو رابط http(s) فقط.'
+      : 'Empty means the shipped brand. The logo must be an http(s) URL.';
 
-  static String get visualEditorTextScale =>
-      _ar ? 'مقياس النص' : 'Text scale';
+  static String get visualEditorTextScale => _ar ? 'مقياس النص' : 'Text scale';
 
   static String get visualEditorRadiusScale =>
       _ar ? 'مقياس التقويس' : 'Radius scale';
@@ -5395,8 +5585,6 @@ class S {
       _ar ? 'قيمة غير صالحة' : 'Invalid value';
 
   // ---------- HR — sidebar ----------
-
-
 
   // إجراءات فرق الصندوق كما تسمّيها 212
 
@@ -5424,39 +5612,22 @@ class S {
 
   // ---------- HR — stored vocabularies, counts and the reason field ----------
 
-
-
   /// عدّاد السطور في تذييل الترقيم، بنفس صيغة شاشة العملاء.
   static String hrRowsLabel(int from, int to, int count) => _ar
       ? 'عرض $from–$to من $count سجلًا'
       : 'Showing $from–$to of $count records';
 
-
   // ---------- HR — page subtitles ----------
-
 
   // ---------- HR — table columns and dialog fields ----------
 
-
-
-
   // ---------- HR — self-service clock surface ----------
-
-
-
-
 
   // ---------- HR — empty states, filters and dashboard tiles ----------
 
-
-
-
   // ---------- HR — forms and dialogs ----------
-
 
   // ---------- HR — employee file sections ----------
 
-
   // ---------- HR — settings surface ----------
-
 }

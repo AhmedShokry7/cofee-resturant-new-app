@@ -34,6 +34,7 @@ class DesignDocumentCodec {
     'spacer': DesignContract.spacer,
     'productGrid': DesignContract.productGrid,
     'column': DesignContract.column,
+    'splashSettings': DesignContract.splashSettings,
     'welcomeHero': DesignContract.welcomeHero,
     'welcomeTitle': DesignContract.welcomeTitle,
     'welcomeBody': DesignContract.welcomeBody,
@@ -165,10 +166,7 @@ class DesignDocumentCodec {
   // ------------------------------------------------------------------ قراءة
 
   /// مكوّنات مستند محفوظة كما كُتبت، بترتيبها.
-  static List<EditableComponent> parsePage(
-    String pageId,
-    Object? children,
-  ) {
+  static List<EditableComponent> parsePage(String pageId, Object? children) {
     final components = <EditableComponent>[];
     if (children is! List) return components;
     for (var index = 0; index < children.length; index++) {
@@ -204,8 +202,8 @@ class DesignDocumentCodec {
           properties: properties,
           defaultValues: entry?.defaultValues ?? const {},
           validationRules: entry?.validationRules ?? const {},
-          allowedOperations: entry?.allowedOperations ??
-              const ['reorder', 'hide'],
+          allowedOperations:
+              entry?.allowedOperations ?? const ['reorder', 'hide'],
           version: 1,
         ),
       );
@@ -260,8 +258,8 @@ class DesignDocumentCodec {
           properties: properties,
           defaultValues: entry?.defaultValues ?? const {},
           validationRules: entry?.validationRules ?? const {},
-          allowedOperations: entry?.allowedOperations ??
-              const ['reorder', 'hide'],
+          allowedOperations:
+              entry?.allowedOperations ?? const ['reorder', 'hide'],
           version: 1,
         ),
       );
@@ -317,6 +315,7 @@ class DesignDocumentCodec {
   /// شجرة فارغة تدّعي لا شيء. خاصية فارغة تُنشر تعني «كما هو»، فنشرها
   /// دون تعديل لا يغيّر شاشة الزبون حرفًا.
   static const Map<String, List<(String, String?)>> defaultPageNodes = {
+    'splash': [('splashSettings', null)],
     'welcome': [
       ('welcomeHero', null),
       ('welcomeTitle', null),

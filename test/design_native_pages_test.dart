@@ -12,6 +12,7 @@ import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_h
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_view_text_body.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_view_text_title.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
+
 import 'support/fake_design_repository.dart';
 
 /// شاشات التطبيق المدمجة تقرأ طبقتها من المستند المنشور: نصّ وصورة منشوران
@@ -67,7 +68,11 @@ void main() {
     });
 
     testWidgets('no hero node keeps the bundled photo', (tester) async {
-      await pump(tester, const WelcomeHeroImage(), design: PublishedDesign.none);
+      await pump(
+        tester,
+        const WelcomeHeroImage(),
+        design: PublishedDesign.none,
+      );
 
       expect(find.byType(DbImage), findsNothing);
       expect(find.byType(Image), findsOneWidget);
@@ -111,7 +116,11 @@ void main() {
               PublishedSection(
                 id: 'w_title',
                 type: 'welcome.title',
-                properties: {'highlight': 'قهوتك', 'rest': 'على كيفك', 'size': '30'},
+                properties: {
+                  'highlight': 'قهوتك',
+                  'rest': 'على كيفك',
+                  'size': '30',
+                },
               ),
             ],
           },
@@ -140,7 +149,11 @@ void main() {
           schemaVersion: 2,
           extraSections: {
             'welcome': [
-              PublishedSection(id: 'w_title', type: 'welcome.title', visible: false),
+              PublishedSection(
+                id: 'w_title',
+                type: 'welcome.title',
+                visible: false,
+              ),
             ],
           },
         ),
@@ -195,9 +208,7 @@ void main() {
       await tester.pumpWidget(
         BlocProvider<DesignCubit>.value(
           value: DesignCubit(repository: FakeDesignRepository(design)),
-          child: const MaterialApp(
-            home: Scaffold(body: WelcomeViewTextBody()),
-          ),
+          child: const MaterialApp(home: Scaffold(body: WelcomeViewTextBody())),
         ),
       );
       await tester.pump();
@@ -308,6 +319,99 @@ void main() {
       ]);
       expect(zeroed.slideDuration, isNull);
       expect(zeroed.autoAdvance, isNull);
+    });
+  });
+
+  group('splash settings', () {
+    test('reads appearance and transition settings with safe bounds', () {
+      final settings = SplashSettings.fromSections(const [
+        PublishedSection(
+          id: 'splash',
+          type: 'splash.settings',
+          properties: {
+            'imageUrl': ' https://cdn.example.com/splash.png ',
+            'imageFit': 'cover',
+            'imageAlignment': 'bottomRight',
+            'verticalAlignment': 'top',
+            'imageWidth': 240,
+            'imageHeight': 300,
+            'imageGap': 24,
+            'text_ar': 'أهلاً',
+            'text_en': 'Welcome',
+            'textColor': '#123456',
+            'textSize': 24,
+            'textAlignment': 'end',
+            'backgroundColor': '#ABCDEF',
+            'durationMs': 4500,
+            'animation': 'fade',
+            'animationDurationMs': 700,
+          },
+        ),
+      ]);
+
+      expect(settings.imageUrl, 'https://cdn.example.com/splash.png');
+      expect(settings.imageFit, 'cover');
+      expect(settings.imageAlignment, 'bottomRight');
+      expect(settings.verticalAlignment, 'top');
+      expect(settings.imageWidth, 240);
+      expect(settings.imageHeight, 300);
+      expect(settings.imageGap, 24);
+      expect(settings.text, 'أهلاً');
+      expect(settings.textColor, '#123456');
+      expect(settings.textSize, 24);
+      expect(settings.textAlignment, 'end');
+      expect(settings.backgroundColor, '#ABCDEF');
+      expect(settings.duration, const Duration(milliseconds: 4500));
+      expect(settings.animation, 'fade');
+      expect(settings.animationDuration, const Duration(milliseconds: 700));
+    });
+
+    test("missing settings keep today's splash defaults", () {
+      final settings = SplashSettings.fromSections(const []);
+
+      expect(settings.visible, isTrue);
+      expect(settings.imageUrl, isNull);
+      expect(settings.text, isNull);
+      expect(settings.backgroundColor, '#FFFFFF');
+      expect(settings.duration, const Duration(milliseconds: 1000));
+      expect(settings.animation, 'fadeScale');
+    });
+
+    test('invalid settings fall back instead of breaking the splash', () {
+      final settings = SplashSettings.fromSections(const [
+        PublishedSection(
+          id: 'splash',
+          type: 'splash.settings',
+          properties: {
+            'imageWidth': 900,
+            'imageHeight': 1,
+            'imageGap': -4,
+            'textSize': 100,
+            'backgroundColor': 'red',
+            'durationMs': 999999,
+            'animation': 'unknown',
+            'animationDurationMs': -1,
+          },
+        ),
+      ]);
+
+      expect(settings.imageWidth, isNull);
+      expect(settings.imageHeight, isNull);
+      expect(settings.imageGap, 16);
+      expect(settings.textSize, 16);
+      expect(settings.backgroundColor, '#FFFFFF');
+      expect(settings.duration, const Duration(seconds: 30));
+      expect(settings.animation, 'fadeScale');
+      expect(settings.animationDuration, Duration.zero);
+    });
+
+    test('hiding the settings node hides the splash content explicitly', () {
+      final settings = SplashSettings.fromSections(const [
+        PublishedSection(id: 'splash', type: 'splash.settings', visible: false),
+      ]);
+
+      expect(settings.visible, isFalse);
+      expect(settings.duration, const Duration(milliseconds: 1000));
     });
   });
 

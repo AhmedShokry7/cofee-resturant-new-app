@@ -27,6 +27,25 @@ void main() {
       }
     });
 
+    test('مكوّن إعدادات الافتتاحية يكتب المفتاح ويعود بقيمه', () {
+      final component = DesignDocumentCodec.defaultComponentsFor('splash')
+          .single;
+      final document = DesignDocumentCodec.document({
+        'splash': [component],
+      });
+      final root = document['pages']!.single['root'] as Map;
+      final node = (root['children'] as List).single as Map;
+
+      expect(node['type'], DesignContract.splashSettings);
+      expect(DesignDocumentCodec.validate(document), isNull);
+      final restored = DesignDocumentCodec.parseDocument(
+        document,
+      )['splash']!.single;
+      expect(restored.componentType, 'splashSettings');
+      expect(restored.properties['durationMs'], 1000);
+      expect(restored.properties['backgroundColor'], '#FFFFFF');
+    });
+
     test('المصادر الداخلية تعود بمفاتيح العقد', () {
       expect(
         DesignDocumentCodec.contractDataSource('featured'),
@@ -68,31 +87,37 @@ void main() {
       version: 1,
     );
 
-    test('العقدة تحمل مفتاح العقد ومصدر بياناته، وتستبعد غير الأعداد الأولية', () {
-      final component = strip();
-      final node = DesignDocumentCodec.node(component);
-      expect(node['type'], DesignContract.productStrip);
-      expect(node['visible'], true);
-      final properties = node['properties'] as Map<String, dynamic>;
-      expect(properties['dataSource'], DesignContract.featured);
-      expect(properties['maxItems'], 10);
-      expect(properties.containsKey('visible'), isFalse,
-          reason: 'الظهور حقل العقدة لا خاصية');
-    });
+    test(
+      'العقدة تحمل مفتاح العقد ومصدر بياناته، وتستبعد غير الأعداد الأولية',
+      () {
+        final component = strip();
+        final node = DesignDocumentCodec.node(component);
+        expect(node['type'], DesignContract.productStrip);
+        expect(node['visible'], true);
+        final properties = node['properties'] as Map<String, dynamic>;
+        expect(properties['dataSource'], DesignContract.featured);
+        expect(properties['maxItems'], 10);
+        expect(
+          properties.containsKey('visible'),
+          isFalse,
+          reason: 'الظهور حقل العقدة لا خاصية',
+        );
+      },
+    );
 
     test('المستند كامل يمر التحقق الحي بلا عيب', () {
-      final document = DesignDocumentCodec.document(
-        {'home': [strip()]},
-      );
+      final document = DesignDocumentCodec.document({
+        'home': [strip()],
+      });
       expect(document['schema_version'], DesignContract.readableSchemaVersion);
       expect(DesignDocumentCodec.validate(document), isNull);
     });
 
     test('المستند يقرأ راجعًا إلى نفس المكوّنات', () {
       final original = strip();
-      final document = DesignDocumentCodec.document(
-        {'home': [original]},
-      );
+      final document = DesignDocumentCodec.document({
+        'home': [original],
+      });
       final parsed = DesignDocumentCodec.parseDocument(document);
       final components = parsed['home']!;
       expect(components, hasLength(1));
@@ -105,11 +130,14 @@ void main() {
     });
 
     test('طبقة محايدة تعني غياب مفتاح theme لا قيمة فارغة', () {
-      final document = DesignDocumentCodec.document(
-        {'home': [strip()]},
+      final document = DesignDocumentCodec.document({
+        'home': [strip()],
+      });
+      expect(
+        document.containsKey('theme'),
+        isFalse,
+        reason: 'المدقق الحي يفرّق بين JSON null وكائن؛ الفارغ غياب',
       );
-      expect(document.containsKey('theme'), isFalse,
-          reason: 'المدقق الحي يفرّق بين JSON null وكائن؛ الفارغ غياب');
     });
 
     test('طبقة شكل تُكتب بمفاتيح العقد وتُقرأ راجعًا', () {
@@ -121,40 +149,37 @@ void main() {
         textScale: 'large',
         radiusScale: 'round',
       );
-      final document = DesignDocumentCodec.document(
-        {'home': [strip()]},
-        theme: theme,
-      );
+      final document = DesignDocumentCodec.document({
+        'home': [strip()],
+      }, theme: theme);
       expect(DesignDocumentCodec.validate(document), isNull);
       final parsedTheme = DesignDocumentCodec.themeOf(document);
-      expect(
-        parsedTheme.colors[DesignColorRole.primary],
-        '#2E7D32',
-      );
+      expect(parsedTheme.colors[DesignColorRole.primary], '#2E7D32');
       expect(parsedTheme.textScale, 'large');
       expect(parsedTheme.radiusScale, 'round');
     });
   });
 
   group('DesignDocumentCodec — التحقق الحي (مرآة app_design_is_valid)', () {
-    final valid = DesignDocumentCodec.document(
-      {'home': [EditableComponent(
-        componentId: 'id1',
-        componentType: 'text',
-        pageId: 'home',
-        index: 0,
-        classification: ComponentClassification.editable,
-        properties: const {'visible': true},
-        defaultValues: const {},
-        validationRules: const {},
-        allowedOperations: const ['reorder', 'hide'],
-        version: 1,
-      )]},
-    );
+    final valid = DesignDocumentCodec.document({
+      'home': [
+        EditableComponent(
+          componentId: 'id1',
+          componentType: 'text',
+          pageId: 'home',
+          index: 0,
+          classification: ComponentClassification.editable,
+          properties: const {'visible': true},
+          defaultValues: const {},
+          validationRules: const {},
+          allowedOperations: const ['reorder', 'hide'],
+          version: 1,
+        ),
+      ],
+    });
 
     test('رمز المخطط', () {
-      final broken = Map<String, dynamic>.from(valid)
-        ..['schema_version'] = 3;
+      final broken = Map<String, dynamic>.from(valid)..['schema_version'] = 3;
       expect(DesignDocumentCodec.validate(broken), 'schema_version');
     });
 
@@ -193,7 +218,13 @@ void main() {
       };
       final broken = Map<String, dynamic>.from(valid);
       broken['pages'] = [
-        {'page': 'home', 'root': {...root, 'children': [child]}},
+        {
+          'page': 'home',
+          'root': {
+            ...root,
+            'children': [child],
+          },
+        },
       ];
       expect(DesignDocumentCodec.validate(broken), 'property_value');
     });

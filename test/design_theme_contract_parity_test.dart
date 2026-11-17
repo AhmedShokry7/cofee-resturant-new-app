@@ -33,7 +33,11 @@ void main() {
     final customer = _customerFactors(_read(customerModelPath));
     expect(customer.keys, admin.keys);
     for (final key in admin.keys) {
-      expect(customer[key], admin[key], reason: 'مقياس `$key` اختلف بين الطرفين.');
+      expect(
+        customer[key],
+        admin[key],
+        reason: 'مقياس `$key` اختلف بين الطرفين.',
+      );
     }
   });
 
@@ -51,7 +55,8 @@ void main() {
       expect(
         adminTypes,
         contains(type),
-        reason: 'نوع يرسمه الهاتف ولا يكتبه محرّر الأدمن: قسم لا يصل إلى النشر.',
+        reason:
+            'نوع يرسمه الهاتف ولا يكتبه محرّر الأدمن: قسم لا يصل إلى النشر.',
       );
     }
     expect(
@@ -101,17 +106,11 @@ List<String> _roles(
 }
 
 Map<String, double> _adminFactors(String source) => _factors(
-  _factorBlock(
-    source,
-    'static const Map<String, double> textFactors',
-  ),
+  _factorBlock(source, 'static const Map<String, double> textFactors'),
 );
 
 Map<String, double> _customerFactors(String source) => _factors(
-  _factorBlock(
-    source,
-    'static const Map<String, double> _textFactors',
-  ),
+  _factorBlock(source, 'static const Map<String, double> _textFactors'),
 );
 
 String _factorBlock(String source, String marker) {

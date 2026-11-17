@@ -8,10 +8,14 @@ import 'package:flutter_test/flutter_test.dart';
 /// شرائح التعريف ووقت انتقالها، وعناوين شاشات الدخول — كلها مسجّلة،
 /// تُسمّى في العقد بمفاتيح الهاتف، وتبدأ من «تصميم اليوم» لا من فراغ.
 void main() {
-  setUpAll(ComponentRegistry.initialize);
+  setUpAll(() {
+    ComponentRegistry.initialize();
+    ComponentRegistry.all.forEach(DesignDocumentCodec.registerEntry);
+  });
 
   test('مكوّنات الشاشات المدمجة مسجّلة كلها', () {
     const nativeTypes = [
+      'splashSettings',
       'welcomeHero',
       'welcomeTitle',
       'welcomeBody',
@@ -34,8 +38,17 @@ void main() {
 
   test('كل مكوّن مدمج مسموح في صفحته فقط', () {
     expect(
+      EditorPages.findById('splash')!.allowedComponentTypes,
+      contains('splashSettings'),
+    );
+    expect(
       EditorPages.findById('welcome')!.allowedComponentTypes,
-      containsAll(['welcomeHero', 'welcomeTitle', 'welcomeBody', 'welcomeSpacing']),
+      containsAll([
+        'welcomeHero',
+        'welcomeTitle',
+        'welcomeBody',
+        'welcomeSpacing',
+      ]),
     );
     expect(
       EditorPages.findById('onboarding')!.allowedComponentTypes,
@@ -43,7 +56,12 @@ void main() {
     );
     expect(
       EditorPages.findById('auth')!.allowedComponentTypes,
-      containsAll(['authTitle', 'authSubtitle', 'authSocial', 'authSwitchPrompt']),
+      containsAll([
+        'authTitle',
+        'authSubtitle',
+        'authSocial',
+        'authSwitchPrompt',
+      ]),
     );
     expect(
       EditorPages.findById('settings')!.allowedComponentTypes,
@@ -54,6 +72,7 @@ void main() {
 
   test('مفاتيح الشاشات المدمجة في العقد هي التي يفهمها الهاتف', () {
     for (final internal in const [
+      'splashSettings',
       'welcomeHero',
       'welcomeTitle',
       'welcomeBody',
@@ -77,6 +96,7 @@ void main() {
 
   test('صفحات الشاشات المدمجة تبدأ من عقد أصلها بخصائص فارغة', () {
     for (final pageId in const [
+      'splash',
       'welcome',
       'onboarding',
       'auth',
@@ -96,11 +116,17 @@ void main() {
         expect(component.pageId, pageId);
         // خاصية فارغة تُنشر تعني «كما هو» — نشر اليوم دون تعديل لا يغيّر
         // شاشة الزبون حرفًا.
-        expect(
-          component.properties['imageUrl'] ?? '',
-          isEmpty,
-          reason: 'عقدة أصل في $pageId تبدأ بقيمة مختلقة',
-        );
+        if (component.componentType != 'splashSettings') {
+          expect(
+            component.properties['imageUrl'] ?? '',
+            isEmpty,
+            reason: 'عقدة أصل في $pageId تبدأ بقيمة مختلقة',
+          );
+        }
+        if (component.componentType == 'splashSettings') {
+          expect(component.properties['durationMs'], 1000);
+          expect(component.properties['backgroundColor'], '#FFFFFF');
+        }
       }
     }
   });

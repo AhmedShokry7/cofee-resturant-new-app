@@ -23,6 +23,15 @@ import 'package:admin_app/features/customers/presentation/pages/customer_page.da
 import 'package:admin_app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/stock_movements_page.dart';
+import 'package:admin_app/features/hr/attendance/presentation/hr_attendance_page.dart';
+import 'package:admin_app/features/hr/schedules/presentation/hr_schedules_page.dart';
+import 'package:admin_app/features/hr/leave/presentation/pages/hr_leave_page.dart';
+import 'package:admin_app/features/hr/payroll/presentation/hr_payroll_page.dart';
+import 'package:admin_app/features/hr/dashboard/hr_dashboard_page.dart';
+import 'package:admin_app/features/hr/offboarding/presentation/hr_offboarding_page.dart';
+import 'package:admin_app/features/hr/finance/presentation/pages/hr_finance_page.dart';
+import 'package:admin_app/features/hr/compensation/presentation/hr_compensation_page.dart';
+import 'package:admin_app/features/hr/settings/hr_settings_page.dart';
 import 'package:admin_app/features/kitchen/presentation/pages/kitchen_page.dart';
 import 'package:admin_app/features/loyalty/presentation/pages/loyalty_page.dart';
 import 'package:admin_app/features/notifications/presentation/pages/notifications_page.dart';
@@ -115,13 +124,19 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) _navCubit.refresh();
   }
 
-  List<AdminDestination> get _destinations => adminDestinations
-      .where(
-        (destination) =>
+  List<AdminDestination> get _destinations =>
+      adminDestinations.where((destination) {
+        final hasPrimary =
             destination.permission == null ||
-            widget.session.hasPermission(destination.permission!),
-      )
-      .toList();
+            widget.session.hasPermission(destination.permission!);
+        final hasAny =
+            destination.anyPermissions.isEmpty ||
+            destination.anyPermissions.any(widget.session.hasPermission);
+        final hasAll = destination.requiredPermissions.every(
+          widget.session.hasPermission,
+        );
+        return hasPrimary && hasAny && hasAll;
+      }).toList();
 
   /// القسم المعروض، ولا شيء حين لا يملك الحساب قسمًا واحدًا.
   ///
@@ -329,7 +344,51 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
           canManagePermissions:
               widget.session.hasPermission('admin.staff.write') ||
               widget.session.isOwner,
+          canReadEmployeeFiles: widget.session.hasPermission(
+            'hr.employee.read',
+          ),
+          canWriteEmployeeFiles: widget.session.hasPermission(
+            'hr.employee.write',
+          ),
         );
+      case 'hrAttendance':
+        return HrAttendancePage(
+          searchController: _searchController,
+          canReview: widget.session.hasPermission('hr.attendance.manage'),
+        );
+      case 'hrDashboard':
+        return const HrDashboardPage();
+      case 'hrSchedules':
+        return HrSchedulesPage(
+          canManage: widget.session.hasPermission('hr.schedule.manage'),
+          canReadEmployees: widget.session.hasPermission('hr.employee.read'),
+        );
+      case 'hrLeave':
+        return HrLeavePage(
+          canReview: widget.session.hasPermission('hr.leave.review'),
+          canManageTypes: widget.session.hasPermission('hr.settings.manage'),
+        );
+      case 'hrPayroll':
+        return HrPayrollPage(
+          canRead: widget.session.hasPermission('hr.payroll.read'),
+          canPrepare: widget.session.hasPermission('hr.payroll.manage'),
+          canApprove: widget.session.hasPermission('hr.payroll.approve'),
+          canPay: widget.session.hasPermission('hr.payroll.pay'),
+        );
+      case 'hrOffboarding':
+        return HrOffboardingPage(
+          canRead: widget.session.hasPermission('hr.employee.read'),
+          canWrite: widget.session.hasPermission('hr.employee.write'),
+        );
+      case 'hrFinance':
+        return HrFinancePage(
+          canManage: widget.session.hasPermission('hr.finance.adjust'),
+          canReadEmployees: widget.session.hasPermission('hr.employee.read'),
+        );
+      case 'hrCompensation':
+        return const HrCompensationPage(canManage: true);
+      case 'hrSettings':
+        return const HrSettingsPage();
       case 'roles':
         return RolePage(
           searchController: _searchController,
@@ -378,7 +437,18 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
           canManage: widget.session.hasPermission('settings.write'),
         );
       case 'visualEditor':
-        return const VisualEditorPage();
+        return VisualEditorPage(
+          canPublish: widget.session.hasPermission('design.publish'),
+          imagePermissions: widget.session.isOwner
+              ? <String>{
+                  ...widget.session.permissions,
+                  'catalog.product.write',
+                  'catalog.category.write',
+                  'settings.write',
+                  'subscriptions.manage',
+                }
+              : widget.session.permissions,
+        );
       default:
         return AdminFeaturePlaceholder(destination: destination);
     }

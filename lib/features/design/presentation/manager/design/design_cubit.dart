@@ -10,12 +10,15 @@ import 'package:new_coffee/features/design/presentation/manager/design/design_st
 /// بلا جواب حين لم يعرف واحدة. عند بلا جواب يُترك ما على الشاشة من شكل — لأن
 /// إقلاعًا طبّق منشورًا ثم انقطعت الشبكة في تحديث لا يعود بالتطبيق إلى الأصل.
 class DesignCubit extends Cubit<DesignState> {
-  DesignCubit({required this._repository})
-    : super(const DesignState()) {
-    load();
+  DesignCubit({required this._repository}) : super(const DesignState()) {
+    initialLoad = load();
   }
 
   final DesignRepository _repository;
+
+  /// First published-design read, exposed to screens whose behavior depends on
+  /// the initial document rather than only its eventual rebuild.
+  late final Future<void> initialLoad;
 
   Future<void> load({bool forceRefresh = false}) async {
     final design = await _repository.published(forceRefresh: forceRefresh);

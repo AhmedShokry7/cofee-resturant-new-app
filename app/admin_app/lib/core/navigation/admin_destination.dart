@@ -7,6 +7,8 @@ class AdminDestination {
     required this.icon,
     required this.searchHint,
     this.permission,
+    this.anyPermissions = const <String>[],
+    this.requiredPermissions = const <String>[],
     this.section,
     this.tables = const <String>[],
     this.immersive = false,
@@ -20,6 +22,13 @@ class AdminDestination {
   final String searchHint;
 
   final String? permission;
+
+  /// Any one of these permissions grants access when a feature has multiple
+  /// read/manage permissions for the same screen.
+  final List<String> anyPermissions;
+
+  /// Permissions that must all be present in addition to [permission].
+  final List<String> requiredPermissions;
 
   /// Group this destination belongs to inside the sidebar.
   final String? section;

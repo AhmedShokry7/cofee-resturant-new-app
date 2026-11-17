@@ -183,6 +183,15 @@ void main() {
         'payments',
         'customers',
         'staff',
+        'hrDashboard',
+        'hrAttendance',
+        'hrSchedules',
+        'hrLeave',
+        'hrPayroll',
+        'hrOffboarding',
+        'hrFinance',
+        'hrCompensation',
+        'hrSettings',
         'roles',
         'auditLog',
         'branches',
@@ -201,6 +210,34 @@ void main() {
     );
     expect(ids, isNot(contains('deliveryZones')));
     expect(ids, isNot(contains('pricing')));
+
+    final staff = adminDestinations.firstWhere(
+      (destination) => destination.id == 'staff',
+    );
+    expect(staff.permission, 'admin.staff.read');
+    expect(staff.section, S.sectionHr);
+    final attendance = adminDestinations.firstWhere(
+      (destination) => destination.id == 'hrAttendance',
+    );
+    expect(attendance.permission, 'hr.attendance.read');
+    expect(attendance.anyPermissions, contains('hr.attendance.manage'));
+    expect(attendance.section, S.sectionHr);
+    for (final id in [
+      'hrSchedules',
+      'hrLeave',
+      'hrPayroll',
+      'hrOffboarding',
+      'hrFinance',
+      'hrCompensation',
+      'hrSettings',
+    ]) {
+      expect(
+        adminDestinations
+            .firstWhere((destination) => destination.id == id)
+            .section,
+        S.sectionHr,
+      );
+    }
 
     for (final destination in adminDestinations) {
       expect(destination.section, isNotNull, reason: destination.id);

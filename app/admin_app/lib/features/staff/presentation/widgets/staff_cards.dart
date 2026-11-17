@@ -19,12 +19,16 @@ class StaffCards extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    this.canReadEmployeeFiles = false,
+    this.onEmployeeFile,
   });
 
   final List<AdminStaffMember> staff;
   final bool canManagePermissions;
   final ValueChanged<AdminStaffMember> onManage;
   final ValueChanged<AdminStaffMember> onEdit;
+  final bool canReadEmployeeFiles;
+  final ValueChanged<AdminStaffMember>? onEmployeeFile;
 
   @override
   Widget build(BuildContext context) => ListView.separated(
@@ -38,6 +42,10 @@ class StaffCards extends StatelessWidget {
         canManagePermissions: canManagePermissions,
         onManage: () => onManage(member),
         onEdit: () => onEdit(member),
+        canReadEmployeeFiles: canReadEmployeeFiles,
+        onEmployeeFile: onEmployeeFile == null
+            ? null
+            : () => onEmployeeFile!(member),
       );
     },
   );
@@ -49,12 +57,16 @@ class _StaffCard extends StatelessWidget {
     required this.canManagePermissions,
     required this.onManage,
     required this.onEdit,
+    required this.canReadEmployeeFiles,
+    this.onEmployeeFile,
   });
 
   final AdminStaffMember member;
   final bool canManagePermissions;
   final VoidCallback onManage;
   final VoidCallback onEdit;
+  final bool canReadEmployeeFiles;
+  final VoidCallback? onEmployeeFile;
 
   @override
   Widget build(BuildContext context) {
@@ -182,6 +194,8 @@ class _StaffCard extends StatelessWidget {
                     StaffEditAction(onPressed: onEdit),
                     const SizedBox(width: AppSizes.px4),
                   ],
+                  if (canReadEmployeeFiles && onEmployeeFile != null)
+                    HrEmployeeFileAction(onPressed: onEmployeeFile!),
                   StaffPermissionAction(
                     canManage: canManagePermissions,
                     onPressed: onManage,

@@ -20,6 +20,8 @@ class PropertiesInspectorPanel extends StatelessWidget {
     required this.component,
     required this.onPropertyChanged,
     required this.onResetProperty,
+    this.onPickImage,
+    this.onBrowseImages,
   });
 
   final EditableComponent component;
@@ -27,11 +29,15 @@ class PropertiesInspectorPanel extends StatelessWidget {
     required String componentId,
     required String propertyKey,
     required dynamic value,
-  }) onPropertyChanged;
+  })
+  onPropertyChanged;
   final void Function({
     required String componentId,
     required String propertyKey,
-  }) onResetProperty;
+  })
+  onResetProperty;
+  final Future<String?> Function()? onPickImage;
+  final Future<String?> Function()? onBrowseImages;
 
   @override
   Widget build(BuildContext context) {
@@ -39,8 +45,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
     final entry = ComponentRegistry.get(component.componentType);
     final properties = entry?.properties ?? {};
     final editableProps = Map.fromEntries(
-      properties.entries
-          .where((e) => e.value.type != PropertyType.json),
+      properties.entries.where((e) => e.value.type != PropertyType.json),
     );
 
     if (editableProps.isEmpty) {
@@ -51,7 +56,8 @@ class PropertiesInspectorPanel extends StatelessWidget {
     }
 
     // تجميع الخصائص حسب المجموعة
-    final grouped = <String?, List<MapEntry<String, ComponentPropertyDefinition>>>{};
+    final grouped =
+        <String?, List<MapEntry<String, ComponentPropertyDefinition>>>{};
     for (final entry in editableProps.entries) {
       final group = entry.value.group;
       grouped.putIfAbsent(group, () => []).add(entry);
@@ -81,6 +87,8 @@ class PropertiesInspectorPanel extends StatelessWidget {
                     component: component,
                     onChanged: onPropertyChanged,
                     onReset: onResetProperty,
+                    onPickImage: onPickImage,
+                    onBrowseImages: onBrowseImages,
                   ),
               ],
             ),
@@ -94,11 +102,11 @@ class PropertiesInspectorPanel extends StatelessWidget {
 /// عنصر حقل بعد التجميع: خاصية واحدة، أو زوج عربي/إنجليزي في حقل واحد.
 class _FieldItem {
   const _FieldItem.single(this.definition)
-      : arDefinition = null,
-        enDefinition = null;
+    : arDefinition = null,
+      enDefinition = null;
 
   const _FieldItem.bilingual(this.arDefinition, this.enDefinition)
-      : definition = null;
+    : definition = null;
 
   final ComponentPropertyDefinition? definition;
   final ComponentPropertyDefinition? arDefinition;
@@ -158,7 +166,11 @@ class _InspectorHeader extends StatelessWidget {
                   : AppColor.adminAccentSurface,
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(AppIcons.tune, size: AppDimensions.iconSizeSm, color: accent),
+            child: Icon(
+              AppIcons.tune,
+              size: AppDimensions.iconSizeSm,
+              color: accent,
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
@@ -200,6 +212,8 @@ class _PropertyGroup extends StatelessWidget {
     required this.component,
     required this.onChanged,
     required this.onReset,
+    this.onPickImage,
+    this.onBrowseImages,
   });
 
   final String? groupLabel;
@@ -209,11 +223,15 @@ class _PropertyGroup extends StatelessWidget {
     required String componentId,
     required String propertyKey,
     required dynamic value,
-  }) onChanged;
+  })
+  onChanged;
   final void Function({
     required String componentId,
     required String propertyKey,
-  }) onReset;
+  })
+  onReset;
+  final Future<String?> Function()? onPickImage;
+  final Future<String?> Function()? onBrowseImages;
 
   @override
   Widget build(BuildContext context) {
@@ -222,13 +240,19 @@ class _PropertyGroup extends StatelessWidget {
       children: [
         if (groupLabel != null) ...[
           Padding(
-            padding: const EdgeInsets.fromLTRB(0, AppSpacing.sm, 0, AppSpacing.xs),
+            padding: const EdgeInsets.fromLTRB(
+              0,
+              AppSpacing.sm,
+              0,
+              AppSpacing.xs,
+            ),
             child: _GroupLabel(label: groupLabel!),
           ),
         ],
         for (final field in fields)
           if (field.definition != null)
             _PropertyField(
+              componentType: component.componentType,
               definition: field.definition!,
               currentValue: component.properties[field.definition!.key],
               onChanged: (v) => onChanged(
@@ -240,6 +264,14 @@ class _PropertyGroup extends StatelessWidget {
                 componentId: component.componentId,
                 propertyKey: field.definition!.key,
               ),
+              onPickImage: onPickImage,
+              onBrowseImages: onBrowseImages,
+              clearLabel:
+                  component.componentType == 'welcomeHero' ||
+                      component.componentType == 'onboardingSlide' ||
+                      component.componentType == 'splashSettings'
+                  ? S.visualEditorRestoreOriginalImage
+                  : S.visualEditorRemoveImage,
             )
           else
             _BilingualPropertyField(
@@ -298,16 +330,24 @@ class _GroupLabel extends StatelessWidget {
 
 class _PropertyField extends StatelessWidget {
   const _PropertyField({
+    required this.componentType,
     required this.definition,
     required this.currentValue,
     required this.onChanged,
     required this.onReset,
+    this.onPickImage,
+    this.onBrowseImages,
+    this.clearLabel,
   });
 
+  final String componentType;
   final ComponentPropertyDefinition definition;
   final dynamic currentValue;
   final void Function(dynamic value) onChanged;
   final VoidCallback onReset;
+  final Future<String?> Function()? onPickImage;
+  final Future<String?> Function()? onBrowseImages;
+  final String? clearLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -357,76 +397,123 @@ class _PropertyField extends StatelessWidget {
   }
 
   Widget _buildInput(BuildContext context) {
+    if (definition.key == 'imageUrl' && componentType == 'splashSettings') {
+      return _SplashImageInput(
+        value: currentValue?.toString() ?? '',
+        onChanged: onChanged,
+        pickAndUpload: onPickImage ?? DesignImageUpload.pickAndUpload,
+        browseImages: onBrowseImages,
+      );
+    }
     return switch (definition.type) {
       PropertyType.string || PropertyType.text => _TextInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '',
-          multiline: definition.type == PropertyType.text,
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '',
+        multiline: definition.type == PropertyType.text,
+        onChanged: onChanged,
+      ),
       PropertyType.number || PropertyType.integer => _NumberInput(
-          value: currentValue,
-          defaultValue: definition.defaultValue,
-          isInteger: definition.type == PropertyType.integer,
-          validation: definition.validation,
-          onChanged: onChanged,
-        ),
+        value: currentValue,
+        defaultValue: definition.defaultValue,
+        isInteger: definition.type == PropertyType.integer,
+        validation: definition.validation,
+        onChanged: onChanged,
+      ),
       PropertyType.boolean => _BooleanInput(
-          value: currentValue as bool? ?? definition.defaultValue as bool? ?? false,
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue as bool? ?? definition.defaultValue as bool? ?? false,
+        onChanged: onChanged,
+      ),
       PropertyType.color => _ColorInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '#000000',
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '#000000',
+        onChanged: onChanged,
+      ),
       PropertyType.enum_ => _EnumInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '',
-          options: definition.options?.map((e) => e.toString()).toList() ?? [],
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '',
+        options: definition.options?.map((e) => e.toString()).toList() ?? [],
+        onChanged: onChanged,
+      ),
       PropertyType.fontSize => _EnumInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '14',
-          options: definition.options?.map((e) => e.toString()).toList() ??
-              ['10', '12', '14', '16', '18', '20', '24', '28', '32'],
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '14',
+        options:
+            definition.options?.map((e) => e.toString()).toList() ??
+            ['10', '12', '14', '16', '18', '20', '24', '28', '32'],
+        onChanged: onChanged,
+      ),
       PropertyType.fontWeight => _EnumInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? 'regular',
-          options: definition.options?.map((e) => e.toString()).toList() ??
-              ['light', 'regular', 'medium', 'semibold', 'bold'],
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            'regular',
+        options:
+            definition.options?.map((e) => e.toString()).toList() ??
+            ['light', 'regular', 'medium', 'semibold', 'bold'],
+        onChanged: onChanged,
+      ),
       PropertyType.alignment => _EnumInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? 'start',
-          options: definition.options?.map((e) => e.toString()).toList() ??
-              ['start', 'center', 'end'],
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            'start',
+        options:
+            definition.options?.map((e) => e.toString()).toList() ??
+            ['start', 'center', 'end'],
+        onChanged: onChanged,
+      ),
       PropertyType.borderRadius => _EnumInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? 'none',
-          options: definition.options?.map((e) => e.toString()).toList() ??
-              ['none', 'sm', 'md', 'lg', 'full'],
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            'none',
+        options:
+            definition.options?.map((e) => e.toString()).toList() ??
+            ['none', 'sm', 'md', 'lg', 'full'],
+        onChanged: onChanged,
+      ),
       PropertyType.spacing => _EnumInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? 'md',
-          options: definition.options?.map((e) => e.toString()).toList() ??
-              ['none', 'xs', 'sm', 'md', 'lg', 'xl'],
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            'md',
+        options:
+            definition.options?.map((e) => e.toString()).toList() ??
+            ['none', 'xs', 'sm', 'md', 'lg', 'xl'],
+        onChanged: onChanged,
+      ),
       PropertyType.imageUrl => _ImageUrlInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '',
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '',
+        onChanged: onChanged,
+        pickAndUpload: onPickImage ?? DesignImageUpload.pickAndUpload,
+        browseImages: onBrowseImages,
+        clearLabel: clearLabel ?? S.visualEditorRemoveImage,
+      ),
       PropertyType.fontFamily => _TextInput(
-          value: currentValue?.toString() ?? definition.defaultValue?.toString() ?? '',
-          multiline: false,
-          onChanged: onChanged,
-        ),
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '',
+        multiline: false,
+        onChanged: onChanged,
+      ),
       _ => _TextInput(
-          value: currentValue?.toString() ?? '',
-          multiline: false,
-          onChanged: onChanged,
-        ),
+        value: currentValue?.toString() ?? '',
+        multiline: false,
+        onChanged: onChanged,
+      ),
     };
   }
 }
@@ -487,8 +574,9 @@ class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
   String get _label {
     final label = widget.arDefinition.label;
     const suffix = ' بالعربي';
-    final stripped =
-        label.endsWith(suffix) ? label.substring(0, label.length - suffix.length) : '';
+    final stripped = label.endsWith(suffix)
+        ? label.substring(0, label.length - suffix.length)
+        : '';
     final trimmed = stripped.trim();
     return trimmed.isNotEmpty ? trimmed : label;
   }
@@ -525,11 +613,7 @@ class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
                   borderRadius: BorderRadius.circular(AppRadius.xs),
                   child: Padding(
                     padding: const EdgeInsets.all(2),
-                    child: Icon(
-                      AppIcons.refresh,
-                      size: 12,
-                      color: muted,
-                    ),
+                    child: Icon(AppIcons.refresh, size: 12, color: muted),
                   ),
                 ),
               ),
@@ -553,10 +637,8 @@ class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
             ),
             _BilingualTextInput(
               value: _arText,
-              onChanged: (v) => widget.onSingleChanged(
-                widget.arDefinition.key,
-                v,
-              ),
+              onChanged: (v) =>
+                  widget.onSingleChanged(widget.arDefinition.key, v),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
@@ -565,10 +647,8 @@ class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
             ),
             _BilingualTextInput(
               value: _enText,
-              onChanged: (v) => widget.onSingleChanged(
-                widget.enDefinition.key,
-                v,
-              ),
+              onChanged: (v) =>
+                  widget.onSingleChanged(widget.enDefinition.key, v),
             ),
           ],
           const SizedBox(height: AppSpacing.xxs),
@@ -655,9 +735,7 @@ class _BilingualTextInputState extends State<_BilingualTextInput> {
         fontSize: AppFontSizes.size12,
         color: dark ? AppColor.darkText : AppColor.adminBody,
       ),
-      decoration: _inputDecoration(dark).copyWith(
-        hintText: widget.hint,
-      ),
+      decoration: _inputDecoration(dark).copyWith(hintText: widget.hint),
     );
   }
 }
@@ -785,11 +863,7 @@ class _BooleanInput extends StatelessWidget {
     final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
     return Row(
       children: [
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeThumbColor: accent,
-        ),
+        Switch(value: value, onChanged: onChanged, activeThumbColor: accent),
         const SizedBox(width: AppSpacing.xs),
         Text(
           value ? S.visualEditorOn : S.visualEditorOff,
@@ -848,9 +922,7 @@ class _ColorInput extends StatelessWidget {
     final clean = hex.replaceFirst('#', '');
     final value = int.tryParse(clean, radix: 16);
     if (value == null) return null;
-    return clean.length == 8
-        ? Color(value)
-        : Color(0xFF000000 | value);
+    return clean.length == 8 ? Color(value) : Color(0xFF000000 | value);
   }
 }
 
@@ -868,13 +940,13 @@ class _EnumInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final safeValue = options.contains(value) ? value : (options.isNotEmpty ? options.first : '');
+    final safeValue = options.contains(value)
+        ? value
+        : (options.isNotEmpty ? options.first : '');
     return DropdownButtonFormField<String>(
       initialValue: safeValue.isEmpty ? null : safeValue,
       items: options
-          .map(
-            (o) => DropdownMenuItem(value: o, child: Text(o)),
-          )
+          .map((o) => DropdownMenuItem(value: o, child: Text(o)))
           .toList(),
       onChanged: (v) {
         if (v != null) onChanged(v);
@@ -889,32 +961,190 @@ class _EnumInput extends StatelessWidget {
 }
 
 InputDecoration _inputDecoration(bool dark) => InputDecoration(
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.sm,
-      ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        borderSide: BorderSide(
-          color: dark ? AppColor.darkBorder : AppColor.adminControlBorder,
+  isDense: true,
+  contentPadding: const EdgeInsets.symmetric(
+    horizontal: AppSpacing.sm,
+    vertical: AppSpacing.sm,
+  ),
+  border: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadius.sm),
+    borderSide: BorderSide(
+      color: dark ? AppColor.darkBorder : AppColor.adminControlBorder,
+    ),
+  ),
+  enabledBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadius.sm),
+    borderSide: BorderSide(
+      color: dark ? AppColor.darkBorder : AppColor.adminControlBorder,
+    ),
+  ),
+  focusedBorder: OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadius.sm),
+    borderSide: BorderSide(
+      color: dark ? AppColor.secondaryColor : AppColor.adminAccent,
+    ),
+  ),
+  filled: true,
+  fillColor: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
+);
+
+/// حقل صورة شاشة الافتتاحية: معاينة واختيار من المكتبة أو رفع صورة جديدة.
+class _SplashImageInput extends StatefulWidget {
+  const _SplashImageInput({
+    required this.value,
+    required this.onChanged,
+    required this.pickAndUpload,
+    this.browseImages,
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+  final Future<String?> Function() pickAndUpload;
+  final Future<String?> Function()? browseImages;
+
+  @override
+  State<_SplashImageInput> createState() => _SplashImageInputState();
+}
+
+class _SplashImageInputState extends State<_SplashImageInput> {
+  late final TextEditingController _controller;
+  bool _uploading = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_SplashImageInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && _controller.text != widget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _browse() async {
+    final url = await widget.browseImages?.call();
+    if (!mounted || url == null || url.isEmpty) return;
+    setState(() {
+      _controller.text = url;
+      _error = null;
+    });
+    widget.onChanged(url);
+  }
+
+  Future<void> _upload() async {
+    setState(() {
+      _uploading = true;
+      _error = null;
+    });
+    try {
+      final url = await widget.pickAndUpload();
+      if (!mounted || url == null || url.isEmpty) return;
+      setState(() => _controller.text = url);
+      widget.onChanged(url);
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final url = _controller.text.trim();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (url.isNotEmpty) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: SizedBox(
+              height: 120,
+              child: Image.network(
+                url,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) => Container(
+                  height: 120,
+                  color: dark
+                      ? AppColor.darkSurfaceContainer
+                      : AppColor.adminTableHeader,
+                  alignment: Alignment.center,
+                  child: Icon(
+                    AppIcons.image01,
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.adminMuted,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
+        TextField(
+          controller: _controller,
+          onChanged: (value) {
+            setState(() {});
+            widget.onChanged(value);
+          },
+          style: TextStyle(
+            fontSize: AppFontSizes.size12,
+            color: dark ? AppColor.darkText : AppColor.adminBody,
+          ),
+          decoration: _inputDecoration(dark).copyWith(hintText: 'https://…'),
         ),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        borderSide: BorderSide(
-          color: dark ? AppColor.darkBorder : AppColor.adminControlBorder,
+        const SizedBox(height: AppSpacing.xs),
+        if (url.isNotEmpty)
+          OutlinedButton.icon(
+            onPressed: () {
+              _controller.clear();
+              setState(() => _error = null);
+              widget.onChanged('');
+            },
+            icon: Icon(AppIcons.remove01, size: 14),
+            label: Text(S.visualEditorRemoveImage),
+          ),
+        if (widget.browseImages != null)
+          OutlinedButton.icon(
+            onPressed: _uploading ? null : _browse,
+            icon: const Icon(AppIcons.image01, size: 14),
+            label: Text(S.visualEditorImageLibrary),
+          ),
+        OutlinedButton.icon(
+          onPressed: _uploading ? null : _upload,
+          icon: _uploading
+              ? const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : Icon(AppIcons.image01, size: 14),
+          label: Text(
+            _uploading ? S.visualEditorUploadingImage : S.visualEditorPickImage,
+          ),
         ),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        borderSide: BorderSide(
-          color: dark ? AppColor.secondaryColor : AppColor.adminAccent,
-        ),
-      ),
-      filled: true,
-      fillColor: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
+        if (_error != null)
+          Text(
+            _error!,
+            style: TextStyle(
+              fontSize: AppFontSizes.size11,
+              color: AppColor.errorColor,
+            ),
+          ),
+      ],
     );
+  }
+}
 
 /// حقل صورة: معاينة صغيرة + رابط + زر اختر من الكمبيوتر وارفع.
 ///
@@ -924,10 +1154,16 @@ class _ImageUrlInput extends StatefulWidget {
   const _ImageUrlInput({
     required this.value,
     required this.onChanged,
+    required this.pickAndUpload,
+    required this.clearLabel,
+    this.browseImages,
   });
 
   final String value;
   final ValueChanged<String> onChanged;
+  final Future<String?> Function() pickAndUpload;
+  final Future<String?> Function()? browseImages;
+  final String clearLabel;
 
   @override
   State<_ImageUrlInput> createState() => _ImageUrlInputState();
@@ -947,8 +1183,7 @@ class _ImageUrlInputState extends State<_ImageUrlInput> {
   @override
   void didUpdateWidget(_ImageUrlInput oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.value != oldWidget.value &&
-        widget.value != _ctrl.text) {
+    if (widget.value != oldWidget.value && widget.value != _ctrl.text) {
       _ctrl.text = widget.value;
     }
   }
@@ -959,13 +1194,25 @@ class _ImageUrlInputState extends State<_ImageUrlInput> {
     super.dispose();
   }
 
+  Future<void> _browseImages() async {
+    final browse = widget.browseImages;
+    if (browse == null) return;
+    final url = await browse();
+    if (!mounted || url == null || url.isEmpty) return;
+    setState(() {
+      _ctrl.text = url;
+      _error = null;
+    });
+    widget.onChanged(url);
+  }
+
   Future<void> _pickAndUpload() async {
     setState(() {
       _uploading = true;
       _error = null;
     });
     try {
-      final url = await DesignImageUpload.pickAndUpload();
+      final url = await widget.pickAndUpload();
       if (!mounted) return;
       if (url != null && url.isNotEmpty) {
         widget.onChanged(url);
@@ -986,16 +1233,16 @@ class _ImageUrlInputState extends State<_ImageUrlInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (url.isNotEmpty)
+        if (url.isNotEmpty) ...[
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.sm),
             child: SizedBox(
-              height: 96,
+              height: 120,
               child: Image.network(
                 url,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 errorBuilder: (_, _, _) => Container(
-                  height: 96,
+                  height: 120,
                   color: dark
                       ? AppColor.darkSurfaceContainer
                       : AppColor.adminTableHeader,
@@ -1010,6 +1257,17 @@ class _ImageUrlInputState extends State<_ImageUrlInput> {
               ),
             ),
           ),
+          const SizedBox(height: AppSpacing.xs),
+          OutlinedButton.icon(
+            onPressed: () {
+              _ctrl.clear();
+              setState(() => _error = null);
+              widget.onChanged('');
+            },
+            icon: Icon(AppIcons.remove01, size: 14),
+            label: Text(widget.clearLabel),
+          ),
+        ],
         const SizedBox(height: AppSpacing.xs),
         TextField(
           controller: _ctrl,
@@ -1021,11 +1279,17 @@ class _ImageUrlInputState extends State<_ImageUrlInput> {
             fontSize: AppFontSizes.size12,
             color: dark ? AppColor.darkText : AppColor.adminBody,
           ),
-          decoration: _inputDecoration(dark).copyWith(
-            hintText: 'https://…',
-          ),
+          decoration: _inputDecoration(dark).copyWith(hintText: 'https://…'),
         ),
         const SizedBox(height: AppSpacing.xs),
+        if (widget.browseImages != null) ...[
+          OutlinedButton.icon(
+            onPressed: _uploading ? null : _browseImages,
+            icon: const Icon(AppIcons.image01, size: 14),
+            label: Text(S.visualEditorImageLibrary),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+        ],
         OutlinedButton.icon(
           onPressed: _uploading ? null : _pickAndUpload,
           icon: _uploading

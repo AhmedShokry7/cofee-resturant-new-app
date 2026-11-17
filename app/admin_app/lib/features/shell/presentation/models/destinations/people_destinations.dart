@@ -2,7 +2,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/navigation/admin_destination.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 
-/// The people domain: customers, staff, permissions and the branches.
+/// Customer, role, audit and branch destinations.
 List<AdminDestination> get peopleDestinations => <AdminDestination>[
   AdminDestination(
     id: 'customers',
@@ -12,15 +12,6 @@ List<AdminDestination> get peopleDestinations => <AdminDestination>[
     permission: 'customers.read',
     section: S.sectionPeople,
     tables: <String>['identity.profiles'],
-  ),
-  AdminDestination(
-    id: 'staff',
-    label: S.staffLabel,
-    icon: AppIcons.user,
-    searchHint: S.searchStaffHint,
-    permission: 'admin.staff.read',
-    section: S.sectionPeople,
-    tables: <String>['identity.staff_members', 'identity.staff_roles'],
   ),
   AdminDestination(
     id: 'roles',

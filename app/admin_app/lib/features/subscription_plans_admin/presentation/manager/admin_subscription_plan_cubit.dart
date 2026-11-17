@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/error/admin_error_message.dart';
@@ -18,12 +20,14 @@ class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
 
   AdminSubscriptionPlanCubit._withUseCases(
     SubscriptionPlanRepository repository,
-  ) : _loadPlans = LoadPlansUseCase(repository),
+  ) : _repository = repository,
+      _loadPlans = LoadPlansUseCase(repository),
       _loadProductOptions = LoadProductOptionsUseCase(repository),
       _savePlan = SavePlanUseCase(repository),
       _setActive = SetActiveUseCase(repository),
       super(const AdminSubscriptionPlanState());
 
+  final SubscriptionPlanRepository _repository;
   final LoadPlansUseCase _loadPlans;
   final LoadProductOptionsUseCase _loadProductOptions;
   final SavePlanUseCase _savePlan;
@@ -108,5 +112,46 @@ class AdminSubscriptionPlanCubit extends Cubit<AdminSubscriptionPlanState> {
     } catch (_) {
       return false;
     }
+  }
+
+  Future<void> updatePlanImage(String planId, String? imageUrl) async {
+    await _repository.updatePlanImage(planId, imageUrl);
+    _replacePlanImage(planId, imageUrl);
+  }
+
+  Future<String> uploadPlanImage({
+    required String planId,
+    required Uint8List bytes,
+    required String fileName,
+    required String contentType,
+  }) async {
+    final url = await _repository.uploadPlanImage(
+      planId: planId,
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
+    _replacePlanImage(planId, url);
+    return url;
+  }
+
+  Future<void> deletePlanImageFile(String? imageUrl) =>
+      _repository.deletePlanImageFile(imageUrl);
+
+  void _replacePlanImage(String planId, String? imageUrl) {
+    emit(
+      state.copyWith(
+        plans: state.plans
+            .map(
+              (plan) => plan.id != planId
+                  ? plan
+                  : plan.copyWith(
+                      imageUrl: imageUrl,
+                      clearImageUrl: imageUrl == null || imageUrl.isEmpty,
+                    ),
+            )
+            .toList(growable: false),
+      ),
+    );
   }
 }

@@ -9,7 +9,7 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
     label: S.visualEditor,
     icon: AppIcons.paintBrush,
     searchHint: S.searchVisualEditorHint,
-    permission: 'settings.write',
+    permission: 'design.edit',
     section: S.sectionContent,
     immersive: true,
     tables: <String>['app_settings'],

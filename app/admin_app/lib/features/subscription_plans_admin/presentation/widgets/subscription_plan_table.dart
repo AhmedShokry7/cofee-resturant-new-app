@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:admin_app/shared/widgets/app_icon.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
@@ -141,20 +142,35 @@ class _Row extends StatelessWidget {
                 flex: 4,
                 child: Row(
                   children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: adminTintedSurfaceColor(theme),
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: AppIcon(
-                        AppIcons.package,
-                        size: 16,
-                        color: dark
-                            ? AppColor.darkTextSecondary
-                            : AppColor.adminMuted,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      child: SizedBox(
+                        width: 36,
+                        height: 36,
+                        child: plan.imageUrl == null || plan.imageUrl!.isEmpty
+                            ? Container(
+                                alignment: Alignment.center,
+                                color: adminTintedSurfaceColor(theme),
+                                child: AppIcon(
+                                  AppIcons.package,
+                                  size: 16,
+                                  color: dark
+                                      ? AppColor.darkTextSecondary
+                                      : AppColor.adminMuted,
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: plan.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, _, _) => Container(
+                                  alignment: Alignment.center,
+                                  color: adminTintedSurfaceColor(theme),
+                                  child: const AppIcon(
+                                    AppIcons.package,
+                                    size: 16,
+                                  ),
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: AppSizes.px10),

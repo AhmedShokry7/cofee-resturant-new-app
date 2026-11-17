@@ -6,6 +6,7 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/staff/data/models/admin_staff.dart';
 import 'package:admin_app/features/staff/presentation/models/staff_filter.dart';
 import 'package:admin_app/features/staff/presentation/widgets/staff_page_body.dart';
+import 'package:admin_app/features/hr/presentation/strings/hr_employee_strings.dart';
 
 AdminStaffMember _member(int index) => AdminStaffMember(
   id: 's$index',
@@ -44,6 +45,8 @@ Future<void> _pumpPage(
   bool canManage = false,
   ValueChanged<AdminStaffMember>? onManage,
   ValueChanged<AdminStaffMember>? onEdit,
+  bool canReadEmployeeFiles = false,
+  ValueChanged<AdminStaffMember>? onEmployeeFile,
   VoidCallback? onInvite,
   VoidCallback? onShowInvitations,
   TextDirection direction = TextDirection.ltr,
@@ -60,6 +63,8 @@ Future<void> _pumpPage(
             canManagePermissions: canManage,
             onManage: onManage ?? (_) {},
             onEdit: onEdit ?? (_) {},
+            canReadEmployeeFiles: canReadEmployeeFiles,
+            onEmployeeFile: onEmployeeFile,
             onInvite: onInvite ?? () {},
             onShowInvitations: onShowInvitations ?? () {},
           ),
@@ -98,6 +103,27 @@ void main() {
 
     expect(_label('Staff 2'), findsOneWidget);
     expect(_label('Staff 1'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('employee file action appears only with HR read permission', (
+    tester,
+  ) async {
+    _setViewport(tester, 1280, 800);
+    await _pumpPage(tester, staff: [_member(1)]);
+    expect(find.byTooltip(HrEmployeeStrings.fileAction), findsNothing);
+
+    AdminStaffMember? selected;
+    await _pumpPage(
+      tester,
+      staff: [_member(1)],
+      canReadEmployeeFiles: true,
+      onEmployeeFile: (member) => selected = member,
+    );
+    final action = find.byTooltip(HrEmployeeStrings.fileAction);
+    expect(action, findsOneWidget);
+    await tester.tap(action);
+    expect(selected?.id, 's1');
     expect(tester.takeException(), isNull);
   });
 

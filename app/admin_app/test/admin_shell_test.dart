@@ -53,6 +53,18 @@ AdminSession _sessionWithProducts() => const AdminSession(
   canManageAllBranches: true,
 );
 
+AdminSession _sessionWithStaffRead() => const AdminSession(
+  staffId: 'u1',
+  email: 'admin@example.com',
+  fullName: 'Admin One',
+  status: 'active',
+  roles: [],
+  permissionScopes: [
+    AdminPermissionScope(permissions: ['orders.read', 'admin.staff.read']),
+  ],
+  canManageAllBranches: true,
+);
+
 /// A staff member that may run the counter.
 AdminSession _sessionWithPos() => const AdminSession(
   staffId: 'u1',
@@ -182,6 +194,22 @@ void main() {
     expect(find.text(S.signOut), findsWidgets);
     expect(find.text('Dashboard'), findsNothing);
     expect(find.text('Sign out'), findsNothing);
+  });
+
+  testWidgets('the existing employee page is grouped under HR', (tester) async {
+    _setViewport(tester, 1280);
+    AppLocale.instance.debugSet(AppLanguage.english);
+    addTearDown(() => AppLocale.instance.debugSet(AppLanguage.english));
+
+    await tester.pumpWidget(MaterialApp(home: AdminShell(session: _session())));
+    await tester.pump();
+    expect(_sidebarItem(S.staffLabel), findsNothing);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AdminShell(session: _sessionWithStaffRead())),
+    );
+    await tester.pump();
+    expect(_sidebarItem(S.staffLabel), findsOneWidget);
   });
 
   testWidgets('the sidebar follows the language back to English', (
