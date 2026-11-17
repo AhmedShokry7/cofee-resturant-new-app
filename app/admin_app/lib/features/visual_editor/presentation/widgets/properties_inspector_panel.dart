@@ -45,25 +45,26 @@ class PropertiesInspectorPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final entry = ComponentRegistry.get(component.componentType);
-    final properties = entry?.properties ?? {};
+    final registryProps = entry?.properties ?? {};
     final editableProps = Map.fromEntries(
-      properties.entries.where((e) => e.value.type != PropertyType.json),
+      registryProps.entries.where((e) => e.value.type != PropertyType.json),
     );
-
-    if (editableProps.isEmpty) {
-      return AdminEmptyState(
-        icon: AppIcons.settings01,
-        message: S.visualEditorNoEditableProperties,
-      );
-    }
 
     // تجميع الخصائص حسب المجموعة
     final grouped =
         <String?, List<MapEntry<String, ComponentPropertyDefinition>>>{};
-    for (final entry in editableProps.entries) {
-      final group = entry.value.group;
-      grouped.putIfAbsent(group, () => []).add(entry);
+    for (final e in editableProps.entries) {
+      grouped.putIfAbsent(e.value.group, () => []).add(e);
     }
+
+    // ─── خصائص حقيقية موجودة في المكوّن لكن غير مسجلة ───
+    // نعرضها كحقول نصية خام حتى يمكن التعديل عليها
+    final knownKeys = editableProps.keys.toSet()..add('visible');
+    final extraProps = component.properties.entries
+        .where((e) => !knownKeys.contains(e.key) && e.value is! Map && e.value is! List)
+        .toList();
+
+    final hasContent = editableProps.isNotEmpty || extraProps.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -79,26 +80,281 @@ class PropertiesInspectorPanel extends StatelessWidget {
           _InspectorHeader(component: component, entry: entry),
           const Divider(height: 1),
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              children: [
-                for (final groupKey in grouped.keys)
-                  _PropertyGroup(
-                    groupLabel: groupKey,
-                    fields: _pairBilingualFields(grouped[groupKey]!),
-                    component: component,
-                    onChanged: onPropertyChanged,
-                    onReset: onResetProperty,
-                    onPickImage: onPickImage,
-                    onBrowseImages: onBrowseImages,
+            child: !hasContent
+                ? AdminEmptyState(
+                    icon: AppIcons.settings01,
+                    message: S.visualEditorNoEditableProperties,
+                  )
+                : ListView(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    children: [
+                      // خصائص السجل المجمّعة
+                      for (final groupKey in grouped.keys)
+                        _PropertyGroup(
+                          groupLabel: groupKey,
+                          fields: _pairBilingualFields(grouped[groupKey]!),
+                          component: component,
+                          onChanged: onPropertyChanged,
+                          onReset: onResetProperty,
+                          onPickImage: onPickImage,
+                          onBrowseImages: onBrowseImages,
+                        ),
+                      // خصائص إضافية (غير مسجلة)
+                      if (extraProps.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        _ExtraPropsGroup(
+                          props: extraProps,
+                          componentId: component.componentId,
+                          onChanged: onPropertyChanged,
+                          dark: dark,
+                        ),
+                      ],
+                    ],
                   ),
-              ],
-            ),
           ),
         ],
       ),
     );
   }
+}
+
+// ─────────────── زر الظهور / الإخفاء السريع ───────────────
+
+class _VisibilityToggle extends StatelessWidget {
+  const _VisibilityToggle({
+    required this.isVisible,
+    required this.onChanged,
+    required this.dark,
+  });
+
+  final bool isVisible;
+  final ValueChanged<bool> onChanged;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    final body = dark ? AppColor.darkText : AppColor.adminBody;
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs + 2,
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+            size: 15,
+            color: isVisible ? const Color(0xFF5A6A3A) : muted,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'الظهور في التطبيق',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: AppFontWeights.medium,
+                color: body,
+              ),
+            ),
+          ),
+          Switch.adaptive(
+            value: isVisible,
+            onChanged: onChanged,
+            activeTrackColor: const Color(0xFF5A6A3A),
+            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────── خصائص إضافية (غير مسجلة في السجل) ───────────────
+
+class _ExtraPropsGroup extends StatelessWidget {
+  const _ExtraPropsGroup({
+    required this.props,
+    required this.componentId,
+    required this.onChanged,
+    required this.dark,
+  });
+
+  final List<MapEntry<String, dynamic>> props;
+  final String componentId;
+  final void Function({
+    required String componentId,
+    required String propertyKey,
+    required dynamic value,
+  }) onChanged;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    final body = dark ? AppColor.darkText : AppColor.adminBody;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+          child: Text(
+            'خصائص إضافية',
+            style: TextStyle(
+              fontSize: AppFontSizes.size10,
+              fontWeight: AppFontWeights.semiBold,
+              color: muted,
+              letterSpacing: 0.8,
+            ),
+          ),
+        ),
+        for (final entry in props)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.key,
+                  style: TextStyle(
+                    fontSize: AppFontSizes.size11,
+                    fontWeight: AppFontWeights.medium,
+                    color: body,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                _ExtraPropField(
+                  propKey: entry.key,
+                  value: entry.value,
+                  componentId: componentId,
+                  onChanged: onChanged,
+                  dark: dark,
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _ExtraPropField extends StatefulWidget {
+  const _ExtraPropField({
+    required this.propKey,
+    required this.value,
+    required this.componentId,
+    required this.onChanged,
+    required this.dark,
+  });
+
+  final String propKey;
+  final dynamic value;
+  final String componentId;
+  final void Function({
+    required String componentId,
+    required String propertyKey,
+    required dynamic value,
+  }) onChanged;
+  final bool dark;
+
+  @override
+  State<_ExtraPropField> createState() => _ExtraPropFieldState();
+}
+
+class _ExtraPropFieldState extends State<_ExtraPropField> {
+  late TextEditingController _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.value?.toString() ?? '');
+  }
+
+  @override
+  void didUpdateWidget(_ExtraPropField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      final newText = widget.value?.toString() ?? '';
+      if (_ctrl.text != newText) {
+        _ctrl.text = newText;
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // بولياني
+    if (widget.value is bool) {
+      return Switch.adaptive(
+        value: widget.value as bool,
+        onChanged: (v) => widget.onChanged(
+          componentId: widget.componentId,
+          propertyKey: widget.propKey,
+          value: v,
+        ),
+        activeColor: const Color(0xFF5A6A3A),
+      );
+    }
+    // رقمي
+    if (widget.value is num) {
+      return TextField(
+        controller: _ctrl,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        onSubmitted: (v) {
+          final n = num.tryParse(v);
+          if (n != null) {
+            widget.onChanged(
+              componentId: widget.componentId,
+              propertyKey: widget.propKey,
+              value: n,
+            );
+          }
+        },
+        decoration: _inputDecoration(widget.dark),
+        style: TextStyle(fontSize: 12, color: widget.dark ? AppColor.darkText : AppColor.adminBody),
+      );
+    }
+    // نصي
+    return TextField(
+      controller: _ctrl,
+      onSubmitted: (v) => widget.onChanged(
+        componentId: widget.componentId,
+        propertyKey: widget.propKey,
+        value: v,
+      ),
+      decoration: _inputDecoration(widget.dark),
+      style: TextStyle(fontSize: 12, color: widget.dark ? AppColor.darkText : AppColor.adminBody),
+    );
+  }
+
+  InputDecoration _inputDecoration(bool dark) => InputDecoration(
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      borderSide: BorderSide(
+        color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
+      ),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      borderSide: BorderSide(
+        color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.sm),
+      borderSide: const BorderSide(color: Color(0xFF5A6A3A)),
+    ),
+    filled: true,
+    fillColor: dark ? AppColor.darkSurfaceContainer : const Color(0xFFF9F7F4),
+  );
 }
 
 /// عنصر حقل بعد التجميع: خاصية واحدة، أو زوج عربي/إنجليزي في حقل واحد.

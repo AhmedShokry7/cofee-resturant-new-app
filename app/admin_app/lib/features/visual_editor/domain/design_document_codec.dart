@@ -379,6 +379,47 @@ class DesignDocumentCodec {
     'reset_password': [('authTitle', null), ('authSubtitle', null)],
     'phone_auth': [('authTitle', null), ('authSubtitle', null)],
     'email_auth': [('authTitle', null), ('authSubtitle', null)],
+    'categories': [
+      ('heading', null),
+      ('categoryList', null),
+      ('spacer', null),
+      ('divider', null),
+      ('productGrid', null),
+    ],
+    'product_details': [
+      ('image', null),
+      ('spacer', null),
+      ('heading', null),
+      ('text', null),
+      ('spacer', null),
+      ('button', null),
+    ],
+    'cart': [
+      ('heading', null),
+      ('bundleList', null),
+      ('divider', null),
+      ('text', null),
+      ('spacer', null),
+      ('button', null),
+    ],
+    'search': [
+      ('searchBar', null),
+      ('spacer', null),
+      ('heading', null),
+      ('productGrid', null),
+    ],
+    'favourites': [
+      ('heading', null),
+      ('spacer', null),
+      ('productGrid', null),
+    ],
+    'settings': [
+      ('heading', null),
+      ('divider', null),
+      ('text', null),
+      ('spacer', null),
+      ('button', null),
+    ],
   };
 
   /// مكوّنات صفحة كما ترسمها مصادر العميل اليوم، فارغة لما لا عقد أصلية

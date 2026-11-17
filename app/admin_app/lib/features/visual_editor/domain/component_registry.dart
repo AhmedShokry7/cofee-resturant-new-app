@@ -823,7 +823,7 @@ class ComponentRegistry {
             options: ['start', 'center', 'end', 'stretch'],
           ),
         },
-        allowedParentTypes: ['home', 'categories', 'column'],
+        allowedParentTypes: ['home', 'categories', 'column', 'row'],
         allowedChildTypes: [
           'bannerCarousel',
           'promoBanner',
@@ -836,6 +836,7 @@ class ComponentRegistry {
           'divider',
           'spacer',
           'column',
+          'row',
           'button',
           'image',
           'searchBar',
@@ -855,6 +856,77 @@ class ComponentRegistry {
         },
         validationRules: {},
         iconName: 'viewColumn',
+        version: 1,
+      ),
+    );
+
+    // Row container
+    register(
+      ComponentRegistryEntry(
+        componentType: 'row',
+        displayName: 'صف',
+        description: 'حاوية أفقية لترتيب العناصر أفقيًا',
+        category: 'layout',
+        classification: ComponentClassification.structural,
+        properties: {
+          'gap': ComponentPropertyDefinition(
+            key: 'gap',
+            label: 'المسافة بين العناصر',
+            description: 'المسافة الأفقية بين العناصر الفرعية',
+            type: PropertyType.spacing,
+            defaultValue: 'md',
+            options: ['none', 'xs', 'sm', 'md', 'lg', 'xl'],
+          ),
+          'inset': ComponentPropertyDefinition(
+            key: 'inset',
+            label: 'الحشو الجانبي',
+            description: 'المساحة من الحواف',
+            type: PropertyType.spacing,
+            defaultValue: 'md',
+            options: ['none', 'xs', 'sm', 'md', 'lg', 'xl'],
+          ),
+          'crossAxisAlignment': ComponentPropertyDefinition(
+            key: 'crossAxisAlignment',
+            label: 'محاذاة المحور العرضي',
+            description: 'كيف تتم محاذاة العناصر رأسيًا',
+            type: PropertyType.alignment,
+            defaultValue: 'center',
+            options: ['start', 'center', 'end', 'stretch'],
+          ),
+        },
+        allowedParentTypes: ['home', 'categories', 'column', 'row'],
+        allowedChildTypes: [
+          'bannerCarousel',
+          'promoBanner',
+          'categoryList',
+          'productStrip',
+          'productGrid',
+          'bundleList',
+          'heading',
+          'text',
+          'divider',
+          'spacer',
+          'column',
+          'row',
+          'button',
+          'image',
+          'searchBar',
+        ],
+        allowedOperations: [
+          'add',
+          'delete',
+          'duplicate',
+          'reorder',
+          'move',
+          'hide',
+        ],
+        defaultValues: {
+          'gap': 'md',
+          'inset': 'md',
+          'crossAxisAlignment': 'center',
+        },
+        validationRules: {},
+        iconName: 'viewRow',
         version: 1,
       ),
     );
@@ -3179,7 +3251,7 @@ class ComponentRegistry {
             group: 'المظهر',
           ),
         },
-        allowedParentTypes: ['home', 'bundles', 'column'],
+        allowedParentTypes: ['home', 'categories', 'column'],
         allowedChildTypes: [],
         allowedOperations: [
           'add',
@@ -3489,7 +3561,7 @@ class ComponentRegistry {
         displayName: 'رأس الصفحة',
         description: 'رأس الصفحة الرئيسية مع التحية والبحث',
         category: 'restaurant',
-        classification: ComponentClassification.configurableBusiness,
+        classification: ComponentClassification.protected,
         properties: {
           'showSearch': ComponentPropertyDefinition(
             key: 'showSearch',
@@ -3784,14 +3856,7 @@ class ComponentRegistry {
         },
         allowedParentTypes: ['home'],
         allowedChildTypes: ['searchBar'],
-        allowedOperations: [
-          'add',
-          'delete',
-          'duplicate',
-          'reorder',
-          'move',
-          'hide',
-        ],
+        allowedOperations: ['hide'],
         defaultValues: {
           'showSearch': true,
           'showGreeting': true,

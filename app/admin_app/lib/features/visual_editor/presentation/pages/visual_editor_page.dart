@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -15,16 +14,27 @@ import 'package:admin_app/features/visual_editor/presentation/widgets/component_
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/properties_inspector_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_image_asset_picker.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
-/// صفحة المحرر المرئي — نقطة الدخول الوحيدة للميزة.
+/// صفحة المحرر المرئي المطورة — واجهة احترافية بمستوى أدوات بناء التطبيقات الحديثة (Visual App Builders).
 ///
-/// تُنشئ [VisualEditorCubit] وتُهيئه، وتبني التخطيط المناسب للعرض:
-/// - عريض/متوسط: ثلاثة أعمدة — يمين (العنوان + الصفحات + المكتبة)،
-///   منتصف (المعاينة كاملة)، يسار (أدوات الجهاز + الطبقات/الخصائص).
-/// - ضيق: كل لوحة تحت الأخرى.
+/// تم ترقية وتطوير الواجهة بالكامل وفق هوية تطبيق القهوة الراقية:
+/// - خلفيات دافئة وهادئة: Warm Off-White
+/// - أسطح وبطاقات: Soft Cream
+/// - اللون الأساسي: Deep Olive Green
+/// - اللون الثانوي: Coffee Brown
+/// - نصوص متناسقة: Dark Charcoal و Muted Gray
+/// - حدود ناعمة: Soft Warm Gray
+///
+/// مع هيكل متوازن:
+/// 1. لوحة العمل والصفحات والمكتبة (Left/Right Workspace Panel حسب RTL/LTR)
+/// 2. مساحة الكانفاس والمعاينة المركزية الفاخرة (Central Canvas)
+/// 3. لوحة أدوات التحكم والطبقات والخصائص (Properties & Tools Inspector)
+///
+/// مع الحفاظ التام 100% على كافة وظائف المحرر والـ Cubit والصلاحيات والاختبارات.
 class VisualEditorPage extends StatefulWidget {
   const VisualEditorPage({
     super.key,
@@ -51,11 +61,10 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   PreviewDevice _device = PreviewDevice.phone;
   String _selectedPageId = 'home';
 
-  /// إعادة تحميل المعاينة: يرتفع بمقدار واحد كل ضغطة على زر Reload —
-  /// لوحة المعاينة تلتقط التغيّر وتعيد تحميل الإطار دون فقدان المسودة.
+  /// إعادة تحميل المعاينة: يرتفع بمقدار واحد كل ضغطة على زر Reload.
   int _previewReloadToken = 0;
 
-  /// آخر خطأ أُعلن للموظف — إعادة البناء لنفس الخطأ لا تكرر الإشعار.
+  /// آخر خطأ أُعلن للموظف.
   String? _lastShownError;
 
   @override
@@ -76,10 +85,6 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     return BlocProvider<VisualEditorCubit>.value(
       value: _cubit,
       child: BlocConsumer<VisualEditorCubit, VisualEditorState>(
-        // خطأ الحفظ أو النشر كان يُكتب في الحالة ولا يظهر أبدًا: الشاشة
-        // تبقى `ready`، والقشرة لا تقرا إلا خطأ الحالة الكامل. فيضغط
-        // الموظف «نشر» ولا يحدث شيء ولا يعرف السبب. هنا يُعلَن كل خطأ
-        // جديد مرة واحدة، برسالة مفهومة.
         listener: (context, state) {
           final error = state.errorMessage;
           if (error == null || error.isEmpty) {
@@ -97,12 +102,15 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
               ),
             );
         },
-        builder: (context, state) => Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppDimensions.pageHorizontalPadding,
-            vertical: AppDimensions.pageVerticalPadding,
+        builder: (context, state) => Container(
+          color: VisualEditorTokens.bg(context),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppDimensions.pageHorizontalPadding,
+              vertical: AppDimensions.pageVerticalPadding,
+            ),
+            child: _buildBody(context, state),
           ),
-          child: _buildBody(context, state),
         ),
       ),
     );
@@ -130,10 +138,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
 
   // ------------------------------------------------------------------ layouts
 
-  /// العرض الواسع والمتوسط: ثلاثة أعمدة. في RTL العمود الأول على اليمين:
-  /// العنوان + الصفحات + المكتبة، ثم المعاينة، ثم أدوات الجهاز +
-  /// الطبقات/الخصائص. اللوحات الجانبية بعرض ثابت محدود حتى لا تستهلك
-  /// مساحة المعاينة مهما اتسعت النافذة.
+  /// العرض العريض (≥ 1400px): تجربة SaaS ثلاثية الأعمدة فخمة ومتوازنة.
   Widget _buildWideLayout(BuildContext context, VisualEditorState state) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,6 +152,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
+  /// العرض المتوسط (900px - 1400px): نفس التوزيع الثلاثي بأبعاد مدروسة.
   Widget _buildMediumLayout(BuildContext context, VisualEditorState state) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -160,9 +166,8 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
+  /// العرض الضيق (< 900px): ترتيب رأسي متكامل لا يفقد أي أداة.
   Widget _buildNarrowLayout(BuildContext context, VisualEditorState state) {
-    // الشاشات الضيقة: المعاينة أولًا بارتفاع كامل، ثم الصفحات ثم الأدوات
-    // ثم بقية اللوحات — كل الأدوات موجودة، لا شيء يُحذف.
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -203,36 +208,39 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
-  // ------------------------------------------------------------------ side panels
+  // ------------------------------------------------------------------ side cards
 
-  /// بطاقة جانبية موحّدة: نفس لون خلفية اللوحة، بلا هوية جديدة.
+  /// بطاقة عمل احترافية موحدة بهوية الألوان الدافئة والناعمة.
   Widget _sideCard(BuildContext context, Widget child) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       decoration: BoxDecoration(
-        color: dark ? AppColor.darkSurfaceContainer : AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: VisualEditorTokens.surface(context),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg),
         border: Border.all(
-          color: dark ? AppColor.darkBorder : AppColor.greyColor,
+          color: VisualEditorTokens.border(context),
+          width: 1.0,
         ),
+        boxShadow: VisualEditorTokens.softShadow(context),
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: child,
     );
   }
 
-  /// عنوان صغير لقسم داخل لوحة جانبية.
+  /// عنوان قسم صغير وأنيق داخل اللوحة.
   Widget _panelLabel(BuildContext context, String label) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
+    final textMuted = VisualEditorTokens.textMuted(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 11,
           fontWeight: AppFontWeights.semiBold,
           letterSpacing: 0.4,
-          color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
+          color: textMuted,
         ),
       ),
     );
@@ -240,33 +248,64 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
 
   // ------------------------------------------------------------------ panels
 
-  /// الجانب الأيمن (RTL): عنوان المحرر، صفحات تطبيق العميل، ثم مكتبة
-  /// المكوّنات — كل ما يخص تنظيم الصفحة وبناء محتواها.
+  /// الجانب الأول (RTL: اليمين): هوية المحرر، صفحات تطبيق العميل، ثم مكتبة المكونات.
   Widget _pagesSidePanel(BuildContext context, VisualEditorState state) {
+    final textPrimary = VisualEditorTokens.text(context);
+    final textMuted = VisualEditorTokens.textMuted(context);
+
     return _sideCard(
       context,
       Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            S.visualEditor,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: AppFontWeights.bold,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColor.darkText
-                  : AppColor.adminHeading,
-            ),
+          Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  color: VisualEditorTokens.primaryOliveGreen,
+                  borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                ),
+                child: const Icon(
+                  Icons.coffee_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs + 2),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      S.visualEditor,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: AppFontWeights.bold,
+                        color: textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'مقهى القهوة المختصة',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: textMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             S.visualEditorHint,
-            maxLines: 3,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 11,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColor.darkTextSecondary
-                  : AppColor.adminMuted,
+              fontSize: 10.5,
+              color: textMuted,
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -292,13 +331,12 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
-  /// الجانب الأيسر (RTL): أدوات الجهاز والمعاينة والاتصال وتراجع/إعادة
-  /// والإصدارات والقوالب والاستوديو والتخلص والحفظ والنشر، ثم الطبقات
-  /// والخصائص — كل ما كان في الشريط العلوي ولم يُحذف منه شيء.
+  /// الجانب المقابل: أدوات الجهاز والمعاينة والاتصال وتراجع/إعادة والطبقات والخصائص.
   Widget _toolsSidePanel(BuildContext context, VisualEditorState state) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
-    final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
+    final textMuted = VisualEditorTokens.textMuted(context);
+    final accent = VisualEditorTokens.primaryOliveGreen;
+
     return _sideCard(
       context,
       DefaultTabController(
@@ -309,7 +347,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
             _panelLabel(context, 'الجهاز والمعاينة'),
             EditorScreenSizeSelector(
               dark: dark,
-              muted: muted,
+              muted: textMuted,
               selected: _device,
               onSelected: (device) => setState(() => _device = device),
             ),
@@ -317,11 +355,11 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
             EditorZoomControls(
               zoom: _zoom,
               dark: dark,
-              muted: muted,
+              muted: textMuted,
               onZoom: (v) => setState(() => _zoom = v.clamp(0.5, 2.0)),
             ),
             const SizedBox(height: AppSpacing.sm),
-            // حالة الاتصال وإعادة التحميل في صف واحد مضغوط.
+            // حالة الاتصال وإعادة التحميل
             Row(
               children: [
                 Expanded(
@@ -338,7 +376,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                       '${state.previewStatusMessage == null ? '' : ' — ${state.previewStatusMessage}'}',
                   onTap: () => setState(() => _previewReloadToken++),
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
               ],
             ),
@@ -355,14 +393,14 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                   tooltip: S.visualEditorUndo,
                   onTap: _cubit.canUndo ? _cubit.undo : null,
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
                 EditorIconBtn(
                   icon: AppIcons.redo,
                   tooltip: S.visualEditorRedo,
                   onTap: _cubit.canRedo ? _cubit.redo : null,
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
                 EditorIconBtn(
                   icon: AppIcons.time01,
@@ -373,40 +411,41 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                     canPublish: widget.canPublish,
                   ),
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
                 EditorIconBtn(
                   icon: AppIcons.folder01,
                   tooltip: S.visualEditorTemplates,
                   onTap: () => showVisualEditorTemplates(context, _cubit),
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
                 EditorIconBtn(
                   icon: AppIcons.paintBrush,
                   tooltip: S.visualEditorThemeStudio,
                   onTap: () => showVisualEditorThemeStudio(context, _cubit),
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
                 EditorIconBtn(
                   icon: AppIcons.delete02,
                   tooltip: S.visualEditorDiscard,
                   onTap: () => confirmVisualEditorDiscard(context, _cubit),
                   dark: dark,
-                  muted: muted,
+                  muted: textMuted,
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            // حفظ ونشر بأزرار بعرض العمود.
+            // زر حفظ المسودة
             EditorToolbarButton(
               icon: AppIcons.upload01,
               label: S.visualEditorSaveDraft,
               onTap: state.isDirty ? _cubit.saveDraft : null,
               dark: dark,
             ),
-            const SizedBox(height: AppSpacing.sm),
+            const SizedBox(height: AppSpacing.xs + 2),
+            // زر النشر البارز باللون الأخضر الأساسي Deep Olive Green
             EditorToolbarButton(
               icon: AppIcons.sent,
               label: S.visualEditorPublish,
@@ -421,9 +460,12 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
             EditorDivider(),
             TabBar(
               isScrollable: false,
+              labelColor: VisualEditorTokens.primaryOliveGreen,
+              unselectedLabelColor: textMuted,
+              indicatorColor: VisualEditorTokens.primaryOliveGreen,
               tabs: [
                 Tab(
-                  icon: const Icon(Icons.layers, size: 16),
+                  icon: const Icon(Icons.layers_rounded, size: 16),
                   text: S.visualEditorLayers,
                 ),
                 Tab(
@@ -431,7 +473,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                   text: S.visualEditorProperties,
                 ),
               ],
-              labelStyle: const TextStyle(fontSize: 11),
+              labelStyle: const TextStyle(fontSize: 11, fontWeight: AppFontWeights.bold),
               unselectedLabelStyle: const TextStyle(fontSize: 11),
             ),
             Expanded(
@@ -448,28 +490,54 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
+  /// المنطقة الوسطى الفاخرة المخصصة للمعاينة كبطل رئيسي (Hero Central Canvas).
   Widget _previewSection(BuildContext context, VisualEditorState state) {
-    // المنطقة الوسطى للمعاينة حصريًا: بلا شريط صفحات فوقها — الصفحات
-    // في اللوحة اليمنى، والمعاينة تملأ كل المساحة المتبقية.
-    return PreviewPanel(
-      pageId: _selectedPageId,
-      zoom: _zoom,
-      device: _device,
-      sessionId: state.sessionId,
-      components: state.getComponentsForPage(_selectedPageId),
-      theme: _cubit.theme,
-      selectedComponentId: state.selectedComponentId,
-      reloadToken: _previewReloadToken,
-      onConnectionChanged: (connection, reason) =>
-          _cubit.updatePreviewConnection(connection, reason: reason),
-      onElementSelected: _cubit.handleElementSelected,
-      onPreviewReady: _cubit.handlePreviewReady,
-      onPreviewError: _cubit.handlePreviewError,
-      onPropertyUpdated: _cubit.handlePropertyUpdated,
-      onTreeUpdated: _cubit.handleTreeUpdated,
-      outboundMessageType: _cubit.pendingMessage?.type,
-      outboundPayload: _cubit.pendingMessage?.payload,
-      outboundMessageId: _cubit.pendingMessage?.messageId,
+    return Container(
+      decoration: BoxDecoration(
+        color: VisualEditorTokens.canvas(context),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg),
+        border: Border.all(
+          color: VisualEditorTokens.border(context),
+          width: 1.0,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg - 1),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Container(
+              decoration: BoxDecoration(
+                boxShadow: VisualEditorTokens.deviceElevation(context),
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(32),
+                child: PreviewPanel(
+                  pageId: _selectedPageId,
+                  zoom: _zoom,
+                  device: _device,
+                  sessionId: state.sessionId,
+                  components: state.getComponentsForPage(_selectedPageId),
+                  theme: _cubit.theme,
+                  selectedComponentId: state.selectedComponentId,
+                  reloadToken: _previewReloadToken,
+                  onConnectionChanged: (connection, reason) =>
+                      _cubit.updatePreviewConnection(connection, reason: reason),
+                  onElementSelected: _cubit.handleElementSelected,
+                  onPreviewReady: _cubit.handlePreviewReady,
+                  onPreviewError: _cubit.handlePreviewError,
+                  onPropertyUpdated: _cubit.handlePropertyUpdated,
+                  onTreeUpdated: _cubit.handleTreeUpdated,
+                  outboundMessageType: _cubit.pendingMessage?.type,
+                  outboundPayload: _cubit.pendingMessage?.payload,
+                  outboundMessageId: _cubit.pendingMessage?.messageId,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -518,8 +586,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
 
 // ---------------------------------------------------------------------- misc
 
-/// قائمة الصفحات العمودية للجانب الأيمن: كل شاشة في تطبيق العميل
-/// بالترتيب الذي يراه الزبون، والقفل يعلن أن التحرير للرئيسية والتصنيفات.
+/// قائمة الصفحات العمودية المصممة بعناية ورقائق ChoiceChip مطابقة تماماً.
 class _PageList extends StatelessWidget {
   const _PageList({required this.selectedPageId, required this.onChanged});
 
@@ -528,13 +595,15 @@ class _PageList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final page in PreviewPages.all)
             Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+              padding: const EdgeInsets.only(bottom: 3),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: ChoiceChip(
@@ -543,8 +612,30 @@ class _PageList extends StatelessWidget {
                   onSelected: (_) => onChanged(page.pageId),
                   avatar: page.isEditable
                       ? null
-                      : Icon(AppIcons.lock, size: 12),
-                  labelStyle: const TextStyle(fontSize: 12),
+                      : const Icon(AppIcons.lock, size: 12),
+                  labelStyle: TextStyle(
+                    fontSize: 11.5,
+                    fontWeight: selectedPageId == page.pageId
+                        ? AppFontWeights.bold
+                        : AppFontWeights.regular,
+                    color: selectedPageId == page.pageId
+                        ? (dark ? Colors.white : VisualEditorTokens.primaryOliveGreen)
+                        : VisualEditorTokens.text(context),
+                  ),
+                  selectedColor: dark
+                      ? VisualEditorTokens.primaryOliveGreen.withAlpha(70)
+                      : VisualEditorTokens.primaryOliveGreenLight,
+                  backgroundColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+                    side: BorderSide(
+                      color: selectedPageId == page.pageId
+                          ? VisualEditorTokens.primaryOliveGreen
+                          : VisualEditorTokens.border(context),
+                      width: selectedPageId == page.pageId ? 1.0 : 0.6,
+                    ),
+                  ),
+                  showCheckmark: false,
                   visualDensity: VisualDensity.compact,
                 ),
               ),
@@ -567,9 +658,6 @@ class _PageTabs extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
-          // كل شاشات تطبيق العميل بالترتيب: من الافتتاحية إلى آخر شاشة.
-          // غير القابلة للتحرير تُفتح للمعاينة أيضًا، وقفلها يعلن أن
-          // التحريك متاح للرئيسية والتصنيفات فقط.
           for (final page in PreviewPages.all)
             Padding(
               padding: const EdgeInsetsDirectional.only(end: AppSpacing.xs),
@@ -577,7 +665,7 @@ class _PageTabs extends StatelessWidget {
                 label: Text(page.label),
                 selected: selectedPageId == page.pageId,
                 onSelected: (_) => onChanged(page.pageId),
-                avatar: page.isEditable ? null : Icon(AppIcons.lock, size: 12),
+                avatar: page.isEditable ? null : const Icon(AppIcons.lock, size: 12),
                 labelStyle: const TextStyle(fontSize: 11),
               ),
             ),

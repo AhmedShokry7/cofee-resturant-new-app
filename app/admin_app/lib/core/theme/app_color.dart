@@ -221,4 +221,28 @@ class AppColor {
   static const mapRadiusSurface = Color(0xFF2196F3);
   static const mapBranchPin = Color(0xFF009688);
   static const mapZonePin = Color(0xFFF44336);
+
+  // ----------
+  // ألوان مخصصة للـ Visual Editor وفق مواصفات الهوية الجديدة
+  // ----------
+  /// خلفية رئيسية (Warm Off‑White)
+  static const visualBackground = Color(0xFFFAF9F6);
+  /// سطح البطاقات (Soft Cream)
+  static const visualCardSurface = Color(0xFFFDFBF7);
+  /// خلفية الكانفاس (Warm Canvas Gray/Cream)
+  static const visualCanvasBackground = Color(0xFFF4F0E8);
+  /// اللون الأساسي (Deep Olive Green)
+  static const visualPrimary = Color(0xFF2C4C38);
+  /// اللون الثانوي (Coffee Brown)
+  static const visualSecondary = Color(0xFF6E473B);
+  /// نص عادي (Dark Charcoal)
+  static const visualTextPrimary = Color(0xFF1A2420);
+  /// نص ثانوي (Muted Gray)
+  static const visualTextSecondary = Color(0xFF68776F);
+  /// حدود بطاقات (Soft Warm Gray)
+  static const visualBorder = Color(0xFFE4DFD5);
+  /// حالة النجاح (هادئ – Green)
+  static const visualSuccess = Color(0xFF2E7D32);
+  /// حالة التحذير (لون واضح غير مزعج)
+  static const visualWarning = Color(0xFFD97706);
 }
