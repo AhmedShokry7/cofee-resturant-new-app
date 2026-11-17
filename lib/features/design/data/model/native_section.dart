@@ -23,6 +23,7 @@ class SplashSettings {
   const SplashSettings({
     this.visible = true,
     this.imageUrl,
+    this.imageVisible = true,
     this.imageFit = 'contain',
     this.imageAlignment = 'center',
     this.verticalAlignment = 'center',
@@ -41,6 +42,7 @@ class SplashSettings {
 
   final bool visible;
   final String? imageUrl;
+  final bool imageVisible;
   final String imageFit;
   final String imageAlignment;
   final String verticalAlignment;
@@ -77,6 +79,7 @@ class SplashSettings {
     return SplashSettings(
       visible: !nativeHidden(node),
       imageUrl: url == null || url.isEmpty ? null : url,
+      imageVisible: node?.flagProperty('imageVisible', fallback: true) ?? true,
       imageFit:
           const {
             'contain',
@@ -153,6 +156,7 @@ class SplashSettings {
       other is SplashSettings &&
       other.visible == visible &&
       other.imageUrl == imageUrl &&
+      other.imageVisible == imageVisible &&
       other.imageFit == imageFit &&
       other.imageAlignment == imageAlignment &&
       other.verticalAlignment == verticalAlignment &&
@@ -172,6 +176,7 @@ class SplashSettings {
   int get hashCode => Object.hash(
     visible,
     imageUrl,
+    imageVisible,
     imageFit,
     imageAlignment,
     verticalAlignment,

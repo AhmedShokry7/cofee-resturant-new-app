@@ -223,6 +223,32 @@ void main() {
     expect(background.backgroundColor, const Color(0xFFABCDEF));
   });
 
+  testWidgets('a published hidden splash image keeps its text visible', (
+    tester,
+  ) async {
+    const design = PublishedDesign(
+      schemaVersion: 2,
+      extraSections: {
+        'splash': [
+          PublishedSection(
+            id: 'splash_settings',
+            type: 'splash.settings',
+            properties: {
+              'imageVisible': false,
+              'text_ar': 'النص يبقى ظاهرًا',
+              'durationMs': 2500,
+            },
+          ),
+        ],
+      },
+    );
+    await _pumpSplash(tester, const Size(360, 690), design: design);
+    await tester.pump();
+
+    expect(find.byType(DbImage), findsNothing);
+    expect(find.text('النص يبقى ظاهرًا'), findsOneWidget);
+  });
+
   testWidgets(
     'published duration controls the handover without changing route',
     (tester) async {

@@ -45,6 +45,7 @@ class ProductCard extends StatelessWidget {
     this.lineId,
     this.unitPrice,
     this.onTap,
+    this.showPrice = true,
   });
 
   final ProductModel product;
@@ -56,6 +57,10 @@ class ProductCard extends StatelessWidget {
   final String? lineId;
   final double? unitPrice;
   final VoidCallback? onTap;
+
+  /// إظهار السعر داخل البطاقة. القيمة الافتراضية تُبقي البطاقة كما هي
+  /// في كل شاشات التطبيق؛ تُطفأ من مستند التصميم وحده.
+  final bool showPrice;
 
   bool get _isCart => quantity != null;
 
@@ -138,7 +143,10 @@ class ProductCard extends StatelessWidget {
                     SizedBox(height: AppSizes.px6),
                     Row(
                       children: [
-                        Expanded(child: ProductPrice(product: product)),
+                        if (showPrice)
+                          Expanded(child: ProductPrice(product: product))
+                        else
+                          const SizedBox.shrink(),
                         SizedBox(width: AppSpacing.xs),
                         AnimatedAddToCartIconButton(
                           size: AppDimensions.addToCartButtonCard,

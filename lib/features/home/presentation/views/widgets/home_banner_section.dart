@@ -13,23 +13,50 @@ import 'package:new_coffee/core/theme/motion_tokens.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeBannerSection extends StatelessWidget {
-  const HomeBannerSection({super.key});
+  const HomeBannerSection({
+    super.key,
+    this.autoplay = true,
+    this.height,
+    this.radius = AppRadius.none,
+    this.showDots = true,
+  });
+
+  final bool autoplay;
+  final double? height;
+
+  /// تقويس زوايا كل بانر. الغائب صفر كما كان.
+  final double radius;
+  final bool showDots;
 
   @override
   Widget build(BuildContext context) {
     final banners = context.watch<HomeCubit>().state.banners;
     if (banners.isEmpty) return const SizedBox.shrink();
     return BlocProvider(
-      create: (context) => BannerCubit(length: banners.length),
-      child: _BannerCarousel(banners: banners),
+      create: (context) =>
+          BannerCubit(length: banners.length, autoplay: autoplay),
+      child: _BannerCarousel(
+        banners: banners,
+        height: height,
+        radius: radius,
+        showDots: showDots,
+      ),
     );
   }
 }
 
 class _BannerCarousel extends StatefulWidget {
-  const _BannerCarousel({required this.banners});
+  const _BannerCarousel({
+    required this.banners,
+    this.height,
+    this.radius = AppRadius.none,
+    this.showDots = true,
+  });
 
   final List<BannerModel> banners;
+  final double? height;
+  final double radius;
+  final bool showDots;
 
   @override
   State<_BannerCarousel> createState() => _BannerCarouselState();
@@ -68,7 +95,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
       child: Column(
         children: [
           SizedBox(
-            height: AppDimensions.homeBannerHeight,
+            height: widget.height ?? AppDimensions.homeBannerHeight,
             child: PageView.builder(
               controller: _controller,
               itemCount: widget.banners.length,
@@ -95,7 +122,7 @@ class _BannerCarouselState extends State<_BannerCarousel> {
                       ),
                       child: BannerImage(
                         banner: banner,
-                        borderRadius: AppRadius.none,
+                        borderRadius: widget.radius,
                       ),
                     ),
                   ),
@@ -103,11 +130,13 @@ class _BannerCarouselState extends State<_BannerCarousel> {
               },
             ),
           ),
+          if (widget.showDots) ...[
           SizedBox(height: AppSpacing.md),
           BlocBuilder<BannerCubit, BannerState>(
             builder: (context, state) =>
                 BannerDots(count: widget.banners.length, current: state.index),
           ),
+          ],
         ],
       ),
     );

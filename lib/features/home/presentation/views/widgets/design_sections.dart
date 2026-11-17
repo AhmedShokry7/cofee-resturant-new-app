@@ -45,6 +45,8 @@ abstract final class DesignSectionRenderers {
         return _DesignProductGrid(section: section);
       case DesignWidgetTypes.column:
         return _DesignColumn(section: section, childBuilder: (child) => build(child));
+      case DesignWidgetTypes.row:
+        return _DesignRow(section: section, childBuilder: (child) => build(child));
       default:
         return null;
     }
@@ -85,6 +87,20 @@ TextAlign _textAlign(String? alignment) => switch (alignment) {
   _ => TextAlign.start,
 };
 
+TextOverflow _textOverflow(String? value) => switch (value) {
+  'clip' => TextOverflow.clip,
+  'fade' => TextOverflow.fade,
+  'visible' => TextOverflow.visible,
+  _ => TextOverflow.ellipsis,
+};
+
+TextDirection _textDirection(BuildContext context, String? value) =>
+    switch (value) {
+      'ltr' => TextDirection.ltr,
+      'rtl' => TextDirection.rtl,
+      _ => Directionality.of(context),
+    };
+
 double _spacing(String? token, {double fallback = AppSpacing.md}) =>
     switch (token) {
       'none' => AppSpacing.none,
@@ -106,6 +122,14 @@ double _radius(String? token) => switch (token) {
   'full' => AppRadius.pill,
   _ => AppRadius.none,
 };
+
+/// نمط عنوان الشبكة من مستند التصميم؛ الغائب يعني نمط القسم كما كان.
+TextStyle? _titleStyle(PublishedSection section) {
+  final size = section.numberProperty('titleSize');
+  final color = _hexColor(section.property('titleColor'));
+  if (size == null && color == null) return null;
+  return TextStyle(fontSize: size ?? 18, fontWeight: FontWeight.w600, color: color);
+}
 
 void _navigate(String? action, BuildContext context) {
   final route = switch (action) {
@@ -136,12 +160,14 @@ class _DesignText extends StatelessWidget {
     return Text(
       text,
       textAlign: _textAlign(section.property('alignment')),
+      textDirection: _textDirection(context, section.property('textDirection')),
       maxLines: section.numberProperty('maxLines')?.round(),
-      overflow: TextOverflow.ellipsis,
+      overflow: _textOverflow(section.property('overflow')),
       style: AppFonts.regular14(context).copyWith(
         fontSize: size,
         fontWeight: _weight(section.property('weight')),
         color: color,
+        letterSpacing: section.numberProperty('letterSpacing'),
         height: section.numberProperty('lineHeight') ??
             AppTextHeights.body,
       ),
@@ -230,12 +256,17 @@ class _DesignButton extends StatelessWidget {
             horizontal: AppSpacing.lg,
             vertical: AppSpacing.md,
           ),
-          child: Text(
-            label,
-            style: AppFonts.medium14(context).copyWith(
-              color: style == 'primary'
-                  ? foreground
-                  : (style == 'outline' ? background : foreground),
+          child: SizedBox(
+            width: section.numberProperty('width'),
+            height: section.numberProperty('height'),
+            child: Text(
+              label,
+              style: AppFonts.medium14(context).copyWith(
+                fontSize: section.numberProperty('fontSize'),
+                color: style == 'primary'
+                    ? foreground
+                    : (style == 'outline' ? background : foreground),
+              ),
             ),
           ),
         ),
@@ -278,7 +309,8 @@ class _DesignImage extends StatelessWidget {
         _ => Alignment.center,
       },
     );
-    return Align(
+    final borderWidth = section.numberProperty('borderWidth');
+    Widget wrapped = Align(
       alignment: switch (section.property('alignment')) {
         'start' => AlignmentDirectional.centerStart,
         'end' => AlignmentDirectional.centerEnd,
@@ -286,6 +318,27 @@ class _DesignImage extends StatelessWidget {
       },
       child: image,
     );
+    if (borderWidth != null && borderWidth > 0) {
+      wrapped = Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: _hexColor(section.property('borderColor')) ??
+                AppColor.borderColor,
+            width: borderWidth,
+          ),
+        ),
+        child: wrapped,
+      );
+    }
+    final aspectRatio = section.numberProperty('aspectRatio');
+    if (aspectRatio != null && aspectRatio > 0) {
+      wrapped = AspectRatio(aspectRatio: aspectRatio, child: wrapped);
+    }
+    final opacity = section.numberProperty('opacity');
+    if (opacity != null && opacity >= 0 && opacity <= 1) {
+      wrapped = Opacity(opacity: opacity, child: wrapped);
+    }
+    return wrapped;
   }
 }
 
@@ -368,14 +421,13 @@ class _DesignProductGrid extends StatelessWidget {
         ? products.sublist(0, maxItems)
         : products;
     if (shown.isEmpty) return const SizedBox.shrink();
-    // showPrice بلا مفعّل: البطاقة المشتركة ترسم السعر في كل شاشات
-    // التطبيق، ومخالفة ذلك هنا تجعل الشبكة بطاقة لا تشبهها.
-    final title = section.property('title');
+    final showPrice = section.flagProperty('showPrice', fallback: true);
+    final title = section.localizedText('title');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (title != null && title.isNotEmpty) ...[
-          HomeSectionTitle(title: title),
+          HomeSectionTitle(title: title, titleStyle: _titleStyle(section)),
           const SizedBox(height: AppSpacing.md),
         ],
         GridView.builder(
@@ -389,9 +441,68 @@ class _DesignProductGrid extends StatelessWidget {
             childAspectRatio: ProductCard.cardAspectRatio,
           ),
           itemCount: shown.length,
-          itemBuilder: (context, index) => ProductCard(product: shown[index]),
+          itemBuilder: (context, index) => ProductCard(product: shown[index], showPrice: showPrice),
         ),
       ],
+    );
+  }
+}
+
+// -------------------------------------------------------------------- صفّ
+
+/// صفّ أفقي لأبناء القسم الذي أنشئه الموظف (فتح الأقسام غير التجارية).
+/// أبناؤه يبنون بنفس دالة رسم الأقسام، فيُقبل أي قسم مسموح داخل الصفّ.
+/// المرونة (`flex`) تخصّ الأبناء هنا فقط: الابن صاحب `flex` يُغلَّف بـ
+/// `Expanded` بصنف توازيه، وغيره بـ `Flexible` فلا ينهار القصّ الأفقي.
+class _DesignRow extends StatelessWidget {
+  const _DesignRow({
+    required this.section,
+    required this.childBuilder,
+  });
+  final PublishedSection section;
+
+  final Widget? Function(PublishedSection) childBuilder;
+
+  @override
+  Widget build(BuildContext context) {
+    final rendered = <Widget>[];
+    for (final child in section.children) {
+      final built = childBuilder(child);
+      if (built == null) continue;
+      final flex = child.numberProperty('flex')?.round();
+      Widget wrapped = previewSectionWrap(child, pageId: 'home', child: built);
+      if (flex != null && flex > 0) {
+        wrapped = Expanded(flex: flex, child: wrapped);
+      } else {
+        wrapped = Flexible(child: wrapped);
+      }
+      if (rendered.isNotEmpty) {
+        rendered.add(SizedBox(width: _spacing(section.property('gap'))));
+      }
+      rendered.add(wrapped);
+    }
+    if (rendered.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: _spacing(section.property('inset'),
+            fallback: AppSpacing.none),
+      ),
+      child: Row(
+        mainAxisAlignment: switch (section.property('mainAxisAlignment')) {
+          'center' => MainAxisAlignment.center,
+          'end' => MainAxisAlignment.end,
+          'spaceBetween' => MainAxisAlignment.spaceBetween,
+          'spaceAround' => MainAxisAlignment.spaceAround,
+          'spaceEvenly' => MainAxisAlignment.spaceEvenly,
+          _ => MainAxisAlignment.start,
+        },
+        crossAxisAlignment: switch (section.property('crossAxisAlignment')) {
+          'center' => CrossAxisAlignment.center,
+          'end' => CrossAxisAlignment.end,
+          _ => CrossAxisAlignment.start,
+        },
+        children: rendered,
+      ),
     );
   }
 }

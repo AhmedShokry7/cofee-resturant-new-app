@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
@@ -81,6 +82,31 @@ void main() {
     expect(find.text('العنوان بالإنجليزي'), findsNothing);
     // مرة لتسمية الحقل ومرة لتسمية مجموعة العنوان.
     expect(find.text('العنوان'), findsNWidgets(2));
+  });
+
+  testWidgets('the merged field prefers the current interface language', (
+    tester,
+  ) async {
+    final previousLanguage = AppLocale.instance.language;
+    addTearDown(() => AppLocale.instance.debugSet(previousLanguage));
+    AppLocale.instance.debugSet(AppLanguage.english);
+    final bilingual = component.copyWith(
+      properties: {
+        ...component.properties,
+        'title_ar': 'عنوان عربي',
+        'title_en': 'English title',
+      },
+    );
+
+    await pumpPanel(
+      tester,
+      onKeyChanged: (_) {},
+      onReset: (_) {},
+      panelComponent: bilingual,
+    );
+
+    final field = tester.widget<TextField>(find.byType(TextField).at(1));
+    expect(field.controller?.text, 'English title');
   });
 
   testWidgets('typing in the merged field writes both languages', (
@@ -217,10 +243,84 @@ void main() {
     );
 
     expect(find.text(S.visualEditorImageLibrary), findsOneWidget);
+    expect(find.text(S.visualEditorSplashDefaultImage), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+    expect(
+      tester.widget<Image>(find.byType(Image)).image,
+      isA<AssetImage>(),
+      reason: 'معاينة الافتتاحية تعرض الشعار الافتراضي قبل رفع صورة مخصصة',
+    );
+
     await tester.tap(find.text(S.visualEditorImageLibrary));
     await tester.pump();
-
     expect(changed, contains('imageUrl=https://example.invalid/splash.png'));
+
+    await tester.tap(find.text(S.visualEditorRestoreOriginalImage));
+    await tester.pump();
+    expect(changed, contains('imageUrl='));
+
+    await tester.tap(find.text(S.visualEditorHideImage));
+    await tester.pump();
+    expect(changed, contains('imageVisible=false'));
+
+    final hiddenSplash = EditableComponent(
+      componentId: 'splash_settings',
+      componentType: 'splashSettings',
+      pageId: 'splash',
+      index: 0,
+      classification: ComponentClassification.editable,
+      properties: const {
+        'imageUrl': '',
+        'visible': true,
+        'imageVisible': false,
+      },
+      defaultValues: const {'imageUrl': ''},
+      validationRules: const {},
+      allowedOperations: const ['edit', 'hide'],
+      version: 1,
+    );
+    await pumpPanel(
+      tester,
+      onKeyChanged: changed.add,
+      onReset: (_) {},
+      panelComponent: hiddenSplash,
+    );
+    expect(find.text(S.visualEditorSplashImageHidden), findsOneWidget);
+  });
+
+  testWidgets('splash image can be replaced with an uploaded file', (
+    tester,
+  ) async {
+    final changed = <String>[];
+    final splash = EditableComponent(
+      componentId: 'splash_settings',
+      componentType: 'splashSettings',
+      pageId: 'splash',
+      index: 0,
+      classification: ComponentClassification.editable,
+      properties: const {'imageUrl': '', 'visible': true},
+      defaultValues: const {'imageUrl': ''},
+      validationRules: const {},
+      allowedOperations: const ['edit', 'hide'],
+      version: 1,
+    );
+    await pumpPanel(
+      tester,
+      onKeyChanged: changed.add,
+      onReset: (_) {},
+      panelComponent: splash,
+      onPickImage: () async => 'https://example.invalid/uploaded-splash.png',
+    );
+
+    await tester.tap(find.text(S.visualEditorPickImage));
+    await tester.pump();
+    await tester.pump();
+
+    expect(
+      changed,
+      contains('imageUrl=https://example.invalid/uploaded-splash.png'),
+    );
+    expect(find.text(S.visualEditorSplashCustomImage), findsOneWidget);
   });
 
   testWidgets('reset clears both languages at once', (tester) async {

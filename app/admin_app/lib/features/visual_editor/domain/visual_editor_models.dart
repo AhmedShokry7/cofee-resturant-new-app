@@ -216,6 +216,7 @@ class EditorPages {
       isEditable: true,
       allowedComponentTypes: [
         'header',
+        'searchBar',
         'bannerCarousel',
         'promoBanner',
         'categoryList',
@@ -228,6 +229,7 @@ class EditorPages {
         'divider',
         'spacer',
         'column',
+        'row',
         'button',
       ],
     ),
@@ -244,6 +246,7 @@ class EditorPages {
         'divider',
         'spacer',
         'column',
+        'row',
         'button',
       ],
     ),

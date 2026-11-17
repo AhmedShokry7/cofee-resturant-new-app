@@ -34,6 +34,7 @@ class DesignDocumentCodec {
     'spacer': DesignContract.spacer,
     'productGrid': DesignContract.productGrid,
     'column': DesignContract.column,
+    'row': DesignContract.row,
     'splashSettings': DesignContract.splashSettings,
     'welcomeHero': DesignContract.welcomeHero,
     'welcomeTitle': DesignContract.welcomeTitle,
@@ -187,6 +188,7 @@ class DesignDocumentCodec {
         properties['dataSource'] =
             internalDataSource(properties['dataSource']) ?? '';
       }
+      _normalizeLegacyProperties(internal, properties);
       properties['visible'] = raw['visible'] is bool
           ? raw['visible'] as bool
           : true;
@@ -243,6 +245,7 @@ class DesignDocumentCodec {
         properties['dataSource'] =
             internalDataSource(properties['dataSource']) ?? '';
       }
+      _normalizeLegacyProperties(internal, properties);
       properties['visible'] = raw['visible'] is bool
           ? raw['visible'] as bool
           : true;
@@ -282,6 +285,34 @@ class DesignDocumentCodec {
       result[pageId] = parsePage(pageId, root['children']);
     }
     return result;
+  }
+
+  /// يرقّي مفاتيح النص الأحادي القديمة إلى زوج ثنائي اللغة في الذاكرة فقط.
+  /// لا يعاد تعديل المستند المحفوظ حتى يغيّر المستخدم الخاصية بنفسه.
+  static void _normalizeLegacyProperties(
+    String componentType,
+    Map<String, dynamic> properties,
+  ) {
+    final baseKeys = switch (componentType) {
+      'categoryList' ||
+      'productStrip' ||
+      'productGrid' ||
+      'bundleList' => const ['title'],
+      'searchBar' => const ['hint'],
+      _ => const <String>[],
+    };
+    for (final base in baseKeys) {
+      final legacy = properties[base];
+      if (legacy is! String || legacy.trim().isEmpty) continue;
+      for (final language in const ['ar', 'en']) {
+        final key = '${base}_$language';
+        final localized = properties[key];
+        if (localized is! String || localized.trim().isEmpty) {
+          properties[key] = legacy;
+        }
+      }
+      properties.remove(base);
+    }
   }
 
   /// طبقة الشكل من مستند.

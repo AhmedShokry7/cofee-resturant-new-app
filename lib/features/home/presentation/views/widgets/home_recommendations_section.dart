@@ -8,7 +8,20 @@ import 'package:new_coffee/features/favorites/presentation/manager/favorites/fav
 import 'package:new_coffee/features/weather/presentation/manager/weather/weather_cubit.dart';
 
 class HomeRecommendationsSection extends StatelessWidget {
-  const HomeRecommendationsSection({super.key});
+  const HomeRecommendationsSection({
+    super.key,
+    this.title,
+    this.maxItems = 10,
+    this.showPrice = true,
+    this.showViewMore = true,
+    this.titleStyle,
+  });
+
+  final String? title;
+  final int maxItems;
+  final bool showPrice;
+  final bool showViewMore;
+  final TextStyle? titleStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +39,9 @@ class HomeRecommendationsSection extends StatelessWidget {
             weather != null && home.recommendationPool.isNotEmpty;
 
         return HomeProductsCarousel(
-          title: S.recommendations,
+          title: title?.trim().isNotEmpty == true
+              ? title!.trim()
+              : S.recommendations,
           subtitle: !hasWeather
               ? null
               : weather.isHot
@@ -36,7 +51,10 @@ class HomeRecommendationsSection extends StatelessWidget {
             weather: weather,
             favoriteIds: favoriteIds,
           ),
-          showViewMore: true,
+          maxItems: maxItems,
+          showPrice: showPrice,
+          showViewMore: showViewMore,
+          titleStyle: titleStyle,
         );
       },
     );

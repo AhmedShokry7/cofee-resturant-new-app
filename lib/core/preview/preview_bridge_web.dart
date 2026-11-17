@@ -141,12 +141,12 @@ class PreviewBridge {
 
   void _post(PreviewMessage message) {
     if (!kIsWeb) return;
+    // لا يوجد إرسال بغير مرساة: غياب `parentOrigin` يعني أن الجلسة لم
+    // تفتح أصلًا، فلا يذهب أي ردّ إلى نافذة لا يملك الأب حقّ استقباله.
+    if (_parentOrigin == null || _parentOrigin!.isEmpty) return;
     final parent = web.window.parent;
     if (parent == null) return;
-    parent.postMessage(
-      message.toJsonString().toJS,
-      (_parentOrigin ?? '*').toJS,
-    );
+    parent.postMessage(message.toJsonString().toJS, _parentOrigin!.toJS);
   }
 
   /// Register a handler for incoming messages

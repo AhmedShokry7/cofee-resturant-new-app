@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/constants/app_images.dart';
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
@@ -266,6 +268,13 @@ class _PropertyGroup extends StatelessWidget {
               ),
               onPickImage: onPickImage,
               onBrowseImages: onBrowseImages,
+              splashImageVisible:
+                  component.properties['imageVisible'] as bool? ?? true,
+              onSplashImageVisibilityChanged: (visible) => onChanged(
+                componentId: component.componentId,
+                propertyKey: 'imageVisible',
+                value: visible,
+              ),
               clearLabel:
                   component.componentType == 'welcomeHero' ||
                       component.componentType == 'onboardingSlide' ||
@@ -337,6 +346,8 @@ class _PropertyField extends StatelessWidget {
     required this.onReset,
     this.onPickImage,
     this.onBrowseImages,
+    this.splashImageVisible = true,
+    this.onSplashImageVisibilityChanged,
     this.clearLabel,
   });
 
@@ -347,6 +358,8 @@ class _PropertyField extends StatelessWidget {
   final VoidCallback onReset;
   final Future<String?> Function()? onPickImage;
   final Future<String?> Function()? onBrowseImages;
+  final bool splashImageVisible;
+  final ValueChanged<bool>? onSplashImageVisibilityChanged;
   final String? clearLabel;
 
   @override
@@ -400,8 +413,16 @@ class _PropertyField extends StatelessWidget {
     if (definition.key == 'imageUrl' && componentType == 'splashSettings') {
       return _SplashImageInput(
         value: currentValue?.toString() ?? '',
-        onChanged: onChanged,
+        imageVisible: splashImageVisible,
+        onChanged: (value) {
+          onChanged(value);
+          if (value.trim().isNotEmpty) {
+            onSplashImageVisibilityChanged?.call(true);
+          }
+        },
+        onVisibilityChanged: onSplashImageVisibilityChanged ?? (_) {},
         pickAndUpload: onPickImage ?? DesignImageUpload.pickAndUpload,
+        clearLabel: clearLabel ?? S.visualEditorRestoreOriginalImage,
         browseImages: onBrowseImages,
       );
     }
@@ -559,13 +580,13 @@ class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
 
   String get _enText => widget.enValue?.toString() ?? '';
 
-  /// ما يظهر في الحقل الموحّد: العربي إن نُطق، وإلا الإنجليزي —
+  /// ما يظهر في الحقل الموحّد: لغة واجهة الأدمن أولًا، ثم الأخرى؛
   /// والفارغ يعني «كما هو» لا نصًا مختلقًا.
   String get _mergedText {
-    final ar = _arText.trim();
-    if (ar.isNotEmpty) return _arText;
-    final en = _enText.trim();
-    if (en.isNotEmpty) return _enText;
+    final preferred = AppLocale.instance.isArabic ? _arText : _enText;
+    if (preferred.trim().isNotEmpty) return preferred;
+    final other = AppLocale.instance.isArabic ? _enText : _arText;
+    if (other.trim().isNotEmpty) return other;
     return '';
   }
 
@@ -992,14 +1013,20 @@ InputDecoration _inputDecoration(bool dark) => InputDecoration(
 class _SplashImageInput extends StatefulWidget {
   const _SplashImageInput({
     required this.value,
+    required this.imageVisible,
     required this.onChanged,
+    required this.onVisibilityChanged,
     required this.pickAndUpload,
+    required this.clearLabel,
     this.browseImages,
   });
 
   final String value;
+  final bool imageVisible;
   final ValueChanged<String> onChanged;
+  final ValueChanged<bool> onVisibilityChanged;
   final Future<String?> Function() pickAndUpload;
+  final String clearLabel;
   final Future<String?> Function()? browseImages;
 
   @override
@@ -1065,32 +1092,85 @@ class _SplashImageInputState extends State<_SplashImageInput> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (url.isNotEmpty) ...[
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            child: SizedBox(
-              height: 120,
-              child: Image.network(
-                url,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => Container(
-                  height: 120,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: SizedBox(
+            height: 150,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ColoredBox(
                   color: dark
                       ? AppColor.darkSurfaceContainer
                       : AppColor.adminTableHeader,
-                  alignment: Alignment.center,
-                  child: Icon(
-                    AppIcons.image01,
-                    color: dark
-                        ? AppColor.darkTextSecondary
-                        : AppColor.adminMuted,
+                ),
+                if (widget.imageVisible)
+                  url.isEmpty
+                      ? Image.asset(
+                          AppImages.logo,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => Icon(
+                            AppIcons.image01,
+                            color: dark
+                                ? AppColor.darkTextSecondary
+                                : AppColor.adminMuted,
+                          ),
+                        )
+                      : Image.network(
+                          url,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, _, _) => Icon(
+                            AppIcons.image01,
+                            color: dark
+                                ? AppColor.darkTextSecondary
+                                : AppColor.adminMuted,
+                          ),
+                        ),
+                if (!widget.imageVisible)
+                  Center(
+                    child: Text(
+                      S.visualEditorSplashImageHidden,
+                      style: TextStyle(
+                        color: dark
+                            ? AppColor.darkTextSecondary
+                            : AppColor.adminMuted,
+                      ),
+                    ),
                   ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                url.isEmpty
+                    ? S.visualEditorSplashDefaultImage
+                    : S.visualEditorSplashCustomImage,
+                style: TextStyle(
+                  fontSize: AppFontSizes.size10,
+                  color: dark
+                      ? AppColor.darkTextSecondary
+                      : AppColor.adminMuted,
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-        ],
+            TextButton.icon(
+              onPressed: () => widget.onVisibilityChanged(!widget.imageVisible),
+              icon: Icon(
+                widget.imageVisible ? AppIcons.eyeOff : AppIcons.eye,
+                size: 14,
+              ),
+              label: Text(
+                widget.imageVisible
+                    ? S.visualEditorHideImage
+                    : S.visualEditorShowImage,
+              ),
+            ),
+          ],
+        ),
         TextField(
           controller: _controller,
           onChanged: (value) {
@@ -1112,7 +1192,7 @@ class _SplashImageInputState extends State<_SplashImageInput> {
               widget.onChanged('');
             },
             icon: Icon(AppIcons.remove01, size: 14),
-            label: Text(S.visualEditorRemoveImage),
+            label: Text(widget.clearLabel),
           ),
         if (widget.browseImages != null)
           OutlinedButton.icon(

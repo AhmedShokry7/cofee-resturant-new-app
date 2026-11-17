@@ -8,9 +8,15 @@ import 'package:new_coffee/core/theme/motion_tokens.dart';
 part 'banner_state.dart';
 
 class BannerCubit extends Cubit<BannerState> {
-  BannerCubit({required this.length}) : super(const BannerState(index: 0)) {
-    _timer = Timer.periodic(MotionTokens.carouselHold, (_) => next());
+  BannerCubit({required this.length, this.autoplay = true})
+      : super(const BannerState(index: 0)) {
+    if (autoplay) {
+      _timer = Timer.periodic(MotionTokens.carouselHold, (_) => next());
+    }
   }
+
+  /// هل يتقدّم الشريط تلقائيًا. الغائب `true` — يدار من مستند التصميم.
+  final bool autoplay;
 
   final int length;
   Timer? _timer;

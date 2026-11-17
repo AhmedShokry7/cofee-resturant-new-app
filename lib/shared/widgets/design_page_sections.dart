@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/preview/preview_section.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/design_section_chrome.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/design_sections.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
 
@@ -82,7 +83,9 @@ List<Widget> buildDesignPageSections({
         previewSectionWrap(
           section,
           pageId: pageId,
-          child: HomeSection(child: widget),
+          child: HomeSection(
+            child: DesignSectionChrome(section: section, child: widget),
+          ),
         ),
       );
     }

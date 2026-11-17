@@ -13,7 +13,16 @@ import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The category row of the home page: one line of circles that keeps walking.
 class HomeCategoriesSection extends StatelessWidget {
-  const HomeCategoriesSection({super.key});
+  const HomeCategoriesSection({
+    super.key,
+    this.title,
+    this.showTitle = true,
+    this.titleStyle,
+  });
+
+  final String? title;
+  final bool showTitle;
+  final TextStyle? titleStyle;
 
   /// Opens the catalogue tab on the chip the customer was looking at.
   ///
@@ -32,9 +41,10 @@ class HomeCategoriesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (showTitle)
         HomeSectionTitle(
-          title: S.categories,
-          titleStyle: AppFonts.semiBold18(context),
+          title: title?.trim().isNotEmpty == true ? title!.trim() : S.categories,
+          titleStyle: titleStyle ?? AppFonts.semiBold18(context),
           trailing: HomeSectionLink(
             label: S.seeAll,
             onTap: () =>

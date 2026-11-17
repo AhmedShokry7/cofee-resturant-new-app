@@ -58,6 +58,13 @@ class HomeState {
     return banners[1];
   }
 
+  /// البانر الترويجي عند فهرس من مستند التصميم، أو null لما لا وجود له.
+  /// الفهرس ١ يعني الثاني كما كان فعلًا؛ لا يُخمَّن بانر منتهيًا.
+  BannerModel? promoBannerAt(int index) {
+    if (index < 0 || index >= banners.length) return null;
+    return banners[index];
+  }
+
   /// Category slugs that suit a hot day, and those that suit a cold one.
   ///
   /// Slugs, not display names: renaming a category must not silently break the

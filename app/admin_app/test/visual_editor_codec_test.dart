@@ -126,6 +126,8 @@ void main() {
       expect(component.componentType, 'productStrip');
       expect(component.properties['dataSource'], 'featured');
       expect(component.properties['maxItems'], 10);
+      expect(component.properties['title_ar'], 'الأكثر طلبًا');
+      expect(component.properties['title_en'], 'الأكثر طلبًا');
       expect(component.properties['visible'], true);
     });
 

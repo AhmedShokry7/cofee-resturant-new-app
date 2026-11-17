@@ -5446,6 +5446,16 @@ class S {
       _ar ? 'إزالة الصورة' : 'Remove image';
   static String get visualEditorRestoreOriginalImage =>
       _ar ? 'استعادة الصورة الأصلية' : 'Restore original image';
+  static String get visualEditorSplashDefaultImage =>
+      _ar ? 'الشعار الافتراضي' : 'Default logo';
+  static String get visualEditorSplashCustomImage =>
+      _ar ? 'صورة مخصصة' : 'Custom image';
+  static String get visualEditorSplashImageHidden =>
+      _ar ? 'الصورة مخفية' : 'Image hidden';
+  static String get visualEditorHideImage =>
+      _ar ? 'إخفاء الصورة' : 'Hide image';
+  static String get visualEditorShowImage =>
+      _ar ? 'إظهار الصورة' : 'Show image';
   static String get visualEditorResetProperty =>
       _ar ? 'إعادة القيمة الافتراضية' : 'Reset to default';
   static String get visualEditorBilingualHint => _ar

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
@@ -36,6 +37,43 @@ void main() {
           reason: 'نوع ${entry.key} لا يرسم مكوّنه في شاشة الزبون.',
         );
       }
+    });
+
+    test('عناوين أقسام المتجر المخصصة تصل إلى مكوّناتها الحقيقية', () {
+      final category = buildHomeDocumentSection(
+        PublishedSection(
+          id: 'categories',
+          type: DesignWidgetTypes.categoryList,
+          properties: const {
+            'title_ar': 'اختياراتنا',
+            'title_en': 'Our categories',
+          },
+        ),
+      );
+      expect(_rendered(category), HomeCategoriesSection);
+      expect((category as HomeSection).child, isA<HomeCategoriesSection>());
+      expect((category.child as HomeCategoriesSection).title, 'اختياراتنا');
+
+      final featured = buildHomeDocumentSection(
+        PublishedSection(
+          id: 'featured',
+          type: DesignWidgetTypes.productStrip,
+          dataSource: DesignDataSources.featured,
+          properties: const {'title_ar': 'الأكثر مبيعًا'},
+        ),
+      );
+      expect((featured as HomeSection).child, isA<HomePopularSection>());
+      expect((featured.child as HomePopularSection).title, 'الأكثر مبيعًا');
+
+      final bundles = buildHomeDocumentSection(
+        PublishedSection(
+          id: 'bundles',
+          type: DesignWidgetTypes.bundleList,
+          properties: const {'title_en': 'Coffee bundles'},
+        ),
+      );
+      expect((bundles as HomeSection).child, isA<HomeBundlesSection>());
+      expect((bundles.child as HomeBundlesSection).title, 'Coffee bundles');
     });
 
     test('شريطا المنتجات نوع واحد والفصل بمصدر البيانات وحده', () {
@@ -248,6 +286,59 @@ void main() {
         ),
       ]);
       expect(find.text('أهلًا بك'), findsOneWidget);
+    });
+
+    testWidgets('localized headings and text follow the selected language', (
+      tester,
+    ) async {
+      final previousLanguage = AppLocale.instance.language;
+      addTearDown(() => AppLocale.instance.debugSet(previousLanguage));
+
+      AppLocale.instance.debugSet(AppLanguage.english);
+      await _pumpHome(tester, [
+        _node(
+          'heading',
+          DesignWidgetTypes.heading,
+          properties: {
+            'title_ar': 'عنوان عربي',
+            'title_en': 'English heading',
+            'subtitle_ar': 'وصف عربي',
+            'subtitle_en': 'English subtitle',
+          },
+        ),
+        _node(
+          'text',
+          DesignWidgetTypes.text,
+          properties: {'text_ar': 'نص عربي', 'text_en': 'English text'},
+        ),
+      ]);
+      expect(find.text('English heading'), findsOneWidget);
+      expect(find.text('English subtitle'), findsOneWidget);
+      expect(find.text('English text'), findsOneWidget);
+      expect(find.text('عنوان عربي'), findsNothing);
+
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+      await _pumpHome(tester, [
+        _node(
+          'heading',
+          DesignWidgetTypes.heading,
+          properties: {
+            'title_ar': 'عنوان عربي',
+            'title_en': 'English heading',
+            'subtitle_ar': 'وصف عربي',
+            'subtitle_en': 'English subtitle',
+          },
+        ),
+        _node(
+          'text',
+          DesignWidgetTypes.text,
+          properties: {'text_ar': 'نص عربي', 'text_en': 'English text'},
+        ),
+      ]);
+      expect(find.text('عنوان عربي'), findsOneWidget);
+      expect(find.text('وصف عربي'), findsOneWidget);
+      expect(find.text('نص عربي'), findsOneWidget);
+      expect(find.text('English heading'), findsNothing);
     });
 
     testWidgets('نص بلا خصائص لا يرسم شيئًا', (tester) async {

@@ -10,7 +10,20 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_product
 /// Before this it passed getMenuList() straight through, so every product was
 /// shown as popular because nothing ranked them.
 class HomePopularSection extends StatelessWidget {
-  const HomePopularSection({super.key});
+  const HomePopularSection({
+    super.key,
+    this.title,
+    this.maxItems = 10,
+    this.showPrice = true,
+    this.showViewMore = true,
+    this.titleStyle,
+  });
+
+  final String? title;
+  final int maxItems;
+  final bool showPrice;
+  final bool showViewMore;
+  final TextStyle? titleStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +34,12 @@ class HomePopularSection extends StatelessWidget {
       return const SizedBox.shrink();
     }
     return HomeProductsCarousel(
-      title: S.popular,
+      title: title?.trim().isNotEmpty == true ? title!.trim() : S.popular,
       products: products,
-      showViewMore: true,
+      maxItems: maxItems,
+      showPrice: showPrice,
+      showViewMore: showViewMore,
+      titleStyle: titleStyle,
     );
   }
 }

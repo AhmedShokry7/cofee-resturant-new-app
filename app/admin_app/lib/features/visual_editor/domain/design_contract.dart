@@ -98,6 +98,7 @@ abstract final class DesignContract {
     'section.product_strip',
     'section.bundle_list',
     'section.text',
+    'section.row',
     'section.heading',
     'section.button',
     'section.image',
@@ -127,6 +128,7 @@ abstract final class DesignContract {
   static const String recommendations = 'catalog.recommendations';
 
   /// أنواع المحتوى الحر والهياكل، بمفاتيح العقد كما يرسمها الهاتف.
+  static const String row = 'section.row';
   static const String text = 'section.text';
   static const String heading = 'section.heading';
   static const String button = 'section.button';

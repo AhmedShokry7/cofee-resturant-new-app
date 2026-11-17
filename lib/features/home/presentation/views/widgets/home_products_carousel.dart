@@ -18,6 +18,8 @@ class HomeProductsCarousel extends StatelessWidget {
     this.subtitle,
     this.maxItems = 10,
     this.showViewMore = false,
+    this.showPrice = true,
+    this.titleStyle,
   });
 
   final String title;
@@ -30,6 +32,10 @@ class HomeProductsCarousel extends StatelessWidget {
   /// sweeps, and the full page exists for exactly that case.
   final int maxItems;
   final bool showViewMore;
+
+  /// إظهار السعر داخل كل بطاقة. يُمرَّر من مستند التصميم.
+  final bool showPrice;
+  final TextStyle? titleStyle;
 
   void _openAll(BuildContext context) {
     Navigator.of(context).pushNamed(
@@ -55,6 +61,7 @@ class HomeProductsCarousel extends StatelessWidget {
       children: [
         HomeSectionTitle(
           title: title,
+          titleStyle: titleStyle,
           trailing: showViewMore
               ? HomeSectionLink(
                   label: S.viewMore,
@@ -83,7 +90,7 @@ class HomeProductsCarousel extends StatelessWidget {
             separatorBuilder: (context, index) =>
                 SizedBox(width: AppSpacing.md),
             itemBuilder: (context, index) =>
-                ProductCard(product: displayed[index]),
+                ProductCard(product: displayed[index], showPrice: showPrice),
           ),
         ),
       ],

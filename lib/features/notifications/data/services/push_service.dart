@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/navigation/notification_routes.dart';
@@ -54,6 +55,30 @@ class PushService {
 
   static bool _started = false;
   static String? _token;
+  static const String _permissionPromptedKey =
+      'notification_permission_prompted_v1';
+
+  /// Shows the system notification permission prompt on the first app visit.
+  /// This only asks the OS; it does not change the customer's notification
+  /// preferences on the server.
+  static Future<void> requestPermissionOnFirstLaunch() async {
+    if (defaultTargetPlatform != TargetPlatform.android &&
+        defaultTargetPlatform != TargetPlatform.iOS) {
+      return;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool(_permissionPromptedKey) ?? false) return;
+      // Android can report `denied` even before its first runtime prompt, so
+      // rely on the once-per-install guard rather than status to decide here.
+      await FirebaseMessaging.instance.requestPermission();
+      await prefs.setBool(_permissionPromptedKey, true);
+    } catch (error) {
+      if (kDebugMode) {
+        debugPrint('[PushService] permission request failed: $error');
+      }
+    }
+  }
 
   /// The customer whose token registration was most recently attempted.
   ///

@@ -14,20 +14,33 @@ import 'package:new_coffee/core/theme/tokens.dart';
 /// banner the carousel had already shown. It now uses the second banner, and
 /// hides itself when there is no second one rather than crashing on .first.
 class HomeSingleBannerSection extends StatelessWidget {
-  const HomeSingleBannerSection({super.key});
+  const HomeSingleBannerSection({
+    super.key,
+    this.bannerIndex = 1,
+    this.height,
+    this.radius = AppRadius.r8,
+  });
+
+  /// فهرس البانر في قائمة البانرات المنشورة، ١ = الثاني كما كان.
+  final int bannerIndex;
+  final double? height;
+
+  /// تقويس زوايا البانر الترويجي. الغائب r8 كما كان.
+  final double radius;
 
   @override
   Widget build(BuildContext context) {
-    final banner = context.watch<HomeCubit>().state.promoBanner;
+    final banner =
+        context.watch<HomeCubit>().state.promoBannerAt(bannerIndex);
     if (banner == null) return const SizedBox.shrink();
     return SizedBox(
-      height: AppDimensions.homeBannerHeight,
+      height: height ?? AppDimensions.homeBannerHeight,
       child: Semantics(
         link: true,
         label: banner.title,
         child: Material(
           color: AppColor.transparent,
-          borderRadius: BorderRadius.circular(AppRadius.r8),
+          borderRadius: BorderRadius.circular(radius),
           child: InkWell(
             // The same rule as the carousel above it: the banner's own target,
             // and the banner page only when there is nothing to open.
@@ -37,7 +50,7 @@ class HomeSingleBannerSection extends StatelessWidget {
               fallback: () => Navigator.of(context)
                   .pushNamed(BannerDetailsPage.routeName, arguments: banner),
             ),
-            borderRadius: BorderRadius.circular(AppRadius.r8),
+            borderRadius: BorderRadius.circular(radius),
             child: BannerImage(banner: banner),
           ),
         ),

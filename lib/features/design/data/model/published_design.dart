@@ -222,6 +222,7 @@ abstract final class DesignWidgetTypes {
   static const String spacer = 'section.spacer';
   static const String productGrid = 'section.product_grid';
   static const String column = 'section.column';
+  static const String row = 'section.row';
   static const String splashSettings = 'splash.settings';
 
   /// عقد شاشات مدمجة: لا يرسمها محرك الأقسام الحرّة، بل يقرؤها مكوّنات

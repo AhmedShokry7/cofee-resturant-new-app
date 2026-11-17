@@ -41,41 +41,42 @@ class SplashBrandMark extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Align(
-            alignment: imageAlignment,
-            child: BlocBuilder<DesignCubit, DesignState>(
-              buildWhen: (previous, next) => previous.logoUrl != next.logoUrl,
-              builder: (context, design) {
-                final source = (settings.imageUrl?.trim().isNotEmpty ?? false)
-                    ? settings.imageUrl
-                    : design.logoUrl;
-                final image = source != null && source.trim().isNotEmpty
-                    ? DbImage(
-                        image: source,
-                        fit: _fit(settings.imageFit),
-                        alignment: DbImage.alignmentFromName(
-                          settings.imageAlignment,
-                        ),
-                        width: width,
-                        height: settings.imageHeight,
-                        iconSize: 32,
-                      )
-                    : Image.asset(
-                        AppImages.logo,
-                        width: width,
-                        height: settings.imageHeight,
-                        fit: _fit(settings.imageFit),
-                        alignment: DbImage.alignmentFromName(
-                          settings.imageAlignment,
-                        ),
-                        filterQuality: FilterQuality.high,
-                      );
-                return image;
-              },
+          if (settings.imageVisible)
+            Align(
+              alignment: imageAlignment,
+              child: BlocBuilder<DesignCubit, DesignState>(
+                buildWhen: (previous, next) => previous.logoUrl != next.logoUrl,
+                builder: (context, design) {
+                  final source = (settings.imageUrl?.trim().isNotEmpty ?? false)
+                      ? settings.imageUrl
+                      : design.logoUrl;
+                  final image = source != null && source.trim().isNotEmpty
+                      ? DbImage(
+                          image: source,
+                          fit: _fit(settings.imageFit),
+                          alignment: DbImage.alignmentFromName(
+                            settings.imageAlignment,
+                          ),
+                          width: width,
+                          height: settings.imageHeight,
+                          iconSize: 32,
+                        )
+                      : Image.asset(
+                          AppImages.logo,
+                          width: width,
+                          height: settings.imageHeight,
+                          fit: _fit(settings.imageFit),
+                          alignment: DbImage.alignmentFromName(
+                            settings.imageAlignment,
+                          ),
+                          filterQuality: FilterQuality.high,
+                        );
+                  return image;
+                },
+              ),
             ),
-          ),
           if (settings.text != null) ...[
-            SizedBox(height: settings.imageGap),
+            SizedBox(height: settings.imageVisible ? settings.imageGap : 0),
             Text(
               settings.text!,
               textAlign: textAlign,

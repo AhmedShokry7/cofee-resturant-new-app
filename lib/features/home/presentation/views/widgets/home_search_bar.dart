@@ -10,7 +10,10 @@ import 'package:new_coffee/features/search/presentation/views/search_page.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeSearchBar extends StatelessWidget {
-  const HomeSearchBar({super.key});
+  const HomeSearchBar({super.key, this.hintText});
+
+  /// نص تلميحي بديل من مستند التصميم؛ الغائب يعني نص التطبيق.
+  final String? hintText;
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +37,7 @@ class HomeSearchBar extends StatelessWidget {
                 SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Text(
-                    S.searchHint,
+                    hintText ?? S.searchHint,
                     style: AppFonts.regular14(context)
                         .copyWith(color: AppColor.greyColor),
                     maxLines: 1,

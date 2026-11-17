@@ -13,7 +13,7 @@ import 'package:new_coffee/features/notifications/data/services/push_service.dar
 ///
 /// The shell also owns the two things that can only happen once the app is
 /// really on screen: the screen a tapped notification asked for, and the
-/// first-launch location prompt.
+/// first-launch location and notification prompts.
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
 
@@ -38,12 +38,15 @@ class _MainScaffoldState extends State<MainScaffold> {
         Navigator.of(context).pushNamed(route.route, arguments: route.entityId);
       }
 
-      // The location prompt is fired, never awaited: it is a system dialog, and
-      // waiting for it before the screen appeared is what froze the app on a
-      // device whose dialog never came back. It marks itself as prompted, so it
-      // asks at most once per install.
-      unawaited(LocationPermissionService.requestOnFirstLaunch());
+      // Ask after the first screen has appeared, and serialize the OS dialogs
+      // so the two permission prompts do not compete with each other.
+      unawaited(_requestFirstLaunchPermissions());
     });
+  }
+
+  Future<void> _requestFirstLaunchPermissions() async {
+    await LocationPermissionService.requestOnFirstLaunch();
+    await PushService.requestPermissionOnFirstLaunch();
   }
 
   @override

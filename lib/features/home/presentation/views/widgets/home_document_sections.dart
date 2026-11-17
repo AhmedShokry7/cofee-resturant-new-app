@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/preview/preview_section.dart';
+import 'package:new_coffee/core/theme/typography.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
@@ -8,6 +10,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_categor
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_recommendations_section.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/design_section_chrome.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/design_sections.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_search_bar.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
@@ -51,60 +54,161 @@ bool _isFreeContent(String type) => switch (type) {
 /// مكوّنات الشاشة لا أنها تُستبدل برسوم.
 ///
 /// null كذلك حين أخفى الموظف القسم: الإخفاء قرار ظاهر على الشاشة لا يحجز مكانه.
+///
+/// كل قسم يُغلَّف بـ [DesignSectionChrome]: كل خصائصه المقاسة (العرض،
+/// الحواف، الخلفية، الحدّ، الزوايا، الظلّ، الشفافية) تمرّ من مستند التصميم
+/// إلى التطبيق كما كتبها الموظف، وغيابها يترك القسم كما كان.
 Widget? buildHomeDocumentSection(PublishedSection section) {
   if (!section.visible) return null;
-  switch (section.type) {
-    case DesignWidgetTypes.header:
-      return const HomeSection(child: HomeHeader());
-    case DesignWidgetTypes.searchBar:
-      return const HomeSection(child: HomeSearchBar());
-    case DesignWidgetTypes.bannerCarousel:
-      // شريط البانيرات يملك حشوه بنفسه، كما في ترتيب اليوم.
-      return const HomeBannerSection();
-    case DesignWidgetTypes.categoryList:
-      return const HomeSection(child: HomeCategoriesSection());
-    case DesignWidgetTypes.promoBanner:
-      return const HomeSection(child: HomeSingleBannerSection());
-    case DesignWidgetTypes.bundleList:
-      return const HomeSection(child: HomeBundlesSection());
-    case DesignWidgetTypes.productStrip:
-      return _productStrip(section.dataSource);
-    case DesignWidgetTypes.productGrid:
+  final Widget? native = switch (section.type) {
+    DesignWidgetTypes.header => HomeSection(
+      child: HomeHeader(
+        greeting: section.localizedText('greeting')?.trim().isNotEmpty == true
+            ? section.localizedText('greeting')!.trim()
+            : null,
+        question:
+            section.localizedText('question')?.trim().isNotEmpty == true
+            ? section.localizedText('question')!.trim()
+            : null,
+        showGreeting: section.flagProperty('showGreeting', fallback: true),
+        showLoyaltyPill: section.flagProperty(
+          'showLoyaltyPill',
+          fallback: true,
+        ),
+        showNotification: section.flagProperty(
+          'showNotification',
+          fallback: true,
+        ),
+      ),
+    ),
+    DesignWidgetTypes.searchBar => HomeSection(
+      child: HomeSearchBar(
+        hintText: section.localizedText('hint')?.trim().isNotEmpty == true
+            ? section.localizedText('hint')!.trim()
+            : null,
+      ),
+    ),
+    DesignWidgetTypes.bannerCarousel =>
+      // شريط البانيرات يملك حشوه بنفسه، كما في ترتيب اليوم. المفتاح يُعيد
+      // بناء الشريط عند تغيّر `autoplay` فلا يبقى المؤقت قديمًا.
+      HomeBannerSection(
+        key: ValueKey('banner_${section.id}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}'),
+        autoplay: section.flagProperty('autoplay', fallback: true),
+        height: section.numberProperty('height'),
+        radius: _radius(section.property('radius')),
+        showDots: section.flagProperty('showDots', fallback: true),
+      ),
+    DesignWidgetTypes.categoryList => HomeSection(
+      child: HomeCategoriesSection(
+        title: _localizedTitle(section),
+        showTitle: section.flagProperty('showTitle', fallback: true),
+        titleStyle: _titleStyle(section),
+      ),
+    ),
+    DesignWidgetTypes.promoBanner => HomeSection(
+      child: HomeSingleBannerSection(
+        bannerIndex: section.numberProperty('bannerIndex')?.round() ?? 1,
+        height: section.numberProperty('height'),
+        radius: _radius(section.property('radius')),
+      ),
+    ),
+    DesignWidgetTypes.bundleList => HomeSection(
+      child: HomeBundlesSection(
+        title: _localizedTitle(section),
+        showTitle: section.flagProperty('showTitle', fallback: true),
+        titleStyle: _titleStyle(section),
+      ),
+    ),
+    DesignWidgetTypes.productStrip => _productStrip(section),
+    DesignWidgetTypes.productGrid =>
       // شبكة المنتجات ترسم عارية مثل المحتوى الحر، فتُغلّف أعلى الصفحة
       // أو يحشوها عمودها بـ inset.
-      return DesignSectionRenderers.build(section);
-    case DesignWidgetTypes.column:
+      DesignSectionRenderers.build(section),
+    DesignWidgetTypes.column =>
       // العمود يحشو نفسه بخاصيته `inset` (افتراض الأدمن md)، وابناه
       // يبنون بنفس دالة رسم الأقسام فتتكرر الأعمدة داخل أعمدة بلا شكل
       // خاص، وابن حقيقي (شريط بانر) يبقى بنفس تخطيطه.
-      return DesignSectionRenderers.column(
+      DesignSectionRenderers.column(
         section,
         childBuilder: buildHomeDocumentSection,
-      );
-    case DesignWidgetTypes.text:
-    case DesignWidgetTypes.heading:
-    case DesignWidgetTypes.button:
-    case DesignWidgetTypes.image:
-    case DesignWidgetTypes.divider:
-    case DesignWidgetTypes.spacer:
+      ),
+    DesignWidgetTypes.row => DesignSectionRenderers.build(section),
+    DesignWidgetTypes.text ||
+    DesignWidgetTypes.heading ||
+    DesignWidgetTypes.button ||
+    DesignWidgetTypes.image ||
+    DesignWidgetTypes.divider ||
+    DesignWidgetTypes.spacer =>
       // عارية: الحشو قرار من يجمعها. في أعلى الصفحة يغلّفها
       // buildHomeDocumentSections، وابن عمود يحشوها عموده بـ inset.
-      return DesignSectionRenderers.build(section);
-    default:
-      return null;
-  }
+      DesignSectionRenderers.build(section),
+    _ => null,
+  };
+  if (native == null) return null;
+  return DesignSectionChrome(section: section, child: native);
 }
 
 /// العقدتان «الأكثر طلبًا» و«ترشيحات لك» نوع واحد في المستند، والفصل بمصدر
 /// البيانات وحده. مصدر لا يعرفه الهاتف لا يُختار له شريط: تخمين أحدهما يخلط
 /// ترشيحات الزبون بصفّ الأكثر مبيعًا.
-Widget? _productStrip(String? dataSource) {
-  switch (dataSource) {
+String? _localizedTitle(PublishedSection section) =>
+    section.localizedText('title');
+
+Widget? _productStrip(PublishedSection section) {
+  final maxItems = section.numberProperty('maxItems')?.round() ?? 10;
+  final showPrice = section.flagProperty('showPrice', fallback: true);
+  final showViewMore = section.flagProperty('showViewMore', fallback: true);
+  switch (section.dataSource) {
     case DesignDataSources.featured:
-      return const HomeSection(child: HomePopularSection());
+      return HomeSection(
+        child: HomePopularSection(
+          title: _localizedTitle(section),
+          maxItems: maxItems,
+          showPrice: showPrice,
+          showViewMore: showViewMore,
+          titleStyle: _titleStyle(section),
+        ),
+      );
     case DesignDataSources.recommendations:
-      return const HomeSection(child: HomeRecommendationsSection());
+      return HomeSection(
+        child: HomeRecommendationsSection(
+          title: _localizedTitle(section),
+          maxItems: maxItems,
+          showPrice: showPrice,
+          showViewMore: showViewMore,
+          titleStyle: _titleStyle(section),
+        ),
+      );
     default:
       return null;
   }
 }
+
+/// نمط العنوان من مستند التصميم؛ الغائب يعني نمط القسم كما كان.
+TextStyle? _titleStyle(PublishedSection section) {
+  final size = section.numberProperty('titleSize');
+  final color = _hexColor(section.property('titleColor'));
+  if (size == null && color == null) return null;
+  return TextStyle(
+    fontSize: size ?? 18,
+    fontWeight: FontWeight.w600,
+    color: color,
+  );
+}
+
+Color? _hexColor(String? hex) {
+  if (hex == null || hex.isEmpty) return null;
+  final value = int.tryParse(hex.replaceFirst('#', ''), radix: 16);
+  if (value == null) return null;
+  return hex.replaceFirst('#', '').length == 8
+      ? Color(value)
+      : Color(0xFF000000 | value);
+}
+
+double _radius(String? token) => switch (token) {
+  'sm' => AppRadius.r8,
+  'md' => AppRadius.r12,
+  'lg' => AppRadius.r16,
+  'full' => AppRadius.pill,
+  _ => AppRadius.none,
+};

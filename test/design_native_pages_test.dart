@@ -350,6 +350,7 @@ void main() {
       ]);
 
       expect(settings.imageUrl, 'https://cdn.example.com/splash.png');
+      expect(settings.imageVisible, isTrue);
       expect(settings.imageFit, 'cover');
       expect(settings.imageAlignment, 'bottomRight');
       expect(settings.verticalAlignment, 'top');
@@ -371,6 +372,7 @@ void main() {
 
       expect(settings.visible, isTrue);
       expect(settings.imageUrl, isNull);
+      expect(settings.imageVisible, isTrue);
       expect(settings.text, isNull);
       expect(settings.backgroundColor, '#FFFFFF');
       expect(settings.duration, const Duration(milliseconds: 1000));
@@ -403,6 +405,25 @@ void main() {
       expect(settings.duration, const Duration(seconds: 30));
       expect(settings.animation, 'fadeScale');
       expect(settings.animationDuration, Duration.zero);
+    });
+
+    test('image visibility is independent from splash text and timing', () {
+      final settings = SplashSettings.fromSections(const [
+        PublishedSection(
+          id: 'splash',
+          type: 'splash.settings',
+          properties: {
+            'imageVisible': false,
+            'text_ar': 'أهلاً',
+            'durationMs': 2500,
+          },
+        ),
+      ]);
+
+      expect(settings.imageVisible, isFalse);
+      expect(settings.visible, isTrue);
+      expect(settings.text, 'أهلاً');
+      expect(settings.duration, const Duration(milliseconds: 2500));
     });
 
     test('hiding the settings node hides the splash content explicitly', () {

@@ -16,7 +16,23 @@ import 'package:new_coffee/shared/utils/optional_provider.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeHeader extends StatelessWidget {
-  const HomeHeader({super.key});
+  const HomeHeader({
+    super.key,
+    this.greeting,
+    this.question,
+    this.showGreeting = true,
+    this.showLoyaltyPill = true,
+    this.showNotification = true,
+  });
+
+  /// نص تحية بديل من مستند التصميم؛ الغائب يعني التحية المحسوبة.
+  final String? greeting;
+
+  /// سؤال بديل من مستند التصميم؛ الغائب يعني نص التطبيق.
+  final String? question;
+  final bool showGreeting;
+  final bool showLoyaltyPill;
+  final bool showNotification;
 
   @override
   Widget build(BuildContext context) {
@@ -28,12 +44,14 @@ class HomeHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (showGreeting)
               BlocBuilder<CurrentUserCubit, CurrentUserState>(
                 builder: (context, state) {
                   final first = firstNameOf(state.name);
-                  final greeting = first == null
-                      ? getGreeting(now)
-                      : '${getGreeting(now)}, $first';
+                  final greeting = this.greeting ??
+                      (first == null
+                          ? getGreeting(now)
+                          : '${getGreeting(now)}, $first');
                   return Row(
                     children: [
                       Flexible(
@@ -56,11 +74,13 @@ class HomeHeader extends StatelessWidget {
                 },
               ),
               SizedBox(height: AppSpacing.xs),
-              Text(S.homeQuestion, style: AppFonts.semiBold20(context)),
+              Text(question ?? S.homeQuestion,
+                  style: AppFonts.semiBold20(context)),
             ],
           ),
         ),
-        SizedBox(width: AppSpacing.sm),
+        if (showLoyaltyPill) ...[
+          SizedBox(width: AppSpacing.sm),
         // The wallet as a live pill, not a mute gift glyph: the balance is the
         // one number that makes the customer tap, and the pill is the same
         // height as the bell beside it so the header stays one line.
@@ -83,7 +103,9 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
         ),
-        SizedBox(width: AppSpacing.sm),
+        ],
+        if (showNotification) ...[
+          SizedBox(width: AppSpacing.sm),
         Semantics(
           button: true,
           label: S.notifications,
@@ -107,6 +129,7 @@ class HomeHeader extends StatelessWidget {
             ),
           ),
         ),
+        ],
       ],
     );
   }

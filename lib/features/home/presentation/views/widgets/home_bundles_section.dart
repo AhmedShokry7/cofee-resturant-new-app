@@ -13,7 +13,16 @@ import 'package:new_coffee/shared/widgets/price_label.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 
 class HomeBundlesSection extends StatelessWidget {
-  const HomeBundlesSection({super.key});
+  const HomeBundlesSection({
+    super.key,
+    this.title,
+    this.showTitle = true,
+    this.titleStyle,
+  });
+
+  final String? title;
+  final bool showTitle;
+  final TextStyle? titleStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +31,11 @@ class HomeBundlesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        HomeSectionTitle(title: S.bundles),
+        if (showTitle)
+        HomeSectionTitle(
+          title: title?.trim().isNotEmpty == true ? title!.trim() : S.bundles,
+          titleStyle: titleStyle,
+        ),
         SizedBox(height: AppSpacing.sm),
         SizedBox(
           height: AppDimensions.bundleSectionHeight,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/constants/app_images.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -159,7 +161,7 @@ class NativeDesignPreview extends StatelessWidget {
     Map<String, List<EditableComponent>> byParent,
   ) {
     if (component.properties['visible'] == false) return null;
-    final Widget? content;
+    Widget? content;
     switch (component.componentType) {
       case 'header':
         content = _header(component);
@@ -218,6 +220,11 @@ class NativeDesignPreview extends StatelessWidget {
       default:
         return null;
     }
+    if (content == null) return null;
+    
+    // Apply DesignSectionChrome-like styling to all components
+    content = _applyChrome(component, content);
+    
     final selected = component.componentId == selectedComponentId;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -385,7 +392,11 @@ class NativeDesignPreview extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       _sectionTitle(
-        c.property('title'),
+        _locOr(
+          c,
+          'title',
+          AppLocale.instance.isArabic ? 'التصنيفات' : 'Categories',
+        ),
         show: c.properties['showTitle'] as bool? ?? true,
       ),
       SizedBox(
@@ -477,7 +488,16 @@ class NativeDesignPreview extends StatelessWidget {
   Widget _productStrip(EditableComponent c) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      _sectionTitle(c.property('title'), show: true),
+      _sectionTitle(
+        _locOr(
+          c,
+          'title',
+          c.property('dataSource') == 'recommendations'
+              ? (AppLocale.instance.isArabic ? 'ترشيحات لك' : 'Recommendations')
+              : (AppLocale.instance.isArabic ? 'الأكثر طلبًا' : 'Popular'),
+        ),
+        show: true,
+      ),
       SizedBox(
         height: 150,
         child: ListView.separated(
@@ -504,7 +524,7 @@ class NativeDesignPreview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle(c.property('title'), show: true),
+        _sectionTitle(_loc(c, 'title'), show: true),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
           child: Column(
@@ -546,7 +566,11 @@ class NativeDesignPreview extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle(
-          c.property('title'),
+          _locOr(
+            c,
+            'title',
+            AppLocale.instance.isArabic ? 'الباقات' : 'Bundles',
+          ),
           show: c.properties['showTitle'] as bool? ?? true,
         ),
         SizedBox(
@@ -820,13 +844,20 @@ class NativeDesignPreview extends StatelessWidget {
     return null;
   }
 
-  /// نصّ ثنائي اللغة للمعاينة: العربي أولًا ثم الإنجليزي ثم الاسم الأحادي
-  /// القديم — كما يقرؤه العميل بسقوطه من لغة الواجهة إلى الأخرى فقط.
+  String _locOr(EditableComponent c, String base, String fallback) {
+    final value = _loc(c, base);
+    return value.isEmpty ? fallback : value;
+  }
+
+  /// نصّ ثنائي اللغة للمعاينة: لغة واجهة العميل أولًا، ثم الأخرى،
+  /// ثم الاسم الأحادي القديم، كما يقرؤه تطبيق العميل.
   String _loc(EditableComponent c, String base) {
     String read(String key) => ((c.properties[key] as String?) ?? '').trim();
-    final preferred = read('${base}_ar');
+    final preferred = read(
+      '${base}_${AppLocale.instance.isArabic ? 'ar' : 'en'}',
+    );
     if (preferred.isNotEmpty) return preferred;
-    final other = read('${base}_en');
+    final other = read('${base}_${AppLocale.instance.isArabic ? 'en' : 'ar'}');
     if (other.isNotEmpty) return other;
     return read(base);
   }
@@ -870,12 +901,19 @@ class NativeDesignPreview extends StatelessWidget {
       _ => MainAxisAlignment.center,
     };
     final image = url.isEmpty
-        ? Container(
+        ? Image.asset(
+            AppImages.logo,
             width: imageWidth ?? 140,
             height: imageHeight,
-            alignment: Alignment.center,
-            color: _surface,
-            child: Icon(AppIcons.image01, size: 30, color: _textSecondary),
+            fit: fit,
+            alignment: alignment,
+            errorBuilder: (_, _, _) => Container(
+              width: imageWidth ?? 140,
+              height: imageHeight,
+              alignment: Alignment.center,
+              color: _surface,
+              child: Icon(AppIcons.image01, size: 30, color: _textSecondary),
+            ),
           )
         : Image.network(
             url,
@@ -900,9 +938,14 @@ class NativeDesignPreview extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisAlignment: verticalAlignment,
         children: [
-          Align(alignment: alignment, child: image),
+          if (c.properties['imageVisible'] as bool? ?? true)
+            Align(alignment: alignment, child: image),
           if (text.isNotEmpty) ...[
-            SizedBox(height: imageGap),
+            SizedBox(
+              height: c.properties['imageVisible'] as bool? ?? true
+                  ? imageGap
+                  : 0,
+            ),
             Text(
               text,
               textAlign: textAlignment,
@@ -1225,6 +1268,159 @@ class NativeDesignPreview extends StatelessWidget {
         children: rendered,
       ),
     );
+  }
+
+  Color? _hexColor(String? hex) {
+    if (hex == null || hex.isEmpty) return null;
+    final trimmed = hex.trim();
+    final value = int.tryParse(trimmed.replaceFirst('#', ''), radix: 16);
+    if (value == null) return null;
+    return trimmed.replaceFirst('#', '').length == 8
+        ? Color(value)
+        : Color(0xFF000000 | value);
+  }
+
+  /// يطبق خصائص Chrome (التخطيط والمظهر) على عنصر، مطابقًا لـ DesignSectionChrome.
+  Widget _applyChrome(EditableComponent c, Widget child) {
+    Widget current = child;
+    final needsChrome = _needsChrome(c);
+    if (!needsChrome) return current;
+
+    // Opacity first
+    final opacity = _numProp(c, 'opacity');
+    if (opacity != null && opacity >= 0 && opacity <= 1) {
+      current = Opacity(opacity: opacity, child: current);
+    }
+
+    // Aspect ratio
+    final aspectRatio = _numProp(c, 'aspectRatio');
+    if (aspectRatio != null && aspectRatio > 0) {
+      current = AspectRatio(aspectRatio: aspectRatio, child: current);
+    }
+
+    // Padding
+    final padLeft = _numProp(c, 'padLeft');
+    final padRight = _numProp(c, 'padRight');
+    final padTop = _numProp(c, 'padTop');
+    final padBottom = _numProp(c, 'padBottom');
+    if (padLeft != null || padRight != null || padTop != null || padBottom != null) {
+      current = Padding(
+        padding: EdgeInsets.only(
+          left: padLeft ?? 0,
+          right: padRight ?? 0,
+          top: padTop ?? 0,
+          bottom: padBottom ?? 0,
+        ),
+        child: current,
+      );
+    }
+
+    // Background, border, radius, shadow
+    final background = _hexColor(c.property('backgroundColor'));
+    final borderColor = _hexColor(c.property('borderColor'));
+    final borderWidth = _numProp(c, 'borderWidth');
+    final hasRadius = c.properties.containsKey('radiusTL') ||
+        c.properties.containsKey('radiusTR') ||
+        c.properties.containsKey('radiusBL') ||
+        c.properties.containsKey('radiusBR');
+    final hasShadow = c.properties.containsKey('shadowColor');
+    if (background != null || borderColor != null || hasRadius || hasShadow) {
+      final tl = _numProp(c, 'radiusTL') ?? 0;
+      final tr = _numProp(c, 'radiusTR') ?? 0;
+      final bl = _numProp(c, 'radiusBL') ?? 0;
+      final br = _numProp(c, 'radiusBR') ?? 0;
+      final radius = BorderRadius.only(
+        topLeft: Radius.circular(tl),
+        topRight: Radius.circular(tr),
+        bottomLeft: Radius.circular(bl),
+        bottomRight: Radius.circular(br),
+      );
+      final shadowColor = _hexColor(c.property('shadowColor'));
+      final decoration = BoxDecoration(
+        color: background,
+        borderRadius: radius,
+        border: (borderColor != null || borderWidth != null)
+            ? Border.all(
+                color: borderColor ?? const Color(0xFF000000),
+                width: borderWidth ?? 1,
+              )
+            : null,
+        boxShadow: shadowColor == null
+            ? null
+            : [
+                BoxShadow(
+                  color: shadowColor,
+                  offset: Offset(
+                    _numProp(c, 'shadowOffsetX') ?? 0,
+                    _numProp(c, 'shadowOffsetY') ?? 2,
+                  ),
+                  blurRadius: _numProp(c, 'shadowBlur') ?? 8,
+                ),
+              ],
+      );
+      current = DecoratedBox(decoration: decoration, child: current);
+      if (hasRadius || borderColor != null || borderWidth != null) {
+        current = ClipRRect(borderRadius: radius, child: current);
+      }
+    }
+
+    // Width/height constraints (structural height components handle height differently)
+    final structuralHeight = c.componentType == 'bannerCarousel' ||
+        c.componentType == 'promoBanner';
+    final width = _numProp(c, 'width');
+    final height = structuralHeight ? null : _numProp(c, 'height');
+    final minWidth = _numProp(c, 'minWidth');
+    final maxWidth = _numProp(c, 'maxWidth');
+    final minHeight = _numProp(c, 'minHeight');
+    final maxHeight = _numProp(c, 'maxHeight');
+    if (width != null || height != null || minWidth != null || maxWidth != null || minHeight != null || maxHeight != null) {
+      current = ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: minWidth ?? 0,
+          maxWidth: maxWidth ?? double.infinity,
+          minHeight: minHeight ?? 0,
+          maxHeight: maxHeight ?? double.infinity,
+        ),
+        child: SizedBox(width: width, height: height, child: current),
+      );
+    }
+
+    // Margin (applied last, outside everything)
+    final mLeft = _numProp(c, 'marginLeft');
+    final mRight = _numProp(c, 'marginRight');
+    final mTop = _numProp(c, 'marginTop');
+    final mBottom = _numProp(c, 'marginBottom');
+    if (mLeft != null || mRight != null || mTop != null || mBottom != null) {
+      current = Padding(
+        padding: EdgeInsets.only(
+          left: mLeft ?? 0,
+          right: mRight ?? 0,
+          top: mTop ?? 0,
+          bottom: mBottom ?? 0,
+        ),
+        child: current,
+      );
+    }
+    return current;
+  }
+
+  bool _needsChrome(EditableComponent c) {
+    const keys = [
+      'width', 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
+      'padTop', 'padBottom', 'padLeft', 'padRight',
+      'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
+      'backgroundColor', 'borderColor', 'borderWidth',
+      'radiusTL', 'radiusTR', 'radiusBL', 'radiusBR',
+      'shadowColor', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur',
+      'opacity', 'aspectRatio',
+    ];
+    for (final key in keys) {
+      final value = c.properties[key];
+      if (value is num || (value is String && value.trim().isNotEmpty)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // ---------------------------------------------------------------- أدوات

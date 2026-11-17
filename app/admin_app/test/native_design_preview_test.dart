@@ -1,3 +1,4 @@
+import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/native_design_preview.dart';
@@ -82,6 +83,90 @@ void main() {
     );
     expect(find.text('ظاهر'), findsNothing);
     expect(find.text('لا توجد أقسام في هذه الصفحة'), findsOneWidget);
+  });
+
+  testWidgets('المعاينة تختار نص العنوان بحسب لغة واجهة التطبيق', (
+    tester,
+  ) async {
+    final previousLanguage = AppLocale.instance.language;
+    addTearDown(() => AppLocale.instance.debugSet(previousLanguage));
+
+    AppLocale.instance.debugSet(AppLanguage.english);
+    await tester.pumpWidget(
+      host([
+        comp(
+          'heading',
+          'heading',
+          properties: {
+            'title_ar': 'العنوان العربي',
+            'title_en': 'English heading',
+          },
+        ),
+        comp(
+          'text',
+          'text',
+          index: 1,
+          properties: {'text_ar': 'النص العربي', 'text_en': 'English body'},
+        ),
+      ]),
+    );
+    expect(find.text('English heading'), findsOneWidget);
+    expect(find.text('English body'), findsOneWidget);
+    expect(find.text('العنوان العربي'), findsNothing);
+
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    await tester.pumpWidget(
+      host([
+        comp(
+          'heading',
+          'heading',
+          properties: {
+            'title_ar': 'العنوان العربي',
+            'title_en': 'English heading',
+          },
+        ),
+        comp(
+          'text',
+          'text',
+          index: 1,
+          properties: {'text_ar': 'النص العربي', 'text_en': 'English body'},
+        ),
+      ]),
+    );
+    expect(find.text('العنوان العربي'), findsOneWidget);
+    expect(find.text('النص العربي'), findsOneWidget);
+    expect(find.text('English heading'), findsNothing);
+  });
+
+  testWidgets('عناوين أقسام المتجر تتبع اللغة وتظهر افتراضيًا', (tester) async {
+    final previousLanguage = AppLocale.instance.language;
+    addTearDown(() => AppLocale.instance.debugSet(previousLanguage));
+
+    AppLocale.instance.debugSet(AppLanguage.english);
+    await tester.pumpWidget(
+      host([
+        comp('categories', 'categoryList'),
+        comp('popular', 'productStrip', index: 1),
+        comp('bundles', 'bundleList', index: 2),
+      ]),
+    );
+    expect(find.text('Categories'), findsOneWidget);
+    expect(find.text('Popular'), findsOneWidget);
+    expect(find.text('Bundles'), findsOneWidget);
+    expect(find.text('التصنيفات'), findsNothing);
+
+    AppLocale.instance.debugSet(AppLanguage.arabic);
+    await tester.pumpWidget(
+      host([
+        comp('categories', 'categoryList'),
+        comp('popular', 'productStrip', index: 1),
+        comp('bundles', 'bundleList', index: 2),
+      ]),
+    );
+    expect(find.text('التصنيفات'), findsOneWidget);
+    expect(find.text('الأكثر طلبًا'), findsOneWidget);
+    expect(find.text('الباقات'), findsOneWidget);
+    expect(find.text('Categories'), findsNothing);
   });
 
   testWidgets('النقر على قسم يحدده', (tester) async {
