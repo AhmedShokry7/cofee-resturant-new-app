@@ -9,6 +9,7 @@ import 'package:new_coffee/core/navigation/app_route_generator.dart';
 import 'package:new_coffee/core/navigation/app_routes.dart';
 import 'package:new_coffee/core/theme/app_color.dart';
 import 'package:new_coffee/core/theme/motion_tokens.dart';
+import 'package:new_coffee/features/design/data/design_preview_store.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/data/repositories/design_repository.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
@@ -28,6 +29,25 @@ class _DeferredDesignRepository implements DesignRepository {
 
   @override
   Future<PublishedDesign?> lastKnown() async => null;
+}
+
+/// Like the real repository, this honours the admin preview store before the
+/// fallback document. A plain [FakeDesignRepository] cannot model editor pushes.
+class _PreviewAwareDesignRepository implements DesignRepository {
+  final FakeDesignRepository _fallback = FakeDesignRepository(null);
+
+  @override
+  Future<PublishedDesign?> published({bool forceRefresh = false}) async {
+    final override = DesignPreviewStore.instance.document;
+    if (override != null) {
+      final previewed = PublishedDesign.fromJson(override);
+      if (previewed != null) return previewed;
+    }
+    return _fallback.published(forceRefresh: forceRefresh);
+  }
+
+  @override
+  Future<PublishedDesign?> lastKnown() => _fallback.lastKnown();
 }
 
 /// Mirrors app.dart: the entry route is the splash, and the destination pages
@@ -112,8 +132,8 @@ void main() {
 
     // Matched by ancestry: the framework puts its own Transform widgets in the
     // tree, so an unscoped finder is ambiguous. The entrance wrapper is the
-    // nearest Transform above the logo itself (the BlocBuilder sits between
-    // them, so child matching no longer works).
+    // nearest Transform above the logo itself (framework transforms sit
+    // between them, so child matching no longer works).
     double scale() => tester
         .widgetList<Transform>(
           find.ancestor(
@@ -219,9 +239,72 @@ void main() {
     final text = tester.widget<Text>(find.text('أهلاً بك'));
     expect(text.textAlign, TextAlign.end);
     expect(text.style?.fontSize, 20);
+    expect(text.style?.color, const Color(0xFF123456));
     final background = tester.widget<Scaffold>(find.byType(Scaffold).first);
     expect(background.backgroundColor, const Color(0xFFABCDEF));
   });
+
+  testWidgets(
+    'a pushed editor document repaints the splash without publishing',
+    (tester) async {
+      addTearDown(() => DesignPreviewStore.instance.setDocument(null));
+      final cubit = DesignCubit(repository: _PreviewAwareDesignRepository());
+      addTearDown(cubit.close);
+      await _pumpSplash(tester, const Size(360, 690), cubit: cubit);
+      await tester.pump();
+
+      Future<void> pushDocument(String url, String color) async {
+        DesignPreviewStore.instance.setDocument({
+          'schema_version': 2,
+          'pages': [
+            {
+              'page': 'splash',
+              'root': {
+                'id': 'root_splash',
+                'type': DesignWidgetTypes.pageHome,
+                'children': [
+                  {
+                    'id': 'splash_settings',
+                    'type': DesignWidgetTypes.splashSettings,
+                    'visible': true,
+                    'properties': {
+                      'imageUrl': url,
+                      'backgroundColor': color,
+                      'durationMs': 5000,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        });
+        await cubit.load(forceRefresh: true);
+        await tester.pump();
+      }
+
+      await pushDocument('https://cdn.example.com/first.png', '#112233');
+      expect(
+        tester.widget<DbImage>(find.byType(DbImage)).image,
+        'https://cdn.example.com/first.png',
+      );
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+        const Color(0xFF112233),
+      );
+
+      await pushDocument('https://cdn.example.com/second.png', '#445566');
+      expect(
+        tester.widget<DbImage>(find.byType(DbImage)).image,
+        'https://cdn.example.com/second.png',
+        reason: 'تغيير صورة الافتتاحية في المعاينة يجب أن يستبدل الصورة',
+      );
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold).first).backgroundColor,
+        const Color(0xFF445566),
+        reason: 'تغيير لون الافتتاحية في المعاينة يجب أن يُعاد رسمه',
+      );
+    },
+  );
 
   testWidgets('a published hidden splash image keeps its text visible', (
     tester,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/constants/app_images.dart';
@@ -12,6 +13,14 @@ import 'package:admin_app/features/visual_editor/domain/component_registry.dart'
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 
+// نفس أبعاد العرض التلقائي في معاينة المحرر وشاشة الافتتاحية عند الزبون.
+// تُستخدم لعرض القيمة الفعّالة في الحقل حين تكون الخاصية متروكة على «تلقائي».
+const double _splashWidthRatio = 0.66;
+const double _splashMinWidth = 160;
+const double _splashMaxWidth = 320;
+const double _splashAssetWidth = 1024;
+const double _splashAssetHeight = 827;
+
 /// لوحة خصائص المكوّن المحدد.
 ///
 /// تعرض الخصائص القابلة للتحرير بحسب نوعها (نص، لون، رقم، اختيار...)
@@ -24,6 +33,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
     required this.onResetProperty,
     this.onPickImage,
     this.onBrowseImages,
+    this.showHeader = true,
   });
 
   final EditableComponent component;
@@ -40,6 +50,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
   onResetProperty;
   final Future<String?> Function()? onPickImage;
   final Future<String?> Function()? onBrowseImages;
+  final bool showHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +72,10 @@ class PropertiesInspectorPanel extends StatelessWidget {
     // نعرضها كحقول نصية خام حتى يمكن التعديل عليها
     final knownKeys = editableProps.keys.toSet()..add('visible');
     final extraProps = component.properties.entries
-        .where((e) => !knownKeys.contains(e.key) && e.value is! Map && e.value is! List)
+        .where(
+          (e) =>
+              !knownKeys.contains(e.key) && e.value is! Map && e.value is! List,
+        )
         .toList();
 
     final hasContent = editableProps.isNotEmpty || extraProps.isNotEmpty;
@@ -74,97 +88,57 @@ class PropertiesInspectorPanel extends StatelessWidget {
           color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _InspectorHeader(component: component, entry: entry),
-          const Divider(height: 1),
-          Expanded(
-            child: !hasContent
-                ? AdminEmptyState(
-                    icon: AppIcons.settings01,
-                    message: S.visualEditorNoEditableProperties,
-                  )
-                : ListView(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    children: [
-                      // خصائص السجل المجمّعة
-                      for (final groupKey in grouped.keys)
-                        _PropertyGroup(
-                          groupLabel: groupKey,
-                          fields: _pairBilingualFields(grouped[groupKey]!),
-                          component: component,
-                          onChanged: onPropertyChanged,
-                          onReset: onResetProperty,
-                          onPickImage: onPickImage,
-                          onBrowseImages: onBrowseImages,
-                        ),
-                      // خصائص إضافية (غير مسجلة)
-                      if (extraProps.isNotEmpty) ...[
-                        const SizedBox(height: AppSpacing.xs),
-                        _ExtraPropsGroup(
-                          props: extraProps,
-                          componentId: component.componentId,
-                          onChanged: onPropertyChanged,
-                          dark: dark,
-                        ),
-                      ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isUnbounded = constraints.maxHeight.isInfinite;
+          final content = !hasContent
+              ? AdminEmptyState(
+                  icon: AppIcons.settings01,
+                  message: S.visualEditorNoEditableProperties,
+                )
+              : ListView(
+                  shrinkWrap: isUnbounded,
+                  physics: isUnbounded
+                      ? const NeverScrollableScrollPhysics()
+                      : null,
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  children: [
+                    // خصائص السجل المجمّعة
+                    for (final groupKey in grouped.keys)
+                      _PropertyGroup(
+                        groupLabel: groupKey,
+                        fields: _pairBilingualFields(grouped[groupKey]!),
+                        component: component,
+                        onChanged: onPropertyChanged,
+                        onReset: onResetProperty,
+                        onPickImage: onPickImage,
+                        onBrowseImages: onBrowseImages,
+                      ),
+                    // خصائص إضافية (غير مسجلة)
+                    if (extraProps.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      _ExtraPropsGroup(
+                        props: extraProps,
+                        componentId: component.componentId,
+                        onChanged: onPropertyChanged,
+                        dark: dark,
+                      ),
                     ],
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+                  ],
+                );
 
-// ─────────────── زر الظهور / الإخفاء السريع ───────────────
-
-class _VisibilityToggle extends StatelessWidget {
-  const _VisibilityToggle({
-    required this.isVisible,
-    required this.onChanged,
-    required this.dark,
-  });
-
-  final bool isVisible;
-  final ValueChanged<bool> onChanged;
-  final bool dark;
-
-  @override
-  Widget build(BuildContext context) {
-    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
-    final body = dark ? AppColor.darkText : AppColor.adminBody;
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs + 2,
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-            size: 15,
-            color: isVisible ? const Color(0xFF5A6A3A) : muted,
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              'الظهور في التطبيق',
-              style: TextStyle(
-                fontSize: 11.5,
-                fontWeight: AppFontWeights.medium,
-                color: body,
-              ),
-            ),
-          ),
-          Switch.adaptive(
-            value: isVisible,
-            onChanged: onChanged,
-            activeTrackColor: const Color(0xFF5A6A3A),
-            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ],
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: isUnbounded ? MainAxisSize.min : MainAxisSize.max,
+            children: [
+              if (showHeader) ...[
+                _InspectorHeader(component: component, entry: entry),
+                const Divider(height: 1),
+              ],
+              if (isUnbounded) content else Expanded(child: content),
+            ],
+          );
+        },
       ),
     );
   }
@@ -186,7 +160,8 @@ class _ExtraPropsGroup extends StatelessWidget {
     required String componentId,
     required String propertyKey,
     required dynamic value,
-  }) onChanged;
+  })
+  onChanged;
   final bool dark;
 
   @override
@@ -254,7 +229,8 @@ class _ExtraPropField extends StatefulWidget {
     required String componentId,
     required String propertyKey,
     required dynamic value,
-  }) onChanged;
+  })
+  onChanged;
   final bool dark;
 
   @override
@@ -298,7 +274,7 @@ class _ExtraPropFieldState extends State<_ExtraPropField> {
           propertyKey: widget.propKey,
           value: v,
         ),
-        activeColor: const Color(0xFF5A6A3A),
+        activeThumbColor: const Color(0xFF5A6A3A),
       );
     }
     // رقمي
@@ -317,7 +293,10 @@ class _ExtraPropFieldState extends State<_ExtraPropField> {
           }
         },
         decoration: _inputDecoration(widget.dark),
-        style: TextStyle(fontSize: 12, color: widget.dark ? AppColor.darkText : AppColor.adminBody),
+        style: TextStyle(
+          fontSize: 12,
+          color: widget.dark ? AppColor.darkText : AppColor.adminBody,
+        ),
       );
     }
     // نصي
@@ -329,7 +308,10 @@ class _ExtraPropFieldState extends State<_ExtraPropField> {
         value: v,
       ),
       decoration: _inputDecoration(widget.dark),
-      style: TextStyle(fontSize: 12, color: widget.dark ? AppColor.darkText : AppColor.adminBody),
+      style: TextStyle(
+        fontSize: 12,
+        color: widget.dark ? AppColor.darkText : AppColor.adminBody,
+      ),
     );
   }
 
@@ -665,7 +647,44 @@ class _PropertyField extends StatelessWidget {
     );
   }
 
+  /// القيمة المعروضة في حقل رقمي: المخزّنة إن وُجدت، وإلا القيمة التي يستخدمها
+  /// الرسم فعليًا. بهذا تظهر أبعاد الافتتاحية التلقائية بدل حقل فارغ، ويبقى
+  /// الحفظ صريحًا عند أول تعديل للموظف.
+  dynamic _effectiveNumberValue(BuildContext context) {
+    if (currentValue != null || componentType != 'splashSettings') {
+      return currentValue;
+    }
+    final size = MediaQuery.maybeSizeOf(context);
+    if (size == null) return null;
+    final defaultWidth = (size.shortestSide * _splashWidthRatio).clamp(
+      _splashMinWidth,
+      _splashMaxWidth,
+    );
+    final width = defaultWidth.clamp(40.0, size.shortestSide);
+    final displayWidth = width == width.roundToDouble() ? width.round() : width;
+    return switch (definition.key) {
+      'imageWidth' => displayWidth,
+      'imageHeight' => (width * _splashAssetHeight / _splashAssetWidth).round(),
+      _ => null,
+    };
+  }
+
   Widget _buildInput(BuildContext context) {
+    if (definition.type == PropertyType.color &&
+        componentType == 'splashSettings') {
+      return _SplashColorInput(
+        value:
+            currentValue?.toString() ??
+            definition.defaultValue?.toString() ??
+            '#000000',
+        pickerKey:
+            componentType == 'splashSettings' &&
+                definition.key == 'backgroundColor'
+            ? const ValueKey('splash-color-picker')
+            : ValueKey('color-picker-$componentType-${definition.key}'),
+        onChanged: onChanged,
+      );
+    }
     if (definition.key == 'imageUrl' && componentType == 'splashSettings') {
       return _SplashImageInput(
         value: currentValue?.toString() ?? '',
@@ -692,7 +711,7 @@ class _PropertyField extends StatelessWidget {
         onChanged: onChanged,
       ),
       PropertyType.number || PropertyType.integer => _NumberInput(
-        value: currentValue,
+        value: _effectiveNumberValue(context),
         defaultValue: definition.defaultValue,
         isInteger: definition.type == PropertyType.integer,
         validation: definition.validation,
@@ -703,11 +722,12 @@ class _PropertyField extends StatelessWidget {
             currentValue as bool? ?? definition.defaultValue as bool? ?? false,
         onChanged: onChanged,
       ),
-      PropertyType.color => _ColorInput(
+      PropertyType.color => _SplashColorInput(
         value:
             currentValue?.toString() ??
             definition.defaultValue?.toString() ??
             '#000000',
+        pickerKey: ValueKey('color-picker-$componentType-${definition.key}'),
         onChanged: onChanged,
       ),
       PropertyType.enum_ => _EnumInput(
@@ -829,8 +849,8 @@ class _BilingualPropertyField extends StatefulWidget {
 }
 
 class _BilingualPropertyFieldState extends State<_BilingualPropertyField> {
-  /// الوجه الأول: نص واحد للغتين. الفصل قرار يفتحه الموظف زرًا.
-  bool _separate = false;
+  /// تظهر الترجمتان الحالية معًا حتى لا تُخفى ترجمة عند تحرير النص.
+  bool _separate = true;
 
   String get _arText => widget.arValue?.toString() ?? '';
 
@@ -1104,6 +1124,20 @@ class _NumberInputState extends State<_NumberInput> {
   }
 
   @override
+  void didUpdateWidget(_NumberInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final oldValue = oldWidget.value ?? oldWidget.defaultValue;
+    final newValue = widget.value ?? widget.defaultValue;
+    if (oldValue == newValue) return;
+
+    final currentValue = widget.isInteger
+        ? int.tryParse(_ctrl.text)
+        : double.tryParse(_ctrl.text);
+    if (currentValue == newValue) return;
+    _ctrl.text = newValue?.toString() ?? '';
+  }
+
+  @override
   void dispose() {
     _ctrl.dispose();
     super.dispose();
@@ -1123,7 +1157,9 @@ class _NumberInputState extends State<_NumberInput> {
         fontSize: AppFontSizes.size12,
         color: dark ? AppColor.darkText : AppColor.adminBody,
       ),
-      decoration: _inputDecoration(dark),
+      decoration: _inputDecoration(dark).copyWith(
+        hintText: widget.defaultValue == null ? S.visualEditorAutoValue : null,
+      ),
     );
   }
 }
@@ -1154,35 +1190,77 @@ class _BooleanInput extends StatelessWidget {
   }
 }
 
-class _ColorInput extends StatelessWidget {
+class _ColorInput extends StatefulWidget {
   const _ColorInput({required this.value, required this.onChanged});
 
   final String value;
-  final void Function(String) onChanged;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_ColorInput> createState() => _ColorInputState();
+}
+
+class _ColorInputState extends State<_ColorInput> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_ColorInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && _controller.text != widget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    final color = _parseColor(value);
+    final color = _parseColor(widget.value) ?? Colors.white;
     return Row(
       children: [
-        Container(
-          width: AppSizes.px24,
-          height: AppSizes.px24,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-            border: Border.all(
-              color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
+        Tooltip(
+          message: S.visualEditorColorHint,
+          child: InkWell(
+            key: ValueKey('color-picker-${widget.value}'),
+            onTap: () => _showPicker(context, color),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Container(
+              width: 42,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
+                ),
+              ),
+              child: Icon(
+                AppIcons.paintBrush,
+                size: 18,
+                color: color.computeLuminance() > 0.5
+                    ? AppColor.adminBody
+                    : AppColor.whiteColor,
+              ),
             ),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: TextField(
-            controller: TextEditingController(text: value),
+            controller: _controller,
             onChanged: (v) {
-              if (_parseColor(v) != null) onChanged(v);
+              if (_parseColor(v) != null) widget.onChanged(v);
             },
             style: TextStyle(
               fontSize: AppFontSizes.size12,
@@ -1195,12 +1273,50 @@ class _ColorInput extends StatelessWidget {
     );
   }
 
-  Color? _parseColor(String hex) {
-    final clean = hex.replaceFirst('#', '');
-    final value = int.tryParse(clean, radix: 16);
-    if (value == null) return null;
-    return clean.length == 8 ? Color(value) : Color(0xFF000000 | value);
+  Future<void> _showPicker(BuildContext context, Color initial) async {
+    var selected = initial;
+    final hexController = TextEditingController(text: _splashColorHex(initial));
+    final picked = await showDialog<Color>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          scrollable: true,
+          title: Text(S.visualEditorPickColor),
+          content: ColorPicker(
+            pickerColor: selected,
+            onColorChanged: (color) => setDialogState(() => selected = color),
+            paletteType: PaletteType.hsvWithHue,
+            enableAlpha: true,
+            labelTypes: const [],
+            displayThumbColor: true,
+            portraitOnly: true,
+            colorPickerWidth: 280,
+            pickerAreaHeightPercent: 0.65,
+            hexInputBar: true,
+            hexInputController: hexController,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(S.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(selected),
+              child: Text(S.visualEditorApplyColor),
+            ),
+          ],
+        ),
+      ),
+    );
+    hexController.dispose();
+    if (picked != null) {
+      final hex = _splashColorHex(picked);
+      _controller.text = hex;
+      widget.onChanged(hex);
+    }
   }
+
+  Color? _parseColor(String hex) => _parseSplashColor(hex);
 }
 
 class _EnumInput extends StatelessWidget {
@@ -1264,6 +1380,245 @@ InputDecoration _inputDecoration(bool dark) => InputDecoration(
   filled: true,
   fillColor: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
 );
+
+/// منتقي لون مباشر، مع الإبقاء على حقل HEX للتعديل الدقيق.
+class _SplashColorInput extends StatefulWidget {
+  const _SplashColorInput({
+    required this.value,
+    required this.onChanged,
+    this.pickerKey = const ValueKey('splash-color-picker'),
+  });
+
+  final String value;
+  final ValueChanged<String> onChanged;
+  final Key pickerKey;
+
+  @override
+  State<_SplashColorInput> createState() => _SplashColorInputState();
+}
+
+class _SplashColorInputState extends State<_SplashColorInput> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_SplashColorInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value && _controller.text != widget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = _parseSplashColor(widget.value) ?? Colors.white;
+    return Row(
+      children: [
+        Tooltip(
+          message: S.visualEditorColorHint,
+          child: InkWell(
+            key: widget.pickerKey,
+            onTap: () => _showPicker(context, color),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            child: Container(
+              width: 42,
+              height: 38,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                border: Border.all(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? AppColor.darkBorder
+                      : AppColor.adminCardBorder,
+                ),
+              ),
+              child: Icon(
+                AppIcons.paintBrush,
+                size: 18,
+                color: color.computeLuminance() > 0.5
+                    ? AppColor.adminBody
+                    : AppColor.whiteColor,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: TextField(
+            key: ValueKey('${widget.pickerKey}-hex'),
+            controller: _controller,
+            onChanged: (raw) {
+              final normalized = _normalizeSplashColor(raw);
+              if (normalized != null) widget.onChanged(normalized);
+            },
+            style: TextStyle(
+              fontSize: AppFontSizes.size12,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColor.darkText
+                  : AppColor.adminBody,
+            ),
+            decoration: _inputDecoration(
+              Theme.of(context).brightness == Brightness.dark,
+            ).copyWith(hintText: S.visualEditorColorHint),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showPicker(BuildContext context, Color initial) async {
+    var selected = initial;
+    final hexController = TextEditingController(text: _splashColorHex(initial));
+    final color = await showDialog<Color>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            scrollable: true,
+            title: Text(S.visualEditorPickColor),
+            content: SizedBox(
+              width: 300,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      for (final swatch in _splashColorSwatches)
+                        InkWell(
+                          key: ValueKey(
+                            'splash-swatch-${_splashColorHex(swatch)}',
+                          ),
+                          onTap: () => setDialogState(() {
+                            selected = swatch;
+                            hexController.text = _splashColorHex(swatch);
+                          }),
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: swatch,
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              border: Border.all(
+                                color: selected == swatch
+                                    ? AppColor.adminHeading
+                                    : AppColor.adminCardBorder,
+                                width: selected == swatch ? 2 : 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ColorPicker(
+                    pickerColor: selected,
+                    onColorChanged: (color) => setDialogState(() {
+                      selected = color;
+                      hexController.text = _splashColorHex(color);
+                    }),
+                    paletteType: PaletteType.hsvWithHue,
+                    enableAlpha: true,
+                    labelTypes: const [],
+                    displayThumbColor: true,
+                    portraitOnly: true,
+                    colorPickerWidth: 280,
+                    pickerAreaHeightPercent: 0.65,
+                    hexInputBar: true,
+                    hexInputController: hexController,
+                  ),
+                  Text(
+                    _splashColorHex(selected),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontFeatures: []),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: Text(S.cancel),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(selected),
+                child: Text(S.visualEditorApplyColor),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    hexController.dispose();
+    if (color != null) {
+      final hex = _splashColorHex(color);
+      _controller.text = hex;
+      widget.onChanged(hex);
+    }
+  }
+}
+
+const _splashColorSwatches = <Color>[
+  Color(0xFFFFFFFF),
+  Color(0xFFF5F1E8),
+  Color(0xFFFFE0B2),
+  Color(0xFFFFCCBC),
+  Color(0xFFF8BBD0),
+  Color(0xFFE1BEE7),
+  Color(0xFFD1C4E9),
+  Color(0xFFBBDEFB),
+  Color(0xFFB3E5FC),
+  Color(0xFFB2DFDB),
+  Color(0xFFC8E6C9),
+  Color(0xFFDCEDC8),
+  Color(0xFFFFF9C4),
+  Color(0xFFFFECB3),
+  Color(0xFFECEFF1),
+  Color(0xFFB0BEC5),
+  Color(0xFF78909C),
+  Color(0xFF455A64),
+  Color(0xFF212121),
+  Color(0xFF1A1A1A),
+  Color(0xFF2E7D32),
+  Color(0xFF6D4C41),
+  Color(0xFF1565C0),
+  Color(0xFFC62828),
+];
+
+String _splashColorHex(Color color) {
+  final argb = color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
+  return color.a == 1 ? '#${argb.substring(2)}' : '#$argb';
+}
+
+Color? _parseSplashColor(String raw) {
+  final value = _normalizeSplashColor(raw);
+  if (value == null) return null;
+  final clean = value.substring(1);
+  final parsed = int.tryParse(clean, radix: 16);
+  if (parsed == null) return null;
+  return clean.length == 8 ? Color(parsed) : Color(0xFF000000 | parsed);
+}
+
+String? _normalizeSplashColor(String raw) {
+  final clean = raw.trim().replaceFirst('#', '');
+  if (!RegExp(r'^(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').hasMatch(clean)) {
+    return null;
+  }
+  return '#${clean.toUpperCase()}';
+}
 
 /// حقل صورة شاشة الافتتاحية: معاينة واختيار من المكتبة أو رفع صورة جديدة.
 class _SplashImageInput extends StatefulWidget {

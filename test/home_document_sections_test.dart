@@ -7,6 +7,7 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_document_sections.dart';
+import 'package:new_coffee/features/home/presentation/views/widgets/design_section_chrome.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_header.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_popular_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_recommendations_section.dart';
@@ -20,6 +21,38 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_single_
 /// عامة: فكل عقدة في المستند تُقرأ هنا باسم المكوّن الذي يخرج من القارئ، لا
 /// بشكلها. وعقدة لا يعرفها الهاتف لا تُخترع لها لوحة — تُترك.
 void main() {
+  testWidgets('هوامش الموضع المنشورة تغيّر موضع عنصر شاشة الزبون', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: DesignSectionChrome(
+            section: PublishedSection(
+              id: 'positioned',
+              type: DesignWidgetTypes.text,
+              properties: const {'marginTop': 24, 'marginLeft': 16},
+            ),
+            child: const SizedBox(key: Key('positioned-child')),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.ancestor(
+        of: find.byKey(const Key('positioned-child')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Padding &&
+              widget.padding == const EdgeInsets.only(top: 24, left: 16),
+        ),
+      ),
+      findsOneWidget,
+      reason: 'هوامش المحرر يجب أن تصل إلى غلاف القسم في شاشة الزبون',
+    );
+  });
+
   group('عقدة المنشور إلى مكوّن العميل', () {
     test('كل نوع يعرفه الهاتف يعطي مكوّنه الحقيقي', () {
       const expected = <String, Type>{
@@ -51,8 +84,7 @@ void main() {
         ),
       );
       expect(_rendered(category), HomeCategoriesSection);
-      expect((category as HomeSection).child, isA<HomeCategoriesSection>());
-      expect((category.child as HomeCategoriesSection).title, 'اختياراتنا');
+      expect((_unwrap(category) as HomeCategoriesSection).title, 'اختياراتنا');
 
       final featured = buildHomeDocumentSection(
         PublishedSection(
@@ -62,8 +94,7 @@ void main() {
           properties: const {'title_ar': 'الأكثر مبيعًا'},
         ),
       );
-      expect((featured as HomeSection).child, isA<HomePopularSection>());
-      expect((featured.child as HomePopularSection).title, 'الأكثر مبيعًا');
+      expect((_unwrap(featured) as HomePopularSection).title, 'الأكثر مبيعًا');
 
       final bundles = buildHomeDocumentSection(
         PublishedSection(
@@ -72,8 +103,7 @@ void main() {
           properties: const {'title_en': 'Coffee bundles'},
         ),
       );
-      expect((bundles as HomeSection).child, isA<HomeBundlesSection>());
-      expect((bundles.child as HomeBundlesSection).title, 'Coffee bundles');
+      expect((_unwrap(bundles) as HomeBundlesSection).title, 'Coffee bundles');
     });
 
     test('شريطا المنتجات نوع واحد والفصل بمصدر البيانات وحده', () {
@@ -146,10 +176,11 @@ void main() {
         _section(DesignWidgetTypes.searchBar),
       ]);
 
-      expect(
-        sections.map(_rendered).toList(),
-        <Type>[HomeHeader, HomeRecommendationsSection, HomeSearchBar],
-      );
+      expect(sections.map(_rendered).toList(), <Type>[
+        HomeHeader,
+        HomeRecommendationsSection,
+        HomeSearchBar,
+      ]);
     });
   });
 
@@ -196,8 +227,7 @@ void main() {
         PublishedDesign.fromJson(<String, Object?>{
           'schema_version': 2,
           'pages': <Object?>[],
-        })!
-            .homeSections,
+        })!.homeSections,
         isEmpty,
       );
       // صفحة أخرى في المستند لا تمسّ الرئيسية: أقسامها لها.
@@ -212,8 +242,7 @@ void main() {
               ]),
             },
           ],
-        })!
-            .homeSections,
+        })!.homeSections,
         isEmpty,
       );
       // جذر لا نوعه `page.home` ليس صفحة رئيسية معروفة.
@@ -230,8 +259,7 @@ void main() {
               },
             },
           ],
-        })!
-            .homeSections,
+        })!.homeSections,
         isEmpty,
       );
       // الابن بلا نوع ليس قسمًا: يسقط وحده، ولا يُهجر المستند لأجله.
@@ -262,10 +290,7 @@ void main() {
         PublishedDesign.fromJson(<String, Object?>{
           'schema_version': 1,
           'pages': pages,
-        })!
-            .homeSections
-            .map((section) => section.id)
-            .toList(),
+        })!.homeSections.map((section) => section.id).toList(),
         <String>['a'],
       );
     });
@@ -341,6 +366,30 @@ void main() {
       expect(find.text('English heading'), findsNothing);
     });
 
+    testWidgets('اتجاه الكتابة وتباعد الحروف وقصّ النص تصل إلى العميل', (
+      tester,
+    ) async {
+      await _pumpHome(tester, [
+        _node(
+          'styled',
+          DesignWidgetTypes.text,
+          properties: {
+            'text': 'نص بتنسيق قابل للتحكم',
+            'textDirection': 'ltr',
+            'letterSpacing': 2.5,
+            'overflow': 'fade',
+            'maxLines': 1,
+          },
+        ),
+      ]);
+
+      final text = tester.widget<Text>(find.text('نص بتنسيق قابل للتحكم'));
+      expect(text.textDirection, TextDirection.ltr);
+      expect(text.style!.letterSpacing, 2.5);
+      expect(text.maxLines, 1);
+      expect(text.overflow, TextOverflow.fade);
+    });
+
     testWidgets('نص بلا خصائص لا يرسم شيئًا', (tester) async {
       await _pumpHome(tester, [_node('t2', DesignWidgetTypes.text)]);
       expect(find.byType(Text), findsNothing);
@@ -356,33 +405,27 @@ void main() {
 
     testWidgets('عمود يرسم أبناءه بترتيبهم المنشور', (tester) async {
       await _pumpHome(tester, [
-        _nestedNode(
-          'c1',
-          DesignWidgetTypes.column,
-          <Object?>[
-            _node('t1', DesignWidgetTypes.text, properties: {'text': 'اول'}),
-            _node('t2', DesignWidgetTypes.text, properties: {'text': 'ثاني'}),
-          ],
-        ),
+        _nestedNode('c1', DesignWidgetTypes.column, <Object?>[
+          _node('t1', DesignWidgetTypes.text, properties: {'text': 'اول'}),
+          _node('t2', DesignWidgetTypes.text, properties: {'text': 'ثاني'}),
+        ]),
       ]);
       expect(find.text('اول'), findsOneWidget);
       expect(find.text('ثاني'), findsOneWidget);
     });
 
     testWidgets('عمود فارغ أو بلا أبناء يرسمين لا يرسم', (tester) async {
-      await _pumpHome(tester, [
-        _node('c2', DesignWidgetTypes.column),
-      ]);
+      await _pumpHome(tester, [_node('c2', DesignWidgetTypes.column)]);
       expect(find.byType(Text), findsNothing);
     });
 
     test('عمود بابن حقيقي يرسم ابنه الحقيقي لا بديلًا', () {
       // عمود يحمل شريط بانر: الشريط نفسه، لا صندوق بديل.
-      final column = PublishedSection.fromJson(_nestedNode(
-        'c3',
-        DesignWidgetTypes.column,
-        <Object?>[_node('b1', DesignWidgetTypes.bannerCarousel)],
-      ))!;
+      final column = PublishedSection.fromJson(
+        _nestedNode('c3', DesignWidgetTypes.column, <Object?>[
+          _node('b1', DesignWidgetTypes.bannerCarousel),
+        ]),
+      )!;
       expect(
         _rendered(buildHomeDocumentSection(column.children.first)),
         HomeBannerSection,
@@ -403,15 +446,13 @@ void main() {
     });
 
     test('الخصائص والأبناء تحفظ في التسلسل الراجع', () {
-      final design = PublishedDesign.fromJson(_document([
-        _nestedNode(
-          'c1',
-          DesignWidgetTypes.column,
-          <Object?>[
+      final design = PublishedDesign.fromJson(
+        _document([
+          _nestedNode('c1', DesignWidgetTypes.column, <Object?>[
             _node('t1', DesignWidgetTypes.text, properties: {'text': 'سطر'}),
-          ],
-        ),
-      ]));
+          ]),
+        ]),
+      );
       final roundTrip = PublishedDesign.fromJson(design!.toDocument())!;
       final column = roundTrip.homeSections.single;
       expect(column.type, DesignWidgetTypes.column);
@@ -449,10 +490,20 @@ PublishedSection _section(
 
 /// الصنف الذي يرسمه القسم: [HomeSection] غلاف الحشو حول القسم فيُفتح إلى ما
 /// داخله، والشريط الكامل الحشو يرسم نفسه بلا غلاف.
-Type _rendered(Widget? widget) {
+Type _rendered(Widget? widget) => _unwrap(widget).runtimeType;
+
+Widget _unwrap(Widget? widget) {
   expect(widget, isNotNull, reason: 'القسم لم يُرسم أصلًا.');
-  final inner = widget is HomeSection ? widget.child : widget!;
-  return inner.runtimeType;
+  Widget inner = widget!;
+  while (true) {
+    if (inner is HomeSection) {
+      inner = inner.child;
+    } else if (inner is DesignSectionChrome) {
+      inner = inner.child;
+    } else {
+      return inner;
+    }
+  }
 }
 
 /// عقدة كما تخرج من `DesignNode.toMap()` في اللوحة.
@@ -466,10 +517,7 @@ Map<String, Object?> _node(
   'id': id,
   'type': type,
   'visible': visible,
-  'properties': <String, Object?>{
-    if (dataSource != null) 'dataSource': dataSource,
-    ...?properties,
-  },
+  'properties': <String, Object?>{'dataSource': ?dataSource, ...?properties},
   'children': <Object?>[],
 };
 
@@ -478,10 +526,7 @@ Map<String, Object?> _nestedNode(
   String id,
   String type,
   List<Object?> children,
-) => <String, Object?>{
-  ..._node(id, type),
-  'children': children,
-};
+) => <String, Object?>{..._node(id, type), 'children': children};
 
 /// ضخ أقسام المستند في شاشة حقيقية: الرسم الكامل لا الاستدعاء الجاف،
 /// فالمحرّك قد يبدأ ويدرك أن لا شيء يرسم.

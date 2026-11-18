@@ -141,6 +141,11 @@ String _previewText(EditableComponent c) {
     case 'welcomeSpacing':
       return 'مسافة الترحيب';
 
+    case 'welcomeCta':
+      final label = p['label_ar'] ?? p['label'];
+      if (label is String && label.isNotEmpty) return label;
+      return 'زر الترحيب';
+
     case 'onboardingSlide':
       final title = p['title_ar'] ?? p['title'];
       if (title is String && title.isNotEmpty) return title;
@@ -174,20 +179,20 @@ String _previewText(EditableComponent c) {
 Color _colorForType(String type, {bool selected = false, required bool dark}) {
   if (selected) return const Color(0xFF5A6A3A); // olive green
   return switch (type) {
-    'text' => const Color(0xFF2563EB),          // أزرق — نص
-    'heading' => const Color(0xFF7C3AED),       // بنفسجي — عنوان
-    'button' => const Color(0xFF059669),        // أخضر — زر
-    'image' => const Color(0xFFD97706),         // برتقالي — صورة
-    'spacer' => const Color(0xFF9CA3AF),        // رمادي — مسافة
-    'divider' => const Color(0xFF6B7280),       // رمادي غامق — فاصل
-    'header' => const Color(0xFF1D4ED8),        // أزرق غامق — شريط التطبيق
-    'searchBar' => const Color(0xFF0891B2),     // سماوي — بحث
+    'text' => const Color(0xFF2563EB), // أزرق — نص
+    'heading' => const Color(0xFF7C3AED), // بنفسجي — عنوان
+    'button' => const Color(0xFF059669), // أخضر — زر
+    'image' => const Color(0xFFD97706), // برتقالي — صورة
+    'spacer' => const Color(0xFF9CA3AF), // رمادي — مسافة
+    'divider' => const Color(0xFF6B7280), // رمادي غامق — فاصل
+    'header' => const Color(0xFF1D4ED8), // أزرق غامق — شريط التطبيق
+    'searchBar' => const Color(0xFF0891B2), // سماوي — بحث
     'bannerCarousel' => const Color(0xFFB45309), // بني — بانر
-    'categoryList' => const Color(0xFF4F46E5),  // بنفسجي — فئات
-    'productStrip' => const Color(0xFFB91C1C),  // أحمر — منتجات
-    'productGrid' => const Color(0xFFB91C1C),   // أحمر — منتجات
-    'promoBanner' => const Color(0xFFD97706),   // برتقالي — عروض
-    'bundleList' => const Color(0xFF0F766E),    // أخضر مزرق — حزم
+    'categoryList' => const Color(0xFF4F46E5), // بنفسجي — فئات
+    'productStrip' => const Color(0xFFB91C1C), // أحمر — منتجات
+    'productGrid' => const Color(0xFFB91C1C), // أحمر — منتجات
+    'promoBanner' => const Color(0xFFD97706), // برتقالي — عروض
+    'bundleList' => const Color(0xFF0F766E), // أخضر مزرق — حزم
     _ => dark ? const Color(0xFF9CA3AF) : const Color(0xFF6B7280),
   };
 }
@@ -293,11 +298,11 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
           Expanded(
             child: _filtered.isEmpty
                 ? (_searchQuery.isEmpty
-                    ? AdminEmptyState(
-                        icon: AppIcons.layers01,
-                        message: S.visualEditorNoComponents,
-                      )
-                    : _EmptySearch(query: _searchQuery, dark: dark))
+                      ? AdminEmptyState(
+                          icon: AppIcons.layers01,
+                          message: S.visualEditorNoComponents,
+                        )
+                      : _EmptySearch(query: _searchQuery, dark: dark))
                 : _ComponentList(
                     components: _filtered,
                     allComponents: widget.components,
@@ -307,6 +312,7 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                     onDelete: widget.onDelete,
                     onDuplicate: widget.onDuplicate,
                     onToggleVisibility: widget.onToggleVisibility,
+                    allowReorder: _searchQuery.trim().isEmpty,
                     dark: dark,
                   ),
           ),
@@ -355,13 +361,17 @@ class _SearchBar extends StatelessWidget {
                   child: Icon(
                     Icons.close_rounded,
                     size: 14,
-                    color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.adminMuted,
                   ),
                 )
               : null,
           isDense: true,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 8,
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.sm),
             borderSide: BorderSide(
@@ -410,18 +420,13 @@ class _CountBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
-    final label = isFiltering
-        ? '$filtered من $total عنصر'
-        : '$total عنصر';
+    final label = isFiltering ? '$filtered من $total عنصر' : '$total عنصر';
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
         vertical: 3,
       ),
-      child: Text(
-        label,
-        style: TextStyle(fontSize: 10, color: muted),
-      ),
+      child: Text(label, style: TextStyle(fontSize: 10, color: muted)),
     );
   }
 }
@@ -442,9 +447,7 @@ class _QuickAddBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: dark
-          ? AppColor.darkSurfaceContainer
-          : const Color(0xFFF5F3EF),
+      color: dark ? AppColor.darkSurfaceContainer : const Color(0xFFF5F3EF),
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
         vertical: AppSpacing.xs,
@@ -576,6 +579,7 @@ class _ComponentList extends StatelessWidget {
     required this.onDelete,
     required this.onDuplicate,
     required this.onToggleVisibility,
+    required this.allowReorder,
     required this.dark,
   });
 
@@ -587,6 +591,7 @@ class _ComponentList extends StatelessWidget {
   final void Function(String) onDelete;
   final void Function(String) onDuplicate;
   final void Function(String) onToggleVisibility;
+  final bool allowReorder;
   final bool dark;
 
   @override
@@ -596,6 +601,7 @@ class _ComponentList extends StatelessWidget {
       buildDefaultDragHandles: false,
       itemCount: components.length,
       onReorderItem: (oldIndex, newIndex) {
+        if (!allowReorder) return;
         final component = components[oldIndex];
         final siblingIndex = siblingIndexForFlatReorder(
           components: allComponents,
@@ -620,8 +626,8 @@ class _ComponentList extends StatelessWidget {
           onDuplicate: component.canDuplicate
               ? () => onDuplicate(component.componentId)
               : null,
-          onToggleVisibility: () =>
-              onToggleVisibility(component.componentId),
+          onToggleVisibility: () => onToggleVisibility(component.componentId),
+          allowReorder: allowReorder,
           dark: dark,
         );
       },
@@ -641,6 +647,7 @@ class _ComponentRow extends StatelessWidget {
     this.onDelete,
     this.onDuplicate,
     required this.onToggleVisibility,
+    required this.allowReorder,
     required this.dark,
   });
 
@@ -651,6 +658,7 @@ class _ComponentRow extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onDuplicate;
   final VoidCallback onToggleVisibility;
+  final bool allowReorder;
   final bool dark;
 
   @override
@@ -702,7 +710,7 @@ class _ComponentRow extends StatelessWidget {
                   ),
 
                 // ► مقبض السحب
-                if (component.canReorder)
+                if (component.canReorder && allowReorder)
                   ReorderableDragStartListener(
                     index: index,
                     child: Padding(
@@ -719,9 +727,7 @@ class _ComponentRow extends StatelessWidget {
                   height: 32,
                   margin: const EdgeInsetsDirectional.only(end: 7),
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? typeColor
-                        : typeColor.withOpacity(0.35),
+                    color: isSelected ? typeColor : typeColor.withOpacity(0.35),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -783,11 +789,32 @@ class _ComponentRow extends StatelessWidget {
                     onTap: onDuplicate!,
                   ),
                 if (onDelete != null)
-                  _ActionButton(
-                    icon: AppIcons.delete01,
-                    tooltip: S.visualEditorDelete,
-                    color: AppColor.errorColor,
-                    onTap: onDelete!,
+                  PopupMenuButton<String>(
+                    tooltip: S.visualEditorMoreActions,
+                    padding: EdgeInsets.zero,
+                    iconSize: 16,
+                    onSelected: (action) {
+                      if (action == 'delete') onDelete!();
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(
+                              AppIcons.delete01,
+                              size: 16,
+                              color: AppColor.errorColor,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            Text(
+                              S.visualEditorDelete,
+                              style: TextStyle(color: AppColor.errorColor),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
               ],
             ),
@@ -818,6 +845,7 @@ class _ComponentRow extends StatelessWidget {
       'welcomeTitle' => Icons.title,
       'welcomeBody' => Icons.text_fields,
       'welcomeSpacing' => Icons.space_bar,
+      'welcomeCta' => Icons.smart_button_outlined,
       'onboardingSlide' => Icons.slideshow_rounded,
       'onboardingTransition' => Icons.animation_rounded,
       'authTitle' => Icons.title,
@@ -924,9 +952,7 @@ class _PanelHeader extends StatelessWidget {
                   child: Icon(
                     isAddActive ? Icons.close_rounded : Icons.add_rounded,
                     size: 16,
-                    color: isAddActive
-                        ? const Color(0xFF5A6A3A)
-                        : muted,
+                    color: isAddActive ? const Color(0xFF5A6A3A) : muted,
                   ),
                 ),
               ),

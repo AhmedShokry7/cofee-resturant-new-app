@@ -24,21 +24,45 @@ class WelcomePanelContent extends StatelessWidget {
     // placed first and the copy takes what is left. A language whose lines need
     // more room than that scrolls its own copy; the way forward never depends
     // on how much room a translation happens to need.
+    return Column(
+      children: [
+        const Expanded(child: _WelcomeCopy()),
+        const _WelcomeCta(),
+        SizedBox(height: AppSpacing.sm),
+      ],
+    );
+  }
+}
+
+/// زر «لنبدأ»، نصّه منشور أيضًا.
+///
+/// عقدة `welcome.cta` تحمل النصّ باللغتين (`label_ar` / `label_en`) وتُخفى
+/// بـ `visible: false`. غياب العقدة أو النصّ يعني نصّ التطبيق كما كان، فلا
+/// يتغيّر شيء لمن لم ينشر تصميمًا.
+class _WelcomeCta extends StatelessWidget {
+  const _WelcomeCta();
+
+  @override
+  Widget build(BuildContext context) {
+    final node = context.select(
+      (DesignCubit cubit) => nativeSection(
+        cubit.state.pageSections('welcome'),
+        DesignWidgetTypes.welcomeCta,
+      ),
+    );
+    if (nativeHidden(node)) return const SizedBox.shrink();
+    final published = node?.localizedText('label')?.trim() ?? '';
+    final label = published.isEmpty ? S.letsGetStarted : published;
+
     return BlocBuilder<WelcomeCubit, WelcomeState>(
       builder: (context, state) {
-        return Column(
-          children: [
-            const Expanded(child: _WelcomeCopy()),
-            SizedBox(
-              width: double.infinity,
-              child: CustomBtn(
-                text: S.letsGetStarted,
-                isLoading: state.isStarting,
-                onPressed: () => context.read<WelcomeCubit>().startOnboarding(),
-              ),
-            ),
-            SizedBox(height: AppSpacing.sm),
-          ],
+        return SizedBox(
+          width: double.infinity,
+          child: CustomBtn(
+            text: label,
+            isLoading: state.isStarting,
+            onPressed: () => context.read<WelcomeCubit>().startOnboarding(),
+          ),
         );
       },
     );

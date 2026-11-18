@@ -17,8 +17,8 @@ export 'visual_editor_state.dart';
 ///
 /// لا يصدر أوامر مباشرة للـ iframe؛ بل يغيّر الحالة وتلتقطها [PreviewPanel]
 /// لترسلها عبر postMessage. كل تعديل تركيبي أو في طبقة الشكل يترك أثرًا في
-/// مكدس التراجع، ويُحفظ مؤجلًا كمسودة عبر الـ RPC، ويُنشر بعد تدقيق محلي ثم
-/// تدقيق القاعدة. القوالب تطبَّق على المسودة لا على المنشور أبدًا.
+/// مكدس التراجع ويحدّث المعاينة الحية؛ لا تُكتب المسودة إلا بطلب حفظ صريح.
+/// النشر يمرّ بتدقيق محلي ثم تدقيق القاعدة، والقوالب تطبّق على الحالة المحلية.
 class VisualEditorCubit extends Cubit<VisualEditorState> {
   VisualEditorCubit({VisualEditorRepository? repository})
     : super(VisualEditorState(sessionId: _generateSessionId())) {
@@ -42,8 +42,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// طبقة الشكل الحالية للمسودة.
   DesignTheme _theme = DesignTheme.none;
 
-  /// مؤجل الحفظ: تعديلات متتالية تكتب مسودة واحدة.
-  Timer? _saveDebounce;
+  /// تسلسل عمليات الحفظ اليدوي حتى لا يكتب طلب أقدم بعد الأحدث.
   Future<void> _saveQueue = Future<void>.value();
   int _editRevision = 0;
 
@@ -72,9 +71,11 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       // في المسودة تبقى كما كُتبت — لا يعاد خلق عقد محوّل عليها.
       final components = <String, List<EditableComponent>>{
         for (final page in EditorPages.pages)
-          page.pageId:
-              saved[page.pageId] ??
-              DesignDocumentCodec.defaultComponentsFor(page.pageId),
+          page.pageId: saved[page.pageId] == null
+              ? DesignDocumentCodec.defaultComponentsFor(page.pageId)
+              : page.pageId == 'welcome'
+              ? DesignDocumentCodec.migrateWelcomeCta(saved[page.pageId]!)
+              : saved[page.pageId]!,
       };
       emit(
         state.copyWith(
@@ -93,12 +94,6 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     }
   }
 
-  @override
-  Future<void> close() {
-    _saveDebounce?.cancel();
-    return super.close();
-  }
-
   // ---------- معالجة رسائل المعاينة الواردة ----------
 
   /// المعاينة أعلنت جاهزيتها: نسلّمها المستند الحالي (إن وُجد) لترسم فورًا.
@@ -113,7 +108,32 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     final document = _currentDocumentOrNull();
     _dispatchToPreview(VisualEditorMessageType.previewInitialize, {
       'sessionId': state.sessionId,
-      if (document != null) 'designDocument': document,
+      'designDocument': ?document,
+      ..._previewSettingsPayload(),
+    });
+  }
+
+  /// تبديل لغة تطبيق العميل داخل المعاينة فقط: لا مسودة ولا تراجع ولا نشر.
+  void togglePreviewLanguage() =>
+      setPreviewLanguage(state.previewLanguage.other);
+
+  void setPreviewLanguage(PreviewLanguage language) {
+    if (isClosed || state.previewLanguage == language) return;
+    emit(state.copyWith(previewLanguage: language));
+    _dispatchToPreview(VisualEditorMessageType.setLanguage, {
+      'language': language.value,
+    });
+  }
+
+  /// تبديل وضع تطبيق العميل (فاتح/داكن) داخل المعاينة فقط.
+  void togglePreviewThemeMode() =>
+      setPreviewThemeMode(state.previewThemeMode.other);
+
+  void setPreviewThemeMode(PreviewThemeMode mode) {
+    if (isClosed || state.previewThemeMode == mode) return;
+    emit(state.copyWith(previewThemeMode: mode));
+    _dispatchToPreview(VisualEditorMessageType.setThemeMode, {
+      'mode': mode.value,
     });
   }
 
@@ -205,7 +225,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       ),
     );
     _syncPreview();
-    _scheduleSave();
+    _markEdited();
   }
 
   void undo() {
@@ -228,7 +248,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     _theme = theme;
     emit(state.copyWith(isDirty: true));
     _syncPreview();
-    _scheduleSave();
+    _markEdited();
   }
 
   // ---------- تنقل الصفحات ----------
@@ -236,7 +256,19 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// تحميل صفحة جديدة في المعاينة.
   void loadPage(String pageId) {
     // الاختيار خاص بالصفحة؛ لا نترك المفتش يعرض خصائص عنصر من صفحة أخرى.
-    emit(state.copyWith(clearSelectedComponent: true));
+    // صفحة الافتتاحية عقدة واحدة، فنحددها فورًا ليظهر محرّر الصورة واللون
+    // بدل لوحة فارغة تحتاج نقرة إضافية لا يدري الموظف أنها مطلوبة.
+    final pageComponents = state.getComponentsForPage(pageId);
+    final onlyComponent = pageComponents.length == 1
+        ? pageComponents.single
+        : null;
+    emit(
+      state.copyWith(
+        selectedComponentId: onlyComponent?.componentId,
+        selectedComponent: onlyComponent,
+        clearSelectedComponent: onlyComponent == null,
+      ),
+    );
     _dispatchToPreview(VisualEditorMessageType.loadPage, {'pageId': pageId});
   }
 
@@ -275,7 +307,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     int? index,
   }) {
     final entry = ComponentRegistry.get(componentType);
-    if (entry == null) return;
+    final page = EditorPages.findById(pageId);
+    if (entry == null || page == null || !page.isEditable) return;
+    if (!page.allowedComponentTypes.contains(componentType)) return;
     if (componentType == 'splashSettings') {
       final existing = state
           .getComponentsForPage(pageId)
@@ -285,12 +319,15 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         return;
       }
     }
-    if (parentId != null &&
-        !DesignDocumentCodec.canNest(
-          childType: componentType,
-          parentType: state.findComponent(parentId)?.componentType,
-        )) {
-      return;
+    if (parentId != null) {
+      final parent = state.findComponent(parentId);
+      if (parent == null || parent.pageId != pageId) return;
+      if (!DesignDocumentCodec.canNest(
+        childType: componentType,
+        parentType: parent.componentType,
+      )) {
+        return;
+      }
     }
     final siblings = _siblings(state.componentsByPage, pageId, parentId);
     final insertAt = (index ?? siblings.length).clamp(0, siblings.length);
@@ -322,6 +359,12 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
     pageComponents.insert(insertPosition, newComponent);
     _updatePage(pageId, _reindexSiblings(pageComponents));
+    emit(
+      state.copyWith(
+        selectedComponentId: newComponent.componentId,
+        selectedComponent: newComponent,
+      ),
+    );
     _dispatchToPreview(VisualEditorMessageType.addComponent, {
       'pageId': pageId,
       'component': DesignDocumentCodec.node(
@@ -330,7 +373,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       ),
       'designDocument': _currentDocumentOrNull(),
     });
-    _scheduleSave();
+    _markEdited();
   }
 
   /// موضع الإدراج في القائمة المسطّحة: آخر موضع يغطيه الأبناء السابقون
@@ -433,7 +476,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       'componentId': componentId,
       'designDocument': _currentDocumentOrNull(),
     });
-    _scheduleSave();
+    _markEdited();
   }
 
   /// نسخ مكوّن وإدراجه بعده مباشرة، مع كل أبنائه بمعرفّات جديدة.
@@ -476,7 +519,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       ),
       'designDocument': _currentDocumentOrNull(),
     });
-    _scheduleSave();
+    _markEdited();
   }
 
   List<EditableComponent> _subtreeOf(
@@ -548,7 +591,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       'newIndex': clamped,
       'designDocument': _currentDocumentOrNull(),
     });
-    _scheduleSave();
+    _markEdited();
   }
 
   // ---------- إظهار وإخفاء ----------
@@ -577,8 +620,12 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     if (component == null) return;
     if (!_isValidValue(component, propertyKey, value)) return;
     _pushUndo();
-    final updatedProps = Map<String, dynamic>.from(component.properties)
-      ..[propertyKey] = value;
+    final updatedProps = Map<String, dynamic>.from(component.properties);
+    if (value == null) {
+      updatedProps.remove(propertyKey);
+    } else {
+      updatedProps[propertyKey] = value;
+    }
     final updatedComponent = component.copyWith(properties: updatedProps);
     _replaceComponent(updatedComponent);
     _dispatchToPreview(VisualEditorMessageType.updateProperty, {
@@ -587,14 +634,16 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       'value': value,
       'designDocument': _currentDocumentOrNull(),
     });
-    _scheduleSave();
+    _markEdited();
   }
 
   bool _isValidValue(EditableComponent component, String key, Object? value) {
     final definition = ComponentRegistry.getEditableProperties(
       component.componentType,
     )[key];
-    if (definition == null) return key == 'visible';
+    if (definition == null) {
+      return key == 'visible' || component.properties.containsKey(key);
+    }
     final validation = definition.validation;
     if (validation == null) return true;
     final min = validation['min'];
@@ -621,6 +670,14 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
           propertyKey: 'visible',
           value: true,
         );
+      } else if (component.properties[propertyKey] != null) {
+        // الخصائص الاختيارية (مثل maxLines والمقاس) ترجع للأصل بحذف
+        // التجاوز؛ null قيمة صالحة في الذاكرة ويُسقطها codec من المستند.
+        updateProperty(
+          componentId: componentId,
+          propertyKey: propertyKey,
+          value: null,
+        );
       }
       return;
     }
@@ -637,7 +694,6 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// لا يُلمس. عند الفشل تبقى الحالة المحلية كما هي: فقدان محلي عند عطل
   /// شبكة يخلق انطباعًا كاذبًا بأن المسودة ماتت.
   Future<bool> discardDraft() async {
-    _saveDebounce?.cancel();
     try {
       await _repository.discardDraft();
     } catch (e) {
@@ -685,7 +741,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         ),
       );
       _syncPreview();
-      _scheduleSave();
+      _markEdited();
       return true;
     } catch (e) {
       if (isClosed) return false;
@@ -742,21 +798,11 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   // ---------- حفظ ونشر ----------
 
-  /// حفظ مؤجل: تعديلات متتالية تكتب مسودة واحدة بعد سكون قصير.
-  void _scheduleSave() {
-    _editRevision++;
-    _saveDebounce?.cancel();
-    _saveDebounce = Timer(_saveDebounceDelay, () {
-      if (!isClosed && state.isDirty) {
-        saveDraft();
-      }
-    });
-  }
+  /// يسجل تعديلًا جديدًا دون كتابة أي شيء إلى الشبكة.
+  void _markEdited() => _editRevision++;
 
-  static const Duration _saveDebounceDelay = Duration(milliseconds: 800);
-
+  /// لا تُكتب المسودة إلا بطلب حفظ صريح.
   Future<void> saveDraft() async {
-    _saveDebounce?.cancel();
     final revision = _editRevision;
     final components = {
       for (final entry in state.componentsByPage.entries)
@@ -796,15 +842,10 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       return null;
     }
     try {
-      final revision = _editRevision;
       final version = await _repository.publishDesign(document, note: note);
       if (isClosed) return version;
-      emit(
-        state.copyWith(
-          isDirty: revision == _editRevision ? false : state.isDirty,
-          clearError: true,
-        ),
-      );
+      // النشر لا يحفظ المسودة؛ لا تصبح التعديلات محفوظة إلا بطلب الحفظ.
+      emit(state.copyWith(clearError: true));
       return version;
     } catch (e) {
       if (isClosed) return null;
@@ -989,8 +1030,16 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     if (document == null) return;
     _dispatchToPreview(VisualEditorMessageType.applyDesignConfig, {
       'designDocument': document,
+      ..._previewSettingsPayload(),
     });
   }
+
+  /// إعدادات العرض التي تُرفق بكل مستند: الإطار الجديد لا يملك حالة المحرّر،
+  /// فيحتاج اللغة والوضع مع أول مستند يرسمه بعد كل إعادة تحميل.
+  Map<String, dynamic> _previewSettingsPayload() => {
+    'previewLanguage': state.previewLanguage.value,
+    'previewThemeMode': state.previewThemeMode.value,
+  };
 
   /// يضع رسالة صادرة في الحالة حتى تلتقطها PreviewPanel وترسلها عبر postMessage.
   void _dispatchToPreview(

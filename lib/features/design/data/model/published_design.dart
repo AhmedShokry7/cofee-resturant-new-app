@@ -70,8 +70,7 @@ class PublishedTheme {
   bool get hasBrand =>
       _nonEmpty(appNameAr) || _nonEmpty(appNameEn) || _nonEmpty(logoUrl);
 
-  bool get isNeutral =>
-      colors.isEmpty && textFactor == 1 && !hasBrand;
+  bool get isNeutral => colors.isEmpty && textFactor == 1 && !hasBrand;
 
   static bool _nonEmpty(String? value) =>
       value != null && value.trim().isNotEmpty;
@@ -81,8 +80,7 @@ class PublishedTheme {
   Map<String, dynamic> toJson() => {
     if (colors.isNotEmpty)
       'colors': {
-        for (final entry in colors.entries)
-          entry.key.key: _hex(entry.value),
+        for (final entry in colors.entries) entry.key.key: _hex(entry.value),
       },
     if (textFactor != 1) 'text_scale': _scaleName(textFactor),
     if (hasBrand)
@@ -157,9 +155,8 @@ class PublishedTheme {
     final scale = raw['text_scale'];
     final factor = scale is String ? _textFactors[scale] : null;
     final brand = raw['brand'] is Map ? raw['brand'] as Map : null;
-    String? text(Object? value) => value is String && value.trim().isNotEmpty
-        ? value.trim()
-        : null;
+    String? text(Object? value) =>
+        value is String && value.trim().isNotEmpty ? value.trim() : null;
     final appNameAr = text(brand?['name_ar']);
     final appNameEn = text(brand?['name_en']);
     final logoUrl = text(brand?['logo_url']);
@@ -234,6 +231,7 @@ abstract final class DesignWidgetTypes {
   static const String welcomeTitle = 'welcome.title';
   static const String welcomeBody = 'welcome.body';
   static const String welcomeSpacing = 'welcome.spacing';
+  static const String welcomeCta = 'welcome.cta';
   static const String onboardingSlide = 'onboarding.slide';
   static const String onboardingTransition = 'onboarding.transition';
   static const String authTitle = 'auth.title';
@@ -338,9 +336,7 @@ class PublishedSection {
     type,
     visible,
     dataSource,
-    Object.hashAll(
-      properties.entries.map((e) => Object.hash(e.key, e.value)),
-    ),
+    Object.hashAll(properties.entries.map((e) => Object.hash(e.key, e.value))),
     Object.hashAll(children),
   );
 
@@ -476,9 +472,7 @@ class PublishedDesign {
     'visible': section.visible,
     'properties': Map<String, dynamic>.from(section.properties),
     if (section.children.isNotEmpty)
-      'children': [
-        for (final child in section.children) _sectionJson(child),
-      ],
+      'children': [for (final child in section.children) _sectionJson(child)],
   };
 
   /// المستندات المنشورة التي يقرأها هذا التطبيق. 1 بلا طبقة شكل، و2 بها.
@@ -510,8 +504,7 @@ class PublishedDesign {
   ) {
     if (a.length != b.length) return false;
     for (final entry in a.entries) {
-      if (!b.containsKey(entry.key) ||
-          !listEquals(b[entry.key], entry.value)) {
+      if (!b.containsKey(entry.key) || !listEquals(b[entry.key], entry.value)) {
         return false;
       }
     }

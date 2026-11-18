@@ -59,10 +59,47 @@ void main() {
   });
 
   testWidgets(
-    'the layers panel delete button is tappable, not covered by the drag handle',
+    'search-filtered layers cannot be reordered from filtered indices',
     (tester) async {
-      // كان فلتر يرسم مقبض سحب افتراضيًا فوق آخر الصف فيغطي زر الحذف؛
-      // هذا الاختبار يثبت أن زر الحذف يستجيب للضغط.
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 260,
+              height: 400,
+              child: ComponentTreePanel(
+                pageId: 'home',
+                components: [
+                  _component('c1', 'section.text', 0),
+                  _component('c2', 'section.heading', 1),
+                ],
+                selectedComponentId: null,
+                onSelect: (_) {},
+                onReorder: (_, _) {},
+                onDelete: (_) {},
+                onDuplicate: (_) {},
+                onToggleVisibility: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.byType(ReorderableDragStartListener), findsNWidgets(2));
+
+      await tester.enterText(find.byType(TextField), 'section.text');
+      await tester.pumpAndSettle();
+
+      expect(find.text('section.text'), findsAtLeastNWidgets(1));
+      expect(find.text('section.heading'), findsNothing);
+      expect(find.byType(ReorderableDragStartListener), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'the layers panel exposes delete under secondary actions, not on the row',
+    (tester) async {
+      // الحذف إجراء ثانوي في قائمة مستقلة لتقليل الحذف العرضي.
       var deletedId = '';
       await tester.pumpWidget(
         MaterialApp(
@@ -94,17 +131,18 @@ void main() {
 
       // The panel rendered both components (row labels fall back to the raw
       // type when the registry has not been warmed up in the test).
-      expect(find.text('section.text'), findsOneWidget);
-      expect(find.text('section.heading'), findsOneWidget);
+      expect(find.text('section.text'), findsAtLeastNWidgets(1));
+      expect(find.text('section.heading'), findsAtLeastNWidgets(1));
 
-      // Find the delete tooltips/buttons: each row shows three actions; the
-      // delete button is the one bound to onDelete. Tapping the row's delete
-      // must call back even though the row sits inside a reorderable list.
-      final deleteButtons = find.byTooltip(S.visualEditorDelete);
-      expect(deleteButtons, findsNWidgets(2));
+      final moreActions = find.byTooltip(S.visualEditorMoreActions);
+      expect(moreActions, findsNWidgets(2));
+      expect(find.byTooltip(S.visualEditorDelete), findsNothing);
 
-      await tester.tap(deleteButtons.last);
-      await tester.pump();
+      await tester.tap(moreActions.last);
+      await tester.pumpAndSettle();
+      expect(find.text(S.visualEditorDelete), findsOneWidget);
+      await tester.tap(find.text(S.visualEditorDelete));
+      await tester.pumpAndSettle();
       expect(deletedId, 'c2');
     },
   );

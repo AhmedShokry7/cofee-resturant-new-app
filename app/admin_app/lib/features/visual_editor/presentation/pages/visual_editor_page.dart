@@ -2,20 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
+import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/component_library_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/component_tree_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/properties_inspector_panel.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_canvas.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_image_asset_picker.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_left_panel.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_right_inspector.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_top_bar.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
@@ -60,6 +65,10 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   double _zoom = 1.0;
   PreviewDevice _device = PreviewDevice.phone;
   String _selectedPageId = 'home';
+  bool _isInteractiveMode = false;
+  bool _isDraggingComponent = false;
+  bool _isLeftPanelOpen = true;
+  bool _isRightPanelOpen = true;
 
   /// إعادة تحميل المعاينة: يرتفع بمقدار واحد كل ضغطة على زر Reload.
   int _previewReloadToken = 0;
@@ -104,13 +113,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
         },
         builder: (context, state) => Container(
           color: VisualEditorTokens.bg(context),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppDimensions.pageHorizontalPadding,
-              vertical: AppDimensions.pageVerticalPadding,
-            ),
-            child: _buildBody(context, state),
-          ),
+          child: _buildBody(context, state),
         ),
       ),
     );
@@ -138,31 +141,124 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
 
   // ------------------------------------------------------------------ layouts
 
-  /// العرض العريض (≥ 1400px): تجربة SaaS ثلاثية الأعمدة فخمة ومتوازنة.
+  /// العرض العريض (≥ 1400px): تجربة المتصفح الكاملة المطابقة للتصميم المرجعي تماماً.
   Widget _buildWideLayout(BuildContext context, VisualEditorState state) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Column(
       children: [
-        SizedBox(width: 280, child: _pagesSidePanel(context, state)),
-        const SizedBox(width: AppSpacing.lg),
-        Expanded(child: _previewSection(context, state)),
-        const SizedBox(width: AppSpacing.lg),
-        SizedBox(width: 270, child: _toolsSidePanel(context, state)),
+        VisualEditorTopBar(
+          state: state,
+          cubit: _cubit,
+          canPublish: widget.canPublish,
+          zoom: _zoom,
+          device: _device,
+          selectedPageId: _selectedPageId,
+          onZoom: (v) => setState(() => _zoom = v.clamp(0.5, 2.0)),
+          onDeviceChanged: (device) => setState(() => _device = device),
+          onPageChanged: (pageId) {
+            setState(() => _selectedPageId = pageId);
+            _cubit.loadPage(pageId);
+          },
+          onReloadPreview: () => setState(() => _previewReloadToken++),
+          onFitToScreen: () => setState(() => _zoom = 1.0),
+          isInteractiveMode: _isInteractiveMode,
+          onToggleInteractiveMode: (v) =>
+              setState(() => _isInteractiveMode = v),
+          onToggleLeftPanel: () =>
+              setState(() => _isLeftPanelOpen = !_isLeftPanelOpen),
+          isLeftPanelOpen: _isLeftPanelOpen,
+          onToggleRightPanel: () =>
+              setState(() => _isRightPanelOpen = !_isRightPanelOpen),
+          isRightPanelOpen: _isRightPanelOpen,
+        ),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              VisualEditorLeftPanel(
+                state: state,
+                cubit: _cubit,
+                selectedPageId: _selectedPageId,
+                onPageSelected: (pageId) {
+                  setState(() => _selectedPageId = pageId);
+                  _cubit.loadPage(pageId);
+                },
+                onAddComponent: _addComponentToSelection,
+                onDragStateChanged: (dragging) =>
+                    setState(() => _isDraggingComponent = dragging),
+                isOpen: _isLeftPanelOpen,
+                onToggleOpen: () =>
+                    setState(() => _isLeftPanelOpen = !_isLeftPanelOpen),
+                imagePermissions: widget.imagePermissions,
+                canPublish: widget.canPublish,
+              ),
+              Expanded(
+                child: VisualEditorCanvas(
+                  pageId: _selectedPageId,
+                  sessionId: state.sessionId,
+                  zoom: _zoom,
+                  device: _device,
+                  components: state.getComponentsForPage(_selectedPageId),
+                  theme: _cubit.theme,
+                  selectedComponentId: state.selectedComponentId,
+                  reloadToken: _previewReloadToken,
+                  previewLanguage: state.previewLanguage,
+                  previewThemeMode: state.previewThemeMode,
+                  onConnectionChanged: (connection, reason) => _cubit
+                      .updatePreviewConnection(connection, reason: reason),
+                  onElementSelected: _cubit.handleElementSelected,
+                  onPreviewReady: _cubit.handlePreviewReady,
+                  onPreviewError: _cubit.handlePreviewError,
+                  onPropertyUpdated: _cubit.handlePropertyUpdated,
+                  onTreeUpdated: _cubit.handleTreeUpdated,
+                  outboundMessageType: _cubit.pendingMessage?.type,
+                  outboundPayload: _cubit.pendingMessage?.payload,
+                  outboundMessageId: _cubit.pendingMessage?.messageId,
+                  isInteractiveMode: _isInteractiveMode,
+                  onZoomChanged: (v) =>
+                      setState(() => _zoom = v.clamp(0.5, 2.0)),
+                  onResetZoom: () => setState(() => _zoom = 1.0),
+                  onDeviceChanged: (d) => setState(() => _device = d),
+                  onReload: () => setState(() => _previewReloadToken++),
+                  onComponentDropped: _addComponentToSelection,
+                  isDraggingComponent: _isDraggingComponent,
+                ),
+              ),
+              VisualEditorRightInspector(
+                selectedComponent: state.selectedComponent,
+                onPropertyChanged: _cubit.updateProperty,
+                onResetProperty: _cubit.resetProperty,
+                imagePermissions: widget.imagePermissions,
+                onClose: () => _cubit.selectComponent(''),
+                onSaveDraft: _cubit.saveDraft,
+                isDirty: state.isDirty,
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  /// العرض المتوسط (900px - 1400px): نفس التوزيع الثلاثي بأبعاد مدروسة.
+  /// العرض المتوسط (900px - 1400px): نفس التوزيع بكفاءة تامة.
   Widget _buildMediumLayout(BuildContext context, VisualEditorState state) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(width: 235, child: _pagesSidePanel(context, state)),
-        const SizedBox(width: AppSpacing.lg),
-        Expanded(child: _previewSection(context, state)),
-        const SizedBox(width: AppSpacing.lg),
-        SizedBox(width: 225, child: _toolsSidePanel(context, state)),
-      ],
+    return _buildWideLayout(context, state);
+  }
+
+  void _addComponentToSelection(String componentType) {
+    final selected = _cubit.state.selectedComponent;
+    final parentId =
+        selected != null &&
+            selected.pageId == _selectedPageId &&
+            DesignDocumentCodec.canNest(
+              childType: componentType,
+              parentType: selected.componentType,
+            )
+        ? selected.componentId
+        : null;
+    _cubit.addComponent(
+      pageId: _selectedPageId,
+      componentType: componentType,
+      parentId: parentId,
     );
   }
 
@@ -208,288 +304,6 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
-  // ------------------------------------------------------------------ side cards
-
-  /// بطاقة عمل احترافية موحدة بهوية الألوان الدافئة والناعمة.
-  Widget _sideCard(BuildContext context, Widget child) {
-    return Container(
-      decoration: BoxDecoration(
-        color: VisualEditorTokens.surface(context),
-        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg),
-        border: Border.all(
-          color: VisualEditorTokens.border(context),
-          width: 1.0,
-        ),
-        boxShadow: VisualEditorTokens.softShadow(context),
-      ),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: child,
-    );
-  }
-
-  /// عنوان قسم صغير وأنيق داخل اللوحة.
-  Widget _panelLabel(BuildContext context, String label) {
-    final textMuted = VisualEditorTokens.textMuted(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: AppFontWeights.semiBold,
-          letterSpacing: 0.4,
-          color: textMuted,
-        ),
-      ),
-    );
-  }
-
-  // ------------------------------------------------------------------ panels
-
-  /// الجانب الأول (RTL: اليمين): هوية المحرر، صفحات تطبيق العميل، ثم مكتبة المكونات.
-  Widget _pagesSidePanel(BuildContext context, VisualEditorState state) {
-    final textPrimary = VisualEditorTokens.text(context);
-    final textMuted = VisualEditorTokens.textMuted(context);
-
-    return _sideCard(
-      context,
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: VisualEditorTokens.primaryOliveGreen,
-                  borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                ),
-                child: const Icon(
-                  Icons.coffee_rounded,
-                  color: Colors.white,
-                  size: 16,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.xs + 2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      S.visualEditor,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: AppFontWeights.bold,
-                        color: textPrimary,
-                      ),
-                    ),
-                    Text(
-                      'مقهى القهوة المختصة',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: textMuted,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            S.visualEditorHint,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 10.5,
-              color: textMuted,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          EditorDivider(),
-          const SizedBox(height: AppSpacing.sm),
-          _panelLabel(context, 'صفحات تطبيق العميل'),
-          Expanded(
-            flex: 5,
-            child: _PageList(
-              selectedPageId: _selectedPageId,
-              onChanged: (pageId) {
-                setState(() => _selectedPageId = pageId);
-                _cubit.loadPage(pageId);
-              },
-            ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          EditorDivider(),
-          const SizedBox(height: AppSpacing.sm),
-          Expanded(flex: 4, child: _componentLibrary(context, state)),
-        ],
-      ),
-    );
-  }
-
-  /// الجانب المقابل: أدوات الجهاز والمعاينة والاتصال وتراجع/إعادة والطبقات والخصائص.
-  Widget _toolsSidePanel(BuildContext context, VisualEditorState state) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-    final textMuted = VisualEditorTokens.textMuted(context);
-    final accent = VisualEditorTokens.primaryOliveGreen;
-
-    return _sideCard(
-      context,
-      DefaultTabController(
-        length: 2,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _panelLabel(context, 'الجهاز والمعاينة'),
-            EditorScreenSizeSelector(
-              dark: dark,
-              muted: textMuted,
-              selected: _device,
-              onSelected: (device) => setState(() => _device = device),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            EditorZoomControls(
-              zoom: _zoom,
-              dark: dark,
-              muted: textMuted,
-              onZoom: (v) => setState(() => _zoom = v.clamp(0.5, 2.0)),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            // حالة الاتصال وإعادة التحميل
-            Row(
-              children: [
-                Expanded(
-                  child: EditorConnectionStatus(
-                    connection: state.previewConnection,
-                    reason: state.previewStatusMessage,
-                    dark: dark,
-                  ),
-                ),
-                EditorIconBtn(
-                  icon: AppIcons.refresh,
-                  tooltip:
-                      'إعادة تحميل المعاينة'
-                      '${state.previewStatusMessage == null ? '' : ' — ${state.previewStatusMessage}'}',
-                  onTap: () => setState(() => _previewReloadToken++),
-                  dark: dark,
-                  muted: textMuted,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            EditorDivider(),
-            const SizedBox(height: AppSpacing.sm),
-            // تراجع وإعادة + سجل الإصدارات والقوالب والاستوديو والتخلص.
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                EditorIconBtn(
-                  icon: AppIcons.undo,
-                  tooltip: S.visualEditorUndo,
-                  onTap: _cubit.canUndo ? _cubit.undo : null,
-                  dark: dark,
-                  muted: textMuted,
-                ),
-                EditorIconBtn(
-                  icon: AppIcons.redo,
-                  tooltip: S.visualEditorRedo,
-                  onTap: _cubit.canRedo ? _cubit.redo : null,
-                  dark: dark,
-                  muted: textMuted,
-                ),
-                EditorIconBtn(
-                  icon: AppIcons.time01,
-                  tooltip: S.visualEditorVersions,
-                  onTap: () => showVisualEditorVersions(
-                    context,
-                    _cubit,
-                    canPublish: widget.canPublish,
-                  ),
-                  dark: dark,
-                  muted: textMuted,
-                ),
-                EditorIconBtn(
-                  icon: AppIcons.folder01,
-                  tooltip: S.visualEditorTemplates,
-                  onTap: () => showVisualEditorTemplates(context, _cubit),
-                  dark: dark,
-                  muted: textMuted,
-                ),
-                EditorIconBtn(
-                  icon: AppIcons.paintBrush,
-                  tooltip: S.visualEditorThemeStudio,
-                  onTap: () => showVisualEditorThemeStudio(context, _cubit),
-                  dark: dark,
-                  muted: textMuted,
-                ),
-                EditorIconBtn(
-                  icon: AppIcons.delete02,
-                  tooltip: S.visualEditorDiscard,
-                  onTap: () => confirmVisualEditorDiscard(context, _cubit),
-                  dark: dark,
-                  muted: textMuted,
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            // زر حفظ المسودة
-            EditorToolbarButton(
-              icon: AppIcons.upload01,
-              label: S.visualEditorSaveDraft,
-              onTap: state.isDirty ? _cubit.saveDraft : null,
-              dark: dark,
-            ),
-            const SizedBox(height: AppSpacing.xs + 2),
-            // زر النشر البارز باللون الأخضر الأساسي Deep Olive Green
-            EditorToolbarButton(
-              icon: AppIcons.sent,
-              label: S.visualEditorPublish,
-              onTap: widget.canPublish
-                  ? () => confirmVisualEditorPublish(context, _cubit)
-                  : null,
-              dark: dark,
-              accent: true,
-              accentColor: accent,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            EditorDivider(),
-            TabBar(
-              isScrollable: false,
-              labelColor: VisualEditorTokens.primaryOliveGreen,
-              unselectedLabelColor: textMuted,
-              indicatorColor: VisualEditorTokens.primaryOliveGreen,
-              tabs: [
-                Tab(
-                  icon: const Icon(Icons.layers_rounded, size: 16),
-                  text: S.visualEditorLayers,
-                ),
-                Tab(
-                  icon: Icon(AppIcons.tune, size: 16),
-                  text: S.visualEditorProperties,
-                ),
-              ],
-              labelStyle: const TextStyle(fontSize: 11, fontWeight: AppFontWeights.bold),
-              unselectedLabelStyle: const TextStyle(fontSize: 11),
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _componentTreePanel(context, state),
-                  _propertiesPanel(context, state),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// المنطقة الوسطى الفاخرة المخصصة للمعاينة كبطل رئيسي (Hero Central Canvas).
   Widget _previewSection(BuildContext context, VisualEditorState state) {
     return Container(
@@ -513,25 +327,70 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(32),
-                child: PreviewPanel(
-                  pageId: _selectedPageId,
-                  zoom: _zoom,
-                  device: _device,
-                  sessionId: state.sessionId,
-                  components: state.getComponentsForPage(_selectedPageId),
-                  theme: _cubit.theme,
-                  selectedComponentId: state.selectedComponentId,
-                  reloadToken: _previewReloadToken,
-                  onConnectionChanged: (connection, reason) =>
-                      _cubit.updatePreviewConnection(connection, reason: reason),
-                  onElementSelected: _cubit.handleElementSelected,
-                  onPreviewReady: _cubit.handlePreviewReady,
-                  onPreviewError: _cubit.handlePreviewError,
-                  onPropertyUpdated: _cubit.handlePropertyUpdated,
-                  onTreeUpdated: _cubit.handleTreeUpdated,
-                  outboundMessageType: _cubit.pendingMessage?.type,
-                  outboundPayload: _cubit.pendingMessage?.payload,
-                  outboundMessageId: _cubit.pendingMessage?.messageId,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    PreviewPanel(
+                      pageId: _selectedPageId,
+                      zoom: _zoom,
+                      device: _device,
+                      sessionId: state.sessionId,
+                      components: state.getComponentsForPage(_selectedPageId),
+                      theme: _cubit.theme,
+                      selectedComponentId: state.selectedComponentId,
+                      reloadToken: _previewReloadToken,
+                      previewLanguage: state.previewLanguage,
+                      previewThemeMode: state.previewThemeMode,
+                      onConnectionChanged: (connection, reason) => _cubit
+                          .updatePreviewConnection(connection, reason: reason),
+                      onElementSelected: _cubit.handleElementSelected,
+                      onPreviewReady: _cubit.handlePreviewReady,
+                      onPreviewError: _cubit.handlePreviewError,
+                      onPropertyUpdated: _cubit.handlePropertyUpdated,
+                      onTreeUpdated: _cubit.handleTreeUpdated,
+                      outboundMessageType: _cubit.pendingMessage?.type,
+                      outboundPayload: _cubit.pendingMessage?.payload,
+                      outboundMessageId: _cubit.pendingMessage?.messageId,
+                      isDragSourceActive: _isDraggingComponent,
+                    ),
+                    if (_isDraggingComponent)
+                      DragTarget<String>(
+                        onWillAcceptWithDetails: (details) =>
+                            EditorPages.findById(_selectedPageId)
+                                ?.allowedComponentTypes
+                                .contains(details.data) ??
+                            false,
+                        onAcceptWithDetails: (details) =>
+                            _addComponentToSelection(details.data),
+                        builder: (context, candidates, rejected) => Container(
+                          alignment: Alignment.center,
+                          color: candidates.isEmpty
+                              ? Colors.transparent
+                              : VisualEditorTokens.primaryOliveGreen.withAlpha(
+                                  25,
+                                ),
+                          child: candidates.isEmpty
+                              ? const SizedBox.shrink()
+                              : Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 9,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: VisualEditorTokens.primaryOliveGreen,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Text(
+                                    'أفلت المكوّن لإضافته إلى الصفحة',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -541,6 +400,31 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
+  Future<void> _confirmDeleteComponent(
+    BuildContext context,
+    String componentId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.visualEditorDelete),
+        content: Text(S.visualEditorDeleteComponentConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColor.errorColor),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.visualEditorDelete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) _cubit.deleteComponent(componentId);
+  }
+
   Widget _componentTreePanel(BuildContext context, VisualEditorState state) {
     return ComponentTreePanel(
       pageId: _selectedPageId,
@@ -548,7 +432,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
       selectedComponentId: state.selectedComponentId,
       onSelect: _cubit.selectComponent,
       onReorder: _cubit.reorderComponent,
-      onDelete: _cubit.deleteComponent,
+      onDelete: (id) => _confirmDeleteComponent(context, id),
       onDuplicate: _cubit.duplicateComponent,
       onToggleVisibility: _cubit.toggleComponentVisibility,
     );
@@ -558,7 +442,14 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     return ComponentLibraryPanel(
       pageId: _selectedPageId,
       availableComponents: ComponentRegistry.getForPage(_selectedPageId),
-      onAddComponent: _cubit.addComponent,
+      onDragStateChanged: (dragging) =>
+          setState(() => _isDraggingComponent = dragging),
+      onAddComponent: ({
+        required pageId,
+        required componentType,
+        parentId,
+        index,
+      }) => _addComponentToSelection(componentType),
     );
   }
 
@@ -584,68 +475,6 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   }
 }
 
-// ---------------------------------------------------------------------- misc
-
-/// قائمة الصفحات العمودية المصممة بعناية ورقائق ChoiceChip مطابقة تماماً.
-class _PageList extends StatelessWidget {
-  const _PageList({required this.selectedPageId, required this.onChanged});
-
-  final String selectedPageId;
-  final void Function(String) onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final dark = Theme.of(context).brightness == Brightness.dark;
-
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (final page in PreviewPages.all)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Align(
-                alignment: AlignmentDirectional.centerStart,
-                child: ChoiceChip(
-                  label: Text(page.label),
-                  selected: selectedPageId == page.pageId,
-                  onSelected: (_) => onChanged(page.pageId),
-                  avatar: page.isEditable
-                      ? null
-                      : const Icon(AppIcons.lock, size: 12),
-                  labelStyle: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: selectedPageId == page.pageId
-                        ? AppFontWeights.bold
-                        : AppFontWeights.regular,
-                    color: selectedPageId == page.pageId
-                        ? (dark ? Colors.white : VisualEditorTokens.primaryOliveGreen)
-                        : VisualEditorTokens.text(context),
-                  ),
-                  selectedColor: dark
-                      ? VisualEditorTokens.primaryOliveGreen.withAlpha(70)
-                      : VisualEditorTokens.primaryOliveGreenLight,
-                  backgroundColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                    side: BorderSide(
-                      color: selectedPageId == page.pageId
-                          ? VisualEditorTokens.primaryOliveGreen
-                          : VisualEditorTokens.border(context),
-                      width: selectedPageId == page.pageId ? 1.0 : 0.6,
-                    ),
-                  ),
-                  showCheckmark: false,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PageTabs extends StatelessWidget {
   const _PageTabs({required this.selectedPageId, required this.onChanged});
 
@@ -665,7 +494,9 @@ class _PageTabs extends StatelessWidget {
                 label: Text(page.label),
                 selected: selectedPageId == page.pageId,
                 onSelected: (_) => onChanged(page.pageId),
-                avatar: page.isEditable ? null : const Icon(AppIcons.lock, size: 12),
+                avatar: page.isEditable
+                    ? null
+                    : const Icon(AppIcons.lock, size: 12),
                 labelStyle: const TextStyle(fontSize: 11),
               ),
             ),

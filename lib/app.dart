@@ -24,13 +24,22 @@ import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
 /// the routing. Everything that had to happen before this exists is in
 /// [bootstrapApp].
 class MyApp extends StatefulWidget {
-  const MyApp({super.key, this.currentRoute, this.onboardingDone = false});
+  const MyApp({
+    super.key,
+    this.currentRoute,
+    this.onboardingDone = false,
+    this.initialThemeMode,
+  });
 
   /// The route the saved session left the customer on.
   final String? currentRoute;
 
   /// Whether the customer already finished the onboarding.
   final bool onboardingDone;
+
+  /// Preview-only starting mode sent by the visual editor. Normal launches
+  /// leave it null so the customer's saved preference is still read.
+  final ThemeMode? initialThemeMode;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -57,77 +66,86 @@ class _MyAppState extends State<MyApp> {
     // can repaint the root before the settings tab even exists.
     return BlocProvider<ThemeModeCubit>(
       lazy: false,
-      create: (_) => ThemeModeCubit(),
+      create: (_) => ThemeModeCubit(initialMode: widget.initialThemeMode),
       child: AppProviders(
-        // Rebuilding MaterialApp alone does not re-localize the app: every route
-        // hands the tree a `const` page (see `AppRoutes.routes`), and Flutter
-        // skips the build of a child whose widget instance did not change. This
-        // walks the tree once per language change so the screens that are already
-        // composed read the copy the customer just chose, without losing a place
-        // in a form or a scroll position.
-        child: LocaleRebuild(
-          child: AnimatedBuilder(
-            animation: AppLocale.instance,
-            builder: (context, _) => BlocBuilder<DesignCubit, DesignState>(
-              // المستند وحده يبني الشاشة من جديد: قراءة لم تُغيّر دورًا ولا مقياسًا
-              // ولا قسمًا لا تسأل الشجرة عن نفسها.
-              buildWhen: (previous, next) => previous.design != next.design,
-              builder: (context, design) => BlocBuilder<ThemeModeCubit, ThemeMode>(
-                builder: (context, themeMode) {
-                  // The design document repaints the colour roles on its own
-                  // load; re-assert the dark roles here so a design refresh can
-                  // never undo the saved dark choice.
-                  context.read<ThemeModeCubit>().syncRoles();
-                  // `ThemeRebuild` walks the tree after the mode flips so the
-                  // screens that read `AppColor` directly repaint too.
-                  return ThemeRebuild(
-                    child: MaterialApp(
-                      // الاسم الذي نصّه الموظف يعلو على اسم الكود، ويُقرأ من لغة الهاتف.
-                      title:
-                          design.brandName(AppLocale.instance.isArabic) ??
-                          S.appName,
-                      themeMode: themeMode,
-                      darkTheme: ThemeClass.dark(),
-                      locale: AppLocale.instance.locale,
-                      supportedLocales: const [Locale('ar'), Locale('en')],
-                      localizationsDelegates: const [
-                        GlobalMaterialLocalizations.delegate,
-                        GlobalWidgetsLocalizations.delegate,
-                        GlobalCupertinoLocalizations.delegate,
-                      ],
-                      debugShowCheckedModeBanner: false,
-                      theme: ThemeClass.light(),
-                      builder: (context, child) => applyDesignTextScale(
-                        context: context,
-                        factor: design.textFactor,
-                        child: Directionality(
-                          textDirection: AppLocale.instance.textDirection,
-                          child: child ?? const SizedBox.shrink(),
-                        ),
-                      ),
-                      navigatorKey: rootNavigatorKey,
-                      scaffoldMessengerKey: rootScaffoldMessengerKey,
-                      // The assistant FAB is owned by the Home page scaffold, not by
-                      // a global overlay, so it can never duplicate or leak onto
-                      // other screens.
-                      navigatorObservers: [AppRouteObserver.instance],
-                      // The splash owns the brand mark because the Android 12+ system
-                      // splash clamps its icon to a fixed circle. It hands over to the
-                      // saved entry route once it is done.
-                      initialRoute: SplashView.routeName,
-                      onGenerateRoute: AppRouteGenerator.onGenerateRoute,
-                      routes: {
-                        SplashView.routeName: (context) => SplashView(
-                          targetRoute: AppRoutes.initialRouteName(
-                            widget.currentRoute,
-                            onboardingDone: widget.onboardingDone,
+        // A publish can happen while this app is in the background (the admin
+        // editor is a separate app). Re-read on resume as a fallback even if
+        // the Realtime channel was unavailable on that network.
+        child: _PublishedDesignOnResume(
+          // Rebuilding MaterialApp alone does not re-localize the app: every route
+          // hands the tree a `const` page (see `AppRoutes.routes`), and Flutter
+          // skips the build of a child whose widget instance did not change. This
+          // walks the tree once per language change so the screens that are already
+          // composed read the copy the customer just chose, without losing a place
+          // in a form or a scroll position.
+          child: LocaleRebuild(
+            child: AnimatedBuilder(
+              animation: AppLocale.instance,
+              builder: (context, _) => BlocBuilder<DesignCubit, DesignState>(
+                // المستند وحده يبني الشاشة من جديد: قراءة لم تُغيّر دورًا ولا مقياسًا
+                // ولا قسمًا لا تسأل الشجرة عن نفسها.
+                buildWhen: (previous, next) => previous.design != next.design,
+                builder: (context, design) =>
+                    BlocBuilder<ThemeModeCubit, ThemeMode>(
+                      builder: (context, themeMode) {
+                        // The design document repaints the colour roles on its own
+                        // load; re-assert the dark roles here so a design refresh can
+                        // never undo the saved dark choice.
+                        context.read<ThemeModeCubit>().syncRoles();
+                        // `ThemeRebuild` walks the tree after the mode flips so the
+                        // screens that read `AppColor` directly repaint too.
+                        return ThemeRebuild(
+                          child: MaterialApp(
+                            // الاسم الذي نصّه الموظف يعلو على اسم الكود، ويُقرأ من لغة الهاتف.
+                            title:
+                                design.brandName(AppLocale.instance.isArabic) ??
+                                S.appName,
+                            themeMode: themeMode,
+                            darkTheme: ThemeClass.dark(),
+                            locale: AppLocale.instance.locale,
+                            supportedLocales: const [
+                              Locale('ar'),
+                              Locale('en'),
+                            ],
+                            localizationsDelegates: const [
+                              GlobalMaterialLocalizations.delegate,
+                              GlobalWidgetsLocalizations.delegate,
+                              GlobalCupertinoLocalizations.delegate,
+                            ],
+                            debugShowCheckedModeBanner: false,
+                            theme: ThemeClass.light(),
+                            builder: (context, child) => applyDesignTextScale(
+                              context: context,
+                              factor: design.textFactor,
+                              child: Directionality(
+                                textDirection: AppLocale.instance.textDirection,
+                                child: child ?? const SizedBox.shrink(),
+                              ),
+                            ),
+                            navigatorKey: rootNavigatorKey,
+                            scaffoldMessengerKey: rootScaffoldMessengerKey,
+                            // The assistant FAB is owned by the Home page scaffold, not by
+                            // a global overlay, so it can never duplicate or leak onto
+                            // other screens.
+                            navigatorObservers: [AppRouteObserver.instance],
+                            // The splash owns the brand mark because the Android 12+ system
+                            // splash clamps its icon to a fixed circle. It hands over to the
+                            // saved entry route once it is done.
+                            initialRoute: SplashView.routeName,
+                            onGenerateRoute: AppRouteGenerator.onGenerateRoute,
+                            routes: {
+                              SplashView.routeName: (context) => SplashView(
+                                targetRoute: AppRoutes.initialRouteName(
+                                  widget.currentRoute,
+                                  onboardingDone: widget.onboardingDone,
+                                ),
+                              ),
+                              ...AppRoutes.routes,
+                            },
                           ),
-                        ),
-                        ...AppRoutes.routes,
+                        );
                       },
                     ),
-                  );
-                },
               ),
             ),
           ),
@@ -135,4 +153,44 @@ class _MyAppState extends State<MyApp> {
       ),
     );
   }
+}
+
+/// Re-reads the published document when the customer returns to the app.
+///
+/// Lives under [AppProviders] so the [DesignCubit] is available in context.
+/// The short in-memory cache is bypassed; the persisted offline copy is only
+/// replaced when Supabase answers, exactly like every other read.
+class _PublishedDesignOnResume extends StatefulWidget {
+  const _PublishedDesignOnResume({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PublishedDesignOnResume> createState() =>
+      _PublishedDesignOnResumeState();
+}
+
+class _PublishedDesignOnResumeState extends State<_PublishedDesignOnResume>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      context.read<DesignCubit>().load(forceRefresh: true);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }

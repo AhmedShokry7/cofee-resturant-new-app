@@ -12,8 +12,16 @@ import 'app_color.dart';
 /// كثيرًا من الشاشات تقرّأ أدوار الألوان من [AppColor] مباشرة (نمط مستودع
 /// التصميم نفسه)، فالتبديل يعيد رسم هذه الأدوار أيضاً عبر [syncRoles].
 class ThemeModeCubit extends Cubit<ThemeMode> {
-  ThemeModeCubit() : super(ThemeMode.light) {
-    _load();
+  /// [initialMode] is used only by the preview iframe: the admin sends its
+  /// chosen preview mode in the launch URL, so a reload starts in that mode
+  /// without first painting the customer's saved preference.
+  ThemeModeCubit({ThemeMode? initialMode})
+    : super(initialMode ?? ThemeMode.light) {
+    if (initialMode == null) {
+      _load();
+    } else {
+      applyRoles(isDark: initialMode == ThemeMode.dark);
+    }
   }
 
   static const String _key = 'theme_mode';
@@ -34,6 +42,15 @@ class ThemeModeCubit extends Cubit<ThemeMode> {
     applyRoles(isDark: mode == ThemeMode.dark);
     emit(mode);
     await SharedPref.setValue(key: _key, value: mode.name);
+  }
+
+  /// Preview-only mode switch used by the admin's visual editor. It applies
+  /// the same colours as [set] but leaves the customer's saved preference
+  /// untouched; the editor re-sends the choice after every iframe reload.
+  void setPreviewMode(ThemeMode mode) {
+    if (state == mode) return;
+    applyRoles(isDark: mode == ThemeMode.dark);
+    emit(mode);
   }
 
   /// يعيد رسم أدوار [AppColor] على حالتي الوضع. يُستدعى عند التبديل وبعد كل

@@ -89,6 +89,50 @@ enum PropertyType {
 class ComponentRegistry {
   static final Map<String, ComponentRegistryEntry> _registry = {};
 
+  /// هوامش الموضع المشتركة بين عناصر المحتوى والتخطيط الحرّة.
+  ///
+  /// طبقة الشكل في المعاينة وفي تطبيق العميل تقرأ الهوامش نفسها من خصائص
+  /// القسم، فتغيير قيمتها يغيّر موضع العنصر فعليًا في المعاينة والصفحة
+  /// المنشورة بلا الحاجة إلى منطق خاص بكل مكوّن.
+  static const Map<String, ComponentPropertyDefinition> positionProperties = {
+    'marginTop': ComponentPropertyDefinition(
+      key: 'marginTop',
+      label: 'هامش أعلى',
+      description: 'إزاحة العنصر من الأعلى بالنقاط',
+      type: PropertyType.number,
+      defaultValue: null,
+      validation: {'min': 0, 'max': 400},
+      group: 'الموضع',
+    ),
+    'marginBottom': ComponentPropertyDefinition(
+      key: 'marginBottom',
+      label: 'هامش أسفل',
+      description: 'إزاحة العنصر من الأسفل بالنقاط',
+      type: PropertyType.number,
+      defaultValue: null,
+      validation: {'min': 0, 'max': 400},
+      group: 'الموضع',
+    ),
+    'marginLeft': ComponentPropertyDefinition(
+      key: 'marginLeft',
+      label: 'هامش يمين',
+      description: 'إزاحة العنصر من اليمين بالنقاط',
+      type: PropertyType.number,
+      defaultValue: null,
+      validation: {'min': 0, 'max': 400},
+      group: 'الموضع',
+    ),
+    'marginRight': ComponentPropertyDefinition(
+      key: 'marginRight',
+      label: 'هامش يسار',
+      description: 'إزاحة العنصر من اليسار بالنقاط',
+      type: PropertyType.number,
+      defaultValue: null,
+      validation: {'min': 0, 'max': 400},
+      group: 'الموضع',
+    ),
+  };
+
   /// Register a component type
   static void register(ComponentRegistryEntry entry) {
     _registry[entry.componentType] = entry;
@@ -147,9 +191,8 @@ class ComponentRegistry {
   ) {
     final entry = _registry[componentType];
     if (entry == null) return {};
-    return Map<String, ComponentPropertyDefinition>.from(
-      entry.properties,
-    )..removeWhere((key, prop) => prop.type == PropertyType.json);
+    return Map<String, ComponentPropertyDefinition>.from(entry.properties)
+      ..removeWhere((key, prop) => prop.type == PropertyType.json);
   }
 
   /// Initialize the registry with all known components
@@ -576,6 +619,43 @@ class ComponentRegistry {
       ),
     );
 
+    // زر «لنبدأ» في شاشة الترحيب
+    register(
+      ComponentRegistryEntry(
+        componentType: 'welcomeCta',
+        displayName: 'زر الترحيب',
+        description:
+            'زر البدء أسفل نص الترحيب — يُعدَّل نصّه باللغتين أو يُخفى',
+        category: 'screen',
+        classification: ComponentClassification.editable,
+        properties: {
+          'label_ar': ComponentPropertyDefinition(
+            key: 'label_ar',
+            label: 'النص بالعربي',
+            description: 'نص الزر للعربية (فارغ = نصّ التطبيق)',
+            type: PropertyType.string,
+            defaultValue: '',
+            group: 'النص',
+          ),
+          'label_en': ComponentPropertyDefinition(
+            key: 'label_en',
+            label: 'النص بالإنجليزي',
+            description: 'نص الزر للإنجليزية (فارغ = ترجمة التطبيق)',
+            type: PropertyType.string,
+            defaultValue: '',
+            group: 'النص',
+          ),
+        },
+        allowedParentTypes: [],
+        allowedChildTypes: [],
+        allowedOperations: ['add', 'delete', 'duplicate', 'reorder', 'hide'],
+        defaultValues: {'label_ar': '', 'label_en': ''},
+        validationRules: {},
+        iconName: 'smartButton',
+        version: 1,
+      ),
+    );
+
     // شريحة تعريف
     register(
       ComponentRegistryEntry(
@@ -798,6 +878,7 @@ class ComponentRegistry {
         category: 'layout',
         classification: ComponentClassification.structural,
         properties: {
+          ...positionProperties,
           'gap': ComponentPropertyDefinition(
             key: 'gap',
             label: 'المسافة بين العناصر',
@@ -869,6 +950,7 @@ class ComponentRegistry {
         category: 'layout',
         classification: ComponentClassification.structural,
         properties: {
+          ...positionProperties,
           'gap': ComponentPropertyDefinition(
             key: 'gap',
             label: 'المسافة بين العناصر',
@@ -940,6 +1022,7 @@ class ComponentRegistry {
         category: 'layout',
         classification: ComponentClassification.editable,
         properties: {
+          ...positionProperties,
           'size': ComponentPropertyDefinition(
             key: 'size',
             label: 'الحجم',
@@ -975,6 +1058,7 @@ class ComponentRegistry {
         category: 'layout',
         classification: ComponentClassification.editable,
         properties: {
+          ...positionProperties,
           'inset': ComponentPropertyDefinition(
             key: 'inset',
             label: 'المسافة الجانبية',
@@ -1027,6 +1111,7 @@ class ComponentRegistry {
         category: 'content',
         classification: ComponentClassification.editable,
         properties: {
+          ...positionProperties,
           'text_ar': ComponentPropertyDefinition(
             key: 'text_ar',
             label: 'النص بالعربي',
@@ -1074,6 +1159,29 @@ class ComponentRegistry {
             defaultValue: 'start',
             options: ['start', 'center', 'end'],
           ),
+          'textDirection': ComponentPropertyDefinition(
+            key: 'textDirection',
+            label: 'اتجاه الكتابة',
+            description: 'اتجاه قراءة النص، أو تلقائي حسب لغة التطبيق',
+            type: PropertyType.enum_,
+            defaultValue: 'auto',
+            options: ['auto', 'rtl', 'ltr'],
+          ),
+          'overflow': ComponentPropertyDefinition(
+            key: 'overflow',
+            label: 'تجاوز النص',
+            description: 'كيف يظهر النص عند تجاوز المساحة المتاحة',
+            type: PropertyType.enum_,
+            defaultValue: 'ellipsis',
+            options: ['ellipsis', 'clip', 'fade', 'visible'],
+          ),
+          'letterSpacing': ComponentPropertyDefinition(
+            key: 'letterSpacing',
+            label: 'تباعد الحروف',
+            description: 'المسافة بين حروف النص',
+            type: PropertyType.number,
+            defaultValue: null,
+          ),
           'lineHeight': ComponentPropertyDefinition(
             key: 'lineHeight',
             label: 'ارتفاع السطر',
@@ -1108,7 +1216,11 @@ class ComponentRegistry {
           'weight': 'regular',
           'color': '#1A1A1A',
           'alignment': 'start',
+          'textDirection': 'auto',
+          'overflow': 'ellipsis',
           'lineHeight': 1.4,
+          'maxLines': null,
+          'letterSpacing': null,
         },
         validationRules: {},
         iconName: 'textFormat',
@@ -1125,6 +1237,7 @@ class ComponentRegistry {
         category: 'content',
         classification: ComponentClassification.editable,
         properties: {
+          ...positionProperties,
           'title_ar': ComponentPropertyDefinition(
             key: 'title_ar',
             label: 'العنوان بالعربي',
@@ -1235,6 +1348,7 @@ class ComponentRegistry {
         category: 'content',
         classification: ComponentClassification.editable,
         properties: {
+          ...positionProperties,
           'label_ar': ComponentPropertyDefinition(
             key: 'label_ar',
             label: 'الزر بالعربي',
@@ -1342,6 +1456,7 @@ class ComponentRegistry {
         category: 'content',
         classification: ComponentClassification.editable,
         properties: {
+          ...positionProperties,
           'imageUrl': ComponentPropertyDefinition(
             key: 'imageUrl',
             label: 'رابط الصورة',
@@ -2958,7 +3073,7 @@ class ComponentRegistry {
       ),
     );
 
-// Bundle List
+    // Bundle List
     register(
       ComponentRegistryEntry(
         componentType: 'bundleList',

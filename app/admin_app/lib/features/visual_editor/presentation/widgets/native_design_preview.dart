@@ -25,6 +25,9 @@ class NativeDesignPreview extends StatelessWidget {
     required this.components,
     required this.theme,
     this.selectedComponentId,
+    this.screenSize,
+    this.previewLanguage,
+    this.previewThemeMode,
     required this.onElementSelected,
   });
 
@@ -35,6 +38,13 @@ class NativeDesignPreview extends StatelessWidget {
   final DesignTheme theme;
 
   final String? selectedComponentId;
+  final Size? screenSize;
+
+  /// اللغة والوضع المختاران لمعاينة تطبيق العميل. الغياب يعني ما كانت اللوحة
+  /// تعرضه قبل إضافة أدوات المعاينة، فلا تتغيّر اختبارات المعاينة الأصلية.
+  final PreviewLanguage? previewLanguage;
+  final PreviewThemeMode? previewThemeMode;
+
   final ValueChanged<String> onElementSelected;
 
   // ---------------------------------------------------------------- الشكل
@@ -85,23 +95,36 @@ class NativeDesignPreview extends StatelessWidget {
         _ => fallback,
       };
 
+  PreviewLanguage get _effectiveLanguage =>
+      previewLanguage ??
+      (AppLocale.instance.isArabic
+          ? PreviewLanguage.arabic
+          : PreviewLanguage.english);
+
+  bool get _darkPreview => previewThemeMode == PreviewThemeMode.dark;
+
   Color get _accent =>
       _roleColor(DesignColorRole.primary) ?? AppColor.adminAccent;
 
   Color get _bg =>
-      _roleColor(DesignColorRole.background) ?? AppColor.whiteColor;
+      _roleColor(DesignColorRole.background) ??
+      (_darkPreview ? AppColor.darkBackground : AppColor.whiteColor);
 
   Color get _surface =>
-      _roleColor(DesignColorRole.surface) ?? AppColor.lightGreyColor;
+      _roleColor(DesignColorRole.surface) ??
+      (_darkPreview ? AppColor.darkSurface : AppColor.lightGreyColor);
 
   Color get _textPrimary =>
-      _roleColor(DesignColorRole.textPrimary) ?? AppColor.adminBody;
+      _roleColor(DesignColorRole.textPrimary) ??
+      (_darkPreview ? AppColor.darkText : AppColor.adminBody);
 
   Color get _textSecondary =>
-      _roleColor(DesignColorRole.textSecondary) ?? AppColor.adminMuted;
+      _roleColor(DesignColorRole.textSecondary) ??
+      (_darkPreview ? AppColor.darkTextSecondary : AppColor.adminMuted);
 
   Color get _borderColor =>
-      _roleColor(DesignColorRole.border) ?? AppColor.adminControlBorder;
+      _roleColor(DesignColorRole.border) ??
+      (_darkPreview ? Color(0xff3A3A3A) : AppColor.adminControlBorder);
 
   // ---------------------------------------------------------------- الشجرة
 
@@ -161,7 +184,7 @@ class NativeDesignPreview extends StatelessWidget {
     Map<String, List<EditableComponent>> byParent,
   ) {
     if (component.properties['visible'] == false) return null;
-    Widget? content;
+    late Widget content;
     switch (component.componentType) {
       case 'header':
         content = _header(component);
@@ -193,11 +216,15 @@ class NativeDesignPreview extends StatelessWidget {
         content = _spacer(component);
       case 'column':
         content = _column(component, byParent);
+      case 'row':
+        content = _row(component, byParent);
       // عقد الشاشات المدمجة: تقرؤها شاشات العميل نفسها لا محرك الأقسام،
       // فترسمها المعاينة الأصلية بنفس ما تعرضه الشاشة من صورة ونصّ، حتى
       // يرى الموظف تعديله فورًا بلا انتظار بناء الويب.
       case 'splashSettings':
-        content = _splashSettings(component);
+        content = Builder(
+          builder: (context) => _splashSettings(component, context),
+        );
       case 'welcomeHero':
         content = _welcomeHero(component);
       case 'welcomeTitle':
@@ -206,6 +233,13 @@ class NativeDesignPreview extends StatelessWidget {
         content = _text(component);
       case 'welcomeSpacing':
         content = _welcomeSpacing(component);
+      case 'welcomeCta':
+        content = _button(
+          component,
+          fallbackLabel: _effectiveLanguage == PreviewLanguage.arabic
+              ? 'لنبدأ'
+              : "Let's Get Started",
+        );
       case 'onboardingSlide':
         content = _onboardingSlide(component);
       case 'onboardingTransition':
@@ -220,11 +254,9 @@ class NativeDesignPreview extends StatelessWidget {
       default:
         return null;
     }
-    if (content == null) return null;
-    
     // Apply DesignSectionChrome-like styling to all components
     content = _applyChrome(component, content);
-    
+
     final selected = component.componentId == selectedComponentId;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -246,24 +278,37 @@ class NativeDesignPreview extends StatelessWidget {
   Widget _header(EditableComponent c) {
     final showSearch = c.properties['showSearch'] as bool? ?? true;
     final showGreeting = c.properties['showGreeting'] as bool? ?? true;
+    final greetingText = _locOr(c, 'greeting', 'أهلًا بك في كوفي ☕');
+    final questionText = _loc(c, 'question');
     return Container(
       color: _surface,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showGreeting)
+          if (showGreeting) ...[
             Text(
-              'أهلًا بك في كوفي ☕',
+              greetingText,
               style: TextStyle(
                 fontSize: AppFontSizes.size16 * _textFactor,
                 fontWeight: AppFontWeights.bold,
                 color: _textPrimary,
               ),
             ),
+            if (questionText.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(
+                questionText,
+                style: TextStyle(
+                  fontSize: AppFontSizes.size12 * _textFactor,
+                  color: _textSecondary,
+                ),
+              ),
+            ],
+          ],
           if (showSearch) ...[
             const SizedBox(height: AppSpacing.sm),
-            _searchField('ابحث عن منتج...'),
+            _searchField(_locOr(c, 'hint', 'ابحث عن منتج...')),
           ],
         ],
       ),
@@ -275,7 +320,7 @@ class NativeDesignPreview extends StatelessWidget {
       horizontal: AppSpacing.lg,
       vertical: AppSpacing.xs,
     ),
-    child: _searchField((c.properties['hint'] as String?) ?? 'ابحث عن منتج...'),
+    child: _searchField(_locOr(c, 'hint', 'ابحث عن منتج...')),
   );
 
   Widget _searchField(String hint) => Container(
@@ -395,7 +440,7 @@ class NativeDesignPreview extends StatelessWidget {
         _locOr(
           c,
           'title',
-          AppLocale.instance.isArabic ? 'التصنيفات' : 'Categories',
+          _effectiveLanguage.isArabic ? 'التصنيفات' : 'Categories',
         ),
         show: c.properties['showTitle'] as bool? ?? true,
       ),
@@ -493,8 +538,8 @@ class NativeDesignPreview extends StatelessWidget {
           c,
           'title',
           c.property('dataSource') == 'recommendations'
-              ? (AppLocale.instance.isArabic ? 'ترشيحات لك' : 'Recommendations')
-              : (AppLocale.instance.isArabic ? 'الأكثر طلبًا' : 'Popular'),
+              ? (_effectiveLanguage.isArabic ? 'ترشيحات لك' : 'Recommendations')
+              : (_effectiveLanguage.isArabic ? 'الأكثر طلبًا' : 'Popular'),
         ),
         show: true,
       ),
@@ -569,7 +614,7 @@ class NativeDesignPreview extends StatelessWidget {
           _locOr(
             c,
             'title',
-            AppLocale.instance.isArabic ? 'الباقات' : 'Bundles',
+            _effectiveLanguage.isArabic ? 'الباقات' : 'Bundles',
           ),
           show: c.properties['showTitle'] as bool? ?? true,
         ),
@@ -667,14 +712,25 @@ class NativeDesignPreview extends StatelessWidget {
           'end' => TextAlign.end,
           _ => TextAlign.start,
         },
+        textDirection: switch (c.property('textDirection')) {
+          'rtl' => TextDirection.rtl,
+          'ltr' => TextDirection.ltr,
+          _ => null,
+        },
         style: TextStyle(
           fontSize: size * _textFactor,
           fontWeight: _weight(c.property('weight')),
           color: _hex(c.property('color')) ?? _textPrimary,
           height: (c.properties['lineHeight'] as num?)?.toDouble() ?? 1.4,
+          letterSpacing: _numProp(c, 'letterSpacing'),
         ),
         maxLines: (c.properties['maxLines'] as num?)?.toInt(),
-        overflow: TextOverflow.ellipsis,
+        overflow: switch (c.property('overflow')) {
+          'clip' => TextOverflow.clip,
+          'fade' => TextOverflow.fade,
+          'visible' => TextOverflow.visible,
+          _ => TextOverflow.ellipsis,
+        },
       ),
     );
   }
@@ -726,9 +782,10 @@ class NativeDesignPreview extends StatelessWidget {
     );
   }
 
-  Widget _button(EditableComponent c) {
+  Widget _button(EditableComponent c, {String fallbackLabel = ''}) {
     final label = _loc(c, 'label');
-    if (label.isEmpty) return const SizedBox.shrink();
+    final effectiveLabel = label.isEmpty ? fallbackLabel : label;
+    if (effectiveLabel.isEmpty) return const SizedBox.shrink();
     final style = c.property('style') ?? 'primary';
     final bg = _hex(c.property('color')) ?? _accent;
     final fg = _hex(c.property('textColor')) ?? Colors.white;
@@ -754,7 +811,7 @@ class NativeDesignPreview extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                 ],
                 Text(
-                  label,
+                  effectiveLabel,
                   style: TextStyle(
                     fontSize: AppFontSizes.size12 * _textFactor,
                     fontWeight: AppFontWeights.semiBold,
@@ -833,8 +890,32 @@ class NativeDesignPreview extends StatelessWidget {
     ),
   );
 
-  Widget _spacer(EditableComponent c) =>
-      SizedBox(height: _spacing(c.property('size'), fallback: AppSpacing.lg));
+  Widget _spacer(EditableComponent c) {
+    final height = _spacing(c.property('size'), fallback: AppSpacing.lg);
+    final selected = c.componentId == selectedComponentId;
+    return SizedBox(
+      height: height,
+      child: selected
+          ? Container(
+              height: height,
+              decoration: BoxDecoration(
+                border: Border.all(color: _accent.withAlpha(120), width: 1.5),
+                color: _accent.withAlpha(30),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                'مسافة (${height.toInt()}px)',
+                style: TextStyle(
+                  fontSize: AppFontSizes.size9_5,
+                  fontWeight: AppFontWeights.medium,
+                  color: _accent,
+                ),
+              ),
+            )
+          : null,
+    );
+  }
 
   /// رقم من خاصية قد تكون عددًا أو نصًّا (لوحة الخصائص ترسل النصّين).
   double? _numProp(EditableComponent c, String key) {
@@ -854,23 +935,28 @@ class NativeDesignPreview extends StatelessWidget {
   String _loc(EditableComponent c, String base) {
     String read(String key) => ((c.properties[key] as String?) ?? '').trim();
     final preferred = read(
-      '${base}_${AppLocale.instance.isArabic ? 'ar' : 'en'}',
+      '${base}_${_effectiveLanguage.isArabic ? 'ar' : 'en'}',
     );
     if (preferred.isNotEmpty) return preferred;
-    final other = read('${base}_${AppLocale.instance.isArabic ? 'en' : 'ar'}');
+    final other = read('${base}_${_effectiveLanguage.isArabic ? 'en' : 'ar'}');
     if (other.isNotEmpty) return other;
     return read(base);
   }
 
   // ------------------------------------------------------- الشاشات المدمجة
 
-  Widget _splashSettings(EditableComponent c) {
+  Widget _splashSettings(EditableComponent c, BuildContext context) {
     final url = (c.properties['imageUrl'] as String?)?.trim() ?? '';
     final text = _loc(c, 'text');
     final duration = _numProp(c, 'durationMs')?.round() ?? 1000;
     final size = _numProp(c, 'textSize') ?? 16;
-    final imageWidth = _numProp(c, 'imageWidth');
-    final imageHeight = _numProp(c, 'imageHeight') ?? 110.0;
+    final previewSize = screenSize ?? MediaQuery.sizeOf(context);
+    final shortestSide = previewSize.shortestSide;
+    final imageWidth =
+        (_numProp(c, 'imageWidth') ?? (shortestSide * 0.66).clamp(160.0, 320.0))
+            .clamp(40.0, shortestSide)
+            .toDouble();
+    final imageHeight = _numProp(c, 'imageHeight')?.clamp(40.0, 700.0);
     final imageGap = _numProp(c, 'imageGap') ?? AppSpacing.sm;
     final fit = switch (c.property('imageFit')) {
       'cover' => BoxFit.cover,
@@ -881,6 +967,7 @@ class NativeDesignPreview extends StatelessWidget {
       _ => BoxFit.contain,
     };
     final alignment = switch (c.property('imageAlignment')) {
+      'topCenter' => Alignment.topCenter,
       'topLeft' => Alignment.topLeft,
       'topRight' => Alignment.topRight,
       'centerLeft' => Alignment.centerLeft,
@@ -900,15 +987,19 @@ class NativeDesignPreview extends StatelessWidget {
       'bottom' => MainAxisAlignment.end,
       _ => MainAxisAlignment.center,
     };
+    final animation = c.property('animation') ?? 'fadeScale';
+    final animationDuration =
+        _numProp(c, 'animationDurationMs')?.round() ?? 300;
     final image = url.isEmpty
         ? Image.asset(
             AppImages.logo,
-            width: imageWidth ?? 140,
+            key: const ValueKey('splash-image-default'),
+            width: imageWidth,
             height: imageHeight,
             fit: fit,
             alignment: alignment,
             errorBuilder: (_, _, _) => Container(
-              width: imageWidth ?? 140,
+              width: imageWidth,
               height: imageHeight,
               alignment: Alignment.center,
               color: _surface,
@@ -917,12 +1008,13 @@ class NativeDesignPreview extends StatelessWidget {
           )
         : Image.network(
             url,
+            key: ValueKey('splash-image-$url'),
             width: imageWidth,
             height: imageHeight,
             fit: fit,
             alignment: alignment,
             errorBuilder: (_, _, _) => Container(
-              width: imageWidth ?? 140,
+              width: imageWidth,
               height: imageHeight,
               color: _surface,
               alignment: Alignment.center,
@@ -930,7 +1022,7 @@ class NativeDesignPreview extends StatelessWidget {
             ),
           );
     return Container(
-      constraints: const BoxConstraints(minHeight: 230),
+      constraints: BoxConstraints(minHeight: previewSize.height),
       width: double.infinity,
       color: _hex(c.property('backgroundColor')) ?? Colors.white,
       padding: const EdgeInsets.all(AppSpacing.md),
@@ -956,8 +1048,16 @@ class NativeDesignPreview extends StatelessWidget {
             ),
           ],
           const SizedBox(height: AppSpacing.xs),
+          if (animation == 'fade' || animation == 'fadeScale')
+            Text(
+              'تأثير $animation • ${animationDuration}ms',
+              style: TextStyle(
+                fontSize: AppFontSizes.size9_5,
+                color: _textSecondary,
+              ),
+            ),
           Text(
-            'الانتقال بعد ${duration}ms • ${c.property('animation') ?? 'fadeScale'}',
+            'الانتقال بعد ${duration}ms',
             style: TextStyle(
               fontSize: AppFontSizes.size9_5,
               color: _textSecondary,
@@ -1270,6 +1370,35 @@ class NativeDesignPreview extends StatelessWidget {
     );
   }
 
+  Widget _row(
+    EditableComponent c,
+    Map<String, List<EditableComponent>> byParent,
+  ) {
+    final children = byParent[c.componentId] ?? const [];
+    final rendered = <Widget>[];
+    for (final child in children) {
+      final widget = _render(child, byParent);
+      if (widget == null) continue;
+      if (rendered.isNotEmpty) {
+        rendered.add(SizedBox(width: _spacing(c.property('gap'))));
+      }
+      rendered.add(Expanded(child: widget));
+    }
+    if (rendered.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: _spacing(c.property('inset'))),
+      child: Row(
+        crossAxisAlignment: switch (c.property('crossAxisAlignment')) {
+          'start' => CrossAxisAlignment.start,
+          'end' => CrossAxisAlignment.end,
+          'stretch' => CrossAxisAlignment.stretch,
+          _ => CrossAxisAlignment.center,
+        },
+        children: rendered,
+      ),
+    );
+  }
+
   Color? _hexColor(String? hex) {
     if (hex == null || hex.isEmpty) return null;
     final trimmed = hex.trim();
@@ -1303,7 +1432,10 @@ class NativeDesignPreview extends StatelessWidget {
     final padRight = _numProp(c, 'padRight');
     final padTop = _numProp(c, 'padTop');
     final padBottom = _numProp(c, 'padBottom');
-    if (padLeft != null || padRight != null || padTop != null || padBottom != null) {
+    if (padLeft != null ||
+        padRight != null ||
+        padTop != null ||
+        padBottom != null) {
       current = Padding(
         padding: EdgeInsets.only(
           left: padLeft ?? 0,
@@ -1319,7 +1451,8 @@ class NativeDesignPreview extends StatelessWidget {
     final background = _hexColor(c.property('backgroundColor'));
     final borderColor = _hexColor(c.property('borderColor'));
     final borderWidth = _numProp(c, 'borderWidth');
-    final hasRadius = c.properties.containsKey('radiusTL') ||
+    final hasRadius =
+        c.properties.containsKey('radiusTL') ||
         c.properties.containsKey('radiusTR') ||
         c.properties.containsKey('radiusBL') ||
         c.properties.containsKey('radiusBR');
@@ -1365,15 +1498,20 @@ class NativeDesignPreview extends StatelessWidget {
     }
 
     // Width/height constraints (structural height components handle height differently)
-    final structuralHeight = c.componentType == 'bannerCarousel' ||
-        c.componentType == 'promoBanner';
+    final structuralHeight =
+        c.componentType == 'bannerCarousel' || c.componentType == 'promoBanner';
     final width = _numProp(c, 'width');
     final height = structuralHeight ? null : _numProp(c, 'height');
     final minWidth = _numProp(c, 'minWidth');
     final maxWidth = _numProp(c, 'maxWidth');
     final minHeight = _numProp(c, 'minHeight');
     final maxHeight = _numProp(c, 'maxHeight');
-    if (width != null || height != null || minWidth != null || maxWidth != null || minHeight != null || maxHeight != null) {
+    if (width != null ||
+        height != null ||
+        minWidth != null ||
+        maxWidth != null ||
+        minHeight != null ||
+        maxHeight != null) {
       current = ConstrainedBox(
         constraints: BoxConstraints(
           minWidth: minWidth ?? 0,
@@ -1406,13 +1544,33 @@ class NativeDesignPreview extends StatelessWidget {
 
   bool _needsChrome(EditableComponent c) {
     const keys = [
-      'width', 'minWidth', 'maxWidth', 'height', 'minHeight', 'maxHeight',
-      'padTop', 'padBottom', 'padLeft', 'padRight',
-      'marginTop', 'marginBottom', 'marginLeft', 'marginRight',
-      'backgroundColor', 'borderColor', 'borderWidth',
-      'radiusTL', 'radiusTR', 'radiusBL', 'radiusBR',
-      'shadowColor', 'shadowOffsetX', 'shadowOffsetY', 'shadowBlur',
-      'opacity', 'aspectRatio',
+      'width',
+      'minWidth',
+      'maxWidth',
+      'height',
+      'minHeight',
+      'maxHeight',
+      'padTop',
+      'padBottom',
+      'padLeft',
+      'padRight',
+      'marginTop',
+      'marginBottom',
+      'marginLeft',
+      'marginRight',
+      'backgroundColor',
+      'borderColor',
+      'borderWidth',
+      'radiusTL',
+      'radiusTR',
+      'radiusBL',
+      'radiusBR',
+      'shadowColor',
+      'shadowOffsetX',
+      'shadowOffsetY',
+      'shadowBlur',
+      'opacity',
+      'aspectRatio',
     ];
     for (final key in keys) {
       final value = c.properties[key];
@@ -1434,9 +1592,11 @@ class NativeDesignPreview extends StatelessWidget {
 
   static Color? _hex(String? hex) {
     if (hex == null || hex.isEmpty) return null;
-    final value = int.tryParse(hex.replaceFirst('#', ''), radix: 16);
+    final clean = hex.trim().replaceFirst('#', '');
+    final value = int.tryParse(clean, radix: 16);
     if (value == null) return null;
-    return Color(hex.length == 8 ? value : 0xFF000000 | value);
+    // `#AARRGGBB` يحمل alpha؛ `#RRGGBB` يكمل بـ FF. الطول هنا بعد إزالة `#`.
+    return clean.length == 8 ? Color(value) : Color(0xFF000000 | value);
   }
 }
 

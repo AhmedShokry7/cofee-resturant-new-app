@@ -56,6 +56,8 @@ dependencies:
   pdf: ^3.13.1
   web: ^1.1.0
   material_ui: ^1.11.0
+  # Flutter has no built-in HSV/HEX color picker for the visual editor.
+  flutter_colorpicker: ^1.1.0
 
 dev_dependencies:
   flutter_test:

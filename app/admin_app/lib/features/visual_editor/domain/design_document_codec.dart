@@ -40,6 +40,7 @@ class DesignDocumentCodec {
     'welcomeTitle': DesignContract.welcomeTitle,
     'welcomeBody': DesignContract.welcomeBody,
     'welcomeSpacing': DesignContract.welcomeSpacing,
+    'welcomeCta': DesignContract.welcomeCta,
     'onboardingSlide': DesignContract.onboardingSlide,
     'onboardingTransition': DesignContract.onboardingTransition,
     'authTitle': DesignContract.authTitle,
@@ -189,6 +190,7 @@ class DesignDocumentCodec {
             internalDataSource(properties['dataSource']) ?? '';
       }
       _normalizeLegacyProperties(internal, properties);
+      _seedMissingSourceText(pageId, internal, properties, index);
       properties['visible'] = raw['visible'] is bool
           ? raw['visible'] as bool
           : true;
@@ -246,6 +248,7 @@ class DesignDocumentCodec {
             internalDataSource(properties['dataSource']) ?? '';
       }
       _normalizeLegacyProperties(internal, properties);
+      _seedMissingSourceText(pageId, internal, properties, index);
       properties['visible'] = raw['visible'] is bool
           ? raw['visible'] as bool
           : true;
@@ -285,6 +288,26 @@ class DesignDocumentCodec {
       result[pageId] = parsePage(pageId, root['children']);
     }
     return result;
+  }
+
+  /// يملأ النصوص الأصلية غير المحفوظة في المستندات القديمة عند فتحها،
+  /// دون استبدال أي قيمة صريحة (حتى إن كانت فارغة عمدًا).
+  static void _seedMissingSourceText(
+    String pageId,
+    String type,
+    Map<String, dynamic> properties,
+    int index,
+  ) {
+    final source = _sourceTextProperties(
+      pageId,
+      type,
+      contractDataSource(properties['dataSource']) ??
+          properties['dataSource'] as String?,
+      index,
+    );
+    for (final entry in source.entries) {
+      properties.putIfAbsent(entry.key, () => entry.value);
+    }
   }
 
   /// يرقّي مفاتيح النص الأحادي القديمة إلى زوج ثنائي اللغة في الذاكرة فقط.
@@ -338,7 +361,12 @@ class DesignDocumentCodec {
   /// مكوّنات «تصميم اليوم» كما تُبنى لشجرة المحرّر، من السجل عند تهيئته.
   static List<EditableComponent> defaultHomeComponents() => [
     for (var index = 0; index < defaultHomeNodes.length; index++)
-      _defaultComponent(defaultHomeNodes[index], index),
+      _withSourceText(
+        _defaultComponent(defaultHomeNodes[index], index),
+        'home',
+        defaultHomeNodes[index],
+        index,
+      ),
   ];
 
   /// مكوّنات «تصميم اليوم» لصفحات الشاشات المدمجة: عقد الشاشة الأصلية
@@ -352,6 +380,7 @@ class DesignDocumentCodec {
       ('welcomeTitle', null),
       ('welcomeBody', null),
       ('welcomeSpacing', null),
+      ('welcomeCta', null),
     ],
     'onboarding': [
       ('onboardingSlide', null),
@@ -408,11 +437,7 @@ class DesignDocumentCodec {
       ('heading', null),
       ('productGrid', null),
     ],
-    'favourites': [
-      ('heading', null),
-      ('spacer', null),
-      ('productGrid', null),
-    ],
+    'favourites': [('heading', null), ('spacer', null), ('productGrid', null)],
     'settings': [
       ('heading', null),
       ('divider', null),
@@ -430,8 +455,178 @@ class DesignDocumentCodec {
     if (nodes == null) return const [];
     return [
       for (var index = 0; index < nodes.length; index++)
-        _defaultComponent(nodes[index], index, pageId: pageId),
+        _withSourceText(
+          _defaultComponent(nodes[index], index, pageId: pageId),
+          pageId,
+          nodes[index],
+          index,
+        ),
     ];
+  }
+
+  /// Drafts saved before the welcome CTA became an editable node still show
+  /// the hard-coded button in the customer app. Give such a draft a seeded
+  /// node once, so the button appears in the editor's tree and inspector;
+  /// a draft that deliberately hides or deletes it is left untouched.
+  static List<EditableComponent> migrateWelcomeCta(
+    List<EditableComponent> components,
+  ) {
+    if (components.any((c) => c.componentType == 'welcomeCta')) {
+      return components;
+    }
+    final seeded = defaultComponentsFor('welcome')
+        .firstWhere((c) => c.componentType == 'welcomeCta');
+    final maxIndex = components.fold<int>(
+      0,
+      (max, component) => component.index > max ? component.index : max,
+    );
+    return [...components, seeded.copyWith(index: maxIndex + 1)];
+  }
+
+  /// Values shown by the customer app when no override exists. Seed these in
+  /// the editor's initial tree so editable copy is visible in its text fields;
+  /// reset still removes the override and restores the app's localized source.
+  static EditableComponent _withSourceText(
+    EditableComponent component,
+    String pageId,
+    (String, String?) node,
+    int index,
+  ) {
+    final type = node.$1;
+    final sourceText = _sourceTextProperties(pageId, type, node.$2, index);
+    if (sourceText.isEmpty) return component;
+    return component.copyWith(
+      properties: {...component.properties, ...sourceText},
+    );
+  }
+
+  static Map<String, dynamic> _sourceTextProperties(
+    String pageId,
+    String type,
+    String? dataSource,
+    int index,
+  ) {
+    Map<String, dynamic> pair(String base, String ar, String en) => {
+      '${base}_ar': ar,
+      '${base}_en': en,
+    };
+
+    if (pageId == 'home') {
+      return switch (type) {
+        'header' => pair(
+          'question',
+          'ماذا تريد اليوم؟',
+          'What would you like today?',
+        ),
+        'searchBar' => pair(
+          'hint',
+          'ابحث عن منتجاتك المفضلة...',
+          'Search for your favorite products...',
+        ),
+        'categoryList' => pair('title', 'التصنيفات', 'Categories'),
+        'productStrip' when dataSource == DesignContract.featured => pair(
+          'title',
+          'الأكثر طلبًا',
+          'Popular',
+        ),
+        'productStrip' when dataSource == DesignContract.recommendations =>
+          pair('title', 'ترشيحات لك', 'Recommendations'),
+        'bundleList' => pair('title', 'الباقات', 'Bundles'),
+        _ => const {},
+      };
+    }
+
+    if (pageId == 'welcome' && type == 'welcomeTitle') {
+      return {
+        ...pair('highlight', 'قهوتك', 'Your Coffee'),
+        ...pair('rest', 'لحظتك، على طريقتك', 'Your Moment, Your Way'),
+      };
+    }
+    if (pageId == 'welcome' && type == 'welcomeBody') {
+      return pair(
+        'text',
+        'اكتشف قهوتك المفضلة واجعل كل لحظة أجمل، كوبًا بعد كوب.',
+        'Discover your favorite coffee and make every moment a little more special, one cup at a time.',
+      );
+    }
+    if (pageId == 'welcome' && type == 'welcomeCta') {
+      return pair('label', 'لنبدأ', "Let's Get Started");
+    }
+    if (pageId == 'onboarding' && type == 'onboardingSlide') {
+      const titles = [
+        ('كل ما تحب في مكان واحد', 'Everything You Love, in One Place'),
+        ('ادفع بالطريقة التي تناسبك', 'Pay Your Way'),
+        ('مساعدك الذكي معك دائمًا', 'Meet Your AI Assistant'),
+      ];
+      const bodies = [
+        (
+          'اكتشف القهوة والمشروبات ومنتجاتك المفضلة بسهولة.',
+          'Explore coffee, drinks, and your favorite products with ease.',
+        ),
+        (
+          'استمتع بتجربة دفع سهلة وآمنة لإكمال طلبك بكل راحة.',
+          'Enjoy a smooth and secure payment experience every time you order.',
+        ),
+        (
+          'احصل على اقتراحات ذكية واكتشف ما يناسب ذوقك بسهولة.',
+          'Get smart recommendations and discover what matches your taste.',
+        ),
+      ];
+      final slideIndex = index.clamp(0, titles.length - 1);
+      return {
+        ...pair('title', titles[slideIndex].$1, titles[slideIndex].$2),
+        ...pair('body', bodies[slideIndex].$1, bodies[slideIndex].$2),
+      };
+    }
+    if (type == 'authTitle' || type == 'authSubtitle') {
+      final text = switch ((pageId, type)) {
+        ('auth', 'authTitle') => ('تسجيل الدخول', 'Sign In'),
+        ('auth', 'authSubtitle') => (
+          'أهلًا بعودتك، كنا ننتظرك',
+          "Hi welcome back, you've been missed",
+        ),
+        ('sign_up', 'authTitle') => ('إنشاء حساب', 'Sign Up'),
+        ('sign_up', 'authSubtitle') => (
+          'أنشئ حسابك للبدء',
+          'Create your account to get started',
+        ),
+        ('forget_password', 'authTitle') => (
+          'نسيت كلمة المرور',
+          'Forget Password',
+        ),
+        ('forget_password', 'authSubtitle') => (
+          'أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين',
+          "Enter your email and we'll send you a link to reset your password",
+        ),
+        ('reset_password', 'authTitle') => (
+          'إعادة تعيين كلمة المرور',
+          'Reset Password',
+        ),
+        ('reset_password', 'authSubtitle') => (
+          'أدخل كلمة المرور الجديدة بالأسفل',
+          'Enter your new password below',
+        ),
+        ('phone_auth', 'authTitle') => (
+          'تسجيل الدخول بالهاتف',
+          'Sign In with Phone',
+        ),
+        ('phone_auth', 'authSubtitle') => (
+          'أدخل رقم هاتفك وسنرسل لك كود تحقق',
+          "Enter your phone number and we'll send you a verification code",
+        ),
+        ('email_auth', 'authTitle') => (
+          'تسجيل الدخول بكود على البريد',
+          'Sign in with an e-mail code',
+        ),
+        ('email_auth', 'authSubtitle') => (
+          'أدخل بريدك الإلكتروني وسنرسل إليه كود تحقق مكونًا من 6 أرقام.',
+          'Enter your e-mail address and we will send a 6-digit verification code to it.',
+        ),
+        _ => null,
+      };
+      if (text != null) return pair('text', text.$1, text.$2);
+    }
+    return const {};
   }
 
   static EditableComponent _defaultComponent(

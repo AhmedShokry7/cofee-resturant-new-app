@@ -6,7 +6,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/locale/app_strings.dart';
+import 'package:new_coffee/core/locale/locale_rebuild.dart';
 import 'package:new_coffee/core/services/session_repository.dart';
+import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
 import 'package:new_coffee/features/welcome/presentation/manager/welcome/welcome_cubit.dart';
@@ -102,6 +104,8 @@ void main() {
     Future<void> pumpWelcome(
       WidgetTester tester, {
       Size logicalSize = phoneViewport,
+      PublishedDesign? design,
+      Key? hostKey,
     }) async {
       // The screen sizes the design was drawn for; the default 800x600 test
       // surface is not a phone this layout was made for.
@@ -113,16 +117,22 @@ void main() {
         // تطبيق العميل يزوّد كل مساراته بـ DesignCubit من جذره، والشاشة
         // تقرأ طبقتها المنشورة منه؛ الاختبار يقلّد ذلك بمستودع زائف.
         BlocProvider<DesignCubit>(
-          create: (context) => DesignCubit(repository: FakeDesignRepository()),
-          child: MaterialApp(
-            initialRoute: WelcomePage.routeName,
-            routes: {
-              WelcomePage.routeName: (context) => const WelcomePage(),
-              // The onboarding screen needs the whole provider tree; the flow
-              // only cares that this route took the screen.
-              OnBoardingView.routeName: (context) =>
-                  const Scaffold(body: Text('onboarding-stub')),
-            },
+          create: (context) =>
+              DesignCubit(repository: FakeDesignRepository(design)),
+          // The real app root listens to AppLocale and rebuilds const pages on
+          // a language switch; mirror that so the CTA is tested as shipped.
+          child: LocaleRebuild(
+            child: MaterialApp(
+              key: hostKey,
+              initialRoute: WelcomePage.routeName,
+              routes: {
+                WelcomePage.routeName: (context) => const WelcomePage(),
+                // The onboarding screen needs the whole provider tree; the flow
+                // only cares that this route took the screen.
+                OnBoardingView.routeName: (context) =>
+                    const Scaffold(body: Text('onboarding-stub')),
+              },
+            ),
           ),
         ),
       );
@@ -170,6 +180,66 @@ void main() {
       final buttonRect = tester.getRect(find.byType(CustomBtn));
       expect(buttonRect.top, greaterThanOrEqualTo(0));
       expect(buttonRect.bottom, lessThanOrEqualTo(phoneViewport.height));
+    });
+
+    testWidgets('a published CTA label is the one the customer reads', (
+      tester,
+    ) async {
+      addTearDown(() => AppLocale.instance.debugSet(AppLanguage.arabic));
+      const design = PublishedDesign(
+        schemaVersion: 2,
+        extraSections: {
+          'welcome': [
+            PublishedSection(
+              id: 'w_cta',
+              type: DesignWidgetTypes.welcomeCta,
+              properties: {'label_ar': 'ابدأ رحلتك', 'label_en': 'Brew now'},
+            ),
+          ],
+        },
+      );
+
+      AppLocale.instance.debugSet(AppLanguage.english);
+      await pumpWelcome(tester, design: design);
+      expect(find.text('Brew now'), findsOneWidget);
+      expect(find.text(S.letsGetStarted), findsNothing);
+
+      await tester.tap(find.text('Brew now'));
+      await tester.pumpAndSettle();
+      expect(find.text('onboarding-stub'), findsOneWidget);
+
+      AppLocale.instance.setPreviewLanguage(AppLanguage.arabic);
+      expect(AppLocale.instance.isArabic, isTrue);
+      // مفتاح مختلف يعيد تركيب المضيف، فيبدأ من route الترحيب بلغته الجديدة.
+      await pumpWelcome(
+        tester,
+        design: design,
+        hostKey: const Key('welcome-after-preview-language'),
+      );
+      expect(find.text('ابدأ رحلتك'), findsOneWidget);
+      expect(find.text('Brew now'), findsNothing);
+    });
+
+    testWidgets('a hidden CTA leaves no way-forward button on the screen', (
+      tester,
+    ) async {
+      const design = PublishedDesign(
+        schemaVersion: 2,
+        extraSections: {
+          'welcome': [
+            PublishedSection(
+              id: 'w_cta',
+              type: DesignWidgetTypes.welcomeCta,
+              visible: false,
+              properties: {'label_en': 'Hidden'},
+            ),
+          ],
+        },
+      );
+
+      await pumpWelcome(tester, design: design);
+      expect(find.text('Hidden'), findsNothing);
+      expect(find.byType(CustomBtn), findsNothing);
     });
   });
 }

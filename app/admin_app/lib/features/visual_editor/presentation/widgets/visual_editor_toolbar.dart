@@ -9,6 +9,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/preview_display_controls.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/templates_dialog.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/theme_studio_dialog.dart';
@@ -91,6 +92,7 @@ class VisualEditorToolbar extends StatelessWidget {
           dark: dark,
           muted: muted,
         ),
+        PreviewDisplayControls(state: state, cubit: cubit),
         EditorDivider(),
 
         // --- تراجع وإعادة ---

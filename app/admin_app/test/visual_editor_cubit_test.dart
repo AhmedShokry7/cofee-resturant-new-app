@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
@@ -167,6 +168,31 @@ void main() {
     expect(cubit.state.selectedComponentId, before.single.componentId);
   });
 
+  test('الإضافة ترفض مكوّنًا غير مسموح للصفحة', () async {
+    await cubit.initialize();
+    final before = cubit.state.getComponentsForPage('categories');
+
+    cubit.addComponent(pageId: 'categories', componentType: 'header');
+
+    expect(cubit.state.getComponentsForPage('categories'), before);
+    expect(cubit.state.isDirty, isFalse);
+  });
+
+  test('الإضافة ترفض حاوية أب من صفحة أخرى', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'column');
+    final parent = cubit.state.getComponentsForPage('home').last;
+    final categoriesBefore = cubit.state.getComponentsForPage('categories');
+
+    cubit.addComponent(
+      pageId: 'categories',
+      componentType: 'text',
+      parentId: parent.componentId,
+    );
+
+    expect(cubit.state.getComponentsForPage('categories'), categoriesBefore);
+  });
+
   test('إضافة مكوّن يترك أثرًا في الشجرة والمستند ويدفع مسودة', () async {
     await cubit.initialize();
     cubit.addComponent(pageId: 'home', componentType: 'productGrid');
@@ -246,6 +272,48 @@ void main() {
     expect(cubit.state.selectedComponent, isNull);
   });
 
+  test('فتح الافتتاحية يحدد إعداداتها فتظهر أدوات الصورة واللون', () async {
+    await cubit.initialize();
+    cubit.loadPage('splash');
+
+    expect(
+      cubit.state.selectedComponent?.componentType,
+      'splashSettings',
+      reason: 'صفحة الافتتاحية عقدة واحدة؛ لا تترك المفتش فارغًا',
+    );
+    expect(cubit.state.selectedComponentId, isNotNull);
+  });
+
+  test('تغيير صورة ولون الافتتاحية يصل إلى مستند المعاينة كاملًا', () async {
+    await cubit.initialize();
+    cubit.loadPage('splash');
+    final splashId = cubit.state.selectedComponentId!;
+
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'imageUrl',
+      value: 'https://example.invalid/new-splash.png',
+    );
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'backgroundColor',
+      value: '#2E7D32',
+    );
+
+    final document =
+        cubit.pendingMessage!.payload['designDocument'] as Map<String, dynamic>;
+    final pages = document['pages'] as List;
+    final splashPage = pages.firstWhere(
+      (page) => page is Map && page['page'] == 'splash',
+    ) as Map;
+    final node =
+        ((splashPage['root'] as Map)['children'] as List).single as Map;
+    final properties = node['properties'] as Map;
+
+    expect(properties['imageUrl'], 'https://example.invalid/new-splash.png');
+    expect(properties['backgroundColor'], '#2E7D32');
+  });
+
   test('حفظ قديم لا يمسح dirty ولا يتسابق مع حفظ أحدث', () async {
     await cubit.initialize();
     cubit.addComponent(pageId: 'home', componentType: 'productGrid');
@@ -315,6 +383,38 @@ void main() {
       cubit.state.findComponent(grid.componentId)!.properties['columns'],
       3,
     );
+  });
+
+  test('إعادة خاصية اختيارية إلى الافتراضي تحذف التجاوز من المستند', () async {
+    await cubit.initialize();
+    cubit.addComponent(pageId: 'welcome', componentType: 'welcomeTitle');
+    final title = cubit.state.getComponentsForPage('welcome').last;
+    cubit.updateProperty(
+      componentId: title.componentId,
+      propertyKey: 'size',
+      value: 28,
+    );
+    expect(
+      cubit.state.findComponent(title.componentId)!.properties['size'],
+      28,
+    );
+
+    cubit.resetProperty(componentId: title.componentId, propertyKey: 'size');
+
+    expect(
+      cubit.state.findComponent(title.componentId)!.properties,
+      isNot(contains('size')),
+    );
+    final document = DesignDocumentCodec.document(cubit.state.componentsByPage);
+    final root =
+        (document['pages'] as List<dynamic>)
+                .whereType<Map<String, dynamic>>()
+                .singleWhere((page) => page['page'] == 'welcome')['root']
+            as Map;
+    final titleNode = (root['children'] as List<dynamic>)
+        .whereType<Map>()
+        .singleWhere((node) => node['id'] == title.componentId);
+    expect(titleNode['properties'], isNot(contains('size')));
   });
 
   test('إظهار وإخفاء يمرر عبر updateProperty', () async {
@@ -600,5 +700,61 @@ void main() {
     final ok = await cubit.deleteTemplate(template!.id);
     expect(ok, isTrue);
     expect(repository.templates, isEmpty);
+  });
+
+  // ---------- لغة ومظهر معاينة العميل ----------
+
+  group('إعدادات عرض المعاينة', () {
+    test('التبديل يرسل رسالته بلا مسودة ولا تراجع ولا حفظ', () async {
+      await cubit.initialize();
+
+      cubit.togglePreviewLanguage();
+      expect(cubit.state.previewLanguage, PreviewLanguage.english);
+      expect(cubit.pendingMessage?.type, VisualEditorMessageType.setLanguage);
+      expect(cubit.pendingMessage?.payload, {'language': 'en'});
+
+      cubit.togglePreviewThemeMode();
+      expect(cubit.state.previewThemeMode, PreviewThemeMode.dark);
+      expect(cubit.pendingMessage?.type, VisualEditorMessageType.setThemeMode);
+      expect(cubit.pendingMessage?.payload, {'mode': 'dark'});
+
+      expect(cubit.state.isDirty, isFalse);
+      expect(cubit.canUndo, isFalse);
+      expect(cubit.canRedo, isFalse);
+      expect(repository.saveSnapshots, isEmpty);
+      expect(repository.publishCalls, 0);
+    });
+
+    test('الإعدادات الحالية تُرفق برسالة تهيئة الإطار', () async {
+      await cubit.initialize();
+      cubit.setPreviewLanguage(PreviewLanguage.english);
+      cubit.setPreviewThemeMode(PreviewThemeMode.dark);
+
+      cubit.handlePreviewReady(null);
+
+      expect(
+        cubit.pendingMessage?.type,
+        VisualEditorMessageType.previewInitialize,
+      );
+      expect(cubit.pendingMessage?.payload['previewLanguage'], 'en');
+      expect(cubit.pendingMessage?.payload['previewThemeMode'], 'dark');
+      expect(cubit.state.isDirty, isFalse);
+    });
+
+    test('النشر لا يحمل إعدادات المعاينة', () async {
+      await cubit.initialize();
+      cubit.setPreviewLanguage(PreviewLanguage.english);
+      cubit.setPreviewThemeMode(PreviewThemeMode.dark);
+
+      final version = await cubit.publish();
+
+      expect(version, isNotNull);
+      expect(repository.publishedDocuments, hasLength(1));
+      final published = jsonEncode(repository.publishedDocuments.single);
+      expect(published, isNot(contains('previewLanguage')));
+      expect(published, isNot(contains('previewThemeMode')));
+      expect(published, isNot(contains('"language":"en"')));
+      expect(published, isNot(contains('"mode":"dark"')));
+    });
   });
 }

@@ -21,6 +21,8 @@ class VisualEditorState {
     this.isDirty = false,
     this.previewConnection = PreviewConnection.connecting,
     this.previewStatusMessage,
+    this.previewLanguage = PreviewLanguage.arabic,
+    this.previewThemeMode = PreviewThemeMode.light,
   });
 
   final VisualEditorStatus status;
@@ -50,6 +52,13 @@ class VisualEditorState {
   /// عنوان URL للـ iframe (يُبنى وقت التهيئة).
   final String? previewUrl;
 
+  /// لغة تطبيق العميل داخل المعاينة فقط — لا تغيّر لغة لوحة الأدمن ولا
+  /// الحفظ المنشور. تُرسل مع كل مستند وفي رابط الإطار عند إعادة تحميله.
+  final PreviewLanguage previewLanguage;
+
+  /// الوضع الفاتح/الداكن لتطبيق العميل داخل المعاينة فقط.
+  final PreviewThemeMode previewThemeMode;
+
   /// هل هناك تعديلات لم تُحفظ كمسودة.
   final bool isDirty;
 
@@ -65,29 +74,32 @@ class VisualEditorState {
     bool? isDirty,
     PreviewConnection? previewConnection,
     String? previewStatusMessage,
+    PreviewLanguage? previewLanguage,
+    PreviewThemeMode? previewThemeMode,
     bool clearError = false,
     bool clearSelectedComponent = false,
     bool clearPreviewStatusMessage = false,
-  }) =>
-      VisualEditorState(
-        status: status ?? this.status,
-        errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-        sessionId: sessionId ?? this.sessionId,
-        componentsByPage: componentsByPage ?? this.componentsByPage,
-        selectedComponentId: clearSelectedComponent
-            ? null
-            : (selectedComponentId ?? this.selectedComponentId),
-        selectedComponent: clearSelectedComponent
-            ? null
-            : (selectedComponent ?? this.selectedComponent),
-        previewReady: previewReady ?? this.previewReady,
-        previewUrl: previewUrl ?? this.previewUrl,
-        isDirty: isDirty ?? this.isDirty,
-        previewConnection: previewConnection ?? this.previewConnection,
-        previewStatusMessage: clearPreviewStatusMessage
-            ? null
-            : (previewStatusMessage ?? this.previewStatusMessage),
-      );
+  }) => VisualEditorState(
+    status: status ?? this.status,
+    errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+    sessionId: sessionId ?? this.sessionId,
+    componentsByPage: componentsByPage ?? this.componentsByPage,
+    selectedComponentId: clearSelectedComponent
+        ? null
+        : (selectedComponentId ?? this.selectedComponentId),
+    selectedComponent: clearSelectedComponent
+        ? null
+        : (selectedComponent ?? this.selectedComponent),
+    previewReady: previewReady ?? this.previewReady,
+    previewUrl: previewUrl ?? this.previewUrl,
+    isDirty: isDirty ?? this.isDirty,
+    previewConnection: previewConnection ?? this.previewConnection,
+    previewStatusMessage: clearPreviewStatusMessage
+        ? null
+        : (previewStatusMessage ?? this.previewStatusMessage),
+    previewLanguage: previewLanguage ?? this.previewLanguage,
+    previewThemeMode: previewThemeMode ?? this.previewThemeMode,
+  );
 
   /// جميع مكوّنات صفحة واحدة بترتيبها العمقي كما هو مخزّن — ترتيب القائمة
   /// المسطّحة هو ترتيب المستند نفسه (الجذر يتبعه أبناءه)، فرز إضافي بالفهرس

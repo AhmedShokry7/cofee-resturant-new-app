@@ -1,4 +1,9 @@
-/// Visual Editor message types for communication with Customer App preview
+/// Visual Editor message types for communication with Customer App preview.
+///
+/// SET_LANGUAGE and SET_THEME_MODE are preview-only: they change what the
+/// iframe renders and never enter a draft, a published document, or the
+/// customer's saved preferences. The enums mirror `PreviewMessageType` in the
+/// customer app; a source-level parity test guards the wire values.
 enum VisualEditorMessageType {
   previewReady('PREVIEW_READY'),
   previewInitialize('PREVIEW_INITIALIZE'),
@@ -14,10 +19,42 @@ enum VisualEditorMessageType {
   applyDesignConfig('APPLY_DESIGN_CONFIG'),
   previewError('PREVIEW_ERROR'),
   previewRefresh('PREVIEW_REFRESH'),
+  setLanguage('SET_LANGUAGE'),
+  setThemeMode('SET_THEME_MODE'),
   saveRequest('SAVE_REQUEST');
 
   const VisualEditorMessageType(this.value);
   final String value;
+}
+
+/// Language shown by the customer preview. Not the admin UI locale.
+enum PreviewLanguage {
+  arabic('ar'),
+  english('en');
+
+  const PreviewLanguage(this.value);
+  final String value;
+
+  String get code => value.toUpperCase();
+
+  bool get isArabic => this == PreviewLanguage.arabic;
+
+  PreviewLanguage get other => this == PreviewLanguage.arabic
+      ? PreviewLanguage.english
+      : PreviewLanguage.arabic;
+}
+
+/// Light/dark mode shown by the customer preview. Not the admin app theme.
+enum PreviewThemeMode {
+  light('light'),
+  dark('dark');
+
+  const PreviewThemeMode(this.value);
+  final String value;
+
+  PreviewThemeMode get other => this == PreviewThemeMode.light
+      ? PreviewThemeMode.dark
+      : PreviewThemeMode.light;
 }
 
 /// Base message structure for Visual Editor communication
@@ -358,6 +395,7 @@ class EditorPages {
         'welcomeTitle',
         'welcomeBody',
         'welcomeSpacing',
+        'welcomeCta',
       ],
     ),
     EditorPage(

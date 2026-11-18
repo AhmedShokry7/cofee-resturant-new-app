@@ -27,17 +27,46 @@ enum PreviewDevice {
   tabletPortrait('تابلت عمودي', Icons.tablet_outlined, 768, 1024),
   tabletLandscape('تابلت أفقي', Icons.tablet, 1024, 768);
 
-  const PreviewDevice(
-    this.label,
-    this.icon,
-    this.width,
-    this.height,
-  );
+  const PreviewDevice(this.label, this.icon, this.width, this.height);
 
   final String label;
   final IconData icon;
   final double width;
   final double height;
+}
+
+/// عنوان URL لـ Customer Flutter Web في وضع المعاينة.
+///
+/// الهدف يُقرأ من إعداد بيئة التشغيل (`--dart-define=PREVIEW_BASE_URL=...`)،
+/// ومنه تُبنى معلمات الجلسة واللغة والمظهر. دالة مستقلة لأن إعادة تحميل
+/// الإطار تحتاج نفس الرابط الذي يبدأ به، ولأن اختبار الرابط لا يحتاج بناء
+/// الشجرة كلها.
+String buildPreviewUrl(
+  String? sessionId,
+  String? parentOrigin, {
+  PreviewLanguage language = PreviewLanguage.arabic,
+  PreviewThemeMode themeMode = PreviewThemeMode.light,
+}) {
+  const baseUrl = String.fromEnvironment(
+    'PREVIEW_BASE_URL',
+    defaultValue:
+        'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview',
+  );
+  // قاعدة قد تنتهي بـ '/' (رابط صفحة GitHub Pages) لا تجوز أن تتضاعف:
+  // `…/preview//?…` رابط مشوّه يُربك الجلسة.
+  final trimmed = baseUrl.endsWith('/')
+      ? baseUrl.substring(0, baseUrl.length - 1)
+      : baseUrl;
+  final params = {
+    'mode': 'preview',
+    'sessionId': ?sessionId,
+    'parentOrigin': ?parentOrigin,
+    // الإطار الجديد يقلع بالاختيار الحالي قبل وصول أول رسالة، فلا يومض
+    // بلغة الزبون أو مظهره المحفوظ ثم يعود إلى ما اختاره الموظف.
+    'language': language.value,
+    'theme': themeMode.value,
+  };
+  return '$trimmed/?${Uri(queryParameters: params).query}';
 }
 
 /// حاوية المعاينة المركزية.
@@ -66,7 +95,10 @@ class PreviewPanel extends StatefulWidget {
     this.theme = DesignTheme.none,
     this.selectedComponentId,
     this.reloadToken = 0,
+    this.previewLanguage = PreviewLanguage.arabic,
+    this.previewThemeMode = PreviewThemeMode.light,
     this.onConnectionChanged,
+    this.isDragSourceActive = false,
   });
 
   final String pageId;
@@ -99,10 +131,18 @@ class PreviewPanel extends StatefulWidget {
   /// الانقطاع) — التغيّر بينه وبين القديم هو الإشارة الوحيدة.
   final int reloadToken;
 
+  /// لغة ووضع المعاينة. يُرسلان في الرابط عند كل تحميل، وفي الرسائل عند
+  /// التبديل، وفي مستند التهيئة؛ ولا يُكتبان في تفضيلات تطبيق العميل.
+  final PreviewLanguage previewLanguage;
+  final PreviewThemeMode previewThemeMode;
+
   /// كل انتقال في حالة قناة المعاينة يُبلّغ به المالك (الـ Cubit) ليصل
   /// للمؤشر والرسالة التشخيصية.
   final void Function(PreviewConnection connection, String? reason)?
-      onConnectionChanged;
+  onConnectionChanged;
+
+  /// استبدل WebView/iframe مؤقتًا أثناء السحب حتى لا يحجب أحداث الإفلات.
+  final bool isDragSourceActive;
 
   @override
   State<PreviewPanel> createState() => _PreviewPanelState();
@@ -126,43 +166,23 @@ class _PreviewPanelState extends State<PreviewPanel> {
   static const Duration _retryWatchdog = Duration(seconds: 30);
 
   /// حالة القناة للغطاء المرئي فوق الإطار، وآخر رسالة تشخيص.
-  final ValueNotifier<PreviewConnection> _connection =
-      ValueNotifier(PreviewConnection.connecting);
+  final ValueNotifier<PreviewConnection> _connection = ValueNotifier(
+    PreviewConnection.connecting,
+  );
   String? _statusMessage;
+  bool _preferNative = false;
+  bool _livePreviewUnavailable = false;
 
   /// آخر رسالة صادرة مُرسلة فعليًا — إعادة البناء المتكرر للوحة لا يعني
   /// رسالة جديدة، والمعرّف نفسه يُرسل مرة واحدة لا في كل إطار.
   String? _lastSentMessageId;
 
-  /// عنوان URL لـ Customer Flutter Web في وضع المعاينة.
-  ///
-  /// الهدف يُقرأ من إعداد بيئة التشغيل (flutter build/run مع
-  /// `--dart-define=PREVIEW_BASE_URL=...`)، ومنه تُبنى معلمات الجلسة:
-  /// `mode=preview` يفعّل نقطة الدخول، و`sessionId` يربط الجلسة، و
-  /// `parentOrigin` هو الأصل الوحيد الذي يثق به الطرفان.
-  ///
-  /// الافتراضي هو النسخة المنشورة من تطبيق العميل (GitHub Pages): هي التي
-  /// تقلع داخل WebView2 على ويندوز — خادم `flutter run` المحلي على 5000
-  /// أثبتَت المعاينة أن صفحته لا تُكمل إقلاعها داخل WebView2 أبدًا. من يريد
-  /// معاينة محلية يمرّر الرابط بنفسه عبر dart-define.
-  static String _buildPreviewUrl(String? sessionId, String? parentOrigin) {
-    const baseUrl = String.fromEnvironment(
-      'PREVIEW_BASE_URL',
-      defaultValue:
-          'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview',
-    );
-    // قاعدة قد تنتهي بـ '/' (رابط صفحة GitHub Pages) لا تجوز أن تتضاعف:
-    // `…/preview//?…` رابط مشوّه يُربك الجلسة.
-    final trimmed = baseUrl.endsWith('/')
-        ? baseUrl.substring(0, baseUrl.length - 1)
-        : baseUrl;
-    final params = {
-      'mode': 'preview',
-      'sessionId': ?sessionId,
-      'parentOrigin': ?parentOrigin,
-    };
-    return '$trimmed/?${Uri(queryParameters: params).query}';
-  }
+  String _previewUrl() => buildPreviewUrl(
+    widget.sessionId,
+    _parentOrigin,
+    language: widget.previewLanguage,
+    themeMode: widget.previewThemeMode,
+  );
 
   @override
   void initState() {
@@ -174,7 +194,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
         // داخل WebView2 لا يوجد أب حقيقي: origin العميل نفسه هو مصدر
         // الرسائل في الاتجاهين، فنمرّه ليتحقق جسر العميل منه كما على الويب.
         _parentOrigin = previewOriginOf(
-          _buildPreviewUrl(widget.sessionId, null),
+          buildPreviewUrl(widget.sessionId, null),
         );
       }
       if (!_viewRegistered) {
@@ -202,11 +222,12 @@ class _PreviewPanelState extends State<PreviewPanel> {
   void _onWatchdogExpired() {
     if (!mounted || !preview_platform.supportsLiveWebview) return;
     if (_autoReloads >= _maxAutoReloads) {
-      widget.onConnectionChanged?.call(
-        PreviewConnection.error,
-        'لم تستجب المعاينة بعد عدة محاولات — تأكد أن تطبيق العميل يعمل '
-        'على منفذ المعاينة ثم اضغط إعادة التحميل',
-      );
+      _watchdog?.cancel();
+      _statusMessage =
+          'المعاينة الحية غير متاحة؛ يعرض المحرر معاينة محلية قابلة للتحديث.';
+      _connection.value = PreviewConnection.error;
+      widget.onConnectionChanged?.call(PreviewConnection.error, _statusMessage);
+      if (mounted) setState(() => _livePreviewUnavailable = true);
       return;
     }
     _autoReloads++;
@@ -216,7 +237,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
     );
     preview_platform.reloadPreviewView(
       viewType: _iframeViewType,
-      url: _buildPreviewUrl(widget.sessionId, _parentOrigin),
+      url: _previewUrl(),
     );
     _armWatchdog();
   }
@@ -224,7 +245,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   void _registerIframeView() {
     preview_platform.registerPreviewView(
       viewType: _iframeViewType,
-      url: _buildPreviewUrl(widget.sessionId, _parentOrigin),
+      url: _previewUrl(),
       sessionId: widget.sessionId,
       parentOrigin: _parentOrigin,
       onElementSelected: widget.onElementSelected,
@@ -245,6 +266,9 @@ class _PreviewPanelState extends State<PreviewPanel> {
           // وصلت إشارة حياة: الساعة تُفصل والمحاولات تعود صفر.
           _watchdog?.cancel();
           _autoReloads = 0;
+          if (_livePreviewUnavailable && mounted) {
+            setState(() => _livePreviewUnavailable = false);
+          }
         }
         widget.onConnectionChanged?.call(connection, reason);
       },
@@ -263,6 +287,15 @@ class _PreviewPanelState extends State<PreviewPanel> {
     _deliverOutbound();
   }
 
+  /// العودة لمحاولة المعاينة الحية بعد تشغيل تطبيق العميل.
+  void _retryLivePreview() {
+    setState(() {
+      _preferNative = false;
+      _livePreviewUnavailable = false;
+    });
+    _reloadManually();
+  }
+
   /// إعادة التحميل بيد الموظف (زر Reload) — الطابور يُحفظ فآخر مستند
   /// يعود أول ما تعلن المعاينة الجديدة جاهزيتها.
   void _reloadManually() {
@@ -270,7 +303,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
     _connection.value = PreviewConnection.connecting;
     preview_platform.reloadPreviewView(
       viewType: _iframeViewType,
-      url: _buildPreviewUrl(widget.sessionId, _parentOrigin),
+      url: _previewUrl(),
     );
     _armWatchdog();
   }
@@ -301,7 +334,8 @@ class _PreviewPanelState extends State<PreviewPanel> {
               connection: connection,
               message: _statusMessage,
               dark: dark,
-              onRetry: _reloadManually,
+              onRetry: _retryLivePreview,
+              onSwitchToNative: () => setState(() => _preferNative = true),
             );
           },
         ),
@@ -330,16 +364,28 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return _PreviewFrame(
-      zoom: widget.zoom,
-      device: widget.device,
-      dark: dark,
-      child: preview_platform.supportsLiveWebview
-          ? _buildWebPreviewWithStatus(dark)
-          : _buildNativePreview(),
+    final showNative =
+        _preferNative ||
+        _livePreviewUnavailable ||
+        !preview_platform.supportsLiveWebview;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: _PreviewFrame(
+            zoom: widget.zoom,
+            device: widget.device,
+            child: widget.isDragSourceActive
+                ? Container(
+                    color: dark ? AppColor.darkSurface : AppColor.whiteColor,
+                  )
+                : showNative
+                ? _buildNativePreview()
+                : _buildWebPreviewWithStatus(dark),
+          ),
+        ),
+      ],
     );
   }
-
 
   /// على غير الويب لا يوجد iframe: يرسم المحرّر مستند التصميم نفسه بمكوّنات
   /// Flutter — نفس التسلسل والخصائص وطبقة الشكل، والنقر يحدد العنصر.
@@ -347,7 +393,10 @@ class _PreviewPanelState extends State<PreviewPanel> {
     return NativeDesignPreview(
       components: widget.components,
       theme: widget.theme,
+      screenSize: Size(widget.device.width, widget.device.height),
       selectedComponentId: widget.selectedComponentId,
+      previewLanguage: widget.previewLanguage,
+      previewThemeMode: widget.previewThemeMode,
       onElementSelected: (componentId) =>
           widget.onElementSelected({'componentId': componentId}),
     );
@@ -364,101 +413,78 @@ class _PreviewFrame extends StatelessWidget {
   const _PreviewFrame({
     required this.zoom,
     required this.device,
-    required this.dark,
     required this.child,
   });
 
   final double zoom;
   final PreviewDevice device;
-  final bool dark;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: dark ? AppColor.darkBackground : AppColor.lightGreyColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          // المساحة الفعلية للوحة بعد الحواف الداخلية.
-          final available = Size(
-            (constraints.maxWidth - AppSpacing.xxl * 2).clamp(1.0, 100000.0),
-            (constraints.maxHeight - AppSpacing.xxl * 2).clamp(1.0, 100000.0),
-          );
-          // نسبة الملاءمة: أصغر عامل يجعل الإطار كاملًا داخل المساحة.
-          final fitScale = math.min(
-            available.width / device.width,
-            available.height / device.height,
-          );
-          final scale = math.max(fitScale * zoom, 0.05);
-          final frameWidth = device.width * scale;
-          final frameHeight = device.height * scale;
-          // الإطار نفسه بحجم الجهاز الطبيعي، موسّطًا ومصغّرًا بالتحويل —
-          // OverflowBox يُبقي قيود الرسم الطبيعية داخل بصمة الحجم المرئي.
-          Widget frame = SizedBox(
-            width: frameWidth,
-            height: frameHeight,
-            child: OverflowBox(
-              // القيود الدنيا صفر حتى لا يرث الأب الحجم المُكيّف كحد أدنى
-              // فوق أبعاد جهاز أصغر — كان يكسر التخطيط عند التكبير > 1
-              // مع الأجهزة الأصغر من الموبايل الافتراضي.
-              minWidth: 0,
-              minHeight: 0,
-              maxWidth: device.width,
-              maxHeight: device.height,
-              child: Transform.scale(
-                scale: scale,
-                alignment: Alignment.center,
-                child: Container(
-                  width: device.width,
-                  height: device.height,
-                  decoration: BoxDecoration(
-                    color: AppColor.deviceChrome,
-                    borderRadius:
-                        BorderRadius.circular(AppRadius.phoneBody),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColor.black20,
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    child: ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(AppRadius.phoneScreen),
-                      child: child,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // المساحة المتاحة مباشرة للمحاكي دون إطار خارجي حوله.
+        final available = Size(
+          constraints.maxWidth.clamp(1.0, 100000.0),
+          constraints.maxHeight.clamp(1.0, 100000.0),
+        );
+        // نسبة الملاءمة: أصغر عامل يجعل الإطار كاملًا داخل المساحة.
+        final fitScale = math.min(
+          available.width / device.width,
+          available.height / device.height,
+        );
+        final scale = math.max(fitScale * zoom, 0.05);
+        final frameWidth = device.width * scale;
+        final frameHeight = device.height * scale;
+        // هيكل المحاكي يطوّق الشاشة، والخلفية المحيطة شفافة.
+        Widget frame = SizedBox(
+          width: frameWidth,
+          height: frameHeight,
+          child: OverflowBox(
+            minWidth: 0,
+            minHeight: 0,
+            maxWidth: device.width,
+            maxHeight: device.height,
+            child: Transform.scale(
+              scale: scale,
+              alignment: Alignment.center,
+              child: Container(
+                width: device.width,
+                height: device.height,
+                decoration: BoxDecoration(
+                  color: AppColor.deviceChrome,
+                  borderRadius: BorderRadius.circular(AppRadius.phoneBody),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.black20,
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
                     ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.phoneScreen),
+                    child: child,
                   ),
                 ),
               ),
             ),
-          );
-          final padded = Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
+          ),
+        );
+        if (frameWidth <= available.width && frameHeight <= available.height) {
+          return Center(child: frame);
+        }
+        return SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
             child: frame,
-          );
-          // التمركز الحقيقي في المنتصف: لا تمرير ما دام الإطار يسع
-          // المساحة — داخل التمرير يفقد Center معناه ويتموضع المحتوى
-          // في أول الاتجاه (يمين الشاشة في RTL).
-          if (frameWidth <= available.width &&
-              frameHeight <= available.height) {
-            return Center(child: padded);
-          }
-          // التكبير فوق الملاءمة فقط يفتح تمرير الإطار؛ لا يُقتطع أبدًا.
-          return SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: padded,
-            ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -471,21 +497,32 @@ class _PreviewStatusOverlay extends StatelessWidget {
     required this.message,
     required this.dark,
     required this.onRetry,
+    this.onSwitchToNative,
   });
 
   final PreviewConnection connection;
   final String? message;
   final bool dark;
   final VoidCallback onRetry;
+  final VoidCallback? onSwitchToNative;
 
   @override
   Widget build(BuildContext context) {
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
     final (icon, title) = switch (connection) {
-      PreviewConnection.connecting => (Icons.hourglass_top, 'جارٍ تحميل تطبيق العميل…'),
-      PreviewConnection.disconnected => (Icons.cloud_off, 'انقطع الاتصال بالمعاينة'),
-      PreviewConnection.error => (Icons.error_outline, 'تعذر إكمال الاتصال بالمعاينة'),
+      PreviewConnection.connecting => (
+        Icons.hourglass_top,
+        'جارٍ تحميل تطبيق العميل…',
+      ),
+      PreviewConnection.disconnected => (
+        Icons.cloud_off,
+        'انقطع الاتصال بالمعاينة',
+      ),
+      PreviewConnection.error => (
+        Icons.error_outline,
+        'تعذر إكمال الاتصال بالمعاينة',
+      ),
       PreviewConnection.connected => (Icons.check_circle, ''),
     };
     return Container(
@@ -534,9 +571,22 @@ class _PreviewStatusOverlay extends StatelessWidget {
               icon: Icon(Icons.refresh, size: 16, color: accent),
               label: Text(
                 'إعادة تحميل المعاينة',
-                style: TextStyle(
-                  fontSize: AppFontSizes.size12,
-                  color: accent,
+                style: TextStyle(fontSize: AppFontSizes.size12, color: accent),
+              ),
+            ),
+          ],
+          if (onSwitchToNative != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            OutlinedButton.icon(
+              onPressed: onSwitchToNative,
+              icon: const Icon(Icons.flash_on, size: 15),
+              label: const Text('المعاينة المباشرة الفورية'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF5A6A3A),
+                side: const BorderSide(color: Color(0xFF5A6A3A)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
                 ),
               ),
             ),

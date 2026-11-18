@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 import 'dart:async';
 
@@ -9,47 +9,18 @@ import 'package:new_coffee/app.dart';
 import 'package:new_coffee/core/constant/app_constant.dart';
 import 'package:new_coffee/core/locale/app_locale.dart';
 import 'package:new_coffee/core/preview/preview_bridge.dart';
+import 'package:new_coffee/core/preview/preview_page_routes.dart';
 import 'package:new_coffee/core/preview/preview_section.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/core/services/supabase_service.dart';
 import 'package:new_coffee/core/startup/preview_theme.dart';
+import 'package:new_coffee/core/theme/theme_mode_cubit.dart';
 import 'package:new_coffee/features/design/data/design_preview_store.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
-import 'package:new_coffee/features/splash/presentation/views/splash_view.dart';
-import 'package:new_coffee/features/welcome/presentation/views/welcome_view.dart';
-import 'package:new_coffee/features/on_boarding/presentation/views/on_boarding_view.dart';
-import 'package:new_coffee/features/auth/presentation/views/auth_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/sign_up_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/forget_password_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/reset_password_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/phone_auth_page.dart';
-import 'package:new_coffee/features/auth/presentation/views/email_auth_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/checkout_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/shipping_addresses_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/add_address_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/payment_method_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/payment_success_page.dart';
-import 'package:new_coffee/features/checkout/presentation/views/e_receipt_page.dart';
-import 'package:new_coffee/features/payment/presentation/views/add_card_page.dart';
-import 'package:new_coffee/features/payment/presentation/views/saved_cards_page.dart';
-import 'package:new_coffee/features/coupon/presentation/views/coupon_page.dart';
-import 'package:new_coffee/features/loyalty/presentation/views/loyalty_page.dart';
-import 'package:new_coffee/features/orders/presentation/views/orders_page.dart';
-import 'package:new_coffee/features/profile/presentation/views/edit_profile_page.dart';
-import 'package:new_coffee/features/addresses/presentation/views/addresses_page.dart';
-import 'package:new_coffee/features/addresses/presentation/views/address_form_page.dart';
-import 'package:new_coffee/features/content/presentation/views/help_page.dart';
-import 'package:new_coffee/features/content/presentation/views/privacy_policy_page.dart';
-import 'package:new_coffee/features/notifications/presentation/views/notifications_page.dart';
-import 'package:new_coffee/features/notifications/presentation/views/notification_settings_page.dart';
-import 'package:new_coffee/features/assistant/presentation/views/assistant_memory_page.dart';
-import 'package:new_coffee/features/subscriptions/presentation/views/subscription_plans_page.dart';
-import 'package:new_coffee/features/subscriptions/presentation/views/subscription_details_page.dart';
-import 'package:new_coffee/features/subscriptions/presentation/views/cashier_subscription_consume_page.dart';
 
 /// Preview mode entry point for the Customer App.
 ///
@@ -61,6 +32,8 @@ import 'package:new_coffee/features/subscriptions/presentation/views/cashier_sub
 ///   [DesignPreviewStore], so the preview goes through the exact pipeline
 ///   the phone uses for a published design.
 /// - LOAD_PAGE: opens the tab the editor asked for.
+/// - SET_LANGUAGE / SET_THEME_MODE: change only this iframe's language and
+///   light/dark mode; the customer's saved preferences are never written.
 /// - SELECT_ELEMENT: highlights the section the editor pointed at.
 /// - PREVIEW_READY / ELEMENT_SELECTED / PROPERTY_UPDATED / TREE_UPDATED:
 ///   flow back to the editor.
@@ -72,6 +45,9 @@ void main() async {
 
   // Locale first: the app below reads it on the first frame.
   await AppLocale.instance.initialize();
+  // The editor owns the preview language. It lives in the iframe URL so the
+  // choice survives a reload without ever touching the customer preference.
+  _applyUrlLanguage();
   // Supabase is required by repositories the app builds (design reads, auth
   // reconnects). Without configuration the repositories fall back the same
   // way they do for a customer without a backend.
@@ -79,6 +55,27 @@ void main() async {
   applyPreviewTheme();
 
   runApp(const PreviewApp());
+}
+
+/// Preview language from the editor's iframe URL.
+void _applyUrlLanguage() {
+  if (!kIsWeb) return;
+  final language = Uri.base.queryParameters['language'];
+  if (language == 'ar') {
+    AppLocale.instance.setPreviewLanguage(AppLanguage.arabic);
+  } else if (language == 'en') {
+    AppLocale.instance.setPreviewLanguage(AppLanguage.english);
+  }
+}
+
+/// Preview light/dark mode from the editor's iframe URL.
+ThemeMode? _urlThemeMode() {
+  if (!kIsWeb) return null;
+  return switch (Uri.base.queryParameters['theme']) {
+    'dark' => ThemeMode.dark,
+    'light' => ThemeMode.light,
+    _ => null,
+  };
 }
 
 /// The preview root: wraps the real [MyApp] with nothing but preview wiring.
@@ -92,6 +89,9 @@ class PreviewApp extends StatefulWidget {
 class _PreviewAppState extends State<PreviewApp> {
   final PreviewBridge _bridge = PreviewBridge();
   StreamSubscription<DesignState>? _designSubscription;
+
+  /// رسالة مظهر وصلت قبل أن يبنى جذر التطبيق؛ تُطبَّق في أول إطار متاح.
+  ThemeMode? _pendingPreviewTheme;
 
   /// الصفحة التي يشاهدها الموظف في المحاكي الآن — شجرتها هي التي تُرسل
   /// راجعة إلى لوحة الطبقات. الافتتاحية دائمًا الرئيسية.
@@ -132,7 +132,9 @@ class _PreviewAppState extends State<PreviewApp> {
       ..onMessage(PreviewMessageType.reorderComponent, _applyDocument)
       ..onMessage(PreviewMessageType.loadPage, _handleLoadPage)
       ..onMessage(PreviewMessageType.selectElement, _handleSelectElement)
-      ..onMessage(PreviewMessageType.previewRefresh, _handleRefresh);
+      ..onMessage(PreviewMessageType.previewRefresh, _handleRefresh)
+      ..onMessage(PreviewMessageType.setLanguage, _handleSetLanguage)
+      ..onMessage(PreviewMessageType.setThemeMode, _handleSetThemeMode);
     _watchDesignForTreeUpdates();
   }
 
@@ -142,10 +144,9 @@ class _PreviewAppState extends State<PreviewApp> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final context = rootNavigatorKey.currentContext;
       if (context == null || !mounted) return;
-      _designSubscription = context
-          .read<DesignCubit>()
-          .stream
-          .listen((_) => _sendTreeUpdate());
+      _designSubscription = context.read<DesignCubit>().stream.listen(
+        (_) => _sendTreeUpdate(),
+      );
     });
   }
 
@@ -181,9 +182,50 @@ class _PreviewAppState extends State<PreviewApp> {
     );
   }
 
+  /// إعدادات العرض التي يرسلها المحرّر مع كل مستند: لغة ووضع فاتح/داكن
+  /// للمعاينة فقط. القيم التالفة تُتجاهل، فلا يرتدّ الإطار إلى لغة عشوائية.
+  void _applyPreviewSettings(Map<String, dynamic> payload) {
+    final language = payload['previewLanguage'] ?? payload['language'];
+    if (language == 'ar') {
+      AppLocale.instance.setPreviewLanguage(AppLanguage.arabic);
+    } else if (language == 'en') {
+      AppLocale.instance.setPreviewLanguage(AppLanguage.english);
+    }
+    final mode = payload['previewThemeMode'] ?? payload['mode'];
+    final themeMode = switch (mode) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => null,
+    };
+    if (themeMode == null) return;
+    _applyPreviewThemeMode(themeMode);
+  }
+
+  /// الوضع قد يصل في نفس لحظة إقلاع الإطار، قبل أن يصبح جذر التطبيق جاهزًا.
+  /// لا نضيع الاختيار ولا نلمس تفضيل الزبون المحفوظ: نؤجّله لإطار واحد.
+  void _applyPreviewThemeMode(ThemeMode mode) {
+    final context = rootNavigatorKey.currentContext;
+    if (context != null) {
+      context.read<ThemeModeCubit>().setPreviewMode(mode);
+      return;
+    }
+    _pendingPreviewTheme = mode;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final context = rootNavigatorKey.currentContext;
+      if (context == null) return;
+      final pending = _pendingPreviewTheme;
+      _pendingPreviewTheme = null;
+      if (pending != null) {
+        context.read<ThemeModeCubit>().setPreviewMode(pending);
+      }
+    });
+  }
+
   /// أي رسالة تحرير تحمل `designDocument` في حمولتها تطبّق كاملة: المحرّر
   /// يملك حالة الوثيقة، والهاتف يرسم ما أُرسل لا ما خمّنه.
   void _applyDocument(PreviewMessage message) {
+    _applyPreviewSettings(message.payload);
     final raw = message.payload['designDocument'];
     if (raw is! Map) {
       _bridge.sendPropertyUpdated(
@@ -238,7 +280,7 @@ class _PreviewAppState extends State<PreviewApp> {
         // كل شاشة أخرى لها مسار ثابت بلا وسيطات — يُفتح من جديد فوق
         // الجذر، فلا تتراكم رصة من معاينة إلى أخرى، وتبقى زر الرجوع
         // يصل للجذر لا لشاشة سابقة في المعاينة.
-        final routeName = pageRoutes[pageId];
+        final routeName = previewPageRoutes[pageId];
         if (routeName == null) return;
         navigator.pushNamedAndRemoveUntil(routeName, (route) => route.isFirst);
         return;
@@ -250,43 +292,6 @@ class _PreviewAppState extends State<PreviewApp> {
       (route) => route.isFirst,
     );
   }
-
-  /// كل شاشات التطبيق التي تُبنى بمسارها الثابت بلا كائنات — كما في
-  /// `AppRoutes.routes`. الشاشات ذات الوسيطات (تفاصيل منتج، طلب، باقة…)
-  /// تُفتح من داخل شاشاتها ولا تُبنى من مسار مجهول الحمولة.
-  static const Map<String, String> pageRoutes = {
-    'splash': SplashView.routeName,
-    'welcome': WelcomePage.routeName,
-    'onboarding': OnBoardingView.routeName,
-    'auth': AuthPage.routeName,
-    'sign_up': SignUpPage.routeName,
-    'forget_password': ForgetPasswordPage.routeName,
-    'reset_password': ResetPasswordPage.routeName,
-    'phone_auth': PhoneAuthPage.routeName,
-    'email_auth': EmailAuthPage.routeName,
-    'checkout': CheckoutPage.routeName,
-    'shipping_addresses': ShippingAddressesPage.routeName,
-    'add_address': AddAddressPage.routeName,
-    'payment_method': PaymentMethodPage.routeName,
-    'add_card': AddCardPage.routeName,
-    'payment_success': PaymentSuccessPage.routeName,
-    'e_receipt': EReceiptPage.routeName,
-    'coupon': CouponPage.routeName,
-    'loyalty': LoyaltyPage.routeName,
-    'orders': OrdersPage.routeName,
-    'edit_profile': EditProfilePage.routeName,
-    'saved_cards': SavedCardsPage.routeName,
-    'addresses': AddressesPage.routeName,
-    'address_form': AddressFormPage.routeName,
-    'help': HelpPage.routeName,
-    'privacy': PrivacyPolicyPage.routeName,
-    'notifications': NotificationsPage.routeName,
-    'notification_settings': NotificationSettingsPage.routeName,
-    'assistant_memory': AssistantMemoryPage.routeName,
-    'subscription_plans': SubscriptionPlansPage.routeName,
-    'subscription_details': SubscriptionDetailsPage.routeName,
-    'cashier_subscription': CashierSubscriptionConsumePage.routeName,
-  };
 
   void _handleSelectElement(PreviewMessage message) {
     final componentId = message.payload['componentId'];
@@ -300,6 +305,30 @@ class _PreviewAppState extends State<PreviewApp> {
         .load(forceRefresh: true);
   }
 
+  void _handleSetLanguage(PreviewMessage message) {
+    final language = message.payload['language'];
+    if (language == 'ar') {
+      AppLocale.instance.setPreviewLanguage(AppLanguage.arabic);
+    } else if (language == 'en') {
+      AppLocale.instance.setPreviewLanguage(AppLanguage.english);
+    } else {
+      return;
+    }
+    _ack(message);
+  }
+
+  void _handleSetThemeMode(PreviewMessage message) {
+    final mode = message.payload['mode'];
+    final themeMode = switch (mode) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => null,
+    };
+    if (themeMode == null) return;
+    _applyPreviewThemeMode(themeMode);
+    _ack(message);
+  }
+
   @override
   Widget build(BuildContext context) {
     // يقرأ المنشور عند الإقلاع — بلا currentRoute ولا onboarding، لأن إطار
@@ -309,6 +338,7 @@ class _PreviewAppState extends State<PreviewApp> {
     return MyApp(
       currentRoute: AppConstant.homeRoute,
       onboardingDone: true,
+      initialThemeMode: _urlThemeMode(),
     );
   }
 }

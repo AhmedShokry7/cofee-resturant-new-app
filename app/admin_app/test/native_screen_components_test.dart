@@ -20,6 +20,7 @@ void main() {
       'welcomeTitle',
       'welcomeBody',
       'welcomeSpacing',
+      'welcomeCta',
       'onboardingSlide',
       'onboardingTransition',
       'authTitle',
@@ -48,6 +49,7 @@ void main() {
         'welcomeTitle',
         'welcomeBody',
         'welcomeSpacing',
+        'welcomeCta',
       ]),
     );
     expect(
@@ -77,6 +79,7 @@ void main() {
       'welcomeTitle',
       'welcomeBody',
       'welcomeSpacing',
+      'welcomeCta',
       'onboardingSlide',
       'onboardingTransition',
       'authTitle',

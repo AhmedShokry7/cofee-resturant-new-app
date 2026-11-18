@@ -5404,6 +5404,11 @@ class S {
   static String get visualEditorShow => _ar ? 'إظهار' : 'Show';
   static String get visualEditorDuplicate => _ar ? 'نسخ' : 'Duplicate';
   static String get visualEditorDelete => _ar ? 'حذف' : 'Delete';
+  static String get visualEditorMoreActions =>
+      _ar ? 'إجراءات أخرى' : 'More actions';
+  static String get visualEditorDeleteComponentConfirm => _ar
+      ? 'سيُحذف هذا العنصر وأبناؤه من التصميم. هل تريد المتابعة؟'
+      : 'This component and its children will be removed from the design. Continue?';
   static String get visualEditorLibrary => _ar ? 'المكتبة' : 'Library';
   static String get visualEditorNoComponentsFound =>
       _ar ? 'لا مكوّنات مطابقة' : 'No matching components';
@@ -5475,6 +5480,10 @@ class S {
   static String get visualEditorZoomOut => _ar ? 'تصغير' : 'Zoom out';
   static String get visualEditorZoomReset => _ar ? 'حجم طبيعي' : 'Reset zoom';
   static String get visualEditorSaveDraft => _ar ? 'حفظ مسودة' : 'Save draft';
+  static String get visualEditorPreviewLanguage =>
+      _ar ? 'لغة معاينة العميل' : 'Customer preview language';
+  static String get visualEditorPreviewTheme =>
+      _ar ? 'مظهر معاينة العميل' : 'Customer preview theme';
   static String get visualEditorPublish => _ar ? 'نشر' : 'Publish';
   static String get visualEditorPublishTitle =>
       _ar ? 'تأكيد النشر' : 'Confirm publish';
@@ -5591,8 +5600,25 @@ class S {
   static String get visualEditorColorHint =>
       _ar ? '#RRGGBB مثل #2E7D32' : '#RRGGBB e.g. #2E7D32';
 
+  static String get visualEditorAutoValue => _ar ? 'تلقائي' : 'Auto';
+
   static String get visualEditorColorInvalid =>
       _ar ? 'قيمة غير صالحة' : 'Invalid value';
+
+  static String get visualEditorPickColor =>
+      _ar ? 'اختيار اللون' : 'Choose color';
+
+  static String get visualEditorCustomColor =>
+      _ar ? 'لون مخصص' : 'Custom color';
+
+  static String get visualEditorApplyColor =>
+      _ar ? 'تطبيق اللون' : 'Apply color';
+
+  static String get visualEditorHue => _ar ? 'درجة اللون' : 'Hue';
+
+  static String get visualEditorSaturation => _ar ? 'التشبع' : 'Saturation';
+
+  static String get visualEditorBrightness => _ar ? 'السطوع' : 'Brightness';
 
   // ---------- HR — sidebar ----------
 

@@ -115,6 +115,7 @@ abstract final class DesignContract {
     'welcome.title',
     'welcome.body',
     'welcome.spacing',
+    'welcome.cta',
     'onboarding.slide',
     'onboarding.transition',
     'auth.title',
@@ -146,6 +147,7 @@ abstract final class DesignContract {
   static const String welcomeTitle = 'welcome.title';
   static const String welcomeBody = 'welcome.body';
   static const String welcomeSpacing = 'welcome.spacing';
+  static const String welcomeCta = 'welcome.cta';
   static const String onboardingSlide = 'onboarding.slide';
   static const String onboardingTransition = 'onboarding.transition';
   static const String authTitle = 'auth.title';

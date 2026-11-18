@@ -11,6 +11,36 @@ void main() {
   });
 
   group('DesignDocumentCodec — مفاتيح العقد', () {
+    test('تظهر نصوص الصفحات المدمجة بالعربية والإنجليزية في حقول التحرير', () {
+      final home = DesignDocumentCodec.defaultComponentsFor('home');
+      final header = home.firstWhere(
+        (component) => component.componentType == 'header',
+      );
+      expect(header.properties['question_ar'], 'ماذا تريد اليوم؟');
+      expect(header.properties['question_en'], 'What would you like today?');
+
+      final welcome = DesignDocumentCodec.defaultComponentsFor('welcome');
+      final title = welcome.firstWhere(
+        (component) => component.componentType == 'welcomeTitle',
+      );
+      expect(title.properties['highlight_ar'], 'قهوتك');
+      expect(title.properties['highlight_en'], 'Your Coffee');
+      expect(title.properties['rest_ar'], 'لحظتك، على طريقتك');
+      expect(title.properties['rest_en'], 'Your Moment, Your Way');
+
+      final auth = DesignDocumentCodec.defaultComponentsFor('forget_password');
+      final subtitle = auth.firstWhere(
+        (component) => component.componentType == 'authSubtitle',
+      );
+      expect(subtitle.properties['text_ar'], contains('أدخل بريدك الإلكتروني'));
+      expect(subtitle.properties['text_en'], contains("we'll send you a link"));
+
+      final cta = welcome.firstWhere(
+        (component) => component.componentType == 'welcomeCta',
+      );
+      expect(cta.properties['label_ar'], 'لنبدأ');
+      expect(cta.properties['label_en'], "Let's Get Started");
+    });
     test('كل قسم يرسمه الهاتف له مفتاح عقد', () {
       for (final contractType in DesignContract.sectionTypes) {
         final internal = DesignDocumentCodec.internalType(contractType);
@@ -25,6 +55,36 @@ void main() {
           reason: 'التحويل الدائري فشل لـ $contractType',
         );
       }
+    });
+
+    test('المستندات القديمة تعرض نصوص المصدر باللغتين عند فتحها', () {
+      final parsed = DesignDocumentCodec.parsePage('home', [
+        {
+          'id': 'legacy-header',
+          'type': DesignContract.header,
+          'properties': const {},
+        },
+      ]);
+      final header = parsed.single;
+      expect(header.properties['question_ar'], 'ماذا تريد اليوم؟');
+      expect(header.properties['question_en'], 'What would you like today?');
+    });
+
+    test('مسودة قديمة بلا زر ترحيب تحصل على عقدة قابلة للتحرير', () {
+      final legacy = DesignDocumentCodec.parsePage('welcome', [
+        {
+          'id': 'welcome-title',
+          'type': DesignContract.welcomeTitle,
+          'properties': {},
+        },
+      ]);
+      final migrated = DesignDocumentCodec.migrateWelcomeCta(legacy);
+      final cta = migrated.singleWhere(
+        (component) => component.componentType == 'welcomeCta',
+      );
+      expect(cta.properties['label_ar'], 'لنبدأ');
+      expect(cta.properties['label_en'], "Let's Get Started");
+      expect(cta.index, 1);
     });
 
     test('مكوّن إعدادات الافتتاحية يكتب المفتاح ويعود بقيمه', () {

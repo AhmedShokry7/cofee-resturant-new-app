@@ -24,8 +24,7 @@ abstract class DesignRepository {
 }
 
 class SupabaseDesignRepository implements DesignRepository {
-  SupabaseDesignRepository({SupabaseClient? client})
-    : _clientOverride = client;
+  SupabaseDesignRepository({SupabaseClient? client}) : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -60,6 +59,13 @@ class SupabaseDesignRepository implements DesignRepository {
       if (cached != null) return cached;
     }
     final read = await _readRow();
+    // قد تصل معاينة جديدة أثناء انتظار الشبكة. افحصها مجددًا قبل لمس الـ cache
+    // أو النسخة المحفوظة؛ فالجواب القديم لا ينبغي أن يفسد الرجوع بعد المعاينة.
+    final latestOverride = DesignPreviewStore.instance.document;
+    if (latestOverride != null) {
+      final previewed = PublishedDesign.fromJson(latestOverride);
+      if (previewed != null) return previewed;
+    }
     if (read == null) return await lastKnown();
     // الحفظ يتبع الجواب لا الشكل: قراءة تقول «لا مستند» تمحو النسخة القديمة،
     // لأن الزبون الذي يعمل بلا شبكة يراها بعد أن رآها الموظف وهو يعمل بشبكة.
@@ -105,7 +111,10 @@ class SupabaseDesignRepository implements DesignRepository {
       final value = (rows.first as Map)['value'];
       final design = PublishedDesign.fromJson(value);
       if (design == null) return const _ReadResult();
-      return _ReadResult(design: design, document: value as Map<Object?, Object?>);
+      return _ReadResult(
+        design: design,
+        document: value as Map<Object?, Object?>,
+      );
     } catch (error) {
       debugPrint('[Design] قراءة المنشور فشلت: $error');
       return null;

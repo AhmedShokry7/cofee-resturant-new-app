@@ -42,8 +42,10 @@ class HrDashboardCubit extends Cubit<HrDashboardState> {
       super(const HrDashboardState());
 
   final HrDashboardRepository _repository;
+  int _loadSequence = 0;
 
   Future<void> load({String? branchId, bool clearBranch = false}) async {
+    final request = ++_loadSequence;
     emit(
       state.copyWith(
         status: HrDashboardStatus.loading,
@@ -59,7 +61,7 @@ class HrDashboardCubit extends Cubit<HrDashboardState> {
       final branches = data['_branches'] is List
           ? (data['_branches'] as List).cast<Map<String, dynamic>>()
           : const <Map<String, dynamic>>[];
-      if (!isClosed) {
+      if (!isClosed && request == _loadSequence) {
         emit(
           state.copyWith(
             status: HrDashboardStatus.ready,
@@ -70,7 +72,7 @@ class HrDashboardCubit extends Cubit<HrDashboardState> {
         );
       }
     } catch (error) {
-      if (!isClosed) {
+      if (!isClosed && request == _loadSequence) {
         emit(
           state.copyWith(
             status: HrDashboardStatus.failure,

@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/features/design/data/model/native_section.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
-import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 
 /// محتوى الافتتاحية المنشور. رابط الصورة الخاص بها يعلو على شعار الهوية؛
@@ -44,36 +43,7 @@ class SplashBrandMark extends StatelessWidget {
           if (settings.imageVisible)
             Align(
               alignment: imageAlignment,
-              child: BlocBuilder<DesignCubit, DesignState>(
-                buildWhen: (previous, next) => previous.logoUrl != next.logoUrl,
-                builder: (context, design) {
-                  final source = (settings.imageUrl?.trim().isNotEmpty ?? false)
-                      ? settings.imageUrl
-                      : design.logoUrl;
-                  final image = source != null && source.trim().isNotEmpty
-                      ? DbImage(
-                          image: source,
-                          fit: _fit(settings.imageFit),
-                          alignment: DbImage.alignmentFromName(
-                            settings.imageAlignment,
-                          ),
-                          width: width,
-                          height: settings.imageHeight,
-                          iconSize: 32,
-                        )
-                      : Image.asset(
-                          AppImages.logo,
-                          width: width,
-                          height: settings.imageHeight,
-                          fit: _fit(settings.imageFit),
-                          alignment: DbImage.alignmentFromName(
-                            settings.imageAlignment,
-                          ),
-                          filterQuality: FilterQuality.high,
-                        );
-                  return image;
-                },
-              ),
+              child: _brandImage(context, settings, width),
             ),
           if (settings.text != null) ...[
             SizedBox(height: settings.imageVisible ? settings.imageGap : 0),
@@ -114,6 +84,40 @@ class SplashBrandMark extends StatelessWidget {
           child: child,
         ),
       ),
+    );
+  }
+
+  /// الصورة الخاصة بالافتتاحية تقول كلمتها قبل شعار الهوية؛ غيابها يعود للشعار.
+  ///
+  /// نراقب كامل حالة التصميم لا `logoUrl` وحده: مستند المعاينة قد يتغيّر
+  /// بصورة الافتتاحية نفسها، وفي تلك الحالة لا يتحرك `logoUrl` إطلاقًا.
+  Widget _brandImage(
+    BuildContext context,
+    SplashSettings settings,
+    double width,
+  ) {
+    final logoUrl = context.watch<DesignCubit>().state.logoUrl;
+    final custom = settings.imageUrl?.trim();
+    final source = custom != null && custom.isNotEmpty ? custom : logoUrl;
+    if (source != null && source.trim().isNotEmpty) {
+      return DbImage(
+        key: ValueKey('splash-image-$source'),
+        image: source,
+        fit: _fit(settings.imageFit),
+        alignment: DbImage.alignmentFromName(settings.imageAlignment),
+        width: width,
+        height: settings.imageHeight,
+        iconSize: 32,
+      );
+    }
+    return Image.asset(
+      AppImages.logo,
+      key: const ValueKey('splash-image-default'),
+      width: width,
+      height: settings.imageHeight,
+      fit: _fit(settings.imageFit),
+      alignment: DbImage.alignmentFromName(settings.imageAlignment),
+      filterQuality: FilterQuality.high,
     );
   }
 

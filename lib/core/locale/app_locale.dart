@@ -68,6 +68,18 @@ class AppLocale extends ChangeNotifier {
     _language.isArabic ? AppLanguage.english : AppLanguage.arabic,
   );
 
+  /// Preview-only language switch used by the admin's visual editor.
+  ///
+  /// The iframe is the real customer app, so reusing [setLanguage] would write
+  /// the customer preference and clear its cached catalogue. The editor owns
+  /// the preview choice instead: it changes the language for this session and
+  /// re-sends the choice whenever the iframe reloads.
+  void setPreviewLanguage(AppLanguage value) {
+    if (_language == value) return;
+    _language = value;
+    notifyListeners();
+  }
+
   @visibleForTesting
   void debugSet(AppLanguage value) {
     _language = value;

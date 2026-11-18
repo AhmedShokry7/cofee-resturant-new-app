@@ -55,4 +55,18 @@ void main() {
     expect(AppLanguage.fromCode('ar'), AppLanguage.arabic);
     expect(AppLanguage.fromCode(null), AppLanguage.arabic);
   });
+
+  test(
+    'a preview language switch never writes the customer preference',
+    () async {
+      SharedPreferences.setMockInitialValues({'app_language': 'ar'});
+      AppLocale.instance.debugSet(AppLanguage.arabic);
+
+      AppLocale.instance.setPreviewLanguage(AppLanguage.english);
+
+      expect(AppLocale.instance.language, AppLanguage.english);
+      final preferences = await SharedPreferences.getInstance();
+      expect(preferences.getString('app_language'), 'ar');
+    },
+  );
 }

@@ -5,7 +5,6 @@ import 'package:new_coffee/core/constant/app_images.dart';
 import 'package:new_coffee/features/design/data/model/native_section.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
-import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 
 /// The photograph behind the welcome copy.

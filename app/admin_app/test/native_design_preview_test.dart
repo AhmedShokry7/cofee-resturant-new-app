@@ -1,5 +1,8 @@
 import 'package:admin_app/core/locale/app_locale.dart';
+import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
+import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
+import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/native_design_preview.dart';
 import 'package:flutter/material.dart';
@@ -33,6 +36,8 @@ void main() {
     DesignTheme theme = DesignTheme.none,
     String? selected,
     ValueChanged<String>? onSelected,
+    PreviewLanguage? previewLanguage,
+    PreviewThemeMode? previewThemeMode,
   }) => MaterialApp(
     home: Scaffold(
       body: SizedBox(
@@ -40,7 +45,10 @@ void main() {
         child: NativeDesignPreview(
           components: components,
           theme: theme,
+          screenSize: const Size(390, 844),
           selectedComponentId: selected,
+          previewLanguage: previewLanguage,
+          previewThemeMode: previewThemeMode,
           onElementSelected: onSelected ?? (_) {},
         ),
       ),
@@ -64,7 +72,10 @@ void main() {
       ]),
     );
     expect(find.text('أهلًا بك في كوفي ☕'), findsOneWidget);
-    expect(find.text('مرحبًا'), findsOneWidget);
+    final previewText = tester.widget<Text>(find.text('مرحبًا'));
+    expect(previewText.textDirection, isNull);
+    expect(previewText.style!.letterSpacing, isNull);
+    expect(previewText.overflow, TextOverflow.ellipsis);
     // النص بعد الرأس في العمق، لا قبلها.
     expect(
       find.text('أهلًا بك في كوفي ☕'),
@@ -83,6 +94,52 @@ void main() {
     );
     expect(find.text('ظاهر'), findsNothing);
     expect(find.text('لا توجد أقسام في هذه الصفحة'), findsOneWidget);
+  });
+
+  testWidgets('معاينة النص تطبق الاتجاه والتباعد والقصّ المحددة', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host([
+        comp(
+          'styled',
+          'text',
+          properties: {
+            'text': 'formatted text',
+            'textDirection': 'rtl',
+            'letterSpacing': 2.5,
+            'overflow': 'fade',
+          },
+        ),
+      ]),
+    );
+
+    final text = tester.widget<Text>(find.text('formatted text'));
+    expect(text.textDirection, TextDirection.rtl);
+    expect(text.style!.letterSpacing, 2.5);
+    expect(text.overflow, TextOverflow.fade);
+  });
+
+  testWidgets('هوامش الموضع تغيّر موضع العنصر داخل المعاينة', (tester) async {
+    await tester.pumpWidget(
+      host([
+        comp(
+          'positioned',
+          'text',
+          properties: {'text': 'عنصر بموضع', 'marginTop': 24, 'marginLeft': 16},
+        ),
+      ]),
+    );
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Padding &&
+            widget.padding == const EdgeInsets.only(top: 24, left: 16),
+      ),
+      findsOneWidget,
+      reason: 'هوامش الموضع يجب أن تصل إلى طبقة الشكل في المعاينة',
+    );
   });
 
   testWidgets('المعاينة تختار نص العنوان بحسب لغة واجهة التطبيق', (
@@ -167,6 +224,61 @@ void main() {
     expect(find.text('الأكثر طلبًا'), findsOneWidget);
     expect(find.text('الباقات'), findsOneWidget);
     expect(find.text('Categories'), findsNothing);
+  });
+
+  testWidgets('لغة المعاينة تعلو على لغة واجهة الأدمن في نصوص الأقسام', (
+    tester,
+  ) async {
+    final previousLanguage = AppLocale.instance.language;
+    addTearDown(() => AppLocale.instance.debugSet(previousLanguage));
+    AppLocale.instance.debugSet(AppLanguage.english);
+
+    await tester.pumpWidget(
+      host([
+        comp(
+          'cta',
+          'welcomeCta',
+          properties: {'label_ar': 'ابدأ الآن', 'label_en': 'Start now'},
+        ),
+      ], previewLanguage: PreviewLanguage.arabic),
+    );
+
+    expect(find.text('ابدأ الآن'), findsOneWidget);
+    expect(find.text('Start now'), findsNothing);
+  });
+
+  testWidgets('زر الترحيب المخفي لا يُرسم في المعاينة', (tester) async {
+    await tester.pumpWidget(
+      host([
+        comp(
+          'cta',
+          'welcomeCta',
+          properties: {
+            'label_ar': 'مخفي',
+            'label_en': 'Hidden',
+            'visible': false,
+          },
+        ),
+      ]),
+    );
+    expect(find.text('مخفي'), findsNothing);
+    expect(find.text('Hidden'), findsNothing);
+  });
+
+  testWidgets('الوضع الداكن للمعاينة يغيّر خلفيتها', (tester) async {
+    await tester.pumpWidget(
+      host([
+        comp('t', 'text', properties: {'text': 'نص'}),
+      ], previewThemeMode: PreviewThemeMode.dark),
+    );
+
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is ColoredBox && widget.color == AppColor.darkBackground,
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('النقر على قسم يحدده', (tester) async {
@@ -263,8 +375,15 @@ void main() {
       );
       expect(find.text('مرحباً'), findsOneWidget);
       expect(find.textContaining('2400ms'), findsOneWidget);
+      expect(find.byType(Image), findsOneWidget);
+      expect(
+        tester.widget<Image>(find.byType(Image)).image,
+        isA<NetworkImage>(),
+        reason: 'يجب أن تعرض معاينة الافتتاحية الصورة المختارة فعلًا',
+      );
       final image = tester.widget<Image>(find.byType(Image));
-      expect(image.width, isNull);
+      expect(image.width, closeTo(257.4, 0.1));
+      expect(image.height, isNull);
       expect(image.fit, BoxFit.contain);
       expect(
         find.byWidgetPredicate(
@@ -273,6 +392,97 @@ void main() {
         ),
         findsOneWidget,
       );
+      ComponentRegistry.initialize();
+      final document = DesignDocumentCodec.document({
+        'splash': [
+          comp(
+            'splash-settings',
+            'splashSettings',
+            properties: const {
+              'imageUrl': 'https://example.invalid/splash.png',
+              'backgroundColor': '#ABCDEF',
+              'durationMs': 2400,
+            },
+          ),
+        ],
+      });
+      final splashNode =
+          ((document['pages'] as List).single as Map)['root'] as Map;
+      final section = ((splashNode['children'] as List).single as Map);
+      expect(section['type'], DesignContract.splashSettings);
+      expect(
+        (section['properties'] as Map)['imageUrl'],
+        'https://example.invalid/splash.png',
+      );
+      expect((section['properties'] as Map)['backgroundColor'], '#ABCDEF');
+    });
+
+    testWidgets('تغيير صورة ولون الافتتاحية يُحدّث المعاينة مباشرة', (
+      tester,
+    ) async {
+      Widget splashWith(String url, String color) => host([
+        comp(
+          'splash-live',
+          'splashSettings',
+          properties: {'imageUrl': url, 'backgroundColor': color},
+        ),
+      ]);
+
+      await tester.pumpWidget(
+        splashWith('https://example.invalid/first.png', '#112233'),
+      );
+      expect(
+        (tester.widget<Image>(find.byType(Image)).image as NetworkImage).url,
+        'https://example.invalid/first.png',
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Container && widget.color == const Color(0xFF112233),
+        ),
+        findsOneWidget,
+      );
+
+      await tester.pumpWidget(
+        splashWith('https://example.invalid/second.png', '#445566'),
+      );
+      expect(
+        (tester.widget<Image>(find.byType(Image)).image as NetworkImage).url,
+        'https://example.invalid/second.png',
+        reason: 'اختيار صورة جديدة يجب أن يستبدل الصورة في المعاينة',
+      );
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Container && widget.color == const Color(0xFF445566),
+        ),
+        findsOneWidget,
+        reason: 'تغيير لون الخلفية يجب أن يُعاد رسمه في المعاينة',
+      );
+    });
+
+    testWidgets('قياس صورة الافتتاحية وطريقة عرضها تنعكس على الصورة', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        host([
+          comp(
+            'splash-sized',
+            'splashSettings',
+            properties: {
+              'imageUrl': 'https://example.invalid/sized.png',
+              'imageWidth': 210,
+              'imageHeight': 160,
+              'imageFit': 'cover',
+            },
+          ),
+        ]),
+      );
+
+      final image = tester.widget<Image>(find.byType(Image));
+      expect(image.width, 210);
+      expect(image.height, 160);
+      expect(image.fit, BoxFit.cover);
     });
 
     testWidgets('عنوان الترحيب المنشور يظهر بجزئيه', (tester) async {

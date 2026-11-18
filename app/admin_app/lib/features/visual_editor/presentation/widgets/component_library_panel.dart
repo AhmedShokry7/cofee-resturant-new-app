@@ -16,6 +16,7 @@ class ComponentLibraryPanel extends StatefulWidget {
     required this.pageId,
     required this.availableComponents,
     required this.onAddComponent,
+    this.onDragStateChanged,
   });
 
   final String pageId;
@@ -25,7 +26,9 @@ class ComponentLibraryPanel extends StatefulWidget {
     required String componentType,
     String? parentId,
     int? index,
-  }) onAddComponent;
+  })
+  onAddComponent;
+  final ValueChanged<bool>? onDragStateChanged;
 
   @override
   State<ComponentLibraryPanel> createState() => _ComponentLibraryPanelState();
@@ -74,9 +77,7 @@ class _ComponentLibraryPanelState extends State<ComponentLibraryPanel> {
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.sm),
-            child: _SearchField(
-              onChanged: (v) => setState(() => _filter = v),
-            ),
+            child: _SearchField(onChanged: (v) => setState(() => _filter = v)),
           ),
           Expanded(
             child: entries.isEmpty
@@ -99,6 +100,7 @@ class _ComponentLibraryPanelState extends State<ComponentLibraryPanel> {
                               componentType: componentType,
                             );
                           },
+                          onDragStateChanged: widget.onDragStateChanged,
                         ),
                     ],
                   ),
@@ -109,13 +111,13 @@ class _ComponentLibraryPanelState extends State<ComponentLibraryPanel> {
   }
 
   String _categoryLabel(String category) => switch (category) {
-        'layout' => S.visualEditorCategoryLayout,
-        'content' => S.visualEditorCategoryContent,
-        'restaurant' => S.visualEditorCategoryRestaurant,
-        'screen' => S.visualEditorCategoryScreen,
-        'navigation' => S.visualEditorCategoryNavigation,
-        _ => category,
-      };
+    'layout' => S.visualEditorCategoryLayout,
+    'content' => S.visualEditorCategoryContent,
+    'restaurant' => S.visualEditorCategoryRestaurant,
+    'screen' => S.visualEditorCategoryScreen,
+    'navigation' => S.visualEditorCategoryNavigation,
+    _ => category,
+  };
 }
 
 class _CategorySection extends StatelessWidget {
@@ -123,11 +125,13 @@ class _CategorySection extends StatelessWidget {
     required this.category,
     required this.entries,
     required this.onAdd,
+    this.onDragStateChanged,
   });
 
   final String category;
   final List<ComponentRegistryEntry> entries;
   final void Function(String componentType) onAdd;
+  final ValueChanged<bool>? onDragStateChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -154,17 +158,26 @@ class _CategorySection extends StatelessWidget {
           ),
         ),
         for (final entry in entries)
-          _ComponentTile(entry: entry, onAdd: () => onAdd(entry.componentType)),
+          _ComponentTile(
+            entry: entry,
+            onAdd: () => onAdd(entry.componentType),
+            onDragStateChanged: onDragStateChanged,
+          ),
       ],
     );
   }
 }
 
 class _ComponentTile extends StatelessWidget {
-  const _ComponentTile({required this.entry, required this.onAdd});
+  const _ComponentTile({
+    required this.entry,
+    required this.onAdd,
+    this.onDragStateChanged,
+  });
 
   final ComponentRegistryEntry entry;
   final VoidCallback onAdd;
+  final ValueChanged<bool>? onDragStateChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -173,10 +186,40 @@ class _ComponentTile extends StatelessWidget {
     final bodyColor = dark ? AppColor.darkText : AppColor.adminBody;
     final accent = dark ? AppColor.secondaryColor : AppColor.adminAccent;
 
+    return Draggable<String>(
+      data: entry.componentType,
+      onDragStarted: () => onDragStateChanged?.call(true),
+      onDragEnd: (_) => onDragStateChanged?.call(false),
+      feedback: Material(
+        elevation: 6,
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 220),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Text(entry.displayName),
+          ),
+        ),
+      ),
+      childWhenDragging: Opacity(
+        opacity: 0.35,
+        child: _buildTile(context, dark, muted, bodyColor, accent),
+      ),
+      child: _buildTile(context, dark, muted, bodyColor, accent),
+    );
+  }
+
+  Widget _buildTile(
+    BuildContext context,
+    bool dark,
+    Color muted,
+    Color bodyColor,
+    Color accent,
+  ) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: null, // الضغط يفتح توضيحًا لاحقًا
+        onTap: onAdd,
         borderRadius: BorderRadius.circular(AppRadius.sm),
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -252,12 +295,12 @@ class _ComponentTile extends StatelessWidget {
   }
 
   IconData _iconForCategory(String category) => switch (category) {
-        'layout' => Icons.view_column,
-        'content' => Icons.text_fields,
-        'restaurant' => AppIcons.coffee01,
-        'navigation' => AppIcons.home01,
-        _ => AppIcons.layers01,
-      };
+    'layout' => Icons.view_column,
+    'content' => Icons.text_fields,
+    'restaurant' => AppIcons.coffee01,
+    'navigation' => AppIcons.home01,
+    _ => AppIcons.layers01,
+  };
 }
 
 class _SearchField extends StatelessWidget {
@@ -309,7 +352,9 @@ class _SearchField extends StatelessWidget {
           ),
         ),
         filled: true,
-        fillColor: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
+        fillColor: dark
+            ? AppColor.darkSurfaceContainer
+            : AppColor.adminTableHeader,
       ),
     );
   }

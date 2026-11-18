@@ -1,9 +1,11 @@
 import 'package:admin_app/features/visual_editor/data/visual_editor_repository.dart';
+import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/pages/visual_editor_page.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_right_inspector.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +13,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// مستودع زائف مستقل: لا يلمس شبكة، ويجعل التهيئة تنجح فورًا.
 class _FakeVisualEditorRepository implements VisualEditorRepository {
+  int saveCalls = 0;
+  final List<Map<String, dynamic>> publishedDocuments = [];
+
   @override
   Future<EditorDraft?> loadDraft() async => null;
 
@@ -18,18 +23,24 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   Future<DateTime> saveDraft(
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
-  }) async => DateTime(2026, 1, 1);
+  }) async {
+    saveCalls++;
+    return DateTime(2026, 1, 1);
+  }
 
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
     String? note,
-  }) async => PublishedVersionInfo(
-    id: 'version-1',
-    versionNumber: 1,
-    publishedAt: DateTime(2026, 1, 2),
-    schemaVersion: 2,
-  );
+  }) async {
+    publishedDocuments.add(designDocument);
+    return PublishedVersionInfo(
+      id: 'version-1',
+      versionNumber: 1,
+      publishedAt: DateTime(2026, 1, 2),
+      schemaVersion: 2,
+    );
+  }
 
   @override
   Future<List<PublishedVersionInfo>> listVersions({int limit = 30}) async => [
@@ -89,6 +100,21 @@ VisualEditorPage _page({bool canPublish = true}) {
   );
 }
 
+EditableComponent _component(String type, Map<String, dynamic> properties) {
+  return EditableComponent(
+    componentId: 'test-$type',
+    componentType: type,
+    pageId: 'home',
+    index: 0,
+    classification: ComponentClassification.editable,
+    properties: properties,
+    defaultValues: const {},
+    validationRules: const {},
+    allowedOperations: const ['edit', 'delete'],
+    version: 1,
+  );
+}
+
 Future<void> _pumpAt(WidgetTester tester, Size size) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
@@ -106,6 +132,52 @@ Future<void> _pumpAt(WidgetTester tester, Size size) async {
 }
 
 void main() {
+  testWidgets('خصائص المفتش تتغير مع نوع العنصر المحدد', (tester) async {
+    ComponentRegistry.initialize();
+    final changed = <String>[];
+
+    Future<void> pumpInspector(EditableComponent component) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Row(
+              children: [
+                VisualEditorRightInspector(
+                  selectedComponent: component,
+                  onPropertyChanged: ({
+                    required componentId,
+                    required propertyKey,
+                    required value,
+                  }) => changed.add(propertyKey),
+                  onResetProperty: ({
+                    required componentId,
+                    required propertyKey,
+                  }) {},
+                  imagePermissions: const {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await pumpInspector(_component('image', const {'imageUrl': ''}));
+    expect(find.text('طريقة العرض'), findsOneWidget);
+    expect(find.text('وزن الخط'), findsNothing);
+    expect(find.text('تخصيص ألوان الخلفية، الشفافية، والظهور'), findsNothing);
+
+    await pumpInspector(
+      _component('text', const {'text_ar': '', 'text_en': ''}),
+    );
+    expect(find.text('وزن الخط'), findsOneWidget);
+    expect(find.text('اتجاه الكتابة'), findsOneWidget);
+    expect(find.text('تباعد الحروف'), findsOneWidget);
+    expect(find.text('تجاوز النص'), findsOneWidget);
+    expect(find.text('طريقة العرض'), findsNothing);
+  });
+
   testWidgets('العرض العريض: لوحات الأطراف والمعاينة في المنتصف كلها موجودة', (
     tester,
   ) async {
@@ -117,6 +189,9 @@ void main() {
     expect(find.text('الجهاز والمعاينة'), findsOneWidget);
     // المنتصف: المعاينة.
     expect(find.byType(PreviewPanel), findsOneWidget);
+    // الشريط العلوي يحمل أدوات لغة ومظهر معاينة العميل.
+    expect(find.byTooltip(S.visualEditorPreviewLanguage), findsOneWidget);
+    expect(find.byTooltip(S.visualEditorPreviewTheme), findsOneWidget);
     // قائمة الصفحات: رقائق متعددة (الجرد الكامل).
     expect(
       find.byType(ChoiceChip),
@@ -127,10 +202,8 @@ void main() {
     expect(find.byType(EditorScreenSizeSelector), findsOneWidget);
     expect(find.byType(EditorZoomControls), findsOneWidget);
     expect(find.byType(EditorConnectionStatus), findsOneWidget);
-    // تبويبات الطبقات/الخصائص في الجانب الأيسر (النص يعتمد اللغة —
-    // نتحقق من وجود التبويبات نفسها).
-    expect(find.byType(TabBar), findsOneWidget);
-    expect(find.byType(TabBarView), findsOneWidget);
+    // لوحة الخصائص تظهر في الجانب الأيسر.
+    expect(find.byType(VisualEditorRightInspector), findsOneWidget);
   });
 
   testWidgets('حساب محرر التصميم لا ينشر أو يسترجع بلا صلاحية النشر', (
@@ -163,6 +236,85 @@ void main() {
     expect(restoreButton.onPressed, isNull);
   });
 
+  testWidgets('سحب مكوّن إلى المعاينة ثم حفظه ونشره من الواجهة', (
+    tester,
+  ) async {
+    ComponentRegistry.initialize();
+    final repository = _FakeVisualEditorRepository();
+    final cubit = VisualEditorCubit(repository: repository);
+    tester.view.physicalSize = const Size(1400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: VisualEditorPage(cubit: cubit, canPublish: true)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final libraryCard = find.text('شبكة منتجات');
+    expect(libraryCard, findsOneWidget);
+    await tester.ensureVisible(libraryCard);
+    await tester.pumpAndSettle();
+    final preview = find.byType(PreviewPanel);
+    final start = tester.getCenter(libraryCard);
+    final end = tester.getCenter(preview);
+    final gesture = await tester.startGesture(start);
+    await tester.pump();
+    for (var step = 1; step <= 12; step++) {
+      await gesture.moveTo(Offset.lerp(start, end, step / 12)!);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+    expect(find.text('أفلت المكوّن لإضافته إلى الصفحة'), findsOneWidget);
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    expect(
+      cubit.state
+          .getComponentsForPage('home')
+          .where((component) => component.componentType == 'productGrid'),
+      hasLength(1),
+    );
+    expect(cubit.state.isDirty, isTrue);
+
+    final saveButton = find
+        .ancestor(
+          of: find.text(S.visualEditorSaveDraft).first,
+          matching: find.byType(EditorToolbarButton),
+        )
+        .first;
+    await tester.tap(saveButton);
+    await tester.pumpAndSettle();
+    expect(repository.saveCalls, 1);
+    expect(cubit.state.isDirty, isFalse);
+
+    final publishButton = find
+        .ancestor(
+          of: find.text(S.visualEditorPublish).first,
+          matching: find.byType(EditorToolbarButton),
+        )
+        .first;
+    await tester.tap(publishButton);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, S.visualEditorPublish));
+    await tester.pumpAndSettle();
+
+    expect(repository.publishedDocuments, hasLength(1));
+    final publishedPage =
+        (repository.publishedDocuments.single['pages'] as List)
+            .whereType<Map<String, dynamic>>()
+            .firstWhere((page) => page['page'] == 'home');
+    final root = publishedPage['root'] as Map<String, dynamic>;
+    final children = root['children'] as List<dynamic>;
+    expect(
+      children.whereType<Map<String, dynamic>>().any(
+        (node) => node['type'] == 'section.product_grid',
+      ),
+      isTrue,
+    );
+    await cubit.close();
+  });
+
   testWidgets('العرض المتوسط: نفس التوزيع الثلاثي بأعمدة أضيق', (tester) async {
     await _pumpAt(tester, const Size(1024, 800));
     expect(find.text('صفحات تطبيق العميل'), findsOneWidget);
@@ -178,6 +330,9 @@ void main() {
     // المعاينة موجودة والشريط الأفقي يبقى (كل الأدوات لا تُفقد).
     expect(find.byType(PreviewPanel), findsOneWidget);
     expect(find.byType(VisualEditorToolbar), findsOneWidget);
+    // أدوات المعاينة نفسها تنتقل إلى الشريط الضيق فلا تُفقد.
+    expect(find.byTooltip(S.visualEditorPreviewLanguage), findsOneWidget);
+    expect(find.byTooltip(S.visualEditorPreviewTheme), findsOneWidget);
     // رقائق الصفحات (شريط أفقي في الضيق) برقائق متعددة.
     expect(find.byType(ChoiceChip), findsWidgets);
   });

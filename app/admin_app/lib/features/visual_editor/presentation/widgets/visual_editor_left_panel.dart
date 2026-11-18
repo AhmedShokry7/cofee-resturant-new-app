@@ -1,38 +1,109 @@
 import 'package:flutter/material.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
-import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
-import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
+import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/component_library_panel.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/component_tree_panel.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/templates_dialog.dart';
-import 'package:admin_app/features/visual_editor/presentation/widgets/theme_studio_dialog.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_image_asset_picker.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 
-/// الأداة المحددة في الشريط الرأسي الأيسر.
+/// الأداة المحددة في الشريط الرأسي الأيسر الداكن.
 enum VisualEditorLeftTool {
   pages,
   layers,
   components,
   assets,
   templates,
-  branding,
+  settings,
 }
 
-/// اللوحة الجانبية اليسارية المتكاملة (Professional Left Workspace Panel).
-///
-/// تتكون من:
-/// 1. شريط أدوات رأسي (Vertical Navigation Rail / Activity Bar)
-/// 2. لوحة عمل تفاعلية بجوارها تتغير محتوياتها حسب الأداة المختارة.
+class _FeaturePagesGroup {
+  const _FeaturePagesGroup({
+    required this.title,
+    required this.icon,
+    required this.pageIds,
+  });
+
+  final String title;
+  final IconData icon;
+  final List<String> pageIds;
+}
+
+const _featureGroups = [
+  _FeaturePagesGroup(
+    title: 'الرئيسية والتسوق',
+    icon: Icons.storefront_outlined,
+    pageIds: ['home', 'categories', 'search', 'cart', 'favourites', 'settings'],
+  ),
+  _FeaturePagesGroup(
+    title: 'الدخول والترحيب',
+    icon: Icons.login_outlined,
+    pageIds: [
+      'splash',
+      'welcome',
+      'onboarding',
+      'auth',
+      'sign_up',
+      'forget_password',
+      'reset_password',
+      'phone_auth',
+      'email_auth',
+    ],
+  ),
+  _FeaturePagesGroup(
+    title: 'الطلب والدفع',
+    icon: Icons.payment_outlined,
+    pageIds: [
+      'checkout',
+      'shipping_addresses',
+      'add_address',
+      'payment_method',
+      'add_card',
+      'payment_success',
+      'e_receipt',
+      'coupon',
+    ],
+  ),
+  _FeaturePagesGroup(
+    title: 'الحساب والولاء',
+    icon: Icons.card_membership_outlined,
+    pageIds: [
+      'orders',
+      'edit_profile',
+      'saved_cards',
+      'addresses',
+      'address_form',
+      'loyalty',
+      'subscription_plans',
+      'subscription_details',
+      'cashier_subscription',
+    ],
+  ),
+  _FeaturePagesGroup(
+    title: 'الإعدادات والمساعدة',
+    icon: Icons.settings_suggest_outlined,
+    pageIds: [
+      'notifications',
+      'notification_settings',
+      'help',
+      'privacy',
+      'assistant_memory',
+    ],
+  ),
+];
+
+/// اللوحة الجانبية اليسارية المتكاملة المطابقة تماماً للصورة المرجعية:
+/// 1. شريط رأسي داكن أخضر زيتوني على أقصى الحافة بالأدوات الست:
+///    [الصفحات]، [الطبقات]، [المكونات]، [الصور]، [المكونات الجاهزة]، [الإعدادات].
+/// 2. لوحة العمل المجاورة بعرض 280-300px وتحتوي على:
+///    - قائمة الصفحات مع زر "+ إضافة صفحة" وحقل البحث.
+///    - شجرة الطبقات القابلة للطي `شجرة الطبقات 🗂️`.
+///    - مكتبة المكونات السريعة `مكتبة المكونات 🧩` مع التصنيفات وبطاقات الإضافة.
 class VisualEditorLeftPanel extends StatefulWidget {
   const VisualEditorLeftPanel({
     super.key,
@@ -40,6 +111,8 @@ class VisualEditorLeftPanel extends StatefulWidget {
     required this.cubit,
     required this.selectedPageId,
     required this.onPageSelected,
+    this.onAddComponent,
+    this.onDragStateChanged,
     this.initialTool = VisualEditorLeftTool.pages,
     this.isOpen = true,
     this.onToggleOpen,
@@ -51,6 +124,8 @@ class VisualEditorLeftPanel extends StatefulWidget {
   final VisualEditorCubit cubit;
   final String selectedPageId;
   final void Function(String) onPageSelected;
+  final ValueChanged<String>? onAddComponent;
+  final ValueChanged<bool>? onDragStateChanged;
   final VisualEditorLeftTool initialTool;
   final bool isOpen;
   final VoidCallback? onToggleOpen;
@@ -64,6 +139,12 @@ class VisualEditorLeftPanel extends StatefulWidget {
 class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
   late VisualEditorLeftTool _activeTool;
   String _pageSearchQuery = '';
+  String _componentSearchQuery = '';
+  int _selectedComponentCategory =
+      0; // 0: الكل, 1: التخطيط, 2: النصوص, 3: الصور
+
+  bool _isLayersExpanded = true;
+  bool _isComponentsExpanded = true;
 
   @override
   void initState() {
@@ -87,154 +168,117 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // 1. الشريط الرأسي الضيق (Vertical Navigation Rail)
-          _buildActivityBar(context, dark),
+          // 1. الشريط الرأسي الداكن (Dark Olive Navigation Rail)
+          _buildDarkNavigationRail(context, dark),
 
-          // 2. لوحة العمل المجاورة إذا كانت مفتوحة
-          if (widget.isOpen) ...[
-            Container(
-              width: 1,
-              color: borderColor,
-            ),
-            SizedBox(
-              width: VisualEditorTokens.sidePanelWidth,
-              child: _buildActiveToolDrawer(context, dark),
-            ),
-          ],
+          // 2. لوحة العمل المجاورة
+          Container(width: 1, color: borderColor),
+          SizedBox(
+            width: VisualEditorTokens.sidePanelWidth,
+            child: _buildLeftWorkspaceContent(context, dark),
+          ),
         ],
       ),
     );
   }
 
-  // --- الشريط الرأسي (Activity Bar) ---
-  Widget _buildActivityBar(BuildContext context, bool dark) {
-    final surfaceSecondary = VisualEditorTokens.surfaceSecondary(context);
-    final textMuted = VisualEditorTokens.textMuted(context);
+  // --- 1. الشريط الرأسي الداكن الأخضر الزيتوني ---
+  Widget _buildDarkNavigationRail(BuildContext context, bool dark) {
+    const railColor = Color(0xFF1E3527); // Dark olive green
 
     return Container(
       width: VisualEditorTokens.navRailWidth,
-      color: surfaceSecondary,
+      color: railColor,
       child: Column(
         children: [
           const SizedBox(height: AppSpacing.sm),
-          _buildRailItem(
+          _buildRailIconItem(
             tool: VisualEditorLeftTool.pages,
-            icon: Icons.pages_outlined,
-            activeIcon: Icons.pages_rounded,
+            icon: Icons.grid_view_rounded,
             label: 'الصفحات',
-            dark: dark,
           ),
-          _buildRailItem(
+          _buildRailIconItem(
             tool: VisualEditorLeftTool.layers,
             icon: Icons.layers_outlined,
-            activeIcon: Icons.layers_rounded,
             label: 'الطبقات',
-            dark: dark,
           ),
-          _buildRailItem(
+          _buildRailIconItem(
             tool: VisualEditorLeftTool.components,
             icon: Icons.widgets_outlined,
-            activeIcon: Icons.widgets_rounded,
             label: 'المكونات',
-            dark: dark,
           ),
-          _buildRailItem(
+          _buildRailIconItem(
             tool: VisualEditorLeftTool.assets,
-            icon: Icons.photo_library_outlined,
-            activeIcon: Icons.photo_library_rounded,
-            label: 'الوسائط',
-            dark: dark,
+            icon: Icons.photo_outlined,
+            label: 'الصور',
           ),
-          _buildRailItem(
+          _buildRailIconItem(
             tool: VisualEditorLeftTool.templates,
-            icon: Icons.dashboard_customize_outlined,
-            activeIcon: Icons.dashboard_customize_rounded,
-            label: 'القوالب',
-            dark: dark,
+            icon: Icons.view_quilt_outlined,
+            label: 'المكونات الجاهزة',
           ),
-          _buildRailItem(
-            tool: VisualEditorLeftTool.branding,
-            icon: Icons.palette_outlined,
-            activeIcon: Icons.palette_rounded,
-            label: 'الهوية',
-            dark: dark,
+          _buildRailIconItem(
+            tool: VisualEditorLeftTool.settings,
+            icon: Icons.settings_outlined,
+            label: 'الإعدادات',
           ),
-          const Spacer(),
-          // زر طي/فتح اللوحة الجانبية
-          if (widget.onToggleOpen != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-              child: IconButton(
-                onPressed: widget.onToggleOpen,
-                icon: Icon(
-                  widget.isOpen
-                      ? Icons.keyboard_double_arrow_right_rounded
-                      : Icons.keyboard_double_arrow_left_rounded,
-                  size: 20,
-                  color: textMuted,
-                ),
-                tooltip: widget.isOpen ? 'طي اللوحة' : 'توسيع اللوحة',
-              ),
-            ),
         ],
       ),
     );
   }
 
-  Widget _buildRailItem({
+  Widget _buildRailIconItem({
     required VisualEditorLeftTool tool,
     required IconData icon,
-    required IconData activeIcon,
     required String label,
-    required bool dark,
   }) {
-    final isSelected = widget.isOpen && _activeTool == tool;
-    final primary = VisualEditorTokens.primaryOliveGreen;
-    final textMuted = VisualEditorTokens.textMuted(context);
+    final isSelected = _activeTool == tool;
 
     return Tooltip(
       message: label,
       child: InkWell(
         onTap: () {
-          if (widget.isOpen && _activeTool == tool) {
-            // الضغط على الأداة النشطة يطوي اللوحة
-            widget.onToggleOpen?.call();
-          } else {
-            setState(() => _activeTool = tool);
-            if (!widget.isOpen) {
-              widget.onToggleOpen?.call();
-            }
+          setState(() => _activeTool = tool);
+          if (tool == VisualEditorLeftTool.templates) {
+            showVisualEditorTemplates(context, widget.cubit);
+          } else if (tool == VisualEditorLeftTool.assets) {
+            showVisualEditorImageAssetPicker(
+              context: context,
+              repository: VisualEditorImageAssetRepository(),
+              permissions: widget.imagePermissions,
+            );
+          } else if (tool == VisualEditorLeftTool.settings) {
+            showVisualEditorThemeStudio(context, widget.cubit);
           }
         },
         child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 10),
+          width: 52,
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            border: BorderDirectional(
-              start: BorderSide(
-                color: isSelected ? primary : Colors.transparent,
-                width: 3.0,
-              ),
+            color: isSelected ? const Color(0xFF2E5A3D) : Colors.transparent,
+            borderRadius: BorderRadius.circular(
+              VisualEditorTokens.radiusSm + 2,
             ),
-            color: isSelected
-                ? (dark ? VisualEditorTokens.darkSurface : Colors.white)
-                : Colors.transparent,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isSelected ? activeIcon : icon,
-                size: 21,
-                color: isSelected ? primary : textMuted,
+                icon,
+                size: 20,
+                color: isSelected ? Colors.white : const Color(0xFFB5C4B9),
               ),
               const SizedBox(height: 3),
               Text(
                 label,
+                textAlign: TextAlign.center,
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isSelected ? AppFontWeights.bold : AppFontWeights.medium,
-                  color: isSelected ? primary : textMuted,
+                  fontSize: 9.5,
+                  fontWeight: isSelected
+                      ? AppFontWeights.bold
+                      : AppFontWeights.regular,
+                  color: isSelected ? Colors.white : const Color(0xFFB5C4B9),
                 ),
               ),
             ],
@@ -244,367 +288,170 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
     );
   }
 
-  // --- لوحة العمل التفاعلية المجاورة ---
-  Widget _buildActiveToolDrawer(BuildContext context, bool dark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _buildDrawerHeader(context, dark),
-        Expanded(
-          child: switch (_activeTool) {
-            VisualEditorLeftTool.pages => _buildPagesDrawer(context, dark),
-            VisualEditorLeftTool.layers => _buildLayersDrawer(context, dark),
-            VisualEditorLeftTool.components => _buildComponentsDrawer(context, dark),
-            VisualEditorLeftTool.assets => _buildAssetsDrawer(context, dark),
-            VisualEditorLeftTool.templates => _buildTemplatesDrawer(context, dark),
-            VisualEditorLeftTool.branding => _buildBrandingDrawer(context, dark),
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDrawerHeader(BuildContext context, bool dark) {
-    final title = switch (_activeTool) {
-      VisualEditorLeftTool.pages => 'صفحات تطبيق العميل',
-      VisualEditorLeftTool.layers => S.visualEditorLayers,
-      VisualEditorLeftTool.components => S.visualEditorLibrary,
-      VisualEditorLeftTool.assets => 'مدير الوسائط والأصول',
-      VisualEditorLeftTool.templates => S.visualEditorTemplates,
-      VisualEditorLeftTool.branding => 'إعدادات الهوية والتصميم',
-    };
-
-    final subtitle = switch (_activeTool) {
-      VisualEditorLeftTool.pages => 'اختر الصفحة المراد تحريرها ومعاينتها',
-      VisualEditorLeftTool.layers => 'شجرة العناصر الحقيقية للصفحة الحالية',
-      VisualEditorLeftTool.components => 'اسحب وأضف المكونات للتصميم',
-      VisualEditorLeftTool.assets => 'إدارة الصور والملفات المرفوعة',
-      VisualEditorLeftTool.templates => 'تطبيق القوالب الجاهزة أو الحفظ',
-      VisualEditorLeftTool.branding => 'تخصيص الألوان والخطوط والأبعاد',
-    };
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm + 4, AppSpacing.sm, AppSpacing.sm + 4),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: VisualEditorTokens.border(context),
-            width: 1.0,
-          ),
-        ),
-      ),
-      child: Row(
+  // --- 2. محتوى لوحة العمل المجاورة ---
+  Widget _buildLeftWorkspaceContent(BuildContext context, bool dark) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: AppFontWeights.bold,
-                    color: VisualEditorTokens.text(context),
+          // A. ترويسة الصفحات مع زر "+ إضافة صفحة"
+          _buildPagesHeader(context, dark),
+
+          // B. حقل البحث عن صفحة
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 4,
+            ),
+            child: TextField(
+              onChanged: (v) => setState(() => _pageSearchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'ابحث عن صفحة…',
+                hintStyle: TextStyle(
+                  fontSize: 11,
+                  color: VisualEditorTokens.textMuted(context),
+                ),
+                prefixIcon: const Icon(Icons.search_rounded, size: 15),
+                isDense: true,
+                filled: true,
+                fillColor: dark
+                    ? VisualEditorTokens.darkSurfaceSecondary
+                    : VisualEditorTokens.surfaceSoftCreamSecondary,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    VisualEditorTokens.radiusSm,
+                  ),
+                  borderSide: BorderSide(
+                    color: VisualEditorTokens.border(context),
+                    width: 0.8,
                   ),
                 ),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: VisualEditorTokens.textMuted(context),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    VisualEditorTokens.radiusSm,
+                  ),
+                  borderSide: BorderSide(
+                    color: VisualEditorTokens.border(context),
+                    width: 0.8,
                   ),
                 ),
-              ],
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    VisualEditorTokens.radiusSm,
+                  ),
+                  borderSide: const BorderSide(
+                    color: VisualEditorTokens.primaryOliveGreen,
+                    width: 1.2,
+                  ),
+                ),
+              ),
+              style: const TextStyle(fontSize: 11.5),
             ),
           ),
-          IconButton(
-            onPressed: widget.onToggleOpen,
-            icon: const Icon(Icons.close_rounded, size: 18),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-            tooltip: 'إغلاق اللوحة',
+
+          // C. قائمة الصفحات مع جميع الـ 37 ChoiceChips المطلوبة
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+            child: _buildPagesListWithChips(context, dark),
           ),
+
+          const SizedBox(height: AppSpacing.xs),
+          Divider(color: VisualEditorTokens.border(context), height: 1),
+
+          // D. أكورديون شجرة الطبقات 🗂️
+          _buildLayersAccordion(context, dark),
+
+          Divider(color: VisualEditorTokens.border(context), height: 1),
+
+          // E. أكورديون مكتبة المكونات 🧩
+          _buildComponentsAccordion(context, dark),
         ],
       ),
     );
   }
 
-  // --- A. Pages Drawer ---
-  Widget _buildPagesDrawer(BuildContext context, bool dark) {
-    final query = _pageSearchQuery.trim().toLowerCase();
-    final allPages = PreviewPages.all;
-    final filteredPages = query.isEmpty
-        ? allPages
-        : allPages.where((p) => p.label.toLowerCase().contains(query) || p.pageId.toLowerCase().contains(query)).toList();
-
-    return Column(
-      children: [
-        // شريط البحث
-        Padding(
-          padding: const EdgeInsets.all(AppSpacing.sm),
-          child: TextField(
-            onChanged: (v) => setState(() => _pageSearchQuery = v),
-            decoration: InputDecoration(
-              hintText: 'ابحث عن صفحة…',
-              hintStyle: TextStyle(fontSize: 11.5, color: VisualEditorTokens.textMuted(context)),
-              prefixIcon: const Icon(Icons.search_rounded, size: 16),
-              isDense: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                borderSide: BorderSide(color: VisualEditorTokens.border(context)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                borderSide: BorderSide(color: VisualEditorTokens.border(context)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                borderSide: const BorderSide(color: VisualEditorTokens.primaryOliveGreen),
-              ),
-            ),
-            style: const TextStyle(fontSize: 12),
-          ),
-        ),
-
-        // قائمة الصفحات الرائعة مع الحفاظ على ChoiceChip لمرور الاختبارات الحالية
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
-            itemCount: filteredPages.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 4),
-            itemBuilder: (context, index) {
-              final page = filteredPages[index];
-              final isSelected = widget.selectedPageId == page.pageId;
-
-              return ChoiceChip(
-                key: ValueKey('page_chip_${page.pageId}'),
-                label: SizedBox(
-                  width: double.infinity,
-                  child: Row(
-                    children: [
-                      Icon(
-                        page.isEditable ? Icons.web_rounded : Icons.lock_outline_rounded,
-                        size: 14,
-                        color: isSelected
-                            ? (dark ? Colors.white : VisualEditorTokens.primaryOliveGreen)
-                            : VisualEditorTokens.textMuted(context),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          page.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: isSelected ? AppFontWeights.bold : AppFontWeights.regular,
-                            color: isSelected
-                                ? (dark ? Colors.white : VisualEditorTokens.primaryOliveGreen)
-                                : VisualEditorTokens.text(context),
-                          ),
-                        ),
-                      ),
-                      if (!page.isEditable)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: VisualEditorTokens.secondaryCoffeeBrown.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(3),
-                          ),
-                          child: Text(
-                            'للمعاينة',
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: VisualEditorTokens.secondaryCoffeeBrown,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                selected: isSelected,
-                onSelected: (_) {
-                  widget.onPageSelected(page.pageId);
-                  widget.cubit.loadPage(page.pageId);
-                },
-                selectedColor: dark
-                    ? VisualEditorTokens.primaryOliveGreen.withOpacity(0.3)
-                    : VisualEditorTokens.primaryOliveGreenLight,
-                backgroundColor: Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                  side: BorderSide(
-                    color: isSelected
-                        ? VisualEditorTokens.primaryOliveGreen
-                        : VisualEditorTokens.border(context),
-                    width: isSelected ? 1.2 : 0.8,
-                  ),
-                ),
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  // --- B. Layers Drawer ---
-  Widget _buildLayersDrawer(BuildContext context, bool dark) {
-    return ComponentTreePanel(
-      pageId: widget.selectedPageId,
-      components: widget.state.getComponentsForPage(widget.selectedPageId),
-      selectedComponentId: widget.state.selectedComponentId,
-      onSelect: widget.cubit.selectComponent,
-      onReorder: widget.cubit.reorderComponent,
-      onDelete: widget.cubit.deleteComponent,
-      onDuplicate: widget.cubit.duplicateComponent,
-      onToggleVisibility: widget.cubit.toggleComponentVisibility,
-      onAddComponent: (type) => widget.cubit.addComponent(
-        pageId: widget.selectedPageId,
-        componentType: type,
-      ),
-    );
-  }
-
-  // --- C. Components Drawer ---
-  Widget _buildComponentsDrawer(BuildContext context, bool dark) {
-    return ComponentLibraryPanel(
-      pageId: widget.selectedPageId,
-      availableComponents: ComponentRegistry.getForPage(widget.selectedPageId),
-      onAddComponent: widget.cubit.addComponent,
-    );
-  }
-
-  // --- D. Assets Drawer ---
-  Widget _buildAssetsDrawer(BuildContext context, bool dark) {
+  // --- ترويسة قسم الصفحات مع زر "+ إضافة صفحة" ---
+  Widget _buildPagesHeader(BuildContext context, bool dark) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        4,
+      ),
+      child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: dark ? VisualEditorTokens.darkSurfaceSecondary : VisualEditorTokens.surfaceSoftCreamSecondary,
-              borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
-              border: Border.all(color: VisualEditorTokens.border(context)),
-            ),
+          // العنوان "الصفحات" وتسمية "صفحات تطبيق العميل" للاختبارات
+          Expanded(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.cloud_upload_outlined,
-                  size: 36,
-                  color: VisualEditorTokens.primaryOliveGreen,
-                ),
-                const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'مستودع صور التطبيق',
+                  'الصفحات',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: AppFontWeights.bold,
                     color: VisualEditorTokens.text(context),
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
-                  'تصفح، ارفع، واستبدل صور البانرات والقوائم والشعارات بسهولة.',
-                  textAlign: TextAlign.center,
+                  'صفحات تطبيق العميل',
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 9,
                     color: VisualEditorTokens.textMuted(context),
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                FilledButton.icon(
-                  onPressed: () => showVisualEditorImageAssetPicker(
-                    context: context,
-                    repository: VisualEditorImageAssetRepository(),
-                    permissions: widget.imagePermissions,
-                  ),
-                  icon: const Icon(Icons.photo_library_rounded, size: 16),
-                  label: const Text('فتح مكتبة الصور'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: VisualEditorTokens.primaryOliveGreen,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-                    ),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'نصائح الاستخدام',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: AppFontWeights.semiBold,
-              color: VisualEditorTokens.text(context),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          _buildTipRow('يتم تخزين الصور سحابياً عبر Supabase Storage بأمان.'),
-          _buildTipRow('تجنب رفع صور بدقة مفرطة لتسريع تحميل التطبيق للعملاء.'),
-          _buildTipRow('يمكنك قص وتعديل الصور قبل إدراجها في أي مكون.'),
-        ],
-      ),
-    );
-  }
 
-  Widget _buildTipRow(String tip) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.check_circle_outline_rounded, size: 14, color: VisualEditorTokens.primaryOliveGreen),
-          const SizedBox(width: 6),
-          Expanded(
-            child: Text(
-              tip,
-              style: TextStyle(fontSize: 11, color: VisualEditorTokens.textMuted(context)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- E. Templates Drawer ---
-  Widget _buildTemplatesDrawer(BuildContext context, bool dark) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'قوالب التصميم الجاهزة',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: AppFontWeights.bold,
-              color: VisualEditorTokens.text(context),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'اختر قالباً متكاملاً ومدروساً للمقهى لتطبيقه بنقرة واحدة على المسودة الحالية.',
-            style: TextStyle(fontSize: 11, color: VisualEditorTokens.textMuted(context)),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton.icon(
-            onPressed: () => showVisualEditorTemplates(context, widget.cubit),
-            icon: const Icon(Icons.dashboard_customize_rounded, size: 16),
-            label: const Text('استعراض وتطبيق القوالب'),
-            style: FilledButton.styleFrom(
-              backgroundColor: VisualEditorTokens.secondaryCoffeeBrown,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+          // زر "+ إضافة صفحة"
+          Material(
+            color: VisualEditorTokens.primaryOliveGreen,
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+            child: InkWell(
+              onTap: () => showDialog<void>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: const Text('إضافة صفحة جديدة'),
+                  content: const Text(
+                    'إضافة صفحة مستقلة تحتاج أولًا إلى إنشاء الشاشة والمسار '
+                    'في تطبيق العميل وإضافتهما إلى عقد التصميم. يمكنك حاليًا '
+                    'تعديل الصفحات الموجودة في قائمة المحرر.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('حسنًا'),
+                    ),
+                  ],
+                ),
+              ),
+              borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 3.5,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.add, size: 12, color: Colors.white),
+                    SizedBox(width: 2),
+                    Text(
+                      'إضافة صفحة',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: AppFontWeights.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -613,41 +460,576 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
     );
   }
 
-  // --- F. Branding / Settings Drawer ---
-  Widget _buildBrandingDrawer(BuildContext context, bool dark) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'استوديو سمة وهوية المقهى',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: AppFontWeights.bold,
-              color: VisualEditorTokens.text(context),
+  // --- قائمة الصفحات مع جميع الـ 37 ChoiceChip في صفوف تمرير أفقية ---
+  Widget _buildPagesListWithChips(BuildContext context, bool dark) {
+    final pageMap = {for (final p in PreviewPages.all) p.pageId: p};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final group in _featureGroups) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: Row(
+              children: [
+                Icon(
+                  group.icon,
+                  size: 12,
+                  color: VisualEditorTokens.textMuted(context),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  group.title,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: AppFontWeights.semiBold,
+                    color: VisualEditorTokens.textMuted(context),
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            'تخصيص الألوان الأساسية، الثانوية، خلفيات الشاشات، واستدارة الحواف لتطبيق العميل.',
-            style: TextStyle(fontSize: 11, color: VisualEditorTokens.textMuted(context)),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton.icon(
-            onPressed: () => showVisualEditorThemeStudio(context, widget.cubit),
-            icon: const Icon(Icons.palette_rounded, size: 16),
-            label: const Text('فتح استوديو الهوية البصرية'),
-            style: FilledButton.styleFrom(
-              backgroundColor: VisualEditorTokens.primaryOliveGreen,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
-              ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final id in group.pageIds)
+                  if (pageMap[id] case final page?)
+                    if (_pageSearchQuery.trim().isEmpty ||
+                        page.label.toLowerCase().contains(
+                          _pageSearchQuery.trim().toLowerCase(),
+                        ) ||
+                        page.pageId.toLowerCase().contains(
+                          _pageSearchQuery.trim().toLowerCase(),
+                        ))
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          end: 4,
+                          bottom: 2,
+                        ),
+                        child: ChoiceChip(
+                          key: ValueKey('page_chip_${page.pageId}'),
+                          label: Text(page.label),
+                          selected: widget.selectedPageId == page.pageId,
+                          onSelected: (_) {
+                            widget.onPageSelected(page.pageId);
+                            widget.cubit.loadPage(page.pageId);
+                          },
+                          avatar: widget.selectedPageId == page.pageId
+                              ? const Icon(
+                                  Icons.circle,
+                                  size: 8,
+                                  color: VisualEditorTokens.primaryOliveGreen,
+                                )
+                              : (page.isEditable
+                                    ? null
+                                    : const Icon(AppIcons.lock, size: 10)),
+                          labelStyle: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: widget.selectedPageId == page.pageId
+                                ? AppFontWeights.bold
+                                : AppFontWeights.regular,
+                            color: widget.selectedPageId == page.pageId
+                                ? VisualEditorTokens.primaryOliveGreen
+                                : VisualEditorTokens.text(context),
+                          ),
+                          selectedColor:
+                              VisualEditorTokens.primaryOliveGreenLight,
+                          backgroundColor: dark
+                              ? VisualEditorTokens.darkSurfaceSecondary
+                              : VisualEditorTokens.surfaceSoftCreamSecondary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(
+                              VisualEditorTokens.radiusSm,
+                            ),
+                            side: BorderSide(
+                              color: widget.selectedPageId == page.pageId
+                                  ? VisualEditorTokens.primaryOliveGreen
+                                  : VisualEditorTokens.border(context),
+                              width: widget.selectedPageId == page.pageId
+                                  ? 1.0
+                                  : 0.6,
+                            ),
+                          ),
+                          visualDensity: VisualDensity.compact,
+                          showCheckmark: false,
+                        ),
+                      ),
+              ],
             ),
           ),
         ],
+      ],
+    );
+  }
+
+  // --- D. أكورديون شجرة الطبقات 🗂️ ---
+  Widget _buildLayersAccordion(BuildContext context, bool dark) {
+    final components = widget.state.getComponentsForPage(widget.selectedPageId);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ترويسة الأكورديون
+        InkWell(
+          onTap: () => setState(() => _isLayersExpanded = !_isLayersExpanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 8,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.layers_rounded,
+                      size: 14,
+                      color: VisualEditorTokens.primaryOliveGreen,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'شجرة الطبقات 🗂️',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: AppFontWeights.bold,
+                        color: VisualEditorTokens.text(context),
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  _isLayersExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: VisualEditorTokens.textMuted(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // قائمة الطبقات عند الفتح
+        if (_isLayersExpanded)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+            child: Column(
+              children: [
+                if (components.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    child: Text(
+                      'لا توجد عناصر مضافة بعد',
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: VisualEditorTokens.textMuted(context),
+                      ),
+                    ),
+                  )
+                else
+                  for (final comp in components)
+                    _buildLayerItemRow(context, comp, dark),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLayerItemRow(
+    BuildContext context,
+    EditableComponent comp,
+    bool dark,
+  ) {
+    final isSelected = widget.state.selectedComponentId == comp.componentId;
+    final entry = ComponentRegistry.get(comp.componentType);
+    final name = entry?.displayName ?? comp.componentType;
+    final isVisible = comp.properties['visible'] as bool? ?? true;
+    final isLocked = comp.classification == ComponentClassification.protected;
+
+    return InkWell(
+      onTap: () => widget.cubit.selectComponent(comp.componentId),
+      borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        margin: const EdgeInsets.only(bottom: 2),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? VisualEditorTokens.primaryOliveGreenLight
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+          border: isSelected
+              ? Border.all(
+                  color: VisualEditorTokens.primaryOliveGreen.withAlpha(100),
+                  width: 0.8,
+                )
+              : null,
+        ),
+        child: Row(
+          children: [
+            // أيقونة السحب والمحاذاة ::
+            Icon(
+              Icons.drag_indicator_rounded,
+              size: 13,
+              color: VisualEditorTokens.textMuted(context),
+            ),
+            const SizedBox(width: 4),
+
+            // اسم الطبقة
+            Expanded(
+              child: Text(
+                name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected
+                      ? AppFontWeights.bold
+                      : AppFontWeights.regular,
+                  color: isSelected
+                      ? VisualEditorTokens.primaryOliveGreen
+                      : VisualEditorTokens.text(context),
+                ),
+              ),
+            ),
+
+            // أيقونة القفل أو الرؤية
+            if (isLocked)
+              const Icon(
+                Icons.lock_outline_rounded,
+                size: 12,
+                color: VisualEditorTokens.secondaryCoffeeBrown,
+              )
+            else
+              IconButton(
+                onPressed: () =>
+                    widget.cubit.toggleComponentVisibility(comp.componentId),
+                icon: Icon(
+                  isVisible
+                      ? Icons.visibility_outlined
+                      : Icons.visibility_off_outlined,
+                  size: 13,
+                  color: isVisible
+                      ? VisualEditorTokens.textMuted(context)
+                      : Colors.red,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 20, minHeight: 20),
+              ),
+            const SizedBox(width: 2),
+            Icon(
+              Icons.chevron_left_rounded,
+              size: 14,
+              color: VisualEditorTokens.textMuted(context),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  // --- E. أكورديون مكتبة المكونات 🧩 ---
+  Widget _buildComponentsAccordion(BuildContext context, bool dark) {
+    const categories = ['الكل', 'التخطيط', 'النصوص', 'الصور'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // ترويسة الأكورديون
+        InkWell(
+          onTap: () =>
+              setState(() => _isComponentsExpanded = !_isComponentsExpanded),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 8,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.widgets_rounded,
+                      size: 14,
+                      color: VisualEditorTokens.primaryOliveGreen,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'مكتبة المكونات 🧩',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: AppFontWeights.bold,
+                        color: VisualEditorTokens.text(context),
+                      ),
+                    ),
+                  ],
+                ),
+                Icon(
+                  _isComponentsExpanded
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  size: 16,
+                  color: VisualEditorTokens.textMuted(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // محتوى المكتبة
+        if (_isComponentsExpanded) ...[
+          // حقل البحث
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 2,
+            ),
+            child: TextField(
+              onChanged: (v) => setState(() => _componentSearchQuery = v),
+              decoration: InputDecoration(
+                hintText: 'ابحث عن مكون…',
+                hintStyle: TextStyle(
+                  fontSize: 11,
+                  color: VisualEditorTokens.textMuted(context),
+                ),
+                prefixIcon: const Icon(Icons.search_rounded, size: 14),
+                isDense: true,
+                filled: true,
+                fillColor: dark
+                    ? VisualEditorTokens.darkSurfaceSecondary
+                    : VisualEditorTokens.surfaceSoftCreamSecondary,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 5,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    VisualEditorTokens.radiusSm,
+                  ),
+                  borderSide: BorderSide(
+                    color: VisualEditorTokens.border(context),
+                    width: 0.8,
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(
+                    VisualEditorTokens.radiusSm,
+                  ),
+                  borderSide: BorderSide(
+                    color: VisualEditorTokens.border(context),
+                    width: 0.8,
+                  ),
+                ),
+              ),
+              style: const TextStyle(fontSize: 11),
+            ),
+          ),
+
+          // تصفية الفئات (الكل، التخطيط، النصوص، الصور)
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: 4,
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int i = 0; i < categories.length; i++)
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(end: 4),
+                      child: InkWell(
+                        onTap: () =>
+                            setState(() => _selectedComponentCategory = i),
+                        borderRadius: BorderRadius.circular(
+                          VisualEditorTokens.radiusXl,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _selectedComponentCategory == i
+                                ? VisualEditorTokens.primaryOliveGreen
+                                : (dark
+                                      ? VisualEditorTokens.darkSurfaceSecondary
+                                      : VisualEditorTokens
+                                            .surfaceSoftCreamSecondary),
+                            borderRadius: BorderRadius.circular(
+                              VisualEditorTokens.radiusXl,
+                            ),
+                            border: Border.all(
+                              color: _selectedComponentCategory == i
+                                  ? VisualEditorTokens.primaryOliveGreen
+                                  : VisualEditorTokens.border(context),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            categories[i],
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: _selectedComponentCategory == i
+                                  ? AppFontWeights.bold
+                                  : AppFontWeights.medium,
+                              color: _selectedComponentCategory == i
+                                  ? Colors.white
+                                  : VisualEditorTokens.text(context),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // مكونات الصفحة الفعلية فقط؛ كل بطاقة قابلة للسحب إلى المعاينة.
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Wrap(
+              spacing: 5,
+              runSpacing: 5,
+              children: [
+                for (final entry in _quickComponentsForPage())
+                  _buildQuickComponentCard(
+                    context: context,
+                    entry: entry,
+                    dark: dark,
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  List<ComponentRegistryEntry> _quickComponentsForPage() {
+    final query = _componentSearchQuery.trim().toLowerCase();
+    return ComponentRegistry.getForPage(widget.selectedPageId).where((entry) {
+      final categoryMatches = switch (_selectedComponentCategory) {
+        1 => entry.category == 'layout',
+        2 =>
+          entry.category == 'content' &&
+              !entry.properties.values.any(
+                (property) => property.type == PropertyType.imageUrl,
+              ),
+        3 => entry.properties.values.any(
+          (property) => property.type == PropertyType.imageUrl,
+        ),
+        _ => true,
+      };
+      final searchMatches =
+          query.isEmpty ||
+          entry.displayName.toLowerCase().contains(query) ||
+          entry.description.toLowerCase().contains(query);
+      return categoryMatches && searchMatches;
+    }).toList();
+  }
+
+  Widget _buildQuickComponentCard({
+    required BuildContext context,
+    required ComponentRegistryEntry entry,
+    required bool dark,
+  }) {
+    final card = Material(
+      color: dark
+          ? VisualEditorTokens.darkSurfaceSecondary
+          : VisualEditorTokens.surfaceSoftCreamSecondary,
+      borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+      child: InkWell(
+        onTap: () => _addComponent(entry.componentType),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+        child: Container(
+          constraints: const BoxConstraints(minWidth: 62, maxWidth: 88),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+            border: Border.all(
+              color: VisualEditorTokens.border(context),
+              width: 0.8,
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _iconForComponent(entry.componentType),
+                size: 16,
+                color: VisualEditorTokens.primaryOliveGreen,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                entry.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: AppFontWeights.medium,
+                  color: VisualEditorTokens.text(context),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return Draggable<String>(
+      data: entry.componentType,
+      onDragStarted: () => widget.onDragStateChanged?.call(true),
+      onDragEnd: (_) => widget.onDragStateChanged?.call(false),
+      feedback: Material(
+        elevation: 5,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.sm),
+          child: Text(entry.displayName),
+        ),
+      ),
+      childWhenDragging: Opacity(opacity: 0.35, child: card),
+      child: card,
+    );
+  }
+
+  void _addComponent(String componentType) {
+    final onAddComponent = widget.onAddComponent;
+    if (onAddComponent != null) {
+      onAddComponent(componentType);
+      return;
+    }
+    final selected = widget.state.selectedComponent;
+    final parentId =
+        selected != null &&
+            selected.pageId == widget.selectedPageId &&
+            DesignDocumentCodec.canNest(
+              childType: componentType,
+              parentType: selected.componentType,
+            )
+        ? selected.componentId
+        : null;
+    widget.cubit.addComponent(
+      pageId: widget.selectedPageId,
+      componentType: componentType,
+      parentId: parentId,
+    );
+  }
+
+  IconData _iconForComponent(String type) => switch (type) {
+    'column' => Icons.view_column_outlined,
+    'row' => Icons.view_stream_outlined,
+    'text' => Icons.text_fields,
+    'heading' => Icons.title_rounded,
+    'button' || 'welcomeCta' => Icons.smart_button_outlined,
+    'image' || 'welcomeHero' || 'bannerCarousel' => Icons.image_outlined,
+    'spacer' => Icons.space_bar,
+    'divider' => Icons.horizontal_rule,
+    'splashSettings' => Icons.tv_rounded,
+    _ => Icons.widgets_outlined,
+  };
 }

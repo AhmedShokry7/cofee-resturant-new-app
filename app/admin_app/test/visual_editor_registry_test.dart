@@ -35,8 +35,7 @@ void main() {
 
   test('كل مكوّن يسمح بإخفائه أو تحريره أو يُعلن محميًا', () {
     for (final entry in ComponentRegistry.all) {
-      final invisible =
-          entry.classification == ComponentClassification.static_;
+      final invisible = entry.classification == ComponentClassification.static_;
       expect(
         invisible ||
             entry.allowedOperations.contains('hide') ||
@@ -64,9 +63,58 @@ void main() {
       contains('image'),
     );
     expect(
-      ComponentRegistry.getForPage('categories').map((entry) => entry.componentType),
+      ComponentRegistry.getForPage('categories')
+          .map((entry) => entry.componentType),
       contains('image'),
     );
+  });
+
+  test('خصائص النص المسجلة مدعومة في عارض العميل والمعاينة الأصلية', () {
+    const renderedByCustomer = {
+      'text_ar',
+      'text_en',
+      'size',
+      'weight',
+      'color',
+      'alignment',
+      'textDirection',
+      'overflow',
+      'letterSpacing',
+      'lineHeight',
+      'maxLines',
+    };
+    final text = ComponentRegistry.get('text')!;
+    final expected = {
+      ...renderedByCustomer,
+      ...ComponentRegistry.positionProperties.keys,
+    };
+    expect(
+      text.properties.keys.toSet(),
+      expected,
+      reason: 'خاصية في لوحة النص لا يقرأها تطبيق العميل أو المعاينة',
+    );
+    expect(text.defaultValues.keys.toSet(), renderedByCustomer);
+  });
+
+  test('عناصر المحتوى والتخطيط الحرّة تعرض هوامش الموضع', () {
+    const freeTypes = [
+      'text',
+      'heading',
+      'button',
+      'image',
+      'column',
+      'row',
+      'spacer',
+      'divider',
+    ];
+    for (final type in freeTypes) {
+      final entry = ComponentRegistry.get(type)!;
+      expect(
+        entry.properties.keys,
+        containsAll(ComponentRegistry.positionProperties.keys),
+        reason: '$type بلا تحكم في موضعه رغم قابليته للإضافة الحرة',
+      );
+    }
   });
 
   test('الصفحات بمفاتيح العقد التي يقبلها المدقق الحي', () {
@@ -99,14 +147,43 @@ void main() {
   test('مقارنة الأب/الابن متسقة في الاتجاهين', () {
     // الجذر ليس مكوّنًا في السجل: الصفحات نفسها هي الحاويات الأولى.
     const pageKeys = {
-      'splash', 'welcome', 'onboarding', 'auth', 'sign_up', 'forget_password',
-      'reset_password', 'phone_auth', 'email_auth', 'home', 'categories',
-      'search', 'product_details', 'cart', 'favourites', 'settings',
-      'checkout', 'shipping_addresses', 'add_address', 'payment_method',
-      'add_card', 'payment_success', 'e_receipt', 'coupon', 'orders',
-      'edit_profile', 'saved_cards', 'addresses', 'address_form', 'loyalty',
-      'subscription_plans', 'subscription_details', 'cashier_subscription',
-      'notifications', 'notification_settings', 'help', 'privacy',
+      'splash',
+      'welcome',
+      'onboarding',
+      'auth',
+      'sign_up',
+      'forget_password',
+      'reset_password',
+      'phone_auth',
+      'email_auth',
+      'home',
+      'categories',
+      'search',
+      'product_details',
+      'cart',
+      'favourites',
+      'settings',
+      'checkout',
+      'shipping_addresses',
+      'add_address',
+      'payment_method',
+      'add_card',
+      'payment_success',
+      'e_receipt',
+      'coupon',
+      'orders',
+      'edit_profile',
+      'saved_cards',
+      'addresses',
+      'address_form',
+      'loyalty',
+      'subscription_plans',
+      'subscription_details',
+      'cashier_subscription',
+      'notifications',
+      'notification_settings',
+      'help',
+      'privacy',
       'assistant_memory',
     };
     for (final entry in ComponentRegistry.all) {
@@ -116,8 +193,7 @@ void main() {
         expect(
           parent,
           isNotNull,
-          reason:
-              '${entry.componentType} يسمح بأب غير مسجّل: $parentType',
+          reason: '${entry.componentType} يسمح بأب غير مسجّل: $parentType',
         );
         expect(
           parent!.allowedChildTypes,

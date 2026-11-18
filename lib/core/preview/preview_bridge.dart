@@ -14,7 +14,10 @@
 //           COMPONENT_TREE_UPDATED, PREVIEW_ERROR.
 // Inbound:  PREVIEW_INITIALIZE, LOAD_PAGE, SELECT_ELEMENT, UPDATE_PROPERTY,
 //           ADD_COMPONENT, REMOVE_COMPONENT, REORDER_COMPONENT,
-//           APPLY_DESIGN_CONFIG, PREVIEW_REFRESH, PREVIEW_ERROR.
+//           APPLY_DESIGN_CONFIG, PREVIEW_REFRESH, SET_LANGUAGE,
+//           SET_THEME_MODE, PREVIEW_ERROR.
+// SET_LANGUAGE / SET_THEME_MODE change only the in-memory preview state; they
+// never write the customer's saved language or theme preference.
 
 import 'dart:convert';
 
@@ -37,6 +40,8 @@ enum PreviewMessageType {
   applyDesignConfig('APPLY_DESIGN_CONFIG'),
   previewError('PREVIEW_ERROR'),
   previewRefresh('PREVIEW_REFRESH'),
+  setLanguage('SET_LANGUAGE'),
+  setThemeMode('SET_THEME_MODE'),
   saveRequest('SAVE_REQUEST');
 
   const PreviewMessageType(this.value);
@@ -51,7 +56,7 @@ class PreviewMessage {
     required this.type,
     required this.payload,
   }) : messageId =
-            messageId ?? DateTime.now().microsecondsSinceEpoch.toString();
+           messageId ?? DateTime.now().microsecondsSinceEpoch.toString();
 
   static const String protocolVersion = '1.0';
 
