@@ -13,6 +13,9 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// مستودع زائف مستقل: لا يلمس شبكة، ويجعل التهيئة تنجح فورًا.
 class _FakeVisualEditorRepository implements VisualEditorRepository {
+  _FakeVisualEditorRepository({this.rejectPublish = false});
+
+  final bool rejectPublish;
   int saveCalls = 0;
   final List<Map<String, dynamic>> publishedDocuments = [];
 
@@ -33,6 +36,9 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
     Map<String, dynamic> designDocument, {
     String? note,
   }) async {
+    if (rejectPublish) {
+      throw StateError('missing permission: design.publish');
+    }
     publishedDocuments.add(designDocument);
     return PublishedVersionInfo(
       id: 'version-1',
@@ -212,8 +218,12 @@ void main() {
     tester.view.physicalSize = const Size(1400, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
+    final repository = _FakeVisualEditorRepository(rejectPublish: true);
+    final cubit = VisualEditorCubit(repository: repository);
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: _page(canPublish: false))),
+      MaterialApp(
+        home: Scaffold(body: VisualEditorPage(cubit: cubit, canPublish: false)),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -223,7 +233,29 @@ void main() {
         matching: find.byType(EditorToolbarButton),
       ),
     );
-    expect(publishButton.onTap, isNull);
+    expect(publishButton.onTap, isNotNull);
+    await tester.ensureVisible(
+      find
+          .ancestor(
+            of: find.text(S.visualEditorPublish).first,
+            matching: find.byType(EditorToolbarButton),
+          )
+          .first,
+    );
+    await tester.tap(
+      find
+          .ancestor(
+            of: find.text(S.visualEditorPublish).first,
+            matching: find.byType(EditorToolbarButton),
+          )
+          .first,
+    );
+    await tester.pumpAndSettle();
+    expect(repository.publishedDocuments, isEmpty);
+    expect(find.text('تعذر نشر التصميم'), findsOneWidget);
+    expect(find.textContaining('لا يملك صلاحية نشر'), findsWidgets);
+    await tester.tap(find.text(S.close));
+    await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip(S.visualEditorVersions));
     await tester.pumpAndSettle();
@@ -296,10 +328,12 @@ void main() {
         .first;
     await tester.tap(publishButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, S.visualEditorPublish));
-    await tester.pumpAndSettle();
 
     expect(repository.publishedDocuments, hasLength(1));
+    expect(find.text('تم النشر بنجاح'), findsOneWidget);
+    expect(find.textContaining('تم النشر كإصدار 1'), findsOneWidget);
+    await tester.tap(find.text(S.close));
+    await tester.pumpAndSettle();
     final publishedPage =
         (repository.publishedDocuments.single['pages'] as List)
             .whereType<Map<String, dynamic>>()

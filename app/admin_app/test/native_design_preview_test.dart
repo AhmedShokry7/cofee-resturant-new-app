@@ -84,6 +84,32 @@ void main() {
     );
   });
 
+  testWidgets('البانرات المنشورة تظهر تلقائيًا بلا قائمة مسودة', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: NativeDesignPreview(
+            components: [comp('published-banner', 'bannerCarousel')],
+            theme: DesignTheme.none,
+            publishedBannerImages: const [
+              'https://example.invalid/published.png',
+            ],
+            onElementSelected: (_) {},
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(PageView), findsOneWidget);
+    expect(
+      (tester.widget<Image>(find.byType(Image).first).image as NetworkImage)
+          .url,
+      'https://example.invalid/published.png',
+    );
+  });
+
   testWidgets('صورة بانر المسودة تظهر وتتغير مباشرة في المعاينة الأصلية', (
     tester,
   ) async {

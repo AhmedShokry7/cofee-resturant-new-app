@@ -889,14 +889,18 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         break;
       }
     }
+    if (raw.contains('missing permission: design.publish')) {
+      return 'حسابك لا يملك صلاحية نشر تصميم التطبيق — اطلب من المالك منحك design.publish.';
+    }
+    if (raw.contains('not authenticated')) {
+      return 'انتهت جلسة تسجيل الدخول — سجّل الدخول مجددًا ثم أعد النشر.';
+    }
     return switch (code) {
-      'page_key' =>
-        'هذه الصفحة غير معروفة لقاعدة البيانات بعد — طبّق migration 244 '
+      'page_key' || 'page_count' =>
+        'قاعدة البيانات لم تُحدّث لدعم صفحات المحرر بعد — طبّق migration 244 '
             '(app_design_all_pages) على مشروع Supabase ثم أعد النشر.',
       'page_duplicate' =>
         'الصفحة مكرّرة في المستند — احذف التكرار ثم أعد النشر.',
-      'page_count' =>
-        'عدد الصفحات تجاوز الحد (40) — احذف أقسامًا من صفحات لا تستعملها.',
       'depth' =>
         'التداخل أعمق من المسموح به — أخرج العناصر من الأعمدة المتداخلة.',
       'node_duplicate' =>

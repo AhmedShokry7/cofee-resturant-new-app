@@ -89,8 +89,9 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
       ),
     ),
     DesignWidgetTypes.bannerCarousel =>
-      // شريط البانيرات يملك حشوه بنفسه، كما في ترتيب اليوم. المفتاح يُعيد
-      // بناء الشريط عند تغيّر `autoplay` فلا يبقى المؤقت قديمًا.
+      // إذا حمل التصميم قائمة بانرات، تُعرض هنا كبديل للقائمة المنشورة،
+      // فيظهر أثر النشر دون تعديل جدول البانرات يدويًا. المفتاح يعيد إنشاء
+      // الشريط أيضًا عند تغيّر عدد العناصر أو ارتفاعه.
       HomeBannerSection(
         key: ValueKey(
           'banner_${section.id}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}_${section.numberProperty('bannerDraftCount')}',

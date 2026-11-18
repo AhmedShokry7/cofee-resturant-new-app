@@ -8,6 +8,8 @@ import 'package:new_coffee/core/locale/app_strings.dart';
 import 'package:new_coffee/core/navigation/notification_routes.dart';
 import 'package:new_coffee/core/navigation/root_navigator.dart';
 import 'package:new_coffee/features/notifications/data/services/push_service.dart';
+import 'package:new_coffee/shared/widgets/db_image.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// The banners shown for a push that arrives while the app is open.
 ///
@@ -51,13 +53,34 @@ class ForegroundPushBanners {
       destination: message.data['destination'],
       relatedEntityId: message.data['related_entity_id'],
     );
+    final imageUrl =
+        message.notification?.apple?.imageUrl ??
+        message.notification?.android?.imageUrl ??
+        message.data['image_url'];
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
           persist: false,
-          content: Text(
-            [title, body].where((part) => part.isNotEmpty).join(' — '),
+          content: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  [title, body].where((part) => part.isNotEmpty).join(' — '),
+                ),
+              ),
+              if (imageUrl != null && imageUrl.trim().isNotEmpty) ...[
+                SizedBox(width: AppSpacing.sm),
+                SizedBox(
+                  width: AppSizes.px48,
+                  height: AppSizes.px48,
+                  child: DbImage(
+                    image: imageUrl,
+                    borderRadius: BorderRadius.circular(AppRadius.r8),
+                  ),
+                ),
+              ],
+            ],
           ),
           action: open == null
               ? null

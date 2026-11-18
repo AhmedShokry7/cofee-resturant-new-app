@@ -10,7 +10,8 @@ import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_cust
 import 'package:admin_app/features/dashboard/presentation/widgets/dashboard_metric_tile.dart';
 import 'package:admin_app/shared/widgets/admin_metric_grid.dart';
 
-/// أربع بلاطات تُقرأ أول ما تُفتح اللوحة: المال، وطلباته، وعملاؤه، ومتوسطه.
+/// أربع بلاطات تُقرأ أول ما تُفتح اللوحة: المبيعات والطلبات، ثم العملاء
+/// ومتوسط الطلب. يبدأ الصف بما يجيب فورًا عن سؤال «كيف كان أداء المتجر؟».
 ///
 /// الأرقام كلها شَهرٌ كامل له سابقٌ يُقارَن به، لا يومٌ يتقلب مع كل طلب: اللوحة
 /// تُقرأ مرة في الصباح وتُقفل، فتثبيتها على الشهر يجعل شاراتها ثابتة.
@@ -23,20 +24,19 @@ class DashboardMetricsCards extends StatelessWidget {
   Widget build(BuildContext context) => AdminMetricGrid(
     children: [
       DashboardMetricTile(
-        label: S.dashboardAverageOrderValue,
-        value: localizeDigits(formatAmount(metrics.averageOrderValue)),
-        icon: AppIcons.coins01,
-        surface: AppColor.adminWarningSurface,
-        ink: AppColor.adminWarning,
-        current: metrics.averageOrderValue,
-        previous: metrics.yesterdayAverageOrderValue,
-        caption: S.dashboardYesterday(
-          localizeDigits(formatAmount(metrics.yesterdayAverageOrderValue)),
+        label: S.dashboardTotalSales,
+        value: localizeDigits(formatAmount(metrics.monthRevenue)),
+        icon: AppIcons.wallet01,
+        surface: AppColor.tintGreenSurface,
+        ink: AppColor.tintGreenInk,
+        current: metrics.monthRevenue,
+        previous: metrics.prevMonthRevenue,
+        caption: S.dashboardLastMonth(
+          localizeDigits(formatAmount(metrics.prevMonthRevenue)),
         ),
         isMoney: true,
         captionIsMoney: true,
       ),
-      DashboardCustomersTile(metrics: metrics),
       DashboardMetricTile(
         label: S.dashboardNewOrders,
         value: localizeDigits(formatCount(metrics.monthOrders)),
@@ -49,16 +49,17 @@ class DashboardMetricsCards extends StatelessWidget {
           localizeDigits(formatCount(metrics.prevMonthOrders)),
         ),
       ),
+      DashboardCustomersTile(metrics: metrics),
       DashboardMetricTile(
-        label: S.dashboardTotalSales,
-        value: localizeDigits(formatAmount(metrics.monthRevenue)),
-        icon: AppIcons.wallet01,
-        surface: AppColor.tintGreenSurface,
-        ink: AppColor.tintGreenInk,
-        current: metrics.monthRevenue,
-        previous: metrics.prevMonthRevenue,
-        caption: S.dashboardLastMonth(
-          localizeDigits(formatAmount(metrics.prevMonthRevenue)),
+        label: S.dashboardAverageOrderValue,
+        value: localizeDigits(formatAmount(metrics.averageOrderValue)),
+        icon: AppIcons.coins01,
+        surface: AppColor.adminWarningSurface,
+        ink: AppColor.adminWarning,
+        current: metrics.averageOrderValue,
+        previous: metrics.yesterdayAverageOrderValue,
+        caption: S.dashboardYesterday(
+          localizeDigits(formatAmount(metrics.yesterdayAverageOrderValue)),
         ),
         isMoney: true,
         captionIsMoney: true,

@@ -186,9 +186,8 @@ class VisualEditorTopBar extends StatelessWidget {
         EditorToolbarButton(
           icon: Icons.rocket_launch_rounded,
           label: S.visualEditorPublish,
-          onTap: canPublish
-              ? () => confirmVisualEditorPublish(context, cubit)
-              : null,
+          // ضغطة واحدة تبدأ النشر مباشرة؛ الخادم يتحقق من الصلاحية.
+          onTap: () => publishVisualEditor(context, cubit),
           dark: dark,
           accent: true,
           accentColor: VisualEditorTokens.primaryOliveGreen,

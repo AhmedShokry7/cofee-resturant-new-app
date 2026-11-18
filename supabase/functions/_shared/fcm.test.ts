@@ -162,6 +162,8 @@ Deno.test("the FCM request carries the picture in both places", async () => {
 
   assertEquals(sentBody.message.notification.image, image);
   assertEquals(sentBody.message.android.notification.image, image);
+  assertEquals(sentBody.message.apns.fcm_options.image, image);
+  assertEquals(sentBody.message.apns.payload.aps["mutable-content"], 1);
   assertEquals(sentBody.message.notification.title, "ترويج");
   assertEquals(sentBody.message.android.notification.channel_id, "default_notification_channel");
 });
@@ -177,6 +179,7 @@ Deno.test("a text message asks FCM for no picture at all", async () => {
 
   assertEquals("image" in sentBody.message.notification, false);
   assertEquals("image" in sentBody.message.android.notification, false);
+  assertEquals("apns" in sentBody.message, false);
 });
 
 Deno.test("a blank picture is dropped before it reaches FCM", async () => {

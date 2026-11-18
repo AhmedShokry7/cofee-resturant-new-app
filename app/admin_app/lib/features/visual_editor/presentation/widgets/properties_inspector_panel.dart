@@ -10,6 +10,7 @@ import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/banners/di/banners_dependencies.dart';
+import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/bundles/di/bundles_dependencies.dart';
 import 'package:admin_app/features/visual_editor/data/design_image_upload.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
@@ -483,20 +484,63 @@ class _BannerDraftControls extends StatefulWidget {
 
 class _BannerDraftControlsState extends State<_BannerDraftControls> {
   late Future<List<VisualEditorImageAsset>> _targets;
-  bool _loadingBanners = false;
+  List<AdminBanner> _publishedBanners = const [];
+  bool _loadingBanners = true;
+  bool _draftStarted = false;
+  String? _draftComponentId;
   int? _uploadingIndex;
+
+  bool get _hasDraft =>
+      _draftStarted || widget.component.properties['bannerDraftCount'] != null;
 
   int get _count =>
       (widget.component.properties['bannerDraftCount'] as num?)?.toInt().clamp(
         0,
         10,
       ) ??
-      0;
+      _publishedBanners.length.clamp(0, 10);
 
   @override
   void initState() {
     super.initState();
+    _draftComponentId = widget.component.componentId;
     _targets = _loadTargets();
+    _loadPublishedBanners();
+  }
+
+  @override
+  void didUpdateWidget(covariant _BannerDraftControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.component.componentId != widget.component.componentId ||
+        (oldWidget.component.properties['bannerDraftCount'] != null &&
+            widget.component.properties['bannerDraftCount'] == null)) {
+      _draftStarted = false;
+      _draftComponentId = widget.component.componentId;
+    }
+  }
+
+  Future<void> _loadPublishedBanners() async {
+    try {
+      final now = DateTime.now().toUtc();
+      final banners = await BannersDependencies.repository.loadBanners();
+      if (mounted) {
+        setState(
+          () => _publishedBanners = banners
+              .where((banner) {
+                final startsAt = banner.startsAt?.toUtc();
+                final endsAt = banner.endsAt?.toUtc();
+                return banner.isPublished &&
+                    (startsAt == null || !now.isBefore(startsAt)) &&
+                    (endsAt == null || !now.isAfter(endsAt));
+              })
+              .toList(growable: false),
+        );
+      }
+    } catch (_) {
+      // The editor remains usable when the customer banner list is unavailable.
+    } finally {
+      if (mounted) setState(() => _loadingBanners = false);
+    }
   }
 
   Future<List<VisualEditorImageAsset>> _loadTargets() async {
@@ -545,35 +589,52 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
 
   String _key(int index, String field) => 'bannerDraft_${index}_$field';
 
-  Future<void> _importPublishedBanners() async {
-    setState(() => _loadingBanners = true);
-    try {
-      final banners = await BannersDependencies.repository.loadBanners();
-      if (!mounted) return;
-      final count = banners.length.clamp(0, 10);
-      for (var index = 0; index < count; index++) {
-        final banner = banners[index];
-        _set(_key(index, 'image'), banner.imageUrl);
-        _set(_key(index, 'targetType'), banner.targetType);
-        _set(_key(index, 'targetId'), banner.targetId ?? '');
-        _set(_key(index, 'targetUrl'), banner.targetUrl ?? '');
-      }
-      _set('bannerDraftCount', count);
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$error')));
-      }
-    } finally {
-      if (mounted) setState(() => _loadingBanners = false);
+  String _bannerValue(int index, String field) {
+    if (_hasDraft) {
+      return widget.component.properties[_key(index, field)]?.toString() ??
+          (field == 'targetType' ? 'none' : '');
     }
+    if (index >= _publishedBanners.length) {
+      return field == 'targetType' ? 'none' : '';
+    }
+    final banner = _publishedBanners[index];
+    return switch (field) {
+      'image' => banner.imageUrl,
+      'targetType' => banner.targetType,
+      'targetId' => banner.targetId ?? '',
+      'targetUrl' => banner.targetUrl ?? '',
+      _ => '',
+    };
+  }
+
+  void _startDraft() {
+    if (_draftComponentId != widget.component.componentId) {
+      _draftStarted = false;
+      _draftComponentId = widget.component.componentId;
+    }
+    if (_hasDraft) return;
+    _draftStarted = true;
+    final count = _publishedBanners.length.clamp(0, 10);
+    for (var index = 0; index < count; index++) {
+      final banner = _publishedBanners[index];
+      _set(_key(index, 'image'), banner.imageUrl);
+      _set(_key(index, 'targetType'), banner.targetType);
+      _set(_key(index, 'targetId'), banner.targetId ?? '');
+      _set(_key(index, 'targetUrl'), banner.targetUrl ?? '');
+    }
+    _set('bannerDraftCount', count);
+  }
+
+  void _updateBanner(int index, String field, dynamic value) {
+    _startDraft();
+    _set(_key(index, field), value);
   }
 
   Future<void> _uploadImage(int index) async {
     setState(() => _uploadingIndex = index);
     try {
       final url = await widget.pickImage();
-      if (url != null && mounted) _set(_key(index, 'image'), url);
+      if (url != null && mounted) _updateBanner(index, 'image', url);
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -585,31 +646,23 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
   }
 
   void _deleteBanner(int index) {
-    for (var current = index; current < _count - 1; current++) {
-      for (final field in const [
-        'image',
-        'targetType',
-        'targetId',
-        'targetUrl',
-      ]) {
-        _set(
-          _key(current, field),
-          widget.component.properties[_key(current + 1, field)] ?? '',
-        );
+    final count = _count;
+    const fields = ['image', 'targetType', 'targetId', 'targetUrl'];
+    final remaining = [
+      for (var current = 0; current < count; current++)
+        if (current != index)
+          {for (final field in fields) field: _bannerValue(current, field)},
+    ];
+    _startDraft();
+    for (var current = 0; current < remaining.length; current++) {
+      for (final field in fields) {
+        _set(_key(current, field), remaining[current][field] ?? '');
       }
     }
-    final last = _count - 1;
-    if (last >= 0) {
-      for (final field in const [
-        'image',
-        'targetType',
-        'targetId',
-        'targetUrl',
-      ]) {
-        _set(_key(last, field), field == 'targetType' ? 'none' : '');
-      }
+    for (final field in fields) {
+      _set(_key(remaining.length, field), field == 'targetType' ? 'none' : '');
     }
-    _set('bannerDraftCount', _count - 1);
+    _set('bannerDraftCount', remaining.length);
   }
 
   @override
@@ -620,65 +673,53 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          OutlinedButton.icon(
-            onPressed: _loadingBanners ? null : _importPublishedBanners,
-            icon: _loadingBanners
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.download_outlined, size: 16),
-            label: Text(
-              _loadingBanners
-                  ? S.uploadingImage
-                  : (AppLocale.instance.isArabic
-                        ? 'استيراد بانرات العميل'
-                        : 'Import customer banners'),
+          if (_loadingBanners && count == 0)
+            const Padding(
+              padding: EdgeInsets.all(AppSpacing.sm),
+              child: Center(
+                child: SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
             ),
-          ),
           for (var index = 0; index < count; index++)
             _BannerDraftItem(
               key: ValueKey(
                 'banner-draft-${widget.component.componentId}-$index',
               ),
               index: index,
-              imageUrl:
-                  widget.component.properties[_key(index, 'image')]
-                      ?.toString() ??
-                  '',
-              targetType:
-                  widget.component.properties[_key(index, 'targetType')]
-                      ?.toString() ??
-                  'none',
-              targetId:
-                  widget.component.properties[_key(index, 'targetId')]
-                      ?.toString() ??
-                  '',
-              targetUrl:
-                  widget.component.properties[_key(index, 'targetUrl')]
-                      ?.toString() ??
-                  '',
+              imageUrl: _bannerValue(index, 'image'),
+              targetType: _bannerValue(index, 'targetType'),
+              targetId: _bannerValue(index, 'targetId'),
+              targetUrl: _bannerValue(index, 'targetUrl'),
               targets: _targets,
               uploading: _uploadingIndex == index,
               onUpload: () => _uploadImage(index),
               onDelete: () => _deleteBanner(index),
               onTargetTypeChanged: (value) =>
-                  _set(_key(index, 'targetType'), value),
+                  _updateBanner(index, 'targetType', value),
               onTargetIdChanged: (value) =>
-                  _set(_key(index, 'targetId'), value),
+                  _updateBanner(index, 'targetId', value),
               onTargetUrlChanged: (value) =>
-                  _set(_key(index, 'targetUrl'), value),
+                  _updateBanner(index, 'targetUrl', value),
             ),
           OutlinedButton.icon(
-            onPressed: count >= 10
+            onPressed: count >= 10 || _loadingBanners
                 ? null
                 : () {
-                    if (widget.component.properties['bannerDraftCount'] ==
-                        null) {
-                      _set(_key(0, 'image'), '');
-                      _set(_key(0, 'targetType'), 'none');
-                      _set(_key(0, 'targetId'), '');
-                      _set(_key(0, 'targetUrl'), '');
+                    _startDraft();
+                    final next = count;
+                    for (final field in const [
+                      'image',
+                      'targetType',
+                      'targetId',
+                      'targetUrl',
+                    ]) {
+                      _set(
+                        _key(next, field),
+                        field == 'targetType' ? 'none' : '',
+                      );
                     }
                     _set('bannerDraftCount', count + 1);
                   },
@@ -688,8 +729,8 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
           const SizedBox(height: AppSpacing.xs),
           Text(
             AppLocale.instance.isArabic
-                ? 'تظهر هذه التعديلات في المعاينة فقط ولا تغيّر البانرات المنشورة.'
-                : 'These edits appear in the preview only; published banners are unchanged.',
+                ? 'التعديلات تظهر كمسودة في المعاينة فقط، وتُطبّق على بانرات العملاء عند نشر التصميم.'
+                : 'Edits stay in preview draft and apply to customer banners when the design is published.',
             style: TextStyle(
               fontSize: AppFontSizes.size10,
               color: Theme.of(context).brightness == Brightness.dark

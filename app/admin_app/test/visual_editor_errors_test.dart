@@ -22,15 +22,13 @@ class _RejectingRepository implements VisualEditorRepository {
   Future<DateTime> saveDraft(
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
-  }) async =>
-      DateTime(2026, 1, 1);
+  }) async => DateTime(2026, 1, 1);
 
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
     String? note,
-  }) async =>
-      throw StateError('design document cannot be published: $error');
+  }) async => throw StateError('design document cannot be published: $error');
 
   @override
   Future<List<PublishedVersionInfo>> listVersions({int limit = 30}) async =>
@@ -56,8 +54,7 @@ class _RejectingRepository implements VisualEditorRepository {
     String? id,
     required String name,
     required Map<String, dynamic> document,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   Future<void> deleteTemplate(String templateId) async {}
@@ -71,7 +68,9 @@ Future<void> pumpEditor(WidgetTester tester, VisualEditorCubit cubit) async {
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
-    MaterialApp(home: Scaffold(body: VisualEditorPage(cubit: cubit))),
+    MaterialApp(
+      home: Scaffold(body: VisualEditorPage(cubit: cubit)),
+    ),
   );
   await tester.pumpAndSettle();
 }
@@ -92,6 +91,19 @@ void main() {
       findsOneWidget,
       reason: 'رمز page_key الخام لا يقول للموظف شيئًا',
     );
+  });
+
+  testWidgets('رفض صلاحية النشر يشرح الصلاحية المطلوبة', (tester) async {
+    final cubit = VisualEditorCubit(
+      repository: _RejectingRepository('missing permission: design.publish'),
+    );
+    await pumpEditor(tester, cubit);
+
+    await cubit.publish();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
+
+    expect(find.textContaining('design.publish'), findsOneWidget);
   });
 
   testWidgets('رمز رفض غير معروف يُعرض كما ردّت القاعدة', (tester) async {

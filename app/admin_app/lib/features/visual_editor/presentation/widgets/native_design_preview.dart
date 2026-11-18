@@ -28,6 +28,7 @@ class NativeDesignPreview extends StatelessWidget {
     this.screenSize,
     this.previewLanguage,
     this.previewThemeMode,
+    this.publishedBannerImages = const [],
     required this.onElementSelected,
   });
 
@@ -44,6 +45,9 @@ class NativeDesignPreview extends StatelessWidget {
   /// تعرضه قبل إضافة أدوات المعاينة، فلا تتغيّر اختبارات المعاينة الأصلية.
   final PreviewLanguage? previewLanguage;
   final PreviewThemeMode? previewThemeMode;
+
+  /// Customer banners shown until the editor document starts an explicit draft.
+  final List<String> publishedBannerImages;
 
   final ValueChanged<String> onElementSelected;
 
@@ -353,10 +357,12 @@ class NativeDesignPreview extends StatelessWidget {
   Widget _bannerCarousel(EditableComponent c) {
     final height = (c.properties['height'] as num?)?.toDouble() ?? 184.0;
     final count = (_numProp(c, 'bannerDraftCount') ?? 0).round().clamp(0, 10);
-    final bannerImages = [
-      for (var index = 0; index < count; index++)
-        c.properties['bannerDraft_${index}_image']?.toString() ?? '',
-    ].where((url) => url.isNotEmpty).toList(growable: false);
+    final bannerImages = c.properties['bannerDraftCount'] == null
+        ? publishedBannerImages
+        : [
+            for (var index = 0; index < count; index++)
+              c.properties['bannerDraft_${index}_image']?.toString() ?? '',
+          ].where((url) => url.isNotEmpty).toList(growable: false);
     final hasDraftBanners = c.properties['bannerDraftCount'] != null;
     final radius = BorderRadius.circular(_radius(c.property('radius')));
     return Padding(
@@ -365,7 +371,7 @@ class NativeDesignPreview extends StatelessWidget {
         height: height,
         child: ClipRRect(
           borderRadius: radius,
-          child: !hasDraftBanners
+          child: bannerImages.isEmpty && !hasDraftBanners
               ? Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

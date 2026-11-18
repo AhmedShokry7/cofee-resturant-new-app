@@ -229,6 +229,28 @@ void main() {
       expect(find.byType(AdminPanelRow), findsNWidgets(3));
     });
 
+    testWidgets('the KPI row leads with sales and orders', (tester) async {
+      _setViewport(tester, 1500);
+      await _pumpBody(tester);
+
+      final cards = tester
+          .widgetList<AdminMetricCard>(
+            find.descendant(
+              of: find.byType(DashboardMetricsCards),
+              matching: find.byType(AdminMetricCard),
+            ),
+          )
+          .map((card) => card.label)
+          .toList();
+
+      expect(cards, <String>[
+        S.dashboardTotalSales,
+        S.dashboardNewOrders,
+        S.customersLabel,
+        S.dashboardAverageOrderValue,
+      ]);
+    });
+
     testWidgets('the four tiles read the month numbers the database returned', (
       tester,
     ) async {

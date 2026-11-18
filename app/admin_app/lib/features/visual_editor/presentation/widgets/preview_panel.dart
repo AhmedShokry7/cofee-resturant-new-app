@@ -7,6 +7,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
+import 'package:admin_app/features/banners/di/banners_dependencies.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
@@ -172,6 +173,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   String? _statusMessage;
   bool _preferNative = false;
   bool _livePreviewUnavailable = false;
+  List<String> _publishedBannerImages = const [];
 
   /// آخر رسالة صادرة مُرسلة فعليًا — إعادة البناء المتكرر للوحة لا يعني
   /// رسالة جديدة، والمعرّف نفسه يُرسل مرة واحدة لا في كل إطار.
@@ -187,6 +189,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   void initState() {
     super.initState();
+    _loadPublishedBannerImages();
     if (preview_platform.supportsLiveWebview) {
       if (kIsWeb) {
         _parentOrigin = Uri.base.origin;
@@ -205,6 +208,26 @@ class _PreviewPanelState extends State<PreviewPanel> {
     } else {
       // المعاينة الأصلية ترسم من الحالة مباشرة — القناة حيّة بلا إطار.
       widget.onConnectionChanged?.call(PreviewConnection.connected, null);
+    }
+  }
+
+  Future<void> _loadPublishedBannerImages() async {
+    try {
+      final now = DateTime.now().toUtc();
+      final banners = await BannersDependencies.repository.loadBanners();
+      if (!mounted) return;
+      setState(() {
+        _publishedBannerImages = [
+          for (final banner in banners)
+            if (banner.isPublished &&
+                (banner.startsAt == null ||
+                    !now.isBefore(banner.startsAt!.toUtc())) &&
+                (banner.endsAt == null || !now.isAfter(banner.endsAt!.toUtc())))
+              banner.imageUrl,
+        ];
+      });
+    } catch (_) {
+      // The native preview remains available if the banner query is offline.
     }
   }
 
@@ -399,6 +422,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
       selectedComponentId: widget.selectedComponentId,
       previewLanguage: widget.previewLanguage,
       previewThemeMode: widget.previewThemeMode,
+      publishedBannerImages: _publishedBannerImages,
       onElementSelected: (componentId) =>
           widget.onElementSelected({'componentId': componentId}),
     );

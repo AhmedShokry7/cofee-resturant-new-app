@@ -210,11 +210,20 @@ export async function sendToToken(
               title: message.title,
               body: message.body,
               // The generic image is what Android's own banner reads; the
-              // platform block repeats it so the picture survives on the
-              // devices that only look at the android settings.
+              // platform blocks repeat it for platform-specific renderers.
               ...(imageUrl ? { image: imageUrl } : {}),
             },
             data: message.data,
+            ...(imageUrl
+              ? {
+                apns: {
+                  payload: {
+                    aps: { "mutable-content": 1 },
+                  },
+                  fcm_options: { image: imageUrl },
+                },
+              }
+              : {}),
             android: {
               priority: "high",
               notification: {

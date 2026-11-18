@@ -156,9 +156,8 @@ class VisualEditorToolbar extends StatelessWidget {
         EditorToolbarButton(
           icon: AppIcons.sent,
           label: S.visualEditorPublish,
-          onTap: canPublish
-              ? () => confirmVisualEditorPublish(context, cubit)
-              : null,
+          // ضغطة واحدة تبدأ النشر مباشرة؛ الخادم يتحقق من الصلاحية.
+          onTap: () => publishVisualEditor(context, cubit),
           dark: dark,
           accent: true,
           accentColor: accent,
@@ -170,38 +169,52 @@ class VisualEditorToolbar extends StatelessWidget {
 
 // ------------------------------------------------------------------ حوارات مشتركة
 
-/// حوارات الأدوات مشتركة بين الشريط الأفقي (العرض الضيق) والعمود الجانبي
-/// (العرض الواسع) — نفس الوظائف، لا نسخ للمنطق.
-
-Future<void> confirmVisualEditorPublish(
+/// حوار موحّد للنشر الفوري من الشريط الأفقي أو الشريط العلوي.
+/// ضغطة الزر نفسها ترسل الطلب؛ وتظهر النتيجة في حوار واضح لا يختفي سريعًا.
+Future<void> publishVisualEditor(
   BuildContext context,
   VisualEditorCubit cubit,
 ) async {
-  final confirmed = await showDialog<bool>(
+  final publishing = cubit.publish();
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const PopScope(
+      canPop: false,
+      child: AlertDialog(
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(width: 20),
+            Flexible(child: Text('جارٍ نشر التصميم...')),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  final version = await publishing;
+  if (!context.mounted) return;
+  Navigator.of(context, rootNavigator: true).pop();
+
+  final succeeded = version != null;
+  final message = succeeded
+      ? 'تم النشر كإصدار ${version.versionNumber}'
+      : cubit.state.errorMessage ?? 'تعذر نشر التصميم. حاول مرة أخرى.';
+  await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(S.visualEditorPublishTitle),
-      content: Text(S.visualEditorPublishConfirm),
+      title: Text(succeeded ? 'تم النشر بنجاح' : 'تعذر نشر التصميم'),
+      content: SelectableText(message),
       actions: [
         TextButton(
-          onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text(S.cancel),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text(S.visualEditorPublish),
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(S.close),
         ),
       ],
     ),
   );
-  if (confirmed == true) {
-    final version = await cubit.publish();
-    if (version != null && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('تم النشر كإصدار ${version.versionNumber}')),
-      );
-    }
-  }
 }
 
 /// سجل الإصدارات: قائمة بأرقام الإصدارات وأوقاتها مع استرجاع.
