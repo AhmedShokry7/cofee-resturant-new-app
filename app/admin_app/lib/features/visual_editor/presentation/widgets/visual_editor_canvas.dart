@@ -90,6 +90,7 @@ class VisualEditorCanvas extends StatelessWidget {
           // 2. الكانفاس المركزي القابل للتكبير والإزاحة مع إطار الهاتف
           Positioned.fill(
             child: InteractiveViewer(
+              scaleEnabled: false,
               boundaryMargin: const EdgeInsets.all(100),
               minScale: 0.5,
               maxScale: 2.5,

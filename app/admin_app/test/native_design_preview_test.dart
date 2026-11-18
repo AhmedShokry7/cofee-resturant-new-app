@@ -84,6 +84,41 @@ void main() {
     );
   });
 
+  testWidgets('صورة بانر المسودة تظهر وتتغير مباشرة في المعاينة الأصلية', (
+    tester,
+  ) async {
+    Widget preview(String imageUrl, {int count = 1}) => host([
+      comp(
+        'banner-draft',
+        'bannerCarousel',
+        properties: {
+          'height': 180,
+          'bannerDraftCount': count,
+          'bannerDraft_0_image': imageUrl,
+        },
+      ),
+    ]);
+
+    await tester.pumpWidget(preview('https://example.invalid/first.png'));
+    expect(find.byType(PageView), findsOneWidget);
+    expect(
+      (tester.widget<Image>(find.byType(Image).first).image as NetworkImage)
+          .url,
+      'https://example.invalid/first.png',
+    );
+
+    await tester.pumpWidget(preview('https://example.invalid/second.png'));
+    expect(
+      (tester.widget<Image>(find.byType(Image).first).image as NetworkImage)
+          .url,
+      'https://example.invalid/second.png',
+    );
+
+    await tester.pumpWidget(preview('', count: 0));
+    expect(find.byType(PageView), findsNothing);
+    expect(find.text('عرض اليوم'), findsNothing);
+  });
+
   testWidgets('المخفي لا يُرسم والفارغ يرسم رسالة الصفحة الفارغة', (
     tester,
   ) async {

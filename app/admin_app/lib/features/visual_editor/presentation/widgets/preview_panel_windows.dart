@@ -42,8 +42,7 @@ final Map<String, StreamSubscription<dynamic>> _subscriptions = {};
 /// origin تطبيق العميل لكل إطار: معيار قبول الوارد.
 final Map<String, String> _previewOrigins = {};
 final Map<String, String?> _sessionIds = {};
-final Map<String, void Function(PreviewConnection, [String?])> _reporters =
-    {};
+final Map<String, void Function(PreviewConnection, [String?])> _reporters = {};
 final Map<String, _Handlers> _handlers = {};
 final Map<String, PreviewOutboundQueue<String>> _queues = {};
 
@@ -95,7 +94,7 @@ void registerPreviewView({
   required void Function(dynamic) onPropertyUpdated,
   required void Function(dynamic) onTreeUpdated,
   void Function(PreviewConnection connection, String? reason)?
-      onConnectionState,
+  onConnectionState,
 }) {
   if (!supportsLiveWebview) return;
 
@@ -119,8 +118,9 @@ void registerPreviewView({
     onTreeUpdated: onTreeUpdated,
   );
   _reporters[viewType] = report;
-  (_queues[viewType] ??= PreviewOutboundQueue<String>())
-      .reset(keepPending: true);
+  (_queues[viewType] ??= PreviewOutboundQueue<String>()).reset(
+    keepPending: true,
+  );
 
   final controller = _controllers[viewType];
   if (controller == null) {
@@ -176,10 +176,7 @@ Future<void> _initController(
     }
     report?.call(PreviewConnection.connecting);
   } catch (error) {
-    report?.call(
-      PreviewConnection.error,
-      'تعذّر تشغيل WebView: $error',
-    );
+    report?.call(PreviewConnection.error, 'تعذّر تشغيل WebView: $error');
   }
 }
 
@@ -292,13 +289,11 @@ void _postToPage(String viewType, String message) {
   );
 }
 
-void reloadPreviewView({
-  required String viewType,
-  required String url,
-}) {
+void reloadPreviewView({required String viewType, required String url}) {
   final controller = _controllers[viewType];
-  (_queues[viewType] ??= PreviewOutboundQueue<String>())
-      .reset(keepPending: true);
+  (_queues[viewType] ??= PreviewOutboundQueue<String>()).reset(
+    keepPending: true,
+  );
   if (controller == null) {
     // إعادة تحميل قبل أول تسجيل للإطار: أنشئ المتحكم وابدأ التهيئة.
     final fresh = WebviewController();

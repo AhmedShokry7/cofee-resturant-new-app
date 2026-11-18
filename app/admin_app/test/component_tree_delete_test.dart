@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/component_tree_panel.dart';
+import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 
 EditableComponent _component(String id, String type, int index) =>
     EditableComponent(
@@ -95,6 +96,42 @@ void main() {
       expect(find.byType(ReorderableDragStartListener), findsNothing);
     },
   );
+
+  testWidgets('image layers show a thumbnail in the tree', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Material(
+            child: SizedBox(
+              width: 260,
+              height: 400,
+              child: ComponentTreePanel(
+                pageId: 'home',
+                components: [
+                  _component('image-1', 'image', 0).copyWith(
+                    properties: const {
+                      'imageUrl': 'https://example.com/photo.jpg',
+                    },
+                  ),
+                ],
+                selectedComponentId: null,
+                onSelect: (_) {},
+                onReorder: (_, _) {},
+                onDelete: (_) {},
+                onDuplicate: (_) {},
+                onToggleVisibility: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(AdminNetworkThumb), findsOneWidget);
+    expect(tester.getSize(find.byType(AdminNetworkThumb)), const Size(34, 34));
+  });
 
   testWidgets(
     'the layers panel exposes delete under secondary actions, not on the row',

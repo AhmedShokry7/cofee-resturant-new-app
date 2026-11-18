@@ -72,6 +72,35 @@ void main() {
       }
     });
 
+    test('خصائص بانرات المعاينة تصل إلى شريط العميل ولا تغيّر المنشور', () {
+      final widget = buildHomeDocumentSection(
+        PublishedSection(
+          id: 'banner-draft',
+          type: DesignWidgetTypes.bannerCarousel,
+          properties: const {
+            'bannerDraftCount': 1,
+            'bannerDraft_0_image': 'https://example.invalid/preview.png',
+            'bannerDraft_0_targetType': 'product',
+            'bannerDraft_0_targetId': 'product-1',
+          },
+        ),
+      );
+
+      final carousel = _unwrap(widget) as HomeBannerSection;
+      expect(carousel.previewBanners, hasLength(1));
+      expect(
+        carousel.previewBanners!.single.image,
+        'https://example.invalid/preview.png',
+      );
+      expect(carousel.previewBanners!.single.target.storage, 'product');
+      expect(carousel.previewBanners!.single.targetId, 'product-1');
+
+      final regular = _unwrap(
+        buildHomeDocumentSection(_section(DesignWidgetTypes.bannerCarousel)),
+      ) as HomeBannerSection;
+      expect(regular.previewBanners, isNull);
+    });
+
     test('عناوين أقسام المتجر المخصصة تصل إلى مكوّناتها الحقيقية', () {
       final category = buildHomeDocumentSection(
         PublishedSection(

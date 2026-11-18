@@ -1534,6 +1534,53 @@ class ComponentRegistry {
     );
   }
 
+  static Map<String, ComponentPropertyDefinition> _bannerDraftProperties() => {
+    'bannerDraftCount': const ComponentPropertyDefinition(
+      key: 'bannerDraftCount',
+      label: 'عدد بانرات المعاينة',
+      description: 'عدد البانرات المعدلة في معاينة المحرر فقط',
+      type: PropertyType.integer,
+      defaultValue: null,
+      validation: {'min': 0, 'max': 10},
+      group: 'بانرات المعاينة',
+    ),
+    for (var index = 0; index < 10; index++) ...{
+      'bannerDraft_${index}_image': ComponentPropertyDefinition(
+        key: 'bannerDraft_${index}_image',
+        label: 'صورة البانر ${index + 1}',
+        description: 'رابط صورة هذا البانر في المسودة',
+        type: PropertyType.string,
+        defaultValue: null,
+        group: 'بانرات المعاينة',
+      ),
+      'bannerDraft_${index}_targetType': ComponentPropertyDefinition(
+        key: 'bannerDraft_${index}_targetType',
+        label: 'وجهة البانر ${index + 1}',
+        description: 'نوع الوجهة في المعاينة',
+        type: PropertyType.enum_,
+        defaultValue: null,
+        options: const ['none', 'category', 'product', 'bundle', 'url'],
+        group: 'بانرات المعاينة',
+      ),
+      'bannerDraft_${index}_targetId': ComponentPropertyDefinition(
+        key: 'bannerDraft_${index}_targetId',
+        label: 'معرّف الوجهة ${index + 1}',
+        description: 'معرّف المنتج أو التصنيف أو الباقة',
+        type: PropertyType.string,
+        defaultValue: null,
+        group: 'بانرات المعاينة',
+      ),
+      'bannerDraft_${index}_targetUrl': ComponentPropertyDefinition(
+        key: 'bannerDraft_${index}_targetUrl',
+        label: 'رابط الوجهة ${index + 1}',
+        description: 'الرابط عند اختيار وجهة من نوع رابط',
+        type: PropertyType.string,
+        defaultValue: null,
+        group: 'بانرات المعاينة',
+      ),
+    },
+  };
+
   static void _registerRestaurantComponents() {
     // Banner Carousel
     register(
@@ -1544,6 +1591,7 @@ class ComponentRegistry {
         category: 'restaurant',
         classification: ComponentClassification.configurableBusiness,
         properties: {
+          ..._bannerDraftProperties(),
           'autoplay': ComponentPropertyDefinition(
             key: 'autoplay',
             label: 'التشغيل التلقائي',
@@ -1799,6 +1847,8 @@ class ComponentRegistry {
           'hide',
         ],
         defaultValues: {
+          for (final entry in _bannerDraftProperties().entries)
+            entry.key: entry.value.defaultValue,
           'autoplay': true,
           'showDots': true,
           'height': 184,

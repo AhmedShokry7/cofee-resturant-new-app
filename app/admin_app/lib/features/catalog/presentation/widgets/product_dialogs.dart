@@ -1,7 +1,6 @@
 import 'dart:convert';
 
-import 'package:material_ui/material_ui.dart' hide GlobalMaterialLocalizations;
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 
@@ -551,9 +550,7 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
     return Localizations(
       locale: locale,
       delegates: <LocalizationsDelegate<dynamic>>[
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+        ...GlobalMaterialLocalizations.delegates,
         FlutterQuillLocalizations.delegate,
       ],
       child: dialog,

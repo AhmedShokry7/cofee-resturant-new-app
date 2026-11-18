@@ -352,33 +352,67 @@ class NativeDesignPreview extends StatelessWidget {
 
   Widget _bannerCarousel(EditableComponent c) {
     final height = (c.properties['height'] as num?)?.toDouble() ?? 184.0;
+    final count = (_numProp(c, 'bannerDraftCount') ?? 0).round().clamp(0, 10);
+    final bannerImages = [
+      for (var index = 0; index < count; index++)
+        c.properties['bannerDraft_${index}_image']?.toString() ?? '',
+    ].where((url) => url.isNotEmpty).toList(growable: false);
+    final hasDraftBanners = c.properties['bannerDraftCount'] != null;
+    final radius = BorderRadius.circular(_radius(c.property('radius')));
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Container(
+      child: SizedBox(
         height: height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [_accent, _accent.withAlpha(120)],
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-          ),
-          borderRadius: BorderRadius.circular(_radius(c.property('radius'))),
-        ),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(AppIcons.promotion, size: 28, color: Colors.white),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'عرض اليوم',
-              style: TextStyle(
-                fontSize: AppFontSizes.size14 * _textFactor,
-                fontWeight: AppFontWeights.semiBold,
-                color: Colors.white,
-              ),
-            ),
-          ],
+        child: ClipRRect(
+          borderRadius: radius,
+          child: !hasDraftBanners
+              ? Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [_accent, _accent.withAlpha(120)],
+                      begin: Alignment.topRight,
+                      end: Alignment.bottomLeft,
+                    ),
+                  ),
+                  alignment: Alignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(AppIcons.promotion, size: 28, color: Colors.white),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'عرض اليوم',
+                        style: TextStyle(
+                          fontSize: AppFontSizes.size14 * _textFactor,
+                          fontWeight: AppFontWeights.semiBold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : bannerImages.isEmpty
+              ? Container(
+                  color: _surface,
+                  alignment: Alignment.center,
+                  child: Icon(AppIcons.image01, color: _textSecondary),
+                )
+              : PageView.builder(
+                  key: ValueKey(
+                    'banner-preview-${c.componentId}-${bannerImages.join('|')}',
+                  ),
+                  itemCount: bannerImages.length,
+                  itemBuilder: (context, index) => Image.network(
+                    bannerImages[index],
+                    width: double.infinity,
+                    height: height,
+                    fit: BoxFit.fill,
+                    errorBuilder: (_, _, _) => ColoredBox(
+                      color: _surface,
+                      child: Icon(AppIcons.image01, color: _textSecondary),
+                    ),
+                  ),
+                ),
         ),
       ),
     );

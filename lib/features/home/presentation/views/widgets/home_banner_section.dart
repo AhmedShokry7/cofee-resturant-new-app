@@ -19,6 +19,7 @@ class HomeBannerSection extends StatelessWidget {
     this.height,
     this.radius = AppRadius.none,
     this.showDots = true,
+    this.previewBanners,
   });
 
   final bool autoplay;
@@ -28,9 +29,13 @@ class HomeBannerSection extends StatelessWidget {
   final double radius;
   final bool showDots;
 
+  /// Draft-only list supplied by the visual editor. Null keeps production
+  /// behavior and reads the customer's published banner list.
+  final List<BannerModel>? previewBanners;
+
   @override
   Widget build(BuildContext context) {
-    final banners = context.watch<HomeCubit>().state.banners;
+    final banners = previewBanners ?? context.watch<HomeCubit>().state.banners;
     if (banners.isEmpty) return const SizedBox.shrink();
     return BlocProvider(
       create: (context) =>
@@ -131,11 +136,13 @@ class _BannerCarouselState extends State<_BannerCarousel> {
             ),
           ),
           if (widget.showDots) ...[
-          SizedBox(height: AppSpacing.md),
-          BlocBuilder<BannerCubit, BannerState>(
-            builder: (context, state) =>
-                BannerDots(count: widget.banners.length, current: state.index),
-          ),
+            SizedBox(height: AppSpacing.md),
+            BlocBuilder<BannerCubit, BannerState>(
+              builder: (context, state) => BannerDots(
+                count: widget.banners.length,
+                current: state.index,
+              ),
+            ),
           ],
         ],
       ),

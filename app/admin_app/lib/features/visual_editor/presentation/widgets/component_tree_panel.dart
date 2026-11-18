@@ -739,7 +739,9 @@ class _ComponentRow extends StatelessWidget {
                   height: 32,
                   margin: const EdgeInsetsDirectional.only(end: 7),
                   decoration: BoxDecoration(
-                    color: isSelected ? typeColor : typeColor.withValues(alpha: 0.35),
+                    color: isSelected
+                        ? typeColor
+                        : typeColor.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -967,7 +969,8 @@ class _PanelHeader extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                     border: isAddActive
                         ? Border.all(
-                            color: const Color(0xFF5A6A3A).withValues(alpha: 0.4),
+                            color: const Color(0xFF5A6A3A)
+                                .withValues(alpha: 0.4),
                           )
                         : null,
                   ),

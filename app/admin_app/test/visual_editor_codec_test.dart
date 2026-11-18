@@ -128,6 +128,36 @@ void main() {
   });
 
   group('DesignDocumentCodec — بناء وقراءة المستند', () {
+    test('خصائص بانرات المسودة تعود من المستند كقيم أولية فقط', () {
+      final banner = DesignDocumentCodec.defaultHomeComponents().firstWhere(
+        (component) => component.componentType == 'bannerCarousel',
+      );
+      final edited = banner.copyWith(
+        properties: {
+          ...banner.properties,
+          'bannerDraftCount': 1,
+          'bannerDraft_0_image': 'https://example.invalid/draft.png',
+          'bannerDraft_0_targetType': 'product',
+          'bannerDraft_0_targetId': 'product-1',
+        },
+      );
+      final document = DesignDocumentCodec.document({
+        'home': [edited],
+      });
+      expect(DesignDocumentCodec.validate(document), isNull);
+
+      final restored = DesignDocumentCodec.parseDocument(
+        document,
+      )['home']!.single;
+      expect(restored.properties['bannerDraftCount'], 1);
+      expect(
+        restored.properties['bannerDraft_0_image'],
+        'https://example.invalid/draft.png',
+      );
+      expect(restored.properties['bannerDraft_0_targetType'], 'product');
+      expect(restored.properties['bannerDraft_0_targetId'], 'product-1');
+    });
+
     EditableComponent strip() => EditableComponent(
       componentId: 'home_productStrip_1',
       componentType: 'productStrip',

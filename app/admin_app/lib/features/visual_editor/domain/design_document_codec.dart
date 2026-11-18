@@ -146,7 +146,7 @@ class DesignDocumentCodec {
     final themeJson = theme.toJson();
     return {
       'schema_version': DesignContract.readableSchemaVersion,
-      if (themeJson != null) 'theme': themeJson,
+      'theme': ?themeJson,
       'pages': [
         for (final entry in componentsByPage.entries)
           if (entry.value.isNotEmpty)

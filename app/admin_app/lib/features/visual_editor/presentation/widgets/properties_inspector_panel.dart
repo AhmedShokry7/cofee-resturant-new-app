@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
@@ -8,7 +9,11 @@ import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/banners/di/banners_dependencies.dart';
+import 'package:admin_app/features/bundles/di/bundles_dependencies.dart';
 import 'package:admin_app/features/visual_editor/data/design_image_upload.dart';
+import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
+import 'package:admin_app/features/catalog/di/catalog_dependencies.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
@@ -58,7 +63,11 @@ class PropertiesInspectorPanel extends StatelessWidget {
     final entry = ComponentRegistry.get(component.componentType);
     final registryProps = entry?.properties ?? {};
     final editableProps = Map.fromEntries(
-      registryProps.entries.where((e) => e.value.type != PropertyType.json),
+      registryProps.entries.where(
+        (e) =>
+            e.value.type != PropertyType.json &&
+            !e.key.startsWith('bannerDraft_'),
+      ),
     );
 
     // تجميع الخصائص حسب المجموعة
@@ -70,7 +79,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
 
     // ─── خصائص حقيقية موجودة في المكوّن لكن غير مسجلة ───
     // نعرضها كحقول نصية خام حتى يمكن التعديل عليها
-    final knownKeys = editableProps.keys.toSet()..add('visible');
+    final knownKeys = registryProps.keys.toSet()..add('visible');
     final extraProps = component.properties.entries
         .where(
           (e) =>
@@ -113,6 +122,13 @@ class PropertiesInspectorPanel extends StatelessWidget {
                         onReset: onResetProperty,
                         onPickImage: onPickImage,
                         onBrowseImages: onBrowseImages,
+                      ),
+                    if (component.componentType == 'bannerCarousel')
+                      _BannerDraftControls(
+                        component: component,
+                        onChanged: onPropertyChanged,
+                        pickImage:
+                            onPickImage ?? DesignImageUpload.pickAndUpload,
                       ),
                     // خصائص إضافية (غير مسجلة)
                     if (extraProps.isNotEmpty) ...[
@@ -443,6 +459,412 @@ class _InspectorHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BannerDraftControls extends StatefulWidget {
+  const _BannerDraftControls({
+    required this.component,
+    required this.onChanged,
+    required this.pickImage,
+  });
+
+  final EditableComponent component;
+  final void Function({
+    required String componentId,
+    required String propertyKey,
+    required dynamic value,
+  })
+  onChanged;
+  final Future<String?> Function() pickImage;
+
+  @override
+  State<_BannerDraftControls> createState() => _BannerDraftControlsState();
+}
+
+class _BannerDraftControlsState extends State<_BannerDraftControls> {
+  late Future<List<VisualEditorImageAsset>> _targets;
+  bool _loadingBanners = false;
+  int? _uploadingIndex;
+
+  int get _count =>
+      (widget.component.properties['bannerDraftCount'] as num?)?.toInt().clamp(
+        0,
+        10,
+      ) ??
+      0;
+
+  @override
+  void initState() {
+    super.initState();
+    _targets = _loadTargets();
+  }
+
+  Future<List<VisualEditorImageAsset>> _loadTargets() async {
+    try {
+      final snapshot = await CatalogDependencies.catalog.loadCatalog(
+        limit: 100,
+      );
+      final bundles = await BundlesDependencies.repository.loadBundles();
+      return [
+        for (final category in snapshot.categories)
+          VisualEditorImageAsset(
+            kind: VisualEditorImageAssetKind.category,
+            id: category.id,
+            imageUrl: category.imageUrl ?? '',
+            label: AppLocale.instance.isArabic
+                ? category.nameAr
+                : category.nameEn,
+          ),
+        for (final product in snapshot.products)
+          VisualEditorImageAsset(
+            kind: VisualEditorImageAssetKind.product,
+            id: product.id,
+            imageUrl: product.imageUrl ?? '',
+            label: AppLocale.instance.isArabic
+                ? product.nameAr
+                : product.nameEn,
+          ),
+        for (final bundle in bundles)
+          VisualEditorImageAsset(
+            kind: VisualEditorImageAssetKind.bundle,
+            id: bundle.id,
+            imageUrl: bundle.imageUrl ?? '',
+            label: AppLocale.instance.isArabic ? bundle.nameAr : bundle.nameEn,
+          ),
+      ];
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  void _set(String key, dynamic value) => widget.onChanged(
+    componentId: widget.component.componentId,
+    propertyKey: key,
+    value: value,
+  );
+
+  String _key(int index, String field) => 'bannerDraft_${index}_$field';
+
+  Future<void> _importPublishedBanners() async {
+    setState(() => _loadingBanners = true);
+    try {
+      final banners = await BannersDependencies.repository.loadBanners();
+      if (!mounted) return;
+      final count = banners.length.clamp(0, 10);
+      for (var index = 0; index < count; index++) {
+        final banner = banners[index];
+        _set(_key(index, 'image'), banner.imageUrl);
+        _set(_key(index, 'targetType'), banner.targetType);
+        _set(_key(index, 'targetId'), banner.targetId ?? '');
+        _set(_key(index, 'targetUrl'), banner.targetUrl ?? '');
+      }
+      _set('bannerDraftCount', count);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      if (mounted) setState(() => _loadingBanners = false);
+    }
+  }
+
+  Future<void> _uploadImage(int index) async {
+    setState(() => _uploadingIndex = index);
+    try {
+      final url = await widget.pickImage();
+      if (url != null && mounted) _set(_key(index, 'image'), url);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingIndex = null);
+    }
+  }
+
+  void _deleteBanner(int index) {
+    for (var current = index; current < _count - 1; current++) {
+      for (final field in const [
+        'image',
+        'targetType',
+        'targetId',
+        'targetUrl',
+      ]) {
+        _set(
+          _key(current, field),
+          widget.component.properties[_key(current + 1, field)] ?? '',
+        );
+      }
+    }
+    final last = _count - 1;
+    if (last >= 0) {
+      for (final field in const [
+        'image',
+        'targetType',
+        'targetId',
+        'targetUrl',
+      ]) {
+        _set(_key(last, field), field == 'targetType' ? 'none' : '');
+      }
+    }
+    _set('bannerDraftCount', _count - 1);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final count = _count;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _loadingBanners ? null : _importPublishedBanners,
+            icon: _loadingBanners
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.download_outlined, size: 16),
+            label: Text(
+              _loadingBanners
+                  ? S.uploadingImage
+                  : (AppLocale.instance.isArabic
+                        ? 'استيراد بانرات العميل'
+                        : 'Import customer banners'),
+            ),
+          ),
+          for (var index = 0; index < count; index++)
+            _BannerDraftItem(
+              key: ValueKey(
+                'banner-draft-${widget.component.componentId}-$index',
+              ),
+              index: index,
+              imageUrl:
+                  widget.component.properties[_key(index, 'image')]
+                      ?.toString() ??
+                  '',
+              targetType:
+                  widget.component.properties[_key(index, 'targetType')]
+                      ?.toString() ??
+                  'none',
+              targetId:
+                  widget.component.properties[_key(index, 'targetId')]
+                      ?.toString() ??
+                  '',
+              targetUrl:
+                  widget.component.properties[_key(index, 'targetUrl')]
+                      ?.toString() ??
+                  '',
+              targets: _targets,
+              uploading: _uploadingIndex == index,
+              onUpload: () => _uploadImage(index),
+              onDelete: () => _deleteBanner(index),
+              onTargetTypeChanged: (value) =>
+                  _set(_key(index, 'targetType'), value),
+              onTargetIdChanged: (value) =>
+                  _set(_key(index, 'targetId'), value),
+              onTargetUrlChanged: (value) =>
+                  _set(_key(index, 'targetUrl'), value),
+            ),
+          OutlinedButton.icon(
+            onPressed: count >= 10
+                ? null
+                : () {
+                    if (widget.component.properties['bannerDraftCount'] ==
+                        null) {
+                      _set(_key(0, 'image'), '');
+                      _set(_key(0, 'targetType'), 'none');
+                      _set(_key(0, 'targetId'), '');
+                      _set(_key(0, 'targetUrl'), '');
+                    }
+                    _set('bannerDraftCount', count + 1);
+                  },
+            icon: const Icon(Icons.add, size: 16),
+            label: Text(S.addBanner),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            AppLocale.instance.isArabic
+                ? 'تظهر هذه التعديلات في المعاينة فقط ولا تغيّر البانرات المنشورة.'
+                : 'These edits appear in the preview only; published banners are unchanged.',
+            style: TextStyle(
+              fontSize: AppFontSizes.size10,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? AppColor.darkTextSecondary
+                  : AppColor.adminMuted,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BannerDraftItem extends StatelessWidget {
+  const _BannerDraftItem({
+    super.key,
+    required this.index,
+    required this.imageUrl,
+    required this.targetType,
+    required this.targetId,
+    required this.targetUrl,
+    required this.targets,
+    required this.uploading,
+    required this.onUpload,
+    required this.onDelete,
+    required this.onTargetTypeChanged,
+    required this.onTargetIdChanged,
+    required this.onTargetUrlChanged,
+  });
+
+  final int index;
+  final String imageUrl;
+  final String targetType;
+  final String targetId;
+  final String targetUrl;
+  final Future<List<VisualEditorImageAsset>> targets;
+  final bool uploading;
+  final VoidCallback onUpload;
+  final VoidCallback onDelete;
+  final ValueChanged<String> onTargetTypeChanged;
+  final ValueChanged<String> onTargetIdChanged;
+  final ValueChanged<String> onTargetUrlChanged;
+
+  @override
+  Widget build(BuildContext context) => Card(
+    margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+    child: Padding(
+      padding: const EdgeInsets.all(AppSpacing.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Expanded(child: Text('${S.banners} ${index + 1}')),
+              IconButton(
+                tooltip: S.delete,
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete_outline),
+              ),
+            ],
+          ),
+          if (imageUrl.isNotEmpty)
+            SizedBox(
+              height: 96,
+              child: CachedNetworkImage(
+                imageUrl: imageUrl,
+                fit: BoxFit.cover,
+                errorWidget: (_, _, _) => const Icon(AppIcons.image01),
+              ),
+            ),
+          OutlinedButton.icon(
+            onPressed: uploading ? null : onUpload,
+            icon: uploading
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.upload_outlined, size: 16),
+            label: Text(S.uploadFromDevice),
+          ),
+          DropdownButtonFormField<String>(
+            key: ValueKey('banner-target-type-$targetType'),
+            initialValue:
+                const [
+                  'none',
+                  'category',
+                  'product',
+                  'bundle',
+                  'url',
+                ].contains(targetType)
+                ? targetType
+                : 'none',
+            decoration: InputDecoration(labelText: S.targetType),
+            items: [
+              DropdownMenuItem(value: 'none', child: Text(S.none)),
+              DropdownMenuItem(
+                value: 'category',
+                child: Text(S.targetCategory),
+              ),
+              DropdownMenuItem(value: 'product', child: Text(S.targetProduct)),
+              DropdownMenuItem(value: 'bundle', child: Text(S.bundles)),
+              DropdownMenuItem(value: 'url', child: Text(S.url)),
+            ],
+            onChanged: (value) {
+              if (value != null) onTargetTypeChanged(value);
+            },
+          ),
+          if (targetType == 'category' ||
+              targetType == 'product' ||
+              targetType == 'bundle')
+            FutureBuilder<List<VisualEditorImageAsset>>(
+              future: targets,
+              builder: (context, snapshot) {
+                final kind = switch (targetType) {
+                  'category' => VisualEditorImageAssetKind.category,
+                  'product' => VisualEditorImageAssetKind.product,
+                  _ => VisualEditorImageAssetKind.bundle,
+                };
+                final assets =
+                    (snapshot.data ?? const <VisualEditorImageAsset>[])
+                        .where((asset) => asset.kind == kind)
+                        .toList(growable: false);
+                final ids = assets.map((asset) => asset.id).toSet();
+                return DropdownButtonFormField<String>(
+                  key: ValueKey('banner-target-choice-$targetType-$targetId'),
+                  initialValue: ids.contains(targetId) ? targetId : null,
+                  decoration: InputDecoration(
+                    labelText: targetType == 'category'
+                        ? S.targetCategory
+                        : targetType == 'product'
+                        ? S.targetProduct
+                        : S.bundles,
+                    hintText: snapshot.hasError ? S.retry : null,
+                  ),
+                  items: [
+                    for (final asset in assets)
+                      DropdownMenuItem(
+                        value: asset.id,
+                        child: Text(
+                          asset.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) onTargetIdChanged(value);
+                  },
+                );
+              },
+            ),
+          if (targetType == 'category' ||
+              targetType == 'product' ||
+              targetType == 'bundle')
+            TextFormField(
+              key: ValueKey('banner-target-id-$targetId'),
+              initialValue: targetId,
+              decoration: InputDecoration(
+                labelText: AppLocale.instance.isArabic
+                    ? 'أو أدخل معرّف الوجهة'
+                    : 'Or enter the destination ID',
+              ),
+              onChanged: onTargetIdChanged,
+            ),
+          if (targetType == 'url')
+            TextFormField(
+              key: ValueKey('banner-target-url-$targetUrl'),
+              initialValue: targetUrl,
+              decoration: InputDecoration(labelText: S.targetUrl),
+              onChanged: onTargetUrlChanged,
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _PropertyGroup extends StatelessWidget {

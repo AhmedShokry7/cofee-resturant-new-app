@@ -4,6 +4,7 @@ import 'package:new_coffee/core/preview/preview_section.dart';
 import 'package:new_coffee/core/theme/typography.dart';
 import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
+import 'package:new_coffee/features/home/data/model/banner_model.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_banner_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_bundles_section.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_categories_section.dart';
@@ -66,8 +67,7 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
         greeting: section.localizedText('greeting')?.trim().isNotEmpty == true
             ? section.localizedText('greeting')!.trim()
             : null,
-        question:
-            section.localizedText('question')?.trim().isNotEmpty == true
+        question: section.localizedText('question')?.trim().isNotEmpty == true
             ? section.localizedText('question')!.trim()
             : null,
         showGreeting: section.flagProperty('showGreeting', fallback: true),
@@ -92,9 +92,12 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
       // شريط البانيرات يملك حشوه بنفسه، كما في ترتيب اليوم. المفتاح يُعيد
       // بناء الشريط عند تغيّر `autoplay` فلا يبقى المؤقت قديمًا.
       HomeBannerSection(
-        key: ValueKey('banner_${section.id}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}'),
+        key: ValueKey(
+          'banner_${section.id}_${section.flagProperty('autoplay', fallback: true)}_${section.numberProperty('height')}_${section.numberProperty('bannerDraftCount')}',
+        ),
         autoplay: section.flagProperty('autoplay', fallback: true),
         height: section.numberProperty('height'),
+        previewBanners: _draftBanners(section),
         radius: _radius(section.property('radius')),
         showDots: section.flagProperty('showDots', fallback: true),
       ),
@@ -151,6 +154,27 @@ Widget? buildHomeDocumentSection(PublishedSection section) {
 /// العقدتان «الأكثر طلبًا» و«ترشيحات لك» نوع واحد في المستند، والفصل بمصدر
 /// البيانات وحده. مصدر لا يعرفه الهاتف لا يُختار له شريط: تخمين أحدهما يخلط
 /// ترشيحات الزبون بصفّ الأكثر مبيعًا.
+/// بنرات مؤقتة يحملها مستند المحرر كخصائص أولية؛ لا تُقرأ ولا تُكتب في
+/// قائمة بنرات العميل المنشورة. الغياب يعيد السلوك الطبيعي لقائمة العميل.
+List<BannerModel>? _draftBanners(PublishedSection section) {
+  final count = section.numberProperty('bannerDraftCount');
+  if (count == null) return null;
+  return [
+    for (var index = 0; index < count.round().clamp(0, 10); index++)
+      BannerModel(
+        id: 'preview_${section.id}_$index',
+        image: section.property('bannerDraft_${index}_image') ?? '',
+        titleAr: 'بانر معاينة ${index + 1}',
+        titleEn: 'Preview banner ${index + 1}',
+        target: BannerTarget.fromStorage(
+          section.property('bannerDraft_${index}_targetType') ?? 'none',
+        ),
+        targetId: section.property('bannerDraft_${index}_targetId'),
+        targetUrl: section.property('bannerDraft_${index}_targetUrl'),
+      ),
+  ];
+}
+
 String? _localizedTitle(PublishedSection section) =>
     section.localizedText('title');
 

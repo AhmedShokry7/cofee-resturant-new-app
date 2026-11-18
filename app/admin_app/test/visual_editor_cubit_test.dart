@@ -165,7 +165,10 @@ void main() {
     gate.complete(null);
     await initialization;
 
-    expect(cubit.pendingMessage?.type, VisualEditorMessageType.applyDesignConfig);
+    expect(
+      cubit.pendingMessage?.type,
+      VisualEditorMessageType.applyDesignConfig,
+    );
     final document =
         cubit.pendingMessage!.payload['designDocument'] as Map<String, dynamic>;
     expect(document['pages'], isNotEmpty);

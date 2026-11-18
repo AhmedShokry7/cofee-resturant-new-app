@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart' hide GlobalMaterialLocalizations;
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-
 import 'package:admin_app/core/config/app_config.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -103,11 +101,9 @@ class _AdminAppState extends State<AdminApp> {
             themeMode: AppTheme.instance.materialThemeMode,
             locale: AppLocale.instance.locale,
             supportedLocales: const <Locale>[Locale('en'), Locale('ar')],
-            localizationsDelegates: <LocalizationsDelegate<dynamic>>[
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+            // `material_ui` has its own localization classes; Flutter's
+            // delegates are not recognized by its Material widgets.
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
             builder: (context, child) => Directionality(
               textDirection: AppLocale.instance.textDirection,
               child: child ?? const SizedBox.shrink(),

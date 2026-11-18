@@ -278,12 +278,14 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   void didUpdateWidget(PreviewPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.reloadToken != oldWidget.reloadToken) {
-      if (preview_platform.supportsLiveWebview) {
-        _autoReloads = 0;
-        _reloadManually();
-      }
+    if (widget.reloadToken != oldWidget.reloadToken &&
+        preview_platform.supportsLiveWebview) {
+      _autoReloads = 0;
+      _reloadManually();
     }
+    // Language and theme changes arrive here as outbound SET_LANGUAGE /
+    // SET_THEME_MODE messages. Deliver them to the live preview in place;
+    // changing display settings must not reload the emulator.
     _deliverOutbound();
   }
 
