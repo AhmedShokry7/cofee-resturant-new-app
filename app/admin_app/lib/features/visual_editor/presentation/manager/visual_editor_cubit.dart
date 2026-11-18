@@ -84,6 +84,10 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
           isDirty: false,
         ),
       );
+      // PREVIEW_READY may arrive before the draft query completes. In that
+      // order the first handshake has no document to send, so push the loaded
+      // state now instead of leaving the iframe on the published snapshot.
+      if (state.previewReady) _syncPreview();
     } catch (e) {
       emit(
         state.copyWith(

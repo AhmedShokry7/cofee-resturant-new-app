@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -117,7 +117,7 @@ void main() {
                   ],
                   selectedComponentId: null,
                   onSelect: (_) {},
-                  onReorder: (_, __) {},
+                  onReorder: (_, _) {},
                   onDelete: (id) => deletedId = id,
                   onDuplicate: (_) {},
                   onToggleVisibility: (_) {},

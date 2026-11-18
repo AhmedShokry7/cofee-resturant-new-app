@@ -57,7 +57,7 @@ import 'package:admin_app/features/visual_editor/presentation/pages/visual_edito
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_feature_placeholder.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 /// The frame around every admin page.

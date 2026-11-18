@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/features/loyalty/domain/entities/admin_loyalty_member.dart';

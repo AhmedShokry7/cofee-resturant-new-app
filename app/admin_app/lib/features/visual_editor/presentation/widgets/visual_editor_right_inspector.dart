@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -157,7 +157,7 @@ class VisualEditorRightInspector extends StatelessWidget {
               style: FilledButton.styleFrom(
                 backgroundColor: VisualEditorTokens.primaryOliveGreen,
                 disabledBackgroundColor: VisualEditorTokens.primaryOliveGreen
-                    .withOpacity(0.35),
+                    .withValues(alpha: 0.35),
                 foregroundColor: Colors.white,
                 alignment: AlignmentDirectional.center,
               ),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// رموز التصميم والهوية البصرية الخاصة بالمحرر المرئي (Visual Editor Design Tokens).
 ///
@@ -96,7 +96,7 @@ class VisualEditorTokens {
     return [
       BoxShadow(
         color: isDark
-            ? Colors.black.withOpacity(0.3)
+            ? Colors.black.withValues(alpha: 0.3)
             : const Color(0x0C2C4C38),
         blurRadius: 10,
         offset: const Offset(0, 3),
@@ -109,7 +109,7 @@ class VisualEditorTokens {
     return [
       BoxShadow(
         color: isDark
-            ? Colors.black.withOpacity(0.5)
+            ? Colors.black.withValues(alpha: 0.5)
             : const Color(0x1F22332D),
         blurRadius: 28,
         spreadRadius: 2,
@@ -117,7 +117,7 @@ class VisualEditorTokens {
       ),
       BoxShadow(
         color: isDark
-            ? Colors.black.withOpacity(0.3)
+            ? Colors.black.withValues(alpha: 0.3)
             : const Color(0x0D22332D),
         blurRadius: 10,
         offset: const Offset(0, 4),

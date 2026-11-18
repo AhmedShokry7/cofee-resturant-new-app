@@ -10,7 +10,7 @@ import 'package:admin_app/core/models/admin_category.dart';
 import 'package:admin_app/core/models/admin_product.dart';
 import 'package:admin_app/features/catalog/data/repositories/admin_product_repository.dart';
 import 'package:admin_app/core/catalog/admin_catalog_snapshot.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';

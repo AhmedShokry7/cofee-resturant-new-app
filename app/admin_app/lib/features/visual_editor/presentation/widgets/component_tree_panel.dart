@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
+import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 
 /// لوحة شجرة المكوّنات — تعرض المكوّنات المسجلة في الصفحة المحددة
 /// وتتيح تحديدها وإعادة ترتيبها وإخفاءها وحذفها.
@@ -39,6 +40,16 @@ const _quickAddTypes = [
 ];
 
 /// استخراج نص معاينة من خصائص المكوّن حسب نوعه
+String? _imagePreviewUrl(EditableComponent component) {
+  final properties = component.properties;
+  final directUrl = properties['imageUrl'] ?? properties['image_url'];
+  if (directUrl is String && directUrl.trim().isNotEmpty) {
+    return directUrl.trim();
+  }
+
+  return null;
+}
+
 String _previewText(EditableComponent c) {
   final p = c.properties;
   switch (c.componentType) {
@@ -509,9 +520,9 @@ class _QuickAddChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(AppRadius.sm),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -681,6 +692,7 @@ class _ComponentRow extends StatelessWidget {
     final bodyColor = dark ? AppColor.darkText : AppColor.adminBody;
 
     final previewStr = _previewText(component);
+    final imagePreviewUrl = _imagePreviewUrl(component);
 
     return Material(
       color: rowBg,
@@ -727,17 +739,27 @@ class _ComponentRow extends StatelessWidget {
                   height: 32,
                   margin: const EdgeInsetsDirectional.only(end: 7),
                   decoration: BoxDecoration(
-                    color: isSelected ? typeColor : typeColor.withOpacity(0.35),
+                    color: isSelected ? typeColor : typeColor.withValues(alpha: 0.35),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
 
-                // ► أيقونة النوع
-                Icon(
-                  _iconForType(component.componentType),
-                  size: 15,
-                  color: typeColor,
-                ),
+                // ► صورة مصغرة للعناصر ذات الصورة، وأيقونة النوع للباقي
+                if (imagePreviewUrl != null)
+                  AdminNetworkThumb(
+                    imageUrl: imagePreviewUrl,
+                    width: 34,
+                    height: 34,
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                    icon: _iconForType(component.componentType),
+                  )
+                else
+                  Icon(
+                    _iconForType(component.componentType),
+                    size: 15,
+                    color: typeColor,
+                  ),
                 const SizedBox(width: 6),
 
                 // ► الاسم والمعاينة
@@ -940,12 +962,12 @@ class _PanelHeader extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: isAddActive
-                        ? const Color(0xFF5A6A3A).withOpacity(0.15)
+                        ? const Color(0xFF5A6A3A).withValues(alpha: 0.15)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                     border: isAddActive
                         ? Border.all(
-                            color: const Color(0xFF5A6A3A).withOpacity(0.4),
+                            color: const Color(0xFF5A6A3A).withValues(alpha: 0.4),
                           )
                         : null,
                   ),

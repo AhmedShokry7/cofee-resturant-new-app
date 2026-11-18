@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// يرسم قوسًا من رأس الدائرة معقَّمًا حتى [fraction] فوق مسار كامل.
 ///

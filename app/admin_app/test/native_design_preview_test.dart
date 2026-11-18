@@ -5,7 +5,7 @@ import 'package:admin_app/features/visual_editor/domain/component_registry.dart'
 import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/native_design_preview.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 EditableComponent comp(

@@ -8,7 +8,7 @@ import 'package:admin_app/features/visual_editor/presentation/widgets/preview_pa
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_right_inspector.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_toolbar.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// مستودع زائف مستقل: لا يلمس شبكة، ويجعل التهيئة تنجح فورًا.

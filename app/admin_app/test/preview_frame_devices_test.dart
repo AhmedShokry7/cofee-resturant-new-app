@@ -1,6 +1,6 @@
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// انحدار قيود الإطار: كل أجهزة العرض تعمل حتى مع تكبير فوق الملاءمة،

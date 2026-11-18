@@ -13,7 +13,7 @@ import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// مركز إعداد المساعد: اتصال النموذج، أسلوب الرد، ومحتوى المعرفة المنشور.
 /// المفاتيح تُرسل مرة واحدة إلى دالة إدارية وتُحفظ في Vault؛ لا تُقرأ ثانية.

@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart' hide GlobalMaterialLocalizations;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
@@ -103,7 +103,7 @@ class _AdminAppState extends State<AdminApp> {
             themeMode: AppTheme.instance.materialThemeMode,
             locale: AppLocale.instance.locale,
             supportedLocales: const <Locale>[Locale('en'), Locale('ar')],
-            localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            localizationsDelegates: <LocalizationsDelegate<dynamic>>[
               GlobalMaterialLocalizations.delegate,
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,

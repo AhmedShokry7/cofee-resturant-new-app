@@ -1,5 +1,4 @@
-import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
@@ -377,6 +376,7 @@ class _VersionsDialog extends StatelessWidget {
 
 class EditorScreenSizeSelector extends StatelessWidget {
   const EditorScreenSizeSelector({
+    super.key,
     required this.dark,
     required this.muted,
     required this.selected,
@@ -429,6 +429,7 @@ class EditorScreenSizeSelector extends StatelessWidget {
 
 class EditorZoomControls extends StatelessWidget {
   const EditorZoomControls({
+    super.key,
     required this.zoom,
     required this.dark,
     required this.muted,
@@ -485,6 +486,7 @@ class EditorZoomControls extends StatelessWidget {
 
 class EditorConnectionStatus extends StatelessWidget {
   const EditorConnectionStatus({
+    super.key,
     required this.connection,
     this.reason,
     required this.dark,
@@ -538,6 +540,7 @@ class EditorConnectionStatus extends StatelessWidget {
 
 class EditorToolbarButton extends StatelessWidget {
   const EditorToolbarButton({
+    super.key,
     required this.icon,
     required this.label,
     required this.onTap,
@@ -604,6 +607,7 @@ class EditorToolbarButton extends StatelessWidget {
 
 class EditorIconBtn extends StatelessWidget {
   const EditorIconBtn({
+    super.key,
     required this.icon,
     required this.tooltip,
     required this.onTap,
@@ -638,6 +642,8 @@ class EditorIconBtn extends StatelessWidget {
 }
 
 class EditorDivider extends StatelessWidget {
+  const EditorDivider({super.key});
+
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;

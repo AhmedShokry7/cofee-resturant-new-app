@@ -1,4 +1,4 @@
-ï»¿import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/models/admin_category.dart';
@@ -48,7 +48,7 @@ class ProductPageBody extends StatelessWidget {
   final ValueChanged<AdminProduct>? onSave;
   final ValueChanged<AdminProduct>? onOpenImages;
 
-  /// ÙŠÙØªØ­ Ø­ÙˆØ§Ø± Ø£Ø­Ø¬Ø§Ù… Ø§Ù„Ù…Ù†ØªØ¬ ÙˆØ¥Ø¶Ø§ÙØ§ØªÙ‡ ÙˆØ£Ø³Ø¹Ø§Ø±Ù‡ Ø¹Ù†Ø¯Ù‡.
+  /// íİÊÍ ÍæÇÑ ÃÍÌÇã ÇáãäÊÌ æÅÖÇİÇÊå æÃÓÚÇÑå ÚäÏå.
   final ValueChanged<AdminProduct>? onOpenOptions;
   final ValueChanged<AdminProduct>? onSelect;
   final Set<String> selectedIds;

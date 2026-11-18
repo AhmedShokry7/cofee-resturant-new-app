@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/features/subscriptions_admin/domain/entities/admin_subscription.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/widgets/subscription_format.dart';

@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:admin_app/features/orders/domain/entities/admin_order.dart';
 import 'package:admin_app/features/orders/domain/entities/order_status_rules.dart';
 import 'package:admin_app/features/orders/presentation/widgets/order_table_header.dart';

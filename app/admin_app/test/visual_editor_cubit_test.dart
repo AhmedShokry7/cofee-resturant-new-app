@@ -19,6 +19,7 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   Map<String, List<EditableComponent>>? savedDraft;
   DesignTheme? savedTheme;
   Completer<void>? saveGate;
+  Completer<EditorDraft?>? draftGate;
   final List<Map<String, List<EditableComponent>>> saveSnapshots = [];
   List<Map<String, dynamic>> publishedDocuments = [];
   String? failedPublishDocument;
@@ -38,7 +39,8 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   }
 
   @override
-  Future<EditorDraft?> loadDraft() async => null;
+  Future<EditorDraft?> loadDraft() async =>
+      draftGate == null ? null : await draftGate!.future;
 
   @override
   Future<DateTime> saveDraft(
@@ -146,6 +148,27 @@ void main() {
   setUp(() {
     repository = _FakeVisualEditorRepository();
     cubit = VisualEditorCubit(repository: repository);
+  });
+
+  test('المعاينة الجاهزة تستقبل المستند بعد اكتمال تحميل المحرر', () async {
+    final gate = Completer<EditorDraft?>();
+    repository.draftGate = gate;
+
+    final initialization = cubit.initialize();
+    cubit.handlePreviewReady(null);
+    expect(
+      cubit.pendingMessage?.payload['designDocument'],
+      isNull,
+      reason: 'قد يصل handshake قبل اكتمال قراءة المسودة',
+    );
+
+    gate.complete(null);
+    await initialization;
+
+    expect(cubit.pendingMessage?.type, VisualEditorMessageType.applyDesignConfig);
+    final document =
+        cubit.pendingMessage!.payload['designDocument'] as Map<String, dynamic>;
+    expect(document['pages'], isNotEmpty);
   });
 
   test('تهيئة بلا مسودة تبدأ من تصميم اليوم', () async {

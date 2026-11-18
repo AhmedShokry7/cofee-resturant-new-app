@@ -15,7 +15,7 @@ import 'dart:async';
 import 'dart:convert' show jsonEncode;
 import 'dart:io' show Platform;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:webview_windows/webview_windows.dart';
 
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
@@ -155,14 +155,17 @@ Future<void> _initController(
     }
     await controller.initialize();
     await controller.setBackgroundColor(const Color(0x00000000));
-    // السكربت يُحقن قبل كل صفحة، فإعادة التحميل لا تفقد الممرّر أبدًا.
-    await controller.addScriptToExecuteOnDocumentCreated(_forwarderScript);
-    await controller.loadUrl(_cacheBusted(url));
-
+    // Subscribe before loading: the preview can send PREVIEW_READY as soon as
+    // Flutter's first frame is painted. Subscribing after loadUrl races that
+    // one-shot handshake and leaves the editor queue permanently unflushed.
     _subscriptions[viewType]?.cancel();
     _subscriptions[viewType] = controller.webMessage.listen(
       (value) => _onWebMessage(viewType, value),
     );
+    // السكربت يُحقن قبل كل صفحة، فإعادة التحميل لا تفقد الممرّر أبدًا.
+    await controller.addScriptToExecuteOnDocumentCreated(_forwarderScript);
+    await controller.loadUrl(_cacheBusted(url));
+
     ready.value = true;
     // رابط طُلب أثناء التهيئة؟ يُحمّل الآن مكانه. بلا طلب أثناء التهيئة
     // لا تُعاد التحميل: الصفحة المحمّلة أعلاه هي الوجهة نفسها، وإعادة

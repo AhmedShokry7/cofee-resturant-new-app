@@ -5,7 +5,7 @@ import 'package:admin_app/features/visual_editor/presentation/manager/visual_edi
 import 'package:admin_app/features/visual_editor/presentation/pages/visual_editor_page.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/templates_dialog.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/theme_studio_dialog.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// رفض النشر كان يُكتب في الحالة ولا يُعرض: الشاشة تبقى جاهزة والقشرة لا

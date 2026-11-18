@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/auth/admin_session.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
