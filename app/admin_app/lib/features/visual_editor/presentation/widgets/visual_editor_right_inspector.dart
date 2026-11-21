@@ -54,7 +54,7 @@ class VisualEditorRightInspector extends StatelessWidget {
     final borderColor = VisualEditorTokens.border(context);
 
     return Container(
-      width: VisualEditorTokens.inspectorWidth,
+      width: double.infinity,
       decoration: BoxDecoration(
         color: VisualEditorTokens.surface(context),
         border: BorderDirectional(
@@ -73,7 +73,9 @@ class VisualEditorRightInspector extends StatelessWidget {
     bool dark,
   ) {
     final entry = ComponentRegistry.get(component.componentType);
-    final title = entry?.displayName ?? component.componentType;
+    final title = component.componentType == 'splashSettings'
+        ? S.visualEditorSplashImage
+        : entry?.displayName ?? component.componentType;
     final textColor = VisualEditorTokens.text(context);
     final mutedColor = VisualEditorTokens.textMuted(context);
 

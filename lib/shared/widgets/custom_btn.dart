@@ -25,10 +25,12 @@ class CustomBtn extends StatelessWidget {
   final TextStyle? textStyle;
   final String? loadingText;
 
-  /// Brand gradient; [AppColor.primaryColor] is a runtime theming value, so this
-  /// cannot be const.
-  static final LinearGradient primaryGradient = LinearGradient(
-    colors: [AppColor.primaryColor, AppColor.primaryColorEnd],
+  /// Read at build time so published brand changes repaint primary buttons.
+  static LinearGradient get primaryGradient => LinearGradient(
+    colors: [
+      AppColor.primaryColor,
+      Color.lerp(AppColor.primaryColor, Colors.white, 0.18)!,
+    ],
   );
 
   const CustomBtn({

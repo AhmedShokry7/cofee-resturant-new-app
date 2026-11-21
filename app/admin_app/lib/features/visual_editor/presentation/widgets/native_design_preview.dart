@@ -151,6 +151,12 @@ class NativeDesignPreview extends StatelessWidget {
     final byParent = _childrenByParent;
     final roots = components.where((c) => c.parentId == null).toList()
       ..sort((a, b) => a.index.compareTo(b.index));
+    // The customer welcome page is a layered screen: its image sits behind an
+    // organic panel. Rendering its nodes as a vertical list made the fallback
+    // preview look unlike the page users are editing.
+    if (roots.any((component) => component.componentType == 'welcomeHero')) {
+      return _welcomePage(context, roots, byParent);
+    }
     final sections = <Widget>[];
     for (final root in roots) {
       final child = _render(root, byParent);
@@ -180,6 +186,108 @@ class NativeDesignPreview extends StatelessWidget {
                 children: sections,
               ),
             ),
+    );
+  }
+
+  Widget _welcomePage(
+    BuildContext context,
+    List<EditableComponent> roots,
+    Map<String, List<EditableComponent>> byParent,
+  ) {
+    final size = screenSize ?? MediaQuery.sizeOf(context);
+    EditableComponent? find(String type) {
+      for (final component in roots) {
+        if (component.componentType == type) return component;
+      }
+      return null;
+    }
+
+    final hero = find('welcomeHero');
+    final spacing = find('welcomeSpacing');
+    final visible = roots
+        .where((component) =>
+            component.componentType != 'welcomeHero' &&
+            component.componentType != 'welcomeSpacing' &&
+            component.properties['visible'] != false)
+        .toList();
+    final defaultRatio = size.height < 720 ? 0.62 : 0.63;
+    final imageHeight = size.height *
+        (hero == null ? defaultRatio : (_numProp(hero, 'heightRatio') ?? defaultRatio))
+            .clamp(0.25, 0.85);
+    final curveDepth =
+        (spacing == null ? 55.0 : (_numProp(spacing, 'curveDepth') ?? 55))
+            .clamp(0.0, 140.0);
+    final panelColor = _hexColor(spacing?.property('panelColor')) ?? Colors.white;
+    final horizontal = spacing == null
+        ? 32.0
+        : (_numProp(spacing, 'paddingHorizontal') ?? 32.0);
+    final top = spacing == null ? 20.0 : (_numProp(spacing, 'top') ?? 20.0);
+    final bottom = spacing == null
+        ? 32.0
+        : (_numProp(spacing, 'paddingBottom') ?? 32.0);
+    final gap = spacing == null
+        ? AppSpacing.md
+        : (_numProp(spacing, 'gap') ?? AppSpacing.md);
+    final alignment = switch (spacing?.property('contentAlignment')) {
+      'start' => MainAxisAlignment.start,
+      'center' => MainAxisAlignment.center,
+      _ => MainAxisAlignment.end,
+    };
+
+    return SizedBox(
+      width: double.infinity,
+      height: size.height,
+      child: Stack(
+        clipBehavior: Clip.hardEdge,
+        children: [
+          if (hero != null && hero.properties['visible'] != false)
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: imageHeight,
+              child: _render(hero, byParent) ?? const SizedBox.shrink(),
+            ),
+          Positioned(
+            top: imageHeight - curveDepth,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: ClipPath(
+              clipper: _WelcomePanelClipper(curveDepth),
+              child: ColoredBox(
+                color: panelColor,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
+                  child: SafeArea(
+                    top: false,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) => SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: Column(
+                            mainAxisAlignment: alignment,
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              for (var i = 0; i < visible.length; i++) ...[
+                                if (i > 0 && visible[i - 1].componentType == 'welcomeTitle')
+                                  SizedBox(height: gap),
+                                if (_render(visible[i], byParent) case final widget?)
+                                  widget,
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -872,7 +980,10 @@ class NativeDesignPreview extends StatelessWidget {
     final effectiveLabel = label.isEmpty ? fallbackLabel : label;
     if (effectiveLabel.isEmpty) return const SizedBox.shrink();
     final style = c.property('style') ?? 'primary';
-    final bg = _hex(c.property('color')) ?? _accent;
+    final savedBackground = _hex(c.property('color'));
+    final bg = savedBackground?.toARGB32() == 0xFF2E7D32
+        ? _accent
+        : savedBackground ?? _accent;
     final fg = _hex(c.property('textColor')) ?? Colors.white;
     final hasIcon = ((c.properties['icon'] as String?) ?? '').isNotEmpty;
     return Padding(
@@ -1196,48 +1307,43 @@ class NativeDesignPreview extends StatelessWidget {
   /// صورة الترحيب: الرابط المنشور أو الصورة المرفقة، بنفس مساحة الشاشة.
   Widget _welcomeHero(EditableComponent c) {
     final url = (c.properties['imageUrl'] as String?)?.trim() ?? '';
+    final imageAlignment = switch (c.property('alignment')) {
+      'topLeft' => Alignment.topLeft,
+      'topRight' => Alignment.topRight,
+      'centerLeft' => Alignment.centerLeft,
+      'centerRight' => Alignment.centerRight,
+      'bottomLeft' => Alignment.bottomLeft,
+      'bottomCenter' => Alignment.bottomCenter,
+      'bottomRight' => Alignment.bottomRight,
+      'center' => Alignment.center,
+      _ => Alignment.topCenter,
+    };
+    final imageFit = switch (c.property('fit')) {
+      'contain' => BoxFit.contain,
+      'fill' => BoxFit.fill,
+      'fitWidth' => BoxFit.fitWidth,
+      'fitHeight' => BoxFit.fitHeight,
+      'scaleDown' => BoxFit.scaleDown,
+      _ => BoxFit.cover,
+    };
     Widget picture;
     if (url.isEmpty) {
-      picture = Container(
-        color: _surface,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(AppIcons.image01, size: 32, color: _textSecondary),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'صورة الترحيب المرفقة',
-              style: TextStyle(
-                fontSize: AppFontSizes.size10 * _textFactor,
-                color: _textSecondary,
-              ),
-            ),
-          ],
+      picture = Image.asset(
+        AppImages.welcomeImage,
+        fit: imageFit,
+        alignment: imageAlignment,
+        errorBuilder: (_, _, _) => ColoredBox(
+          color: _surface,
+          child: Center(
+            child: Icon(AppIcons.image01, size: 32, color: _textSecondary),
+          ),
         ),
       );
     } else {
       picture = Image.network(
         url,
-        fit: switch (c.property('fit')) {
-          'contain' => BoxFit.contain,
-          'fill' => BoxFit.fill,
-          'fitWidth' => BoxFit.fitWidth,
-          'fitHeight' => BoxFit.fitHeight,
-          'scaleDown' => BoxFit.scaleDown,
-          _ => BoxFit.cover,
-        },
-        alignment: switch (c.property('alignment')) {
-          'topLeft' => Alignment.topLeft,
-          'topRight' => Alignment.topRight,
-          'centerLeft' => Alignment.centerLeft,
-          'centerRight' => Alignment.centerRight,
-          'bottomLeft' => Alignment.bottomLeft,
-          'bottomCenter' => Alignment.bottomCenter,
-          'bottomRight' => Alignment.bottomRight,
-          'center' => Alignment.center,
-          _ => Alignment.topCenter,
-        },
+        fit: imageFit,
+        alignment: imageAlignment,
         errorBuilder: (_, _, _) => Container(
           color: _surface,
           alignment: Alignment.center,
@@ -1252,20 +1358,7 @@ class NativeDesignPreview extends StatelessWidget {
       child: SizedBox(
         height: previewSize.height * heightRatio,
         width: double.infinity,
-        child: Align(
-          alignment: switch (c.property('alignment')) {
-            'topLeft' => Alignment.topLeft,
-            'topRight' => Alignment.topRight,
-            'centerLeft' => Alignment.centerLeft,
-            'centerRight' => Alignment.centerRight,
-            'bottomLeft' => Alignment.bottomLeft,
-            'bottomCenter' => Alignment.bottomCenter,
-            'bottomRight' => Alignment.bottomRight,
-            'center' => Alignment.center,
-            _ => Alignment.topCenter,
-          },
-          child: picture,
-        ),
+        child: SizedBox.expand(child: picture),
       ),
     );
   }
@@ -1769,4 +1862,26 @@ extension on EditableComponent {
     if (value is String && value.isNotEmpty) return value;
     return defaultValues[key]?.toString();
   }
+}
+
+class _WelcomePanelClipper extends CustomClipper<Path> {
+  const _WelcomePanelClipper(this.depth);
+
+  final double depth;
+
+  @override
+  Path getClip(Size size) {
+    final scale = depth / 55;
+    return Path()
+      ..moveTo(0, depth)
+      ..cubicTo(size.width * .18, depth, size.width * .22, 0, size.width * .48, 0)
+      ..cubicTo(size.width * .72, 0, size.width * .78, 34 * scale, size.width, 24 * scale)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _WelcomePanelClipper oldClipper) =>
+      oldClipper.depth != depth;
 }

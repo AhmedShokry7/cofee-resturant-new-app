@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// رفض النشر كان يُكتب في الحالة ولا يُعرض: الشاشة تبقى جاهزة والقشرة لا
 /// تقرأ إلا خطأ الحالة الكامل، فيضغط الموظف «نشر» ولا يعرف السبب أبدًا.
-class _RejectingRepository implements VisualEditorRepository {
+class _RejectingRepository extends VisualEditorRepository {
   _RejectingRepository(this.error);
 
   final String error;
@@ -27,6 +27,7 @@ class _RejectingRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
+    String? name,
     String? note,
   }) async => throw StateError('design document cannot be published: $error');
 
@@ -41,6 +42,16 @@ class _RejectingRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> restoreVersion(String versionId) async =>
       throw UnimplementedError();
+
+  @override
+  Future<void> updateVersionDetails(
+    String versionId,
+    String? name,
+    String? note,
+  ) async {}
+
+  @override
+  Future<void> deleteVersion(String versionId) async {}
 
   @override
   Future<List<DesignTemplateInfo>> listTemplates() async => const [];

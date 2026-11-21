@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 ///
 /// كل دالة تحاكي عقد الـ RPC الحي: المسودة تُقرأ null حين لا شيء محفوظ،
 /// والنشر يرفض مستندًا غير صالح كأن القاعدة فعلت.
-class _FakeVisualEditorRepository implements VisualEditorRepository {
+class _FakeVisualEditorRepository extends VisualEditorRepository {
   _FakeVisualEditorRepository();
 
   Map<String, List<EditableComponent>>? savedDraft;
@@ -61,6 +61,7 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
+    String? name,
     String? note,
   }) async {
     publishCalls++;

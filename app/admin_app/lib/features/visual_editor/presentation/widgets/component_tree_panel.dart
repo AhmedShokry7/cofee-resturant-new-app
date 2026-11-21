@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/constants/app_images.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
@@ -134,7 +135,11 @@ String _previewText(EditableComponent c) {
       return 'قائمة الحزم';
 
     case 'splashSettings':
-      return 'إعدادات الافتتاحية';
+      final value = p['durationMs'];
+      final duration = value is num
+          ? value.round()
+          : int.tryParse(value.toString()) ?? 1000;
+      return S.visualEditorSplashTransitionDuration(duration);
 
     case 'welcomeHero':
       return 'صورة الترحيب';
@@ -270,7 +275,9 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
           _PanelHeader(
             icon: AppIcons.layers01,
             title: S.visualEditorLayers,
-            onAddTap: () => setState(() => _showQuickAdd = !_showQuickAdd),
+            onAddTap: widget.pageId == 'splash'
+                ? null
+                : () => setState(() => _showQuickAdd = !_showQuickAdd),
             isAddActive: _showQuickAdd,
           ),
           const Divider(height: 1),
@@ -674,7 +681,10 @@ class _ComponentRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isVisible = component.properties['visible'] as bool? ?? true;
+    final isSplash = component.componentType == 'splashSettings';
+    final isVisible = isSplash
+        ? component.properties['imageVisible'] as bool? ?? true
+        : component.properties['visible'] as bool? ?? true;
     final entry = ComponentRegistry.get(component.componentType);
     final isChild = component.parentId != null;
     final typeColor = _colorForType(
@@ -756,6 +766,16 @@ class _ComponentRow extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.xs),
                     icon: _iconForType(component.componentType),
                   )
+                else if (isSplash && isVisible)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(AppRadius.xs),
+                    child: Image.asset(
+                      AppImages.logo,
+                      width: 34,
+                      height: 34,
+                      fit: BoxFit.cover,
+                    ),
+                  )
                 else
                   Icon(
                     _iconForType(component.componentType),
@@ -771,7 +791,9 @@ class _ComponentRow extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        entry?.displayName ?? component.componentType,
+                        isSplash
+                            ? S.visualEditorSplashImage
+                            : entry?.displayName ?? component.componentType,
                         style: TextStyle(
                           fontSize: 11.5,
                           fontWeight: isSelected
@@ -799,12 +821,13 @@ class _ComponentRow extends StatelessWidget {
                 ),
 
                 // ► أزرار الإجراءات (تظهر عند التحويم أو التحديد)
-                _ActionButton(
-                  icon: isVisible ? AppIcons.eyeIcon : AppIcons.eyeOff,
-                  tooltip: isVisible ? S.visualEditorHide : S.visualEditorShow,
-                  color: isVisible ? muted : const Color(0xFF5A6A3A),
-                  onTap: onToggleVisibility,
-                ),
+                if (component.allowedOperations.contains('hide'))
+                  _ActionButton(
+                    icon: isVisible ? AppIcons.eyeIcon : AppIcons.eyeOff,
+                    tooltip: isVisible ? S.visualEditorHide : S.visualEditorShow,
+                    color: isVisible ? muted : const Color(0xFF5A6A3A),
+                    onTap: onToggleVisibility,
+                  ),
                 if (onDuplicate != null)
                   _ActionButton(
                     icon: AppIcons.copy01,

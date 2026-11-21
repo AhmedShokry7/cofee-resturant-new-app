@@ -173,7 +173,13 @@ Future<void> publishVisualEditor(
   BuildContext context,
   VisualEditorCubit cubit,
 ) async {
-  final publishing = cubit.publish();
+  final details = await showDialog<_PublishDetails>(
+    context: context,
+    builder: (_) => const _PublishDetailsDialog(),
+  );
+  if (details == null || !context.mounted) return;
+
+  final publishing = cubit.publish(name: details.name, note: details.note);
   showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -185,7 +191,7 @@ Future<void> publishVisualEditor(
           children: [
             CircularProgressIndicator(),
             SizedBox(width: 20),
-            Flexible(child: Text('جارٍ نشر التصميم...')),
+            Flexible(child: Text('Publishing customer app...')),
           ],
         ),
       ),
@@ -198,12 +204,15 @@ Future<void> publishVisualEditor(
 
   final succeeded = version != null;
   final message = succeeded
-      ? 'تم النشر كإصدار ${version.versionNumber}'
-      : cubit.state.errorMessage ?? 'تعذر نشر التصميم. حاول مرة أخرى.';
+      ? '${S.visualEditorPublishSuccess}: ${version.name ?? details.name} '
+            '(#${version.versionNumber})'
+      : cubit.state.errorMessage ?? 'Could not publish the customer app.';
   await showDialog<void>(
     context: context,
     builder: (ctx) => AlertDialog(
-      title: Text(succeeded ? 'تم النشر بنجاح' : 'تعذر نشر التصميم'),
+      title: Text(
+        succeeded ? S.visualEditorPublishSuccess : S.visualEditorPublishFailed,
+      ),
       content: SelectableText(message),
       actions: [
         TextButton(
@@ -215,7 +224,94 @@ Future<void> publishVisualEditor(
   );
 }
 
-/// سجل الإصدارات: قائمة بأرقام الإصدارات وأوقاتها مع استرجاع.
+class _PublishDetails {
+  const _PublishDetails({required this.name, required this.note});
+
+  final String name;
+  final String note;
+}
+
+class _PublishDetailsDialog extends StatefulWidget {
+  const _PublishDetailsDialog();
+
+  @override
+  State<_PublishDetailsDialog> createState() => _PublishDetailsDialogState();
+}
+
+class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
+  final TextEditingController _name = TextEditingController();
+  final TextEditingController _note = TextEditingController();
+  bool _showNameError = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(S.visualEditorPublishTitle),
+    content: SizedBox(
+      width: 420,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(S.visualEditorPublishConfirm),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _name,
+            autofocus: true,
+            maxLength: 120,
+            onChanged: (_) {
+              if (_showNameError) setState(() => _showNameError = false);
+            },
+            decoration: InputDecoration(
+              labelText: S.visualEditorVersionName,
+              hintText: S.visualEditorVersionName,
+              errorText: _showNameError
+                  ? S.visualEditorVersionNameRequired
+                  : null,
+              counterText: '',
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            controller: _note,
+            maxLength: 500,
+            maxLines: 2,
+            decoration: InputDecoration(
+              labelText: S.visualEditorVersionNote,
+              hintText: S.visualEditorVersionNoteHint,
+              counterText: '',
+            ),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: Text(S.cancel),
+      ),
+      FilledButton.icon(
+        onPressed: () {
+          final name = _name.text.trim();
+          if (name.isEmpty) {
+            setState(() => _showNameError = true);
+            return;
+          }
+          Navigator.of(context)
+              .pop(_PublishDetails(name: name, note: _note.text.trim()));
+        },
+        icon: const Icon(Icons.publish_outlined),
+        label: Text(S.visualEditorPublish),
+      ),
+    ],
+  );
+}
+
 Future<void> showVisualEditorVersions(
   BuildContext context,
   VisualEditorCubit cubit, {
@@ -280,7 +376,7 @@ Future<void> confirmVisualEditorDiscard(
   }
 }
 
-class _VersionsDialog extends StatelessWidget {
+class _VersionsDialog extends StatefulWidget {
   const _VersionsDialog({
     required this.versions,
     required this.cubit,
@@ -292,13 +388,49 @@ class _VersionsDialog extends StatelessWidget {
   final bool canPublish;
 
   @override
+  State<_VersionsDialog> createState() => _VersionsDialogState();
+}
+
+class _VersionsDialogState extends State<_VersionsDialog> {
+  late List<PublishedVersionInfo> _versions;
+  final Map<String, TextEditingController> _names = {};
+  final Map<String, TextEditingController> _notes = {};
+  final Set<String> _busy = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _versions = List.of(widget.versions);
+    for (final version in _versions) {
+      _names[version.id] = TextEditingController(
+        text:
+            version.name ??
+            '${S.visualEditorVersionLabel} ${version.versionNumber}',
+      );
+      _notes[version.id] = TextEditingController(text: version.note ?? '');
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final controller in _names.values) {
+      controller.dispose();
+    }
+    for (final controller in _notes.values) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return AlertDialog(
       title: Text(S.visualEditorVersionsTitle),
       content: SizedBox(
-        width: 420,
-        child: versions.isEmpty
+        width: 620,
+        height: 520,
+        child: _versions.isEmpty
             ? Padding(
                 padding: const EdgeInsets.all(AppSpacing.lg),
                 child: Text(
@@ -312,33 +444,91 @@ class _VersionsDialog extends StatelessWidget {
                 ),
               )
             : ListView.builder(
-                shrinkWrap: true,
-                itemCount: versions.length,
+                itemCount: _versions.length,
                 itemBuilder: (context, index) {
-                  final version = versions[index];
+                  final version = _versions[index];
                   final when = version.publishedAt;
-                  return ListTile(
-                    dense: true,
-                    title: Text(
-                      'الإصدار ${version.versionNumber}'
-                      '${version.note == null ? '' : ' — ${version.note}'}',
-                      style: TextStyle(
-                        fontSize: AppFontSizes.size13,
-                        color: dark ? AppColor.darkText : AppColor.adminBody,
+                  final busy = _busy.contains(version.id);
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _names[version.id],
+                                  maxLength: 120,
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    labelText: S.visualEditorVersionName,
+                                    counterText: '',
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: widget.canPublish
+                                    ? () => _preview(context, version)
+                                    : null,
+                                child: Text(S.visualEditorVersionPreview),
+                              ),
+                              IconButton(
+                                tooltip: S.visualEditorDeleteVersion,
+                                onPressed: widget.canPublish && !busy
+                                    ? () => _delete(context, version)
+                                    : null,
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                            ],
+                          ),
+                          Text(
+                            '${when.year}-${when.month.toString().padLeft(2, '0')}-'
+                            '${when.day.toString().padLeft(2, '0')} '
+                            '${when.hour.toString().padLeft(2, '0')}:'
+                            '${when.minute.toString().padLeft(2, '0')}',
+                            style: TextStyle(fontSize: AppFontSizes.size11),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _notes[version.id],
+                                  maxLength: 500,
+                                  minLines: 1,
+                                  maxLines: 2,
+                                  decoration: InputDecoration(
+                                    isDense: true,
+                                    labelText: S.visualEditorVersionNote,
+                                    hintText: S.visualEditorVersionNoteHint,
+                                    counterText: '',
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              IconButton(
+                                tooltip: S.save,
+                                onPressed: busy
+                                    ? null
+                                    : () => _saveNote(version),
+                                icon: busy
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : const Icon(Icons.save_outlined),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ),
-                    subtitle: Text(
-                      '${when.year}-${when.month.toString().padLeft(2, '0')}-'
-                      '${when.day.toString().padLeft(2, '0')} '
-                      '${when.hour.toString().padLeft(2, '0')}:'
-                      '${when.minute.toString().padLeft(2, '0')}',
-                      style: TextStyle(fontSize: AppFontSizes.size11),
-                    ),
-                    trailing: TextButton(
-                      onPressed: canPublish
-                          ? () => _preview(context, version)
-                          : null,
-                      child: const Text('معاينة الإصدار'),
                     ),
                   );
                 },
@@ -357,8 +547,73 @@ class _VersionsDialog extends StatelessWidget {
     BuildContext context,
     PublishedVersionInfo version,
   ) async {
-    final loaded = await cubit.previewVersion(version.id);
+    final loaded = await widget.cubit.previewVersion(version.id);
     if (loaded && context.mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _saveNote(PublishedVersionInfo version) async {
+    setState(() => _busy.add(version.id));
+    try {
+      await widget.cubit.updateVersionDetails(
+        version.id,
+        _names[version.id]!.text,
+        _notes[version.id]!.text,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.visualEditorVersionDetailsSaved)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(S.visualEditorVersionNoteFailed)));
+    } finally {
+      if (mounted) setState(() => _busy.remove(version.id));
+    }
+  }
+
+  Future<void> _delete(
+    BuildContext context,
+    PublishedVersionInfo version,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(S.visualEditorDeleteVersion),
+        content: Text(S.visualEditorDeleteVersionConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(S.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(S.visualEditorDeleteVersion),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted || !context.mounted) return;
+    setState(() => _busy.add(version.id));
+    try {
+      await widget.cubit.deleteVersion(version.id);
+      if (!mounted || !context.mounted) return;
+      setState(() {
+        _versions.removeWhere((item) => item.id == version.id);
+        _names.remove(version.id)?.dispose();
+        _notes.remove(version.id)?.dispose();
+        _busy.remove(version.id);
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.visualEditorVersionDeleted)));
+    } catch (_) {
+      if (!mounted || !context.mounted) return;
+      setState(() => _busy.remove(version.id));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(S.visualEditorVersionDeleteFailed)),
+      );
+    }
   }
 }
 

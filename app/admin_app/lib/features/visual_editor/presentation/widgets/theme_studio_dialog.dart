@@ -2,11 +2,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
+import 'package:admin_app/core/constants/app_images.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
+import 'package:admin_app/features/visual_editor/data/design_image_upload.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_color_picker.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 
 /// استوديو طبقة الشكل: ألوان الأدوار العشرة ومقياسا النص والتقويس.
@@ -16,7 +19,11 @@ import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 /// كل تطبيق كامل هو لمسة تراجع واحدة، لأن [VisualEditorCubit.updateTheme]
 /// يستقبل الطبقة دفعة واحدة.
 class ThemeStudioDialog extends StatefulWidget {
-  const ThemeStudioDialog({super.key, required this.initialTheme, required this.cubit});
+  const ThemeStudioDialog({
+    super.key,
+    required this.initialTheme,
+    required this.cubit,
+  });
 
   final DesignTheme initialTheme;
 
@@ -29,6 +36,7 @@ class ThemeStudioDialog extends StatefulWidget {
 }
 
 class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
+  bool _uploadingLogo = false;
   late final Map<DesignColorRole, TextEditingController> _colors;
   late final TextEditingController _textScale;
   late final TextEditingController _radiusScale;
@@ -39,24 +47,36 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
   @override
   void initState() {
     super.initState();
+    final current = widget.initialTheme;
     _colors = {
       for (final role in DesignColorRole.values)
-        role: TextEditingController(text: widget.initialTheme.colors[role]),
+        role: TextEditingController(
+          text: current.colors[role] ?? _defaultColor(role),
+        ),
     };
     _textScale = TextEditingController(text: widget.initialTheme.textScale);
-    _radiusScale = TextEditingController(
-      text: widget.initialTheme.radiusScale,
-    );
+    _radiusScale = TextEditingController(text: widget.initialTheme.radiusScale);
     _appNameAr = TextEditingController(
-      text: widget.initialTheme.appNameAr,
+      text: widget.initialTheme.appNameAr ?? S.appName,
     );
     _appNameEn = TextEditingController(
-      text: widget.initialTheme.appNameEn,
+      text: widget.initialTheme.appNameEn ?? 'Ghem & Sohob',
     );
-    _logoUrl = TextEditingController(
-      text: widget.initialTheme.logoUrl,
-    );
+    _logoUrl = TextEditingController(text: widget.initialTheme.logoUrl ?? '');
   }
+
+  String _defaultColor(DesignColorRole role) => switch (role) {
+    DesignColorRole.primary => '#087F68',
+    DesignColorRole.secondary => '#DDF5EE',
+    DesignColorRole.background => '#F8FAF8',
+    DesignColorRole.surface => '#FFFFFF',
+    DesignColorRole.textPrimary => '#22332D',
+    DesignColorRole.textSecondary => '#819087',
+    DesignColorRole.border => '#E3E9E4',
+    DesignColorRole.success => '#2E7D32',
+    DesignColorRole.error => '#DC2626',
+    DesignColorRole.disabled => '#667085',
+  };
 
   @override
   void dispose() {
@@ -124,13 +144,31 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              for (final role in DesignColorRole.values)
-                _RoleColorRow(
-                  role: role,
-                  controller: _colors[role]!,
-                  dark: dark,
-                  body: body,
-                ),
+              GridView.count(
+                crossAxisCount: 5,
+                crossAxisSpacing: AppSpacing.sm,
+                mainAxisSpacing: AppSpacing.sm,
+                mainAxisExtent: 104,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  for (final role in DesignColorRole.values)
+                    _RoleColorRow(
+                      compact: true,
+                      role: role,
+                      controller: _colors[role]!,
+                      dark: dark,
+                      body: body,
+                      onColorChanged: (value) {
+                        _colors[role]!.text = value;
+                        if (_validHex(value)) {
+                          widget.cubit.updateTheme(_currentTheme);
+                        }
+                        setState(() {});
+                      },
+                    ),
+                ],
+              ),
               Text(
                 S.visualEditorBrand,
                 style: TextStyle(
@@ -140,34 +178,88 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: _appNameAr,
-                decoration: InputDecoration(labelText: S.visualEditorBrandNameAr),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextField(
-                controller: _appNameEn,
-                decoration: InputDecoration(labelText: S.visualEditorBrandNameEn),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _appNameAr,
+                      onChanged: (_) => _applyThemeLive(),
+                      decoration: InputDecoration(
+                        labelText: S.visualEditorBrandNameAr,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: TextField(
+                      controller: _appNameEn,
+                      onChanged: (_) => _applyThemeLive(),
+                      decoration: InputDecoration(
+                        labelText: S.visualEditorBrandNameEn,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.sm),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _logoUrl,
-                      onChanged: (_) => setState(() {}),
-                      decoration: InputDecoration(
-                        labelText: S.visualEditorBrandLogoUrl,
-                        helperText: _logoIsValid ? S.visualEditorBrandHint : S.visualEditorColorInvalid,
-                        errorText: _logoIsValid ? null : '',
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        TextField(
+                          controller: _logoUrl,
+                          onChanged: (_) {
+                            setState(() {});
+                            if (_logoIsValid) _applyThemeLive();
+                          },
+                          decoration: InputDecoration(
+                            labelText: S.visualEditorBrandLogoUrl,
+                            helperText: _logoIsValid
+                                ? S.visualEditorBrandHint
+                                : S.visualEditorColorInvalid,
+                            errorText: _logoIsValid ? null : '',
+                          ),
+                        ),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton.icon(
+                            onPressed: _uploadingLogo ? null : _pickLogo,
+                            icon: _uploadingLogo
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.upload_file_outlined),
+                            label: Text(
+                              _uploadingLogo
+                                  ? S.uploadingImage
+                                  : S.visualEditorPickImage,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
-                  AdminNetworkThumb(
-                    imageUrl: _logoUrl.text.trim().isEmpty ? null : _logoUrl.text.trim(),
-                    size: 56,
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: _logoUrl.text.trim().isEmpty
+                        ? Image.asset(
+                            AppImages.logo,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.contain,
+                          )
+                        : AdminNetworkThumb(
+                            imageUrl: _logoUrl.text.trim(),
+                            size: 56,
+                          ),
                   ),
                 ],
               ),
@@ -185,16 +277,20 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
                 label: S.visualEditorTextScale,
                 options: DesignContract.textScales,
                 value: _textScale.text.isEmpty ? null : _textScale.text,
-                onChanged: (value) =>
-                    setState(() => _textScale.text = value ?? ''),
+                onChanged: (value) => setState(() {
+                  _textScale.text = value ?? '';
+                  _applyThemeLive();
+                }),
               ),
               const SizedBox(height: AppSpacing.sm),
               _ScaleDropdown(
                 label: S.visualEditorRadiusScale,
                 options: DesignContract.radiusScales,
                 value: _radiusScale.text.isEmpty ? null : _radiusScale.text,
-                onChanged: (value) =>
-                    setState(() => _radiusScale.text = value ?? ''),
+                onChanged: (value) => setState(() {
+                  _radiusScale.text = value ?? '';
+                  _applyThemeLive();
+                }),
               ),
             ],
           ),
@@ -210,14 +306,36 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
             final theme = _currentTheme;
             widget.cubit.updateTheme(theme);
             Navigator.of(context).pop();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(S.visualEditorThemeApplied)),
-            );
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(S.visualEditorThemeApplied)));
           },
           child: Text(S.save),
         ),
       ],
     );
+  }
+
+  void _applyThemeLive() {
+    widget.cubit.updateTheme(_currentTheme, recordUndo: false);
+  }
+
+  Future<void> _pickLogo() async {
+    setState(() => _uploadingLogo = true);
+    try {
+      final url = await DesignImageUpload.pickAndUpload();
+      if (!mounted || url == null) return;
+      _logoUrl.text = url;
+      _applyThemeLive();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${S.imageCouldNotBeOpened}: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingLogo = false);
+    }
   }
 }
 
@@ -227,16 +345,20 @@ class _ThemeStudioDialogState extends State<ThemeStudioDialog> {
 /// تعتمدان على النص الحالي، فالاستماع له هو ما يعيد رسمهما عند كل حرف.
 class _RoleColorRow extends StatefulWidget {
   const _RoleColorRow({
+    this.compact = false,
     required this.role,
     required this.controller,
     required this.dark,
     required this.body,
+    required this.onColorChanged,
   });
 
+  final bool compact;
   final DesignColorRole role;
   final TextEditingController controller;
   final bool dark;
   final Color body;
+  final ValueChanged<String> onColorChanged;
 
   @override
   State<_RoleColorRow> createState() => _RoleColorRowState();
@@ -292,6 +414,63 @@ class _RoleColorRowState extends State<_RoleColorRow> {
     final valid = _validHex(controller.text);
     final dark = widget.dark;
     final body = widget.body;
+    if (widget.compact) {
+      final color = valid
+          ? Color(
+              int.parse(controller.text.substring(1), radix: 16) | 0xFF000000,
+            )
+          : Colors.transparent;
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: dark ? AppColor.darkSurface : Colors.white,
+          border: Border.all(
+            color: dark ? AppColor.darkBorder : AppColor.adminControlBorder,
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              _labels[widget.role]!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 10, color: body),
+            ),
+            const Spacer(),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 20,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(5),
+                      border: Border.all(
+                        color: dark
+                            ? AppColor.darkBorder
+                            : AppColor.adminControlBorder,
+                      ),
+                    ),
+                  ),
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 28,
+                    height: 28,
+                  ),
+                  tooltip: S.visualEditorThemeStudio,
+                  onPressed: _showPicker,
+                  icon: const Icon(Icons.palette_outlined, size: 17),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
@@ -303,10 +482,7 @@ class _RoleColorRowState extends State<_RoleColorRow> {
               children: [
                 Text(
                   _labels[widget.role]!,
-                  style: TextStyle(
-                    fontSize: AppFontSizes.size12,
-                    color: body,
-                  ),
+                  style: TextStyle(fontSize: AppFontSizes.size12, color: body),
                 ),
                 Text(
                   widget.role.key,
@@ -342,7 +518,7 @@ class _RoleColorRowState extends State<_RoleColorRow> {
             flex: 2,
             child: TextField(
               controller: controller,
-              onChanged: (_) {},
+              onChanged: widget.onColorChanged,
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'[#0-9a-fA-F]')),
               ],
@@ -354,15 +530,32 @@ class _RoleColorRowState extends State<_RoleColorRow> {
                     : S.visualEditorColorInvalid,
                 border: const OutlineInputBorder(),
               ),
-              style: TextStyle(
-                fontSize: AppFontSizes.size12,
-                color: body,
-              ),
+              style: TextStyle(fontSize: AppFontSizes.size12, color: body),
             ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          IconButton(
+            tooltip: S.visualEditorThemeStudio,
+            onPressed: _showPicker,
+            icon: const Icon(Icons.palette_outlined),
           ),
         ],
       ),
     );
+  }
+
+  void _showPicker() {
+    final controller = _controller;
+    final valid = _validHex(controller.text);
+    final initial = valid
+        ? Color(int.parse(controller.text.substring(1), radix: 16) | 0xFF000000)
+        : AppColor.primaryColor;
+    showVisualEditorColorPicker(context: context, initialColor: initial).then((
+      hex,
+    ) {
+      if (!mounted || hex == null) return;
+      widget.onColorChanged(hex);
+    });
   }
 
   bool _validHex(String raw) {

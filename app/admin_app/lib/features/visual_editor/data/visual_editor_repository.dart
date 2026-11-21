@@ -30,11 +30,21 @@ abstract class VisualEditorRepository {
   /// نشر الإصدار عبر `admin_publish_app_design` — ترجع بيانات الإصدار.
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
+    String? name,
     String? note,
   });
 
   /// تاريخ الإصدارات بترتيبها، بلا مستندات (مصمم كذلك في 226).
-  Future<List<PublishedVersionInfo>> listVersions({int limit = 30});
+  Future<List<PublishedVersionInfo>> listVersions({int limit = 1000000});
+
+  Future<void> updateVersionDetails(
+    String versionId,
+    String? name,
+    String? note,
+  ) async => throw UnimplementedError();
+
+  Future<void> deleteVersion(String versionId) async =>
+      throw UnimplementedError();
 
   /// مستند إصدار مخزّن.
   Future<Map<String, dynamic>?> getVersionDocument(String versionId);
@@ -82,6 +92,7 @@ class PublishedVersionInfo {
     required this.versionNumber,
     required this.publishedAt,
     required this.schemaVersion,
+    this.name,
     this.note,
   });
 
@@ -89,6 +100,7 @@ class PublishedVersionInfo {
   final int versionNumber;
   final DateTime publishedAt;
   final int schemaVersion;
+  final String? name;
   final String? note;
 
   static PublishedVersionInfo? fromJson(Object? raw) {
@@ -99,13 +111,13 @@ class PublishedVersionInfo {
     return PublishedVersionInfo(
       id: id,
       versionNumber: number.round(),
-      publishedAt: DateTime.tryParse(
-            raw['published_at']?.toString() ?? '',
-          ) ??
+      publishedAt:
+          DateTime.tryParse(raw['published_at']?.toString() ?? '') ??
           DateTime.now(),
       schemaVersion: raw['schema_version'] is num
           ? (raw['schema_version'] as num).round()
           : 0,
+      name: raw['name'] is String ? raw['name'] as String : null,
       note: raw['note'] is String ? raw['note'] as String : null,
     );
   }
@@ -147,7 +159,7 @@ class DesignTemplateInfo {
 /// تنفيذ Supabase للمستودع فوق الـ RPCs.
 class SupabaseVisualEditorRepository implements VisualEditorRepository {
   SupabaseVisualEditorRepository({SupabaseClient? client})
-      : _clientOverride = client;
+    : _clientOverride = client;
 
   final SupabaseClient? _clientOverride;
 
@@ -159,10 +171,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     }
   }
 
-  Object? _rpc(
-    String function,
-    Map<String, dynamic> params,
-  ) {
+  Object? _rpc(String function, Map<String, dynamic> params) {
     final client = _client;
     if (client == null) {
       throw StateError('Supabase غير مهيأ للمحرر المرئي');
@@ -192,10 +201,9 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
       componentsByPage,
       theme: theme,
     );
-    final saved = await _rpc(
-      'admin_save_app_design_draft',
-      {'p_document': document},
-    );
+    final saved = await _rpc('admin_save_app_design_draft', {
+      'p_document': document,
+    });
     final savedAt = saved is Map ? saved['saved_at']?.toString() : null;
     return DateTime.tryParse(savedAt ?? '') ?? DateTime.now();
   }
@@ -203,15 +211,14 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
+    String? name,
     String? note,
   }) async {
-    final version = await _rpc(
-      'admin_publish_app_design',
-      {
-        'p_document': designDocument,
-        'p_note': note,
-      },
-    );
+    final version = await _rpc('admin_publish_app_design', {
+      'p_document': designDocument,
+      'p_name': name?.trim(),
+      'p_note': note,
+    });
     final info = PublishedVersionInfo.fromJson(version);
     if (info == null) {
       throw StateError('إجابة نشر غير مفهومة من admin_publish_app_design');
@@ -220,11 +227,10 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   }
 
   @override
-  Future<List<PublishedVersionInfo>> listVersions({int limit = 30}) async {
-    final raw = await _rpc(
-      'admin_list_app_design_versions',
-      {'p_limit': limit.clamp(1, 100)},
-    );
+  Future<List<PublishedVersionInfo>> listVersions({int limit = 1000000}) async {
+    final raw = await _rpc('admin_list_app_design_versions', {
+      'p_limit': limit.clamp(1, 1000000),
+    });
     if (raw is! List) return const [];
     return [
       for (final item in raw)
@@ -234,24 +240,42 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   }
 
   @override
+  Future<void> updateVersionDetails(
+    String versionId,
+    String? name,
+    String? note,
+  ) async {
+    await _rpc('admin_update_app_design_version_details', {
+      'p_version_id': versionId,
+      'p_name': name?.trim(),
+      'p_note': note?.trim(),
+    });
+  }
+
+  @override
+  Future<void> deleteVersion(String versionId) async {
+    await _rpc('admin_delete_app_design_version', {'p_version_id': versionId});
+  }
+
+  @override
   Future<Map<String, dynamic>?> getVersionDocument(String versionId) async {
-    final raw = await _rpc(
-      'admin_get_app_design_version',
-      {'p_version_id': versionId},
-    );
+    final raw = await _rpc('admin_get_app_design_version', {
+      'p_version_id': versionId,
+    });
     if (raw == null) return null;
     return jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   }
 
   @override
   Future<PublishedVersionInfo> restoreVersion(String versionId) async {
-    final version = await _rpc(
-      'admin_restore_app_design_version',
-      {'p_version_id': versionId},
-    );
+    final version = await _rpc('admin_restore_app_design_version', {
+      'p_version_id': versionId,
+    });
     final info = PublishedVersionInfo.fromJson(version);
     if (info == null) {
-      throw StateError('إجابة استرجاع غير مفهومة من admin_restore_app_design_version');
+      throw StateError(
+        'إجابة استرجاع غير مفهومة من admin_restore_app_design_version',
+      );
     }
     return info;
   }
@@ -273,13 +297,10 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   }
 
   @override
-  Future<Map<String, dynamic>?> getTemplateDocument(
-    String templateId,
-  ) async {
-    final raw = await _rpc(
-      'admin_get_app_design_template',
-      {'p_id': templateId},
-    );
+  Future<Map<String, dynamic>?> getTemplateDocument(String templateId) async {
+    final raw = await _rpc('admin_get_app_design_template', {
+      'p_id': templateId,
+    });
     if (raw == null) return null;
     return jsonDecode(jsonEncode(raw)) as Map<String, dynamic>;
   }
@@ -290,14 +311,11 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     required String name,
     required Map<String, dynamic> document,
   }) async {
-    final raw = await _rpc(
-      'admin_save_app_design_template',
-      {
-        'p_id': id,
-        'p_name': name.trim(),
-        'p_document': document,
-      },
-    );
+    final raw = await _rpc('admin_save_app_design_template', {
+      'p_id': id,
+      'p_name': name.trim(),
+      'p_document': document,
+    });
     final info = DesignTemplateInfo.fromJson(raw);
     if (info == null) {
       throw StateError('إجابة غير مفهومة من admin_save_app_design_template');
@@ -307,9 +325,6 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<void> deleteTemplate(String templateId) async {
-    await _rpc(
-      'admin_delete_app_design_template',
-      {'p_id': templateId},
-    );
+    await _rpc('admin_delete_app_design_template', {'p_id': templateId});
   }
 }

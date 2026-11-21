@@ -1,5 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
+import 'package:admin_app/core/theme/app_color.dart';
+
 /// رموز التصميم والهوية البصرية الخاصة بالمحرر المرئي (Visual Editor Design Tokens).
 ///
 /// صُممت لتقديم تجربة بصرية راقية وفاخرة بمستوى أدوات بناء التطبيقات الحديثة (SaaS App Builders)،
@@ -17,8 +19,8 @@ class VisualEditorTokens {
   static const Color surfaceSoftCreamSecondary = Color(0xFFF6F2EB);
   static const Color canvasBg = Color(0xFFEFECE6);
 
-  static const Color primaryOliveGreen = Color(0xFF6035F5);
-  static const Color primaryOliveGreenLight = Color(0xFFECE7FF);
+  static const Color primaryOliveGreen = AppColor.primaryColor;
+  static const Color primaryOliveGreenLight = AppColor.secondaryColor;
   static const Color secondaryCoffeeBrown = Color(0xFF6E473B);
   static const Color secondaryCoffeeLight = Color(0xFFF4ECE8);
 
@@ -40,13 +42,13 @@ class VisualEditorTokens {
   static const Color statusInfoBg = Color(0xFFEFF6FF);
 
   // --- ألوان الواجهة الداكنة (Dark Theme) ---
-  static const Color darkBg = Color(0xFF10111D);
-  static const Color darkSurface = Color(0xFF171927);
-  static const Color darkSurfaceSecondary = Color(0xFF202338);
-  static const Color darkCanvasBg = Color(0xFF111321);
-  static const Color darkBorder = Color(0xFF2B2E45);
-  static const Color darkText = Color(0xFFF4F3FA);
-  static const Color darkTextMuted = Color(0xFFAAAABD);
+  static const Color darkBg = AppColor.darkBackground;
+  static const Color darkSurface = AppColor.darkSurface;
+  static const Color darkSurfaceSecondary = AppColor.darkSurfaceContainer;
+  static const Color darkCanvasBg = AppColor.darkBackground;
+  static const Color darkBorder = AppColor.darkBorder;
+  static const Color darkText = AppColor.darkText;
+  static const Color darkTextMuted = AppColor.darkTextSecondary;
 
   // --- أدوات المساعدة للحصول على الألوان حسب السمة ---
   static Color bg(BuildContext context) =>
@@ -54,31 +56,31 @@ class VisualEditorTokens {
 
   static Color surface(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkSurface
-          : surfaceSoftCream;
+      ? darkSurface
+      : AppColor.whiteColor;
 
   static Color surfaceSecondary(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkSurfaceSecondary
-          : surfaceSoftCreamSecondary;
+      ? darkSurfaceSecondary
+      : surfaceSoftCreamSecondary;
 
   static Color canvas(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark ? darkCanvasBg : canvasBg;
 
   static Color border(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkBorder
-          : borderWarmGray;
+      ? darkBorder
+      : borderWarmGray;
 
   static Color text(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkText
-          : textDarkCharcoal;
+      ? darkText
+      : textDarkCharcoal;
 
   static Color textMuted(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark
-          ? darkTextMuted
-          : textMutedGray;
+      ? darkTextMuted
+      : textMutedGray;
 
   // --- الظلال والأبعاد ---
   static const double topBarHeight = 60.0;

@@ -11,7 +11,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// مستودع صامت: أدوات العرض لا تقرأ ولا تكتب مسودة، فلا حاجة لاتصال حقيقي.
-class _NoopRepository implements VisualEditorRepository {
+class _NoopRepository extends VisualEditorRepository {
   @override
   Future<EditorDraft?> loadDraft() async => null;
 
@@ -27,6 +27,7 @@ class _NoopRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
+    String? name,
     String? note,
   }) async => PublishedVersionInfo(
     id: 'v1',
@@ -46,6 +47,16 @@ class _NoopRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> restoreVersion(String versionId) async =>
       throw UnimplementedError();
+
+  @override
+  Future<void> updateVersionDetails(
+    String versionId,
+    String? name,
+    String? note,
+  ) async {}
+
+  @override
+  Future<void> deleteVersion(String versionId) async {}
 
   @override
   Future<List<DesignTemplateInfo>> listTemplates() async => const [];

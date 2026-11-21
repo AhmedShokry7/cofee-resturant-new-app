@@ -38,6 +38,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   Map<String, dynamic>? _externalPreviewDocument;
   String? _unconfirmedPreviewId;
   Timer? _previewAckTimeout;
+  Timer? _themePreviewDebounce;
 
   List<OutboundMessage> takePreviewMessages() {
     final messages = List<OutboundMessage>.of(_outbound);
@@ -325,12 +326,22 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   // ---------- تحديث طبقة الشكل ----------
 
   /// تحديث طبقة الشكل كاملة — لون أو مقياس. أثر التراجع يسبق التطبيق.
-  void updateTheme(DesignTheme theme) {
-    _pushUndo();
+  void updateTheme(DesignTheme theme, {bool recordUndo = true}) {
+    if (recordUndo) _pushUndo();
     _theme = theme;
     emit(state.copyWith(isDirty: true));
-    _syncPreview();
-    _markEdited();
+    if (recordUndo) {
+      _themePreviewDebounce?.cancel();
+      _syncPreview();
+      _markEdited();
+    } else {
+      _themePreviewDebounce?.cancel();
+      _themePreviewDebounce = Timer(const Duration(milliseconds: 180), () {
+        if (isClosed) return;
+        _syncPreview();
+        _markEdited();
+      });
+    }
   }
 
   /// Replace the current design from the JSON source editor. The same
@@ -959,7 +970,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   }
 
   /// نشر التصميم بعد تدقيق محلي. يرفض قبل أن ترفض القاعدة.
-  Future<PublishedVersionInfo?> publish({String? note}) async {
+  Future<PublishedVersionInfo?> publish({String? name, String? note}) async {
     final document = _currentDocumentOrNull();
     if (document == null) {
       emit(
@@ -973,7 +984,11 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       return null;
     }
     try {
-      final version = await _repository.publishDesign(document, note: note);
+      final version = await _repository.publishDesign(
+        document,
+        name: name,
+        note: note,
+      );
       if (isClosed) return version;
       // النشر لا يحفظ المسودة؛ لا تصبح التعديلات محفوظة إلا بطلب الحفظ.
       emit(state.copyWith(clearError: true));
@@ -1050,8 +1065,17 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   // ---------- سجل الإصدارات ----------
 
   /// تاريخ الإصدارات المنشورة، الأحدث أولًا.
-  Future<List<PublishedVersionInfo>> loadVersions({int limit = 30}) =>
+  Future<List<PublishedVersionInfo>> loadVersions({int limit = 1000000}) =>
       _repository.listVersions(limit: limit);
+
+  Future<void> updateVersionDetails(
+    String versionId,
+    String? name,
+    String? note,
+  ) => _repository.updateVersionDetails(versionId, name, note);
+
+  Future<void> deleteVersion(String versionId) =>
+      _repository.deleteVersion(versionId);
 
   /// مستند إصدار سابق، لمعاينته قبل الاسترجاع.
   Future<Map<String, dynamic>?> versionDocument(String versionId) =>

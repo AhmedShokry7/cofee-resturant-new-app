@@ -12,7 +12,7 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// مستودع زائف مستقل: لا يلمس شبكة، ويجعل التهيئة تنجح فورًا.
-class _FakeVisualEditorRepository implements VisualEditorRepository {
+class _FakeVisualEditorRepository extends VisualEditorRepository {
   _FakeVisualEditorRepository({this.rejectPublish = false});
 
   final bool rejectPublish;
@@ -34,6 +34,7 @@ class _FakeVisualEditorRepository implements VisualEditorRepository {
   @override
   Future<PublishedVersionInfo> publishDesign(
     Map<String, dynamic> designDocument, {
+    String? name,
     String? note,
   }) async {
     if (rejectPublish) {

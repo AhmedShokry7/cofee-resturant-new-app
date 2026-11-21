@@ -63,6 +63,7 @@ String buildPreviewUrl(
       : baseUrl;
   final params = {
     'mode': 'preview',
+    'previewSafety': '1',
     'sessionId': ?sessionId,
     'parentOrigin': ?parentOrigin,
     // الإطار الجديد يقلع بالاختيار الحالي قبل وصول أول رسالة، فلا يومض

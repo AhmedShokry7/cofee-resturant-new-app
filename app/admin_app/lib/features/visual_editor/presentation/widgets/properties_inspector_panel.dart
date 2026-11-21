@@ -1,6 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/constants/app_images.dart';
@@ -14,6 +13,7 @@ import 'package:admin_app/features/banners/domain/entities/admin_banner.dart';
 import 'package:admin_app/features/bundles/di/bundles_dependencies.dart';
 import 'package:admin_app/features/visual_editor/data/design_image_upload.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_color_picker.dart';
 import 'package:admin_app/features/catalog/di/catalog_dependencies.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
@@ -140,7 +140,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                         onBrowseImages,
                       ),
                       _splashLayer(
-                        'الشعار والصورة',
+                        S.visualEditorSplashImageSettings,
                         const {
                           'imageVisible',
                           'imageUrl',
@@ -196,7 +196,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                         onBrowseImages,
                       ),
                       _splashLayer(
-                        'الحركة ومدة العرض',
+                        S.visualEditorSplashNavigationSettings,
                         const {
                           'durationMs',
                           'animation',
@@ -215,7 +215,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                       for (final groupKey in grouped.keys.where(
                         (key) => !_isAdvancedPropertyGroup(key),
                       ))
-                        _PropertyGroup(
+                        _ExpandablePropertyGroup(
                           groupLabel: groupKey,
                           fields: _pairBilingualFields(grouped[groupKey]!),
                           component: component,
@@ -223,6 +223,13 @@ class PropertiesInspectorPanel extends StatelessWidget {
                           onReset: onResetProperty,
                           onPickImage: onPickImage,
                           onBrowseImages: onBrowseImages,
+                          initiallyExpanded:
+                              grouped.keys
+                                  .where(
+                                    (key) => !_isAdvancedPropertyGroup(key),
+                                  )
+                                  .firstOrNull ==
+                              groupKey,
                         ),
                       if (component.componentType == 'bannerCarousel')
                         _BannerDraftControls(
@@ -314,22 +321,117 @@ class PropertiesInspectorPanel extends StatelessWidget {
     void Function({required String componentId, required String propertyKey})
     onReset,
     Future<String?> Function()? onPickImage,
-    Future<String?> Function()? onBrowseImages,
-  ) {
+    Future<String?> Function()? onBrowseImages, {
+    bool initiallyExpanded = false,
+  }) {
     final fields = properties.entries
         .where((entry) => keys.contains(entry.key))
         .toList();
     if (fields.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: _PropertyGroup(
-        groupLabel: title,
-        fields: _pairBilingualFields(fields),
-        component: component,
-        onChanged: onChanged,
-        onReset: onReset,
-        onPickImage: onPickImage,
-        onBrowseImages: onBrowseImages,
+    return _ExpandablePropertyGroup(
+      groupLabel: title,
+      fields: _pairBilingualFields(fields),
+      component: component,
+      onChanged: onChanged,
+      onReset: onReset,
+      onPickImage: onPickImage,
+      onBrowseImages: onBrowseImages,
+      initiallyExpanded:
+          initiallyExpanded || title == S.visualEditorSplashImageSettings,
+    );
+  }
+}
+
+class _ExpandablePropertyGroup extends StatelessWidget {
+  const _ExpandablePropertyGroup({
+    required this.groupLabel,
+    required this.fields,
+    required this.component,
+    required this.onChanged,
+    required this.onReset,
+    this.onPickImage,
+    this.onBrowseImages,
+    this.initiallyExpanded = false,
+  });
+
+  final String? groupLabel;
+  final List<_FieldItem> fields;
+  final EditableComponent component;
+  final void Function({
+    required String componentId,
+    required String propertyKey,
+    required dynamic value,
+  })
+  onChanged;
+  final void Function({
+    required String componentId,
+    required String propertyKey,
+  })
+  onReset;
+  final Future<String?> Function()? onPickImage;
+  final Future<String?> Function()? onBrowseImages;
+  final bool initiallyExpanded;
+
+  @override
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final label = groupLabel?.trim().isNotEmpty == true
+        ? groupLabel!
+        : S.visualEditorProperties;
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
+      elevation: 0,
+      color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.sm),
+        side: BorderSide(
+          color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        tilePadding: const EdgeInsetsDirectional.only(
+          start: AppSpacing.sm,
+          end: AppSpacing.sm,
+        ),
+        childrenPadding: const EdgeInsetsDirectional.fromSTEB(
+          AppSpacing.sm,
+          0,
+          AppSpacing.sm,
+          AppSpacing.sm,
+        ),
+        visualDensity: VisualDensity.compact,
+        title: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: AppFontSizes.size11,
+            fontWeight: AppFontWeights.semiBold,
+            color: dark ? AppColor.darkText : AppColor.adminBody,
+          ),
+        ),
+        subtitle: Text(
+          '${fields.length} ${S.visualEditorProperties}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: AppFontSizes.size9_5,
+            color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
+          ),
+        ),
+        children: [
+          _PropertyGroup(
+            groupLabel: null,
+            fields: fields,
+            component: component,
+            onChanged: onChanged,
+            onReset: onReset,
+            onPickImage: onPickImage,
+            onBrowseImages: onBrowseImages,
+          ),
+        ],
       ),
     );
   }
@@ -617,7 +719,9 @@ class _InspectorHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  entry?.displayName ?? component.componentType,
+                  component.componentType == 'splashSettings'
+                      ? S.visualEditorSplashImage
+                      : entry?.displayName ?? component.componentType,
                   style: TextStyle(
                     fontSize: AppFontSizes.size12,
                     fontWeight: AppFontWeights.semiBold,
@@ -1469,6 +1573,12 @@ class _PropertyField extends StatelessWidget {
         pickAndUpload: onPickImage ?? DesignImageUpload.pickAndUpload,
         browseImages: onBrowseImages,
         clearLabel: clearLabel ?? S.visualEditorRemoveImage,
+        fallbackAsset: componentType == 'welcomeHero'
+            ? AppImages.welcomeImage
+            : null,
+        imageFit: componentType == 'welcomeHero'
+            ? BoxFit.cover
+            : BoxFit.contain,
       ),
       PropertyType.fontFamily => _TextInput(
         value:
@@ -1946,51 +2056,19 @@ class _ColorInputState extends State<_ColorInput> {
   }
 
   Future<void> _showPicker(BuildContext context, Color initial) async {
-    var selected = initial;
-    final hexController = TextEditingController(text: _splashColorHex(initial));
-    final picked = await showDialog<Color>(
+    final hex = await showVisualEditorColorPicker(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          scrollable: true,
-          title: Text(S.visualEditorPickColor),
-          content: ColorPicker(
-            pickerColor: selected,
-            onColorChanged: (color) => setDialogState(() => selected = color),
-            paletteType: PaletteType.hsvWithHue,
-            enableAlpha: true,
-            labelTypes: const [],
-            displayThumbColor: true,
-            portraitOnly: true,
-            colorPickerWidth: 280,
-            pickerAreaHeightPercent: 0.65,
-            hexInputBar: true,
-            hexInputController: hexController,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: Text(S.cancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(selected),
-              child: Text(S.visualEditorApplyColor),
-            ),
-          ],
-        ),
-      ),
+      initialColor: initial,
     );
-    hexController.dispose();
-    if (picked != null) {
-      final hex = _splashColorHex(picked);
-      _controller.text = hex;
-      widget.onChanged(hex);
-    }
+    if (!mounted || hex == null) return;
+    _controller.text = hex;
+    widget.onChanged(hex);
   }
 
   Color? _parseColor(String hex) => _parseSplashColor(hex);
 }
 
+/// حقل صورة شاشة الافتتاحية: معاينة واختيار من المكتبة أو رفع صورة جديدة.
 String _spacingLabel(String token) {
   final size = switch (token) {
     'none' => AppSpacing.none,
@@ -2078,7 +2156,6 @@ InputDecoration _inputDecoration(bool dark) => InputDecoration(
   fillColor: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
 );
 
-/// منتقي لون مباشر، مع الإبقاء على حقل HEX للتعديل الدقيق.
 class _SplashColorInput extends StatefulWidget {
   const _SplashColorInput({
     required this.value,
@@ -2175,129 +2252,14 @@ class _SplashColorInputState extends State<_SplashColorInput> {
   }
 
   Future<void> _showPicker(BuildContext context, Color initial) async {
-    var selected = initial;
-    final hexController = TextEditingController(text: _splashColorHex(initial));
-    final color = await showDialog<Color>(
+    final hex = await showVisualEditorColorPicker(
       context: context,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            scrollable: true,
-            title: Text(S.visualEditorPickColor),
-            content: SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
-                    children: [
-                      for (final swatch in _splashColorSwatches)
-                        InkWell(
-                          key: ValueKey(
-                            'splash-swatch-${_splashColorHex(swatch)}',
-                          ),
-                          onTap: () => setDialogState(() {
-                            selected = swatch;
-                            hexController.text = _splashColorHex(swatch);
-                          }),
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            decoration: BoxDecoration(
-                              color: swatch,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                              border: Border.all(
-                                color: selected == swatch
-                                    ? AppColor.adminHeading
-                                    : AppColor.adminCardBorder,
-                                width: selected == swatch ? 2 : 1,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  ColorPicker(
-                    pickerColor: selected,
-                    onColorChanged: (color) => setDialogState(() {
-                      selected = color;
-                      hexController.text = _splashColorHex(color);
-                    }),
-                    paletteType: PaletteType.hsvWithHue,
-                    enableAlpha: true,
-                    labelTypes: const [],
-                    displayThumbColor: true,
-                    portraitOnly: true,
-                    colorPickerWidth: 280,
-                    pickerAreaHeightPercent: 0.65,
-                    hexInputBar: true,
-                    hexInputController: hexController,
-                  ),
-                  Text(
-                    _splashColorHex(selected),
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(fontFeatures: []),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: Text(S.cancel),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.of(dialogContext).pop(selected),
-                child: Text(S.visualEditorApplyColor),
-              ),
-            ],
-          );
-        },
-      ),
+      initialColor: initial,
     );
-    hexController.dispose();
-    if (color != null) {
-      final hex = _splashColorHex(color);
-      _controller.text = hex;
-      widget.onChanged(hex);
-    }
+    if (!mounted || hex == null) return;
+    _controller.text = hex;
+    widget.onChanged(hex);
   }
-}
-
-const _splashColorSwatches = <Color>[
-  Color(0xFFFFFFFF),
-  Color(0xFFF5F1E8),
-  Color(0xFFFFE0B2),
-  Color(0xFFFFCCBC),
-  Color(0xFFF8BBD0),
-  Color(0xFFE1BEE7),
-  Color(0xFFD1C4E9),
-  Color(0xFFBBDEFB),
-  Color(0xFFB3E5FC),
-  Color(0xFFB2DFDB),
-  Color(0xFFC8E6C9),
-  Color(0xFFDCEDC8),
-  Color(0xFFFFF9C4),
-  Color(0xFFFFECB3),
-  Color(0xFFECEFF1),
-  Color(0xFFB0BEC5),
-  Color(0xFF78909C),
-  Color(0xFF455A64),
-  Color(0xFF212121),
-  Color(0xFF1A1A1A),
-  Color(0xFF2E7D32),
-  Color(0xFF6D4C41),
-  Color(0xFF1565C0),
-  Color(0xFFC62828),
-];
-
-String _splashColorHex(Color color) {
-  final argb = color.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase();
-  return color.a == 1 ? '#${argb.substring(2)}' : '#$argb';
 }
 
 Color? _parseSplashColor(String raw) {
@@ -2317,7 +2279,6 @@ String? _normalizeSplashColor(String raw) {
   return '#${clean.toUpperCase()}';
 }
 
-/// حقل صورة شاشة الافتتاحية: معاينة واختيار من المكتبة أو رفع صورة جديدة.
 class _SplashImageInput extends StatefulWidget {
   const _SplashImageInput({
     required this.value,
@@ -2545,6 +2506,8 @@ class _ImageUrlInput extends StatefulWidget {
     required this.pickAndUpload,
     required this.clearLabel,
     this.browseImages,
+    this.fallbackAsset,
+    this.imageFit = BoxFit.contain,
   });
 
   final String value;
@@ -2552,6 +2515,8 @@ class _ImageUrlInput extends StatefulWidget {
   final Future<String?> Function() pickAndUpload;
   final Future<String?> Function()? browseImages;
   final String clearLabel;
+  final String? fallbackAsset;
+  final BoxFit imageFit;
 
   @override
   State<_ImageUrlInput> createState() => _ImageUrlInputState();
@@ -2618,30 +2583,40 @@ class _ImageUrlInputState extends State<_ImageUrlInput> {
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     final url = _ctrl.text.trim();
+    final showImagePreview = url.isNotEmpty || widget.fallbackAsset != null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (url.isNotEmpty) ...[
+        if (showImagePreview) ...[
           ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.sm),
             child: SizedBox(
               height: 120,
-              child: Image.network(
-                url,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => Container(
-                  height: 120,
-                  color: dark
-                      ? AppColor.darkSurfaceContainer
-                      : AppColor.adminTableHeader,
-                  alignment: Alignment.center,
-                  child: Icon(
-                    AppIcons.image01,
-                    color: dark
-                        ? AppColor.darkTextSecondary
-                        : AppColor.adminMuted,
-                  ),
-                ),
+              child: ColoredBox(
+                color: dark
+                    ? AppColor.darkSurfaceContainer
+                    : AppColor.adminTableHeader,
+                child: url.isEmpty
+                    ? Image.asset(
+                        widget.fallbackAsset!,
+                        fit: widget.imageFit,
+                        errorBuilder: (_, _, _) => Icon(
+                          AppIcons.image01,
+                          color: dark
+                              ? AppColor.darkTextSecondary
+                              : AppColor.adminMuted,
+                        ),
+                      )
+                    : Image.network(
+                        url,
+                        fit: widget.imageFit,
+                        errorBuilder: (_, _, _) => Icon(
+                          AppIcons.image01,
+                          color: dark
+                              ? AppColor.darkTextSecondary
+                              : AppColor.adminMuted,
+                        ),
+                      ),
               ),
             ),
           ),

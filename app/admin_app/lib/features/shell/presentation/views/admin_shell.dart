@@ -76,8 +76,7 @@ class AdminShell extends StatefulWidget {
 }
 
 class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
-  /// Below this width a workspace page keeps its full width and moves the
-  /// navigation into a drawer.
+  /// Below this width an immersive page moves navigation into a drawer.
   static const double _immersiveMinWidth = 1380;
 
   String _selectedId = 'dashboard';

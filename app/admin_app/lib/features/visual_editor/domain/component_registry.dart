@@ -227,7 +227,7 @@ class ComponentRegistry {
     register(
       ComponentRegistryEntry(
         componentType: 'splashSettings',
-        displayName: 'إعدادات الافتتاحية',
+        displayName: 'صورة الافتتاحية',
         description: 'صورة ونص ولون الخلفية ومدة العرض وتأثير الظهور',
         category: 'screen',
         classification: ComponentClassification.editable,
@@ -462,7 +462,7 @@ class ComponentRegistry {
           ),
           'durationMs': ComponentPropertyDefinition(
             key: 'durationMs',
-            label: 'مدة العرض (مللي ثانية)',
+            label: 'الوقت قبل الانتقال للمسار (مللي ثانية)',
             description: 'المدة قبل الانتقال للمسار الحالي',
             type: PropertyType.integer,
             defaultValue: 1000,
@@ -681,7 +681,14 @@ class ComponentRegistry {
             description: 'سماكة نص العنوان.',
             type: PropertyType.fontWeight,
             defaultValue: 'brand',
-            options: ['brand', 'light', 'regular', 'medium', 'semibold', 'bold'],
+            options: [
+              'brand',
+              'light',
+              'regular',
+              'medium',
+              'semibold',
+              'bold',
+            ],
           ),
         },
         allowedParentTypes: [],
@@ -1649,7 +1656,6 @@ class ComponentRegistry {
             label: 'لون الخلفية',
             description: 'لون الزر (للنمط الأساسي)',
             type: PropertyType.color,
-            defaultValue: '#2E7D32',
           ),
           'textColor': ComponentPropertyDefinition(
             key: 'textColor',
@@ -1689,7 +1695,6 @@ class ComponentRegistry {
           'label_en': '',
           'action': 'none',
           'style': 'primary',
-          'color': '#2E7D32',
           'textColor': '#FFFFFF',
           'borderRadius': 'md',
           'icon': '',

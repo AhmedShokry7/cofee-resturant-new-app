@@ -4,4 +4,5 @@ class AppImages {
   static const String logo = 'assets/images/logo.png';
   static const String moon = 'assets/images/moon.png';
   static const String sun = 'assets/images/sun.png';
+  static const String welcomeImage = 'assets/images/welcome_page.png';
 }

@@ -44,9 +44,15 @@ abstract final class DesignSectionRenderers {
       case DesignWidgetTypes.productGrid:
         return _DesignProductGrid(section: section);
       case DesignWidgetTypes.column:
-        return _DesignColumn(section: section, childBuilder: (child) => build(child));
+        return _DesignColumn(
+          section: section,
+          childBuilder: (child) => build(child),
+        );
       case DesignWidgetTypes.row:
-        return _DesignRow(section: section, childBuilder: (child) => build(child));
+        return _DesignRow(
+          section: section,
+          childBuilder: (child) => build(child),
+        );
       default:
         return null;
     }
@@ -128,7 +134,11 @@ TextStyle? _titleStyle(PublishedSection section) {
   final size = section.numberProperty('titleSize');
   final color = _hexColor(section.property('titleColor'));
   if (size == null && color == null) return null;
-  return TextStyle(fontSize: size ?? 18, fontWeight: FontWeight.w600, color: color);
+  return TextStyle(
+    fontSize: size ?? 18,
+    fontWeight: FontWeight.w600,
+    color: color,
+  );
 }
 
 void _navigate(String? action, BuildContext context) {
@@ -153,10 +163,8 @@ class _DesignText extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = section.localizedText('text');
     if (text == null || text.isEmpty) return const SizedBox.shrink();
-    final size =
-        section.numberProperty('size') ?? AppFontSizes.size14;
-    final color =
-        _hexColor(section.property('color')) ?? AppColor.textPrimary;
+    final size = section.numberProperty('size') ?? AppFontSizes.size14;
+    final color = _hexColor(section.property('color')) ?? AppColor.textPrimary;
     return Text(
       text,
       textAlign: _textAlign(section.property('alignment')),
@@ -168,8 +176,7 @@ class _DesignText extends StatelessWidget {
         fontWeight: _weight(section.property('weight')),
         color: color,
         letterSpacing: section.numberProperty('letterSpacing'),
-        height: section.numberProperty('lineHeight') ??
-            AppTextHeights.body,
+        height: section.numberProperty('lineHeight') ?? AppTextHeights.body,
       ),
     );
   }
@@ -198,23 +205,20 @@ class _DesignHeading extends StatelessWidget {
           title: title,
           titleStyle: titleSize == null
               ? null
-              : AppFonts.semiBold16(context)
-                  .copyWith(fontSize: titleSize),
+              : AppFonts.semiBold16(context).copyWith(fontSize: titleSize),
           trailing: linkLabel == null || linkLabel.isEmpty
               ? null
               : HomeSectionLink(
                   label: linkLabel,
                   // الإجراءات التي تحتاج معامِلات لا تُخمَّن (نفس قاعدة الزر).
-                  onTap: () =>
-                      _navigate(section.property('action'), context),
+                  onTap: () => _navigate(section.property('action'), context),
                 ),
         ),
         if (subtitle != null && subtitle.isNotEmpty) ...[
           Text(
             subtitle,
-            style: AppFonts.regular12(context).copyWith(
-              color: AppColor.textSecondary,
-            ),
+            style: AppFonts.regular12(context)
+                .copyWith(color: AppColor.textSecondary),
           ),
         ],
       ],
@@ -234,10 +238,15 @@ class _DesignButton extends StatelessWidget {
     final label = section.localizedText('label');
     if (label == null || label.isEmpty) return const SizedBox.shrink();
     final style = section.property('style') ?? 'primary';
-    final background =
-        _hexColor(section.property('color')) ?? AppColor.primaryColor;
+    final savedBackground = _hexColor(section.property('color'));
+    // Older button documents stored the former hard-coded green as a default.
+    // Treat that legacy value as unset so the published brand color takes over.
+    final background = savedBackground?.toARGB32() == 0xFF2E7D32
+        ? AppColor.primaryColor
+        : savedBackground ?? AppColor.primaryColor;
     // الزر بأسلوب نصّ يرسم بمنتظم نصّ الشاشة لا بلون نصّ أبيض على شفاف.
-    final foreground = _hexColor(section.property('textColor')) ??
+    final foreground =
+        _hexColor(section.property('textColor')) ??
         (style == 'primary' ? AppColor.whiteColor : AppColor.textPrimary);
     final radius = _radius(section.property('borderRadius'));
     return Material(
@@ -322,7 +331,8 @@ class _DesignImage extends StatelessWidget {
       wrapped = Container(
         decoration: BoxDecoration(
           border: Border.all(
-            color: _hexColor(section.property('borderColor')) ??
+            color:
+                _hexColor(section.property('borderColor')) ??
                 AppColor.borderColor,
             width: borderWidth,
           ),
@@ -371,9 +381,7 @@ class _DesignSpacer extends StatelessWidget {
   Widget build(BuildContext context) {
     // المسافة قد تكون رمزًا أو رقمًا مباشرًا من المستند.
     final number = section.numberProperty('size');
-    return SizedBox(
-      height: number ?? _spacing(section.property('size')),
-    );
+    return SizedBox(height: number ?? _spacing(section.property('size')));
   }
 }
 
@@ -401,10 +409,10 @@ class _DesignProductGrid extends StatelessWidget {
           final weather = weatherState is WeatherLoaded
               ? weatherState.weather
               : null;
-          return _grid(context, home.recommendations(
-            weather: weather,
-            favoriteIds: favoriteIds,
-          ));
+          return _grid(
+            context,
+            home.recommendations(weather: weather, favoriteIds: favoriteIds),
+          );
         },
       );
     }
@@ -415,8 +423,10 @@ class _DesignProductGrid extends StatelessWidget {
 
   Widget _grid(BuildContext context, List<ProductModel> products) {
     final maxItems = section.numberProperty('maxItems')?.round() ?? 20;
-    final columns = (section.numberProperty('columns')?.round() ?? 2)
-        .clamp(1, 4);
+    final columns = (section.numberProperty('columns')?.round() ?? 2).clamp(
+      1,
+      4,
+    );
     final shown = products.length > maxItems
         ? products.sublist(0, maxItems)
         : products;
@@ -441,7 +451,8 @@ class _DesignProductGrid extends StatelessWidget {
             childAspectRatio: ProductCard.cardAspectRatio,
           ),
           itemCount: shown.length,
-          itemBuilder: (context, index) => ProductCard(product: shown[index], showPrice: showPrice),
+          itemBuilder: (context, index) =>
+              ProductCard(product: shown[index], showPrice: showPrice),
         ),
       ],
     );
@@ -455,10 +466,7 @@ class _DesignProductGrid extends StatelessWidget {
 /// المرونة (`flex`) تخصّ الأبناء هنا فقط: الابن صاحب `flex` يُغلَّف بـ
 /// `Expanded` بصنف توازيه، وغيره بـ `Flexible` فلا ينهار القصّ الأفقي.
 class _DesignRow extends StatelessWidget {
-  const _DesignRow({
-    required this.section,
-    required this.childBuilder,
-  });
+  const _DesignRow({required this.section, required this.childBuilder});
   final PublishedSection section;
 
   final Widget? Function(PublishedSection) childBuilder;
@@ -484,8 +492,10 @@ class _DesignRow extends StatelessWidget {
     if (rendered.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: EdgeInsets.symmetric(
-        vertical: _spacing(section.property('inset'),
-            fallback: AppSpacing.none),
+        vertical: _spacing(
+          section.property('inset'),
+          fallback: AppSpacing.none,
+        ),
       ),
       child: Row(
         mainAxisAlignment: switch (section.property('mainAxisAlignment')) {
@@ -510,10 +520,7 @@ class _DesignRow extends StatelessWidget {
 // ------------------------------------------------------------------- عمود
 
 class _DesignColumn extends StatelessWidget {
-  const _DesignColumn({
-    required this.section,
-    required this.childBuilder,
-  });
+  const _DesignColumn({required this.section, required this.childBuilder});
   final PublishedSection section;
 
   /// بناء ابن: نفس دالة رسم الأقسام، فتتكرر الأعمدة بلا شكل خاص.
@@ -529,17 +536,17 @@ class _DesignColumn extends StatelessWidget {
       if (rendered.isNotEmpty) {
         rendered.add(SizedBox(height: _spacing(section.property('gap'))));
       }
-      rendered.add(
-        previewSectionWrap(child, pageId: 'home', child: widget),
-      );
+      rendered.add(previewSectionWrap(child, pageId: 'home', child: widget));
     }
     if (rendered.isEmpty) return const SizedBox.shrink();
     // حشو العمود بخصائصه هو، فلا يتزداد مع حشو الأب: ابن عمود داخل
     // عمود يرسم بمسافة الأب + مسافة العمود الداخلي لا أكثر.
     return Padding(
       padding: EdgeInsets.symmetric(
-        horizontal: _spacing(section.property('inset'),
-            fallback: AppSpacing.md),
+        horizontal: _spacing(
+          section.property('inset'),
+          fallback: AppSpacing.md,
+        ),
       ),
       child: Column(
         crossAxisAlignment: switch (section.property('crossAxisAlignment')) {

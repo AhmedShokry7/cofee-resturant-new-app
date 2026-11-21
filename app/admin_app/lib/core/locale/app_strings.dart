@@ -7,6 +7,18 @@ import 'package:admin_app/core/locale/app_locale.dart';
 class S {
   S._();
 
+  static String get studioTitle =>
+      _ar ? 'استوديو تطبيق العميل' : 'Customer App Studio';
+  static String get studioUnsaved => _ar ? 'غير محفوظة' : 'Unsaved';
+  static String get studioSaved => _ar ? 'محفوظة' : 'Saved';
+  static String get studioPreview => _ar ? 'معاينة' : 'Preview';
+  static String get studioEdit => _ar ? 'تحرير' : 'Edit';
+  static String get studioArchives => _ar ? 'الأرشيف' : 'Archives';
+  static String get studioSchedule => _ar ? 'جدولة النشر' : 'Schedule';
+  static String get studioIdentity => _ar ? 'هوية التطبيق' : 'App identity';
+  static String get studioUnavailable =>
+      _ar ? 'غير متاح في النسخة الحالية' : 'Unavailable in this version';
+
   static bool get _ar => AppLocale.instance.isArabic;
 
   static String get appName => _ar ? 'غيم وسحب' : 'Ghem & Sohob';
@@ -5485,6 +5497,15 @@ class S {
       _ar ? 'استعادة الصورة الأصلية' : 'Restore original image';
   static String get visualEditorSplashDefaultImage =>
       _ar ? 'الشعار الافتراضي' : 'Default logo';
+  static String get visualEditorSplashImage =>
+      _ar ? 'صورة الافتتاحية' : 'Splash image';
+  static String get visualEditorSplashImageSettings =>
+      _ar ? 'إعدادات الصورة' : 'Image settings';
+  static String get visualEditorSplashNavigationSettings =>
+      _ar ? 'التنقل والوقت' : 'Navigation and timing';
+  static String visualEditorSplashTransitionDuration(int milliseconds) => _ar
+      ? 'مدة الانتقال: $milliseconds مللي ثانية'
+      : 'Transition time: $milliseconds ms';
   static String get visualEditorSplashCustomImage =>
       _ar ? 'صورة مخصصة' : 'Custom image';
   static String get visualEditorSplashImageHidden =>
@@ -5517,6 +5538,12 @@ class S {
   static String get visualEditorPreviewTheme =>
       _ar ? 'مظهر معاينة العميل' : 'Customer preview theme';
   static String get visualEditorPublish => _ar ? 'نشر' : 'Publish';
+  static String get visualEditorPublishSuccess =>
+      _ar ? 'تم النشر بنجاح' : 'Published successfully';
+  static String get visualEditorPublishFailed =>
+      _ar ? 'تعذّر النشر' : 'Publish failed';
+  static String get visualEditorVersionNameRequired =>
+      _ar ? 'اكتب اسمًا للإصدار' : 'Enter a version name';
   static String get visualEditorPublishTitle =>
       _ar ? 'تأكيد النشر' : 'Confirm publish';
   static String get visualEditorPublishConfirm => _ar
@@ -5538,6 +5565,30 @@ class S {
   static String get visualEditorNoVersions =>
       _ar ? 'لا إصدارات منشورة بعد' : 'No published versions yet';
   static String get visualEditorRestore => _ar ? 'استرجاع' : 'Restore';
+  static String get visualEditorVersionName =>
+      _ar ? 'اسم الإصدار' : 'Version name';
+  static String get visualEditorVersionNote =>
+      _ar ? 'ملاحظة الإصدار' : 'Version note';
+  static String get visualEditorVersionNoteHint =>
+      _ar ? 'اكتب ملاحظة لهذا الإصدار' : 'Add a note to this version';
+  static String get visualEditorVersionDetailsSaved =>
+      _ar ? 'تم حفظ بيانات الإصدار' : 'Version details saved';
+  static String get visualEditorVersionNoteSaved =>
+      _ar ? 'تم حفظ الملاحظة' : 'Note saved';
+  static String get visualEditorDeleteVersion =>
+      _ar ? 'حذف الإصدار' : 'Delete version';
+  static String get visualEditorDeleteVersionConfirm => _ar
+      ? 'سيُحذف هذا الإصدار من سجل الإصدارات ولن يمكن استعادته. الإصدار المنشور للمستخدمين لن يتغير. هل تريد المتابعة؟'
+      : 'This version will be permanently removed from history and cannot be restored. The version currently live to users will not change. Continue?';
+  static String get visualEditorVersionDeleted =>
+      _ar ? 'تم حذف الإصدار' : 'Version deleted';
+  static String get visualEditorVersionNoteFailed =>
+      _ar ? 'تعذّر حفظ الملاحظة' : 'Could not save the note';
+  static String get visualEditorVersionDeleteFailed =>
+      _ar ? 'تعذّر حذف الإصدار' : 'Could not delete the version';
+  static String get visualEditorVersionLabel => _ar ? 'الإصدار' : 'Version';
+  static String get visualEditorVersionPreview =>
+      _ar ? 'معاينة الإصدار' : 'Preview version';
   static String get visualEditorRestoreTitle =>
       _ar ? 'استرجاع إصدار' : 'Restore version';
   static String get visualEditorRestoreConfirm => _ar
@@ -5639,6 +5690,8 @@ class S {
 
   static String get visualEditorPickColor =>
       _ar ? 'اختيار اللون' : 'Choose color';
+
+  static String get visualEditorColorConfirm => _ar ? 'موافق' : 'OK';
 
   static String get visualEditorCustomColor =>
       _ar ? 'لون مخصص' : 'Custom color';
