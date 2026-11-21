@@ -172,6 +172,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
         ),
         Expanded(
           child: Row(
+            textDirection: TextDirection.rtl,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               VisualEditorLeftPanel(
@@ -213,6 +214,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                   outboundMessageType: _cubit.pendingMessage?.type,
                   outboundPayload: _cubit.pendingMessage?.payload,
                   outboundMessageId: _cubit.pendingMessage?.messageId,
+                  takePreviewMessages: _cubit.takePreviewMessages,
                   isInteractiveMode: _isInteractiveMode,
                   onZoomChanged: (v) =>
                       setState(() => _zoom = v.clamp(0.5, 2.0)),
@@ -227,6 +229,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                 selectedComponent: state.selectedComponent,
                 onPropertyChanged: _cubit.updateProperty,
                 onResetProperty: _cubit.resetProperty,
+                onPropertiesChanged: _cubit.updateProperties,
                 imagePermissions: widget.imagePermissions,
                 onClose: () => _cubit.selectComponent(''),
                 onSaveDraft: _cubit.saveDraft,
@@ -351,6 +354,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                       outboundMessageType: _cubit.pendingMessage?.type,
                       outboundPayload: _cubit.pendingMessage?.payload,
                       outboundMessageId: _cubit.pendingMessage?.messageId,
+                      takePreviewMessages: _cubit.takePreviewMessages,
                       isDragSourceActive: _isDraggingComponent,
                     ),
                     if (_isDraggingComponent)
@@ -466,6 +470,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
       component: selected,
       onPropertyChanged: _cubit.updateProperty,
       onResetProperty: _cubit.resetProperty,
+      onPropertiesChanged: _cubit.updateProperties,
       onBrowseImages: () => showVisualEditorImageAssetPicker(
         context: context,
         repository: VisualEditorImageAssetRepository(),

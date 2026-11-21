@@ -29,6 +29,84 @@ import {
   type ResendResult,
 } from "../_shared/resend.ts";
 import { publicImageUrlOf, storageHostOf } from "../_shared/storage_url.ts";
+import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
+
+type AuthHookPayload = {
+  user?: { email?: string };
+  email_data?: {
+    token?: string;
+    token_hash?: string;
+    redirect_to?: string;
+    site_url?: string;
+    email_action_type?: string;
+  };
+};
+
+const authEmailTemplates: Record<string, { subject: string; title: string; text: string }> = {
+  signup: { subject: "تأكيد إنشاء حسابك", title: "مرحبًا بك", text: "استخدم الرمز التالي لتأكيد بريدك الإلكتروني وإنشاء حسابك." },
+  recovery: { subject: "إعادة تعيين كلمة المرور", title: "إعادة تعيين كلمة المرور", text: "استخدم الرمز التالي لمتابعة إعادة تعيين كلمة المرور." },
+  magiclink: { subject: "رمز تسجيل الدخول", title: "تسجيل الدخول", text: "استخدم الرمز التالي لتسجيل الدخول إلى حسابك." },
+  email: { subject: "رمز التحقق", title: "تأكيد بريدك الإلكتروني", text: "أدخل الرمز التالي لمتابعة تسجيل الدخول." },
+  invite: { subject: "دعوة للانضمام", title: "لديك دعوة", text: "استخدم الرمز التالي لقبول الدعوة." },
+  email_change: { subject: "تأكيد تغيير البريد", title: "تغيير البريد الإلكتروني", text: "استخدم الرمز التالي لتأكيد تغيير بريدك الإلكتروني." },
+  reauthentication: { subject: "تأكيد هويتك", title: "تأكيد الهوية", text: "أدخل الرمز التالي لتأكيد هويتك." },
+};
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[char]!);
+}
+
+/// Supabase Auth Send Email Hook. Its signed request is verified before any
+/// address, token or redirect is used, then the server sends through Resend.
+export async function handleAuthEmailHook(
+  req: Request,
+  deps: {
+    env: (name: string) => string | undefined;
+    fetch?: typeof fetch;
+    verify?: (secret: string, body: string, headers: Headers) => AuthHookPayload;
+  },
+): Promise<Response> {
+  if (req.method !== "POST") return fail("method_not_allowed", 405);
+  const secret = deps.env("SEND_EMAIL_HOOK_SECRET") ?? "";
+  const apiKey = deps.env("RESEND_API_KEY") ?? "";
+  const from = deps.env("EMAIL_FROM") ?? "";
+  if (!secret || !apiKey || !from) return fail("email_not_configured", 503);
+
+  let payload: AuthHookPayload;
+  try {
+    const raw = await req.text();
+    const verify = deps.verify ?? ((key, body, headers) =>
+      new Webhook(key.replace(/^v1,whsec_/, ""))
+        .verify(body, Object.fromEntries(headers)) as AuthHookPayload);
+    payload = verify(secret, raw, req.headers);
+  } catch {
+    return fail("unauthorized", 401);
+  }
+
+  const action = payload.email_data?.email_action_type ?? "";
+  const template = authEmailTemplates[action];
+  const address = payload.user?.email?.trim() ?? "";
+  const token = payload.email_data?.token ?? "";
+  const tokenHash = payload.email_data?.token_hash ?? "";
+  if (!template || !address || !token || !tokenHash) {
+    return fail("invalid_auth_email_payload", 400);
+  }
+  const redirect = payload.email_data?.redirect_to || payload.email_data?.site_url || "";
+  const link = redirect
+    ? `${redirect}${redirect.includes("?") ? "&" : "?"}token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(action)}`
+    : "";
+  const result = await sendEmail(apiKey, {
+    from,
+    to: address,
+    subject: template.subject,
+    text: `${template.title}\n\n${template.text}\n\n${token}${link ? `\n\n${link}` : ""}`,
+    html: `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:560px;margin:auto;padding:24px"><h1>${template.title}</h1><p>${template.text}</p><p style="font-size:32px;letter-spacing:8px;font-weight:bold">${escapeHtml(token)}</p>${link ? `<p><a href="${escapeHtml(link)}">متابعة</a></p>` : ""}</div>`,
+    replyTo: deps.env("EMAIL_REPLY_TO") ?? null,
+  }, deps.fetch ?? fetch);
+  return result.ok ? new Response(null, { status: 200 }) : fail("email_delivery_failed", 502);
+}
 
 /// The notification as the database hands it over.
 export type EmailNotification = {

@@ -8,9 +8,7 @@ import 'package:admin_app/shared/widgets/admin_page_header.dart';
 import 'package:admin_app/shared/widgets/custom_btn.dart';
 
 class OptionGroupPageHeader extends StatelessWidget {
-  const OptionGroupPageHeader({super.key, required this.count, this.onAdd});
-
-  final int count;
+  const OptionGroupPageHeader({super.key, this.onAdd});
 
   /// 020 و225 يطلبان `catalog.product.write` لكتابة مجموعة، فالصفحة تُعرض
   /// للقارئ وزرّ الإضافة يُحجب عنه.
@@ -20,7 +18,7 @@ class OptionGroupPageHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return AdminPageHeader(
       title: S.addonsPageTitle,
-      subtitle: S.optionGroupsCount(count),
+      subtitle: S.addonsPageDescription,
       actions: [
         if (onAdd != null)
           CustomBtn(

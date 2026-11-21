@@ -33,39 +33,44 @@ class BannerPageBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppDimensions.pageHorizontalPadding,
-        vertical: AppDimensions.pageVerticalPadding,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final inset = AppDimensions.pageHorizontalInset(constraints.maxWidth);
+        return Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: inset,
+            vertical: AppDimensions.pageVerticalPadding,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AdminPageTitle(S.banners),
-              if (onAdd != null)
-                FilledButton.icon(
-                  onPressed: onAdd,
-                  icon: const Icon(AppIcons.add01, size: 18),
-                  label: Text(S.addBanner),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  AdminPageTitle(S.banners),
+                  if (onAdd != null)
+                    FilledButton.icon(
+                      onPressed: onAdd,
+                      icon: const Icon(AppIcons.add01, size: 18),
+                      label: Text(S.addBanner),
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Expanded(
+                child: BannerRecords(
+                  banners: banners,
+                  search: search,
+                  onEdit: onEdit,
+                  onDelete: onDelete,
+                  onTogglePublished: onTogglePublished,
+                  onChangeImage: onChangeImage,
                 ),
+              ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          Expanded(
-            child: BannerRecords(
-              banners: banners,
-              search: search,
-              onEdit: onEdit,
-              onDelete: onDelete,
-              onTogglePublished: onTogglePublished,
-              onChangeImage: onChangeImage,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

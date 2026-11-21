@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
+import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 
 /// محرك المعاينة الأصلي للمحرر المرئي على المنصات غير الويب.
 ///
@@ -93,9 +94,9 @@ class NativeDesignPreview extends StatelessWidget {
         'sm' => AppSpacing.sm,
         'md' => AppSpacing.md,
         'lg' => AppSpacing.lg,
-        'xl' => AppSpacing.xl,
-        'xxl' => AppSpacing.xxl,
-        'xxxl' => AppSpacing.xxxl,
+        'xl' => 24.0,
+        'xxl' => 32.0,
+        'xxxl' => 48.0,
         _ => fallback,
       };
 
@@ -256,7 +257,10 @@ class NativeDesignPreview extends StatelessWidget {
       case 'authSwitchPrompt':
         content = _authSwitchPrompt();
       default:
-        return null;
+        // Keep every node visible in the local preview. Silently dropping an
+        // unimplemented registry type made pages look incomplete and gave no
+        // clue why a layer was missing from the device.
+        content = _unsupportedComponent(component);
     }
     // Apply DesignSectionChrome-like styling to all components
     content = _applyChrome(component, content);
@@ -328,8 +332,8 @@ class NativeDesignPreview extends StatelessWidget {
   );
 
   Widget _searchField(String hint) => Container(
-    height: 38,
-    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+    constraints: const BoxConstraints(minHeight: 44),
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
     decoration: BoxDecoration(
       color: _bg,
       borderRadius: BorderRadius.circular(_radius('pill')),
@@ -337,7 +341,7 @@ class NativeDesignPreview extends StatelessWidget {
     ),
     child: Row(
       children: [
-        Icon(AppIcons.search01, size: 16, color: _textSecondary),
+        Icon(AppIcons.search01, size: 20, color: _textSecondary),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Text(
@@ -353,6 +357,52 @@ class NativeDesignPreview extends StatelessWidget {
       ],
     ),
   );
+
+  Widget _unsupportedComponent(EditableComponent component) {
+    final entry = ComponentRegistry.get(component.componentType);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 72),
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: _surface,
+          border: Border.all(color: _borderColor),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+        ),
+        child: Row(
+          children: [
+            Icon(AppIcons.layers01, size: 20, color: _accent),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry?.displayName ?? component.componentType,
+                    style: TextStyle(
+                      fontSize: AppFontSizes.size12 * _textFactor,
+                      fontWeight: AppFontWeights.semiBold,
+                      color: _textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    'المعاينة المحلية لا ترسم هذا النوع بعد',
+                    style: TextStyle(
+                      fontSize: AppFontSizes.size10 * _textFactor,
+                      color: _textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _bannerCarousel(EditableComponent c) {
     final height = (c.properties['height'] as num?)?.toDouble() ?? 184.0;
@@ -988,7 +1038,6 @@ class NativeDesignPreview extends StatelessWidget {
   Widget _splashSettings(EditableComponent c, BuildContext context) {
     final url = (c.properties['imageUrl'] as String?)?.trim() ?? '';
     final text = _loc(c, 'text');
-    final duration = _numProp(c, 'durationMs')?.round() ?? 1000;
     final size = _numProp(c, 'textSize') ?? 16;
     final previewSize = screenSize ?? MediaQuery.sizeOf(context);
     final shortestSide = previewSize.shortestSide;
@@ -1061,50 +1110,51 @@ class NativeDesignPreview extends StatelessWidget {
               child: Icon(AppIcons.image01, color: _textSecondary),
             ),
           );
+    final splashContent = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisAlignment: verticalAlignment,
+      children: [
+        if (c.properties['imageVisible'] as bool? ?? true)
+          Align(alignment: alignment, child: image),
+        if (text.isNotEmpty) ...[
+          SizedBox(
+            height: c.properties['imageVisible'] as bool? ?? true
+                ? imageGap
+                : 0,
+          ),
+          Text(
+            text,
+            textAlign: textAlignment,
+            style: TextStyle(
+              fontSize: size,
+              color: _hex(c.property('textColor')) ?? _textPrimary,
+            ),
+          ),
+        ],
+      ],
+    );
+    final animatedContent = animation == 'none' || animationDuration <= 0
+        ? splashContent
+        : TweenAnimationBuilder<double>(
+            key: ValueKey('$animation:$animationDuration'),
+            tween: Tween<double>(begin: 0, end: 1),
+            duration: Duration(milliseconds: animationDuration.clamp(0, 5000)),
+            curve: Curves.easeOutCubic,
+            child: splashContent,
+            builder: (context, progress, child) => Opacity(
+              opacity: progress,
+              child: Transform.scale(
+                scale: animation == 'fadeScale' ? 0.92 + 0.08 * progress : 1,
+                child: child,
+              ),
+            ),
+          );
     return Container(
       constraints: BoxConstraints(minHeight: previewSize.height),
       width: double.infinity,
       color: _hex(c.property('backgroundColor')) ?? Colors.white,
       padding: const EdgeInsets.all(AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisAlignment: verticalAlignment,
-        children: [
-          if (c.properties['imageVisible'] as bool? ?? true)
-            Align(alignment: alignment, child: image),
-          if (text.isNotEmpty) ...[
-            SizedBox(
-              height: c.properties['imageVisible'] as bool? ?? true
-                  ? imageGap
-                  : 0,
-            ),
-            Text(
-              text,
-              textAlign: textAlignment,
-              style: TextStyle(
-                fontSize: size * _textFactor,
-                color: _hex(c.property('textColor')) ?? _textPrimary,
-              ),
-            ),
-          ],
-          const SizedBox(height: AppSpacing.xs),
-          if (animation == 'fade' || animation == 'fadeScale')
-            Text(
-              'تأثير $animation • ${animationDuration}ms',
-              style: TextStyle(
-                fontSize: AppFontSizes.size9_5,
-                color: _textSecondary,
-              ),
-            ),
-          Text(
-            'الانتقال بعد ${duration}ms',
-            style: TextStyle(
-              fontSize: AppFontSizes.size9_5,
-              color: _textSecondary,
-            ),
-          ),
-        ],
-      ),
+      child: animatedContent,
     );
   }
 

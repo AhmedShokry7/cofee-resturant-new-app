@@ -1,3 +1,6 @@
+import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart'
+    show OutboundMessage;
+
 import 'dart:async';
 import 'dart:math' as math;
 
@@ -92,6 +95,7 @@ class PreviewPanel extends StatefulWidget {
     this.outboundMessageType,
     this.outboundPayload,
     this.outboundMessageId,
+    this.takePreviewMessages,
     this.components = const [],
     this.theme = DesignTheme.none,
     this.selectedComponentId,
@@ -100,6 +104,7 @@ class PreviewPanel extends StatefulWidget {
     this.previewThemeMode = PreviewThemeMode.light,
     this.onConnectionChanged,
     this.isDragSourceActive = false,
+    this.isInteractiveMode = false,
   });
 
   final String pageId;
@@ -118,6 +123,7 @@ class PreviewPanel extends StatefulWidget {
   final VisualEditorMessageType? outboundMessageType;
   final Map<String, dynamic>? outboundPayload;
   final String? outboundMessageId;
+  final List<OutboundMessage> Function()? takePreviewMessages;
 
   /// مكوّنات الصفحة الحالية لرسم المعاينة الأصلية على غير الويب.
   final List<EditableComponent> components;
@@ -144,6 +150,7 @@ class PreviewPanel extends StatefulWidget {
 
   /// استبدل WebView/iframe مؤقتًا أثناء السحب حتى لا يحجب أحداث الإفلات.
   final bool isDragSourceActive;
+  final bool isInteractiveMode;
 
   @override
   State<PreviewPanel> createState() => _PreviewPanelState();
@@ -189,6 +196,9 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _deliverOutbound();
+    });
     _loadPublishedBannerImages();
     if (preview_platform.supportsLiveWebview) {
       if (kIsWeb) {
@@ -272,9 +282,16 @@ class _PreviewPanelState extends State<PreviewPanel> {
       sessionId: widget.sessionId,
       parentOrigin: _parentOrigin,
       onElementSelected: widget.onElementSelected,
-      onPreviewReady: widget.onPreviewReady,
+      onPreviewReady: (data) {
+        widget.onPreviewReady(data);
+        _sendInteractiveMode();
+      },
       onPreviewError: widget.onPreviewError,
-      onPropertyUpdated: widget.onPropertyUpdated,
+      onPropertyUpdated: (data) {
+        if (!_preferNative && !_livePreviewUnavailable) {
+          widget.onPropertyUpdated(data);
+        }
+      },
       onTreeUpdated: widget.onTreeUpdated,
       onConnectionState: (connection, reason) {
         // الغطاء والمؤشر يقرآن نفس الحالة: تحديث موحّد بلا مسارين.
@@ -306,6 +323,9 @@ class _PreviewPanelState extends State<PreviewPanel> {
       _autoReloads = 0;
       _reloadManually();
     }
+    if (widget.isInteractiveMode != oldWidget.isInteractiveMode) {
+      _sendInteractiveMode();
+    }
     // Language and theme changes arrive here as outbound SET_LANGUAGE /
     // SET_THEME_MODE messages. Deliver them to the live preview in place;
     // changing display settings must not reload the emulator.
@@ -313,17 +333,13 @@ class _PreviewPanelState extends State<PreviewPanel> {
   }
 
   /// العودة لمحاولة المعاينة الحية بعد تشغيل تطبيق العميل.
-  void _retryLivePreview() {
-    setState(() {
-      _preferNative = false;
-      _livePreviewUnavailable = false;
-    });
-    _reloadManually();
-  }
+  void _retryLivePreview() => setState(_reloadManually);
 
   /// إعادة التحميل بيد الموظف (زر Reload) — الطابور يُحفظ فآخر مستند
   /// يعود أول ما تعلن المعاينة الجديدة جاهزيتها.
   void _reloadManually() {
+    _preferNative = false;
+    _livePreviewUnavailable = false;
     _statusMessage = 'إعادة تحميل المعاينة…';
     _connection.value = PreviewConnection.connecting;
     preview_platform.reloadPreviewView(
@@ -369,13 +385,28 @@ class _PreviewPanelState extends State<PreviewPanel> {
   }
 
   void _deliverOutbound() {
+    final takeMessages = widget.takePreviewMessages;
+    if (takeMessages != null) {
+      for (final message in takeMessages()) {
+        _sendOutbound(message.messageId, message.type, message.payload);
+      }
+      return;
+    }
     final messageId = widget.outboundMessageId;
     final type = widget.outboundMessageType;
     final payload = widget.outboundPayload;
     if (messageId == null || type == null || payload == null) return;
-    if (!preview_platform.supportsLiveWebview) return;
     if (messageId == _lastSentMessageId) return;
     _lastSentMessageId = messageId;
+    _sendOutbound(messageId, type, payload);
+  }
+
+  void _sendOutbound(
+    String messageId,
+    VisualEditorMessageType type,
+    Map<String, dynamic> payload,
+  ) {
+    if (!preview_platform.supportsLiveWebview) return;
     preview_platform.sendOutboundMessage(
       viewType: _iframeViewType,
       type: type,
@@ -383,6 +414,14 @@ class _PreviewPanelState extends State<PreviewPanel> {
       sessionId: widget.sessionId ?? '',
       messageId: messageId,
       parentOrigin: _parentOrigin,
+    );
+  }
+
+  void _sendInteractiveMode() {
+    _sendOutbound(
+      DateTime.now().microsecondsSinceEpoch.toString(),
+      VisualEditorMessageType.setInteractiveMode,
+      <String, dynamic>{'enabled': widget.isInteractiveMode},
     );
   }
 

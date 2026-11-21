@@ -1,3 +1,5 @@
+import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart'
+    show OutboundMessage;
 import 'package:material_ui/material_ui.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
@@ -30,6 +32,7 @@ class VisualEditorCanvas extends StatelessWidget {
     this.outboundMessageType,
     this.outboundPayload,
     this.outboundMessageId,
+    this.takePreviewMessages,
     this.isInteractiveMode = false,
     this.onZoomChanged,
     this.onResetZoom,
@@ -61,6 +64,7 @@ class VisualEditorCanvas extends StatelessWidget {
   final VisualEditorMessageType? outboundMessageType;
   final Map<String, dynamic>? outboundPayload;
   final String? outboundMessageId;
+  final List<OutboundMessage> Function()? takePreviewMessages;
   final bool isInteractiveMode;
   final ValueChanged<double>? onZoomChanged;
   final VoidCallback? onResetZoom;
@@ -100,9 +104,13 @@ class VisualEditorCanvas extends StatelessWidget {
                     horizontal: AppSpacing.lg,
                     vertical: 40,
                   ),
+                  // PreviewPanel computes fitScale * zoom from the available
+                  // device viewport. Passing zoom here as well applied it a
+                  // second time (e.g. 80% became 64%) and made the customer
+                  // app look unexpectedly small inside the editor.
                   child: SizedBox(
-                    width: device.width * zoom,
-                    height: device.height * zoom,
+                    width: device.width,
+                    height: device.height,
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
@@ -124,9 +132,11 @@ class VisualEditorCanvas extends StatelessWidget {
                           onPropertyUpdated: onPropertyUpdated,
                           onTreeUpdated: onTreeUpdated,
                           isDragSourceActive: isDraggingComponent,
+                          isInteractiveMode: isInteractiveMode,
                           outboundMessageType: outboundMessageType,
                           outboundPayload: outboundPayload,
                           outboundMessageId: outboundMessageId,
+                          takePreviewMessages: takePreviewMessages,
                         ),
                         if (isDraggingComponent)
                           DragTarget<String>(

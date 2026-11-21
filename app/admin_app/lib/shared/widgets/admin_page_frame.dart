@@ -11,38 +11,34 @@ class AdminPageFrame extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final narrow = MediaQuery.sizeOf(context).width < AppBreakpoints.pageCanvas;
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: narrow
-            ? AppDimensions.pageFrameGutterNarrow
-            : AppDimensions.pageFrameGutterWide,
-      ),
-      child: Align(
-        alignment: Alignment.topCenter,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: AppDimensions.pageFrameMaxContentWidth,
-          ),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(
-              narrow
-                  ? AppDimensions.pageFrameInnerHorizontalNarrow
-                  : AppDimensions.pageFrameInnerHorizontalWide,
-              narrow
-                  ? AppDimensions.pageFrameInnerTopNarrow
-                  : AppDimensions.pageFrameInnerTopWide,
-              narrow
-                  ? AppDimensions.pageFrameInnerHorizontalNarrow
-                  : AppDimensions.pageFrameInnerHorizontalWide,
-              narrow
-                  ? AppDimensions.pageFrameInnerBottomNarrow
-                  : AppDimensions.pageFrameInnerBottomWide,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final narrow = width < AppBreakpoints.pageCanvas;
+        final inset = AppDimensions.pageHorizontalInset(width);
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: inset),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppDimensions.pageFrameMaxContentWidth,
+              ),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: narrow
+                      ? AppDimensions.pageFrameInnerTopNarrow
+                      : AppDimensions.pageFrameInnerTopWide,
+                  bottom: narrow
+                      ? AppDimensions.pageFrameInnerBottomNarrow
+                      : AppDimensions.pageFrameInnerBottomWide,
+                ),
+                child: child,
+              ),
             ),
-            child: child,
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

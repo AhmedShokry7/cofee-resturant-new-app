@@ -44,7 +44,7 @@ class RoleTable extends StatelessWidget {
                 for (final role in roles)
                   _Row(
                     role: role,
-                    canManage: canManage,
+                    canManage: canManage && !role.isOwner,
                     onManage: onManage == null ? null : () => onManage!(role),
                   ),
               ],

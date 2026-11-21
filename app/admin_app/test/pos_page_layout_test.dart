@@ -13,6 +13,7 @@ import 'package:admin_app/features/pos/domain/entities/pos_shift.dart';
 import 'package:admin_app/features/pos/domain/repositories/pos_repository.dart';
 import 'package:admin_app/features/pos/presentation/manager/pos_state.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_page_body.dart';
+import 'package:admin_app/features/pos/presentation/widgets/pos_cart_panel.dart';
 import 'package:admin_app/features/pos/presentation/widgets/pos_product_card.dart';
 import 'package:admin_app/core/models/dining_table.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
@@ -458,6 +459,22 @@ void main() {
     await tester.pump();
 
     expect(opened, isTrue);
+  });
+
+  testWidgets('a tablet landscape keeps the menu and basket side by side', (
+    tester,
+  ) async {
+    _setViewport(tester, 1024, 768);
+
+    await _pump(tester, _state(withCart: true));
+
+    _expectNoException(tester);
+    expect(find.byType(PosCartPanel), findsOneWidget);
+    expect(find.text(S.posViewCart), findsNothing);
+    final grid = tester.widget<GridView>(find.byType(GridView).first);
+    final delegate =
+        grid.gridDelegate as SliverGridDelegateWithFixedCrossAxisCount;
+    expect(delegate.crossAxisCount, 3);
   });
 
   testWidgets('an empty narrow basket hides the floating bar', (tester) async {

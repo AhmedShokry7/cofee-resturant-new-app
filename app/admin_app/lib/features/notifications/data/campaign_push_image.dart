@@ -31,8 +31,21 @@ Future<CampaignPushImage> campaignPushImageOf({
   Future<Uint8List?> Function(Uint8List)? shrink,
 }) async {
   if (bytes.isEmpty) throw AdminProductException(S.imageIsEmpty);
-  if (bytes.length <= campaignPushImageMaxBytes) {
-    return (bytes: bytes, fileName: fileName, type: contentType);
+  final detectedType = adminImageSniffedType(bytes) ?? contentType;
+  // FCM documents JPEG and PNG as fully supported across platforms. WebP and
+  // other formats have device-dependent support. BMP is not supported by the
+  // upload path's content-type/extension pairing, so normalize it too.
+  final fcmSafeType = const {'image/jpeg', 'image/png'}
+      .contains(detectedType.toLowerCase());
+  final needsJpeg = bytes.length > campaignPushImageMaxBytes || !fcmSafeType;
+  if (!needsJpeg) {
+    final normalizedType = detectedType.toLowerCase();
+    final extension = normalizedType == 'image/png' ? '.png' : '.jpg';
+    return (
+      bytes: bytes,
+      fileName: _fileNameWithExtension(fileName, extension),
+      type: normalizedType,
+    );
   }
 
   final shrunk = await (shrink?.call(bytes) ?? compute(_shrinkToJpeg, bytes));
@@ -44,4 +57,10 @@ Future<CampaignPushImage> campaignPushImageOf({
     fileName: adminImageJpegName(fileName),
     type: 'image/jpeg',
   );
+}
+
+String _fileNameWithExtension(String fileName, String extension) {
+  final dot = fileName.lastIndexOf('.');
+  final stem = dot > 0 ? fileName.substring(0, dot) : fileName;
+  return '$stem$extension';
 }

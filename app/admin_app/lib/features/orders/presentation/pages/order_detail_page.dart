@@ -97,9 +97,9 @@ class _OrderDetailsPageState extends State<OrderDetailsPage> {
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(
-                      horizontal: narrow
-                          ? AppDimensions.pageFrameGutterNarrow
-                          : AppDimensions.pageFrameGutterWide,
+                      horizontal: AppDimensions.pageHorizontalInset(
+                        MediaQuery.sizeOf(context).width,
+                      ),
                       vertical: narrow
                           ? AppDimensions.pageFrameInnerTopNarrow
                           : AppDimensions.pageFrameInnerTopWide,

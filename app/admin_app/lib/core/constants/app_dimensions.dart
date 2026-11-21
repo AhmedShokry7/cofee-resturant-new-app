@@ -278,12 +278,12 @@ abstract final class AppDimensions {
 
   // إطار صفحات السجلات (AdminPageFrame)
   /// الفراغ الجانبي خارج عمود الصفحة، وعلى النافذة الضيقة.
-  static const double pageFrameGutterWide = 38.0;
-  static const double pageFrameGutterNarrow = AppSpacing.lg;
+  /// Shared page inset scaled to the available width so content gains space
+  /// continuously as the viewport gets narrower.
+  static double pageHorizontalInset(double width) =>
+      (width * 0.025).clamp(8.0, 36.0).toDouble();
 
   /// الحشو الداخلي لعمود الصفحة: جانبين وسقف وأرضية.
-  static const double pageFrameInnerHorizontalWide = AppSizes.px28;
-  static const double pageFrameInnerHorizontalNarrow = AppSpacing.md;
   static const double pageFrameInnerTopWide = AppSpacing.xxl;
   static const double pageFrameInnerTopNarrow = AppSpacing.lg;
   static const double pageFrameInnerBottomWide = 21.0;
@@ -324,7 +324,6 @@ abstract final class AppDimensions {
   static const double directoryCanvasHeightXxl = 700.0;
   static const double directoryCanvasHeightXxxl = 720.0;
   static const double directoryCanvasHeightHuge = 760.0;
-
 }
 
 /// نقاط عرض النافذة التي يغيّر عندها التخطيط شكله.
@@ -348,4 +347,8 @@ abstract final class AppBreakpoints {
 
   /// النافذة تعتبر واسعة: بطاقات المقاييس تصير عمودين والديالوج العريض يصغر.
   static const double wideLayout = 900.0;
+
+  /// Keep the admin navigation in a drawer until a tablet has enough room for
+  /// both a persistent sidebar and the page's working area.
+  static const double adminDesktopShell = 1200.0;
 }

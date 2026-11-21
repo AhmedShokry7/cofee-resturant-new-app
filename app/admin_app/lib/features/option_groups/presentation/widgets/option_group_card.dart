@@ -43,10 +43,13 @@ class OptionGroupCard extends StatelessWidget {
       AppSpacing.lg * 2 + AppSizes.px8 + AppDimensions.recordFooterHeight + 3.0;
 
   /// ما يكبر مع الخط: سطر الاسم وسطر الشارتين وأسطر الخيارات.
-  static const double textBlockExtent = 20 + 20 + visibleValueRows * 22;
-
-  static double extent(double cardWidth, TextScaler scaler) =>
-      chromeExtent + scaler.scale(textBlockExtent);
+  static double extent(double cardWidth, TextScaler scaler, int maxValues) {
+    final chipRows = cardWidth < 280 ? 3 : cardWidth < 370 ? 2 : 1;
+    final valueRows = maxValues == 0
+        ? 1
+        : (maxValues > visibleValueRows ? visibleValueRows + 1 : maxValues);
+    return chromeExtent + scaler.scale(20 + chipRows * 22 + valueRows * 22);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -92,23 +95,18 @@ class OptionGroupCard extends StatelessWidget {
                     children: [
                       AdminStatusBadge(
                         label: _scopeLabel(group),
-                        color: group.isActive
-                            ? AppColor.adminAccent
-                            : AppColor.adminWarning,
-                      ),
-                      AdminStatusBadge(
-                        label:
-                            group.selectionType ==
-                                AdminOptionSelectionType.single
-                            ? S.singleChoiceLabel
-                            : S.multipleChoicesLabel,
                         color: AppColor.greyColor,
                       ),
-                      if (!group.isActive)
-                        AdminStatusBadge(
-                          label: S.inactive,
-                          color: AppColor.errorColor,
-                        ),
+                      AdminStatusBadge(
+                        label: group.isActive ? S.active : S.inactive,
+                        color: group.isActive
+                            ? AppColor.trendPositive
+                            : AppColor.errorColor,
+                      ),
+                      AdminStatusBadge(
+                        label: _selectionLabel(group),
+                        color: AppColor.adminInfo,
+                      ),
                     ],
                   ),
                   const SizedBox(height: AppSizes.px8),
@@ -144,9 +142,11 @@ class OptionGroupCard extends StatelessWidget {
                   Expanded(
                     child: _FooterAction(
                       icon: group.isActive
-                          ? AppIcons.checkmarkCircle01
-                          : AppIcons.cancelCircle,
-                      label: group.isActive ? S.active : S.inactive,
+                          ? AppIcons.cancelCircle
+                          : AppIcons.checkmarkCircle01,
+                      label: group.isActive
+                          ? S.deactivateOptionGroup
+                          : S.activateOptionGroup,
                       color: onToggleActive == null
                           ? adminMutedColor(theme)
                           : (dark
@@ -184,6 +184,16 @@ class OptionGroupCard extends StatelessWidget {
       AdminOptionGroupScope.products => S.scopeProducts,
     };
   }
+
+  static String _selectionLabel(AdminOptionGroup group) {
+    final type = group.selectionType == AdminOptionSelectionType.single
+        ? S.singleChoiceLabel
+        : S.multipleChoicesLabel;
+    final requirement = group.isRequired
+        ? S.requiredShortLabel
+        : S.optionalShortLabel;
+    return '$type · $requirement';
+  }
 }
 
 /// أسطر الخيارات بأسعارها، مع سطر أخير يسمّي ما لم يُعرض.
@@ -198,7 +208,7 @@ class _ValueLines extends StatelessWidget {
     final theme = Theme.of(context);
     if (values.isEmpty) {
       return Text(
-        S.addOptionValue,
+        S.optionGroupValuesEmpty,
         style: TextStyle(
           color: adminMutedColor(theme),
           fontSize: AppFontSizes.size10_5,

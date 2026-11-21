@@ -36,74 +36,27 @@ class _FeaturePagesGroup {
 
 const _featureGroups = [
   _FeaturePagesGroup(
-    title: 'الرئيسية والتسوق',
-    icon: Icons.storefront_outlined,
+    title: 'الرئيسية والتسوق', icon: Icons.storefront_outlined,
     pageIds: ['home', 'categories', 'search', 'cart', 'favourites', 'settings'],
   ),
   _FeaturePagesGroup(
-    title: 'الدخول والترحيب',
-    icon: Icons.login_outlined,
-    pageIds: [
-      'splash',
-      'welcome',
-      'onboarding',
-      'auth',
-      'sign_up',
-      'forget_password',
-      'reset_password',
-      'phone_auth',
-      'email_auth',
-    ],
+    title: 'الدخول والترحيب', icon: Icons.login_outlined,
+    pageIds: ['splash', 'welcome', 'onboarding', 'auth', 'sign_up', 'forget_password', 'reset_password', 'phone_auth', 'email_auth'],
   ),
   _FeaturePagesGroup(
-    title: 'الطلب والدفع',
-    icon: Icons.payment_outlined,
-    pageIds: [
-      'checkout',
-      'shipping_addresses',
-      'add_address',
-      'payment_method',
-      'add_card',
-      'payment_success',
-      'e_receipt',
-      'coupon',
-    ],
+    title: 'الطلب والدفع', icon: Icons.payment_outlined,
+    pageIds: ['checkout', 'shipping_addresses', 'add_address', 'payment_method', 'add_card', 'payment_success', 'e_receipt', 'coupon'],
   ),
   _FeaturePagesGroup(
-    title: 'الحساب والولاء',
-    icon: Icons.card_membership_outlined,
-    pageIds: [
-      'orders',
-      'edit_profile',
-      'saved_cards',
-      'addresses',
-      'address_form',
-      'loyalty',
-      'subscription_plans',
-      'subscription_details',
-      'cashier_subscription',
-    ],
+    title: 'الحساب والولاء', icon: Icons.card_membership_outlined,
+    pageIds: ['orders', 'edit_profile', 'saved_cards', 'addresses', 'address_form', 'loyalty', 'subscription_plans', 'subscription_details', 'cashier_subscription'],
   ),
   _FeaturePagesGroup(
-    title: 'الإعدادات والمساعدة',
-    icon: Icons.settings_suggest_outlined,
-    pageIds: [
-      'notifications',
-      'notification_settings',
-      'help',
-      'privacy',
-      'assistant_memory',
-    ],
+    title: 'الإعدادات والمساعدة', icon: Icons.settings_suggest_outlined,
+    pageIds: ['notifications', 'notification_settings', 'help', 'privacy', 'assistant_memory'],
   ),
 ];
 
-/// اللوحة الجانبية اليسارية المتكاملة المطابقة تماماً للصورة المرجعية:
-/// 1. شريط رأسي داكن أخضر زيتوني على أقصى الحافة بالأدوات الست:
-///    [الصفحات]، [الطبقات]، [المكونات]، [الصور]، [المكونات الجاهزة]، [الإعدادات].
-/// 2. لوحة العمل المجاورة بعرض 280-300px وتحتوي على:
-///    - قائمة الصفحات مع زر "+ إضافة صفحة" وحقل البحث.
-///    - شجرة الطبقات القابلة للطي `شجرة الطبقات 🗂️`.
-///    - مكتبة المكونات السريعة `مكتبة المكونات 🧩` مع التصنيفات وبطاقات الإضافة.
 class VisualEditorLeftPanel extends StatefulWidget {
   const VisualEditorLeftPanel({
     super.key,
@@ -145,6 +98,15 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
 
   bool _isLayersExpanded = true;
   bool _isComponentsExpanded = true;
+  final ScrollController _pagesScrollController = ScrollController();
+  final ScrollController _workspaceScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _pagesScrollController.dispose();
+    _workspaceScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -290,86 +252,92 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
 
   // --- 2. محتوى لوحة العمل المجاورة ---
   Widget _buildLeftWorkspaceContent(BuildContext context, bool dark) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // A. ترويسة الصفحات مع زر "+ إضافة صفحة"
-          _buildPagesHeader(context, dark),
+    return Scrollbar(
+      controller: _workspaceScrollController,
+      thumbVisibility: true,
+      child: SingleChildScrollView(
+        controller: _workspaceScrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // A. ترويسة الصفحات مع زر "+ إضافة صفحة"
+            _buildPagesHeader(context, dark),
 
-          // B. حقل البحث عن صفحة
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: 4,
-            ),
-            child: TextField(
-              onChanged: (v) => setState(() => _pageSearchQuery = v),
-              decoration: InputDecoration(
-                hintText: 'ابحث عن صفحة…',
-                hintStyle: TextStyle(
-                  fontSize: 11,
-                  color: VisualEditorTokens.textMuted(context),
-                ),
-                prefixIcon: const Icon(Icons.search_rounded, size: 15),
-                isDense: true,
-                filled: true,
-                fillColor: dark
-                    ? VisualEditorTokens.darkSurfaceSecondary
-                    : VisualEditorTokens.surfaceSoftCreamSecondary,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 6,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    VisualEditorTokens.radiusSm,
-                  ),
-                  borderSide: BorderSide(
-                    color: VisualEditorTokens.border(context),
-                    width: 0.8,
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    VisualEditorTokens.radiusSm,
-                  ),
-                  borderSide: BorderSide(
-                    color: VisualEditorTokens.border(context),
-                    width: 0.8,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(
-                    VisualEditorTokens.radiusSm,
-                  ),
-                  borderSide: const BorderSide(
-                    color: VisualEditorTokens.primaryOliveGreen,
-                    width: 1.2,
-                  ),
-                ),
+            // B. حقل البحث عن صفحة
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: 4,
               ),
-              style: const TextStyle(fontSize: 11.5),
+              child: TextField(
+                onChanged: (v) => setState(() => _pageSearchQuery = v),
+                decoration: InputDecoration(
+                  hintText: 'ابحث عن صفحة…',
+                  hintStyle: TextStyle(
+                    fontSize: 11,
+                    color: VisualEditorTokens.textMuted(context),
+                  ),
+                  prefixIcon: const Icon(Icons.search_rounded, size: 15),
+                  isDense: true,
+                  filled: true,
+                  fillColor: dark
+                      ? VisualEditorTokens.darkSurfaceSecondary
+                      : VisualEditorTokens.surfaceSoftCreamSecondary,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 6,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusSm,
+                    ),
+                    borderSide: BorderSide(
+                      color: VisualEditorTokens.border(context),
+                      width: 0.8,
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusSm,
+                    ),
+                    borderSide: BorderSide(
+                      color: VisualEditorTokens.border(context),
+                      width: 0.8,
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusSm,
+                    ),
+                    borderSide: const BorderSide(
+                      color: VisualEditorTokens.primaryOliveGreen,
+                      width: 1.2,
+                    ),
+                  ),
+                ),
+                style: const TextStyle(fontSize: 11.5),
+              ),
             ),
-          ),
 
-          // C. قائمة الصفحات مع جميع الـ 37 ChoiceChips المطلوبة
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-            child: _buildPagesListWithChips(context, dark),
-          ),
+            // C. صفحات التطبيق في صف قابل للتمرير
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+              child: _buildPagesListWithChips(context),
+            ),
 
-          const SizedBox(height: AppSpacing.xs),
-          Divider(color: VisualEditorTokens.border(context), height: 1),
+            const SizedBox(height: AppSpacing.xs),
+            Divider(color: VisualEditorTokens.border(context), height: 1),
 
-          // D. أكورديون شجرة الطبقات 🗂️
-          _buildLayersAccordion(context, dark),
+            // D. أكورديون شجرة الطبقات 🗂️
+            _buildLayersAccordion(context, dark),
 
-          Divider(color: VisualEditorTokens.border(context), height: 1),
+            Divider(color: VisualEditorTokens.border(context), height: 1),
 
-          // E. أكورديون مكتبة المكونات 🧩
-          _buildComponentsAccordion(context, dark),
-        ],
+            // E. أكورديون مكتبة المكونات 🧩
+            _buildComponentsAccordion(context, dark),
+          ],
+        ),
       ),
     );
   }
@@ -460,106 +428,118 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
     );
   }
 
-  // --- قائمة الصفحات مع جميع الـ 37 ChoiceChip في صفوف تمرير أفقية ---
-  Widget _buildPagesListWithChips(BuildContext context, bool dark) {
-    final pageMap = {for (final p in PreviewPages.all) p.pageId: p};
+  // قائمة الصفحات في صف أفقي
+  Widget _buildPagesListWithChips(BuildContext context) {
+    final query = _pageSearchQuery.trim().toLowerCase();
+    final pageMap = {for (final page in PreviewPages.all) page.pageId: page};
+    final groupedIds = _featureGroups.expand((group) => group.pageIds).toSet();
+    final orphanPages = PreviewPages.all.where((page) => !groupedIds.contains(page.pageId));
+    final visibleOrphans = orphanPages.where((page) => _matchesPage(page, query)).toList();
+    final hasResults = _featureGroups.any((group) => group.pageIds.any((id) {
+      final page = pageMap[id];
+      return page != null && _matchesPage(page, query);
+    })) || visibleOrphans.isNotEmpty;
+    return Scrollbar(
+      controller: _pagesScrollController,
+      thumbVisibility: true,
+      scrollbarOrientation: ScrollbarOrientation.right,
+      notificationPredicate: (notification) =>
+          notification.metrics.axis == Axis.vertical,
+      child: SizedBox(
+        height: 280,
+        child: ListView(
+        controller: _pagesScrollController,
+          padding: const EdgeInsetsDirectional.only(end: 8, bottom: AppSpacing.sm),
+          children: [
+            if (!hasResults)
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Text('لا توجد شاشات مطابقة', style: TextStyle(fontSize: 11, color: VisualEditorTokens.textMuted(context))),
+              ),
+            for (final group in _featureGroups)
+              if (group.pageIds.any((id) {
+                final page = pageMap[id];
+                return page != null && _matchesPage(page, query);
+              })) ...[
+                _buildFeatureHeader(context, group),
+                for (final id in group.pageIds)
+                  if (pageMap[id] case final page?)
+                    if (_matchesPage(page, query)) _buildPageRow(context, page),
+              ],
+            if (visibleOrphans.isNotEmpty) ...[
+              _buildFeatureHeader(context, const _FeaturePagesGroup(title: 'شاشات أخرى', icon: Icons.more_horiz, pageIds: [])),
+              for (final page in visibleOrphans) _buildPageRow(context, page),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final group in _featureGroups) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 6, bottom: 2),
+  bool _matchesPage(PreviewPage page, String query) => query.isEmpty ||
+      page.label.toLowerCase().contains(query) || page.pageId.toLowerCase().contains(query);
+
+  Widget _buildFeatureHeader(BuildContext context, _FeaturePagesGroup group) =>
+      Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(8, 9, 8, 3),
+        child: Row(children: [
+          Icon(group.icon, size: 13, color: VisualEditorTokens.textMuted(context)),
+          const SizedBox(width: 5),
+          Text(group.title, style: TextStyle(fontSize: 10.5, fontWeight: AppFontWeights.semiBold, color: VisualEditorTokens.textMuted(context))),
+        ]),
+      );
+
+  Widget _buildPageRow(BuildContext context, PreviewPage page) {
+    final selected = widget.selectedPageId == page.pageId;
+    final foreground = VisualEditorTokens.text(context);
+    return Padding(
+      padding: const EdgeInsetsDirectional.fromSTEB(5, 1, 5, 1),
+      child: Material(
+        color: selected
+            ? VisualEditorTokens.primaryOliveGreenLight
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+        child: InkWell(
+          key: ValueKey('page_chip_${page.pageId}'),
+          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+          onTap: () => widget.onPageSelected(page.pageId),
+          child: Padding(
+            padding: const EdgeInsetsDirectional.fromSTEB(8, 6, 8, 6),
             child: Row(
               children: [
                 Icon(
-                  group.icon,
-                  size: 12,
-                  color: VisualEditorTokens.textMuted(context),
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
+                  size: 15,
+                  color: selected
+                      ? VisualEditorTokens.primaryOliveGreen
+                      : VisualEditorTokens.textMuted(context),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  group.title,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: AppFontWeights.semiBold,
-                    color: VisualEditorTokens.textMuted(context),
+                const SizedBox(width: 7),
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 160),
+                  child: Text(
+                    page.label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: selected
+                          ? AppFontWeights.semiBold
+                          : AppFontWeights.regular,
+                      color: selected
+                          ? VisualEditorTokens.primaryOliveGreen
+                          : foreground,
+                    ),
                   ),
                 ),
+                if (!page.isEditable) const Icon(AppIcons.lock, size: 11),
               ],
             ),
           ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final id in group.pageIds)
-                  if (pageMap[id] case final page?)
-                    if (_pageSearchQuery.trim().isEmpty ||
-                        page.label.toLowerCase().contains(
-                          _pageSearchQuery.trim().toLowerCase(),
-                        ) ||
-                        page.pageId.toLowerCase().contains(
-                          _pageSearchQuery.trim().toLowerCase(),
-                        ))
-                      Padding(
-                        padding: const EdgeInsetsDirectional.only(
-                          end: 4,
-                          bottom: 2,
-                        ),
-                        child: ChoiceChip(
-                          key: ValueKey('page_chip_${page.pageId}'),
-                          label: Text(page.label),
-                          selected: widget.selectedPageId == page.pageId,
-                          onSelected: (_) {
-                            widget.onPageSelected(page.pageId);
-                            widget.cubit.loadPage(page.pageId);
-                          },
-                          avatar: widget.selectedPageId == page.pageId
-                              ? const Icon(
-                                  Icons.circle,
-                                  size: 8,
-                                  color: VisualEditorTokens.primaryOliveGreen,
-                                )
-                              : (page.isEditable
-                                    ? null
-                                    : const Icon(AppIcons.lock, size: 10)),
-                          labelStyle: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: widget.selectedPageId == page.pageId
-                                ? AppFontWeights.bold
-                                : AppFontWeights.regular,
-                            color: widget.selectedPageId == page.pageId
-                                ? VisualEditorTokens.primaryOliveGreen
-                                : VisualEditorTokens.text(context),
-                          ),
-                          selectedColor:
-                              VisualEditorTokens.primaryOliveGreenLight,
-                          backgroundColor: dark
-                              ? VisualEditorTokens.darkSurfaceSecondary
-                              : VisualEditorTokens.surfaceSoftCreamSecondary,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(
-                              VisualEditorTokens.radiusSm,
-                            ),
-                            side: BorderSide(
-                              color: widget.selectedPageId == page.pageId
-                                  ? VisualEditorTokens.primaryOliveGreen
-                                  : VisualEditorTokens.border(context),
-                              width: widget.selectedPageId == page.pageId
-                                  ? 1.0
-                                  : 0.6,
-                            ),
-                          ),
-                          visualDensity: VisualDensity.compact,
-                          showCheckmark: false,
-                        ),
-                      ),
-              ],
-            ),
-          ),
-        ],
-      ],
+        ),
+      ),
     );
   }
 
@@ -590,7 +570,7 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'شجرة الطبقات 🗂️',
+                      'شجرة الطبقات (${components.length})',
                       style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: AppFontWeights.bold,
@@ -646,14 +626,16 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
     final isSelected = widget.state.selectedComponentId == comp.componentId;
     final entry = ComponentRegistry.get(comp.componentType);
     final name = entry?.displayName ?? comp.componentType;
-    final isVisible = comp.properties['visible'] as bool? ?? true;
+    final isVisible = comp.properties['visible'] != false;
     final isLocked = comp.classification == ComponentClassification.protected;
+    final depth = _layerDepth(comp).clamp(0, 8);
 
     return InkWell(
+      key: ValueKey('layer_${comp.componentId}'),
       onTap: () => widget.cubit.selectComponent(comp.componentId),
       borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+        padding: EdgeInsetsDirectional.fromSTEB(6 + depth * 12, 5, 6, 5),
         margin: const EdgeInsets.only(bottom: 2),
         decoration: BoxDecoration(
           color: isSelected
@@ -728,6 +710,19 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
         ),
       ),
     );
+  }
+
+  int _layerDepth(EditableComponent component) {
+    var depth = 0;
+    var parentId = component.parentId;
+    final visited = <String>{};
+    while (parentId != null && visited.add(parentId)) {
+      final parent = widget.state.findComponent(parentId);
+      if (parent == null || parent.pageId != component.pageId) break;
+      depth++;
+      parentId = parent.parentId;
+    }
+    return depth;
   }
 
   // --- E. أكورديون مكتبة المكونات 🧩 ---

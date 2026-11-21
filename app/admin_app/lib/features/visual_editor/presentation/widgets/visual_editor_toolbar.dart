@@ -92,8 +92,6 @@ class VisualEditorToolbar extends StatelessWidget {
           muted: muted,
         ),
         PreviewDisplayControls(state: state, cubit: cubit),
-        EditorDivider(),
-
         // --- تراجع وإعادة ---
         EditorIconBtn(
           icon: AppIcons.undo,
@@ -157,7 +155,7 @@ class VisualEditorToolbar extends StatelessWidget {
           icon: AppIcons.sent,
           label: S.visualEditorPublish,
           // ضغطة واحدة تبدأ النشر مباشرة؛ الخادم يتحقق من الصلاحية.
-          onTap: () => publishVisualEditor(context, cubit),
+          onTap: !canPublish ? null : () => publishVisualEditor(context, cubit),
           dark: dark,
           accent: true,
           accentColor: accent,
@@ -338,9 +336,9 @@ class _VersionsDialog extends StatelessWidget {
                     ),
                     trailing: TextButton(
                       onPressed: canPublish
-                          ? () => _restore(context, version)
+                          ? () => _preview(context, version)
                           : null,
-                      child: Text(S.visualEditorRestore),
+                      child: const Text('معاينة الإصدار'),
                     ),
                   );
                 },
@@ -355,35 +353,12 @@ class _VersionsDialog extends StatelessWidget {
     );
   }
 
-  Future<void> _restore(
+  Future<void> _preview(
     BuildContext context,
     PublishedVersionInfo version,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(S.visualEditorRestoreTitle),
-        content: Text(S.visualEditorRestoreConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text(S.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text(S.visualEditorRestore),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final restored = await cubit.restoreVersion(version.id);
-    if (restored != null && context.mounted) {
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('استُرجع كإصدار ${restored.versionNumber}')),
-      );
-    }
+    final loaded = await cubit.previewVersion(version.id);
+    if (loaded && context.mounted) Navigator.of(context).pop();
   }
 }
 

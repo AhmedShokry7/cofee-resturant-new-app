@@ -3210,6 +3210,12 @@ class S {
       _ar ? 'ابحث في المحتوى...' : 'Search content...';
   static String get searchAppSettingsHint =>
       _ar ? 'ابحث في الإعدادات...' : 'Search settings...';
+  static String get splashManagement =>
+      _ar ? 'إدارة شاشة البداية' : 'Splash screen';
+  static String get splashManagementSearchHint =>
+      _ar ? 'ابحث في إعدادات شاشة البداية...' : 'Search splash settings...';
+  static String splashCopy(String arabic, String english) =>
+      _ar ? arabic : english;
   static String get searchCouponsHint =>
       _ar ? 'ابحث في الكوبونات...' : 'Search coupons...';
   static String get searchBannersHint =>
@@ -5153,6 +5159,32 @@ class S {
   static String get optionGroups =>
       _ar ? 'الأحجام والإضافات' : 'Sizes & extras';
   static String get addonsPageTitle => _ar ? 'الإضافات' : 'Add-ons';
+  static String get addonsPageDescription => _ar
+      ? 'أنشئ مجموعات الإضافات وحدد خياراتها وأسعارها، ثم اختر المنتجات التي تظهر فيها.'
+      : 'Create add-on groups, set their choices and prices, then choose which products show them.';
+  static String get optionGroupsMetric =>
+      _ar ? 'مجموعات الإضافات' : 'Add-on groups';
+  static String get activeOptionGroupsMetric =>
+      _ar ? 'المجموعات النشطة' : 'Active groups';
+  static String get optionChoicesMetric =>
+      _ar ? 'الخيارات المتاحة' : 'Available choices';
+  static String get activateOptionGroup =>
+      _ar ? 'تفعيل المجموعة' : 'Activate group';
+  static String get deactivateOptionGroup =>
+      _ar ? 'إيقاف المجموعة' : 'Deactivate group';
+  static String get requiredShortLabel => _ar ? 'إلزامي' : 'Required';
+  static String get optionalShortLabel => _ar ? 'اختياري' : 'Optional';
+  static String get showOptionGroupOnProduct =>
+      _ar ? 'إظهار المجموعة لهذا المنتج' : 'Show this group for this product';
+  static String get hideOptionGroupFromProduct => _ar
+      ? 'إخفاء المجموعة عن هذا المنتج'
+      : 'Hide this group from this product';
+  static String get optionGroupValuesEmpty => _ar
+      ? 'لا توجد خيارات نشطة في هذه المجموعة.'
+      : 'This group has no active choices.';
+  static String get productOptionPricingGuide => _ar
+      ? 'السعر النهائي = سعر المنتج الأساسي + زيادة الخيار. اترك خانة سعر هذا المنتج فارغة لاستخدام زيادة المجموعة.'
+      : 'Final price = product base price + option extra. Leave this product price blank to use the group extra.';
   static String get addAddonGroup => _ar ? 'إضافة جديدة' : 'Add an add-on';
   static String get productSizesSection => _ar ? 'الأحجام' : 'Sizes';
   static String get productAddonsSection => _ar ? 'الإضافات' : 'Add-ons';

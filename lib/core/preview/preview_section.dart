@@ -7,8 +7,10 @@ import 'package:new_coffee/features/design/data/model/published_design.dart';
 ///
 /// ValueNotifier عام لأن القسم الذي يرسم الصفحة الرئيسية لا يملك شجرة موحدة:
 /// كل قسم يستمع بنفسه، والتحديد يظهر فوق القسم الذي يحمل المعرفّ.
-final ValueNotifier<String?> previewSelectedSectionId =
-    ValueNotifier<String?>(null);
+final ValueNotifier<String?> previewSelectedSectionId = ValueNotifier<String?>(
+  null,
+);
+final ValueNotifier<bool> previewInteractiveMode = ValueNotifier<bool>(false);
 
 /// يلفّ قسمًا بلمسة تحديد وضع المعاينة، أو يعيده كما هو خارج المعاينة.
 ///
@@ -58,51 +60,55 @@ class _PreviewSectionTapState extends State<PreviewSectionTap> {
     final bridge = PreviewBridge();
     if (!bridge.isActive) return widget.child;
 
-    return ValueListenableBuilder<String?>(
-      valueListenable: previewSelectedSectionId,
-      // القسم نفسه يمر هنا كـ `child` ثابت لا يعاد بناؤه مع كل تحديد،
-      // والمعالج يبني الغلاف حوله — إغفال تمريره يجعل الطفل null،
-      // وGestureDetector بلا طفل يأخذ قيود أبيه كاملة، وفي قائمة تمرير
-      // قيودها لانهائية فينهار التخطيط كلها في وضع المعاينة.
+    return ValueListenableBuilder<bool>(
+      valueListenable: previewInteractiveMode,
       child: widget.child,
-      builder: (context, selectedId, child) {
-        final selected =
-            selectedId != null && selectedId == widget.section.id;
-        final wrapped = GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTap: () {
-            previewSelectedSectionId.value = widget.section.id;
-            bridge.sendElementSelected(
-              componentId: widget.section.id,
-              componentType: widget.section.type,
-              pageId: widget.pageId,
-              index: null,
-              properties: <String, dynamic>{
-                'visible': widget.section.visible,
-                if (widget.section.dataSource != null)
-                  'dataSource': widget.section.dataSource!,
-              },
-            );
-          },
+      builder: (context, interactive, child) {
+        if (interactive) return child!;
+        return ValueListenableBuilder<String?>(
+          valueListenable: previewSelectedSectionId,
+          // القسم نفسه يمر هنا كـ `child` ثابت لا يعاد بناؤه مع كل تحديد،
+          // والمعالج يبني الغلاف حوله — إغفال تمريره يجعل الطفل null،
+          // وGestureDetector بلا طفل يأخذ قيود أبيه كاملة، وفي قائمة تمرير
+          // قيودها لانهائية فينهار التخطيط كلها في وضع المعاينة.
           child: child,
-        );
-        if (!selected) return wrapped;
-        return Stack(
-          children: [
-            wrapped,
-            Positioned.fill(
-              child: IgnorePointer(
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: Colors.blue,
-                      width: 2,
+          builder: (context, selectedId, child) {
+            final selected =
+                selectedId != null && selectedId == widget.section.id;
+            final wrapped = GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                previewSelectedSectionId.value = widget.section.id;
+                bridge.sendElementSelected(
+                  componentId: widget.section.id,
+                  componentType: widget.section.type,
+                  pageId: widget.pageId,
+                  index: null,
+                  properties: <String, dynamic>{
+                    'visible': widget.section.visible,
+                    if (widget.section.dataSource != null)
+                      'dataSource': widget.section.dataSource!,
+                  },
+                );
+              },
+              child: child,
+            );
+            if (!selected) return wrapped;
+            return Stack(
+              children: [
+                wrapped,
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.blue, width: 2),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         );
       },
     );

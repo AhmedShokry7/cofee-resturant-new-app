@@ -19,6 +19,7 @@ import 'package:admin_app/shared/widgets/admin_avatar_image.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 import 'package:admin_app/shared/widgets/admin_status_badge.dart';
 import 'package:admin_app/shared/widgets/admin_surface.dart';
 
@@ -327,56 +328,60 @@ class _PosCartPanelState extends State<PosCartPanel> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        SizedBox(
-                          width: 420,
-                          child: Wrap(
-                            spacing: AppSizes.px8,
-                            runSpacing: AppSizes.px8,
-                            children: [
-                              SizedBox(
-                                width: 180,
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    SizedBox(
-                                      height: 24,
-                                      child: Align(
-                                        alignment:
-                                            AlignmentDirectional.centerStart,
-                                        child: _CartLabel(text: S.posCustomer),
-                                      ),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  SizedBox(
+                                    height: 24,
+                                    child: Align(
+                                      alignment:
+                                          AlignmentDirectional.centerStart,
+                                      child: _CartLabel(text: S.posCustomer),
                                     ),
-                                    const SizedBox(height: AppSizes.px6),
-                                    _CustomerCard(
-                                      customer: _state.customer,
-                                      enabled: !_state.isPlacingOrder,
-                                      onChoose: widget.onChooseCustomer,
-                                      onClear: widget.onClearCustomer,
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                  const SizedBox(height: AppSizes.px6),
+                                  LayoutBuilder(
+                                    builder: (context, constraints) =>
+                                        _CustomerCard(
+                                          customer: _state.customer,
+                                          enabled: !_state.isPlacingOrder,
+                                          compact: constraints.maxWidth < 180,
+                                          onChoose: widget.onChooseCustomer,
+                                          onClear: widget.onClearCustomer,
+                                        ),
+                                  ),
+                                ],
                               ),
-                              SizedBox(
-                                width: 180,
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.stretch,
-                                  children: [
-                                    const _DineInHeader(),
-                                    const SizedBox(height: AppSizes.px6),
-                                    _TableCard(
-                                      state: _state,
-                                      enabled: !_state.isPlacingOrder,
-                                      onChoose: widget.onChooseTable,
-                                      onClear: widget.onClearTable,
-                                      onRefresh: widget.onRefreshTables,
-                                    ),
-                                  ],
-                                ),
+                            ),
+                            const SizedBox(width: AppSizes.px8),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  const SizedBox(
+                                    height: 24,
+                                    child: _DineInHeader(),
+                                  ),
+                                  const SizedBox(height: AppSizes.px6),
+                                  LayoutBuilder(
+                                    builder: (context, constraints) =>
+                                        _TableCard(
+                                          state: _state,
+                                          enabled: !_state.isPlacingOrder,
+                                          compact: constraints.maxWidth < 180,
+                                          onChoose: widget.onChooseTable,
+                                          onClear: widget.onClearTable,
+                                          onRefresh: widget.onRefreshTables,
+                                        ),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: AppSizes.px10),
                         TextField(
@@ -903,12 +908,14 @@ class _CustomerCard extends StatelessWidget {
   const _CustomerCard({
     required this.customer,
     required this.enabled,
+    required this.compact,
     required this.onChoose,
     required this.onClear,
   });
 
   final PosCustomer? customer;
   final bool enabled;
+  final bool compact;
   final VoidCallback onChoose;
   final VoidCallback onClear;
 
@@ -916,7 +923,11 @@ class _CustomerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final selected = customer;
     if (selected == null) {
-      return _EmptyCustomerCard(enabled: enabled, onTap: onChoose);
+      return _EmptyCustomerCard(
+        enabled: enabled,
+        compact: compact,
+        onTap: onChoose,
+      );
     }
 
     final theme = Theme.of(context);
@@ -1001,23 +1012,36 @@ class _CustomerCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: AppSizes.px4),
-          TextButton(
-            onPressed: enabled ? onChoose : null,
-            style: TextButton.styleFrom(
-              minimumSize: const Size(0, 28),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: foreground,
-            ),
-            child: Text(
-              S.posCustomerChange,
-              style: const TextStyle(
-                fontSize: AppFontSizes.size9,
-                fontWeight: AppFontWeights.semiBold,
+          const SizedBox(width: AppSizes.px2),
+          if (compact)
+            IconButton(
+              tooltip: S.posCustomerChange,
+              onPressed: enabled ? onChoose : null,
+              style: IconButton.styleFrom(
+                fixedSize: const Size(24, 24),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: foreground,
+              ),
+              icon: const AppIcon(AppIcons.edit01, size: 13),
+            )
+          else
+            TextButton(
+              onPressed: enabled ? onChoose : null,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 28),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: foreground,
+              ),
+              child: Text(
+                S.posCustomerChange,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.size9,
+                  fontWeight: AppFontWeights.semiBold,
+                ),
               ),
             ),
-          ),
           IconButton(
             tooltip: S.posCustomerRemove,
             onPressed: enabled ? onClear : null,
@@ -1041,9 +1065,14 @@ class _CustomerCard extends StatelessWidget {
 }
 
 class _EmptyCustomerCard extends StatelessWidget {
-  const _EmptyCustomerCard({required this.enabled, required this.onTap});
+  const _EmptyCustomerCard({
+    required this.enabled,
+    required this.compact,
+    required this.onTap,
+  });
 
   final bool enabled;
+  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -1084,7 +1113,7 @@ class _EmptyCustomerCard extends StatelessWidget {
                   color: adminFlagForeground(theme, AppColor.adminAccent),
                 ),
               ),
-              const SizedBox(width: AppSizes.px8),
+              SizedBox(width: compact ? AppSizes.px4 : AppSizes.px8),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1114,7 +1143,7 @@ class _EmptyCustomerCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: AppSizes.px6),
+              if (!compact) const SizedBox(width: AppSizes.px6),
               AppIcon(
                 rtl ? AppIcons.arrowLeft01 : AppIcons.arrowRight01,
                 size: 15,
@@ -1224,6 +1253,7 @@ class _TableCard extends StatelessWidget {
   const _TableCard({
     required this.state,
     required this.enabled,
+    required this.compact,
     required this.onChoose,
     required this.onClear,
     required this.onRefresh,
@@ -1231,6 +1261,7 @@ class _TableCard extends StatelessWidget {
 
   final PosState state;
   final bool enabled;
+  final bool compact;
   final VoidCallback onChoose;
   final VoidCallback onClear;
   final VoidCallback onRefresh;
@@ -1242,6 +1273,7 @@ class _TableCard extends StatelessWidget {
       return _SelectedTableCard(
         table: selected,
         enabled: enabled,
+        compact: compact,
         onChange: onChoose,
         onClear: onClear,
       );
@@ -1280,12 +1312,14 @@ class _SelectedTableCard extends StatelessWidget {
   const _SelectedTableCard({
     required this.table,
     required this.enabled,
+    required this.compact,
     required this.onChange,
     required this.onClear,
   });
 
   final DiningTable table;
   final bool enabled;
+  final bool compact;
   final VoidCallback onChange;
   final VoidCallback onClear;
 
@@ -1346,13 +1380,15 @@ class _SelectedTableCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: AppSizes.px2),
-                    Flexible(
-                      child: AdminStatusBadge(
-                        label: diningTableStatusLabel(table.status),
-                        color: statusColor,
+                    if (!compact) ...[
+                      const SizedBox(width: AppSizes.px2),
+                      Flexible(
+                        child: AdminStatusBadge(
+                          label: diningTableStatusLabel(table.status),
+                          color: statusColor,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
                 const SizedBox(height: AppSizes.px1),
@@ -1402,25 +1438,51 @@ class _SelectedTableCard extends StatelessWidget {
                     ),
                   ),
                 ],
+                if (compact) ...[
+                  const SizedBox(height: AppSizes.px2),
+                  AdminStatusBadge(
+                    label: diningTableStatusLabel(table.status),
+                    color: statusColor,
+                  ),
+                ],
               ],
             ),
           ),
-          TextButton(
-            onPressed: enabled ? onChange : null,
-            style: TextButton.styleFrom(
-              minimumSize: const Size(0, 24),
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              foregroundColor: adminFlagForeground(theme, AppColor.adminAccent),
-            ),
-            child: Text(
-              S.posChangeTable,
-              style: const TextStyle(
-                fontSize: AppFontSizes.size9,
-                fontWeight: AppFontWeights.semiBold,
+          if (compact)
+            IconButton(
+              tooltip: S.posChangeTable,
+              onPressed: enabled ? onChange : null,
+              style: IconButton.styleFrom(
+                fixedSize: const Size(24, 24),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: adminFlagForeground(
+                  theme,
+                  AppColor.adminAccent,
+                ),
+              ),
+              icon: const AppIcon(AppIcons.edit01, size: 13),
+            )
+          else
+            TextButton(
+              onPressed: enabled ? onChange : null,
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 24),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                foregroundColor: adminFlagForeground(
+                  theme,
+                  AppColor.adminAccent,
+                ),
+              ),
+              child: Text(
+                S.posChangeTable,
+                style: const TextStyle(
+                  fontSize: AppFontSizes.size9,
+                  fontWeight: AppFontWeights.semiBold,
+                ),
               ),
             ),
-          ),
           IconButton(
             tooltip: S.posClearTable,
             onPressed: enabled ? onClear : null,
@@ -1716,52 +1778,50 @@ class _PaymentSelector extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: TextField(
-                  key: const Key('pos-split-cash'),
-                  controller: cashController,
-                  focusNode: cashFocus,
-                  enabled: enabled,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: onSplitCashChanged,
-                  style: TextStyle(
-                    color: adminBodyColor(theme),
-                    fontSize: AppFontSizes.size11,
-                  ),
-                  decoration: _posFieldDecoration(
-                    context,
-                    label: S.posSplitCashLabel,
-                    hint: '0',
-                    suffixIcon: CurrencyIcon(
-                      size: 10,
-                      color: adminMutedColor(theme),
+                child: CurrencyInputRow(
+                  iconSize: 12,
+                  child: TextField(
+                    key: const Key('pos-split-cash'),
+                    controller: cashController,
+                    focusNode: cashFocus,
+                    enabled: enabled,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onChanged: onSplitCashChanged,
+                    style: TextStyle(
+                      color: adminBodyColor(theme),
+                      fontSize: AppFontSizes.size11,
+                    ),
+                    decoration: _posFieldDecoration(
+                      context,
+                      label: S.posSplitCashLabel,
+                      hint: '0',
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: AppSizes.px8),
               Expanded(
-                child: TextField(
-                  key: const Key('pos-split-card'),
-                  controller: cardController,
-                  focusNode: cardFocus,
-                  enabled: enabled,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  onChanged: onSplitCardChanged,
-                  style: TextStyle(
-                    color: adminBodyColor(theme),
-                    fontSize: AppFontSizes.size11,
-                  ),
-                  decoration: _posFieldDecoration(
-                    context,
-                    label: S.posSplitCardLabel,
-                    hint: '0',
-                    suffixIcon: CurrencyIcon(
-                      size: 10,
-                      color: adminMutedColor(theme),
+                child: CurrencyInputRow(
+                  iconSize: 12,
+                  child: TextField(
+                    key: const Key('pos-split-card'),
+                    controller: cardController,
+                    focusNode: cardFocus,
+                    enabled: enabled,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onChanged: onSplitCardChanged,
+                    style: TextStyle(
+                      color: adminBodyColor(theme),
+                      fontSize: AppFontSizes.size11,
+                    ),
+                    decoration: _posFieldDecoration(
+                      context,
+                      label: S.posSplitCardLabel,
+                      hint: '0',
                     ),
                   ),
                 ),
@@ -1803,10 +1863,6 @@ class _PaymentSelector extends StatelessWidget {
                     context,
                     label: S.posCashReceivedLabel,
                     hint: '0',
-                    suffixIcon: CurrencyIcon(
-                      size: 10,
-                      color: adminMutedColor(theme),
-                    ),
                   ),
                 ),
               ),

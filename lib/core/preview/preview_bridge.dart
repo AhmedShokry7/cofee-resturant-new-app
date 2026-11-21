@@ -15,7 +15,7 @@
 // Inbound:  PREVIEW_INITIALIZE, LOAD_PAGE, SELECT_ELEMENT, UPDATE_PROPERTY,
 //           ADD_COMPONENT, REMOVE_COMPONENT, REORDER_COMPONENT,
 //           APPLY_DESIGN_CONFIG, PREVIEW_REFRESH, SET_LANGUAGE,
-//           SET_THEME_MODE, PREVIEW_ERROR.
+//           SET_THEME_MODE, SET_INTERACTIVE_MODE, PREVIEW_ERROR.
 // SET_LANGUAGE / SET_THEME_MODE change only the in-memory preview state; they
 // never write the customer's saved language or theme preference.
 
@@ -42,6 +42,7 @@ enum PreviewMessageType {
   previewRefresh('PREVIEW_REFRESH'),
   setLanguage('SET_LANGUAGE'),
   setThemeMode('SET_THEME_MODE'),
+  setInteractiveMode('SET_INTERACTIVE_MODE'),
   saveRequest('SAVE_REQUEST');
 
   const PreviewMessageType(this.value);

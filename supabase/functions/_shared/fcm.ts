@@ -237,11 +237,10 @@ export async function sendToToken(
                 ...(imageUrl
                   ? {
                     visibility: "PUBLIC",
-                    // HTTP v1 notifications can be delegated to Google Play
-                    // services, unlike messages sent from Firebase Console.
-                    // Keep image messages in the app's FCM SDK so Android can
-                    // fetch the attachment and build the BigPicture style.
-                    proxy: "DENY",
+                    // Let Google Play services handle the image notification
+                    // when FCM delegates it. This avoids making image display
+                    // depend on the app process being started in time.
+                    proxy: "ALLOW",
                   }
                   : {}),
                 ...(imageUrl ? { image: imageUrl } : {}),
@@ -264,9 +263,10 @@ export async function sendToToken(
     }
 
     const invalidToken =
-      /UNREGISTERED|registration-token-not-registered|INVALID_ARGUMENT/i.test(
+      /UNREGISTERED|NOTREGISTERED|registration-token-not-registered/i.test(
         text,
-      ) && /token/i.test(text);
+      ) ||
+      (/INVALID_ARGUMENT/i.test(text) && /token/i.test(text));
     return {
       ok: false,
       invalidToken,

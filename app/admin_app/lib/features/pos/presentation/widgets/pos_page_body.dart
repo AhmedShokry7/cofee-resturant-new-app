@@ -90,7 +90,10 @@ class PosPageBody extends StatelessWidget {
   /// The reason the last checkout attempt was rejected.
   final String? checkoutError;
 
-  static const double _wideBreakpoint = 960;
+  /// Keep the basket beside the menu on tablets and desktops. The former
+  /// 960px cutoff sent portrait tablets into the phone-style bottom sheet even
+  /// though there was enough room for a compact two-column workspace.
+  static const double _wideBreakpoint = 820;
 
   @override
   Widget build(BuildContext context) {
@@ -100,8 +103,10 @@ class PosPageBody extends StatelessWidget {
           final wide = constraints.maxWidth >= _wideBreakpoint;
           final showBar = !wide && (!state.isCartEmpty || state.hasHeldOrders);
           final bottomInset = showBar ? 70.0 : 0.0;
-          final cartWidth = (constraints.maxWidth * .3)
-              .clamp(400.0, 480.0)
+          // Let the menu keep most of the width on compact desktops while
+          // keeping the basket wide enough for its payment and customer rows.
+          final cartWidth = (constraints.maxWidth * .34)
+              .clamp(320.0, 440.0)
               .toDouble();
 
           return Column(
@@ -192,24 +197,43 @@ class PosPageBody extends StatelessWidget {
                         : null,
                   ),
                 )
-              : GridView.builder(
-                  keyboardDismissBehavior:
-                      ScrollViewKeyboardDismissBehavior.onDrag,
-                  padding: EdgeInsets.only(bottom: bottomInset),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 300,
-                    mainAxisExtent: 264,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                  ),
-                  itemCount: visible.length,
-                  itemBuilder: (context, index) {
-                    final product = visible[index];
-                    return PosProductCard(
-                      product: product,
-                      inCart: state.quantityOf(product.id),
-                      remaining: state.remainingFor(product),
-                      onTap: () => onAddProduct(product),
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    // On phones, two compact cards use the screen better than
+                    // a single stretched tile. Keep one column only when the
+                    // actual menu area is too narrow for readable controls.
+                    final columns = constraints.maxWidth >= 1080
+                        ? 4
+                        : constraints.maxWidth >= 540
+                        ? 3
+                        : constraints.maxWidth >= 340
+                        ? 2
+                        : 1;
+                    final cardHeight = constraints.maxWidth < 440
+                        ? 236.0
+                        : constraints.maxWidth < 700
+                        ? 250.0
+                        : 264.0;
+                    return GridView.builder(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      padding: EdgeInsets.only(bottom: bottomInset),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: columns,
+                        mainAxisExtent: cardHeight,
+                        crossAxisSpacing: AppSizes.px12,
+                        mainAxisSpacing: AppSizes.px12,
+                      ),
+                      itemCount: visible.length,
+                      itemBuilder: (context, index) {
+                        final product = visible[index];
+                        return PosProductCard(
+                          product: product,
+                          inCart: state.quantityOf(product.id),
+                          remaining: state.remainingFor(product),
+                          onTap: () => onAddProduct(product),
+                        );
+                      },
                     );
                   },
                 ),

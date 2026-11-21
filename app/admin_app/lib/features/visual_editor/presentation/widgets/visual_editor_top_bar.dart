@@ -4,6 +4,7 @@ import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
+import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_display_controls.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/preview_panel.dart';
@@ -187,7 +188,7 @@ class VisualEditorTopBar extends StatelessWidget {
           icon: Icons.rocket_launch_rounded,
           label: S.visualEditorPublish,
           // ضغطة واحدة تبدأ النشر مباشرة؛ الخادم يتحقق من الصلاحية.
-          onTap: () => publishVisualEditor(context, cubit),
+          onTap: !canPublish ? null : () => publishVisualEditor(context, cubit),
           dark: dark,
           accent: true,
           accentColor: VisualEditorTokens.primaryOliveGreen,
@@ -341,13 +342,23 @@ class VisualEditorTopBar extends StatelessWidget {
   // --- مؤشر حالة الحفظ: "✓ تم الحفظ منذ دقيقة" ---
   Widget _buildSaveStatusIndicator(BuildContext context, bool dark) {
     final bool isSaving = state.status == VisualEditorStatus.loading;
+    final bool isPreviewUpdating = state.previewUpdatesPending > 0;
     final bool isDirty = state.isDirty;
 
     String statusText;
     Color statusColor;
     IconData statusIcon;
 
-    if (isSaving) {
+    if (isPreviewUpdating &&
+        state.previewConnection == PreviewConnection.error) {
+      statusText = state.previewStatusMessage ?? 'تعذر تحديث المعاينة';
+      statusColor = VisualEditorTokens.statusWarning;
+      statusIcon = Icons.error_outline;
+    } else if (isPreviewUpdating) {
+      statusText = 'جارٍ تحديث المعاينة…';
+      statusColor = VisualEditorTokens.statusInfo;
+      statusIcon = Icons.visibility_outlined;
+    } else if (isSaving) {
       statusText = 'جارٍ الحفظ…';
       statusColor = VisualEditorTokens.statusInfo;
       statusIcon = Icons.sync_rounded;

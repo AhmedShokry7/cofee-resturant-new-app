@@ -250,7 +250,8 @@ class AdminNotificationsRepository implements NotificationsRepository {
   /// picture can be removed by: anything else is not this app's object.
   static const String _imageBucket = 'product-images';
   static String get _publicPrefix =>
-      '${AppConfig.supabaseUrl}/storage/v1/object/public/$_imageBucket/';
+      '${AppConfig.supabaseUrl.replaceFirst(RegExp(r'/+$'), '')}'
+      '/storage/v1/object/public/$_imageBucket/';
 
   static String _extensionOf(String fileName) {
     final name = fileName.toLowerCase();

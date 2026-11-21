@@ -33,7 +33,7 @@ class RoleCards extends StatelessWidget {
       final role = roles[index];
       return _RoleCard(
         role: role,
-        canManage: canManage,
+        canManage: canManage && !role.isOwner,
         onManage: onManage == null ? null : () => onManage!(role),
       );
     },

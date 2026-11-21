@@ -56,6 +56,8 @@ class ProductOptionsDialogBody extends StatelessWidget {
               hintText: S.searchProductOptions,
             ),
             const SizedBox(height: AppSpacing.md),
+            _pricingGuide(context),
+            const SizedBox(height: AppSpacing.md),
             if (_filteredGroups.isEmpty)
               _noMatches(context)
             else
@@ -65,6 +67,22 @@ class ProductOptionsDialogBody extends StatelessWidget {
       ),
     );
   }
+
+  Widget _pricingGuide(BuildContext context) => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+    ),
+    child: Text(
+      S.productOptionPricingGuide,
+      style: TextStyle(
+        color: adminMutedColor(Theme.of(context)),
+        fontSize: AppFontSizes.size10_5,
+        height: AppTextHeights.line1_5,
+      ),
+    ),
+  );
 
   /// لا مجموعات بعد، أو كلها موقوفة: نفس الجملة التي تقولها اللوحة حين لا شيء.
   Widget _empty(BuildContext context) => Text(

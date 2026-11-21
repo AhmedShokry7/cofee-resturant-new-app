@@ -19,6 +19,7 @@ class VisualEditorRightInspector extends StatelessWidget {
     required this.selectedComponent,
     required this.onPropertyChanged,
     required this.onResetProperty,
+    this.onPropertiesChanged,
     required this.imagePermissions,
     this.onClose,
     this.onSaveDraft,
@@ -37,6 +38,11 @@ class VisualEditorRightInspector extends StatelessWidget {
     required String propertyKey,
   })
   onResetProperty;
+  final void Function({
+    required String componentId,
+    required Map<String, dynamic> values,
+  })?
+  onPropertiesChanged;
   final Set<String> imagePermissions;
   final VoidCallback? onClose;
   final VoidCallback? onSaveDraft;
@@ -140,6 +146,7 @@ class VisualEditorRightInspector extends StatelessWidget {
             showHeader: false,
             onPropertyChanged: onPropertyChanged,
             onResetProperty: onResetProperty,
+            onPropertiesChanged: onPropertiesChanged,
             onBrowseImages: () => showVisualEditorImageAssetPicker(
               context: context,
               repository: VisualEditorImageAssetRepository(),

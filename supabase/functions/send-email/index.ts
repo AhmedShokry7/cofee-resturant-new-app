@@ -12,10 +12,14 @@ import {
   handleUnsubscribe,
   createSupabaseStore,
   unsubscribeTokenFor,
+  handleAuthEmailHook,
 } from "./handler.ts";
 
 Deno.serve((req) => {
   const path = new URL(req.url).pathname.replace(/\/+$/, "");
+  if (path.endsWith("/auth-hook")) {
+    return handleAuthEmailHook(req, { env: (name) => Deno.env.get(name) });
+  }
   if (!path.endsWith("/unsubscribe")) {
     return handleEmailRequest(req);
   }

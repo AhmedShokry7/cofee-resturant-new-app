@@ -375,32 +375,46 @@ class _OptionGroupSection extends StatelessWidget {
         else
           SizedBox(height: AppSpacing.xs),
         if (group.isSingleSelect)
-          Row(
-            children: [
-              for (var i = 0; i < group.values.length; i++) ...[
-                if (i > 0) SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _ValueChip(
-                    label: _label(group.values[i]),
-                    hint: _delta(group.values[i]),
-                    selected: selection
-                        .inGroup(group.id)
-                        .contains(group.values[i].id),
-                    icon: showCupArt
-                        ? CupIcon(
-                            size: CupSize.fromCode(group.values[i].code),
-                            selected: selection
-                                .inGroup(group.id)
-                                .contains(group.values[i].id),
-                          )
-                        : null,
-                    onTap: () => context
-                        .read<ProductDetailsCubit>()
-                        .toggleValue(group.id, group.values[i].id),
-                  ),
-                ),
-              ],
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Keep choices readable for long names and larger option sets.
+              // A fixed Row of Expanded chips squeezed every choice into one
+              // line and overflowed on narrow phones or with many values.
+              final columns = constraints.maxWidth >= 520
+                  ? 4
+                  : constraints.maxWidth >= 340
+                  ? 3
+                  : 2;
+              final gap = AppSpacing.sm;
+              final chipWidth =
+                  (constraints.maxWidth - gap * (columns - 1)) / columns;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  for (final value in group.values)
+                    SizedBox(
+                      width: chipWidth,
+                      child: _ValueChip(
+                        label: _label(value),
+                        hint: _delta(value),
+                        selected: selection.inGroup(group.id).contains(value.id),
+                        icon: showCupArt
+                            ? CupIcon(
+                                size: CupSize.fromCode(value.code),
+                                selected: selection
+                                    .inGroup(group.id)
+                                    .contains(value.id),
+                              )
+                            : null,
+                        onTap: () => context
+                            .read<ProductDetailsCubit>()
+                            .toggleValue(group.id, value.id),
+                      ),
+                    ),
+                ],
+              );
+            },
           )
         else
           for (final value in group.values)
@@ -441,47 +455,58 @@ class _ValueChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hintAmount = hint;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColor.primaryColor.withValues(alpha: 0.1)
-              : AppColor.whiteColor,
-          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-          border: Border.all(
-            color: selected ? AppColor.primaryColor : AppColor.borderColor,
-            width: selected ? 1.5 : 1,
+    final surface = Theme.of(context).brightness == Brightness.dark
+        ? AppColor.darkSurface
+        : AppColor.whiteColor;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[icon!, SizedBox(height: AppSpacing.xs)],
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: AppFonts.medium14(context).copyWith(
-                color: selected ? AppColor.primaryColor : AppColor.blackColor,
-              ),
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColor.primaryColor.withValues(alpha: 0.1)
+                : surface,
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+            border: Border.all(
+              color: selected ? AppColor.primaryColor : AppColor.borderColor,
+              width: selected ? 1.5 : 1,
             ),
-            if (hintAmount != null)
-              PriceLabel(
-                amount: hintAmount,
-                prefix: '+',
-                style: AppFonts.regular12(context).copyWith(
-                  color: selected ? AppColor.primaryColor : AppColor.greyColor,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[icon!, SizedBox(height: AppSpacing.xs)],
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppFonts.medium14(context).copyWith(
+                  color: selected
+                      ? AppColor.primaryColor
+                      : AppColor.textPrimary,
                 ),
-                iconSize: 12,
-                iconColor: selected
-                    ? AppColor.primaryColor
-                    : AppColor.greyColor,
               ),
-          ],
+              if (hintAmount != null)
+                PriceLabel(
+                  amount: hintAmount,
+                  prefix: '+',
+                  style: AppFonts.regular12(context).copyWith(
+                    color: selected
+                        ? AppColor.primaryColor
+                        : AppColor.greyColor,
+                  ),
+                  iconSize: 12,
+                  iconColor: selected
+                      ? AppColor.primaryColor
+                      : AppColor.greyColor,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -503,54 +528,62 @@ class _ValueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        margin: EdgeInsets.only(bottom: AppSpacing.sm),
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: AppColor.cardSurface,
-          borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
-          border: Border.all(
-            color: selected ? AppColor.primaryColor : AppColor.borderColor,
-            width: selected ? 1.5 : 1,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+        child: Container(
+          margin: EdgeInsets.only(bottom: AppSpacing.sm),
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
           ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: AppSizes.px22,
-              width: AppSizes.px22,
-              decoration: BoxDecoration(
-                color: selected ? AppColor.primaryColor : AppColor.transparent,
-                borderRadius: BorderRadius.circular(AppRadius.r6),
-                border: Border.all(
-                  color: selected ? AppColor.primaryColor : AppColor.greyColor,
-                ),
-              ),
-              child: selected
-                  ? Icon(
-                      AppIcons.checkmark,
-                      size: AppSpacing.lg,
-                      color: AppColor.whiteColor,
-                    )
-                  : null,
+          decoration: BoxDecoration(
+            color: AppColor.cardSurface,
+            borderRadius: BorderRadius.circular(AppDimensions.cardRadius),
+            border: Border.all(
+              color: selected ? AppColor.primaryColor : AppColor.borderColor,
+              width: selected ? 1.5 : 1,
             ),
-            SizedBox(width: AppSpacing.sm),
-            Expanded(child: Text(label, style: AppFonts.medium14(context))),
-            if (hint != null)
-              PriceLabel(
-                amount: hint!,
-                prefix: '+',
-                style: AppFonts.semiBold14(context)
-                    .copyWith(color: AppColor.primaryColor),
-                iconSize: 13,
-                iconColor: AppColor.primaryColor,
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: AppSizes.px22,
+                width: AppSizes.px22,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? AppColor.primaryColor
+                      : AppColor.transparent,
+                  borderRadius: BorderRadius.circular(AppRadius.r6),
+                  border: Border.all(
+                    color: selected
+                        ? AppColor.primaryColor
+                        : AppColor.greyColor,
+                  ),
+                ),
+                child: selected
+                    ? Icon(
+                        AppIcons.checkmark,
+                        size: AppSpacing.lg,
+                        color: AppColor.whiteColor,
+                      )
+                    : null,
               ),
-          ],
+              SizedBox(width: AppSpacing.sm),
+              Expanded(child: Text(label, style: AppFonts.medium14(context))),
+              if (hint != null)
+                PriceLabel(
+                  amount: hint!,
+                  prefix: '+',
+                  style: AppFonts.semiBold14(context)
+                      .copyWith(color: AppColor.primaryColor),
+                  iconSize: 13,
+                  iconColor: AppColor.primaryColor,
+                ),
+            ],
+          ),
         ),
       ),
     );

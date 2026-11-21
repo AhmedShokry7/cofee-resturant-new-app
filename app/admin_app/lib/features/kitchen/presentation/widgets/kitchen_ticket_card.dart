@@ -438,6 +438,9 @@ class _KitchenItemRow extends StatelessWidget {
                         Expanded(
                           child: Text(
                             note,
+                            textAlign: TextAlign.start,
+                            textDirection: Directionality.of(context),
+                            softWrap: true,
                             style: TextStyle(
                               color: adminFlagForeground(
                                 theme,
@@ -603,6 +606,9 @@ class _CustomerNote extends StatelessWidget {
                 ),
                 Text(
                   note,
+                  textAlign: TextAlign.start,
+                  textDirection: Directionality.of(context),
+                  softWrap: true,
                   style: TextStyle(
                     color: foreground,
                     fontSize: AppFontSizes.size9_5,

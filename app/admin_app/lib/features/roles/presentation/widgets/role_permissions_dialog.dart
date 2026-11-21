@@ -15,8 +15,11 @@ Future<void> showRolePermissionsDialog({
   required bool canManage,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  // The database grants the owner role every permission implicitly, so its
+  // stored permission rows are informational and must never be editable.
+  final editable = canManage && !role.isOwner;
   List<Map<String, dynamic>> allPermissions;
-  if (canManage) {
+  if (editable) {
     try {
       allPermissions = await cubit.loadPermissions();
     } catch (_) {
@@ -34,10 +37,10 @@ Future<void> showRolePermissionsDialog({
     subtitle: role.code,
     granted: role.permissions.toSet(),
     catalog: allPermissions,
-    canManage: canManage,
-    emptyMessage: canManage ? null : S.roleNoPermissions,
+    canManage: editable,
+    emptyMessage: editable ? null : S.roleNoPermissions,
     onToggle: (code, granted) =>
         cubit.setRolePermission(role.id, code, granted),
   );
-  if (canManage) await cubit.load();
+  if (editable) await cubit.load();
 }

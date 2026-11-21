@@ -78,8 +78,8 @@ AdminSession _sessionWithPos() => const AdminSession(
   canManageAllBranches: true,
 );
 
-void _setViewport(WidgetTester tester, double width) {
-  tester.view.physicalSize = Size(width, 900);
+void _setViewport(WidgetTester tester, double width, {double height = 900}) {
+  tester.view.physicalSize = Size(width, height);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
@@ -170,6 +170,22 @@ void main() {
 
     searchController.dispose();
     searchTextController.dispose();
+  });
+
+  testWidgets('a tablet keeps navigation in a drawer and gives pages width', (
+    tester,
+  ) async {
+    _setViewport(tester, 1024, height: 768);
+
+    await tester.pumpWidget(
+      MaterialApp(home: AdminShell(session: _sessionWithPos())),
+    );
+    await tester.pump();
+
+    expect(find.byType(AdminMobileLayout), findsOneWidget);
+    expect(find.byType(AdminDesktopLayout), findsNothing);
+    expect(find.byTooltip(S.menu), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('the sidebar follows the language of the panel', (tester) async {

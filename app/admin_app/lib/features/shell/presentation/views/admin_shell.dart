@@ -1,4 +1,5 @@
 import 'package:admin_app/core/auth/admin_session.dart';
+import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_locale.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/models/admin_product.dart';
@@ -498,7 +499,7 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
 
   Widget _buildShell(BuildContext context, AdminNavCounts counts) {
     final width = MediaQuery.sizeOf(context).width;
-    final isWide = width >= 900;
+    final isWide = width >= AppBreakpoints.adminDesktopShell;
     final data = _buildLayoutData(counts);
     // الصفحات تُبنى تحت اليد نفسها: رابط «كل الطلبات» داخل بطاقة ينادي
     // `_select` هنا، فلا صفحة تملك قرارًا هو للقشرة.

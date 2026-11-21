@@ -25,6 +25,7 @@ void main() {
     expect(customer, admin);
     expect(customer, contains('SET_LANGUAGE'));
     expect(customer, contains('SET_THEME_MODE'));
+    expect(customer, contains('SET_INTERACTIVE_MODE'));
   });
 }
 

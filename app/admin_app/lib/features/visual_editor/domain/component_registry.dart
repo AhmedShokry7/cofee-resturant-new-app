@@ -140,19 +140,25 @@ class ComponentRegistry {
 
   /// Get a component entry by type
   static ComponentRegistryEntry? get(String componentType) {
+    initialize();
     return _registry[componentType];
   }
 
   /// Get all registered components
-  static List<ComponentRegistryEntry> get all => _registry.values.toList();
+  static List<ComponentRegistryEntry> get all {
+    initialize();
+    return _registry.values.toList();
+  }
 
   /// Get components by category
   static List<ComponentRegistryEntry> getByCategory(String category) {
+    initialize();
     return _registry.values.where((e) => e.category == category).toList();
   }
 
   /// Get components allowed for a specific page
   static List<ComponentRegistryEntry> getForPage(String pageId) {
+    initialize();
     final page = EditorPages.findById(pageId);
     if (page == null) return [];
     return _registry.values
@@ -162,6 +168,7 @@ class ComponentRegistry {
 
   /// Get components that can be children of a parent type
   static List<ComponentRegistryEntry> getAllowedChildren(String parentType) {
+    initialize();
     final parent = _registry[parentType];
     if (parent == null) return [];
     return _registry.values
@@ -171,6 +178,7 @@ class ComponentRegistry {
 
   /// Check if a component can be added to a parent
   static bool canAddToParent(String childType, String parentType) {
+    initialize();
     final parent = _registry[parentType];
     if (parent == null) return false;
     return parent.allowedChildTypes.contains(childType);
@@ -178,6 +186,7 @@ class ComponentRegistry {
 
   /// Check if a component can be moved to a new parent
   static bool canMoveToParent(String componentType, String newParentType) {
+    initialize();
     final component = _registry[componentType];
     final parent = _registry[newParentType];
     if (component == null || parent == null) return false;
@@ -189,6 +198,7 @@ class ComponentRegistry {
   static Map<String, ComponentPropertyDefinition> getEditableProperties(
     String componentType,
   ) {
+    initialize();
     final entry = _registry[componentType];
     if (entry == null) return {};
     return Map<String, ComponentPropertyDefinition>.from(entry.properties)

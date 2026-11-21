@@ -29,9 +29,12 @@ class PreviewBridge {
     required String componentId,
     required String propertyKey,
     required dynamic value,
+    String? requestId,
     bool success = true,
     String? error,
   }) {}
+
+  void sendPreviewError(String message) {}
 
   void sendTreeUpdated({
     required String pageId,

@@ -150,6 +150,36 @@ void main() {
     cubit = VisualEditorCubit(repository: repository);
   });
 
+  tearDown(() => cubit.close());
+
+  void confirmPreview(String requestId, {bool success = true}) {
+    cubit.handlePropertyUpdated({
+      'payload': {'requestId': requestId, 'success': success},
+    });
+  }
+
+  test(
+    'publishing does not hang on a failed preview acknowledgement',
+    () async {
+      await cubit.initialize();
+      cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+      final first = cubit.pendingMessage!.messageId;
+      cubit.undo();
+      final latest = cubit.pendingMessage!.messageId;
+
+      confirmPreview(first);
+      expect(cubit.state.previewUpdatesPending, 1);
+      expect(await cubit.publish(), isNotNull);
+      expect(repository.publishCalls, 1);
+
+      confirmPreview(latest, success: false);
+      expect(cubit.state.previewUpdatesPending, 0);
+      expect(cubit.state.previewConnection, PreviewConnection.error);
+      expect(await cubit.publish(), isNotNull);
+      expect(repository.publishCalls, 2);
+    },
+  );
+
   test('المعاينة الجاهزة تستقبل المستند بعد اكتمال تحميل المحرر', () async {
     final gate = Completer<EditorDraft?>();
     repository.draftGate = gate;
@@ -274,8 +304,11 @@ void main() {
 
   test('خطأ المعاينة لا يحوّل حالة المحرر الجاهز إلى فشل', () async {
     await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    expect(cubit.state.previewUpdatesPending, 1);
     cubit.handlePreviewError({'error': 'preview unavailable'});
     expect(cubit.state.status, VisualEditorStatus.ready);
+    expect(cubit.state.previewUpdatesPending, 0);
     expect(cubit.state.previewConnection, PreviewConnection.error);
     expect(cubit.state.errorMessage, 'preview unavailable');
   });
@@ -312,6 +345,8 @@ void main() {
 
   test('تغيير صورة ولون الافتتاحية يصل إلى مستند المعاينة كاملًا', () async {
     await cubit.initialize();
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    final homeGrid = cubit.state.getComponentsForPage('home').last;
     cubit.loadPage('splash');
     final splashId = cubit.state.selectedComponentId!;
 
@@ -325,7 +360,37 @@ void main() {
       propertyKey: 'backgroundColor',
       value: '#2E7D32',
     );
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'text_ar',
+      value: 'أهلاً بك',
+    );
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'text_en',
+      value: 'Welcome',
+    );
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'textColor',
+      value: '#F5F5F5',
+    );
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'durationMs',
+      value: 2400,
+    );
+    cubit.updateProperty(
+      componentId: splashId,
+      propertyKey: 'animation',
+      value: 'fade',
+    );
 
+    expect(
+      cubit.pendingMessage?.type,
+      VisualEditorMessageType.applyDesignConfig,
+    );
+    expect(cubit.pendingMessage?.payload['awaitPreviewAck'], isTrue);
     final document =
         cubit.pendingMessage!.payload['designDocument'] as Map<String, dynamic>;
     final pages = document['pages'] as List;
@@ -338,6 +403,23 @@ void main() {
 
     expect(properties['imageUrl'], 'https://example.invalid/new-splash.png');
     expect(properties['backgroundColor'], '#2E7D32');
+    expect(properties['text_ar'], 'أهلاً بك');
+    expect(properties['text_en'], 'Welcome');
+    expect(properties['textColor'], '#F5F5F5');
+    expect(properties['durationMs'], 2400);
+    expect(properties['animation'], 'fade');
+    expect(properties['imageVisible'], isTrue);
+    expect(properties['imageFit'], 'contain');
+    expect(
+      cubit.state
+          .getComponentsForPage('home')
+          .firstWhere(
+            (component) => component.componentId == homeGrid.componentId,
+          )
+          .properties['columns'],
+      homeGrid.properties['columns'],
+      reason: 'Editing Splash must keep components on other pages intact.',
+    );
   });
 
   test('حفظ قديم لا يمسح dirty ولا يتسابق مع حفظ أحدث', () async {
@@ -464,6 +546,7 @@ void main() {
     expect(repository.publishedDocuments, hasLength(1));
 
     cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    confirmPreview(cubit.pendingMessage!.messageId);
     final version = await cubit.publish();
     expect(version, isNotNull);
     expect(repository.publishedDocuments, hasLength(2));
@@ -490,6 +573,7 @@ void main() {
     // في الحالة قبل اتصال المستودع.
     await cubit.initialize();
     cubit.addComponent(pageId: 'home', componentType: 'bannerCarousel');
+    confirmPreview(cubit.pendingMessage!.messageId);
     final version = await cubit.publish();
     expect(version, isNotNull);
     expect(repository.failedPublishDocument, isNull);
@@ -504,11 +588,11 @@ void main() {
     expect(cubit.state.isDirty, isFalse);
   });
 
-  test('الاسترجاع يجيب بخطأ مفهوم حين يفشل', () async {
+  test('معاينة إصدار غير موجود تعرض رسالة واضحة', () async {
     await cubit.initialize();
-    final result = await cubit.restoreVersion('missing-version');
-    expect(result, isNull);
-    expect(cubit.state.errorMessage, contains('تعذر استرجاع الإصدار'));
+    final result = await cubit.previewVersion('missing-version');
+    expect(result, isFalse);
+    expect(cubit.state.errorMessage, contains('تعذر تحميل مستند الإصدار'));
   });
 
   test('سجل الإصدارات يقرأ من المستودع بترتيبه', () async {

@@ -21,6 +21,7 @@ enum VisualEditorMessageType {
   previewRefresh('PREVIEW_REFRESH'),
   setLanguage('SET_LANGUAGE'),
   setThemeMode('SET_THEME_MODE'),
+  setInteractiveMode('SET_INTERACTIVE_MODE'),
   saveRequest('SAVE_REQUEST');
 
   const VisualEditorMessageType(this.value);
@@ -893,92 +894,12 @@ class PreviewPage {
 class PreviewPages {
   PreviewPages._();
 
-  static const List<PreviewPage> all = [
-    // ---- الإقلاع والدخول ----
-    PreviewPage(pageId: 'splash', label: 'الافتتاحية', isEditable: true),
-    PreviewPage(pageId: 'welcome', label: 'الترحيب', isEditable: true),
-    PreviewPage(pageId: 'onboarding', label: 'التعريف', isEditable: true),
-    PreviewPage(pageId: 'auth', label: 'تسجيل الدخول', isEditable: true),
-    PreviewPage(pageId: 'sign_up', label: 'حساب جديد', isEditable: true),
-    PreviewPage(
-      pageId: 'forget_password',
-      label: 'نسيت كلمة المرور',
-      isEditable: true,
-    ),
-    PreviewPage(
-      pageId: 'reset_password',
-      label: 'إعادة التعيين',
-      isEditable: true,
-    ),
-    PreviewPage(pageId: 'phone_auth', label: 'دخول بالهاتف', isEditable: true),
-    PreviewPage(pageId: 'email_auth', label: 'دخول بالبريد', isEditable: true),
-    // ---- التبويبات الرئيسية (قابلة للتحرير: home/categories) ----
-    PreviewPage(pageId: 'home', label: 'الرئيسية', isEditable: true),
-    PreviewPage(pageId: 'categories', label: 'التصنيفات', isEditable: true),
-    PreviewPage(pageId: 'search', label: 'البحث', isEditable: true),
-    PreviewPage(pageId: 'cart', label: 'السلة', isEditable: true),
-    PreviewPage(pageId: 'favourites', label: 'المفضلة', isEditable: true),
-    PreviewPage(pageId: 'settings', label: 'الإعدادات', isEditable: true),
-    // ---- شراء ----
-    PreviewPage(pageId: 'checkout', label: 'إتمام الطلب', isEditable: true),
-    PreviewPage(
-      pageId: 'shipping_addresses',
-      label: 'عناوين الشحن',
-      isEditable: true,
-    ),
-    PreviewPage(pageId: 'add_address', label: 'إضافة عنوان', isEditable: true),
-    PreviewPage(
-      pageId: 'payment_method',
-      label: 'طريقة الدفع',
-      isEditable: true,
-    ),
-    PreviewPage(pageId: 'add_card', label: 'إضافة بطاقة', isEditable: true),
-    PreviewPage(
-      pageId: 'payment_success',
-      label: 'نجاح الدفع',
-      isEditable: true,
-    ),
-    PreviewPage(pageId: 'e_receipt', label: 'الإيصال', isEditable: true),
-    PreviewPage(pageId: 'coupon', label: 'الكوبونات', isEditable: true),
-    // ---- الحساب ----
-    PreviewPage(pageId: 'orders', label: 'الطلبات', isEditable: true),
-    PreviewPage(pageId: 'edit_profile', label: 'تعديل الملف', isEditable: true),
-    PreviewPage(
-      pageId: 'saved_cards',
-      label: 'البطاقات المحفوظة',
-      isEditable: true,
-    ),
-    PreviewPage(pageId: 'addresses', label: 'العناوين', isEditable: true),
-    PreviewPage(pageId: 'address_form', label: 'نموذج عنوان', isEditable: true),
-    PreviewPage(pageId: 'loyalty', label: 'الولاء', isEditable: true),
-    PreviewPage(
-      pageId: 'subscription_plans',
-      label: 'الاشتراكات',
-      isEditable: true,
-    ),
-    PreviewPage(
-      pageId: 'subscription_details',
-      label: 'تفاصيل الاشتراك',
-      isEditable: true,
-    ),
-    PreviewPage(
-      pageId: 'cashier_subscription',
-      label: 'استهلاك كاشير',
-      isEditable: true,
-    ),
-    // ---- محتوى وإعدادات ----
-    PreviewPage(pageId: 'notifications', label: 'الإشعارات', isEditable: true),
-    PreviewPage(
-      pageId: 'notification_settings',
-      label: 'إعدادات الإشعارات',
-      isEditable: true,
-    ),
-    PreviewPage(pageId: 'help', label: 'المساعدة', isEditable: true),
-    PreviewPage(pageId: 'privacy', label: 'الخصوصية', isEditable: true),
-    PreviewPage(
-      pageId: 'assistant_memory',
-      label: 'ذاكرة المساعد',
-      isEditable: true,
-    ),
-  ];
+  static final List<PreviewPage> all = List.unmodifiable([
+    for (final page in EditorPages.pages)
+      PreviewPage(
+        pageId: page.pageId,
+        label: page.label,
+        isEditable: page.isEditable,
+      ),
+  ]);
 }

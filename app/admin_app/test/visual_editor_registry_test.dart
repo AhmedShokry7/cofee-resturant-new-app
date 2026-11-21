@@ -10,6 +10,48 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   setUpAll(ComponentRegistry.initialize);
 
+  test('Splash exposes the complete editable screen contract', () {
+    final splash = ComponentRegistry.get('splashSettings')!;
+    final properties = ComponentRegistry.getEditableProperties(
+      'splashSettings',
+    );
+
+    expect(splash.classification, ComponentClassification.editable);
+    expect(
+      properties.keys,
+      containsAll([
+        'imageVisible',
+        'imageUrl',
+        'imageFit',
+        'imageWidth',
+        'imageHeight',
+        'imageAlignment',
+        'imageGap',
+        'text_ar',
+        'text_en',
+        'textColor',
+        'textSize',
+        'textAlignment',
+        'backgroundColor',
+        'verticalAlignment',
+        'durationMs',
+        'animation',
+        'animationDurationMs',
+      ]),
+    );
+    expect(properties['imageUrl']!.type, PropertyType.imageUrl);
+    expect(properties['durationMs']!.type, PropertyType.integer);
+    expect(properties['text_ar']!.type, PropertyType.text);
+    expect(properties['textColor']!.type, PropertyType.color);
+    expect(properties['backgroundColor']!.type, PropertyType.color);
+    expect(properties['animation']!.options, ['none', 'fade', 'fadeScale']);
+    expect(properties['durationMs']!.validation, {'min': 0, 'max': 30000});
+    expect(properties['animationDurationMs']!.validation, {
+      'min': 0,
+      'max': 5000,
+    });
+  });
+
   test('كل مكوّن مسجّل بلا تعارض', () {
     final all = ComponentRegistry.all;
     expect(all, isNotEmpty);

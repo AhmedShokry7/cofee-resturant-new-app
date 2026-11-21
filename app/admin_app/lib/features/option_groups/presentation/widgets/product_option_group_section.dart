@@ -44,15 +44,23 @@ class ProductOptionGroupSection extends StatelessWidget {
     final type = group.selectionType == AdminOptionSelectionType.single
         ? S.singleChoiceLabel
         : S.multipleChoicesLabel;
+    final requirement = group.isRequired
+        ? S.requiredShortLabel
+        : S.optionalShortLabel;
     return AdminSectionCard(
       title: group.nameFor(AppLocale.instance.language),
-      subtitle: group.isRequired ? '$type · ${S.requiredGroupLabel}' : type,
+      subtitle: '$type · $requirement',
       leading: const AppIcon(AppIcons.layers01, size: 16),
       count: group.values.length,
-      trailing: Switch(
-        key: ValueKey('product-option-attach-${group.id}'),
-        value: group.isAttached,
-        onChanged: saving ? null : onAttachChanged,
+      trailing: Tooltip(
+        message: group.isAttached
+            ? S.hideOptionGroupFromProduct
+            : S.showOptionGroupOnProduct,
+        child: Switch(
+          key: ValueKey('product-option-attach-${group.id}'),
+          value: group.isAttached,
+          onChanged: saving ? null : onAttachChanged,
+        ),
       ),
       child: _body(context),
     );

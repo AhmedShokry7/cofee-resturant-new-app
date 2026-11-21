@@ -105,6 +105,7 @@ class PreviewBridge {
     required String componentId,
     required String propertyKey,
     required dynamic value,
+    String? requestId,
     bool success = true,
     String? error,
   }) {
@@ -118,13 +119,26 @@ class PreviewBridge {
           'propertyKey': propertyKey,
           'value': value,
           'success': success,
-          if (error != null) 'error': error,
+          'requestId': ?requestId,
+          'error': ?error,
         },
       ),
     );
   }
 
   /// Send the current tree state so the editor can sync its layers panel.
+  void sendPreviewError(String message) {
+    final sessionId = _sessionId;
+    if (sessionId == null) return;
+    _post(
+      PreviewMessage(
+        sessionId: sessionId,
+        type: PreviewMessageType.previewError,
+        payload: {'error': message},
+      ),
+    );
+  }
+
   void sendTreeUpdated({
     required String pageId,
     required List<Map<String, dynamic>> nodes,

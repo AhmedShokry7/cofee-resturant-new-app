@@ -15,6 +15,9 @@ class AdminRole {
   final bool isSystem;
   final List<String> permissions;
 
+  /// The owner role is implicitly granted every permission by the database.
+  bool get isOwner => code == 'owner';
+
   factory AdminRole.fromJson(Map<String, dynamic> json) {
     final perms = json['permissions'] as List<dynamic>?;
     return AdminRole(

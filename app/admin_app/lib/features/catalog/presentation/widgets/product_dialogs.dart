@@ -19,6 +19,7 @@ import 'package:admin_app/features/catalog/data/category_excel_mapper.dart';
 import 'package:admin_app/features/catalog/data/product_excel_mapper.dart';
 import 'package:admin_app/features/catalog/presentation/manager/admin_product_cubit.dart';
 import 'package:admin_app/shared/widgets/currency_icon.dart';
+import 'package:admin_app/shared/widgets/currency_input_row.dart';
 import 'package:admin_app/shared/widgets/discount_pill.dart';
 
 /// The unit the admin picks for the preparation time.
@@ -583,28 +584,56 @@ class _ProductDataDialogState extends State<ProductDataDialog> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: TextField(
-        controller: controller,
-        maxLines: lines,
-        minLines: lines > 1 ? lines : null,
-        textDirection: textDirection,
-        keyboardType: number
-            ? const TextInputType.numberWithOptions(decimal: true)
-            : TextInputType.text,
-        onChanged: onChanged,
-        style: Theme.of(context).textTheme.bodyMedium,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: Theme.of(context).textTheme.bodyMedium
-              ?.copyWith(color: AppColor.greyColor),
-          suffixIcon: currency ? const CurrencyIcon(size: 10) : null,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.md,
-          ),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
+      child: currency
+          ? CurrencyInputRow(
+              child: _buildTextField(
+                controller,
+                label,
+                number,
+                lines,
+                onChanged,
+                textDirection,
+              ),
+            )
+          : _buildTextField(
+              controller,
+              label,
+              number,
+              lines,
+              onChanged,
+              textDirection,
+            ),
+    );
+  }
+
+  TextField _buildTextField(
+    TextEditingController controller,
+    String label,
+    bool number,
+    int lines,
+    ValueChanged<String>? onChanged,
+    TextDirection? textDirection,
+  ) {
+    return TextField(
+      controller: controller,
+      maxLines: lines,
+      minLines: lines > 1 ? lines : null,
+      textDirection: textDirection,
+      keyboardType: number
+          ? const TextInputType.numberWithOptions(decimal: true)
+          : TextInputType.text,
+      onChanged: onChanged,
+      style: Theme.of(context).textTheme.bodyMedium,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: Theme.of(context).textTheme.bodyMedium
+            ?.copyWith(color: AppColor.greyColor),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
       ),
     );

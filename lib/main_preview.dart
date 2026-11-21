@@ -21,6 +21,8 @@ import 'package:new_coffee/features/design/presentation/manager/design/design_cu
 import 'package:new_coffee/features/design/presentation/manager/design/design_state.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/main_page.dart';
+import 'package:new_coffee/features/menu/data/repositories/product_repository.dart';
+import 'package:new_coffee/features/menu/presentation/views/product_details_page.dart';
 
 /// Preview mode entry point for the Customer App.
 ///
@@ -96,6 +98,7 @@ class _PreviewAppState extends State<PreviewApp> {
   /// الصفحة التي يشاهدها الموظف في المحاكي الآن — شجرتها هي التي تُرسل
   /// راجعة إلى لوحة الطبقات. الافتتاحية دائمًا الرئيسية.
   String _currentPreviewPage = 'home';
+  int _pageLoadId = 0;
 
   @override
   void initState() {
@@ -134,7 +137,11 @@ class _PreviewAppState extends State<PreviewApp> {
       ..onMessage(PreviewMessageType.selectElement, _handleSelectElement)
       ..onMessage(PreviewMessageType.previewRefresh, _handleRefresh)
       ..onMessage(PreviewMessageType.setLanguage, _handleSetLanguage)
-      ..onMessage(PreviewMessageType.setThemeMode, _handleSetThemeMode);
+      ..onMessage(PreviewMessageType.setThemeMode, _handleSetThemeMode)
+      ..onMessage(
+        PreviewMessageType.setInteractiveMode,
+        _handleSetInteractiveMode,
+      );
     _watchDesignForTreeUpdates();
   }
 
@@ -224,47 +231,81 @@ class _PreviewAppState extends State<PreviewApp> {
 
   /// أي رسالة تحرير تحمل `designDocument` في حمولتها تطبّق كاملة: المحرّر
   /// يملك حالة الوثيقة، والهاتف يرسم ما أُرسل لا ما خمّنه.
-  void _applyDocument(PreviewMessage message) {
+  Future<void> _applyDocument(PreviewMessage message) async {
     _applyPreviewSettings(message.payload);
     final raw = message.payload['designDocument'];
-    if (raw is! Map) {
-      _bridge.sendPropertyUpdated(
-        componentId: message.payload['componentId'] as String? ?? '',
-        propertyKey: message.payload['propertyKey'] as String? ?? '',
-        value: message.payload['value'],
-        success: false,
-        error: 'design_document_missing',
-      );
+    final context = rootNavigatorKey.currentContext;
+    if (raw is! Map || context == null) {
+      _ack(message, error: 'design_preview_unavailable');
       return;
     }
-    final document = Map<String, dynamic>.from(raw);
-    DesignPreviewStore.instance.setDocument(document);
-    // المسار نفسه الذي يرسم به الهاتف يوم النشر: قراءة المنشور، ثم تطبيق
-    // الطبقة، ثم إعادة بناء الشاشة.
-    BlocProvider.of<DesignCubit>(rootNavigatorKey.currentContext!)
-        .load(forceRefresh: true);
-    _ack(message);
+    try {
+      final document = Map<String, dynamic>.from(raw);
+      if (PublishedDesign.fromJson(document) == null) {
+        _ack(message, error: 'design_document_invalid');
+        return;
+      }
+      DesignPreviewStore.instance.setDocument(document);
+      final designLoad = context.read<DesignCubit>().load(forceRefresh: true);
+      if (message.type == PreviewMessageType.previewInitialize &&
+          message.payload['pageId'] is String &&
+          message.payload['pageId'] != _currentPreviewPage) {
+        await _handleLoadPage(message);
+      }
+      await designLoad;
+      await WidgetsBinding.instance.endOfFrame;
+      if (mounted) _ack(message);
+    } catch (_) {
+      if (mounted) _ack(message, error: 'design_document_apply_failed');
+    }
   }
 
-  /// تأكيد رسالة تحرير واحدة — الرسالة كلها طبّقت كاملة.
-  void _ack(PreviewMessage message) {
+  void _ack(PreviewMessage message, {String? error}) {
     _bridge.sendPropertyUpdated(
       componentId: message.payload['componentId'] as String? ?? '',
       propertyKey: message.payload['propertyKey'] as String? ?? '',
       value: message.payload['value'],
-      success: true,
+      requestId: message.messageId,
+      success: error == null,
+      error: error,
     );
   }
 
-  void _handleLoadPage(PreviewMessage message) {
+  Future<void> _handleLoadPage(PreviewMessage message) async {
     final pageId = message.payload['pageId'];
     if (pageId is! String) return;
     // الصفحة المعروضة الآن هي التي تُبلّغ شجرتها الراجعة إلى المحرّر.
     _currentPreviewPage = pageId;
+    final loadId = ++_pageLoadId;
     final navigator = rootNavigatorKey.currentState;
     if (navigator == null) return;
     // التبويبات الخمسة تُفتح بإعادة فتح MainPage بتبويبها — نفس ما يستدعي
     // التطبيق نفسه، وinitialTab يقرأه MainPage الجديد عند إنشائه.
+    if (pageId == 'product_details') {
+      final context = rootNavigatorKey.currentContext;
+      if (context == null) return;
+      try {
+        final products = await context.read<CatalogRepository>().getProducts(
+          limit: 1,
+        );
+        if (!mounted || loadId != _pageLoadId) return;
+        if (products.isEmpty) {
+          _bridge.sendPreviewError(
+            'لا يوجد منتج متاح لفتح صفحة تفاصيل المنتج في المعاينة.',
+          );
+          return;
+        }
+        navigator.pushNamedAndRemoveUntil(
+          ProductDetailsPage.routeName,
+          (route) => route.isFirst,
+          arguments: products.first,
+        );
+      } catch (_) {
+        if (!mounted || loadId != _pageLoadId) return;
+        _bridge.sendPreviewError('تعذر تحميل منتج لعرض تفاصيله في المعاينة.');
+      }
+      return;
+    }
     switch (pageId) {
       case 'home':
         MainCubit.initialTab = 0;
@@ -326,6 +367,12 @@ class _PreviewAppState extends State<PreviewApp> {
     };
     if (themeMode == null) return;
     _applyPreviewThemeMode(themeMode);
+    _ack(message);
+  }
+
+  void _handleSetInteractiveMode(PreviewMessage message) {
+    previewInteractiveMode.value = message.payload['enabled'] == true;
+    if (previewInteractiveMode.value) previewSelectedSectionId.value = null;
     _ack(message);
   }
 

@@ -17,6 +17,7 @@ class VisualEditorState {
     this.selectedComponentId,
     this.selectedComponent,
     this.previewReady = false,
+    this.previewUpdatesPending = 0,
     this.previewUrl,
     this.isDirty = false,
     this.previewConnection = PreviewConnection.connecting,
@@ -42,6 +43,11 @@ class VisualEditorState {
 
   /// هل أرسل الـ iframe رسالة PREVIEW_READY.
   final bool previewReady;
+
+  /// Number of document updates awaiting acknowledgement from the customer
+  /// preview. A preview failure clears this status; it does not block saving
+  /// or publishing a valid design document.
+  final int previewUpdatesPending;
 
   /// حالة قناة المعاينة كما يراها الموظف — أصدق من مؤشر ثنائي.
   final PreviewConnection previewConnection;
@@ -70,6 +76,7 @@ class VisualEditorState {
     String? selectedComponentId,
     EditableComponent? selectedComponent,
     bool? previewReady,
+    int? previewUpdatesPending,
     String? previewUrl,
     bool? isDirty,
     PreviewConnection? previewConnection,
@@ -91,6 +98,7 @@ class VisualEditorState {
         ? null
         : (selectedComponent ?? this.selectedComponent),
     previewReady: previewReady ?? this.previewReady,
+    previewUpdatesPending: previewUpdatesPending ?? this.previewUpdatesPending,
     previewUrl: previewUrl ?? this.previewUrl,
     isDirty: isDirty ?? this.isDirty,
     previewConnection: previewConnection ?? this.previewConnection,

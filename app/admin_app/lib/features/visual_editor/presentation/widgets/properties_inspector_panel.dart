@@ -39,6 +39,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
     required this.onResetProperty,
     this.onPickImage,
     this.onBrowseImages,
+    this.onPropertiesChanged,
     this.showHeader = true,
   });
 
@@ -56,6 +57,11 @@ class PropertiesInspectorPanel extends StatelessWidget {
   onResetProperty;
   final Future<String?> Function()? onPickImage;
   final Future<String?> Function()? onBrowseImages;
+  final void Function({
+    required String componentId,
+    required Map<String, dynamic> values,
+  })?
+  onPropertiesChanged;
   final bool showHeader;
 
   @override
@@ -75,7 +81,16 @@ class PropertiesInspectorPanel extends StatelessWidget {
     final grouped =
         <String?, List<MapEntry<String, ComponentPropertyDefinition>>>{};
     for (final e in editableProps.entries) {
-      grouped.putIfAbsent(e.value.group, () => []).add(e);
+      final definition = e.value;
+      final group =
+          definition.type == PropertyType.spacing ||
+              RegExp(
+                r'^(padding|margin|inset|gap)',
+                caseSensitive: false,
+              ).hasMatch(e.key)
+          ? 'المسافات'
+          : definition.group;
+      grouped.putIfAbsent(group, () => []).add(e);
     }
 
     // ─── خصائص حقيقية موجودة في المكوّن لكن غير مسجلة ───
@@ -113,33 +128,145 @@ class PropertiesInspectorPanel extends StatelessWidget {
                       : null,
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   children: [
-                    // خصائص السجل المجمّعة
-                    for (final groupKey in grouped.keys)
-                      _PropertyGroup(
-                        groupLabel: groupKey,
-                        fields: _pairBilingualFields(grouped[groupKey]!),
-                        component: component,
-                        onChanged: onPropertyChanged,
-                        onReset: onResetProperty,
-                        onPickImage: onPickImage,
-                        onBrowseImages: onBrowseImages,
+                    if (component.componentType == 'splashSettings') ...[
+                      _splashLayer(
+                        'الخلفية',
+                        const {'backgroundColor'},
+                        editableProps,
+                        component,
+                        onPropertyChanged,
+                        onResetProperty,
+                        onPickImage,
+                        onBrowseImages,
                       ),
-                    if (component.componentType == 'bannerCarousel')
-                      _BannerDraftControls(
-                        component: component,
-                        onChanged: onPropertyChanged,
-                        pickImage:
-                            onPickImage ?? DesignImageUpload.pickAndUpload,
+                      _splashLayer(
+                        'الشعار والصورة',
+                        const {
+                          'imageVisible',
+                          'imageUrl',
+                          'imageFit',
+                          'imageWidth',
+                          'imageHeight',
+                          'imageAlignment',
+                        },
+                        editableProps,
+                        component,
+                        onPropertyChanged,
+                        onResetProperty,
+                        onPickImage,
+                        onBrowseImages,
                       ),
-                    // خصائص إضافية (غير مسجلة)
-                    if (extraProps.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      _ExtraPropsGroup(
-                        props: extraProps,
-                        componentId: component.componentId,
-                        onChanged: onPropertyChanged,
-                        dark: dark,
+                      _splashLayer(
+                        'النص',
+                        const {
+                          'text_ar',
+                          'text_en',
+                          'textColor',
+                          'textSize',
+                          'textAlignment',
+                        },
+                        editableProps,
+                        component,
+                        onPropertyChanged,
+                        onResetProperty,
+                        onPickImage,
+                        onBrowseImages,
                       ),
+                      _splashLayer(
+                        'الموضع والمسافات',
+                        const {'verticalAlignment', 'imageGap'},
+                        editableProps,
+                        component,
+                        onPropertyChanged,
+                        onResetProperty,
+                        onPickImage,
+                        onBrowseImages,
+                      ),
+                      _splashLayer(
+                        'الحركة ومدة العرض',
+                        const {
+                          'durationMs',
+                          'animation',
+                          'animationDurationMs',
+                        },
+                        editableProps,
+                        component,
+                        onPropertyChanged,
+                        onResetProperty,
+                        onPickImage,
+                        onBrowseImages,
+                      ),
+                    ] else ...[
+                      // Keep common content controls visible; layout and visual
+                      // polish remain available under the advanced section.
+                      for (final groupKey in grouped.keys.where(
+                        (key) => !_isAdvancedPropertyGroup(key),
+                      ))
+                        _PropertyGroup(
+                          groupLabel: groupKey,
+                          fields: _pairBilingualFields(grouped[groupKey]!),
+                          component: component,
+                          onChanged: onPropertyChanged,
+                          onReset: onResetProperty,
+                          onPickImage: onPickImage,
+                          onBrowseImages: onBrowseImages,
+                        ),
+                      if (component.componentType == 'bannerCarousel')
+                        _BannerDraftControls(
+                          component: component,
+                          onChanged: onPropertyChanged,
+                          onPropertiesChanged: onPropertiesChanged,
+                          pickImage:
+                              onPickImage ?? DesignImageUpload.pickAndUpload,
+                        ),
+                      if (grouped.keys.any(_isAdvancedPropertyGroup) ||
+                          extraProps.isNotEmpty)
+                        Material(
+                          type: MaterialType.transparency,
+                          child: ExpansionTile(
+                            tilePadding: const EdgeInsetsDirectional.only(
+                              start: AppSpacing.xs,
+                              end: AppSpacing.xs,
+                            ),
+                            childrenPadding: const EdgeInsetsDirectional.only(
+                              start: AppSpacing.sm,
+                              end: AppSpacing.sm,
+                            ),
+                            title: Text(
+                              'المزيد من الإعدادات',
+                              style: TextStyle(
+                                fontSize: AppFontSizes.size11,
+                                fontWeight: AppFontWeights.semiBold,
+                                color: dark
+                                    ? AppColor.darkText
+                                    : AppColor.adminBody,
+                              ),
+                            ),
+                            children: [
+                              for (final groupKey in grouped.keys.where(
+                                _isAdvancedPropertyGroup,
+                              ))
+                                _PropertyGroup(
+                                  groupLabel: groupKey,
+                                  fields: _pairBilingualFields(
+                                    grouped[groupKey]!,
+                                  ),
+                                  component: component,
+                                  onChanged: onPropertyChanged,
+                                  onReset: onResetProperty,
+                                  onPickImage: onPickImage,
+                                  onBrowseImages: onBrowseImages,
+                                ),
+                              if (extraProps.isNotEmpty)
+                                _ExtraPropsGroup(
+                                  props: extraProps,
+                                  componentId: component.componentId,
+                                  onChanged: onPropertyChanged,
+                                  dark: dark,
+                                ),
+                            ],
+                          ),
+                        ),
                     ],
                   ],
                 );
@@ -159,7 +286,49 @@ class PropertiesInspectorPanel extends StatelessWidget {
       ),
     );
   }
+
+  Widget _splashLayer(
+    String title,
+    Set<String> keys,
+    Map<String, ComponentPropertyDefinition> properties,
+    EditableComponent component,
+    void Function({
+      required String componentId,
+      required String propertyKey,
+      required dynamic value,
+    })
+    onChanged,
+    void Function({required String componentId, required String propertyKey})
+    onReset,
+    Future<String?> Function()? onPickImage,
+    Future<String?> Function()? onBrowseImages,
+  ) {
+    final fields = properties.entries
+        .where((entry) => keys.contains(entry.key))
+        .toList();
+    if (fields.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: _PropertyGroup(
+        groupLabel: title,
+        fields: _pairBilingualFields(fields),
+        component: component,
+        onChanged: onChanged,
+        onReset: onReset,
+        onPickImage: onPickImage,
+        onBrowseImages: onBrowseImages,
+      ),
+    );
+  }
 }
+
+bool _isAdvancedPropertyGroup(String? group) => const {
+  'الموضع',
+  'التخطيط',
+  'المظهر',
+  'الانتقال',
+  'المسافات',
+}.contains(group);
 
 // ─────────────── خصائص إضافية (غير مسجلة في السجل) ───────────────
 
@@ -466,6 +635,7 @@ class _BannerDraftControls extends StatefulWidget {
   const _BannerDraftControls({
     required this.component,
     required this.onChanged,
+    this.onPropertiesChanged,
     required this.pickImage,
   });
 
@@ -476,6 +646,11 @@ class _BannerDraftControls extends StatefulWidget {
     required dynamic value,
   })
   onChanged;
+  final void Function({
+    required String componentId,
+    required Map<String, dynamic> values,
+  })?
+  onPropertiesChanged;
   final Future<String?> Function() pickImage;
 
   @override
@@ -581,11 +756,20 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
     }
   }
 
-  void _set(String key, dynamic value) => widget.onChanged(
-    componentId: widget.component.componentId,
-    propertyKey: key,
-    value: value,
-  );
+  void _setMany(Map<String, dynamic> values) {
+    final batch = widget.onPropertiesChanged;
+    if (batch != null) {
+      batch(componentId: widget.component.componentId, values: values);
+      return;
+    }
+    for (final entry in values.entries) {
+      widget.onChanged(
+        componentId: widget.component.componentId,
+        propertyKey: entry.key,
+        value: entry.value,
+      );
+    }
+  }
 
   String _key(int index, String field) => 'bannerDraft_${index}_$field';
 
@@ -607,27 +791,35 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
     };
   }
 
-  void _startDraft() {
+  Map<String, dynamic> _draftSeed() {
+    final values = <String, dynamic>{};
+    final count = _publishedBanners.length.clamp(0, 10);
+    for (var index = 0; index < count; index++) {
+      final banner = _publishedBanners[index];
+      values[_key(index, 'image')] = banner.imageUrl;
+      values[_key(index, 'targetType')] = banner.targetType;
+      values[_key(index, 'targetId')] = banner.targetId ?? '';
+      values[_key(index, 'targetUrl')] = banner.targetUrl ?? '';
+    }
+    values['bannerDraftCount'] = count;
+    return values;
+  }
+
+  void _startDraft({Map<String, dynamic> additional = const {}}) {
     if (_draftComponentId != widget.component.componentId) {
       _draftStarted = false;
       _draftComponentId = widget.component.componentId;
     }
-    if (_hasDraft) return;
-    _draftStarted = true;
-    final count = _publishedBanners.length.clamp(0, 10);
-    for (var index = 0; index < count; index++) {
-      final banner = _publishedBanners[index];
-      _set(_key(index, 'image'), banner.imageUrl);
-      _set(_key(index, 'targetType'), banner.targetType);
-      _set(_key(index, 'targetId'), banner.targetId ?? '');
-      _set(_key(index, 'targetUrl'), banner.targetUrl ?? '');
+    if (_hasDraft) {
+      if (additional.isNotEmpty) _setMany(additional);
+      return;
     }
-    _set('bannerDraftCount', count);
+    _draftStarted = true;
+    _setMany({..._draftSeed(), ...additional});
   }
 
   void _updateBanner(int index, String field, dynamic value) {
-    _startDraft();
-    _set(_key(index, field), value);
+    _startDraft(additional: {_key(index, field): value});
   }
 
   Future<void> _uploadImage(int index) async {
@@ -653,16 +845,19 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
         if (current != index)
           {for (final field in fields) field: _bannerValue(current, field)},
     ];
-    _startDraft();
+    final updates = <String, dynamic>{};
     for (var current = 0; current < remaining.length; current++) {
       for (final field in fields) {
-        _set(_key(current, field), remaining[current][field] ?? '');
+        updates[_key(current, field)] = remaining[current][field] ?? '';
       }
     }
     for (final field in fields) {
-      _set(_key(remaining.length, field), field == 'targetType' ? 'none' : '');
+      updates[_key(remaining.length, field)] = field == 'targetType'
+          ? 'none'
+          : '';
     }
-    _set('bannerDraftCount', remaining.length);
+    updates['bannerDraftCount'] = remaining.length;
+    _startDraft(additional: updates);
   }
 
   @override
@@ -708,20 +903,20 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
             onPressed: count >= 10 || _loadingBanners
                 ? null
                 : () {
-                    _startDraft();
                     final next = count;
+                    final values = <String, dynamic>{};
                     for (final field in const [
                       'image',
                       'targetType',
                       'targetId',
                       'targetUrl',
                     ]) {
-                      _set(
-                        _key(next, field),
-                        field == 'targetType' ? 'none' : '',
-                      );
+                      values[_key(next, field)] = field == 'targetType'
+                          ? 'none'
+                          : '';
                     }
-                    _set('bannerDraftCount', count + 1);
+                    values['bannerDraftCount'] = count + 1;
+                    _startDraft(additional: values);
                   },
             icon: const Icon(Icons.add, size: 16),
             label: Text(S.addBanner),
@@ -729,8 +924,8 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
           const SizedBox(height: AppSpacing.xs),
           Text(
             AppLocale.instance.isArabic
-                ? 'التعديلات تظهر كمسودة في المعاينة فقط، وتُطبّق على بانرات العملاء عند نشر التصميم.'
-                : 'Edits stay in preview draft and apply to customer banners when the design is published.',
+                ? 'التعديلات تظهر فورًا في المعاينة، وتُحفظ كمسودة في قاعدة البيانات. يراها العملاء بعد نشر التصميم.'
+                : 'Changes appear in preview immediately, save as a database draft, and reach customers when published.',
             style: TextStyle(
               fontSize: AppFontSizes.size10,
               color: Theme.of(context).brightness == Brightness.dark
@@ -1249,6 +1444,7 @@ class _PropertyField extends StatelessWidget {
         options:
             definition.options?.map((e) => e.toString()).toList() ??
             ['none', 'xs', 'sm', 'md', 'lg', 'xl'],
+        optionLabel: _spacingLabel,
         onChanged: onChanged,
       ),
       PropertyType.imageUrl => _ImageUrlInput(
@@ -1782,15 +1978,33 @@ class _ColorInputState extends State<_ColorInput> {
   Color? _parseColor(String hex) => _parseSplashColor(hex);
 }
 
+String _spacingLabel(String token) {
+  final size = switch (token) {
+    'none' => AppSpacing.none,
+    'xxs' => AppSpacing.xxs,
+    'xs' => AppSpacing.xs,
+    'sm' => AppSpacing.sm,
+    'md' => AppSpacing.md,
+    'lg' => AppSpacing.lg,
+    'xl' => 24.0,
+    'xxl' => 32.0,
+    'xxxl' => 48.0,
+    _ => null,
+  };
+  return size == null ? token : '$token (${size.toStringAsFixed(0)} px)';
+}
+
 class _EnumInput extends StatelessWidget {
   const _EnumInput({
     required this.value,
     required this.options,
     required this.onChanged,
+    this.optionLabel,
   });
 
   final String value;
   final List<String> options;
+  final String Function(String)? optionLabel;
   final void Function(String) onChanged;
 
   @override
@@ -1800,9 +2014,16 @@ class _EnumInput extends StatelessWidget {
         ? value
         : (options.isNotEmpty ? options.first : '');
     return DropdownButtonFormField<String>(
+      key: ValueKey(safeValue),
+      isExpanded: true,
       initialValue: safeValue.isEmpty ? null : safeValue,
       items: options
-          .map((o) => DropdownMenuItem(value: o, child: Text(o)))
+          .map(
+            (o) => DropdownMenuItem(
+              value: o,
+              child: Text(optionLabel?.call(o) ?? o),
+            ),
+          )
           .toList(),
       onChanged: (v) {
         if (v != null) onChanged(v);

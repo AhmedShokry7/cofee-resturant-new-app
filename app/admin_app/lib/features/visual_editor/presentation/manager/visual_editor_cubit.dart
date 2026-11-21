@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -31,6 +32,18 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// آخر رسالة صادرة للـ iframe — تلتقطها PreviewPanel بمراقبة الـ state.
   OutboundMessage? _pendingMessage;
+  final _outbound = <OutboundMessage>[];
+  int _messageSequence = 0;
+  String _previewPageId = 'home';
+  Map<String, dynamic>? _externalPreviewDocument;
+  String? _unconfirmedPreviewId;
+  Timer? _previewAckTimeout;
+
+  List<OutboundMessage> takePreviewMessages() {
+    final messages = List<OutboundMessage>.of(_outbound);
+    _outbound.clear();
+    return messages;
+  }
 
   OutboundMessage? get pendingMessage => _pendingMessage;
 
@@ -51,6 +64,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   DesignTheme get theme => _theme;
 
+  Map<String, dynamic> get currentDesignDocument =>
+      DesignDocumentCodec.document(state.componentsByPage, theme: _theme);
+
   static String _generateSessionId() {
     final rand = math.Random();
     return 've_${DateTime.now().millisecondsSinceEpoch}_${rand.nextInt(9999)}';
@@ -64,6 +80,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     emit(state.copyWith(status: VisualEditorStatus.loading, clearError: true));
     try {
       final draft = await _repository.loadDraft();
+      if (isClosed) return;
       _theme = draft?.theme ?? DesignTheme.none;
       final saved = draft?.componentsByPage ?? const {};
       // الصفحات الغائبة عن المسودة تبدأ من «تصميم اليوم»: شاشات مدمجة
@@ -87,8 +104,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       // PREVIEW_READY may arrive before the draft query completes. In that
       // order the first handshake has no document to send, so push the loaded
       // state now instead of leaving the iframe on the published snapshot.
-      if (state.previewReady) _syncPreview();
+      if (state.previewReady || draft != null) _syncPreview();
     } catch (e) {
+      if (isClosed) return;
       emit(
         state.copyWith(
           status: VisualEditorStatus.failure,
@@ -112,9 +130,32 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     final document = _currentDocumentOrNull();
     _dispatchToPreview(VisualEditorMessageType.previewInitialize, {
       'sessionId': state.sessionId,
+      'pageId': _previewPageId,
       'designDocument': ?document,
+      if (document != null) ...{
+        'componentId': '__document__',
+        'awaitPreviewAck': true,
+      },
       ..._previewSettingsPayload(),
     });
+  }
+
+  /// Supplies an in-memory document to the client simulator without importing
+  /// it into editor state or writing it to Supabase. Screen management pages
+  /// use this to show unsaved changes inside the complete customer app.
+  void setExternalPreviewDocument(
+    Map<String, dynamic>? document, {
+    String? pageId,
+  }) {
+    if (isClosed) return;
+    _externalPreviewDocument = document == null
+        ? null
+        : (jsonDecode(jsonEncode(document)) as Map).cast<String, dynamic>();
+    if (pageId != null) _previewPageId = pageId;
+    _syncPreview();
+    if (pageId != null && state.previewReady) {
+      _dispatchToPreview(VisualEditorMessageType.loadPage, {'pageId': pageId});
+    }
   }
 
   /// تبديل لغة تطبيق العميل داخل المعاينة فقط: لا مسودة ولا تراجع ولا نشر.
@@ -155,6 +196,8 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// خطأ من المعاينة.
   void handlePreviewError(dynamic data) {
+    _previewAckTimeout?.cancel();
+    _unconfirmedPreviewId = null;
     final msg = data is Map
         ? data['error'] ?? 'خطأ في المعاينة'
         : 'خطأ في المعاينة';
@@ -163,6 +206,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         // عطل قناة المعاينة لا يعني أن تحميل المحرر نفسه فشل؛ اترك القشرة
         // وأدوات إعادة الاتصال ظاهرة ليتمكن الموظف من المتابعة.
         errorMessage: msg.toString(),
+        previewUpdatesPending: 0,
         previewConnection: PreviewConnection.error,
         previewStatusMessage: msg.toString(),
       ),
@@ -184,9 +228,43 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
   }
 
-  /// المعاينة أكدت تطبيق رسالة تحرير — الرسالة وصلت، والمحرّر يبقى مصدر
-  /// الحقيقة لحالة المستند، فلا حالة إضافية يلزم تسجيلها هنا.
-  void handlePropertyUpdated(dynamic data) {}
+  /// تأكيد المعاينة أن المستند طُبّق. تبقى حالة المستند محلية، لكن فشل
+  /// التطبيق يجب أن يصل للمحرر بدل ترك الموظف يظن أن التعديل ظهر.
+  void handlePropertyUpdated(dynamic data) {
+    if (data is! Map || data['payload'] is! Map) return;
+    final payload = data['payload'] as Map;
+    final requestId = payload['requestId'];
+    if (_unconfirmedPreviewId == null || requestId != _unconfirmedPreviewId) {
+      return;
+    }
+    _previewAckTimeout?.cancel();
+    if (payload['success'] != true) {
+      _reportPreviewApplyFailure();
+      return;
+    }
+    _unconfirmedPreviewId = null;
+    emit(
+      state.copyWith(
+        previewUpdatesPending: 0,
+        previewConnection: PreviewConnection.connected,
+        clearPreviewStatusMessage: true,
+      ),
+    );
+  }
+
+  void _reportPreviewApplyFailure() {
+    if (isClosed) return;
+    _previewAckTimeout?.cancel();
+    _unconfirmedPreviewId = null;
+    emit(
+      state.copyWith(
+        previewUpdatesPending: 0,
+        previewConnection: PreviewConnection.error,
+        previewStatusMessage:
+            'تعذر تأكيد عرض آخر تعديل. أعد تحميل معاينة تطبيق العميل.',
+      ),
+    );
+  }
 
   /// المعاينة بثّت حالتها — تُزامن لوحة الطبقات مع ما يرسمه الهاتف فعليًا.
   void handleTreeUpdated(dynamic data) {
@@ -255,10 +333,39 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     _markEdited();
   }
 
+  /// Replace the current design from the JSON source editor. The same
+  /// contract validation used for publish runs before any editor state changes.
+  String? importDesignDocument(Map<String, dynamic> document) {
+    final invalid = DesignDocumentCodec.validate(document);
+    if (invalid != null) return invalid;
+    final parsed = DesignDocumentCodec.parseDocument(document);
+    final components = <String, List<EditableComponent>>{
+      for (final page in EditorPages.pages)
+        page.pageId: parsed[page.pageId] ?? <EditableComponent>[],
+    };
+    _pushUndo();
+    _theme = DesignDocumentCodec.themeOf(document);
+    final selected = _selectedIn(components);
+    emit(
+      state.copyWith(
+        componentsByPage: components,
+        selectedComponentId: selected?.componentId,
+        selectedComponent: selected,
+        clearSelectedComponent: selected == null,
+        isDirty: true,
+        clearError: true,
+      ),
+    );
+    _syncPreview();
+    _markEdited();
+    return null;
+  }
+
   // ---------- تنقل الصفحات ----------
 
   /// تحميل صفحة جديدة في المعاينة.
   void loadPage(String pageId) {
+    _previewPageId = pageId;
     // الاختيار خاص بالصفحة؛ لا نترك المفتش يعرض خصائص عنصر من صفحة أخرى.
     // صفحة الافتتاحية عقدة واحدة، فنحددها فورًا ليظهر محرّر الصورة واللون
     // بدل لوحة فارغة تحتاج نقرة إضافية لا يدري الموظف أنها مطلوبة.
@@ -619,24 +726,44 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     required String componentId,
     required String propertyKey,
     required dynamic value,
+  }) =>
+      updateProperties(componentId: componentId, values: {propertyKey: value});
+
+  /// Apply a related group of property changes as one undo step and one
+  /// complete-document update to the live customer preview.
+  void updateProperties({
+    required String componentId,
+    required Map<String, dynamic> values,
   }) {
     final component = state.findComponent(componentId);
     if (component == null) return;
-    if (!_isValidValue(component, propertyKey, value)) return;
+    final validValues = Map<String, dynamic>.fromEntries(
+      values.entries.where(
+        (entry) => _isValidValue(component, entry.key, entry.value),
+      ),
+    );
+    if (validValues.isEmpty) return;
     _pushUndo();
     final updatedProps = Map<String, dynamic>.from(component.properties);
-    if (value == null) {
-      updatedProps.remove(propertyKey);
-    } else {
-      updatedProps[propertyKey] = value;
+    for (final entry in validValues.entries) {
+      if (entry.value == null) {
+        updatedProps.remove(entry.key);
+      } else {
+        updatedProps[entry.key] = entry.value;
+      }
     }
     final updatedComponent = component.copyWith(properties: updatedProps);
     _replaceComponent(updatedComponent);
-    _dispatchToPreview(VisualEditorMessageType.updateProperty, {
-      'componentId': componentId,
-      'propertyKey': propertyKey,
-      'value': value,
+    // Send the complete document through the same protocol message used when
+    // the preview is first initialized. Older deployed customer previews may
+    // understand APPLY_DESIGN_CONFIG without implementing the incremental
+    // UPDATE_PROPERTY message; sending the full document also guarantees that
+    // image URLs and other nested screen settings repaint together.
+    _dispatchToPreview(VisualEditorMessageType.applyDesignConfig, {
+      'componentId': '__document__',
+      'awaitPreviewAck': true,
       'designDocument': _currentDocumentOrNull(),
+      ..._previewSettingsPayload(),
     });
     _markEdited();
   }
@@ -930,17 +1057,24 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   Future<Map<String, dynamic>?> versionDocument(String versionId) =>
       _repository.getVersionDocument(versionId);
 
-  /// استرجاع إصدار سابق: إصدار جديد في السجل، والمسودة المحلية تتبعه.
-  Future<PublishedVersionInfo?> restoreVersion(String versionId) async {
+  /// Load a previous release into the editor for preview before publishing.
+  Future<bool> previewVersion(String versionId) async {
     try {
-      final version = await _repository.restoreVersion(versionId);
-      if (isClosed) return version;
       final document = await _repository.getVersionDocument(versionId);
-      final components = DesignDocumentCodec.parseDocument(document);
+      if (isClosed) return false;
+      if (document == null) {
+        emit(state.copyWith(errorMessage: 'تعذر تحميل مستند الإصدار.'));
+        return false;
+      }
+      final parsed = DesignDocumentCodec.parseDocument(document);
+      final components = {
+        for (final page in EditorPages.pages)
+          page.pageId:
+              parsed[page.pageId] ??
+              DesignDocumentCodec.defaultComponentsFor(page.pageId),
+      };
       _pushUndo();
-      _theme = document == null
-          ? DesignTheme.none
-          : DesignDocumentCodec.themeOf(document);
+      _theme = DesignDocumentCodec.themeOf(document);
       final selected = _selectedIn(components);
       emit(
         state.copyWith(
@@ -948,16 +1082,17 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
           selectedComponentId: selected?.componentId,
           selectedComponent: selected,
           clearSelectedComponent: selected == null,
-          isDirty: false,
+          isDirty: true,
           clearError: true,
         ),
       );
       _syncPreview();
-      return version;
+      _markEdited();
+      return true;
     } catch (e) {
-      if (isClosed) return null;
-      emit(state.copyWith(errorMessage: 'تعذر استرجاع الإصدار: $e'));
-      return null;
+      if (isClosed) return false;
+      emit(state.copyWith(errorMessage: 'تعذر تحميل الإصدار للمعاينة: $e'));
+      return false;
     }
   }
 
@@ -1025,6 +1160,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// المستند الحالي كاملًا، أو null حين لا مكوّنات (لا نشر ولا إرسال فارغ).
   Map<String, dynamic>? _currentDocumentOrNull() {
+    if (_externalPreviewDocument != null) return _externalPreviewDocument;
     if (state.componentsByPage.isEmpty) return null;
     final hasContent = state.componentsByPage.values.any((c) => c.isNotEmpty);
     if (!hasContent) return null;
@@ -1038,6 +1174,8 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     if (document == null) return;
     _dispatchToPreview(VisualEditorMessageType.applyDesignConfig, {
       'designDocument': document,
+      'componentId': '__document__',
+      'awaitPreviewAck': true,
       ..._previewSettingsPayload(),
     });
   }
@@ -1050,18 +1188,45 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   };
 
   /// يضع رسالة صادرة في الحالة حتى تلتقطها PreviewPanel وترسلها عبر postMessage.
+  @override
+  Future<void> close() {
+    _previewAckTimeout?.cancel();
+    return super.close();
+  }
+
   void _dispatchToPreview(
     VisualEditorMessageType type,
     Map<String, dynamic> payload,
   ) {
-    _pendingMessage = OutboundMessage(
+    final requiresAck =
+        payload['componentId'] is String &&
+        (payload['componentId'] as String).isNotEmpty &&
+        (payload['awaitPreviewAck'] == true ||
+            type == VisualEditorMessageType.updateProperty ||
+            type == VisualEditorMessageType.addComponent ||
+            type == VisualEditorMessageType.removeComponent ||
+            type == VisualEditorMessageType.reorderComponent);
+    final message = OutboundMessage(
       type: type,
       payload: payload,
       sessionId: state.sessionId,
-      messageId: DateTime.now().microsecondsSinceEpoch.toString(),
+      messageId: '${state.sessionId}-${++_messageSequence}',
     );
-    // إعادة emit للحالة الحالية حتى يُبلَّغ الـ PreviewPanel بالتغيير
-    emit(state.copyWith());
+    if (requiresAck) {
+      _unconfirmedPreviewId = message.messageId;
+      _previewAckTimeout?.cancel();
+      _previewAckTimeout = Timer(
+        const Duration(seconds: 20),
+        _reportPreviewApplyFailure,
+      );
+    }
+    _outbound.add(message);
+    _pendingMessage = message;
+    emit(
+      state.copyWith(
+        previewUpdatesPending: _unconfirmedPreviewId == null ? 0 : 1,
+      ),
+    );
   }
 }
 

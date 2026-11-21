@@ -62,8 +62,20 @@ class OptionGroupRecords extends StatelessWidget {
 
     return AdminRecordGrid(
       itemCount: visible.length,
-      cardExtent: (cardWidth) =>
-          OptionGroupCard.extent(cardWidth, MediaQuery.textScalerOf(context)),
+      cardExtent: (cardWidth) {
+        final maxValues = visible.fold<int>(
+          0,
+          (max, group) {
+            final count = group.values.where((value) => value.isActive).length;
+            return count > max ? count : max;
+          },
+        );
+        return OptionGroupCard.extent(
+          cardWidth,
+          MediaQuery.textScalerOf(context),
+          maxValues,
+        );
+      },
       itemBuilder: (context, index) {
         final group = visible[index];
         return OptionGroupCard(
