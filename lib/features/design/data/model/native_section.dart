@@ -25,11 +25,21 @@ class SplashSettings {
     this.imageUrl,
     this.imageVisible = true,
     this.imageFit = 'contain',
+    this.imageShape = 'original',
+    this.imageCornerRadius = 16,
     this.imageAlignment = 'center',
     this.verticalAlignment = 'center',
     this.imageWidth,
     this.imageHeight,
     this.imageGap = 16,
+    this.contentPaddingHorizontal = 24,
+    this.contentPaddingVertical = 24,
+    this.imagePadding = 0,
+    this.textPaddingHorizontal = 0,
+    this.textPaddingVertical = 0,
+    this.textMarginTop = 0,
+    this.textMarginBottom = 0,
+    this.textWeight = 'regular',
     this.text,
     this.textColor = '#1A1A1A',
     this.textSize = 16,
@@ -44,11 +54,21 @@ class SplashSettings {
   final String? imageUrl;
   final bool imageVisible;
   final String imageFit;
+  final String imageShape;
+  final double imageCornerRadius;
   final String imageAlignment;
   final String verticalAlignment;
   final double? imageWidth;
   final double? imageHeight;
   final double imageGap;
+  final double contentPaddingHorizontal;
+  final double contentPaddingVertical;
+  final double imagePadding;
+  final double textPaddingHorizontal;
+  final double textPaddingVertical;
+  final double textMarginTop;
+  final double textMarginBottom;
+  final String textWeight;
   final String? text;
   final String textColor;
   final double textSize;
@@ -68,11 +88,18 @@ class SplashSettings {
     final height = node?.numberProperty('imageHeight');
     final gap = node?.numberProperty('imageGap');
     final size = node?.numberProperty('textSize');
+    double number(String key, double fallback, double max) {
+      final value = node?.numberProperty(key);
+      return value != null && value >= 0 && value <= max ? value : fallback;
+    }
+
     final animation = node?.property('animation');
     final fit = node?.property('imageFit');
     final alignment = node?.property('imageAlignment');
     final verticalAlignment = node?.property('verticalAlignment');
     final textAlignment = node?.property('textAlignment');
+    final imageShape = node?.property('imageShape');
+    final textWeight = node?.property('textWeight');
     final background = _validHex(node?.property('backgroundColor'));
     final textColor = _validHex(node?.property('textColor'));
 
@@ -91,6 +118,11 @@ class SplashSettings {
           }.contains(fit)
           ? fit!
           : 'contain',
+      imageShape:
+          const {'original', 'circle', 'square', 'rounded'}.contains(imageShape)
+          ? imageShape!
+          : 'original',
+      imageCornerRadius: number('imageCornerRadius', 16, 200),
       verticalAlignment:
           const {'top', 'center', 'bottom'}.contains(verticalAlignment)
           ? verticalAlignment!
@@ -114,6 +146,17 @@ class SplashSettings {
           ? height
           : null,
       imageGap: gap != null && gap >= 0 && gap <= 100 ? gap : 16,
+      contentPaddingHorizontal: number('contentPaddingHorizontal', 24, 200),
+      contentPaddingVertical: number('contentPaddingVertical', 24, 300),
+      imagePadding: number('imagePadding', 0, 100),
+      textPaddingHorizontal: number('textPaddingHorizontal', 0, 100),
+      textPaddingVertical: number('textPaddingVertical', 0, 100),
+      textMarginTop: number('textMarginTop', 0, 100),
+      textMarginBottom: number('textMarginBottom', 0, 100),
+      textWeight:
+          const {'light', 'regular', 'medium', 'bold'}.contains(textWeight)
+          ? textWeight!
+          : 'regular',
       text: text == null || text.isEmpty ? null : text,
       textColor: textColor ?? '#1A1A1A',
       textSize: size != null && size >= 8 && size <= 48 ? size : 16,
@@ -158,11 +201,21 @@ class SplashSettings {
       other.imageUrl == imageUrl &&
       other.imageVisible == imageVisible &&
       other.imageFit == imageFit &&
+      other.imageShape == imageShape &&
+      other.imageCornerRadius == imageCornerRadius &&
       other.imageAlignment == imageAlignment &&
       other.verticalAlignment == verticalAlignment &&
       other.imageWidth == imageWidth &&
       other.imageHeight == imageHeight &&
       other.imageGap == imageGap &&
+      other.contentPaddingHorizontal == contentPaddingHorizontal &&
+      other.contentPaddingVertical == contentPaddingVertical &&
+      other.imagePadding == imagePadding &&
+      other.textPaddingHorizontal == textPaddingHorizontal &&
+      other.textPaddingVertical == textPaddingVertical &&
+      other.textMarginTop == textMarginTop &&
+      other.textMarginBottom == textMarginBottom &&
+      other.textWeight == textWeight &&
       other.text == text &&
       other.textColor == textColor &&
       other.textSize == textSize &&
@@ -173,16 +226,26 @@ class SplashSettings {
       other.animationDuration == animationDuration;
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     visible,
     imageUrl,
     imageVisible,
     imageFit,
+    imageShape,
+    imageCornerRadius,
     imageAlignment,
     verticalAlignment,
     imageWidth,
     imageHeight,
     imageGap,
+    contentPaddingHorizontal,
+    contentPaddingVertical,
+    imagePadding,
+    textPaddingHorizontal,
+    textPaddingVertical,
+    textMarginTop,
+    textMarginBottom,
+    textWeight,
     text,
     textColor,
     textSize,
@@ -191,5 +254,5 @@ class SplashSettings {
     duration,
     animation,
     animationDuration,
-  );
+  ]);
 }

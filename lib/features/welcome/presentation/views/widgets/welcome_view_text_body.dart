@@ -27,12 +27,28 @@ class WelcomeViewTextBody extends StatelessWidget {
     if (nativeHidden(node)) return const SizedBox.shrink();
     final text = (node?.localizedText('text') ?? S.welcomeDescription).trim();
     if (text.isEmpty) return const SizedBox.shrink();
+    final alignment = switch (node?.property('alignment')) {
+      'start' => TextAlign.start,
+      'end' => TextAlign.end,
+      _ => TextAlign.center,
+    };
+    final colorValue = node?.property('color');
+    Color color = AppColor.greyColor;
+    if (colorValue != null &&
+        RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
+            .hasMatch(colorValue)) {
+      final parsed = int.parse(colorValue.substring(1), radix: 16);
+      color = colorValue.length == 9
+          ? Color(parsed)
+          : Color(0xFF000000 | parsed);
+    }
     return Text(
-      textAlign: TextAlign.center,
+      textAlign: alignment,
       text,
       style: AppFonts.regular16(context).copyWith(
-        color: AppColor.greyColor,
+        color: color,
         fontSize: node?.numberProperty('size'),
+        height: node?.numberProperty('lineHeight'),
       ),
     );
   }

@@ -27,6 +27,10 @@ class SplashBrandMark extends StatelessWidget {
     final width = (settings.imageWidth ?? defaultWidth)
         .clamp(40, shortestSide)
         .toDouble();
+    final imageHeight =
+        settings.imageShape == 'circle' || settings.imageShape == 'square'
+        ? width
+        : settings.imageHeight;
     final imageAlignment = _alignment(settings.imageAlignment);
     final textAlign = switch (settings.textAlignment) {
       'start' => TextAlign.start,
@@ -34,32 +38,59 @@ class SplashBrandMark extends StatelessWidget {
       _ => TextAlign.center,
     };
 
-    final content = SizedBox(
-      width: double.infinity,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (settings.imageVisible)
-            Align(
-              alignment: imageAlignment,
-              child: _brandImage(context, settings, width),
-            ),
-          if (settings.text != null) ...[
-            SizedBox(height: settings.imageVisible ? settings.imageGap : 0),
-            Text(
-              settings.text!,
-              textAlign: textAlign,
-              style: TextStyle(
-                color: SplashSettings.colorFromHex(
-                  settings.textColor,
-                  fallback: const Color(0xFF1A1A1A),
+    final content = Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: settings.contentPaddingHorizontal,
+        vertical: settings.contentPaddingVertical,
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (settings.imageVisible)
+              Align(
+                alignment: imageAlignment,
+                child: Padding(
+                  padding: EdgeInsets.all(settings.imagePadding),
+                  child: _brandImage(context, settings, width, imageHeight),
                 ),
-                fontSize: settings.textSize,
               ),
-            ),
+            if (settings.text != null) ...[
+              SizedBox(
+                height: settings.imageVisible
+                    ? settings.imageGap + settings.textMarginTop
+                    : settings.textMarginTop,
+              ),
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  settings.textPaddingHorizontal,
+                  settings.textPaddingVertical,
+                  settings.textPaddingHorizontal,
+                  settings.textPaddingVertical + settings.textMarginBottom,
+                ),
+                child: Text(
+                  settings.text!,
+                  textAlign: textAlign,
+                  style: TextStyle(
+                    color: SplashSettings.colorFromHex(
+                      settings.textColor,
+                      fallback: const Color(0xFF1A1A1A),
+                    ),
+                    fontSize: settings.textSize,
+                    fontWeight: switch (settings.textWeight) {
+                      'light' => FontWeight.w300,
+                      'medium' => FontWeight.w500,
+                      'bold' => FontWeight.bold,
+                      _ => FontWeight.normal,
+                    },
+                  ),
+                ),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
 
@@ -95,29 +126,57 @@ class SplashBrandMark extends StatelessWidget {
     BuildContext context,
     SplashSettings settings,
     double width,
+    double? height,
   ) {
     final logoUrl = context.watch<DesignCubit>().state.logoUrl;
     final custom = settings.imageUrl?.trim();
     final source = custom != null && custom.isNotEmpty ? custom : logoUrl;
     if (source != null && source.trim().isNotEmpty) {
-      return DbImage(
-        key: ValueKey('splash-image-$source'),
-        image: source,
-        fit: _fit(settings.imageFit),
-        alignment: DbImage.alignmentFromName(settings.imageAlignment),
-        width: width,
-        height: settings.imageHeight,
-        iconSize: 32,
+      return _shapeImage(
+        settings,
+        DbImage(
+          key: ValueKey('splash-image-$source'),
+          image: source,
+          fit: _fit(settings.imageFit),
+          alignment: DbImage.alignmentFromName(settings.imageAlignment),
+          width: width,
+          height: height,
+          iconSize: 32,
+        ),
+        width,
+        height,
       );
     }
-    return Image.asset(
-      AppImages.logo,
-      key: const ValueKey('splash-image-default'),
-      width: width,
-      height: settings.imageHeight,
-      fit: _fit(settings.imageFit),
-      alignment: DbImage.alignmentFromName(settings.imageAlignment),
-      filterQuality: FilterQuality.high,
+    return _shapeImage(
+      settings,
+      Image.asset(
+        AppImages.logo,
+        key: const ValueKey('splash-image-default'),
+        width: width,
+        height: height,
+        fit: _fit(settings.imageFit),
+        alignment: DbImage.alignmentFromName(settings.imageAlignment),
+        filterQuality: FilterQuality.high,
+      ),
+      width,
+      height,
+    );
+  }
+
+  Widget _shapeImage(
+    SplashSettings settings,
+    Widget image,
+    double width,
+    double? height,
+  ) {
+    final radius = switch (settings.imageShape) {
+      'circle' => width / 2,
+      'rounded' => settings.imageCornerRadius,
+      _ => 0.0,
+    };
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: SizedBox(width: width, height: height, child: image),
     );
   }
 

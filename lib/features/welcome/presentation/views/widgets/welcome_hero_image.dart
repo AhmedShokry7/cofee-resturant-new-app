@@ -7,14 +7,7 @@ import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/shared/widgets/db_image.dart';
 
-/// The photograph behind the welcome copy.
-///
-/// The visible subject sits in the top of the file, so the crop keeps it in
-/// frame when the panel covers the bottom of a tall screen.
-///
-/// الصورة المنشورة تعلو على المرفقة: عقدة `welcome.hero` برابط صالح تعني
-/// الصورة الجديدة، بأسلوب العرض الذي اختاره الموظف (`fit`)، وعقدة مخفية
-/// تعني بلا صورة أصلًا. غياب العقدة يعني الصورة المرفقة كما كانت.
+/// Displays the welcome page's image using its published design properties.
 class WelcomeHeroImage extends StatelessWidget {
   const WelcomeHeroImage({super.key});
 
@@ -27,22 +20,20 @@ class WelcomeHeroImage extends StatelessWidget {
       ),
     );
     if (nativeHidden(node)) return const SizedBox.shrink();
-    final imageUrl = node?.property('imageUrl')?.trim() ?? '';
-    if (imageUrl.isNotEmpty) {
-      return DbImage(
-        image: imageUrl,
-        fit: DbImage.fitFromName(node?.property('fit')),
-        // الموضوع يظهر في أعلى الصورة المرفقة، فالإحلال يبدأ من هناك
-        // ما لم يختر الموظف محاذاة غيره.
-        alignment: DbImage.alignmentFromName(
-          node?.property('alignment') ?? 'topCenter',
-        ),
-      );
-    }
-    return Image(
-      image: const AssetImage(AppImages.welcomeImage),
-      fit: BoxFit.cover,
-      alignment: Alignment.topCenter,
+
+    final opacity = (node?.numberProperty('opacity') ?? 1).clamp(0.0, 1.0);
+    final fit = DbImage.fitFromName(node?.property('fit'));
+    final alignment = DbImage.alignmentFromName(
+      node?.property('alignment') ?? 'topCenter',
     );
+    final imageUrl = node?.property('imageUrl')?.trim() ?? '';
+    final Widget image = imageUrl.isEmpty
+        ? Image(
+            image: const AssetImage(AppImages.welcomeImage),
+            fit: fit,
+            alignment: alignment,
+          )
+        : DbImage(image: imageUrl, fit: fit, alignment: alignment);
+    return Opacity(opacity: opacity, child: image);
   }
 }

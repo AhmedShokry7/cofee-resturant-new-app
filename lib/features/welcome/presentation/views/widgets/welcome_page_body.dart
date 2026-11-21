@@ -1,55 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'package:new_coffee/core/theme/tokens.dart';
 import 'package:new_coffee/features/design/data/model/native_section.dart';
 import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_hero_image.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/welcome_panel_content.dart';
 import 'package:new_coffee/features/welcome/presentation/views/widgets/wavy_container.dart';
-import 'package:new_coffee/core/theme/tokens.dart';
-import 'package:new_coffee/shared/widgets/design_page_sections.dart';
 
-/// The photograph and the panel that overlaps its bottom edge.
-///
-/// Layout only: it decides nothing and asks nothing of the backend.
+/// The editable hero image and wave panel for the customer welcome page.
 class WelcomePageBody extends StatelessWidget {
   const WelcomePageBody({super.key});
 
-  /// Image height as a share of the screen. The photo is tall enough for the
-  /// wave to sink down close to the copy instead of leaving a dead gap.
   static const double _imageRatio = 0.63;
-
-  /// The same share on a short screen, where the copy would otherwise be
-  /// pushed under the panel.
   static const double _compactImageRatio = 0.62;
-
-  /// Below this logical height the screen is treated as short.
   static const double _compactScreenMaxHeight = 720;
-
-  /// The panel overlaps the photo by exactly the depth of the curve, so the
-  /// wave always meets the bottom edge of the photo.
-  static double get _curveDepth => WavyContainer.designCurveDepth;
-
-  /// Gap between the curve and the copy, so the first line never touches it.
   static const double _clearance = 20;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final isCompact = size.height < _compactScreenMaxHeight;
-    final imageHeight =
-        size.height * (isCompact ? _compactImageRatio : _imageRatio);
-
-    // المسافات المنشورة تعلو على الأصل: `top` بين الموجة والنصّ، و`gap`
-    // بين العنوان ووصفه. غياب عقدة `welcome.spacing` يعني المسافات المرسومة.
-    final spacing = context.select(
-      (DesignCubit cubit) => nativeSection(
-        cubit.state.pageSections('welcome'),
-        DesignWidgetTypes.welcomeSpacing,
-      ),
+    final sections = context.select(
+      (DesignCubit cubit) => cubit.state.pageSections('welcome'),
     );
-    final clearance = spacing?.numberProperty('top') ?? _clearance;
+    final settings = nativeSection(sections, DesignWidgetTypes.welcomeSpacing);
+    final hero = nativeSection(sections, DesignWidgetTypes.welcomeHero);
+    final defaultRatio = isCompact ? _compactImageRatio : _imageRatio;
+    final ratio = (hero?.numberProperty('heightRatio') ?? defaultRatio).clamp(
+      0.25,
+      0.85,
+    );
+    final curveDepth =
+        (settings?.numberProperty('curveDepth') ??
+                WavyContainer.designCurveDepth)
+            .clamp(0.0, 140.0);
+    final imageHeight = nativeHidden(hero) ? curveDepth : size.height * ratio;
+    final clearance = settings?.numberProperty('top') ?? _clearance;
+    final horizontal =
+        settings?.numberProperty('paddingHorizontal') ?? AppSpacing.xxl;
+    final bottom = settings?.numberProperty('paddingBottom') ?? AppSpacing.xxl;
+    final panelColor = _hexColor(settings?.property('panelColor'));
 
     return Stack(
       children: [
@@ -61,28 +53,32 @@ class WelcomePageBody extends StatelessWidget {
           child: const WelcomeHeroImage(),
         ),
         Positioned(
-          top: imageHeight - _curveDepth,
+          top: imageHeight - curveDepth,
           left: 0,
           right: 0,
           bottom: 0,
           child: WavyContainer(
-            curveHeight: _curveDepth,
+            curveHeight: curveDepth,
+            color: panelColor ?? const Color(0xFFFFFFFF),
             padding: EdgeInsets.fromLTRB(
-              AppSpacing.xxl,
+              horizontal,
               clearance,
-              AppSpacing.xl,
-              AppSpacing.xxl,
+              horizontal,
+              bottom,
             ),
-            child: SafeArea(
-              top: false,
-              child: DesignPageSectionsInline(
-                pageId: 'welcome',
-                child: const WelcomePanelContent(),
-              ),
-            ),
+            child: const SafeArea(top: false, child: WelcomePanelContent()),
           ),
         ),
       ],
     );
+  }
+
+  static Color? _hexColor(String? value) {
+    if (value == null ||
+        !RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$').hasMatch(value)) {
+      return null;
+    }
+    final parsed = int.parse(value.substring(1), radix: 16);
+    return value.length == 9 ? Color(parsed) : Color(0xFF000000 | parsed);
   }
 }

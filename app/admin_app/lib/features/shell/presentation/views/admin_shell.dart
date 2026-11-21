@@ -54,7 +54,6 @@ import 'package:admin_app/features/staff/presentation/pages/staff_page.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/pages/subscription_plan_page.dart';
 import 'package:admin_app/features/subscriptions_admin/presentation/pages/subscription_admin_page.dart';
 import 'package:admin_app/features/tables/presentation/pages/tables_page.dart';
-import 'package:admin_app/features/visual_editor/presentation/pages/visual_editor_page.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_feature_placeholder.dart';
 import 'package:admin_app/shared/widgets/admin_page_frame.dart';
@@ -436,19 +435,6 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         return AiKnowledgePage(
           searchController: _searchController,
           canManage: widget.session.hasPermission('settings.write'),
-        );
-      case 'visualEditor':
-        return VisualEditorPage(
-          canPublish: widget.session.hasPermission('design.publish'),
-          imagePermissions: widget.session.isOwner
-              ? <String>{
-                  ...widget.session.permissions,
-                  'catalog.product.write',
-                  'catalog.category.write',
-                  'settings.write',
-                  'subscriptions.manage',
-                }
-              : widget.session.permissions,
         );
       default:
         return AdminFeaturePlaceholder(destination: destination);

@@ -30,23 +30,57 @@ class WelcomeViewTextTitle extends StatelessWidget {
     final rest = (node?.localizedText('rest') ?? S.yourMoment).trim();
     if (highlight.isEmpty && rest.isEmpty) return const SizedBox.shrink();
     final size = node?.numberProperty('size');
+    final alignment = switch (node?.property('alignment')) {
+      'start' => TextAlign.start,
+      'end' => TextAlign.end,
+      _ => TextAlign.center,
+    };
+    final weight = node?.property('textWeight') ?? 'brand';
+    FontWeight weightFor(String part) => switch (weight) {
+      'light' => FontWeight.w300,
+      'regular' => FontWeight.normal,
+      'medium' => FontWeight.w500,
+      'semibold' => FontWeight.w600,
+      'bold' => FontWeight.bold,
+      _ => part == 'highlight' ? FontWeight.bold : FontWeight.w600,
+    };
+    Color colorFor(String? value, Color fallback) {
+      if (value == null ||
+          !RegExp(r'^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$')
+              .hasMatch(value)) {
+        return fallback;
+      }
+      final parsed = int.parse(value.substring(1), radix: 16);
+      return value.length == 9 ? Color(parsed) : Color(0xFF000000 | parsed);
+    }
     return Text.rich(
-      textAlign: TextAlign.center,
+      textAlign: alignment,
       TextSpan(
         children: [
           if (highlight.isNotEmpty)
             TextSpan(
               text: highlight,
               style: AppFonts.bold24(context).copyWith(
-                color: AppColor.primaryColor,
                 fontSize: size,
+                color: colorFor(
+                  node?.property('highlightColor'),
+                  AppColor.primaryColor,
+                ),
+                fontWeight: weightFor('highlight'),
               ),
             ),
           if (highlight.isNotEmpty && rest.isNotEmpty) const TextSpan(text: " "),
           if (rest.isNotEmpty)
             TextSpan(
               text: rest,
-              style: AppFonts.semiBold24(context).copyWith(fontSize: size),
+              style: AppFonts.semiBold24(context).copyWith(
+                fontSize: size,
+                color: colorFor(
+                  node?.property('restColor'),
+                  AppColor.textPrimary,
+                ),
+                fontWeight: weightFor('rest'),
+              ),
             ),
         ],
       ),

@@ -7,6 +7,7 @@ import 'package:new_coffee/features/design/presentation/manager/design/design_cu
 import 'package:new_coffee/features/home/presentation/views/widgets/design_section_chrome.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/design_sections.dart';
 import 'package:new_coffee/features/home/presentation/views/widgets/home_section.dart';
+import 'package:new_coffee/core/theme/tokens.dart';
 
 /// مصمِّم صفحة عامة: يقرأ أقسام المستند المنشور لصفحة ويعرضها فوق جسم
 /// الصفحة الحقيقي، بلا تغيير بنية الشاشة عند غياب المستند.
@@ -41,6 +42,41 @@ class DesignPageSectionsAbove extends StatelessWidget {
   }
 }
 
+/// Keep added splash elements in the same order as the editor's component
+/// tree, with the native logo/text settings occupying their own tree position.
+Widget _buildSplashSections(List<PublishedSection> sections, Widget child) {
+  final built = <Widget>[];
+  var insertedNativeSplash = false;
+  void append(Widget widget) {
+    if (built.isNotEmpty) {
+      built.add(const SizedBox(height: AppSpacing.sm));
+    }
+    built.add(widget);
+  }
+
+  for (final section in sections) {
+    if (section.type == DesignWidgetTypes.splashSettings) {
+      if (section.visible) append(child);
+      insertedNativeSplash = true;
+      continue;
+    }
+    if (!section.visible) continue;
+    final widget = DesignSectionRenderers.build(section);
+    if (widget == null) continue;
+    append(
+      previewSectionWrap(
+        section,
+        pageId: 'splash',
+        child: HomeSection(
+          child: DesignSectionChrome(section: section, child: widget),
+        ),
+      ),
+    );
+  }
+  if (!insertedNativeSplash) append(child);
+  return Column(mainAxisSize: MainAxisSize.min, children: built);
+}
+
 /// صورة مضغوطة للأقسام لسياقات محدودة الارتفاع (شاشة افتتاحية مثلًا):
 /// الأقسام فوق الطفل بلا Expanded.
 class DesignPageSectionsInline extends StatelessWidget {
@@ -58,15 +94,12 @@ class DesignPageSectionsInline extends StatelessWidget {
     final sections = context.select(
       (DesignCubit cubit) => cubit.state.pageSections(pageId),
     );
+    if (pageId == 'splash') {
+      return _buildSplashSections(sections, child);
+    }
     final built = buildDesignPageSections(pageId: pageId, sections: sections);
     if (built.isEmpty) return child;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ...built,
-        child,
-      ],
-    );
+    return Column(mainAxisSize: MainAxisSize.min, children: [...built, child]);
   }
 }
 
