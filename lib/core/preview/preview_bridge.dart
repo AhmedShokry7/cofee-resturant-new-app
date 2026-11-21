@@ -82,7 +82,9 @@ class PreviewMessage {
     if (raw['protocolVersion'] != protocolVersion) return null;
     final sessionId = raw['sessionId'];
     final type = raw['type'];
-    if (sessionId is! String || sessionId.isEmpty) return null;
+    if (sessionId is! String || sessionId.isEmpty || sessionId.length > 128) {
+      return null;
+    }
     if (type is! String) return null;
     PreviewMessageType? kind;
     for (final candidate in PreviewMessageType.values) {
@@ -90,12 +92,12 @@ class PreviewMessage {
     }
     if (kind == null) return null;
     final payload = raw['payload'];
+    if (payload is! Map || payload.length > 256) return null;
+    if (payload.keys.any((key) => key is! String)) return null;
     return PreviewMessage(
       sessionId: sessionId,
       type: kind,
-      payload: payload is Map
-          ? Map<String, dynamic>.from(payload)
-          : <String, dynamic>{},
+      payload: Map<String, dynamic>.from(payload),
     );
   }
 

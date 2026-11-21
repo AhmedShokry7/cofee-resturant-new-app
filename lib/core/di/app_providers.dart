@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:new_coffee/core/services/supabase_service.dart';
+import 'package:new_coffee/core/preview/preview_repositories.dart';
 import 'package:new_coffee/features/addresses/presentation/manager/addresses/addresses_cubit.dart';
 import 'package:new_coffee/features/auth/data/repositories/auth_repository.dart';
 import 'package:new_coffee/features/auth/data/repositories/resilient_auth_repository.dart';
@@ -50,9 +51,14 @@ import 'package:new_coffee/features/weather/presentation/manager/weather/weather
 
 /// Global dependency injection: repositories + app-wide blocs.
 class AppProviders extends StatelessWidget {
-  const AppProviders({super.key, required this.child});
+  const AppProviders({
+    super.key,
+    required this.child,
+    this.previewMode = false,
+  });
 
   final Widget child;
+  final bool previewMode;
 
   /// The one place that decides which auth implementation runs.
   ///
@@ -62,6 +68,7 @@ class AppProviders extends StatelessWidget {
   /// session. A mock that accepted any password would let a customer believe
   /// they were signed in while no account exists, so there is no mock.
   AuthRepository _buildAuthRepository() {
+    if (previewMode) return const PreviewAuthRepository();
     return ResilientAuthRepository();
   }
 
@@ -72,6 +79,7 @@ class AppProviders extends StatelessWidget {
   /// The offline fallback serves an empty catalogue instead, so the app
   /// renders its own "no results" state rather than a made-up menu.
   CatalogRepository _buildCatalogRepository() {
+    if (previewMode) return const UnavailableCatalogRepository();
     if (SupabaseService.isReady) return SupabaseProductRepository();
     return const UnavailableCatalogRepository();
   }
@@ -79,11 +87,13 @@ class AppProviders extends StatelessWidget {
   /// The server cart is authoritative. There is no local-only fallback: an
   /// order must always price and validate against the database.
   CartRepository _buildCartRepository() {
+    if (previewMode) return PreviewMemoryCartRepository();
     if (SupabaseService.isReady) return SupabaseCartRepository();
     return LocalCartRepository();
   }
 
   OrdersRepository _buildOrdersRepository() {
+    if (previewMode) return _UnavailableOrdersRepository();
     if (SupabaseService.isReady) return SupabaseOrdersRepository();
     return _UnavailableOrdersRepository();
   }
@@ -96,7 +106,9 @@ class AppProviders extends StatelessWidget {
   /// that saving is not allowed — which is the truth, and better than a card
   /// number collected into a backend that cannot be reached.
   SavedCardsRepository? _buildSavedCardsRepository() {
-    if (SupabaseService.isReady) return SupabaseSavedCardsRepository();
+    if (!previewMode && SupabaseService.isReady) {
+      return SupabaseSavedCardsRepository();
+    }
     return null;
   }
 
@@ -122,38 +134,63 @@ class AppProviders extends StatelessWidget {
         RepositoryProvider<CartRepository>(
           create: (_) => _buildCartRepository(),
         ),
-        RepositoryProvider<CouponRepository>(
-          create: (_) => const CouponRepositoryImpl(),
-        ),
         RepositoryProvider<AddressRepository>(
-          create: (_) => SupabaseAddressRepository(),
+          create: (_) => previewMode
+              ? const PreviewAddressRepository()
+              : SupabaseAddressRepository(),
+        ),
+        RepositoryProvider<CouponRepository>(
+          create: (_) => previewMode
+              ? const PreviewCouponRepository()
+              : const CouponRepositoryImpl(),
         ),
         RepositoryProvider<PaymentMethodRepository>(
-          create: (_) => SupabasePaymentMethodRepository(),
+          create: (_) => previewMode
+              ? const PreviewPaymentMethodRepository()
+              : SupabasePaymentMethodRepository(),
         ),
         // The charge repository. Not tied to one checkout — the same cubit can
         // be started for any order, so it is resolved from here rather than
         // created per payment page.
         RepositoryProvider<TapPaymentRepository>(
-          create: (_) => SupabaseTapPaymentRepository(),
+          create: (_) => previewMode
+              ? const PreviewPaymentRepository()
+              : SupabaseTapPaymentRepository(),
         ),
         RepositoryProvider<DeliveryZoneRepository>(
-          create: (_) => SupabaseDeliveryZoneRepository(),
+          create: (_) => previewMode
+              ? const PreviewDeliveryZoneRepository()
+              : SupabaseDeliveryZoneRepository(),
         ),
         RepositoryProvider<ContentRepository>(
-          create: (_) => SupabaseContentRepository(),
+          create: (_) => previewMode
+              ? const PreviewContentRepository()
+              : SupabaseContentRepository(),
         ),
         RepositoryProvider<DesignRepository>(
-          create: (_) => SupabaseDesignRepository(),
+          create: (_) => previewMode
+              ? const PreviewDesignRepository()
+              : SupabaseDesignRepository(),
         ),
         RepositoryProvider<PlaceSearchRepository>(
-          create: (_) => NominatimPlaceSearchRepository(),
+          create: (_) => previewMode
+              ? const PreviewPlaceSearchRepository()
+              : NominatimPlaceSearchRepository(),
         ),
         RepositoryProvider<ProfilePhotoRepository>(
-          create: (_) => SupabaseProfilePhotoRepository(),
+          create: (_) => previewMode
+              ? const PreviewProfilePhotoRepository()
+              : SupabaseProfilePhotoRepository(),
+        ),
+        RepositoryProvider<NotificationsRepository>(
+          create: (_) => previewMode
+              ? const PreviewNotificationsRepository()
+              : const NotificationsRepositoryImpl(),
         ),
         RepositoryProvider<SubscriptionRepository>(
-          create: (_) => SubscriptionRepositoryImpl(),
+          create: (_) => previewMode
+              ? const PreviewSubscriptionRepository()
+              : SubscriptionRepositoryImpl(),
         ),
       ],
       child: MultiBlocProvider(
@@ -165,8 +202,11 @@ class AppProviders extends StatelessWidget {
                 DesignCubit(repository: context.read<DesignRepository>()),
           ),
           BlocProvider(
-            create: (_) =>
-                BranchCubit(repository: const BranchRepositoryImpl()),
+            create: (_) => BranchCubit(
+              repository: previewMode
+                  ? const PreviewBranchRepository()
+                  : const BranchRepositoryImpl(),
+            ),
           ),
           BlocProvider(
             // The cubit loads itself when it is created, so the cart is read
@@ -180,7 +220,9 @@ class AppProviders extends StatelessWidget {
           BlocProvider(
             create: (context) => FavoritesCubit(
               repository: context.read<CatalogRepository>(),
-              favorites: FavoritesRepositoryImpl(),
+              favorites: previewMode
+                  ? PreviewMemoryFavoritesRepository()
+                  : FavoritesRepositoryImpl(),
               branchId: context.read<BranchCubit>().state.selected?.id,
               branchCubit: context.read<BranchCubit>(),
             ),
@@ -217,7 +259,7 @@ class AppProviders extends StatelessWidget {
           ),
           BlocProvider(
             create: (context) => NotificationsCubit(
-              repository: const NotificationsRepositoryImpl(),
+              repository: context.read<NotificationsRepository>(),
             ),
           ),
           BlocProvider(
@@ -247,16 +289,21 @@ class AppProviders extends StatelessWidget {
           // it cost a second pair of catalogue and ledger reads on every start.
           BlocProvider(
             create: (context) => LoyaltyCubit(
-              repository: LoyaltyRepositoryImpl(
-                catalog: context.read<CatalogRepository>(),
-              ),
+              repository: previewMode
+                  ? const PreviewLoyaltyRepository()
+                  : LoyaltyRepositoryImpl(
+                      catalog: context.read<CatalogRepository>(),
+                    ),
               branchId: context.read<BranchCubit>().state.selected?.id,
               branchCubit: context.read<BranchCubit>(),
             ),
           ),
           BlocProvider(
-            create: (context) =>
-                WeatherCubit(const WeatherRepositoryImpl())..load(),
+            create: (context) => WeatherCubit(
+              previewMode
+                  ? const PreviewWeatherRepository()
+                  : const WeatherRepositoryImpl(),
+            )..load(),
           ),
         ],
         child: _BranchSync(child: child),

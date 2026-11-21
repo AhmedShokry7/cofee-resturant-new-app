@@ -26,4 +26,14 @@ List<AdminDestination> get contentDestinations => <AdminDestination>[
     section: S.sectionContent,
     tables: <String>['core.app_settings'],
   ),
+  AdminDestination(
+    id: 'visualEditor',
+    label: S.visualEditor,
+    icon: AppIcons.layers01,
+    searchHint: S.visualEditorSearchHint,
+    permission: 'design.edit',
+    section: S.sectionContent,
+    tables: const <String>[],
+    immersive: true,
+  ),
 ];

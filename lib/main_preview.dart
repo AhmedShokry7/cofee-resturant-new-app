@@ -45,15 +45,11 @@ import 'package:new_coffee/features/menu/presentation/views/product_details_page
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Locale first: the app below reads it on the first frame.
-  await AppLocale.instance.initialize();
+  // Preview mode stays memory-only, including locale and theme preferences.
+  SupabaseService.enterPreviewMode();
   // The editor owns the preview language. It lives in the iframe URL so the
   // choice survives a reload without ever touching the customer preference.
   _applyUrlLanguage();
-  // Supabase is required by repositories the app builds (design reads, auth
-  // reconnects). Without configuration the repositories fall back the same
-  // way they do for a customer without a backend.
-  await SupabaseService.init();
   applyPreviewTheme();
 
   runApp(const PreviewApp());
@@ -116,6 +112,10 @@ class _PreviewAppState extends State<PreviewApp> {
   void _initializeFromUrl() {
     if (!kIsWeb) return;
     final uri = Uri.base;
+    // The runtime is launched only by the Studio's isolated preview frame.
+    // A direct launch can still render the app, but it does not activate the
+    // privileged editor bridge without the explicit safety marker.
+    if (uri.queryParameters['previewSafety'] != '1') return;
     final sessionId = uri.queryParameters['sessionId'];
     if (sessionId == null || sessionId.isEmpty) return;
     _bridge.initialize(
@@ -371,8 +371,11 @@ class _PreviewAppState extends State<PreviewApp> {
   }
 
   void _handleSetInteractiveMode(PreviewMessage message) {
-    previewInteractiveMode.value = message.payload['enabled'] == true;
-    if (previewInteractiveMode.value) previewSelectedSectionId.value = null;
+    previewInteractiveMode.value = false;
+    if (message.payload['enabled'] == true) {
+      _ack(message, error: 'preview_interaction_disabled');
+      return;
+    }
     _ack(message);
   }
 
@@ -382,10 +385,14 @@ class _PreviewAppState extends State<PreviewApp> {
     // المعاينة يبدأ من الشاشة الرئيسية دائمًا. التوجيه نفسه في الكود الحقيقي:
     // الزائر المجهول يُوجّه لتسجيل الدخول، أما المعاينة فتجتاز ذلك بمسار
     // الرئيسية صراحة — نفس MyApp ونفس MainPage، بلا شاشة دخول داخل الإطار.
-    return MyApp(
-      currentRoute: AppConstant.homeRoute,
-      onboardingDone: true,
-      initialThemeMode: _urlThemeMode(),
+    return AbsorbPointer(
+      absorbing: true,
+      child: MyApp(
+        currentRoute: AppConstant.homeRoute,
+        onboardingDone: true,
+        initialThemeMode: _urlThemeMode() ?? ThemeMode.light,
+        previewMode: true,
+      ),
     );
   }
 }

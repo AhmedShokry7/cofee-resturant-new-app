@@ -21,6 +21,7 @@ import 'package:admin_app/features/catalog/presentation/pages/product_page.dart'
 import 'package:admin_app/features/coupons/presentation/pages/coupons_page.dart';
 
 import 'package:admin_app/features/customers/presentation/pages/customer_page.dart';
+import 'package:admin_app/features/visual_editor/presentation/pages/visual_editor_page.dart';
 import 'package:admin_app/features/dashboard/presentation/pages/dashboard_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/inventory_page.dart';
 import 'package:admin_app/features/inventory/presentation/pages/stock_movements_page.dart';
@@ -238,6 +239,11 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
   /// page keeps showing the placeholder.
   Widget _pageFor(AdminDestination destination) {
     switch (destination.id) {
+      case 'visualEditor':
+        return VisualEditorPage(
+          canPublish: widget.session.hasPermission('design.publish'),
+          imagePermissions: widget.session.permissions,
+        );
       case 'dashboard':
         return DashboardPage(
           searchController: _searchController,
@@ -507,6 +513,7 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
         content: content,
         collapseSidebar:
             _selected?.immersive == true && width < _immersiveMinWidth,
+        fullWidthContent: _selected?.immersive == true,
       );
     }
 

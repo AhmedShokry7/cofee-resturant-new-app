@@ -17,11 +17,13 @@ class AdminDesktopLayout extends StatelessWidget {
     required this.data,
     required this.content,
     this.collapseSidebar = false,
+    this.fullWidthContent = false,
   });
 
   final AdminShellLayoutData data;
   final Widget content;
   final bool collapseSidebar;
+  final bool fullWidthContent;
 
   @override
   Widget build(BuildContext context) {
@@ -44,15 +46,17 @@ class AdminDesktopLayout extends StatelessWidget {
           : data.onSignOut,
     );
 
-    final body = Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: AppDimensions.contentMaxWidth,
-        ),
-        child: content,
-      ),
-    );
+    final body = fullWidthContent
+        ? SizedBox(width: double.infinity, child: content)
+        : Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: AppDimensions.contentMaxWidth,
+              ),
+              child: content,
+            ),
+          );
 
     if (collapseSidebar) {
       // The drawer belongs to the same Scaffold as the menu button, otherwise

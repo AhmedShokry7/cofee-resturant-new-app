@@ -29,6 +29,7 @@ class MyApp extends StatefulWidget {
     this.currentRoute,
     this.onboardingDone = false,
     this.initialThemeMode,
+    this.previewMode = false,
   });
 
   /// The route the saved session left the customer on.
@@ -40,6 +41,7 @@ class MyApp extends StatefulWidget {
   /// Preview-only starting mode sent by the visual editor. Normal launches
   /// leave it null so the customer's saved preference is still read.
   final ThemeMode? initialThemeMode;
+  final bool previewMode;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -68,6 +70,7 @@ class _MyAppState extends State<MyApp> {
       lazy: false,
       create: (_) => ThemeModeCubit(initialMode: widget.initialThemeMode),
       child: AppProviders(
+        previewMode: widget.previewMode,
         // A publish can happen while this app is in the background (the admin
         // editor is a separate app). Re-read on resume as a fallback even if
         // the Realtime channel was unavailable on that network.

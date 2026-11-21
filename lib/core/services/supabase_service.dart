@@ -13,8 +13,21 @@ class SupabaseService {
   static SupabaseClient? _client;
   static Future<SupabaseClient?>? _initialising;
   static Object? _initialisationError;
+  static bool _previewMode = false;
 
   static bool get isReady => _client != null;
+  static bool get isPreviewMode => _previewMode;
+
+  /// Locks the process away from Supabase before the preview app is composed.
+  /// A preview cannot be switched back to a customer session in this process.
+  static void enterPreviewMode() {
+    if (_client != null) {
+      throw StateError(
+        'Preview mode must start before Supabase initialization.',
+      );
+    }
+    _previewMode = true;
+  }
 
   /// Test hook for simulating an authenticated session without a live backend.
   @visibleForTesting
@@ -25,7 +38,8 @@ class SupabaseService {
 
   /// Whether the current process has an authenticated customer.
   static bool get isSignedIn =>
-      debugSignedIn || (_client != null && _client!.auth.currentUser != null);
+      !_previewMode &&
+      (debugSignedIn || (_client != null && _client!.auth.currentUser != null));
 
   /// Whether the backend is configured.
   static bool get isConfigured => AppConfig.isSupabaseConfigured;
@@ -83,6 +97,7 @@ class SupabaseService {
   /// lifetime, and every sign-in then failed with "the service is
   /// unavailable" even after the network came back.
   static Future<SupabaseClient?> init() {
+    if (_previewMode) return Future<SupabaseClient?>.value(null);
     if (!AppConfig.isSupabaseConfigured) {
       AppConfig.debugLogConfiguration();
       return Future.value(null);
@@ -103,6 +118,7 @@ class SupabaseService {
     int attempts = 3,
     Duration delay = const Duration(seconds: 2),
   }) async {
+    if (_previewMode) return null;
     if (_client != null) return _client;
     if (!AppConfig.isSupabaseConfigured) return null;
     for (var attempt = 1; attempt <= attempts; attempt++) {
@@ -159,6 +175,7 @@ class SupabaseService {
     _initialising = null;
     _initialisationError = null;
     _passwordRecoverySeen = false;
+    _previewMode = false;
   }
 
   /// Test hook for injecting a client that talks to a fake server.

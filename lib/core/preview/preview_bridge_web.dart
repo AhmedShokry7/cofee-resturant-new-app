@@ -34,6 +34,20 @@ class PreviewBridge {
 
   /// Initialize the bridge with a session ID from the launch URL.
   void initialize(String sessionId, {String? parentOrigin}) {
+    final parsedOrigin = parentOrigin == null
+        ? null
+        : Uri.tryParse(parentOrigin);
+    final isLocalDevelopment =
+        parsedOrigin != null &&
+        (parsedOrigin.host == 'localhost' || parsedOrigin.host == '127.0.0.1');
+    if (sessionId.isEmpty ||
+        sessionId.length > 128 ||
+        parsedOrigin == null ||
+        parsedOrigin.origin != parentOrigin ||
+        (parsedOrigin.scheme != 'https' &&
+            !(isLocalDevelopment && parsedOrigin.scheme == 'http'))) {
+      return;
+    }
     _sessionId = sessionId;
     _parentOrigin = parentOrigin;
     if (!kIsWeb) return;
@@ -45,14 +59,22 @@ class PreviewBridge {
     if (_listener != null) return;
     void handler(web.MessageEvent event) {
       try {
-        if (_parentOrigin != null && event.origin != _parentOrigin) {
+        final parent = web.window.parent;
+        if (parent == null ||
+            event.source != parent ||
+            _parentOrigin == null ||
+            event.origin != _parentOrigin) {
           return;
         }
         // المرسل يبعث نص JSON (toJSONString) — المتصفح يسلّمه Dart كسلسلة،
         // فالتحليل هنا قبل فحص الشكل وإلا سقط كل ما يصل.
         final data = PreviewMessage.decodePayload(event.data.dartify());
         final message = data == null ? null : PreviewMessage.fromJson(data);
-        if (message == null || message.sessionId != _sessionId) return;
+        if (message == null ||
+            message.sessionId != _sessionId ||
+            !_allowedInboundTypes.contains(message.type)) {
+          return;
+        }
         _handlers[message.type.value]?.call(message);
       } catch (error) {
         debugPrint('[PreviewBridge] رسالة غير صالحة: $error');
@@ -63,13 +85,28 @@ class PreviewBridge {
     web.window.addEventListener('message', _listener!);
   }
 
+  static const Set<PreviewMessageType> _allowedInboundTypes = {
+    PreviewMessageType.previewInitialize,
+    PreviewMessageType.loadPage,
+    PreviewMessageType.selectElement,
+    PreviewMessageType.updateProperty,
+    PreviewMessageType.addComponent,
+    PreviewMessageType.removeComponent,
+    PreviewMessageType.reorderComponent,
+    PreviewMessageType.applyDesignConfig,
+    PreviewMessageType.previewRefresh,
+    PreviewMessageType.setLanguage,
+    PreviewMessageType.setThemeMode,
+    PreviewMessageType.setInteractiveMode,
+  };
+
   void _sendReady() {
     if (_sessionId == null) return;
     _post(
       PreviewMessage(
         sessionId: _sessionId!,
         type: PreviewMessageType.previewReady,
-        payload: const {'platform': 'web'},
+        payload: const {'platform': 'web', 'safetyVersion': 1},
       ),
     );
   }
