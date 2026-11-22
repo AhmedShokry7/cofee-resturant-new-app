@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -119,7 +120,7 @@ class _AddCardPageState extends State<AddCardPage> {
       return;
     }
     navigator.pop();
-    message.showSnackBar(SnackBar(content: Text(S.cardAdded)));
+    message.showSnackBar(SnackBar(content: DesignText(S.cardAdded, page: 'add_card', label: 'cardAdded')));
   }
 
   @override
@@ -128,7 +129,7 @@ class _AddCardPageState extends State<AddCardPage> {
       child: BlocBuilder<SavedCardsCubit, SavedCardsState>(
         builder: (context, state) {
           return Scaffold(
-            appBar: AppBar(title: Text(S.addCard)),
+            appBar: AppBar(title: DesignText(S.addCard, page: 'add_card', label: 'addCard')),
             // Once we know the provider cannot be reached, there is nothing to
             // collect: asking for a full card number that cannot be saved is how
             // the customer ends up typing a real PAN into a form that fails.

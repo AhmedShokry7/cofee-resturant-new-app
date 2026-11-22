@@ -88,7 +88,7 @@ class CartPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PageTitle(title: S.cart),
+              PageTitle(title: S.cart, page: 'cart', label: 'cart'),
               Expanded(
                 child: BlocBuilder<CartCubit, CartState>(
                   builder: (context, state) {

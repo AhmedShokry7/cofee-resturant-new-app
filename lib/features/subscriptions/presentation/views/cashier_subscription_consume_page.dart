@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -62,7 +63,7 @@ class _ConsumeForm extends StatelessWidget {
   Widget build(BuildContext context) {
     final branchId = context.watch<BranchCubit>().state.selected?.id ?? '';
     return Scaffold(
-      appBar: AppBar(title: Text(S.consumeSubscription)),
+      appBar: AppBar(title: DesignText(S.consumeSubscription, page: 'cashier_subscription', label: 'consumeSubscription')),
       body: Padding(
         padding: EdgeInsets.all(AppSpacing.lg),
         child: Column(
@@ -97,7 +98,7 @@ class _ConsumeForm extends StatelessWidget {
                                   productId: productController.text,
                                   quantityText: quantityController.text,
                                 ),
-                      child: Text(S.deduct),
+                      child: DesignText(S.deduct, page: 'cashier_subscription', label: 'deduct'),
                     ),
                   ),
                   if (state.message != null) ...[

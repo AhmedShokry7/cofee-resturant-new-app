@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/theme/app_icons.dart';
@@ -24,7 +25,7 @@ class EReceiptPage extends StatelessWidget {
     final order = state.lastOrder;
 
     return Scaffold(
-      appBar: AppBar(title: Text(S.eReceipt)),
+      appBar: AppBar(title: DesignText(S.eReceipt, page: 'e_receipt', label: 'eReceipt')),
       body: order == null
           ? EmptyState(
               icon: AppIcons.receipt,

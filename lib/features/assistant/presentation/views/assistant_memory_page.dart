@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -44,7 +45,7 @@ class _AssistantMemoryView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(S.assistantMemoryTitle)),
+      appBar: AppBar(title: DesignText(S.assistantMemoryTitle, page: 'assistant_memory', label: 'assistantMemoryTitle')),
       body: BlocBuilder<AssistantMemoryCubit, AssistantMemoryViewState>(
         builder: (context, state) {
           if (state.loading) {
@@ -111,7 +112,7 @@ class _AssistantMemoryView extends StatelessWidget {
                 TextButton.icon(
                   onPressed: () => _confirmErase(context, cubit),
                   icon: const Icon(AppIcons.delete),
-                  label: Text(S.assistantMemoryDeleteAll),
+                  label: DesignText(S.assistantMemoryDeleteAll, page: 'assistant_memory', label: 'assistantMemoryDeleteAll'),
                   style: TextButton.styleFrom(
                     foregroundColor: AppColor.errorColor,
                   ),
@@ -133,16 +134,16 @@ class _AssistantMemoryView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(S.assistantMemoryDeleteAll),
-        content: Text(S.assistantMemoryOffWarning),
+        title: DesignText(S.assistantMemoryDeleteAll, page: 'assistant_memory', label: 'assistantMemoryDeleteAll'),
+        content: DesignText(S.assistantMemoryOffWarning, page: 'assistant_memory', label: 'assistantMemoryOffWarning'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(S.cancel),
+            child: DesignText(S.cancel, page: 'assistant_memory', label: 'cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(S.confirm),
+            child: DesignText(S.confirm, page: 'assistant_memory', label: 'confirm'),
           ),
         ],
       ),
@@ -150,7 +151,7 @@ class _AssistantMemoryView extends StatelessWidget {
     if (confirmed != true) return;
     await cubit.eraseAll();
     messenger.showSnackBar(
-      SnackBar(content: Text(S.assistantMemoryDeletedAll)),
+      SnackBar(content: DesignText(S.assistantMemoryDeletedAll, page: 'assistant_memory', label: 'assistantMemoryDeletedAll')),
     );
   }
 }

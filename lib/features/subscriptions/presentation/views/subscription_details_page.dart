@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -53,7 +54,7 @@ class _SubscriptionDetailsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(S.mySubscription)),
+      appBar: AppBar(title: DesignText(S.mySubscription, page: 'subscription_details', label: 'mySubscription')),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           final subscription = state.subscription;
@@ -71,7 +72,7 @@ class _SubscriptionDetailsView extends StatelessWidget {
                   SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
-                    child: Text(S.retry),
+                    child: DesignText(S.retry, page: 'subscription_details', label: 'retry'),
                   ),
                 ],
               ),
@@ -82,13 +83,13 @@ class _SubscriptionDetailsView extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(S.noSubscriptionYet),
+                  DesignText(S.noSubscriptionYet, page: 'subscription_details', label: 'noSubscriptionYet'),
                   SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () =>
                         Navigator.of(context)
                             .pushNamed(SubscriptionPlansPage.routeName),
-                    child: Text(S.browsePlans),
+                    child: DesignText(S.browsePlans, page: 'subscription_details', label: 'browsePlans'),
                   ),
                 ],
               ),
@@ -166,7 +167,7 @@ class _SubscriptionBody extends StatelessWidget {
           ),
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
-          title: Text(S.autoRenew),
+          title: DesignText(S.autoRenew, page: 'subscription_details', label: 'autoRenew'),
           value: subscription.autoRenew,
           onChanged: subscription.isActive && !busy
               ? (value) => _setAutoRenew(context, value)
@@ -179,22 +180,22 @@ class _SubscriptionBody extends StatelessWidget {
             if (subscription.isPendingPayment)
               FilledButton(
                 onPressed: busy ? null : () => cubit.load(),
-                child: Text(S.checkPaymentStatus),
+                child: DesignText(S.checkPaymentStatus, page: 'subscription_details', label: 'checkPaymentStatus'),
               ),
             if (subscription.isActive)
               FilledButton(
                 onPressed: busy ? null : () => _showQr(context),
-                child: Text(S.showQrCode),
+                child: DesignText(S.showQrCode, page: 'subscription_details', label: 'showQrCode'),
               ),
             OutlinedButton(
               onPressed: busy ? null : () => _renew(context),
-              child: Text(S.renew),
+              child: DesignText(S.renew, page: 'subscription_details', label: 'renew'),
             ),
             OutlinedButton(
               onPressed: subscription.isActive && !busy
                   ? () => _cancel(context)
                   : null,
-              child: Text(S.cancel),
+              child: DesignText(S.cancel, page: 'subscription_details', label: 'cancel'),
             ),
           ],
         ),
@@ -218,7 +219,7 @@ class _SubscriptionBody extends StatelessWidget {
   Future<void> _setAutoRenew(BuildContext context, bool value) async {
     final messenger = ScaffoldMessenger.of(context);
     if (await cubit.setAutoRenew(value)) return;
-    messenger.showSnackBar(SnackBar(content: Text(S.couldNotSaveAutoRenew)));
+    messenger.showSnackBar(SnackBar(content: DesignText(S.couldNotSaveAutoRenew, page: 'subscription_details', label: 'couldNotSaveAutoRenew')));
   }
 
   /// Makes a pass, or says why there is none.
@@ -228,7 +229,7 @@ class _SubscriptionBody extends StatelessWidget {
   Future<void> _showQr(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     if (await cubit.showQr()) return;
-    messenger.showSnackBar(SnackBar(content: Text(S.couldNotShowQr)));
+    messenger.showSnackBar(SnackBar(content: DesignText(S.couldNotShowQr, page: 'subscription_details', label: 'couldNotShowQr')));
   }
 
   /// Renews and pays for the new cycle.
@@ -242,13 +243,13 @@ class _SubscriptionBody extends StatelessWidget {
     final renewed = await cubit.renew();
     if (renewed == null) {
       messenger.showSnackBar(
-        SnackBar(content: Text(S.couldNotRenewSubscription)),
+        SnackBar(content: DesignText(S.couldNotRenewSubscription, page: 'subscription_details', label: 'couldNotRenewSubscription')),
       );
       return;
     }
     final plan = cubit.renewalPlan;
     if (plan == null) {
-      messenger.showSnackBar(SnackBar(content: Text(S.couldNotPriceRenewal)));
+      messenger.showSnackBar(SnackBar(content: DesignText(S.couldNotPriceRenewal, page: 'subscription_details', label: 'couldNotPriceRenewal')));
       // The new row is real and unpaid, so the page is re-read rather than left
       // showing a subscription the customer cannot act on.
       await cubit.load();
@@ -267,7 +268,7 @@ class _SubscriptionBody extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     if (await cubit.cancel()) return;
     messenger.showSnackBar(
-      SnackBar(content: Text(S.couldNotCancelSubscription)),
+      SnackBar(content: DesignText(S.couldNotCancelSubscription, page: 'subscription_details', label: 'couldNotCancelSubscription')),
     );
   }
 }
@@ -303,7 +304,7 @@ class _StaleNotice extends StatelessWidget {
             label: S.retry,
             child: Material(
               color: AppColor.transparent,
-              child: TextButton(onPressed: onRetry, child: Text(S.retry)),
+              child: TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'subscription_details', label: 'retry')),
             ),
           ),
         ],
@@ -329,7 +330,7 @@ class _UsageHistory extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(S.couldNotLoadUsage, style: AppFonts.regular14(context)),
-          TextButton(onPressed: onRetry, child: Text(S.retry)),
+          TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'subscription_details', label: 'retry')),
         ],
       );
     }
@@ -340,7 +341,7 @@ class _UsageHistory extends StatelessWidget {
         child: const Center(child: CircularProgressIndicator()),
       );
     }
-    if (usage.isEmpty) return Text(S.noUsageYet);
+    if (usage.isEmpty) return DesignText(S.noUsageYet, page: 'subscription_details', label: 'noUsageYet');
     return Column(
       children: [for (final entry in usage) _UsageRow(entry: entry)],
     );

@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -45,7 +46,7 @@ class _SavedCardsPageState extends State<SavedCardsPage> {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: Text(S.paymentMethod)),
+        appBar: AppBar(title: DesignText(S.paymentMethod, page: 'saved_cards', label: 'paymentMethod')),
         body: const _SavedCardsView(),
       ),
     );
@@ -63,16 +64,16 @@ class _SavedCardsView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(S.deleteCard),
-        content: Text(S.deleteCardConfirm),
+        title: DesignText(S.deleteCard, page: 'saved_cards', label: 'deleteCard'),
+        content: DesignText(S.deleteCardConfirm, page: 'saved_cards', label: 'deleteCardConfirm'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(S.cancel),
+            child: DesignText(S.cancel, page: 'saved_cards', label: 'cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(S.delete),
+            child: DesignText(S.delete, page: 'saved_cards', label: 'delete'),
           ),
         ],
       ),
@@ -184,7 +185,7 @@ class _ReadFailedBanner extends StatelessWidget {
           Semantics(
             button: true,
             label: S.retry,
-            child: TextButton(onPressed: onRetry, child: Text(S.retry)),
+            child: TextButton(onPressed: onRetry, child: DesignText(S.retry, page: 'saved_cards', label: 'retry')),
           ),
         ],
       ),

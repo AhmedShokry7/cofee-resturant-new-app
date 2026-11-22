@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -26,7 +27,7 @@ class AddressesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: Text(S.myAddresses)),
+        appBar: AppBar(title: DesignText(S.myAddresses, page: 'addresses', label: 'myAddresses')),
         body: const _AddressesView(),
       ),
     );
@@ -44,16 +45,16 @@ class _AddressesView extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(S.deleteAddress),
-        content: Text(S.deleteAddressConfirm),
+        title: DesignText(S.deleteAddress, page: 'addresses', label: 'deleteAddress'),
+        content: DesignText(S.deleteAddressConfirm, page: 'addresses', label: 'deleteAddressConfirm'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(S.cancel),
+            child: DesignText(S.cancel, page: 'addresses', label: 'cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(S.delete),
+            child: DesignText(S.delete, page: 'addresses', label: 'delete'),
           ),
         ],
       ),

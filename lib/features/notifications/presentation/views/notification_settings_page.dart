@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -30,7 +31,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       BlocBuilder<NotificationsCubit, NotificationsState>(
         builder: (context, state) {
           return Scaffold(
-            appBar: AppBar(title: Text(S.notificationPreferences)),
+            appBar: AppBar(title: DesignText(S.notificationPreferences, page: 'notification_settings', label: 'notificationPreferences')),
             body: state.signedOut
                 ? const AuthRequiredView(
                     originRoute: NotificationSettingsPage.routeName,
@@ -44,13 +45,13 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text(S.notificationPreferencesLoadFailed),
+                          DesignText(S.notificationPreferencesLoadFailed, page: 'notification_settings', label: 'notificationPreferencesLoadFailed'),
                           const SizedBox(height: 12),
                           TextButton(
                             onPressed: () => context
                                 .read<NotificationsCubit>()
                                 .loadPushState(),
-                            child: Text(S.tryAgain),
+                            child: DesignText(S.tryAgain, page: 'notification_settings', label: 'tryAgain'),
                           ),
                         ],
                       ),

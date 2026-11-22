@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -15,7 +16,7 @@ class PaymentMethodPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: Text(S.paymentMethod)),
+        appBar: AppBar(title: DesignText(S.paymentMethod, page: 'payment_method', label: 'paymentMethod')),
         body: const PaymentMethodPageBody(),
         bottomNavigationBar: const PaymentMethodBottomBar(),
       ),

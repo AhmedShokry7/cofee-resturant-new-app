@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/theme/tokens.dart';
@@ -18,7 +19,7 @@ class CheckoutPage extends StatelessWidget {
         SupabaseService.isReady &&
         SupabaseService.client.auth.currentUser != null;
     return Scaffold(
-      appBar: AppBar(title: Text(S.checkout)),
+      appBar: AppBar(title: DesignText(S.checkout, page: 'checkout', label: 'checkout')),
       body: const CheckoutPageBody(),
       bottomNavigationBar: signedIn
           ? const CheckoutBottomBar()
@@ -29,7 +30,7 @@ class CheckoutPage extends StatelessWidget {
                   onPressed: () =>
                       Navigator.of(context)
                           .pushNamed(AuthPage.routeName, arguments: routeName),
-                  child: Text(S.signIn),
+                  child: DesignText(S.signIn, page: 'checkout', label: 'signIn'),
                 ),
               ),
             ),

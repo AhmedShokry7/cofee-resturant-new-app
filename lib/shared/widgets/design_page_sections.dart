@@ -43,11 +43,15 @@ class DesignPageSectionsAbove extends StatelessWidget {
       pageId: pageId,
       sections: pageSections,
     );
-    if (built.isEmpty) return child;
+    final body = sections.where((node) => node.type == 'native.body').firstOrNull;
+    final content = body == null
+        ? child
+        : body.visible ? DesignSectionChrome(section: body, child: child) : const SizedBox.shrink();
+    if (built.isEmpty) return content;
     return Column(
       children: [
         ...built,
-        Expanded(child: child),
+        Expanded(child: content),
       ],
     );
   }

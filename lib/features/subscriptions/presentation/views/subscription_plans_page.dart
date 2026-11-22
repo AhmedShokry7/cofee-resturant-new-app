@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -63,7 +64,7 @@ class _SubscriptionPlansView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(S.subscriptionPlans)),
+      appBar: AppBar(title: DesignText(S.subscriptionPlans, page: 'subscription_plans', label: 'subscriptionPlans')),
       body: BlocBuilder<SubscriptionCubit, SubscriptionState>(
         builder: (context, state) {
           if (state.loading && state.plans.isEmpty) {
@@ -78,14 +79,14 @@ class _SubscriptionPlansView extends StatelessWidget {
                   SizedBox(height: AppSpacing.md),
                   FilledButton(
                     onPressed: () => context.read<SubscriptionCubit>().load(),
-                    child: Text(S.retry),
+                    child: DesignText(S.retry, page: 'subscription_plans', label: 'retry'),
                   ),
                 ],
               ),
             );
           }
           if (state.plans.isEmpty) {
-            return Center(child: Text(S.noPlansAvailable));
+            return Center(child: DesignText(S.noPlansAvailable, page: 'subscription_plans', label: 'noPlansAvailable'));
           }
           return GridView.builder(
             padding: EdgeInsets.all(AppSpacing.md),
@@ -124,7 +125,7 @@ class _SubscriptionPlansView extends StatelessWidget {
     final subscription = await cubit.subscribe(plan);
     if (subscription == null) {
       messenger.showSnackBar(
-        SnackBar(content: Text(S.couldNotStartSubscription)),
+        SnackBar(content: DesignText(S.couldNotStartSubscription, page: 'subscription_plans', label: 'couldNotStartSubscription')),
       );
       return;
     }

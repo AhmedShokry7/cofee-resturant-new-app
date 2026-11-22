@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -15,7 +16,7 @@ class ShippingAddressesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthGuard(
       child: Scaffold(
-        appBar: AppBar(title: Text(S.shippingAddress)),
+        appBar: AppBar(title: DesignText(S.shippingAddress, page: 'shipping_addresses', label: 'shippingAddress')),
         body: const ShippingAddressesPageBody(),
         bottomNavigationBar: const ShippingAddressesBottomBar(),
       ),

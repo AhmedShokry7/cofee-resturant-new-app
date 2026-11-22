@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -70,16 +71,16 @@ class _NotificationsPageState extends State<NotificationsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(S.notificationDeleteAll),
-        content: Text(S.notificationDeleteAllConfirm),
+        title: DesignText(S.notificationDeleteAll, page: 'notifications', label: 'notificationDeleteAll'),
+        content: DesignText(S.notificationDeleteAllConfirm, page: 'notifications', label: 'notificationDeleteAllConfirm'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(S.cancel),
+            child: DesignText(S.cancel, page: 'notifications', label: 'cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(S.delete),
+            child: DesignText(S.delete, page: 'notifications', label: 'delete'),
           ),
         ],
       ),
@@ -163,7 +164,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     itemBuilder: (context) => [
                       PopupMenuItem(
                         value: 'delete_all',
-                        child: Text(S.notificationDeleteAll),
+                        child: DesignText(S.notificationDeleteAll, page: 'notifications', label: 'notificationDeleteAll'),
                       ),
                     ],
                   ),

@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:new_coffee/core/locale/app_strings.dart';
@@ -15,7 +16,7 @@ class OrdersPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(S.myOrders)),
+      appBar: AppBar(title: DesignText(S.myOrders, page: 'orders', label: 'myOrders')),
       body: BlocProvider(
         create: (context) =>
             OrdersCubit(repository: context.read<OrdersRepository>()),

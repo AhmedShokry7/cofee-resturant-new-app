@@ -42,7 +42,7 @@ class CategoriesPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (!isOneCategory) ...[
-              PageTitle(title: S.categories),
+              PageTitle(title: S.categories, page: 'categories', label: 'categories'),
               const CategoryTabs(),
               ...buildCategoriesDocumentSections(document),
             ],

@@ -1,3 +1,4 @@
+import 'package:new_coffee/shared/widgets/design_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -92,7 +93,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(S.loyaltyPoints)),
+      appBar: AppBar(title: DesignText(S.loyaltyPoints, page: 'loyalty', label: 'loyaltyPoints')),
       body: BlocListener<LoyaltyCubit, LoyaltyState>(
         // The rewards are public reference rows; when they arrived but the
         // wallet did not, the page has something to show and only the balance
@@ -104,7 +105,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
           // What the server said stays out of the sentence — the customer needs
           // to know the points on screen may be old, not which table refused.
           ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text(S.couldNotRefreshWallet)));
+              .showSnackBar(SnackBar(content: DesignText(S.couldNotRefreshWallet, page: 'loyalty', label: 'couldNotRefreshWallet')));
         },
         child: BlocBuilder<LoyaltyCubit, LoyaltyState>(
           builder: (context, state) {
@@ -155,7 +156,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                       ? null
                       : TextButton(
                           onPressed: () => _openRewards(context, state.rewards),
-                          child: Text(S.loyaltyShowAll),
+                          child: DesignText(S.loyaltyShowAll, page: 'loyalty', label: 'loyaltyShowAll'),
                         ),
                 ),
                 SizedBox(height: AppSpacing.md),
@@ -185,7 +186,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                     ),
                     action: TextButton(
                       onPressed: () => _openRewards(context, state.rewards),
-                      child: Text(S.loyaltyShowAll),
+                      child: DesignText(S.loyaltyShowAll, page: 'loyalty', label: 'loyaltyShowAll'),
                     ),
                   ),
                   SizedBox(height: AppSpacing.md),
@@ -203,7 +204,7 @@ class _LoyaltyPageState extends State<LoyaltyPage> {
                           builder: (_) => const LoyaltyHistoryPage(),
                         ),
                       ),
-                      child: Text(S.loyaltyShowAll),
+                      child: DesignText(S.loyaltyShowAll, page: 'loyalty', label: 'loyaltyShowAll'),
                     ),
                   ),
                   SizedBox(height: AppSpacing.md),

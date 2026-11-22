@@ -31,7 +31,7 @@ class FavoritesPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PageTitle(title: S.favorites),
+              PageTitle(title: S.favorites, page: 'favourites', label: 'favorites'),
               Expanded(
                 child: BlocBuilder<FavoritesCubit, FavoritesState>(
                   builder: (context, state) {
