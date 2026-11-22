@@ -18,8 +18,10 @@ class SupabaseService {
   static bool get isReady => _client != null;
   static bool get isPreviewMode => _previewMode;
 
-  /// Locks the process away from Supabase before the preview app is composed.
-  /// A preview cannot be switched back to a customer session in this process.
+  /// Locks the process into preview identity semantics before the preview
+  /// app is composed: no customer session is restored or created, and every
+  /// write path is swapped for a closed preview layer. The process may still
+  /// connect to Supabase for read-only catalogue data — see [init].
   static void enterPreviewMode() {
     if (_client != null) {
       throw StateError(
@@ -97,7 +99,10 @@ class SupabaseService {
   /// lifetime, and every sign-in then failed with "the service is
   /// unavailable" even after the network came back.
   static Future<SupabaseClient?> init() {
-    if (_previewMode) return Future<SupabaseClient?>.value(null);
+    // وضع المعاينة يتصل أيضًا: بيانات الكتالوج الحقيقية (منتجات،
+    // تصنيفات، بانرات) تعرض في المحاكي كي يرى الموظف الشكل كما
+    // يراه الزبون. كل مسارات الكتابة تظل مستبدلة بطبقات معاينة
+    // مغلقة، والجلسة لا تُستعاد ولا تُنشأ هنا.
     if (!AppConfig.isSupabaseConfigured) {
       AppConfig.debugLogConfiguration();
       return Future.value(null);
@@ -118,7 +123,6 @@ class SupabaseService {
     int attempts = 3,
     Duration delay = const Duration(seconds: 2),
   }) async {
-    if (_previewMode) return null;
     if (_client != null) return _client;
     if (!AppConfig.isSupabaseConfigured) return null;
     for (var attempt = 1; attempt <= attempts; attempt++) {

@@ -55,7 +55,12 @@ class _PreviewAwareDesignRepository implements DesignRepository {
 ///
 /// تطبيق العميل يزوّد كل مساراته بـ DesignCubit من جذره، وهنا يُقلّد ذلك
 /// بمستودع زائف يجيب بلا مستند — فترسم الشاشات أصولها.
-Widget _app(String targetRoute, {PublishedDesign? design, DesignCubit? cubit}) {
+Widget _app(
+  String targetRoute, {
+  PublishedDesign? design,
+  DesignCubit? cubit,
+  Key? treeKey,
+}) {
   final app = MaterialApp(
     onGenerateRoute: AppRouteGenerator.onGenerateRoute,
     routes: {
@@ -64,11 +69,21 @@ Widget _app(String targetRoute, {PublishedDesign? design, DesignCubit? cubit}) {
     },
     initialRoute: SplashView.routeName,
   );
-  if (cubit != null) return BlocProvider.value(value: cubit, child: app);
-  return BlocProvider<DesignCubit>(
-    create: (context) => DesignCubit(repository: FakeDesignRepository(design)),
-    child: app,
-  );
+  Widget provided;
+  if (cubit != null) {
+    provided = BlocProvider.value(value: cubit, child: app);
+  } else {
+    provided = BlocProvider<DesignCubit>(
+      create: (context) =>
+          DesignCubit(repository: FakeDesignRepository(design)),
+      child: app,
+    );
+  }
+  // مفتاح الشجرة يجبر إعادة الإنشاء بين سيناريوهين في نفس الاختبار؛
+  // pumpWidget يعيد استعمال شجرة العناصر فيتوقف cubit الأول حيًّا.
+  return treeKey == null
+      ? provided
+      : KeyedSubtree(key: treeKey, child: provided);
 }
 
 /// Renders the splash on a surface of the given logical size.
@@ -79,12 +94,15 @@ Future<void> _pumpSplash(
   String targetRoute = WelcomePage.routeName,
   PublishedDesign? design,
   DesignCubit? cubit,
+  Key? treeKey,
 }) async {
   tester.view.physicalSize = logicalSize * pixelRatio;
   tester.view.devicePixelRatio = pixelRatio;
   addTearDown(tester.view.reset);
 
-  await tester.pumpWidget(_app(targetRoute, design: design, cubit: cubit));
+  await tester.pumpWidget(
+    _app(targetRoute, design: design, cubit: cubit, treeKey: treeKey),
+  );
 }
 
 /// Counts every copy of the destination on the navigator stack, including the
@@ -111,6 +129,75 @@ void main() {
     );
     expect(background.backgroundColor, AppColor.whiteColor);
   });
+
+  testWidgets(
+    'بدون صورة افتتاحية تنطلق الشاشة إلى لوجو الهوية، ومع صورة تبقى كل صورة منفصلة',
+    (tester) async {
+      // لا صورة افتتاحية — لكن الهوية تحمل لوجوًا: الاحتياط يقرأه لا الأصل.
+      const logoOnly = PublishedDesign(
+        schemaVersion: 2,
+        theme: PublishedTheme(
+          colors: {},
+          textFactor: 1,
+          logoUrl: 'https://cdn.example.com/identity-logo.png',
+        ),
+        extraSections: {
+          'splash': [
+            PublishedSection(
+              id: 'splash_settings',
+              type: 'splash.settings',
+              properties: {'imageVisible': true},
+            ),
+          ],
+        },
+      );
+      await _pumpSplash(
+        tester,
+        const Size(360, 690),
+        design: logoOnly,
+        treeKey: const ValueKey('identity-logo-scenario'),
+      );
+      await tester.pump();
+      expect(
+        tester.widget<DbImage>(find.byType(DbImage)).image,
+        'https://cdn.example.com/identity-logo.png',
+        reason: 'غياب صورة الافتتاحية يرجع للوجو لا للأصل المضمّن',
+      );
+
+      // صورة افتتاحية موجودة: تقول كلمتها وتتجاهل لوجو الهوية تمامًا.
+      const splashImage = PublishedDesign(
+        schemaVersion: 2,
+        theme: PublishedTheme(
+          colors: {},
+          textFactor: 1,
+          logoUrl: 'https://cdn.example.com/identity-logo.png',
+        ),
+        extraSections: {
+          'splash': [
+            PublishedSection(
+              id: 'splash_settings',
+              type: 'splash.settings',
+              properties: {
+                'imageUrl': 'https://cdn.example.com/splash-hero.png',
+              },
+            ),
+          ],
+        },
+      );
+      await _pumpSplash(
+        tester,
+        const Size(360, 690),
+        design: splashImage,
+        treeKey: const ValueKey('splash-hero-scenario'),
+      );
+      await tester.pump();
+      expect(
+        tester.widget<DbImage>(find.byType(DbImage)).image,
+        'https://cdn.example.com/splash-hero.png',
+        reason: 'صورة الافتتاحية تسبق اللوجو ولا تُستبدل به',
+      );
+    },
+  );
 
   testWidgets('the mark starts transparent and reaches full opacity', (
     tester,

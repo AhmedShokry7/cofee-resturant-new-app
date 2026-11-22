@@ -12,14 +12,15 @@ void main() {
   });
 
   test(
-    'preview mode prevents Supabase initialization and session access',
+    'preview stays a guest: session is never restored and sign-in is blocked',
     () async {
+      SupabaseService.debugSetSignedIn(true);
       SupabaseService.enterPreviewMode();
       expect(SupabaseService.isPreviewMode, isTrue);
+      // حتى لو وُجدت جلسة في مخزن التطبيق الحقيقي، المعاينة زبون مجهول:
+      // لا سلة خادم ولا عناوين ولا طلبات باسم أحد.
       expect(SupabaseService.isSignedIn, isFalse);
-      expect(await SupabaseService.init(), isNull);
-      expect(await SupabaseService.ensureReady(attempts: 1), isNull);
-      expect(SupabaseService.isReady, isFalse);
+      expect(const PreviewAuthRepository().currentUser(), completion(isNull));
     },
   );
 

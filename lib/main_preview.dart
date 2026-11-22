@@ -47,6 +47,15 @@ void main() async {
 
   // Preview mode stays memory-only, including locale and theme preferences.
   SupabaseService.enterPreviewMode();
+  // اتصال قراءة فقط: المحاكي يعرض الكتالوج الحقيقي (منتجات، تصنيفات،
+  // بانرات) كما يراه الزبون. الكتابة مغلقة بطبقات المعاينة، والجلسة
+  // لا تُستعاد. فشل الشبكة يترك الكتالوج فارغًا كما كان ولا يعطل المعاينة.
+  try {
+    await SupabaseService.init();
+  } catch (_) {
+    // السبب محفوظ في SupabaseService.initialisationError؛ المعاينة تعمل
+    // بلا كتالوج بدل أن تعلق على إقلاع معطّل.
+  }
   // The editor owns the preview language. It lives in the iframe URL so the
   // choice survives a reload without ever touching the customer preference.
   _applyUrlLanguage();

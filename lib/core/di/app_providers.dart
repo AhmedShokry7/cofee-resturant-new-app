@@ -76,10 +76,12 @@ class AppProviders extends StatelessWidget {
   ///
   /// The database is the only source. There is deliberately no mock fallback:
   /// fabricated products, prices and banners must never reach the customer.
-  /// The offline fallback serves an empty catalogue instead, so the app
-  /// renders its own "no results" state rather than a made-up menu.
+  /// The preview connects too (read-only): the simulator shows the real
+  /// catalogue — products, categories, banners — exactly as the customer
+  /// sees it. Every write path stays swapped for a closed preview layer.
+  /// Without a ready backend the offline fallback serves an empty catalogue,
+  /// so the app renders its own "no results" state rather than a made-up menu.
   CatalogRepository _buildCatalogRepository() {
-    if (previewMode) return const UnavailableCatalogRepository();
     if (SupabaseService.isReady) return SupabaseProductRepository();
     return const UnavailableCatalogRepository();
   }
