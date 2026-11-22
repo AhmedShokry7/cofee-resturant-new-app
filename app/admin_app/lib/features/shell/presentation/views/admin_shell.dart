@@ -50,6 +50,7 @@ import 'package:admin_app/features/shell/presentation/models/admin_destinations.
 import 'package:admin_app/features/shell/presentation/models/admin_shell_layout_data.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_desktop_layout.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_mobile_layout.dart';
+import 'package:admin_app/features/shell/presentation/widgets/admin_more_page.dart';
 import 'package:admin_app/features/shell/presentation/widgets/admin_sign_out_dialog.dart';
 import 'package:admin_app/features/staff/presentation/pages/staff_page.dart';
 import 'package:admin_app/features/subscription_plans_admin/presentation/pages/subscription_plan_page.dart';
@@ -238,6 +239,12 @@ class _AdminShellState extends State<AdminShell> with WidgetsBindingObserver {
   /// page keeps showing the placeholder.
   Widget _pageFor(AdminDestination destination) {
     switch (destination.id) {
+      case 'more':
+        return AdminMorePage(
+          destinations: _destinations,
+          selectedId: destination.id,
+          onSelect: _select,
+        );
       case 'visualEditor':
         return VisualEditorPage(
           canPublish: widget.session.hasPermission('design.publish'),

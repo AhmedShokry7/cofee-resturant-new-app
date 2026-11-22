@@ -219,13 +219,17 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(home: AdminShell(session: _session())));
     await tester.pump();
+    // الصفحات الثانوية خرجت من الشريط الجانبي إلى صفحة «المزيد».
     expect(_sidebarItem(S.staffLabel), findsNothing);
 
     await tester.pumpWidget(
       MaterialApp(home: AdminShell(session: _sessionWithStaffRead())),
     );
     await tester.pump();
-    expect(_sidebarItem(S.staffLabel), findsOneWidget);
+    // من صفحة «المزيد»: كرت الموظفين يظهر لمن يملك صلاحية القراءة.
+    await tester.tap(find.widgetWithText(AdminSidebarItem, S.more));
+    await tester.pumpAndSettle();
+    expect(find.text(S.staffLabel), findsWidgets);
   });
 
   testWidgets('the sidebar follows the language back to English', (

@@ -93,7 +93,9 @@ class PosPageBody extends StatelessWidget {
   /// Keep the basket beside the menu on tablets and desktops. The former
   /// 960px cutoff sent portrait tablets into the phone-style bottom sheet even
   /// though there was enough room for a compact two-column workspace.
-  static const double _wideBreakpoint = 820;
+  // التابليت (٧٠٠ بكسل وأكثر) يحصل على التقسيم الاحترافي: القائمة
+  // والسلة جنبًا إلى جنب — بلا انتظار شاشة مكتب عريضة.
+  static const double _wideBreakpoint = 700;
 
   @override
   Widget build(BuildContext context) {

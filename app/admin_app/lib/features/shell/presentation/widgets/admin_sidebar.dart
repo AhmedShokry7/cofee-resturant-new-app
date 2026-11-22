@@ -34,6 +34,24 @@ class AdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // الشريط الجانبي يعرض الصفحات الأساسية فقط + بوابة «المزيد» —
+    // باقي الصفحات تُقرأ من صفحة المزيد بأقسامها وكروتها بدل قائمة
+    // طويلة لا تنتهي.
+    const primaryIds = {
+      'dashboard',
+      'orders',
+      'products',
+      'pos',
+      'kitchen',
+      'inventory',
+      'payments',
+      'visualEditor',
+      'notifications',
+      'more',
+    };
+    final visible = destinations
+        .where((destination) => primaryIds.contains(destination.id))
+        .toList();
     return Container(
       width: AppDimensions.sidebarWidth,
       color: AppColor.primaryColor,
@@ -49,9 +67,9 @@ class AdminSidebar extends StatelessWidget {
                   bottom: AppSpacing.lg,
                 ),
                 children: [
-                  for (final destination in destinations) ...[
+                  for (final destination in visible) ...[
                     if (destination.section != null &&
-                        _isFirstOfSection(destination))
+                        _isFirstOfSection(visible, destination))
                       AdminSidebarSectionTitle(title: destination.section!),
                     AdminSidebarItem(
                       destination: destination,
@@ -70,10 +88,13 @@ class AdminSidebar extends StatelessWidget {
     );
   }
 
-  bool _isFirstOfSection(AdminDestination destination) {
-    final index = destinations.indexOf(destination);
+  bool _isFirstOfSection(
+    List<AdminDestination> visible,
+    AdminDestination destination,
+  ) {
+    final index = visible.indexOf(destination);
     if (index <= 0) return true;
-    return destinations[index - 1].section != destination.section;
+    return visible[index - 1].section != destination.section;
   }
 }
 

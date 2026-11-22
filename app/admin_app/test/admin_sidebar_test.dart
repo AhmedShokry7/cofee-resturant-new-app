@@ -240,6 +240,8 @@ void main() {
     }
 
     for (final destination in adminDestinations) {
+      // بوابة «المزيد» ليست صفحة بقاعدة بيانات: بلا قسم ولا جداول.
+      if (destination.id == 'more') continue;
       expect(destination.section, isNotNull, reason: destination.id);
       if (destination.id != 'dashboard' &&
           destination.id != 'orders' &&

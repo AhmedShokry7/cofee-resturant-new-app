@@ -36,8 +36,9 @@ class ReviewPageBody extends StatelessWidget {
     return AdminPageFrame(
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final compact =
-              constraints.maxWidth < 840 || constraints.maxHeight < 700;
+          // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
+          // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
+          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
           final sections = <Widget>[
             AdminPageHeader(
               title: S.reviews,
@@ -58,27 +59,18 @@ class ReviewPageBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.px14),
           ];
-          if (compact) {
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
                   SizedBox(
-                    height: AppDimensions.directoryCanvasHeightLg,
+                    height: directoryHeight,
                     child: directory,
                   ),
                 ],
               ),
             );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...sections,
-              Expanded(child: directory),
-            ],
-          );
         },
       ),
     );

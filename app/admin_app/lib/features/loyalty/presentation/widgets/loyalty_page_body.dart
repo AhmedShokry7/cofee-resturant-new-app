@@ -43,8 +43,9 @@ class LoyaltyPageBody extends StatelessWidget {
           // Phones cannot fit the header, metrics, rule card and a usable
           // directory at once, so the whole page scrolls and the directory
           // keeps a bounded height for its own lists.
-          final compact =
-              constraints.maxWidth < 840 || constraints.maxHeight < 640;
+          // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
+          // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
+          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
           final sections = <Widget>[
             AdminPageHeader(
               title: S.loyalty,
@@ -75,27 +76,18 @@ class LoyaltyPageBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSizes.px16),
           ];
-          if (compact) {
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
                   SizedBox(
-                    height: AppDimensions.directoryCanvasHeightSm,
+                    height: directoryHeight,
                     child: directory,
                   ),
                 ],
               ),
             );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...sections,
-              Expanded(child: directory),
-            ],
-          );
         },
       ),
     );

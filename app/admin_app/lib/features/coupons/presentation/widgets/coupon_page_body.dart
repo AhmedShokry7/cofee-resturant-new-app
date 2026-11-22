@@ -38,8 +38,9 @@ class CouponPageBody extends StatelessWidget {
         builder: (context, constraints) {
           // The directory keeps a usable height on phones while the rest of
           // the page scrolls above it.
-          final compact =
-              constraints.maxWidth < 840 || constraints.maxHeight < 640;
+          // السكرول على الصفحة كاملة: الترويسة والبطاقات والقائمة تتحرك
+          // معًا، والقائمة تأخذ ارتفاعًا متجاوبًا مع مساحة الشاشة.
+          final directoryHeight = (constraints.maxHeight - 360).clamp(480.0, 840.0);
           final sections = <Widget>[
             AdminPageHeader(
               title: S.coupons,
@@ -66,27 +67,18 @@ class CouponPageBody extends StatelessWidget {
             CouponMetricsCards(metrics: metrics),
             const SizedBox(height: AppSizes.px16),
           ];
-          if (compact) {
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   ...sections,
                   SizedBox(
-                    height: AppDimensions.directoryCanvasHeightMd,
+                    height: directoryHeight,
                     child: directory,
                   ),
                 ],
               ),
             );
-          }
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              ...sections,
-              Expanded(child: directory),
-            ],
-          );
         },
       ),
     );
