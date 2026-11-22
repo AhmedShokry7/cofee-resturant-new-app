@@ -68,135 +68,124 @@ class AdminMetricCard extends StatelessWidget {
     final theme = Theme.of(context);
     final dark = theme.brightness == Brightness.dark;
     final grey = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.lg,
-        vertical: 12,
-      ),
-      decoration: ShapeDecoration(
-        color: theme.colorScheme.surface,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
-          ),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 105),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
         ),
-        shadows: dark
-            ? const []
-            : const [
-                BoxShadow(
-                  color: AppColor.inkWashFaint,
-                  blurRadius: 24,
-                  offset: Offset(0, 5),
-                ),
-              ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // رأس البطاقة: فقاعة الأيقونة عند البداية، وشارة الاتجاه عند النهاية
-          // — بحيز مرن حتى لا تُجزع البطاقة على العرض الضيق.
-          Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: iconBackground,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: Icon(icon, size: 20, color: iconColor),
-              ),
-              const Spacer(),
-              if (changeLabel != null)
-                Flexible(
-                  child: Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: _TrendChip(
-                      label: changeLabel!,
-                      positive: isPositive,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: AppSizes.px10),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: grey,
-              fontSize: AppFontSizes.size10,
-              fontWeight: AppFontWeights.medium,
-              height: 1.4,
+        decoration: ShapeDecoration(
+          color: theme.colorScheme.surface,
+          shape: RoundedRectangleBorder(
+            side: BorderSide(
+              color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
             ),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
           ),
-          const SizedBox(height: AppSizes.px2),
-          Row(
-            children: [
-              Flexible(
-                child: Text(
-                  value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: dark ? AppColor.darkText : AppColor.adminHeading,
-                    fontSize: AppFontSizes.size22,
-                    fontWeight: AppFontWeights.bold,
-                    height: 1.25,
-                    letterSpacing: -0.3,
+          shadows: dark
+              ? const []
+              : const [
+                  BoxShadow(
+                    color: AppColor.inkWashFaint,
+                    blurRadius: 24,
+                    offset: Offset(0, 5),
                   ),
-                ),
-              ),
-              if (isMoney) ...[
-                const SizedBox(width: AppSizes.px4),
-                CurrencyIcon(
-                  size: AppFontSizes.size22 - 3,
-                  color: dark
-                      ? AppColor.darkTextSecondary
-                      : AppColor.adminMuted,
-                ),
-              ],
-            ],
-          ),
-          if (caption != null) ...[
-            const SizedBox(height: AppSizes.px4),
+                ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _MetricBadge(
+              label: changeLabel,
+              positive: isPositive,
+              icon: icon,
+              iconColor: iconColor,
+              iconBackground: iconBackground,
+            ),
+            const SizedBox(height: AppSizes.px8),
             Row(
               children: [
                 Flexible(
                   child: Text(
-                    caption!,
+                    value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: grey,
-                      fontSize: AppFontSizes.size8_5,
-                      height: 1.4,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: dark ? AppColor.darkText : AppColor.adminHeading,
+                      fontSize: AppFontSizes.size21,
+                      fontWeight: AppFontWeights.bold,
+                      height: 1.5,
                     ),
                   ),
                 ),
-                if (captionIsMoney) ...[
+                if (isMoney) ...[
                   const SizedBox(width: AppSizes.px4),
-                  CurrencyIcon(size: 10, color: grey),
+                  CurrencyIcon(
+                    size: AppFontSizes.size21 - 1,
+                    color: dark
+                        ? AppColor.darkTextSecondary
+                        : AppColor.adminMuted,
+                  ),
                 ],
               ],
             ),
+            const SizedBox(height: AppSizes.px1),
+            Text(
+              label,
+              textAlign: TextAlign.start,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
+                fontSize: AppFontSizes.size9,
+                fontWeight: AppFontWeights.regular,
+                height: 1.5,
+              ),
+            ),
+            if (caption != null)
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      caption!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: grey,
+                        fontSize: AppFontSizes.size8_5,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                  if (captionIsMoney) ...[
+                    const SizedBox(width: AppSizes.px4),
+                    CurrencyIcon(size: 10, color: grey),
+                  ],
+                ],
+              ),
           ],
-        ],
+        ),
       ),
     );
   }
 }
 
-/// شارة الاتجاه: سهم يقرأه العين قبل الرقم، والنسبة تُقرأ بعده.
-class _TrendChip extends StatelessWidget {
-  const _TrendChip({required this.label, required this.positive});
+class _MetricBadge extends StatelessWidget {
+  const _MetricBadge({
+    required this.label,
+    required this.positive,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+  });
 
-  final String label;
+  final String? label;
   final bool positive;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
 
   @override
   Widget build(BuildContext context) {
@@ -205,43 +194,67 @@ class _TrendChip extends StatelessWidget {
         : AppColor.trendNegative;
     return Directionality(
       textDirection: TextDirection.ltr,
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: 3,
-        ),
-        decoration: BoxDecoration(
-          color: positive
-              ? AppColor.trendPositiveSurface
-              : AppColor.trendNegativeSurface,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              positive
-                  ? Icons.trending_up_rounded
-                  : Icons.trending_down_rounded,
-              size: 13,
-              color: trendColor,
-            ),
-            const SizedBox(width: 3),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          if (label != null)
             Flexible(
-              child: Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: trendColor,
-                  fontSize: AppFontSizes.size9,
-                  fontWeight: AppFontWeights.bold,
-                  height: 1.3,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.xs,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color: positive
+                      ? AppColor.trendPositiveSurface
+                      : AppColor.trendNegativeSurface,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          label!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: trendColor,
+                            fontSize: AppFontSizes.size8,
+                            fontWeight: AppFontWeights.semiBold,
+                            height: AppTextHeights.line1_5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: AppSizes.px4),
+                      Icon(
+                        positive
+                            ? Icons.trending_up_rounded
+                            : Icons.trending_down_rounded,
+                        size: 14,
+                        color: trendColor,
+                      ),
+                    ],
+                  ),
                 ),
               ),
+            )
+          else
+            const SizedBox.shrink(),
+          const SizedBox(width: AppSizes.px6),
+          Container(
+            width: 33,
+            height: 33,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: iconBackground,
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-          ],
-        ),
+            child: Icon(icon, size: 19, color: iconColor),
+          ),
+        ],
       ),
     );
   }
