@@ -346,9 +346,8 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                     ],
                   ),
                 ),
-            // قائمة العناصر: الترحيب شجرة تشريحية بموضع كل مسافة
-            // الحقيقي، والشاشات المدمجة الأخرى مجموعات (خلفية،
-            // محتوى، إجراء، ترتيب)، وبقية الصفحات قائمة هرمية مسطّحة.
+            // قائمة العناصر: كل الصفحات بما فيها الترحيب شجرة هرمية
+            // بترتيب المستند الحقيقي، مع الإضافة والحذف والنسخ في كل صف.
             Expanded(
               child: _filtered.isEmpty
                   ? (_searchQuery.isEmpty
@@ -357,8 +356,6 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                             message: S.visualEditorNoComponents,
                           )
                         : _EmptySearch(query: _searchQuery, dark: dark))
-                  : widget.pageId == 'welcome' && _searchQuery.isEmpty
-                  ? _buildWelcomeTree(dark)
                   : _ComponentList(
                       components: _searchQuery.trim().isEmpty
                           ? _documentOrderedComponents()
@@ -374,6 +371,13 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                       dark: dark,
                     ),
             ),
+
+            // إضافة دائمة أسفل اللوحة: كل صفحة زرّها تحت يده، العنصر
+            // الجديد يُلحق بنهاية الصفحة ويُفتح محرّره فورًا.
+            if (widget.pageId != 'splash' && widget.onAddComponent != null) ...[
+              Divider(height: 1, color: VisualEditorTokens.border(context)),
+              _BottomAddBar(onAdd: widget.onAddComponent!, dark: dark),
+            ],
           ],
         ),
       ),
@@ -415,81 +419,6 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
     final seen = ordered.map((c) => c.componentId).toSet();
     ordered.addAll(all.where((c) => !seen.contains(c.componentId)));
     return ordered;
-  }
-
-  /// شجرة الترحيب التشريحية: تعكس البناء الحقيقي للصفحة في تطبيق
-  /// العميل (welcome_page_body.dart) — الصورة فوق واللوحة المتموّجة
-  /// تحتها، وعقدة «المسافات» ليست فاصلًا في القائمة بل تتحكم في
-  /// موضعين فعليين: الهامش تحت الصورة والمسافة بعد العنوان — لذا
-  /// تظهر بصفّين في موضعهما الصحيح، وكلاهما يفتح نفس المحرّر.
-  Widget _buildWelcomeTree(bool dark) {
-    EditableComponent? byType(String type) {
-      for (final c in widget.components) {
-        if (c.componentType == type) return c;
-      }
-      return null;
-    }
-
-    final hero = byType('welcomeHero');
-    final spacing = byType('welcomeSpacing');
-    final title = byType('welcomeTitle');
-    final body = byType('welcomeBody');
-    final cta = byType('welcomeCta');
-
-    Widget row(
-      EditableComponent? component, {
-      String? label,
-      String? subtitle,
-      bool withActions = true,
-    }) {
-      if (component == null) return const SizedBox.shrink();
-      return _ComponentRow(
-        key: ValueKey('${component.componentId}.$label'),
-        component: component,
-        index: 0,
-        isSelected: widget.selectedComponentId == component.componentId,
-        onTap: () => widget.onSelect(component.componentId),
-        onDelete: withActions && component.canDelete
-            ? () => widget.onDelete(component.componentId)
-            : null,
-        onDuplicate: withActions && component.canDuplicate
-            ? () => widget.onDuplicate(component.componentId)
-            : null,
-        onToggleVisibility: () =>
-            widget.onToggleVisibility(component.componentId),
-        allowReorder: false,
-        dark: dark,
-        labelOverride: label,
-        subtitleOverride: subtitle,
-      );
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          row(hero),
-          if (spacing != null) ...[
-            row(
-              spacing,
-              label: 'المسافة تحت الصورة',
-              subtitle: 'الهامش بين الصورة ولوحة المحتوى',
-            ),
-          ],
-          row(title),
-          if (spacing != null)
-            row(
-              spacing,
-              label: 'المسافة بعد العنوان',
-              subtitle: 'المسافة بين العنوان والنص',
-              withActions: false,
-            ),
-          row(body),
-          row(cta),
-        ],
-      ),
-    );
   }
 }
 
@@ -661,6 +590,80 @@ class _QuickAddBar extends StatelessWidget {
                   color: _colorForType(type, dark: dark),
                 ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BottomAddBar extends StatelessWidget {
+  const _BottomAddBar({required this.onAdd, required this.dark});
+
+  /// ينادي بإضافة عنصر جديد في نهاية الصفحة الحالية.
+  final void Function(String) onAdd;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: dark
+          ? AppColor.darkSurfaceContainer
+          : VisualEditorTokens.surfaceSoftCreamSecondary,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.add_circle_outline_rounded,
+                  size: 13,
+                  color: dark
+                      ? AppColor.darkTextSecondary
+                      : AppColor.adminMuted,
+                ),
+                const SizedBox(width: AppSizes.px4),
+                Expanded(
+                  child: Text(
+                    'إضافة عنصر إلى نهاية الصفحة',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: AppFontWeights.semiBold,
+                      color: dark
+                          ? AppColor.darkTextSecondary
+                          : AppColor.adminMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                for (final (type, label, icon) in _quickAddTypes)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 6),
+                    child: _QuickAddChip(
+                      label: label,
+                      icon: icon,
+                      onTap: () => onAdd(type),
+                      dark: dark,
+                      color: _colorForType(type, dark: dark),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
