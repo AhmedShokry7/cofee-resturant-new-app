@@ -224,12 +224,11 @@ class PropertiesInspectorPanel extends StatelessWidget {
                           pickImage:
                               onPickImage ?? DesignImageUpload.pickAndUpload,
                         ),
-                      // Keep common content controls visible; layout and visual
-                      // polish remain available under the advanced section.
-                      for (final groupKey in grouped.keys.where(
-                        (key) => !_isAdvancedPropertyGroup(key),
-                      ))
-                        _ExpandablePropertyGroup(
+                      // أقسام بأسلوب فيجما: كل المجموعات ظاهرة دائمًا
+                      // بترتيب ثابت (الموضع ← الأبعاد ← المظهر ←
+                      // الانتقال ← المحتوى) — بلا طيّ يخفي الإعدادات.
+                      for (final groupKey in _orderedGroupKeys(grouped.keys))
+                        _PropertySection(
                           groupLabel: groupKey,
                           fields: _pairBilingualFields(grouped[groupKey]!),
                           component: component,
@@ -237,61 +236,13 @@ class PropertiesInspectorPanel extends StatelessWidget {
                           onReset: onResetProperty,
                           onPickImage: onPickImage,
                           onBrowseImages: onBrowseImages,
-                          initiallyExpanded:
-                              grouped.keys
-                                  .where(
-                                    (key) => !_isAdvancedPropertyGroup(key),
-                                  )
-                                  .firstOrNull ==
-                              groupKey,
                         ),
-                      if (grouped.keys.any(_isAdvancedPropertyGroup) ||
-                          extraProps.isNotEmpty)
-                        Material(
-                          type: MaterialType.transparency,
-                          child: ExpansionTile(
-                            tilePadding: const EdgeInsetsDirectional.only(
-                              start: AppSpacing.xs,
-                              end: AppSpacing.xs,
-                            ),
-                            childrenPadding: const EdgeInsetsDirectional.only(
-                              start: AppSpacing.sm,
-                              end: AppSpacing.sm,
-                            ),
-                            title: Text(
-                              'المزيد من الإعدادات',
-                              style: TextStyle(
-                                fontSize: AppFontSizes.size11,
-                                fontWeight: AppFontWeights.semiBold,
-                                color: dark
-                                    ? AppColor.darkText
-                                    : AppColor.adminBody,
-                              ),
-                            ),
-                            children: [
-                              for (final groupKey in grouped.keys.where(
-                                _isAdvancedPropertyGroup,
-                              ))
-                                _PropertyGroup(
-                                  groupLabel: groupKey,
-                                  fields: _pairBilingualFields(
-                                    grouped[groupKey]!,
-                                  ),
-                                  component: component,
-                                  onChanged: onPropertyChanged,
-                                  onReset: onResetProperty,
-                                  onPickImage: onPickImage,
-                                  onBrowseImages: onBrowseImages,
-                                ),
-                              if (extraProps.isNotEmpty)
-                                _ExtraPropsGroup(
-                                  props: extraProps,
-                                  componentId: component.componentId,
-                                  onChanged: onPropertyChanged,
-                                  dark: dark,
-                                ),
-                            ],
-                          ),
+                      if (extraProps.isNotEmpty)
+                        _ExtraPropsGroup(
+                          props: extraProps,
+                          componentId: component.componentId,
+                          onChanged: onPropertyChanged,
+                          dark: dark,
                         ),
                     ],
                   ],
@@ -327,16 +278,15 @@ class PropertiesInspectorPanel extends StatelessWidget {
     void Function({required String componentId, required String propertyKey})
     onReset,
     Future<String?> Function()? onPickImage,
-    Future<String?> Function()? onBrowseImages, {
-    bool initiallyExpanded = false,
-  }) {
+    Future<String?> Function()? onBrowseImages,
+  ) {
     if (splashGroup != null && splashGroup != title)
       return const SizedBox.shrink();
     final fields = properties.entries
         .where((entry) => keys.contains(entry.key))
         .toList();
     if (fields.isEmpty) return const SizedBox.shrink();
-    return _ExpandablePropertyGroup(
+    return _PropertySection(
       groupLabel: title,
       fields: _pairBilingualFields(fields),
       component: component,
@@ -344,16 +294,37 @@ class PropertiesInspectorPanel extends StatelessWidget {
       onReset: onReset,
       onPickImage: onPickImage,
       onBrowseImages: onBrowseImages,
-      initiallyExpanded:
-          splashGroup == title ||
-          initiallyExpanded ||
-          title == S.visualEditorSplashImageSettings,
     );
   }
 }
 
-class _ExpandablePropertyGroup extends StatelessWidget {
-  const _ExpandablePropertyGroup({
+/// ترتيب أقسام لوحة الخصائص بأسلوب فيجما: الهندسة أولًا (الموضع ←
+/// الأبعاد ← المظهر ← الانتقال ← المسافات) ثم مجموعات المحتوى بترتيب
+/// السجل — بلا طيّ يخفي الإعدادات.
+const List<String> _figmaSectionOrder = [
+  'الموضع',
+  'التخطيط',
+  'المظهر',
+  'الانتقال',
+  'المسافات',
+];
+
+List<String?> _orderedGroupKeys(Iterable<String?> keys) {
+  int rank(String? key) {
+    final index = key == null ? -1 : _figmaSectionOrder.indexOf(key);
+    return index < 0 ? _figmaSectionOrder.length : index;
+  }
+
+  final list = keys.toList()
+    ..sort((a, b) {
+      final byRank = rank(a).compareTo(rank(b));
+      return byRank != 0 ? byRank : (a ?? '').compareTo(b ?? '');
+    });
+  return list;
+}
+
+class _PropertySection extends StatelessWidget {
+  const _PropertySection({
     required this.groupLabel,
     required this.fields,
     required this.component,
@@ -361,7 +332,6 @@ class _ExpandablePropertyGroup extends StatelessWidget {
     required this.onReset,
     this.onPickImage,
     this.onBrowseImages,
-    this.initiallyExpanded = false,
   });
 
   final String? groupLabel;
@@ -380,7 +350,6 @@ class _ExpandablePropertyGroup extends StatelessWidget {
   onReset;
   final Future<String?> Function()? onPickImage;
   final Future<String?> Function()? onBrowseImages;
-  final bool initiallyExpanded;
 
   @override
   Widget build(BuildContext context) {
@@ -388,50 +357,30 @@ class _ExpandablePropertyGroup extends StatelessWidget {
     final label = groupLabel?.trim().isNotEmpty == true
         ? groupLabel!
         : S.visualEditorProperties;
-    return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
-      elevation: 0,
-      color: dark ? AppColor.darkSurfaceContainer : AppColor.adminTableHeader,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        side: BorderSide(
-          color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
-        ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded,
-        tilePadding: const EdgeInsetsDirectional.only(
-          start: AppSpacing.sm,
-          end: AppSpacing.sm,
-        ),
-        childrenPadding: const EdgeInsetsDirectional.fromSTEB(
-          AppSpacing.sm,
-          0,
-          AppSpacing.sm,
-          AppSpacing.sm,
-        ),
-        visualDensity: VisualDensity.compact,
-        title: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: AppFontSizes.size11,
-            fontWeight: AppFontWeights.semiBold,
-            color: dark ? AppColor.darkText : AppColor.adminBody,
-          ),
-        ),
-        subtitle: Text(
-          '${fields.length} ${S.visualEditorProperties}',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: AppFontSizes.size9_5,
-            color: dark ? AppColor.darkTextSecondary : AppColor.adminMuted,
-          ),
-        ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ترويسة القسم بنبرة فيجما: عنوان صغير عريض، والمحتوى ظاهر
+          // دائمًا تحته بلا طيّ.
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: AppSpacing.xs,
+              end: AppSpacing.xs,
+              bottom: AppSpacing.xs,
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: AppFontWeights.semiBold,
+                color: dark ? AppColor.darkText : AppColor.adminHeading,
+              ),
+            ),
+          ),
           _PropertyGroup(
             groupLabel: null,
             fields: fields,
@@ -446,14 +395,6 @@ class _ExpandablePropertyGroup extends StatelessWidget {
     );
   }
 }
-
-bool _isAdvancedPropertyGroup(String? group) => const {
-  'الموضع',
-  'التخطيط',
-  'المظهر',
-  'الانتقال',
-  'المسافات',
-}.contains(group);
 
 // --------------- خصائص إضافية (غير مسجلة في السجل) ---------------
 
@@ -1577,68 +1518,158 @@ class _PropertyGroup extends StatelessWidget {
             child: _GroupLabel(label: groupLabel!),
           ),
         ],
-        for (final field in fields)
-          if (field.definition != null)
-            _PropertyField(
-              componentType: component.componentType,
-              definition: field.definition!,
-              currentValue: component.properties[field.definition!.key],
-              onChanged: (v) => onChanged(
-                componentId: component.componentId,
-                propertyKey: field.definition!.key,
-                value: v,
-              ),
-              onReset: () => onReset(
-                componentId: component.componentId,
-                propertyKey: field.definition!.key,
-              ),
-              onPickImage: onPickImage,
-              onBrowseImages: onBrowseImages,
-              splashImageVisible:
-                  component.properties['imageVisible'] as bool? ?? true,
-              onSplashImageVisibilityChanged: (visible) => onChanged(
-                componentId: component.componentId,
-                propertyKey: 'imageVisible',
-                value: visible,
-              ),
-              clearLabel:
-                  component.componentType == 'welcomeHero' ||
-                      component.componentType == 'onboardingSlide' ||
-                      component.componentType == 'splashSettings'
-                  ? S.visualEditorRestoreOriginalImage
-                  : S.visualEditorRemoveImage,
+        // شبكة كثيفة بأسلوب فيجما: الحقول الرقمية الصغيرة والأزواج
+        // ثنائية اللغة تتشارك الصف الواحد، والباقي بعرض كامل.
+        for (final row in _layoutFieldRows(fields))
+          if (row.length == 2)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _fieldWidget(
+                    component,
+                    row[0],
+                    onChanged,
+                    onReset,
+                    onPickImage,
+                    onBrowseImages,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: _fieldWidget(
+                    component,
+                    row[1],
+                    onChanged,
+                    onReset,
+                    onPickImage,
+                    onBrowseImages,
+                  ),
+                ),
+              ],
             )
           else
-            _BilingualPropertyField(
-              arDefinition: field.arDefinition!,
-              enDefinition: field.enDefinition!,
-              arValue: component.properties[field.arDefinition!.key],
-              enValue: component.properties[field.enDefinition!.key],
-              onChanged: (arKey, enKey, v) {
-                // الحقل الواحد يكتب اللغتين معًا: هذا هو الطبيعي —
-                // والفصل بين اللغتين يبقى متاحًا بزر داخل الحقل نفسه.
-                onChanged(
-                  componentId: component.componentId,
-                  propertyKey: arKey,
-                  value: v,
-                );
-                onChanged(
-                  componentId: component.componentId,
-                  propertyKey: enKey,
-                  value: v,
-                );
-              },
-              onSingleChanged: (key, v) => onChanged(
-                componentId: component.componentId,
-                propertyKey: key,
-                value: v,
-              ),
-              onReset: (arKey, enKey) {
-                onReset(componentId: component.componentId, propertyKey: arKey);
-                onReset(componentId: component.componentId, propertyKey: enKey);
-              },
+            _fieldWidget(
+              component,
+              row.single,
+              onChanged,
+              onReset,
+              onPickImage,
+              onBrowseImages,
             ),
       ],
+    );
+  }
+
+  /// تجميع الحقول في صفوف: الحقلان المتتاليان الصغيران (رقم/حجم خط/
+  /// مسافة، أو زوج ثنائي اللغة) يتشاركان صفًّا — والباقي منفرد.
+  List<List<_FieldItem>> _layoutFieldRows(List<_FieldItem> fields) {
+    bool isCompact(_FieldItem item) {
+      final def = item.definition ?? item.arDefinition;
+      if (def == null) return false;
+      return const {
+            PropertyType.number,
+            PropertyType.integer,
+            PropertyType.fontSize,
+            PropertyType.spacing,
+          }.contains(def.type) ||
+          item.arDefinition != null;
+    }
+
+    final rows = <List<_FieldItem>>[];
+    var pending = List<_FieldItem>.empty(growable: true);
+    for (final field in fields) {
+      if (isCompact(field)) {
+        pending.add(field);
+        if (pending.length == 2) {
+          rows.add(pending);
+          pending = List<_FieldItem>.empty(growable: true);
+        }
+      } else {
+        if (pending.isNotEmpty) {
+          rows.add(pending);
+          pending = List<_FieldItem>.empty(growable: true);
+        }
+        rows.add([field]);
+      }
+    }
+    if (pending.isNotEmpty) rows.add(pending);
+    return rows;
+  }
+
+  Widget _fieldWidget(
+    EditableComponent component,
+    _FieldItem field,
+    void Function({
+      required String componentId,
+      required String propertyKey,
+      required dynamic value,
+    })
+    onChanged,
+    void Function({required String componentId, required String propertyKey})
+    onReset,
+    Future<String?> Function()? onPickImage,
+    Future<String?> Function()? onBrowseImages,
+  ) {
+    if (field.definition != null) {
+      return _PropertyField(
+        componentType: component.componentType,
+        definition: field.definition!,
+        currentValue: component.properties[field.definition!.key],
+        onChanged: (v) => onChanged(
+          componentId: component.componentId,
+          propertyKey: field.definition!.key,
+          value: v,
+        ),
+        onReset: () => onReset(
+          componentId: component.componentId,
+          propertyKey: field.definition!.key,
+        ),
+        onPickImage: onPickImage,
+        onBrowseImages: onBrowseImages,
+        splashImageVisible:
+            component.properties['imageVisible'] as bool? ?? true,
+        onSplashImageVisibilityChanged: (visible) => onChanged(
+          componentId: component.componentId,
+          propertyKey: 'imageVisible',
+          value: visible,
+        ),
+        clearLabel:
+            component.componentType == 'welcomeHero' ||
+                component.componentType == 'onboardingSlide' ||
+                component.componentType == 'splashSettings'
+            ? S.visualEditorRestoreOriginalImage
+            : S.visualEditorRemoveImage,
+      );
+    }
+    return _BilingualPropertyField(
+      arDefinition: field.arDefinition!,
+      enDefinition: field.enDefinition!,
+      arValue: component.properties[field.arDefinition!.key],
+      enValue: component.properties[field.enDefinition!.key],
+      onChanged: (arKey, enKey, v) {
+        // الحقل الواحد يكتب اللغتين معًا: هذا هو الطبيعي —
+        // والفصل بين اللغتين يبقى متاحًا بزر داخل الحقل نفسه.
+        onChanged(
+          componentId: component.componentId,
+          propertyKey: arKey,
+          value: v,
+        );
+        onChanged(
+          componentId: component.componentId,
+          propertyKey: enKey,
+          value: v,
+        );
+      },
+      onSingleChanged: (key, v) => onChanged(
+        componentId: component.componentId,
+        propertyKey: key,
+        value: v,
+      ),
+      onReset: (arKey, enKey) {
+        onReset(componentId: component.componentId, propertyKey: arKey);
+        onReset(componentId: component.componentId, propertyKey: enKey);
+      },
     );
   }
 }
