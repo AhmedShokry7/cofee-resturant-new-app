@@ -38,8 +38,7 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
 
   Future<void> _load() async {
     try {
-      final templates =
-          await widget.cubit.loadTemplates();
+      final templates = await widget.cubit.loadTemplates();
       if (!mounted) return;
       setState(() => _templates = templates);
     } catch (e) {
@@ -67,9 +66,7 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
               onSave: _saveAsTemplate,
             ),
             const SizedBox(height: AppSpacing.md),
-            Flexible(
-              child: _buildList(dark, muted),
-            ),
+            Flexible(child: _buildList(dark, muted)),
           ],
         ),
       ),
@@ -164,15 +161,12 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
   }
 
   Future<void> _apply(DesignTemplateInfo template) async {
-    final ok = await widget.cubit.applyTemplate(
-          template.id,
-        );
+    final ok = await widget.cubit.applyTemplate(template.id);
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.visualEditorTemplateApplied)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.visualEditorTemplateApplied)));
     }
   }
 
@@ -195,26 +189,22 @@ class _TemplatesDialogState extends State<TemplatesDialog> {
       ),
     );
     if (confirmed != true) return;
-    final ok =
-        await widget.cubit.deleteTemplate(template.id);
+    final ok = await widget.cubit.deleteTemplate(template.id);
     if (ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.visualEditorTemplateDeleted)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.visualEditorTemplateDeleted)));
       _load();
     }
   }
 
   Future<void> _saveAsTemplate(String name) async {
     setState(() => _saving = true);
-    final template = await widget.cubit
-        .saveCurrentAsTemplate(name);
+    final template = await widget.cubit.saveCurrentAsTemplate(name);
     if (!mounted) return;
     setState(() => _saving = false);
     if (template != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(S.visualEditorTemplateSaved)),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(S.visualEditorTemplateSaved)));
       _load();
     }
   }

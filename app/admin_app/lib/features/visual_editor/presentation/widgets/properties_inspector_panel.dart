@@ -41,6 +41,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
     this.onBrowseImages,
     this.onPropertiesChanged,
     this.showHeader = true,
+    this.splashGroup,
   });
 
   final EditableComponent component;
@@ -63,6 +64,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
   })?
   onPropertiesChanged;
   final bool showHeader;
+  final String? splashGroup;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +95,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
       grouped.putIfAbsent(group, () => []).add(e);
     }
 
-    // ─── خصائص حقيقية موجودة في المكوّن لكن غير مسجلة ───
+    // --- خصائص حقيقية موجودة في المكوّن لكن غير مسجلة ---
     // نعرضها كحقول نصية خام حتى يمكن التعديل عليها
     final knownKeys = registryProps.keys.toSet()..add('visible');
     final extraProps = component.properties.entries
@@ -130,7 +132,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                   children: [
                     if (component.componentType == 'splashSettings') ...[
                       _splashLayer(
-                        'الخلفية',
+                        S.visualEditorSplashBackground,
                         const {'backgroundColor'},
                         editableProps,
                         component,
@@ -159,7 +161,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                         onBrowseImages,
                       ),
                       _splashLayer(
-                        'النص',
+                        S.visualEditorSplashText,
                         const {
                           'text_ar',
                           'text_en',
@@ -176,7 +178,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
                         onBrowseImages,
                       ),
                       _splashLayer(
-                        'الموضع والمسافات',
+                        S.visualEditorSplashLayout,
                         const {
                           'verticalAlignment',
                           'imageGap',
@@ -324,6 +326,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
     Future<String?> Function()? onBrowseImages, {
     bool initiallyExpanded = false,
   }) {
+    if (splashGroup != null && splashGroup != title) return const SizedBox.shrink();
     final fields = properties.entries
         .where((entry) => keys.contains(entry.key))
         .toList();
@@ -337,7 +340,7 @@ class PropertiesInspectorPanel extends StatelessWidget {
       onPickImage: onPickImage,
       onBrowseImages: onBrowseImages,
       initiallyExpanded:
-          initiallyExpanded || title == S.visualEditorSplashImageSettings,
+          splashGroup == title || initiallyExpanded || title == S.visualEditorSplashImageSettings,
     );
   }
 }
@@ -445,7 +448,7 @@ bool _isAdvancedPropertyGroup(String? group) => const {
   'المسافات',
 }.contains(group);
 
-// ─────────────── خصائص إضافية (غير مسجلة في السجل) ───────────────
+// --------------- خصائص إضافية (غير مسجلة في السجل) ---------------
 
 class _ExtraPropsGroup extends StatelessWidget {
   const _ExtraPropsGroup({
@@ -583,7 +586,7 @@ class _ExtraPropFieldState extends State<_ExtraPropField> {
       return TextField(
         controller: _ctrl,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        onSubmitted: (v) {
+        onChanged: (v) {
           final n = num.tryParse(v);
           if (n != null) {
             widget.onChanged(
@@ -603,7 +606,7 @@ class _ExtraPropFieldState extends State<_ExtraPropField> {
     // نصي
     return TextField(
       controller: _ctrl,
-      onSubmitted: (v) => widget.onChanged(
+      onChanged: (v) => widget.onChanged(
         componentId: widget.componentId,
         propertyKey: widget.propKey,
         value: v,

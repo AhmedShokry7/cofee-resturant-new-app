@@ -31,7 +31,18 @@ class DesignPageSectionsAbove extends StatelessWidget {
     final sections = context.select(
       (DesignCubit cubit) => cubit.state.pageSections(pageId),
     );
-    final built = buildDesignPageSections(pageId: pageId, sections: sections);
+    // Favorites already renders its own saved-product grid. Old published
+    // editor defaults may still contain a generic grid; rendering both creates
+    // a tall, unbounded column that pushes the actual favorites page offscreen.
+    final pageSections = pageId == 'favourites'
+        ? sections
+              .where((section) => section.type != DesignWidgetTypes.productGrid)
+              .toList(growable: false)
+        : sections;
+    final built = buildDesignPageSections(
+      pageId: pageId,
+      sections: pageSections,
+    );
     if (built.isEmpty) return child;
     return Column(
       children: [
@@ -56,7 +67,9 @@ Widget _buildSplashSections(List<PublishedSection> sections, Widget child) {
 
   for (final section in sections) {
     if (section.type == DesignWidgetTypes.splashSettings) {
-      if (section.visible) append(child);
+      if (section.visible) {
+        append(previewSectionWrap(section, pageId: 'splash', child: child));
+      }
       insertedNativeSplash = true;
       continue;
     }

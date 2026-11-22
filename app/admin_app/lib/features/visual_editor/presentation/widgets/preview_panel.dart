@@ -25,16 +25,26 @@ import 'preview_panel_stub.dart'
 /// أحجام المعاينة: خمسة أجهزة، عرضها وارتفاعها المنطقي هو المرسوم، فما
 /// يراه الموظف في المحرّر هو ما سيراه الزبون على جهاز مثله.
 enum PreviewDevice {
-  phoneSmall('موبايل صغير', AppIcons.smartPhone01, 360, 740),
-  phone('موبايل', AppIcons.smartPhone01, 390, 844),
-  phoneLarge('موبايل كبير', AppIcons.smartPhone01, 430, 932),
-  tabletPortrait('تابلت عمودي', Icons.tablet_outlined, 768, 1024),
-  tabletLandscape('تابلت أفقي', Icons.tablet, 1024, 768);
+  phoneSmall('موبايل صغير', AppIcons.smartPhone01, 13, 360, 740),
+  phone('موبايل متوسط', AppIcons.smartPhone01, 16, 390, 844),
+  phoneLarge('موبايل كبير', AppIcons.smartPhone01, 19, 430, 932),
+  tabletPortrait('تابلت عمودي', Icons.tablet_outlined, 16, 768, 1024),
+  tabletLandscape('تابلت أفقي', Icons.tablet, 16, 1024, 768);
 
-  const PreviewDevice(this.label, this.icon, this.width, this.height);
+  const PreviewDevice(
+    this.label,
+    this.icon,
+    this.iconSize,
+    this.width,
+    this.height,
+  );
 
   final String label;
   final IconData icon;
+
+  /// حجم أيقونة الجهاز في القائمة — يكبر مع حجم الشاشة نفسه فتُقرأ
+  /// درجات الحجم بنظرة.
+  final double iconSize;
   final double width;
   final double height;
 }
@@ -51,11 +61,8 @@ String buildPreviewUrl(
   PreviewLanguage language = PreviewLanguage.arabic,
   PreviewThemeMode themeMode = PreviewThemeMode.light,
 }) {
-  const baseUrl = String.fromEnvironment(
-    'PREVIEW_BASE_URL',
-    defaultValue:
-        'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview',
-  );
+  const configured = String.fromEnvironment('PREVIEW_BASE_URL');
+  final baseUrl = configured.isEmpty ? preview_platform.defaultPreviewUrl() : configured;
   // قاعدة قد تنتهي بـ '/' (رابط صفحة GitHub Pages) لا تجوز أن تتضاعف:
   // `…/preview//?…` رابط مشوّه يُربك الجلسة.
   final trimmed = baseUrl.endsWith('/')
@@ -158,8 +165,8 @@ class PreviewPanel extends StatefulWidget {
 }
 
 class _PreviewPanelState extends State<PreviewPanel> {
-  static const _iframeViewType = 'visual-editor-preview-iframe';
-  static bool _viewRegistered = false;
+  static int _nextFrame = 0;
+  late final _iframeViewType = kIsWeb ? 'visual-editor-preview-${_nextFrame++}' : 'visual-editor-preview-iframe';
 
   /// origin لوحة الأدمن: الأب المتوقع للمعاينة في الاتجاهين.
   String? _parentOrigin;
@@ -211,10 +218,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
           buildPreviewUrl(widget.sessionId, null),
         );
       }
-      if (!_viewRegistered) {
-        _registerIframeView();
-        _viewRegistered = true;
-      }
+      _registerIframeView();
       _armWatchdog(first: true);
     } else {
       // المعاينة الأصلية ترسم من الحالة مباشرة — القناة حيّة بلا إطار.
@@ -296,6 +300,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
       onTreeUpdated: widget.onTreeUpdated,
       onConnectionState: (connection, reason) {
         // الغطاء والمؤشر يقرآن نفس الحالة: تحديث موحّد بلا مسارين.
+        if (!mounted) return;
         if (_connection.value != connection) {
           _statusMessage = reason;
           _connection.value = connection;
@@ -353,6 +358,7 @@ class _PreviewPanelState extends State<PreviewPanel> {
   @override
   void dispose() {
     _watchdog?.cancel();
+    preview_platform.disposePreviewView(_iframeViewType);
     _connection.dispose();
     super.dispose();
   }
@@ -439,6 +445,17 @@ class _PreviewPanelState extends State<PreviewPanel> {
           child: _PreviewFrame(
             zoom: widget.zoom,
             device: widget.device,
+            // على الويب iframe لا يستجيب للتحويل الهندسي، فالتحجيم يُطبّق
+            // على عنصر الإطار نفسه عبر CSS؛ وعلى المنصات الأخرى التحويل
+            // الهندسي كافٍ (WebView2 يُرسم عبر Texture).
+            cssScaled: kIsWeb && !showNative,
+            onScale: (scale, width, height) =>
+                preview_platform.applyPreviewScale(
+                  viewType: _iframeViewType,
+                  scale: scale,
+                  width: width,
+                  height: height,
+                ),
             child: widget.isDragSourceActive
                 ? Container(
                     color: dark ? AppColor.darkSurface : AppColor.whiteColor,
@@ -469,22 +486,36 @@ class _PreviewPanelState extends State<PreviewPanel> {
   }
 }
 
-/// الإطار المرئي حول المعاينة: خلفية محايدة + ظل + تحكم بالتكبير.
+/// الإطار المرئي حول المعاينة: جهاز بحواف مستديرة وظل، مثبّت في المنتصف.
 ///
-/// الإطار يُضبط تلقائيًا ليملأ المساحة المتاحة دون قص: نحسب نسبة
-/// الملاءمة من أبعاد الجهاز مقابل المساحة الفعلية، ثم نضربها في تكبير
-/// الموظف. عند التكبير 1 تبقى شاشة التطبيق كاملة ظاهرة ومتوسطة دومًا،
-/// وحجم الجهاز الأكبر من اللوحة يُصغّر تلقائيًا بدل التمرير إليه.
+/// القاعدتان اللتان يحكمانه:
+/// - **التوسيط الدائم**: مهما تغيّر الجهاز أو التكبير يبقى الإطار في منتصف
+///   مسرحه بالضبط، وما زاد عن المساحة يُقص من المنتصف لا أن يهرب لزاوية.
+/// - **التحجيم الصادق**: نحسب نسبة الملاءمة من أبعاد الجهاز مقابل المساحة
+///   الفعلية ثم نضربها في تكبير الموظف؛ كل جهاز يظهر بحجمه كما يراه
+///   الزبون على جهاز مثله.
+///
+/// على الويب لا يعمل التحويل الهندسي مع عناصر iframe، فالحجم يُطبّق على
+/// عنصر iframe نفسه عبر CSS ([onScale]) والفطيمة تُرسم بحجمها النهائي؛
+/// وعلى المنصات الأصلية التحويل الهندسي كافٍ (WebView2 يُرسم عبر Texture).
 class _PreviewFrame extends StatelessWidget {
   const _PreviewFrame({
     required this.zoom,
     required this.device,
     required this.child,
+    this.cssScaled = false,
+    this.onScale,
   });
 
   final double zoom;
   final PreviewDevice device;
   final Widget child;
+
+  /// هل يُطبّق التحجيم على عنصر iframe نفسه عبر CSS بدل تحويل Flutter؟
+  final bool cssScaled;
+
+  /// يُبلّغ بالمقياس النهائي ليطبّقه اتصال المعاينة على عنصر iframe.
+  final void Function(double scale, double width, double height)? onScale;
 
   @override
   Widget build(BuildContext context) {
@@ -503,53 +534,69 @@ class _PreviewFrame extends StatelessWidget {
         final scale = math.max(fitScale * zoom, 0.05);
         final frameWidth = device.width * scale;
         final frameHeight = device.height * scale;
+        if (cssScaled) {
+          final report = onScale;
+          if (report != null) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              report(
+                scale,
+                device.width - 2 * AppSpacing.sm,
+                device.height - 2 * AppSpacing.sm,
+              );
+            });
+          }
+        }
+        // حجم الإطار الظاهر: كاملًا إن سع، ومقصوصًا من المنتصف إن زاد
+        // عن المساحة (تكبير فوق الملاءمة) — بلا قفزات أو انحياز.
+        final visibleWidth = math.min(frameWidth, available.width);
+        final visibleHeight = math.min(frameHeight, available.height);
         // هيكل المحاكي يطوّق الشاشة، والخلفية المحيطة شفافة.
-        Widget frame = SizedBox(
-          width: frameWidth,
-          height: frameHeight,
-          child: OverflowBox(
-            minWidth: 0,
-            minHeight: 0,
-            maxWidth: device.width,
-            maxHeight: device.height,
-            child: Transform.scale(
-              scale: scale,
-              alignment: Alignment.center,
-              child: Container(
-                width: device.width,
-                height: device.height,
-                decoration: BoxDecoration(
-                  color: AppColor.deviceChrome,
-                  borderRadius: BorderRadius.circular(AppRadius.phoneBody),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.black20,
-                      blurRadius: 24,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.phoneScreen),
-                    child: child,
-                  ),
-                ),
+        final double chromeScale = cssScaled ? scale : 1;
+        final chrome = Container(
+          width: cssScaled ? frameWidth : device.width,
+          height: cssScaled ? frameHeight : device.height,
+          decoration: BoxDecoration(
+            color: AppColor.deviceChrome,
+            borderRadius: BorderRadius.circular(
+              AppRadius.phoneBody * chromeScale,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColor.black20,
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
+            ],
+          ),
+          child: Padding(
+            padding: EdgeInsets.all(AppSpacing.sm * chromeScale),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                AppRadius.phoneScreen * chromeScale,
+              ),
+              child: child,
             ),
           ),
         );
-        if (frameWidth <= available.width && frameHeight <= available.height) {
-          return Center(child: frame);
-        }
-        return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: frame,
+        Widget frame = SizedBox(
+          width: visibleWidth,
+          height: visibleHeight,
+          child: OverflowBox(
+            alignment: Alignment.center,
+            minWidth: 0,
+            minHeight: 0,
+            maxWidth: cssScaled ? double.infinity : device.width,
+            maxHeight: cssScaled ? double.infinity : device.height,
+            child: cssScaled
+                ? chrome
+                : Transform.scale(
+                    scale: scale,
+                    alignment: Alignment.center,
+                    child: chrome,
+                  ),
           ),
         );
+        return Center(child: ClipRect(child: frame));
       },
     );
   }

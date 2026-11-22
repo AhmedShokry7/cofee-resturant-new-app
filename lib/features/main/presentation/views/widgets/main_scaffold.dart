@@ -1,9 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'package:new_coffee/features/location/data/services/location_permission_service.dart';
 import 'package:new_coffee/features/main/presentation/manager/main/main_cubit.dart';
 import 'package:new_coffee/features/main/presentation/views/widgets/main_bottom_bar.dart';
 import 'package:new_coffee/features/main/presentation/views/widgets/main_tabs.dart';
@@ -12,8 +9,7 @@ import 'package:new_coffee/features/notifications/data/services/push_service.dar
 /// The five tabs and the bar between them.
 ///
 /// The shell also owns the two things that can only happen once the app is
-/// really on screen: the screen a tapped notification asked for, and the
-/// first-launch location and notification prompts.
+/// really on screen: the screen a tapped notification asked for.
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
 
@@ -25,8 +21,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
-    // The first frame of the shell is the moment the app is really usable, so
-    // it is the one place that asks the customer for something on their behalf.
+    // Wait for the first frame so a notification can navigate from a ready
+    // navigator.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
@@ -37,16 +33,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       if (route != null) {
         Navigator.of(context).pushNamed(route.route, arguments: route.entityId);
       }
-
-      // Ask after the first screen has appeared, and serialize the OS dialogs
-      // so the two permission prompts do not compete with each other.
-      unawaited(_requestFirstLaunchPermissions());
     });
-  }
-
-  Future<void> _requestFirstLaunchPermissions() async {
-    await LocationPermissionService.requestOnFirstLaunch();
-    await PushService.requestPermissionOnFirstLaunch();
   }
 
   @override

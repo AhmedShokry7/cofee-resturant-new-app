@@ -29,18 +29,18 @@ jobs:
         run: >-
           flutter build web
           --target=lib/main_preview.dart
-          --base-href=/cofee-resturant-new-app/studio-preview/
-          --output=build/studio-preview-package/studio-preview
+          --base-href=/cofee-resturant-new-app/preview/
+          --output=build/studio-preview-package/preview
           --no-pub
 
       - name: Verify static site package
         shell: bash
         run: |
-          test -s build/studio-preview-package/studio-preview/index.html
-          grep -F '<base href="/cofee-resturant-new-app/studio-preview/">' build/studio-preview-package/studio-preview/index.html
-          test -d build/studio-preview-package/studio-preview/assets
-          test -s build/studio-preview-package/studio-preview/flutter_bootstrap.js
-          test -s build/studio-preview-package/studio-preview/main.dart.js
+          test -s build/studio-preview-package/preview/index.html
+          grep -F '<base href="/cofee-resturant-new-app/preview/">' build/studio-preview-package/preview/index.html
+          test -d build/studio-preview-package/preview/assets
+          test -s build/studio-preview-package/preview/flutter_bootstrap.js
+          test -s build/studio-preview-package/preview/main.dart.js
 
       - name: Upload build artifact (no deployment)
         uses: actions/upload-artifact@v4

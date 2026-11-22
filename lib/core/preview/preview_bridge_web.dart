@@ -13,6 +13,7 @@
 import 'dart:js_interop';
 
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
+import 'package:flutter/widgets.dart' show WidgetsBinding;
 import 'package:web/web.dart' as web;
 
 import 'package:new_coffee/core/preview/preview_bridge.dart';
@@ -52,7 +53,7 @@ class PreviewBridge {
     _parentOrigin = parentOrigin;
     if (!kIsWeb) return;
     _attachMessageListener();
-    _sendReady();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _sendReady());
   }
 
   void _attachMessageListener() {

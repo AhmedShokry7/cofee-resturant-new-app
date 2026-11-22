@@ -149,21 +149,28 @@ class DesignDocumentCodec {
       'theme': ?themeJson,
       'pages': [
         for (final entry in componentsByPage.entries)
-          if (entry.value.isNotEmpty)
-            {
-              // مفاتيح صفحات المحرّر هي مفاتيح العقد نفسها (المدقق يقبلها
-              // بالحرف). `page.home` في الجذر هو النوع كما يقرؤه الهاتف.
-              'page': entry.key,
-              'root': {
-                // الجذر عقدة كاملة لدى المدقق الحي: بمعرفّ فريد عبر المستند.
-                'id': 'root_${entry.key}',
-                'type': DesignContract.pageHome,
-                'children': _topLevelNodes(entry.value),
-              },
-            },
+          if (entry.value.isNotEmpty) pageEntry(entry.key, entry.value),
       ],
     };
   }
+
+  /// إدخال صفحة واحدة كما يبنيه [document] بالحرف — لدمج صفحة في مستند
+  /// محفوظ دون إعادة بناء بقية الصفحات. صفحة فارغة تعيد مدخلًا بلا أبناء؛
+  /// طبقة الدمج تسقِط المدخل الفارغ حتى تطابق [document].
+  static Map<String, dynamic> pageEntry(
+    String pageId,
+    List<EditableComponent> components,
+  ) => {
+    // مفاتيح صفحات المحرّر هي مفاتيح العقد نفسها (المدقق يقبلها
+    // بالحرف). `page.home` في الجذر هو النوع كما يقرؤه الهاتف.
+    'page': pageId,
+    'root': {
+      // الجذر عقدة كاملة لدى المدقق الحي: بمعرفّ فريد عبر المستند.
+      'id': 'root_$pageId',
+      'type': DesignContract.pageHome,
+      'children': _topLevelNodes(components),
+    },
+  };
 
   // ------------------------------------------------------------------ قراءة
 
@@ -408,13 +415,10 @@ class DesignDocumentCodec {
     'reset_password': [('authTitle', null), ('authSubtitle', null)],
     'phone_auth': [('authTitle', null), ('authSubtitle', null)],
     'email_auth': [('authTitle', null), ('authSubtitle', null)],
-    'categories': [
-      ('heading', null),
-      ('categoryList', null),
-      ('spacer', null),
-      ('divider', null),
-      ('productGrid', null),
-    ],
+    // These screens already render their native category tabs/product list.
+    // Seed only the native category browser so publishing the editor defaults
+    // cannot add a second heading, divider or product grid over that UI.
+    'categories': [('categoryList', null)],
     'product_details': [
       ('image', null),
       ('spacer', null),
@@ -437,7 +441,9 @@ class DesignDocumentCodec {
       ('heading', null),
       ('productGrid', null),
     ],
-    'favourites': [('heading', null), ('spacer', null), ('productGrid', null)],
+    // Favorites owns its title, empty state and product grid. Keep the editor
+    // page available for custom additions without duplicating those widgets.
+    'favourites': [],
     'settings': [
       ('heading', null),
       ('divider', null),

@@ -36,24 +36,64 @@ class _FeaturePagesGroup {
 
 const _featureGroups = [
   _FeaturePagesGroup(
-    title: 'الرئيسية والتسوق', icon: Icons.storefront_outlined,
+    title: 'الرئيسية والتسوق',
+    icon: Icons.storefront_outlined,
     pageIds: ['home', 'categories', 'search', 'cart', 'favourites', 'settings'],
   ),
   _FeaturePagesGroup(
-    title: 'الدخول والترحيب', icon: Icons.login_outlined,
-    pageIds: ['splash', 'welcome', 'onboarding', 'auth', 'sign_up', 'forget_password', 'reset_password', 'phone_auth', 'email_auth'],
+    title: 'الدخول والترحيب',
+    icon: Icons.login_outlined,
+    pageIds: [
+      'splash',
+      'welcome',
+      'onboarding',
+      'auth',
+      'sign_up',
+      'forget_password',
+      'reset_password',
+      'phone_auth',
+      'email_auth',
+    ],
   ),
   _FeaturePagesGroup(
-    title: 'الطلب والدفع', icon: Icons.payment_outlined,
-    pageIds: ['checkout', 'shipping_addresses', 'add_address', 'payment_method', 'add_card', 'payment_success', 'e_receipt', 'coupon'],
+    title: 'الطلب والدفع',
+    icon: Icons.payment_outlined,
+    pageIds: [
+      'checkout',
+      'shipping_addresses',
+      'add_address',
+      'payment_method',
+      'add_card',
+      'payment_success',
+      'e_receipt',
+      'coupon',
+    ],
   ),
   _FeaturePagesGroup(
-    title: 'الحساب والولاء', icon: Icons.card_membership_outlined,
-    pageIds: ['orders', 'edit_profile', 'saved_cards', 'addresses', 'address_form', 'loyalty', 'subscription_plans', 'subscription_details', 'cashier_subscription'],
+    title: 'الحساب والولاء',
+    icon: Icons.card_membership_outlined,
+    pageIds: [
+      'orders',
+      'edit_profile',
+      'saved_cards',
+      'addresses',
+      'address_form',
+      'loyalty',
+      'subscription_plans',
+      'subscription_details',
+      'cashier_subscription',
+    ],
   ),
   _FeaturePagesGroup(
-    title: 'الإعدادات والمساعدة', icon: Icons.settings_suggest_outlined,
-    pageIds: ['notifications', 'notification_settings', 'help', 'privacy', 'assistant_memory'],
+    title: 'الإعدادات والمساعدة',
+    icon: Icons.settings_suggest_outlined,
+    pageIds: [
+      'notifications',
+      'notification_settings',
+      'help',
+      'privacy',
+      'assistant_memory',
+    ],
   ),
 ];
 
@@ -433,12 +473,20 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
     final query = _pageSearchQuery.trim().toLowerCase();
     final pageMap = {for (final page in PreviewPages.all) page.pageId: page};
     final groupedIds = _featureGroups.expand((group) => group.pageIds).toSet();
-    final orphanPages = PreviewPages.all.where((page) => !groupedIds.contains(page.pageId));
-    final visibleOrphans = orphanPages.where((page) => _matchesPage(page, query)).toList();
-    final hasResults = _featureGroups.any((group) => group.pageIds.any((id) {
-      final page = pageMap[id];
-      return page != null && _matchesPage(page, query);
-    })) || visibleOrphans.isNotEmpty;
+    final orphanPages = PreviewPages.all.where(
+      (page) => !groupedIds.contains(page.pageId),
+    );
+    final visibleOrphans = orphanPages
+        .where((page) => _matchesPage(page, query))
+        .toList();
+    final hasResults =
+        _featureGroups.any(
+          (group) => group.pageIds.any((id) {
+            final page = pageMap[id];
+            return page != null && _matchesPage(page, query);
+          }),
+        ) ||
+        visibleOrphans.isNotEmpty;
     return Scrollbar(
       controller: _pagesScrollController,
       thumbVisibility: true,
@@ -448,13 +496,22 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
       child: SizedBox(
         height: 280,
         child: ListView(
-        controller: _pagesScrollController,
-          padding: const EdgeInsetsDirectional.only(end: 8, bottom: AppSpacing.sm),
+          controller: _pagesScrollController,
+          padding: const EdgeInsetsDirectional.only(
+            end: 8,
+            bottom: AppSpacing.sm,
+          ),
           children: [
             if (!hasResults)
               Padding(
                 padding: const EdgeInsets.all(AppSpacing.sm),
-                child: Text('لا توجد شاشات مطابقة', style: TextStyle(fontSize: 11, color: VisualEditorTokens.textMuted(context))),
+                child: Text(
+                  'لا توجد شاشات مطابقة',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: VisualEditorTokens.textMuted(context),
+                  ),
+                ),
               ),
             for (final group in _featureGroups)
               if (group.pageIds.any((id) {
@@ -467,7 +524,14 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
                     if (_matchesPage(page, query)) _buildPageRow(context, page),
               ],
             if (visibleOrphans.isNotEmpty) ...[
-              _buildFeatureHeader(context, const _FeaturePagesGroup(title: 'شاشات أخرى', icon: Icons.more_horiz, pageIds: [])),
+              _buildFeatureHeader(
+                context,
+                const _FeaturePagesGroup(
+                  title: 'شاشات أخرى',
+                  icon: Icons.more_horiz,
+                  pageIds: [],
+                ),
+              ),
               for (final page in visibleOrphans) _buildPageRow(context, page),
             ],
           ],
@@ -476,17 +540,32 @@ class _VisualEditorLeftPanelState extends State<VisualEditorLeftPanel> {
     );
   }
 
-  bool _matchesPage(PreviewPage page, String query) => query.isEmpty ||
-      page.label.toLowerCase().contains(query) || page.pageId.toLowerCase().contains(query);
+  bool _matchesPage(PreviewPage page, String query) =>
+      query.isEmpty ||
+      page.label.toLowerCase().contains(query) ||
+      page.pageId.toLowerCase().contains(query);
 
   Widget _buildFeatureHeader(BuildContext context, _FeaturePagesGroup group) =>
       Padding(
         padding: const EdgeInsetsDirectional.fromSTEB(8, 9, 8, 3),
-        child: Row(children: [
-          Icon(group.icon, size: 13, color: VisualEditorTokens.textMuted(context)),
-          const SizedBox(width: 5),
-          Text(group.title, style: TextStyle(fontSize: 10.5, fontWeight: AppFontWeights.semiBold, color: VisualEditorTokens.textMuted(context))),
-        ]),
+        child: Row(
+          children: [
+            Icon(
+              group.icon,
+              size: 13,
+              color: VisualEditorTokens.textMuted(context),
+            ),
+            const SizedBox(width: 5),
+            Text(
+              group.title,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: AppFontWeights.semiBold,
+                color: VisualEditorTokens.textMuted(context),
+              ),
+            ),
+          ],
+        ),
       );
 
   Widget _buildPageRow(BuildContext context, PreviewPage page) {

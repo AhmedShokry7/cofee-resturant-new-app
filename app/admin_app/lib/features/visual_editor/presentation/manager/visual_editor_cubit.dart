@@ -8,11 +8,16 @@ import 'package:admin_app/features/visual_editor/data/visual_editor_repository.d
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
+import 'package:admin_app/features/visual_editor/domain/design_document_merge.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_state.dart';
 
 export 'visual_editor_state.dart';
+
+/// نطاق النشر: الصفحة الحالية من آخر مسودة محفوظة، أو كل الصفحات من
+/// آخر مسودة، أو «المعاينة كما هي» عند وجود مستند قالب/استرجاع/استيراد.
+enum PublishScope { currentPage, allPages, wholeDocument }
 
 /// يدير حالة المحرر المرئي ويرسل الأوامر إلى معاينة Customer App عبر الـ Bridge.
 ///
@@ -48,6 +53,15 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   OutboundMessage? get pendingMessage => _pendingMessage;
 
+  /// الصفحة المفتوحة حاليًا في المعاينة — نطاق نشر «الصفحة الحالية».
+  String get previewPageId => _previewPageId;
+
+  /// هل توجد تعديلات غير محفوظة على الصفحة المفتوحة.
+  bool get currentPageHasUnsavedEdits => _dirtyPages.contains(_previewPageId);
+
+  /// هل يوجد مستند معاينة كامل (قالب/استرجاع/استيراد) بانتظار القرار.
+  bool get hasWholePreviewDocument => _externalPublishDocument != null;
+
   /// لقطة تراجع كاملة: المكوّنات وطبقة الشكل معًا — التراجع عن لون بلا
   /// ترتيب نصف تراجع، والاثنان يُنشران في مستند واحد.
   final List<_EditorSnapshot> _undoStack = [];
@@ -58,6 +72,26 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
 
   /// تسلسل عمليات الحفظ اليدوي حتى لا يكتب طلب أقدم بعد الأحدث.
   Future<void> _saveQueue = Future<void>.value();
+
+  /// مراجعات الصفحات المعروفة للمحرّر — من المسودة المحمّلة وتتحدث بعد
+  /// كل حفظ ناجح. مرجع فحص التعارض: صفحة غيّرتها جلسة أخرى منذ التحميل
+  /// ترفع تعارضًا بدل الكتابة الصامتة فوق تعديل أحدث.
+  Map<String, int> _knownDraftRevisions = const {};
+
+  /// الصفحات التي تغيّرت محليًا ولم تُحفظ بعد — الحفظ المدمج يعتمدها
+  /// وحدها؛ الصفحات غير المعدّلة لا تُكتب أصلًا.
+  final Set<String> _dirtyPages = {};
+
+  /// طبقة الشكل تغيّرت ولم تُحفظ. الشكل يُكتب مع كل حفظ صفحة أو بذاته.
+  bool _themeDirty = false;
+
+  /// الصفحات التي رُفعت عليها تعارضات لم يُفصَل فيها بعد.
+  final Set<String> _conflictedPages = {};
+
+  /// مستند معاينة كامل (قالب/استرجاع إصدار/استيراد JSON). عندما يُضبط
+  /// يعتمد النشر هذا المستند كما هو بدل التجميع من المسودة، ويلغى مع
+  /// أول تعديل فردي على أي صفحة أو طبقة الشكل.
+  Map<String, dynamic>? _externalPublishDocument;
   int _editRevision = 0;
 
   bool get canUndo => _undoStack.isNotEmpty;
@@ -83,6 +117,10 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       final draft = await _repository.loadDraft();
       if (isClosed) return;
       _theme = draft?.theme ?? DesignTheme.none;
+      _knownDraftRevisions = draft?.pageRevisions ?? const {};
+      _dirtyPages.clear();
+      _themeDirty = false;
+      _externalPublishDocument = null;
       final saved = draft?.componentsByPage ?? const {};
       // الصفحات الغائبة عن المسودة تبدأ من «تصميم اليوم»: شاشات مدمجة
       // بعقدها الأصلية، وبقية الصفحات بشجرة فارغة يبني عليها الموظف. صفحة
@@ -333,13 +371,13 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     if (recordUndo) {
       _themePreviewDebounce?.cancel();
       _syncPreview();
-      _markEdited();
+      _markThemeEdited();
     } else {
       _themePreviewDebounce?.cancel();
       _themePreviewDebounce = Timer(const Duration(milliseconds: 180), () {
         if (isClosed) return;
         _syncPreview();
-        _markEdited();
+        _markThemeEdited();
       });
     }
   }
@@ -369,6 +407,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
     _syncPreview();
     _markEdited();
+    // الاستيراد بديل مستند كامل: النشر من حوار «المعاينة كما هي» يعتمده
+    // بدل التجميع من المسودة — حتى أول تعديل فردي يلغيه.
+    _externalPublishDocument = document;
     return null;
   }
 
@@ -489,13 +530,14 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     );
     _dispatchToPreview(VisualEditorMessageType.addComponent, {
       'pageId': pageId,
+      'componentId': newComponent.componentId,
       'component': DesignDocumentCodec.node(
         newComponent,
         _childrenByParent(pageComponents),
       ),
       'designDocument': _currentDocumentOrNull(),
     });
-    _markEdited();
+    _markEdited(pageId);
   }
 
   /// موضع الإدراج في القائمة المسطّحة: آخر موضع يغطيه الأبناء السابقون
@@ -598,7 +640,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       'componentId': componentId,
       'designDocument': _currentDocumentOrNull(),
     });
-    _markEdited();
+    _markEdited(component.pageId);
   }
 
   /// نسخ مكوّن وإدراجه بعده مباشرة، مع كل أبنائه بمعرفّات جديدة.
@@ -635,13 +677,14 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     final duplicateRoot = duplicates.first;
     _dispatchToPreview(VisualEditorMessageType.addComponent, {
       'pageId': component.pageId,
+      'componentId': duplicateRoot.componentId,
       'component': DesignDocumentCodec.node(
         duplicateRoot,
         _childrenByParent(pageComponents),
       ),
       'designDocument': _currentDocumentOrNull(),
     });
-    _markEdited();
+    _markEdited(component.pageId);
   }
 
   List<EditableComponent> _subtreeOf(
@@ -713,7 +756,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       'newIndex': clamped,
       'designDocument': _currentDocumentOrNull(),
     });
-    _markEdited();
+    _markEdited(component.pageId);
   }
 
   // ---------- إظهار وإخفاء ----------
@@ -776,7 +819,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       'designDocument': _currentDocumentOrNull(),
       ..._previewSettingsPayload(),
     });
-    _markEdited();
+    _markEdited(component.pageId);
   }
 
   bool _isValidValue(EditableComponent component, String key, Object? value) {
@@ -875,15 +918,28 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       }
       _pushUndo();
       _theme = DesignDocumentCodec.themeOf(document);
+      final parsed = DesignDocumentCodec.parseDocument(document);
+      // الصفحات الغائبة عن القالب تبقى كما هي محليًا: تطبيق قالب لا يعيد
+      // ولا يفقد صفحات لا يغطيها — قاعدة عدم إعادة الصفحات الأخرى.
+      final merged = <String, List<EditableComponent>>{
+        for (final page in EditorPages.pages)
+          page.pageId:
+              parsed[page.pageId] ??
+              (state.componentsByPage[page.pageId] ??
+                  DesignDocumentCodec.defaultComponentsFor(page.pageId)),
+      };
       emit(
         state.copyWith(
-          componentsByPage: DesignDocumentCodec.parseDocument(document),
+          componentsByPage: merged,
           isDirty: true,
           clearError: true,
         ),
       );
       _syncPreview();
       _markEdited();
+      // القالب بديل مستند كامل: النشر من حوار «المعاينة كما هي» يعتمده
+      // بدل التجميع من المسودة — حتى أول تعديل فردي يلغيه.
+      _externalPublishDocument = document;
       return true;
     } catch (e) {
       if (isClosed) return false;
@@ -941,14 +997,39 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   // ---------- حفظ ونشر ----------
 
   /// يسجل تعديلًا جديدًا دون كتابة أي شيء إلى الشبكة.
-  void _markEdited() => _editRevision++;
+  void _markEdited([String? pageId]) {
+    if (pageId != null) {
+      _dirtyPages.add(pageId);
+    } else {
+      // تعديل شامل (استرجاع/استيراد/تراجع) — كل الصفحات في الحالة
+      // المحلية تعدّ عن آخر مسودة محفوظة حتى يثبت العكس.
+      _dirtyPages.addAll(state.componentsByPage.keys);
+    }
+    // أي تعديل فردي يفصل الحالة عن مستند المعاينة الكامل.
+    _externalPublishDocument = null;
+    _editRevision++;
+  }
 
-  /// لا تُكتب المسودة إلا بطلب حفظ صريح.
-  Future<void> saveDraft() async {
+  /// تعديل طبقة الشكل وحده — لا يوسّع قائمة الصفحات المتّسخة.
+  void _markThemeEdited() {
+    _themeDirty = true;
+    _externalPublishDocument = null;
+    _editRevision++;
+  }
+
+  /// لا تُكتب المسودة إلا بطلب حفظ صريح، والحفظ مدمج على مستوى الصفحة:
+  /// الصفحات المعدّلة فقط تُدمج في آخر مسودة محفوظة — لا تُكتب صفحة لم
+  /// يلمسها الموظف، فلا يعيد حفظ صفحة بقية الصفحات. طبقة الشكل تُكتب مع
+  /// كل حفظ (وبذاتها إن لم تكن صفحات متّسخة). يعيد الصفحات التي حُفظت
+  /// فعلًا؛ فارغة إن لم يوجد ما يُحفظ.
+  Future<Set<String>> saveDraft({bool force = false}) async {
+    if (_dirtyPages.isEmpty && !_themeDirty) return const {};
     final revision = _editRevision;
-    final components = {
-      for (final entry in state.componentsByPage.entries)
-        entry.key: List<EditableComponent>.of(entry.value),
+    final pages = {
+      for (final pageId in _dirtyPages)
+        pageId: List<EditableComponent>.from(
+          state.componentsByPage[pageId] ?? const [],
+        ),
     };
     final theme = _theme;
     final previousSave = _saveQueue;
@@ -956,43 +1037,199 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     _saveQueue = completer.future;
     await previousSave.catchError((Object _) {});
     try {
-      await _repository.saveDraft(components, theme: theme);
-      if (!isClosed && revision == _editRevision) {
-        emit(state.copyWith(isDirty: false, clearError: true));
+      final result = await _repository.saveDraft(
+        pages,
+        theme: theme,
+        knownRevisions: _knownDraftRevisions,
+        force: force,
+      );
+      _knownDraftRevisions = {
+        ..._knownDraftRevisions,
+        ...result.savedRevisions,
+      };
+      _conflictedPages.removeAll(result.savedRevisions.keys);
+      if (revision == _editRevision) {
+        _dirtyPages.removeAll(result.savedRevisions.keys);
+        _themeDirty = false;
       }
+      if (!isClosed && revision == _editRevision) {
+        emit(
+          state.copyWith(
+            isDirty: _dirtyPages.isNotEmpty || _themeDirty,
+            clearError: true,
+          ),
+        );
+      }
+      return result.savedRevisions.keys.toSet();
+    } on PageRevisionConflict catch (e) {
+      _conflictedPages.add(e.pageId);
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            isDirty: true,
+            clearConflict: true,
+            conflict: PageConflict(
+              pageId: e.pageId,
+              serverRevision: e.serverRevision,
+              knownRevision: e.knownRevision,
+            ),
+            errorMessage:
+                'تعارض في مراجعة صفحة: القاعدة تحمل مراجعة أحدث من مرجعك '
+                '— حدّد مصير الصفحة من حوار التعارض.',
+          ),
+        );
+      }
+      return const {};
     } catch (e) {
       if (!isClosed) {
-        emit(state.copyWith(errorMessage: 'تعذر حفظ المسودة: $e'));
+        emit(
+          state.copyWith(
+            isDirty: true,
+            errorMessage: 'تعذر حفظ المسودة: $e',
+          ),
+        );
       }
+      return const {};
     } finally {
       completer.complete();
     }
   }
 
-  /// نشر التصميم بعد تدقيق محلي. يرفض قبل أن ترفض القاعدة.
-  Future<PublishedVersionInfo?> publish({String? name, String? note}) async {
-    final document = _currentDocumentOrNull();
-    if (document == null) {
-      emit(
-        state.copyWith(errorMessage: 'لا يوجد تصميم لنشره — أضف مكوّنًا أولًا'),
-      );
-      return null;
-    }
-    final invalid = DesignDocumentCodec.validate(document);
-    if (invalid != null) {
-      emit(state.copyWith(errorMessage: 'المستند غير صالح للنشر: $invalid'));
-      return null;
-    }
+  /// تحميل نسخة القاعدة للصفحات المتعارضة — قرار صريح من الموظف:
+  /// التعديلات المحلية على هذه الصفحات تُفقد، ولا تُلمس صفحات أخرى.
+  Future<void> reloadConflictedFromServer() async {
+    final conflicted = {..._conflictedPages};
+    if (conflicted.isEmpty) return;
     try {
-      final version = await _repository.publishDesign(
-        document,
-        name: name,
-        note: note,
+      final document = await _repository.loadDraftDocument();
+      if (isClosed) return;
+      _conflictedPages.clear();
+      if (document == null) {
+        emit(state.copyWith(clearConflict: true, clearError: true));
+        return;
+      }
+      final parsed = DesignDocumentCodec.parseDocument(document);
+      final revisions = DesignDocumentMeta.pageRevisions(document);
+      final pages = {...state.componentsByPage};
+      for (final pageId in conflicted) {
+        pages[pageId] = parsed.containsKey(pageId)
+            ? parsed[pageId]!
+            : DesignDocumentCodec.defaultComponentsFor(pageId);
+        _knownDraftRevisions = {
+          ..._knownDraftRevisions,
+          pageId: revisions[pageId] ?? 0,
+        };
+        _dirtyPages.remove(pageId);
+      }
+      final selected = _selectedIn(pages);
+      emit(
+        state.copyWith(
+          componentsByPage: pages,
+          selectedComponentId: selected?.componentId,
+          selectedComponent: selected,
+          clearSelectedComponent: selected == null,
+          clearConflict: true,
+          clearError: true,
+          isDirty: _dirtyPages.isNotEmpty || _themeDirty,
+        ),
       );
+      _syncPreview();
+    } catch (e) {
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            errorMessage: 'تعذر تحميل نسخة القاعدة: $e',
+            clearConflict: true,
+          ),
+        );
+      }
+    }
+  }
+
+  /// إجبار حفظ الصفحات المتعارضة فوق المراجعات الأحدث — قرار صريح
+  /// يكتب نسخة المحرّر ويهمل ما كتبته الجلسة الأخرى على هذه الصفحات.
+  Future<void> forceSaveConflicted() async {
+    _conflictedPages.clear();
+    await saveDraft(force: true);
+    if (!isClosed) emit(state.copyWith(clearConflict: true));
+  }
+
+  /// نشر التصميم.
+  ///
+  /// افتراضيًا نشر الصفحة الحالية من آخر مسودة محفوظة (لا من حالة المحرر
+  /// المفتوح): تجميع من أحدث مسودة للصفحة المعتمدة + أحدث مستند منشور
+  /// لكل ما عداها — صفحة منشورة لا تُمسّ بغير موافقة صريحة. التعديلات
+  /// غير المحفوظة لا تُنشر أبدًا بغير حفظ أولًا.
+  Future<PublishedVersionInfo?> publish({
+    String? name,
+    String? note,
+    PublishScope scope = PublishScope.currentPage,
+    bool force = false,
+  }) async {
+    try {
+      final PublishedVersionInfo version;
+      final external = scope == PublishScope.wholeDocument
+          ? _externalPublishDocument
+          : null;
+      if (external != null) {
+        final invalid = DesignDocumentCodec.validate(external);
+        if (invalid != null) {
+          emit(state.copyWith(errorMessage: 'المستند غير صالح للنشر: $invalid'));
+          return null;
+        }
+        version = await _repository.publishDesign(
+          external,
+          name: name,
+          note: note,
+        );
+      } else if (scope == PublishScope.wholeDocument) {
+        // لا مستند معاينة كامل — رجع إلى التجميع من المسودة لكل الصفحات.
+        version = await _repository.publishPages(
+          pageIds: state.componentsByPage.keys.toSet(),
+          knownRevisions: _knownDraftRevisions,
+          force: force,
+          name: name,
+          note: note,
+        );
+      } else {
+        version = await _repository.publishPages(
+          pageIds: scope == PublishScope.currentPage
+              ? {_previewPageId}
+              : state.componentsByPage.keys.toSet(),
+          knownRevisions: _knownDraftRevisions,
+          force: force,
+          name: name,
+          note: note,
+        );
+      }
       if (isClosed) return version;
+      _conflictedPages.clear();
       // النشر لا يحفظ المسودة؛ لا تصبح التعديلات محفوظة إلا بطلب الحفظ.
-      emit(state.copyWith(clearError: true));
+      emit(
+        state.copyWith(
+          clearError: true,
+          clearConflict: true,
+        ),
+      );
       return version;
+    } on PageRevisionConflict catch (e) {
+      _conflictedPages.add(e.pageId);
+      if (!isClosed) {
+        emit(
+          state.copyWith(
+            clearConflict: true,
+            conflict: PageConflict(
+              pageId: e.pageId,
+              serverRevision: e.serverRevision,
+              knownRevision: e.knownRevision,
+            ),
+            errorMessage:
+                'تعارض في مراجعة صفحة: القاعدة تحمل مراجعة أحدث من مرجعك '
+                '— حمّل نسخة القاعدة أو اجبر النشر.',
+          ),
+        );
+      }
+      return null;
     } catch (e) {
       if (isClosed) return null;
       emit(state.copyWith(errorMessage: _readablePublishError(e)));
@@ -1112,6 +1349,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       );
       _syncPreview();
       _markEdited();
+      // مستند الإصدار المعاين بديل كامل: النشر من حوار «المعاينة كما هي»
+      // يعتمده بدل التجميع من المسودة — حتى أول تعديل فردي يلغيه.
+      _externalPublishDocument = document;
       return true;
     } catch (e) {
       if (isClosed) return false;
@@ -1278,7 +1518,10 @@ class _Counter {
 
 /// لقطة تراجع: المكوّنات وطبقة الشكل معًا.
 class _EditorSnapshot {
-  const _EditorSnapshot({required this.componentsByPage, required this.theme});
+  const _EditorSnapshot({
+    required this.componentsByPage,
+    required this.theme,
+  });
 
   final Map<String, List<EditableComponent>> componentsByPage;
   final DesignTheme theme;

@@ -16,10 +16,16 @@ class _NoopRepository extends VisualEditorRepository {
   Future<EditorDraft?> loadDraft() async => null;
 
   @override
-  Future<DateTime> saveDraft(
+  Future<PageSaveResult> saveDraft(
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
-  }) async => DateTime(2026, 1, 1);
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
+  }) async =>
+      PageSaveResult(
+        savedRevisions: const {},
+        savedAt: DateTime(2026, 1, 1),
+      );
 
   @override
   Future<void> discardDraft() async {}

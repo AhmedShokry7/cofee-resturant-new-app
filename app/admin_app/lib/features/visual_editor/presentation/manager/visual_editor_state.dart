@@ -20,6 +20,7 @@ class VisualEditorState {
     this.previewUpdatesPending = 0,
     this.previewUrl,
     this.isDirty = false,
+    this.conflict,
     this.previewConnection = PreviewConnection.connecting,
     this.previewStatusMessage,
     this.previewLanguage = PreviewLanguage.arabic,
@@ -68,6 +69,10 @@ class VisualEditorState {
   /// هل هناك تعديلات لم تُحفظ كمسودة.
   final bool isDirty;
 
+  /// تعارض مراجعة صفحة: القاعدة تحمل نسخة أحدث من مرجع المحرّر.
+  /// الحوار المعروض للموظف يقرر: تحميل نسخة القاعدة أو الإجبار.
+  final PageConflict? conflict;
+
   VisualEditorState copyWith({
     VisualEditorStatus? status,
     String? errorMessage,
@@ -79,6 +84,7 @@ class VisualEditorState {
     int? previewUpdatesPending,
     String? previewUrl,
     bool? isDirty,
+    PageConflict? conflict,
     PreviewConnection? previewConnection,
     String? previewStatusMessage,
     PreviewLanguage? previewLanguage,
@@ -86,6 +92,7 @@ class VisualEditorState {
     bool clearError = false,
     bool clearSelectedComponent = false,
     bool clearPreviewStatusMessage = false,
+    bool clearConflict = false,
   }) => VisualEditorState(
     status: status ?? this.status,
     errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -101,6 +108,7 @@ class VisualEditorState {
     previewUpdatesPending: previewUpdatesPending ?? this.previewUpdatesPending,
     previewUrl: previewUrl ?? this.previewUrl,
     isDirty: isDirty ?? this.isDirty,
+    conflict: clearConflict ? null : (conflict ?? this.conflict),
     previewConnection: previewConnection ?? this.previewConnection,
     previewStatusMessage: clearPreviewStatusMessage
         ? null
@@ -108,6 +116,9 @@ class VisualEditorState {
     previewLanguage: previewLanguage ?? this.previewLanguage,
     previewThemeMode: previewThemeMode ?? this.previewThemeMode,
   );
+
+  /// هل هناك تعارض مراجعة معروض للموظف.
+  bool get hasConflict => conflict != null;
 
   /// جميع مكوّنات صفحة واحدة بترتيبها العمقي كما هو مخزّن — ترتيب القائمة
   /// المسطّحة هو ترتيب المستند نفسه (الجذر يتبعه أبناءه)، فرز إضافي بالفهرس
@@ -124,4 +135,18 @@ class VisualEditorState {
     }
     return null;
   }
+}
+
+/// تعارض مراجعة صفحة معروض للموظف — مرجع الحوار الذي يقرر المصير:
+/// تحميل نسخة القاعدة (تفقد التعديلات المحلية) أو الإجبار فوق المراجعة الأحدث.
+class PageConflict {
+  const PageConflict({
+    required this.pageId,
+    required this.serverRevision,
+    required this.knownRevision,
+  });
+
+  final String pageId;
+  final int serverRevision;
+  final int knownRevision;
 }

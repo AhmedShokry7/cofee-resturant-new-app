@@ -43,9 +43,11 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
       draftGate == null ? null : await draftGate!.future;
 
   @override
-  Future<DateTime> saveDraft(
+  Future<PageSaveResult> saveDraft(
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
   }) async {
     final snapshot = {
       for (final entry in componentsByPage.entries)
@@ -55,7 +57,13 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
     await saveGate?.future;
     savedDraft = snapshot;
     savedTheme = theme;
-    return DateTime(2026, 1, 1);
+    return PageSaveResult(
+      savedRevisions: {
+        for (var i = 0; i < snapshot.keys.length; i++)
+          snapshot.keys.elementAt(i): i + 1,
+      },
+      savedAt: DateTime(2026, 1, 1),
+    );
   }
 
   @override
@@ -327,7 +335,9 @@ void main() {
     cubit.undo();
     expect(cubit.state.selectedComponent?.componentId, grid.componentId);
     expect(cubit.state.selectedComponent?.properties['columns'], 2);
-    cubit.loadPage('categories');
+    // صفحة «سلة» تُبنى بعدة مكوّنات فلا تحديد تلقائي واحد؛ تبديلها يمسح
+    // التحديد. (صفحة التصنيفات أصبحت مكوّنًا واحدًا يُحدد تلقائيًا بالتصميم.)
+    cubit.loadPage('cart');
     expect(cubit.state.selectedComponentId, isNull);
     expect(cubit.state.selectedComponent, isNull);
   });

@@ -40,7 +40,8 @@ void registerPreviewView({
   required void Function(dynamic) onPropertyUpdated,
   required void Function(dynamic) onTreeUpdated,
   void Function(PreviewConnection connection, String? reason)?
-      onConnectionState = _defaultConnectionSink,
+      onConnectionState =
+      _defaultConnectionSink,
 }) {
   // مستخدم قديم (بلا معالج حالات)؟ لا ينهار — الحالات تراقب بصمت.
   void report(PreviewConnection state, [String? reason]) {
@@ -49,23 +50,17 @@ void registerPreviewView({
 
   final previewOrigin = previewOriginOf(url);
   if (previewOrigin == null) {
-    report(
-      PreviewConnection.error,
-      'رابط المعاينة غير صالح: $url',
-    );
+    report(PreviewConnection.error, 'رابط المعاينة غير صالح: $url');
     return;
   }
 
-  _listeners.remove(viewType)?.callAsFunction();
+  disposePreviewView(viewType);
   _iframes.remove(viewType);
   _previewOrigins[viewType] = previewOrigin;
-  final queue =
-      (_queues[viewType] ??= PreviewOutboundQueue<String>())
-        ..reset(keepPending: true);
+  final queue = (_queues[viewType] ??= PreviewOutboundQueue<String>())
+    ..reset(keepPending: true);
 
-  ui_web.platformViewRegistry.registerViewFactory(
-    viewType,
-    (int viewId) => createPreviewIframe(
+  _factories[viewType] = () => createPreviewIframe(
       viewType: viewType,
       url: url,
       sessionId: sessionId,
@@ -78,14 +73,54 @@ void registerPreviewView({
       onPreviewError: onPreviewError,
       onPropertyUpdated: onPropertyUpdated,
       onTreeUpdated: onTreeUpdated,
-    ),
-  );
+    );
+  if (!_registered) {
+    ui_web.platformViewRegistry.registerViewFactory('visual-editor-preview',
+        (int id, {Object? params}) => _factories[params]!());
+    _registered = true;
+  }
+}
+
+bool _registered = false;
+final _factories = <String, web.HTMLElement Function()>{};
+String defaultPreviewUrl() => Uri.parse(web.document.baseURI).resolve('../preview/').toString();
+
+void disposePreviewView(String viewType) {
+  final listener = _listeners.remove(viewType);
+  if (listener != null) web.window.removeEventListener('message', listener);
+  _iframes.remove(viewType);
+  _queues.remove(viewType);
+  _previewOrigins.remove(viewType);
+  _factories.remove(viewType);
 }
 
 void _defaultConnectionSink(PreviewConnection _, String? __) {}
 
 Widget buildPreviewView({required String viewType}) =>
-    HtmlElementView(viewType: viewType);
+    HtmlElementView(viewType: 'visual-editor-preview', creationParams: viewType);
+
+/// يطبّق التحجيم النهائي على عنصر iframe نفسه.
+///
+/// Flutter على الويب يضع/يحجّم فتحة منصة العرض لكنه لا يطبّق التحويلات
+/// الهندسية على محتواها، فتحجيم الإطار يجب أن يعيش على عنصر iframe:
+/// حجم العرض الحقيقي للجهاز بالبكسل، و`scale` للتصغير البصري، وorigin
+/// أعلى-يسار ليمتلئ داخل فتحة بحجمه النهائي تمامًا.
+void applyPreviewScale({
+  required String viewType,
+  required double scale,
+  required double width,
+  required double height,
+}) {
+  final iframe = _iframes[viewType];
+  if (iframe == null) return;
+  iframe.style.position = 'absolute';
+  iframe.style.left = '0';
+  iframe.style.top = '0';
+  iframe.style.width = '${width.round()}px';
+  iframe.style.height = '${height.round()}px';
+  iframe.style.transformOrigin = '0 0';
+  iframe.style.transform = (scale - 1).abs() < 0.001 ? 'none' : 'scale($scale)';
+}
 
 /// يبني عنصر iframe حقيقيًا ويعلّق معالج postMessage عليه.
 ///
@@ -126,6 +161,7 @@ web.HTMLElement createPreviewIframe({
     if (!event.isA<web.MessageEvent>()) return;
     try {
       final msgEvent = event as web.MessageEvent;
+      if (msgEvent.source != iframe.contentWindow) return;
       // مصدر الوارد هو الإطار (origin تطبيق العميل) — التحقق هنا معيار
       // رابط المعاينة لا origin الأدمن، وإلا رفضنا كل ما يأتي من التطبيق
       // الحقيقي وظهرت الشاشة بيضاء بلا سبب مفهوم.
@@ -150,10 +186,7 @@ web.HTMLElement createPreviewIframe({
           // ولا بعدها.
           queue.markReady();
           for (final pending in queue.drain()) {
-            iframe.contentWindow?.postMessage(
-              pending.toJS,
-              previewOrigin.toJS,
-            );
+            iframe.contentWindow?.postMessage(pending.toJS, previewOrigin.toJS);
           }
           report(PreviewConnection.connected);
           onPreviewReady(payload);
@@ -195,9 +228,7 @@ void sendOutboundMessage({
   required String? parentOrigin,
 }) {
   final iframe = _iframes[viewType];
-  if (iframe == null) return;
-  final queue =
-      (_queues[viewType] ??= PreviewOutboundQueue<String>());
+  final queue = (_queues[viewType] ??= PreviewOutboundQueue<String>());
   final message = jsonEncode({
     'protocolVersion': '1.0',
     'messageId': messageId,
@@ -209,7 +240,7 @@ void sendOutboundMessage({
   // فورًا، ووصلت إلى قناة صامتة تنتظر — والترتيب لا يُكسر في الحالين.
   if (!queue.offer(message)) return;
   final previewOrigin = _previewOrigins[viewType];
-  if (previewOrigin == null) return;
+  if (previewOrigin == null || iframe == null) return;
   _postTo(iframe, message, previewOrigin);
 }
 
@@ -222,14 +253,12 @@ void _postTo(web.HTMLIFrameElement iframe, String message, String origin) {
 /// الطابور يُحفظ لا يُمسح: آخر مستند يظل في آخر رسالة معلقة، وأول
 /// PREVIEW_READY من الإطار الجديد يصرف كل ما مضى بالترتيب ثم يصل
 /// PREVIEW_INITIALIZE بأحدث مستند من المحرّر.
-void reloadPreviewView({
-  required String viewType,
-  required String url,
-}) {
+void reloadPreviewView({required String viewType, required String url}) {
   final iframe = _iframes[viewType];
   if (iframe == null) return;
-  (_queues[viewType] ??= PreviewOutboundQueue<String>())
-      .reset(keepPending: true);
+  (_queues[viewType] ??= PreviewOutboundQueue<String>()).reset(
+    keepPending: true,
+  );
   // معلمة تحطيم الكاش: نفس الرابط قد لا يعيد المتصفح تحميله، والمعلمة
   // الجديدة لا تلمس الجلسة ولا الأصل.
   final separator = url.contains('?') ? '&' : '?';

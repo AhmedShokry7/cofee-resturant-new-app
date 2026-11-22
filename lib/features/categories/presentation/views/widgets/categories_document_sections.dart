@@ -21,7 +21,12 @@ import 'package:new_coffee/features/home/presentation/views/widgets/home_section
 List<Widget> buildCategoriesDocumentSections(List<PublishedSection> document) =>
     <Widget>[
       for (final section in document)
-        if (section.type != DesignWidgetTypes.categoryList)
+        // CategoryBody already renders the products for the selected tab.
+        // A generic productGrid here creates a second, unbounded grid above
+        // that body and makes the page's Column overflow on phone screens.
+        if (section.type != DesignWidgetTypes.categoryList &&
+            section.type != DesignWidgetTypes.productGrid &&
+            section.type != DesignWidgetTypes.divider)
           if (DesignSectionRenderers.build(section) case Widget widget)
             previewSectionWrap(
               section,

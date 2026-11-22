@@ -82,16 +82,65 @@ class VisualEditorTokens {
       ? darkTextMuted
       : textMutedGray;
 
+  /// سطح مائل للون الأساسي — خلفيات الشارات والأزرار النشطة.
+  static Color accentSurface(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? primaryOliveGreen.withValues(alpha: 0.22)
+      : const Color(0xFFE2F2EB);
+
+  /// حدّ ناعم مائل للون الأساسي حول العناصر النشطة.
+  static Color accentBorder(BuildContext context) =>
+      primaryOliveGreen.withValues(
+        alpha: Theme.of(context).brightness == Brightness.dark ? 0.5 : 0.35,
+      );
+
+  /// لون نقاط شبكة خلفية مسرح المعاينة.
+  static Color canvasDot(BuildContext context) =>
+      Theme.of(context).brightness == Brightness.dark
+      ? const Color(0xFF2B3547)
+      : const Color(0xFFDCD6CB);
+
+  /// تدرّج اللون الأساسي للأزرار الرئيسية وشارات العنوان.
+  static const LinearGradient primaryGradient = LinearGradient(
+    begin: AlignmentDirectional.topStart,
+    end: AlignmentDirectional.bottomEnd,
+    colors: [Color(0xFF0FA284), Color(0xFF087F68)],
+  );
+
+  /// ظل خفيف جدًا لللوحات الطافية فوق مسرح المعاينة.
+  static List<BoxShadow> panelShadow(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return [
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.35)
+            : const Color(0x1422332B),
+        blurRadius: 18,
+        offset: const Offset(0, 6),
+      ),
+      BoxShadow(
+        color: isDark
+            ? Colors.black.withValues(alpha: 0.2)
+            : const Color(0x0A22332B),
+        blurRadius: 6,
+        offset: const Offset(0, 2),
+      ),
+    ];
+  }
+
   // --- الظلال والأبعاد ---
   static const double topBarHeight = 60.0;
   static const double navRailWidth = 64.0;
   static const double sidePanelWidth = 290.0;
   static const double inspectorWidth = 320.0;
 
+  static const double radiusXs = 4.0;
   static const double radiusSm = 6.0;
   static const double radiusMd = 10.0;
   static const double radiusLg = 14.0;
   static const double radiusXl = 20.0;
+  static const double radiusPanel = 18.0;
+  static const double radiusPill = 999.0;
 
   static List<BoxShadow> softShadow(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

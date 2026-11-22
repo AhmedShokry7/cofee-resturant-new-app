@@ -205,19 +205,25 @@ class NativeDesignPreview extends StatelessWidget {
     final hero = find('welcomeHero');
     final spacing = find('welcomeSpacing');
     final visible = roots
-        .where((component) =>
-            component.componentType != 'welcomeHero' &&
-            component.componentType != 'welcomeSpacing' &&
-            component.properties['visible'] != false)
+        .where(
+          (component) =>
+              component.componentType != 'welcomeHero' &&
+              component.componentType != 'welcomeSpacing' &&
+              component.properties['visible'] != false,
+        )
         .toList();
     final defaultRatio = size.height < 720 ? 0.62 : 0.63;
-    final imageHeight = size.height *
-        (hero == null ? defaultRatio : (_numProp(hero, 'heightRatio') ?? defaultRatio))
+    final imageHeight =
+        size.height *
+        (hero == null
+                ? defaultRatio
+                : (_numProp(hero, 'heightRatio') ?? defaultRatio))
             .clamp(0.25, 0.85);
     final curveDepth =
         (spacing == null ? 55.0 : (_numProp(spacing, 'curveDepth') ?? 55))
             .clamp(0.0, 140.0);
-    final panelColor = _hexColor(spacing?.property('panelColor')) ?? Colors.white;
+    final panelColor =
+        _hexColor(spacing?.property('panelColor')) ?? Colors.white;
     final horizontal = spacing == null
         ? 32.0
         : (_numProp(spacing, 'paddingHorizontal') ?? 32.0);
@@ -258,22 +264,32 @@ class NativeDesignPreview extends StatelessWidget {
               child: ColoredBox(
                 color: panelColor,
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(horizontal, top, horizontal, bottom),
+                  padding: EdgeInsets.fromLTRB(
+                    horizontal,
+                    top,
+                    horizontal,
+                    bottom,
+                  ),
                   child: SafeArea(
                     top: false,
                     child: LayoutBuilder(
                       builder: (context, constraints) => SingleChildScrollView(
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
+                          ),
                           child: Column(
                             mainAxisAlignment: alignment,
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               for (var i = 0; i < visible.length; i++) ...[
-                                if (i > 0 && visible[i - 1].componentType == 'welcomeTitle')
+                                if (i > 0 &&
+                                    visible[i - 1].componentType ==
+                                        'welcomeTitle')
                                   SizedBox(height: gap),
-                                if (_render(visible[i], byParent) case final widget?)
+                                if (_render(visible[i], byParent)
+                                    case final widget?)
                                   widget,
                               ],
                             ],
@@ -1274,6 +1290,25 @@ class NativeDesignPreview extends StatelessWidget {
             ),
           ),
         ],
+        // شارة إعدادات الانتقال كما حرّرها الموظف — تعيش في المعاينة فقط.
+        const SizedBox(height: AppSpacing.xs),
+        if (animation == 'fade' || animation == 'fadeScale')
+          Text(
+            'تأثير $animation • ${animationDuration}ms',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: AppFontSizes.size9_5 * _textFactor,
+              color: _textSecondary,
+            ),
+          ),
+        Text(
+          'الانتقال بعد ${(_numProp(c, 'durationMs')?.round() ?? 1000)}ms',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontSize: AppFontSizes.size9_5 * _textFactor,
+            color: _textSecondary,
+          ),
+        ),
       ],
     );
     final animatedContent = animation == 'none' || animationDuration <= 0
@@ -1874,8 +1909,22 @@ class _WelcomePanelClipper extends CustomClipper<Path> {
     final scale = depth / 55;
     return Path()
       ..moveTo(0, depth)
-      ..cubicTo(size.width * .18, depth, size.width * .22, 0, size.width * .48, 0)
-      ..cubicTo(size.width * .72, 0, size.width * .78, 34 * scale, size.width, 24 * scale)
+      ..cubicTo(
+        size.width * .18,
+        depth,
+        size.width * .22,
+        0,
+        size.width * .48,
+        0,
+      )
+      ..cubicTo(
+        size.width * .72,
+        0,
+        size.width * .78,
+        34 * scale,
+        size.width,
+        24 * scale,
+      )
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();

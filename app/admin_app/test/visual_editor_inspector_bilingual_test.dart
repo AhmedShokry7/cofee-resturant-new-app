@@ -49,6 +49,8 @@ void main() {
   }) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        supportedLocales: const <Locale>[Locale('en'), Locale('ar')],
         home: Scaffold(
           body: SizedBox(
             width: 400,
@@ -71,6 +73,40 @@ void main() {
     await tester.pump();
   }
 
+  /// توسيع أقسام الخصائص المطوية — الحقول تعيش داخل ExpansionTile
+  /// والاختبارات تتفاعل مع الحقول مباشرة. لا نلمس الأقسام الموسوعة أصلًا
+  /// حتى لا تُطوى بالتبديل.
+  Future<void> expandAllGroups(WidgetTester tester) async {
+    Future<void> tapIfPresent(String label) async {
+      final header = find.text(label);
+      if (header.evaluate().isEmpty) return;
+      final before = find.byType(TextField).evaluate().length;
+      await tester.ensureVisible(header.first);
+      await tester.tap(header.first, warnIfMissed: false);
+      await tester.pumpAndSettle();
+      // إن كان القسم موسوعًا أصلًا فقد طوانا به — نعيده كما كان.
+      final after = find.byType(TextField).evaluate().length;
+      if (after < before) {
+        await tester.tap(find.text(label).first, warnIfMissed: false);
+        await tester.pumpAndSettle();
+      }
+    }
+
+    // المجموعات المتقدمة تعيش خلف زر «المزيد من الإعدادات».
+    await tapIfPresent('المزيد من الإعدادات');
+    for (final label in const [
+      'Properties',
+      'العنوان',
+      'الوصف',
+      'المحتوى',
+      'الصورة',
+      'النص',
+      'الخلفية',
+    ]) {
+      await tapIfPresent(label);
+    }
+  }
+
   testWidgets('general color properties open the full color picker', (
     tester,
   ) async {
@@ -89,7 +125,11 @@ void main() {
       onReset: (_) {},
       panelComponent: text,
     );
+    await expandAllGroups(tester);
 
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('color-picker-text-color')),
+    );
     await tester.tap(find.byKey(const ValueKey('color-picker-text-color')));
     await tester.pumpAndSettle();
     expect(find.text(S.visualEditorPickColor), findsOneWidget);
@@ -122,13 +162,19 @@ void main() {
         onReset: (_) {},
         panelComponent: splash,
       );
+      await expandAllGroups(tester);
 
       await tester.tap(find.byKey(const ValueKey('splash-color-picker')).first);
       await tester.pumpAndSettle();
       expect(find.text(S.visualEditorPickColor), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('splash-swatch-#2E7D32')));
+      expect(find.byType(ColorPicker), findsOneWidget);
+      // غلق الحوار ثم الإدخال المباشر للقيمة في حقل القيمة السداسي.
+      await tester.tap(find.text(S.cancel));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(S.visualEditorApplyColor));
+      final hexField = find.byWidgetPredicate(
+        (widget) => widget is TextField && widget.controller?.text == '#FFFFFF',
+      );
+      await tester.enterText(hexField.first, '#2E7D32');
       await tester.pumpAndSettle();
 
       expect(changed, contains('backgroundColor=#2E7D32'));
@@ -203,6 +249,7 @@ void main() {
       onReset: (_) {},
       panelComponent: bilingual,
     );
+    await expandAllGroups(tester);
 
     expect(find.text(S.visualEditorBilingualArabicLabel), findsNWidgets(2));
     expect(find.text(S.visualEditorBilingualEnglishLabel), findsNWidgets(2));
@@ -240,6 +287,7 @@ void main() {
       onReset: (_) {},
       panelComponent: bilingual,
     );
+    await expandAllGroups(tester);
 
     final fields = tester.widgetList<TextField>(find.byType(TextField));
     expect(
@@ -324,6 +372,7 @@ void main() {
   ) async {
     final changed = <String>[];
     await pumpPanel(tester, onKeyChanged: changed.add, onReset: (_) {});
+    await expandAllGroups(tester);
 
     // حقل الصورة أولًا، ثم حقل العربية وحقل الإنجليزية.
     final arabicField = find.byType(TextField).at(1);
@@ -339,6 +388,7 @@ void main() {
   ) async {
     final changed = <String>[];
     await pumpPanel(tester, onKeyChanged: changed.add, onReset: (_) {});
+    await expandAllGroups(tester);
 
     // دمج الزوج متاح لكنه اختيار صريح؛ الفصل هو الوضع الأول.
     await tester.tap(find.text(S.visualEditorBilingualBoth).first);
@@ -540,6 +590,7 @@ void main() {
   testWidgets('reset clears both languages at once', (tester) async {
     final resets = <String>[];
     await pumpPanel(tester, onKeyChanged: (_) {}, onReset: resets.add);
+    await expandAllGroups(tester);
 
     // أول زر إعادة يخص حقل الصورة، والثاني زوج العنوان.
     final resetButtons = find.byTooltip(S.visualEditorResetProperty);

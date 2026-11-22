@@ -1,6 +1,5 @@
 import 'package:material_ui/material_ui.dart';
 
-import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
@@ -27,26 +26,42 @@ class PreviewDisplayControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        _PreviewChip(
-          tooltip: S.visualEditorPreviewLanguage,
-          icon: AppIcons.translate,
-          label: state.previewLanguage.code,
-          onTap: cubit.togglePreviewLanguage,
-          dark: dark,
+    return Container(
+      decoration: BoxDecoration(
+        color: dark
+            ? VisualEditorTokens.darkSurfaceSecondary
+            : VisualEditorTokens.surfaceSoftCreamSecondary,
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPill),
+        border: Border.all(
+          color: VisualEditorTokens.border(context),
+          width: 0.8,
         ),
-        const SizedBox(width: AppSpacing.xs),
-        _PreviewChip(
-          tooltip: S.visualEditorPreviewTheme,
-          icon: state.previewThemeMode == PreviewThemeMode.dark
-              ? AppIcons.moon01
-              : AppIcons.sun03,
-          onTap: cubit.togglePreviewThemeMode,
-          dark: dark,
-        ),
-      ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _PreviewChip(
+            tooltip: S.visualEditorPreviewLanguage,
+            icon: AppIcons.translate,
+            label: state.previewLanguage.code,
+            onTap: cubit.togglePreviewLanguage,
+            dark: dark,
+          ),
+          Container(
+            width: 1,
+            height: 14,
+            color: VisualEditorTokens.border(context),
+          ),
+          _PreviewChip(
+            tooltip: S.visualEditorPreviewTheme,
+            icon: state.previewThemeMode == PreviewThemeMode.dark
+                ? AppIcons.moon01
+                : AppIcons.sun03,
+            onTap: cubit.togglePreviewThemeMode,
+            dark: dark,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -75,19 +90,9 @@ class _PreviewChip extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusXl),
+          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPill),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4.5),
-            decoration: BoxDecoration(
-              color: dark
-                  ? VisualEditorTokens.darkSurfaceSecondary
-                  : VisualEditorTokens.surfaceSoftCreamSecondary,
-              borderRadius: BorderRadius.circular(VisualEditorTokens.radiusXl),
-              border: Border.all(
-                color: VisualEditorTokens.border(context),
-                width: 0.8,
-              ),
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5.5),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

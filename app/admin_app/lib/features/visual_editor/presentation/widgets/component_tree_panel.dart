@@ -8,6 +8,7 @@ import 'package:admin_app/core/theme/app_icons.dart';
 import 'package:admin_app/core/theme/typography.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/shared/widgets/admin_empty_state.dart';
 import 'package:admin_app/shared/widgets/admin_network_thumb.dart';
 
@@ -193,7 +194,7 @@ String _previewText(EditableComponent c) {
 
 /// لون أيقونة حسب نوع المكوّن
 Color _colorForType(String type, {bool selected = false, required bool dark}) {
-  if (selected) return const Color(0xFF5A6A3A); // olive green
+  if (selected) return VisualEditorTokens.primaryOliveGreen;
   return switch (type) {
     'text' => const Color(0xFF2563EB), // أزرق — نص
     'heading' => const Color(0xFF7C3AED), // بنفسجي — عنوان
@@ -225,8 +226,12 @@ class ComponentTreePanel extends StatefulWidget {
     required this.onDuplicate,
     required this.onToggleVisibility,
     this.onAddComponent,
+    this.onSplashGroup,
+    this.splashGroup,
   });
 
+  final String? splashGroup;
+  final void Function(String id, String group)? onSplashGroup;
   final String pageId;
   final List<EditableComponent> components;
   final String? selectedComponentId;
@@ -260,87 +265,107 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
-        color: dark ? AppColor.darkSurface : AppColor.whiteColor,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(
-          color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
-        ),
+        color: VisualEditorTokens.surface(context),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPanel),
+        border: Border.all(color: VisualEditorTokens.border(context)),
+        boxShadow: VisualEditorTokens.panelShadow(context),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ترويسة اللوحة مع زر الإضافة
-          _PanelHeader(
-            icon: AppIcons.layers01,
-            title: S.visualEditorLayers,
-            onAddTap: widget.pageId == 'splash'
-                ? null
-                : () => setState(() => _showQuickAdd = !_showQuickAdd),
-            isAddActive: _showQuickAdd,
-          ),
-          const Divider(height: 1),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPanel),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ترويسة اللوحة مع زر الإضافة وعدّاد العناصر
+            _PanelHeader(
+              icon: AppIcons.layers01,
+              title: S.visualEditorLayers,
+              count: _searchQuery.isEmpty
+                  ? widget.components.length
+                  : _filtered.length,
+              onAddTap: widget.pageId == 'splash'
+                  ? null
+                  : () => setState(() => _showQuickAdd = !_showQuickAdd),
+              isAddActive: _showQuickAdd,
+            ),
+            Divider(height: 1, color: VisualEditorTokens.border(context)),
 
-          // شريط البحث
-          _SearchBar(
-            query: _searchQuery,
-            onChanged: (v) => setState(() => _searchQuery = v),
-            dark: dark,
-          ),
-
-          // شريط الإضافة السريعة
-          if (_showQuickAdd) ...[
-            const Divider(height: 1),
-            _QuickAddBar(
-              pageId: widget.pageId,
-              onAdd: (type) {
-                widget.onAddComponent?.call(type);
-                setState(() => _showQuickAdd = false);
-              },
+            // شريط البحث
+            _SearchBar(
+              query: _searchQuery,
+              onChanged: (v) => setState(() => _searchQuery = v),
               dark: dark,
             ),
-          ],
 
-          const Divider(height: 1),
+            // شريط الإضافة السريعة
+            if (_showQuickAdd) ...[
+              Divider(height: 1, color: VisualEditorTokens.border(context)),
+              _QuickAddBar(
+                pageId: widget.pageId,
+                onAdd: (type) {
+                  widget.onAddComponent?.call(type);
+                  setState(() => _showQuickAdd = false);
+                },
+                dark: dark,
+              ),
+            ],
 
-          // عداد العناصر
-          _CountBar(
-            total: widget.components.length,
-            filtered: _filtered.length,
-            isFiltering: _searchQuery.isNotEmpty,
-            dark: dark,
-          ),
+            Divider(height: 1, color: VisualEditorTokens.border(context)),
 
-          // قائمة العناصر
-          Expanded(
-            child: _filtered.isEmpty
-                ? (_searchQuery.isEmpty
-                      ? AdminEmptyState(
-                          icon: AppIcons.layers01,
-                          message: S.visualEditorNoComponents,
-                        )
-                      : _EmptySearch(query: _searchQuery, dark: dark))
-                : _ComponentList(
-                    components: _filtered,
-                    allComponents: widget.components,
-                    selectedComponentId: widget.selectedComponentId,
-                    onSelect: widget.onSelect,
-                    onReorder: widget.onReorder,
-                    onDelete: widget.onDelete,
-                    onDuplicate: widget.onDuplicate,
-                    onToggleVisibility: widget.onToggleVisibility,
-                    allowReorder: _searchQuery.trim().isEmpty,
-                    dark: dark,
+            // عداد العناصر
+            _CountBar(
+              total: widget.components.length,
+              filtered: _filtered.length,
+              isFiltering: _searchQuery.isNotEmpty,
+              dark: dark,
+            ),
+
+            if (widget.onSplashGroup != null && widget.pageId == 'splash')
+              for (final node in _filtered.where((c) => c.componentType == 'splashSettings'))
+                Padding(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  child: Wrap(
+                    spacing: AppSpacing.xs,
+                    children: [
+                      for (final group in [S.visualEditorSplashImageSettings, S.visualEditorSplashText,
+                        S.visualEditorSplashBackground, S.visualEditorSplashLayout, S.visualEditorSplashNavigationSettings])
+                        ChoiceChip(label: Text(group), selected: widget.splashGroup == group,
+                          onSelected: (_) => widget.onSplashGroup!(node.componentId, group)),
+                    ],
                   ),
-          ),
-        ],
+                ),
+            // قائمة العناصر
+            Expanded(
+              child: _filtered.isEmpty
+                  ? (_searchQuery.isEmpty
+                        ? AdminEmptyState(
+                            icon: AppIcons.layers01,
+                            message: S.visualEditorNoComponents,
+                          )
+                        : _EmptySearch(query: _searchQuery, dark: dark))
+                  : _ComponentList(
+                      components: _filtered,
+                      allComponents: widget.components,
+                      selectedComponentId: widget.selectedComponentId,
+                      onSelect: widget.onSelect,
+                      onReorder: widget.onReorder,
+                      onDelete: widget.onDelete,
+                      onDuplicate: widget.onDuplicate,
+                      onToggleVisibility: widget.onToggleVisibility,
+                      allowReorder: _searchQuery.trim().isEmpty,
+                      dark: dark,
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ─────────────────────────── شريط البحث ───────────────────────────
+// --------------------------- شريط البحث ---------------------------
 
 class _SearchBar extends StatelessWidget {
   const _SearchBar({
@@ -391,20 +416,23 @@ class _SearchBar extends StatelessWidget {
             vertical: 8,
           ),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
             borderSide: BorderSide(
               color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
             ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
             borderSide: BorderSide(
               color: dark ? AppColor.darkBorder : AppColor.adminCardBorder,
             ),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.sm),
-            borderSide: const BorderSide(color: Color(0xFF5A6A3A)),
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+            borderSide: const BorderSide(
+              color: VisualEditorTokens.primaryOliveGreen,
+              width: 1.2,
+            ),
           ),
           filled: true,
           fillColor: dark
@@ -420,7 +448,7 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── عداد العناصر ───────────────────────────
+// --------------------------- عداد العناصر ---------------------------
 
 class _CountBar extends StatelessWidget {
   const _CountBar({
@@ -440,16 +468,20 @@ class _CountBar extends StatelessWidget {
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     final label = isFiltering ? '$filtered من $total عنصر' : '$total عنصر';
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: 3,
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, 6, AppSpacing.md, 2),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: AppFontWeights.medium,
+          color: muted,
+        ),
       ),
-      child: Text(label, style: TextStyle(fontSize: 10, color: muted)),
     );
   }
 }
 
-// ─────────────────────────── شريط الإضافة السريعة ───────────────────────────
+// --------------------------- شريط الإضافة السريعة ---------------------------
 
 class _QuickAddBar extends StatelessWidget {
   const _QuickAddBar({
@@ -465,10 +497,12 @@ class _QuickAddBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: dark ? AppColor.darkSurfaceContainer : const Color(0xFFF5F3EF),
+      color: dark
+          ? AppColor.darkSurfaceContainer
+          : VisualEditorTokens.surfaceSoftCreamSecondary,
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        vertical: AppSpacing.sm,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,7 +585,7 @@ class _QuickAddChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── حالة البحث الفارغ ───────────────────────────
+// --------------------------- حالة البحث الفارغ ---------------------------
 
 class _EmptySearch extends StatelessWidget {
   const _EmptySearch({required this.query, required this.dark});
@@ -585,7 +619,7 @@ class _EmptySearch extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── قائمة العناصر ───────────────────────────
+// --------------------------- قائمة العناصر ---------------------------
 
 class _ComponentList extends StatelessWidget {
   const _ComponentList({
@@ -653,7 +687,7 @@ class _ComponentList extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── صف مكوّن ───────────────────────────
+// --------------------------- صف مكوّن ---------------------------
 
 class _ComponentRow extends StatelessWidget {
   const _ComponentRow({
@@ -695,7 +729,7 @@ class _ComponentRow extends StatelessWidget {
 
     final selectedBg = dark
         ? AppColor.darkSurfaceContainer
-        : const Color(0xFFEEF2E8); // olive tint
+        : const Color(0xFFE6F3ED); // teal tint
     final rowBg = isSelected ? selectedBg : Colors.transparent;
 
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
@@ -704,166 +738,178 @@ class _ComponentRow extends StatelessWidget {
     final previewStr = _previewText(component);
     final imagePreviewUrl = _imagePreviewUrl(component);
 
-    return Material(
-      color: rowBg,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.sm),
-        child: Opacity(
-          opacity: isVisible ? 1.0 : 0.45,
-          child: Padding(
-            padding: EdgeInsetsDirectional.only(
-              start: isChild ? AppSpacing.md + AppSpacing.sm : AppSpacing.sm,
-              end: AppSpacing.xs,
-              top: AppSpacing.xs,
-              bottom: AppSpacing.xs,
-            ),
-            child: Row(
-              children: [
-                // ► مؤشر التداخل (أبناء)
-                if (isChild)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 4),
-                    child: Icon(
-                      Icons.subdirectory_arrow_right_rounded,
-                      size: 12,
-                      color: muted,
-                    ),
-                  ),
-
-                // ► مقبض السحب
-                if (component.canReorder && allowReorder)
-                  ReorderableDragStartListener(
-                    index: index,
-                    child: Padding(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+      child: Material(
+        color: rowBg,
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+          child: Opacity(
+            opacity: isVisible ? 1.0 : 0.45,
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(
+                start: isChild ? AppSpacing.md + AppSpacing.sm : AppSpacing.sm,
+                end: AppSpacing.xs,
+                top: AppSpacing.xs,
+                bottom: AppSpacing.xs,
+              ),
+              child: Row(
+                children: [
+                  // ► مؤشر التداخل (أبناء)
+                  if (isChild)
+                    Padding(
                       padding: const EdgeInsetsDirectional.only(end: 4),
-                      child: Icon(Icons.drag_indicator, size: 15, color: muted),
+                      child: Icon(
+                        Icons.subdirectory_arrow_right_rounded,
+                        size: 12,
+                        color: muted,
+                      ),
                     ),
-                  )
-                else
-                  SizedBox(width: AppSpacing.sm + 4),
 
-                // ► شريط اللون الجانبي
-                Container(
-                  width: 3,
-                  height: 32,
-                  margin: const EdgeInsetsDirectional.only(end: 7),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? typeColor
-                        : typeColor.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(2),
+                  // ► مقبض السحب
+                  if (component.canReorder && allowReorder)
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 4),
+                        child: Icon(
+                          Icons.drag_indicator,
+                          size: 15,
+                          color: muted,
+                        ),
+                      ),
+                    )
+                  else
+                    SizedBox(width: AppSpacing.sm + 4),
+
+                  // ► شريط اللون الجانبي
+                  Container(
+                    width: 3,
+                    height: 32,
+                    margin: const EdgeInsetsDirectional.only(end: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? typeColor
+                          : typeColor.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
 
-                // ► صورة مصغرة للعناصر ذات الصورة، وأيقونة النوع للباقي
-                if (imagePreviewUrl != null)
-                  AdminNetworkThumb(
-                    imageUrl: imagePreviewUrl,
-                    width: 34,
-                    height: 34,
-                    fit: BoxFit.cover,
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                    icon: _iconForType(component.componentType),
-                  )
-                else if (isSplash && isVisible)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                    child: Image.asset(
-                      AppImages.logo,
+                  // ► صورة مصغرة للعناصر ذات الصورة، وأيقونة النوع للباقي
+                  if (imagePreviewUrl != null)
+                    AdminNetworkThumb(
+                      imageUrl: imagePreviewUrl,
                       width: 34,
                       height: 34,
                       fit: BoxFit.cover,
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                      icon: _iconForType(component.componentType),
+                    )
+                  else if (isSplash && isVisible)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(AppRadius.xs),
+                      child: Image.asset(
+                        AppImages.logo,
+                        width: 34,
+                        height: 34,
+                        fit: BoxFit.cover,
+                      ),
+                    )
+                  else
+                    Icon(
+                      _iconForType(component.componentType),
+                      size: 15,
+                      color: typeColor,
                     ),
-                  )
-                else
-                  Icon(
-                    _iconForType(component.componentType),
-                    size: 15,
-                    color: typeColor,
-                  ),
-                const SizedBox(width: 6),
+                  const SizedBox(width: 6),
 
-                // ► الاسم والمعاينة
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        isSplash
-                            ? S.visualEditorSplashImage
-                            : entry?.displayName ?? component.componentType,
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: isSelected
-                              ? AppFontWeights.semiBold
-                              : AppFontWeights.medium,
-                          color: isSelected ? typeColor : bodyColor,
-                          height: 1.3,
+                  // ► الاسم والمعاينة
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isSplash
+                              ? S.visualEditorSplashImage
+                              : entry?.displayName ?? component.componentType,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: isSelected
+                                ? AppFontWeights.semiBold
+                                : AppFontWeights.medium,
+                            color: isSelected ? typeColor : bodyColor,
+                            height: 1.3,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        previewStr,
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: muted,
-                          height: 1.3,
-                          fontStyle: FontStyle.italic,
+                        Text(
+                          previewStr,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: muted,
+                            height: 1.3,
+                            fontStyle: FontStyle.italic,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
 
-                // ► أزرار الإجراءات (تظهر عند التحويم أو التحديد)
-                if (component.allowedOperations.contains('hide'))
-                  _ActionButton(
-                    icon: isVisible ? AppIcons.eyeIcon : AppIcons.eyeOff,
-                    tooltip: isVisible ? S.visualEditorHide : S.visualEditorShow,
-                    color: isVisible ? muted : const Color(0xFF5A6A3A),
-                    onTap: onToggleVisibility,
-                  ),
-                if (onDuplicate != null)
-                  _ActionButton(
-                    icon: AppIcons.copy01,
-                    tooltip: S.visualEditorDuplicate,
-                    color: muted,
-                    onTap: onDuplicate!,
-                  ),
-                if (onDelete != null)
-                  PopupMenuButton<String>(
-                    tooltip: S.visualEditorMoreActions,
-                    padding: EdgeInsets.zero,
-                    iconSize: 16,
-                    onSelected: (action) {
-                      if (action == 'delete') onDelete!();
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(
-                              AppIcons.delete01,
-                              size: 16,
-                              color: AppColor.errorColor,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            Text(
-                              S.visualEditorDelete,
-                              style: TextStyle(color: AppColor.errorColor),
-                            ),
-                          ],
+                  // ► أزرار الإجراءات (تظهر عند التحويم أو التحديد)
+                  if (component.allowedOperations.contains('hide'))
+                    _ActionButton(
+                      icon: isVisible ? AppIcons.eyeIcon : AppIcons.eyeOff,
+                      tooltip: isVisible
+                          ? S.visualEditorHide
+                          : S.visualEditorShow,
+                      color: isVisible
+                          ? muted
+                          : VisualEditorTokens.primaryOliveGreen,
+                      onTap: onToggleVisibility,
+                    ),
+                  if (onDuplicate != null)
+                    _ActionButton(
+                      icon: AppIcons.copy01,
+                      tooltip: S.visualEditorDuplicate,
+                      color: muted,
+                      onTap: onDuplicate!,
+                    ),
+                  if (onDelete != null)
+                    PopupMenuButton<String>(
+                      tooltip: S.visualEditorMoreActions,
+                      padding: EdgeInsets.zero,
+                      iconSize: 16,
+                      onSelected: (action) {
+                        if (action == 'delete') onDelete!();
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem<String>(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(
+                                AppIcons.delete01,
+                                size: 16,
+                                color: AppColor.errorColor,
+                              ),
+                              const SizedBox(width: AppSpacing.xs),
+                              Text(
+                                S.visualEditorDelete,
+                                style: TextStyle(color: AppColor.errorColor),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-              ],
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -904,7 +950,7 @@ class _ComponentRow extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── زر إجراء ───────────────────────────
+// --------------------------- زر إجراء ---------------------------
 
 class _ActionButton extends StatelessWidget {
   const _ActionButton({
@@ -935,40 +981,61 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-// ─────────────────────────── ترويسة اللوحة ───────────────────────────
+// --------------------------- ترويسة اللوحة ---------------------------
 
 class _PanelHeader extends StatelessWidget {
   const _PanelHeader({
     required this.icon,
     required this.title,
+    this.count,
     this.onAddTap,
     this.isAddActive = false,
   });
 
   final IconData icon;
   final String title;
+  final int? count;
   final VoidCallback? onAddTap;
   final bool isAddActive;
 
   @override
   Widget build(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
+
     final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
     final heading = dark ? AppColor.darkText : AppColor.adminHeading;
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        AppSpacing.md,
+        10,
+        AppSpacing.sm,
+        10,
       ),
       child: Row(
         children: [
-          Icon(icon, size: AppDimensions.iconSizeSm, color: muted),
+          // شارة الأيقونة المتدرّجة
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: VisualEditorTokens.accentSurface(context),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: VisualEditorTokens.accentBorder(context),
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 15,
+              color: VisualEditorTokens.primaryOliveGreen,
+            ),
+          ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12.5,
                 fontWeight: AppFontWeights.semiBold,
                 color: heading,
               ),
@@ -976,31 +1043,53 @@ class _PanelHeader extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
+          // عدّاد العناصر
+          if (count != null)
+            Container(
+              margin: const EdgeInsetsDirectional.only(end: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                color: VisualEditorTokens.surfaceSecondary(context),
+                borderRadius: BorderRadius.circular(
+                  VisualEditorTokens.radiusPill,
+                ),
+                border: Border.all(color: VisualEditorTokens.border(context)),
+              ),
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: AppFontWeights.bold,
+                  color: muted,
+                ),
+              ),
+            ),
           // زر الإضافة السريعة
           if (onAddTap != null)
             Tooltip(
               message: 'إضافة عنصر',
               child: InkWell(
                 onTap: onAddTap,
-                borderRadius: BorderRadius.circular(AppRadius.sm),
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
                     color: isAddActive
-                        ? const Color(0xFF5A6A3A).withValues(alpha: 0.15)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                        ? VisualEditorTokens.accentSurface(context)
+                        : VisualEditorTokens.primaryOliveGreen,
+                    borderRadius: BorderRadius.circular(8),
                     border: isAddActive
                         ? Border.all(
-                            color: const Color(0xFF5A6A3A)
-                                .withValues(alpha: 0.4),
+                            color: VisualEditorTokens.accentBorder(context),
                           )
                         : null,
                   ),
                   child: Icon(
                     isAddActive ? Icons.close_rounded : Icons.add_rounded,
-                    size: 16,
-                    color: isAddActive ? const Color(0xFF5A6A3A) : muted,
+                    size: 15,
+                    color: isAddActive
+                        ? VisualEditorTokens.primaryOliveGreen
+                        : Colors.white,
                   ),
                 ),
               ),

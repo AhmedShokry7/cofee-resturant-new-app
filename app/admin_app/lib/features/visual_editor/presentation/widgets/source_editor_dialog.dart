@@ -8,7 +8,8 @@ Future<void> showVisualEditorJsonEditor(
   VisualEditorCubit cubit,
 ) async {
   final controller = TextEditingController(
-    text: const JsonEncoder.withIndent('  ').convert(cubit.currentDesignDocument),
+    text: const JsonEncoder.withIndent('  ')
+        .convert(cubit.currentDesignDocument),
   );
   String? error;
   await showDialog<void>(
@@ -57,19 +58,25 @@ Future<void> showVisualEditorJsonEditor(
               try {
                 final decoded = jsonDecode(controller.text);
                 if (decoded is! Map) {
-                  setDialogState(() => error = 'يجب أن يكون المحتوى كائن JSON.');
+                  setDialogState(
+                    () => error = 'يجب أن يكون المحتوى كائن JSON.',
+                  );
                   return;
                 }
                 final validation = cubit.importDesignDocument(
                   Map<String, dynamic>.from(decoded),
                 );
                 if (validation != null) {
-                  setDialogState(() => error = 'ملف التصميم غير صالح: $validation');
+                  setDialogState(
+                    () => error = 'ملف التصميم غير صالح: $validation',
+                  );
                   return;
                 }
                 Navigator.pop(dialogContext);
               } on FormatException catch (exception) {
-                setDialogState(() => error = 'خطأ في صيغة JSON: ${exception.message}');
+                setDialogState(
+                  () => error = 'خطأ في صيغة JSON: ${exception.message}',
+                );
               } catch (exception) {
                 setDialogState(() => error = 'تعذر تطبيق التصميم: $exception');
               }

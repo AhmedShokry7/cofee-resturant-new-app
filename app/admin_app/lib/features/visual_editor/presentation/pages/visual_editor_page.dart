@@ -10,6 +10,8 @@ import 'package:admin_app/features/visual_editor/presentation/widgets/studio_sin
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/shared/widgets/admin_state_view.dart';
 
+/// صفحة المحرر المرئي — مساحة عمل استوديو كاملة:
+/// شريط أدوات علوي، لوحة الطبقات، مسرح معاينة حيّة، ومفتش الخصائص.
 class VisualEditorPage extends StatefulWidget {
   const VisualEditorPage({
     super.key,
@@ -31,10 +33,58 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
   String _pageId = 'home';
   PreviewDevice _device = PreviewDevice.phone;
   bool _interactive = false;
+  String? _splashGroup;
   bool _compactLayersOpen = false;
   bool _compactPropertiesOpen = false;
   int _reloadToken = 0;
   String? _lastShownError;
+  PageConflict? _lastShownConflict;
+
+  Future<void> _showConflictDialog(PageConflict conflict) async {
+    if (!mounted) return;
+    final decision = await showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('تعارض في مراجعة الصفحة'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'القاعدة تحمل مراجعة أحدث لصفحة «${conflict.pageId}» '
+              '(مراجعة ${conflict.serverRevision}) من مرجعك '
+              '(مراجعة ${conflict.knownRevision}) — جلسة أخرى عدّلت هذه '
+              'الصفحة بعد تحميلك. اختر:',
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '• تحميل نسخة القاعدة: تفقد تعديلاتك المحلية على هذه الصفحة '
+              'فقط، ولا تُلمس صفحات أخرى.\n'
+              '• إجبار الحفظ: تكتب نسختك وتتجاوز ما كتبته الجلسة الأخرى '
+              'على هذه الصفحة.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop('reload'),
+            child: const Text('تحميل نسخة القاعدة'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop('force'),
+            child: const Text('إجبار الحفظ'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (decision == 'reload') {
+      await _cubit.reloadConflictedFromServer();
+    } else if (decision == 'force') {
+      await _cubit.forceSaveConflicted();
+    }
+  }
 
   @override
   void initState() {
@@ -58,18 +108,26 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
           final error = state.errorMessage;
           if (error == null || error.isEmpty) {
             _lastShownError = null;
-            return;
+          } else if (error != _lastShownError) {
+            _lastShownError = error;
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                SnackBar(
+                  content: Text(error),
+                  duration: const Duration(seconds: 6),
+                ),
+              );
           }
-          if (error == _lastShownError) return;
-          _lastShownError = error;
-          ScaffoldMessenger.of(context)
-            ..hideCurrentSnackBar()
-            ..showSnackBar(
-              SnackBar(
-                content: Text(error),
-                duration: const Duration(seconds: 6),
-              ),
-            );
+          // تعارض مراجعة: حوار قرار لا شريط إشعار — الهدف حسم مصير
+          // الصفحة: نسخة القاعدة أو الإجبار. بلا قرار لا يُحفظ شيئًا.
+          final conflict = state.conflict;
+          if (conflict != null && conflict != _lastShownConflict) {
+            _lastShownConflict = conflict;
+            _showConflictDialog(conflict);
+          } else if (conflict == null) {
+            _lastShownConflict = null;
+          }
         },
         builder: (context, state) {
           if (state.status == VisualEditorStatus.loading) {
@@ -95,7 +153,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                   interactive: _interactive,
                   onDeviceChanged: (value) => setState(() => _device = value),
                   onPageChanged: (value) {
-                    setState(() => _pageId = value);
+                    setState(() { _pageId = value; _splashGroup = null; });
                     _cubit.loadPage(value);
                   },
                   onModeChanged: (value) =>
@@ -112,15 +170,21 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
+                              // اللوحتان متناظرتان في العرض فلا يُقرأ
+                              // المسرح أنه مائل لأحدهما مهما تغيّر الجهاز.
                               SizedBox(
-                                width: 276,
+                                width: (constraints.maxWidth * .23)
+                                    .clamp(300.0, 380.0)
+                                    .toDouble(),
                                 child: _buildLayersPanel(state),
                               ),
                               const SizedBox(width: 16),
                               Expanded(child: _buildPreviewStage(state)),
                               const SizedBox(width: 16),
                               SizedBox(
-                                width: 304,
+                                width: (constraints.maxWidth * .23)
+                                    .clamp(300.0, 380.0)
+                                    .toDouble(),
                                 child: _buildPropertiesPanel(state),
                               ),
                             ],
@@ -132,48 +196,96 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
                         children: [
                           Positioned.fill(child: _buildPreviewStage(state)),
                           Positioned(
-                            top: 12,
-                            right: 12,
-                            child: IconButton.filledTonal(
+                            top: 14,
+                            right: 14,
+                            child: _FloatingPanelButton(
                               tooltip: S.visualEditorLayers,
+                              icon: Icons.layers_outlined,
+                              active: _compactLayersOpen,
                               onPressed: () => setState(() {
                                 _compactLayersOpen = !_compactLayersOpen;
+                                if (_compactLayersOpen) {
+                                  _compactPropertiesOpen = false;
+                                }
                               }),
-                              icon: const Icon(Icons.layers_outlined),
                             ),
                           ),
                           Positioned(
-                            top: 12,
-                            left: 12,
-                            child: IconButton.filledTonal(
+                            top: 14,
+                            left: 14,
+                            child: _FloatingPanelButton(
                               tooltip: S.visualEditorProperties,
+                              icon: Icons.tune_outlined,
+                              active: _compactPropertiesOpen,
                               onPressed: () => setState(() {
                                 _compactPropertiesOpen =
                                     !_compactPropertiesOpen;
+                                if (_compactPropertiesOpen) {
+                                  _compactLayersOpen = false;
+                                }
                               }),
-                              icon: const Icon(Icons.tune_outlined),
                             ),
                           ),
-                          if (_compactLayersOpen)
-                            Positioned(
-                              top: 60,
-                              bottom: 12,
-                              right: 12,
-                              width: constraints.maxWidth
-                                  .clamp(220.0, 320.0)
-                                  .toDouble(),
-                              child: _buildLayersPanel(state),
+                          Positioned(
+                            top: 62,
+                            bottom: 14,
+                            right: 14,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(
+                                      scale: Tween(
+                                        begin: 0.96,
+                                        end: 1.0,
+                                      ).animate(animation),
+                                      child: child,
+                                    ),
+                                  ),
+                              child: _compactLayersOpen
+                                  ? SizedBox(
+                                      key: const ValueKey('compact-layers'),
+                                      width: constraints.maxWidth
+                                          .clamp(220.0, 320.0)
+                                          .toDouble(),
+                                      child: _buildLayersPanel(state),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('compact-layers-empty'),
+                                    ),
                             ),
-                          if (_compactPropertiesOpen)
-                            Positioned(
-                              top: 60,
-                              bottom: 12,
-                              left: 12,
-                              width: constraints.maxWidth
-                                  .clamp(220.0, 320.0)
-                                  .toDouble(),
-                              child: _buildPropertiesPanel(state),
+                          ),
+                          Positioned(
+                            top: 62,
+                            bottom: 14,
+                            left: 14,
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(
+                                      scale: Tween(
+                                        begin: 0.96,
+                                        end: 1.0,
+                                      ).animate(animation),
+                                      child: child,
+                                    ),
+                                  ),
+                              child: _compactPropertiesOpen
+                                  ? SizedBox(
+                                      key: const ValueKey('compact-properties'),
+                                      width: constraints.maxWidth
+                                          .clamp(220.0, 320.0)
+                                          .toDouble(),
+                                      child: _buildPropertiesPanel(state),
+                                    )
+                                  : const SizedBox.shrink(
+                                      key: ValueKey('compact-properties-empty'),
+                                    ),
                             ),
+                          ),
                         ],
                       );
                     },
@@ -187,47 +299,71 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
     );
   }
 
-  Widget _buildPreviewStage(VisualEditorState state) => DecoratedBox(
-    decoration: BoxDecoration(
-      color: VisualEditorTokens.canvas(context),
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: VisualEditorTokens.border(context)),
-    ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(18),
-      child: PreviewPanel(
-        pageId: _pageId,
-        sessionId: state.sessionId,
-        zoom: 1,
-        device: _device,
-        isInteractiveMode: _interactive,
-        components: state.getComponentsForPage(_pageId),
-        theme: _cubit.theme,
-        selectedComponentId: state.selectedComponentId,
-        reloadToken: _reloadToken,
-        previewLanguage: state.previewLanguage,
-        previewThemeMode: state.previewThemeMode,
-        onConnectionChanged: (connection, reason) =>
-            _cubit.updatePreviewConnection(connection, reason: reason),
-        onElementSelected: _cubit.handleElementSelected,
-        onPreviewReady: _cubit.handlePreviewReady,
-        onPreviewError: _cubit.handlePreviewError,
-        onPropertyUpdated: _cubit.handlePropertyUpdated,
-        onTreeUpdated: _cubit.handleTreeUpdated,
-        outboundMessageType: _cubit.pendingMessage?.type,
-        outboundPayload: _cubit.pendingMessage?.payload,
-        outboundMessageId: _cubit.pendingMessage?.messageId,
-        takePreviewMessages: _cubit.takePreviewMessages,
+  /// مسرح المعاينة: خلفية بنقاط خفيفة وإطار مستدير يحيط بالجهاز.
+  Widget _buildPreviewStage(VisualEditorState state) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: VisualEditorTokens.canvas(context),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPanel),
+        border: Border.all(color: VisualEditorTokens.border(context)),
       ),
-    ),
-  );
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusPanel),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            CustomPaint(
+              painter: _DotGridPainter(VisualEditorTokens.canvasDot(context)),
+            ),
+            PreviewPanel(
+              pageId: _pageId,
+              sessionId: state.sessionId,
+              zoom: 1,
+              device: _device,
+              isInteractiveMode: _interactive,
+              components: state.getComponentsForPage(_pageId),
+              theme: _cubit.theme,
+              selectedComponentId: state.selectedComponentId,
+              reloadToken: _reloadToken,
+              previewLanguage: state.previewLanguage,
+              previewThemeMode: state.previewThemeMode,
+              onConnectionChanged: (connection, reason) =>
+                  _cubit.updatePreviewConnection(connection, reason: reason),
+              onElementSelected: (data) {
+                _cubit.handleElementSelected(data);
+                if (_cubit.state.selectedComponent != null) _showProperties();
+              },
+              onPreviewReady: _cubit.handlePreviewReady,
+              onPreviewError: _cubit.handlePreviewError,
+              onPropertyUpdated: _cubit.handlePropertyUpdated,
+              onTreeUpdated: _cubit.handleTreeUpdated,
+              outboundMessageType: _cubit.pendingMessage?.type,
+              outboundPayload: _cubit.pendingMessage?.payload,
+              outboundMessageId: _cubit.pendingMessage?.messageId,
+              takePreviewMessages: _cubit.takePreviewMessages,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showProperties([String? splashGroup]) {
+    setState(() {
+      _splashGroup = splashGroup;
+      _compactLayersOpen = false;
+      _compactPropertiesOpen = true;
+    });
+  }
 
   Widget _buildLayersPanel(VisualEditorState state) => ComponentTreePanel(
     key: ValueKey('layers-$_pageId'),
     pageId: _pageId,
     components: state.getComponentsForPage(_pageId),
     selectedComponentId: state.selectedComponentId,
-    onSelect: _cubit.selectComponent,
+    splashGroup: _splashGroup,
+    onSplashGroup: (id, group) { _cubit.selectComponent(id); _showProperties(group); },
+    onSelect: (id) { _cubit.selectComponent(id); _showProperties(); },
     onReorder: _cubit.reorderComponent,
     onDelete: _cubit.deleteComponent,
     onDuplicate: _cubit.duplicateComponent,
@@ -251,10 +387,91 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
 
   Widget _buildPropertiesPanel(VisualEditorState state) =>
       VisualEditorRightInspector(
+        splashGroup: _splashGroup,
         selectedComponent: state.selectedComponent,
         imagePermissions: widget.imagePermissions,
         onPropertyChanged: _cubit.updateProperty,
         onResetProperty: _cubit.resetProperty,
         onPropertiesChanged: _cubit.updateProperties,
       );
+}
+
+/// زر طافٍ مستدير لتبديل اللوحات في العرض الضيق — بطاقة مرتفعة بظل ناعم
+/// وتمييز واضح عند كون اللوحة مفتوحة.
+class _FloatingPanelButton extends StatelessWidget {
+  const _FloatingPanelButton({
+    required this.tooltip,
+    required this.icon,
+    required this.active,
+    required this.onPressed,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final bool active;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: active
+            ? VisualEditorTokens.primaryOliveGreen
+            : VisualEditorTokens.surface(context),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg),
+        elevation: 0,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg),
+            border: Border.all(
+              color: active
+                  ? Colors.transparent
+                  : VisualEditorTokens.border(context),
+            ),
+            boxShadow: VisualEditorTokens.panelShadow(context),
+          ),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusLg),
+            child: Padding(
+              padding: const EdgeInsets.all(11),
+              child: Icon(
+                icon,
+                size: 19,
+                color: active
+                    ? Colors.white
+                    : VisualEditorTokens.textMuted(context),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// شبكة نقاط خفيفة لخلفية مسرح المعاينة — تضيف إحساس «الكانفس» الاحترافي
+/// دون أن تنافس محتوى المعاينة.
+class _DotGridPainter extends CustomPainter {
+  const _DotGridPainter(this.dotColor);
+
+  final Color dotColor;
+
+  static const double _spacing = 18;
+  static const double _radius = 1.1;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = dotColor;
+    for (var y = _spacing / 2; y < size.height; y += _spacing) {
+      for (var x = _spacing / 2; x < size.width; x += _spacing) {
+        canvas.drawCircle(Offset(x, y), _radius, paint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DotGridPainter oldDelegate) =>
+      oldDelegate.dotColor != dotColor;
 }

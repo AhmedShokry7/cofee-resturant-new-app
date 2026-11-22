@@ -248,8 +248,7 @@ class _PreviewAppState extends State<PreviewApp> {
       DesignPreviewStore.instance.setDocument(document);
       final designLoad = context.read<DesignCubit>().load(forceRefresh: true);
       if (message.type == PreviewMessageType.previewInitialize &&
-          message.payload['pageId'] is String &&
-          message.payload['pageId'] != _currentPreviewPage) {
+          message.payload['pageId'] is String) {
         await _handleLoadPage(message);
       }
       await designLoad;
@@ -371,11 +370,7 @@ class _PreviewAppState extends State<PreviewApp> {
   }
 
   void _handleSetInteractiveMode(PreviewMessage message) {
-    previewInteractiveMode.value = false;
-    if (message.payload['enabled'] == true) {
-      _ack(message, error: 'preview_interaction_disabled');
-      return;
-    }
+    previewInteractiveMode.value = message.payload['enabled'] == true;
     _ack(message);
   }
 
@@ -386,7 +381,7 @@ class _PreviewAppState extends State<PreviewApp> {
     // الزائر المجهول يُوجّه لتسجيل الدخول، أما المعاينة فتجتاز ذلك بمسار
     // الرئيسية صراحة — نفس MyApp ونفس MainPage، بلا شاشة دخول داخل الإطار.
     return AbsorbPointer(
-      absorbing: true,
+      absorbing: !_bridge.isActive,
       child: MyApp(
         currentRoute: AppConstant.homeRoute,
         onboardingDone: true,

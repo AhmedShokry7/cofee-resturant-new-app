@@ -6,6 +6,7 @@ import 'package:new_coffee/features/design/data/model/published_design.dart';
 import 'package:new_coffee/features/categories/presentation/manager/categories/categories_cubit.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/categories_document_sections.dart';
 import 'package:new_coffee/features/categories/presentation/views/widgets/category_body.dart';
+import 'package:new_coffee/features/categories/presentation/views/widgets/category_tabs.dart';
 import 'package:new_coffee/features/design/presentation/manager/design/design_cubit.dart';
 import 'package:new_coffee/shared/widgets/page_title.dart';
 
@@ -40,12 +41,12 @@ class CategoriesPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!isOneCategory) PageTitle(title: S.categories),
-            ...buildCategoriesDocumentSections(document),
-            if (!isOneCategory)
-              buildCategoriesDocumentBrowser(document)
-            else
-              Expanded(child: CategoryBody(categoryId: initialCategoryId)),
+            if (!isOneCategory) ...[
+              PageTitle(title: S.categories),
+              const CategoryTabs(),
+              ...buildCategoriesDocumentSections(document),
+            ],
+            Expanded(child: CategoryBody(categoryId: initialCategoryId)),
           ],
         ),
       ),

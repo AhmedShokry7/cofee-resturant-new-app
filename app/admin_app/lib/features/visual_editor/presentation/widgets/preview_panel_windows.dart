@@ -83,6 +83,13 @@ const String _forwarderScript = '''
 })();
 ''';
 
+String defaultPreviewUrl() => 'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview/';
+void disposePreviewView(String viewType) {
+  _handlers.remove(viewType);
+  _reporters.remove(viewType);
+  _queues.remove(viewType);
+}
+
 void registerPreviewView({
   required String viewType,
   required String url,
@@ -310,3 +317,12 @@ void reloadPreviewView({required String viewType, required String url}) {
   }
   unawaited(controller.loadUrl(busted));
 }
+
+/// WebView2 يُرسم عبر Texture فيستجيب لتحويل Flutter مباشرة — لا تعديل
+/// CSS هنا كما على الويب؛ الدالة موجودة لاتساق عقد الطبقة بين المنصات.
+void applyPreviewScale({
+  required String viewType,
+  required double scale,
+  required double width,
+  required double height,
+}) {}

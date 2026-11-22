@@ -175,11 +175,19 @@ Future<void> publishVisualEditor(
 ) async {
   final details = await showDialog<_PublishDetails>(
     context: context,
-    builder: (_) => const _PublishDetailsDialog(),
+    builder: (_) => _PublishDetailsDialog(cubit: cubit),
   );
   if (details == null || !context.mounted) return;
 
-  final publishing = cubit.publish(name: details.name, note: details.note);
+  if (details.scope != PublishScope.wholeDocument && cubit.state.isDirty) {
+    await cubit.saveDraft();
+    if (!context.mounted || cubit.state.isDirty) return;
+  }
+  final publishing = cubit.publish(
+    name: details.name,
+    note: details.note,
+    scope: details.scope,
+  );
   showDialog<void>(
     context: context,
     barrierDismissible: false,
@@ -225,14 +233,21 @@ Future<void> publishVisualEditor(
 }
 
 class _PublishDetails {
-  const _PublishDetails({required this.name, required this.note});
+  const _PublishDetails({
+    required this.name,
+    required this.note,
+    required this.scope,
+  });
 
   final String name;
   final String note;
+  final PublishScope scope;
 }
 
 class _PublishDetailsDialog extends StatefulWidget {
-  const _PublishDetailsDialog();
+  const _PublishDetailsDialog({required this.cubit});
+
+  final VisualEditorCubit cubit;
 
   @override
   State<_PublishDetailsDialog> createState() => _PublishDetailsDialogState();
@@ -243,6 +258,12 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
   final TextEditingController _note = TextEditingController();
   bool _showNameError = false;
 
+  /// النطاق الافتراضي: المعاينة الكاملة عندما تنتظر القرار، وإلا
+  /// الصفحة الحالية من آخر مسودة محفوظة.
+  late PublishScope _scope = widget.cubit.hasWholePreviewDocument
+      ? PublishScope.wholeDocument
+      : PublishScope.currentPage;
+
   @override
   void dispose() {
     _name.dispose();
@@ -250,15 +271,61 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
     super.dispose();
   }
 
-  @override
+  String _scopeLabel(PublishScope scope) => switch (scope) {
+    PublishScope.currentPage =>
+      'الصفحة الحالية فقط (من آخر مسودة محفوظة)',
+    PublishScope.allPages =>
+      'كل الصفحات (من آخر مسودة محفوظة)',
+    PublishScope.wholeDocument =>
+      'المعاينة الحالية كما هي (استبدال كل الصفحات)',
+  };
+
   Widget build(BuildContext context) => AlertDialog(
     title: Text(S.visualEditorPublishTitle),
     content: SizedBox(
       width: 420,
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(S.visualEditorPublishConfirm),
+          const SizedBox(height: AppSpacing.md),
+          // نطاق النشر: صفحة واحدة لا تلمس ما ينشر لغيرها، والنشر يعتمد
+          // آخر مسودة محفوظة لا الحالة المفتوحة.
+          ...PublishScope.values
+              .where(
+                (scope) =>
+                    scope != PublishScope.wholeDocument ||
+                    widget.cubit.hasWholePreviewDocument,
+              )
+              .map(
+                (scope) => RadioListTile<PublishScope>(
+                  value: scope,
+                  groupValue: _scope,
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    _scopeLabel(scope),
+                    style: AppFonts.regular14(context),
+                  ),
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _scope = value);
+                    }
+                  },
+                ),
+              ),
+          if (_scope == PublishScope.currentPage &&
+              widget.cubit.currentPageHasUnsavedEdits)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              child: Text(
+                S.visualEditorSaveBeforePublish,
+                style: AppFonts.regular12(
+                  context,
+                ).copyWith(color: AppColor.errorColor),
+              ),
+            ),
           const SizedBox(height: AppSpacing.md),
           TextField(
             controller: _name,
@@ -302,8 +369,13 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
             setState(() => _showNameError = true);
             return;
           }
-          Navigator.of(context)
-              .pop(_PublishDetails(name: name, note: _note.text.trim()));
+          Navigator.of(context).pop(
+            _PublishDetails(
+              name: name,
+              note: _note.text.trim(),
+              scope: _scope,
+            ),
+          );
         },
         icon: const Icon(Icons.publish_outlined),
         label: Text(S.visualEditorPublish),

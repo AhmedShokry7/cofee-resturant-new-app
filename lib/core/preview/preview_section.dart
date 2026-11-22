@@ -91,7 +91,7 @@ class _PreviewSectionTapState extends State<PreviewSectionTap> {
                   },
                 );
               },
-              child: child,
+              child: IgnorePointer(child: child),
             );
             if (!selected) return wrapped;
             return Stack(

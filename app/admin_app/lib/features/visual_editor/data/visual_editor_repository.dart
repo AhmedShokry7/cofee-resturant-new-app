@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
+import 'package:admin_app/features/visual_editor/domain/design_document_merge.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 
 /// عقد مخزن المحرر المرئي.
@@ -17,10 +18,27 @@ abstract class VisualEditorRepository {
   /// قراءة المسودة المحفوظة؛ تعيد null إن لم توجد.
   Future<EditorDraft?> loadDraft();
 
+  /// المسودة الخام كما جاءت من القاعدة — لطبقة الدمج لا للعرض.
+  Future<Map<String, dynamic>?> loadDraftDocument() async =>
+      throw UnimplementedError();
+
+  /// المسودّ المنشور الخام — يبني عليه نشر الصفحات.
+  Future<Map<String, dynamic>?> loadPublishedDocument() async =>
+      throw UnimplementedError();
+
   /// حفظ مسودة عبر `admin_save_app_design_draft`.
-  Future<DateTime> saveDraft(
+  ///
+  /// حفظ مدمج على مستوى الصفحة: قراءة حية ثم استبدال الصفحات الممرّرة
+  /// فقط — صفحة محفوظة لا تُمسّ صفحات أخرى ولا ترتيبها ولا عناصرها.
+  /// [knownRevisions] مراجعات الصفحات التي بُنيت عليها حالة المحرّر؛
+  /// صفحة تغيّرت في القاعدة منذ التحميل ترفع [PageRevisionConflict] بدل
+  /// الكتابة الصامتة فوق تعديل أحدث. [force] يجبر الحفظ فوق المراجعة
+  /// الأحدث (يُستخدم فقط بعد قرار صريح من الموظف في حوار التعارض).
+  Future<PageSaveResult> saveDraft(
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
   });
 
   /// التخلص من المسودة عبر `admin_discard_app_design_draft` — يمسح صف
@@ -33,6 +51,21 @@ abstract class VisualEditorRepository {
     String? name,
     String? note,
   });
+
+  /// نشر صفحات محددة من آخر مسودة محفوظة.
+  ///
+  /// تجميع من أحدث مسودة (الصفحات المعتمدة) + أحدث منشور (ما عداها) —
+  /// لا من حالة المحرر المفتوح ولا من لقطة قديمة. صفحة لم تُحفظ بعد
+  /// لا تُنشر (النشر يعتمد المسودّ المحفوظ فقط). فحص المراجعة كما في
+  /// [saveDraft]: صفحة غيّرها موظف آخر منذ التحميل ترفع التعارض بدل
+  /// اعتماد تغيير لم يره الناشر.
+  Future<PublishedVersionInfo> publishPages({
+    required Set<String> pageIds,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
+    String? name,
+    String? note,
+  }) async => throw UnimplementedError();
 
   /// تاريخ الإصدارات بترتيبها، بلا مستندات (مصمم كذلك في 226).
   Future<List<PublishedVersionInfo>> listVersions({int limit = 1000000});
@@ -78,11 +111,53 @@ class EditorDraft {
     required this.componentsByPage,
     required this.theme,
     required this.savedAt,
+    this.pageRevisions = const {},
   });
 
   final Map<String, List<EditableComponent>> componentsByPage;
   final DesignTheme theme;
   final DateTime savedAt;
+
+  /// مراجعات الصفحات من `meta.page_revisions` في المستند المحمّل —
+  /// مرجع المحرّر لكشف الكتابة فوق تعديل أحدث.
+  final Map<String, int> pageRevisions;
+}
+
+/// تعارض مراجعة صفحة: القاعدة تحمل مراجعة أحدث من مرجع المحرّر.
+///
+/// لا تكتب ولا تنشر شيئًا عند رفعها — الحالة المحلية للمحرّر تبقى كما هي
+/// والحوار يعطي الموظف القرار: تحميل نسخة القاعدة أو الإجبار.
+class PageRevisionConflict implements Exception {
+  const PageRevisionConflict({
+    required this.pageId,
+    required this.serverRevision,
+    required this.knownRevision,
+  });
+
+  final String pageId;
+  final int serverRevision;
+  final int knownRevision;
+
+  @override
+  String toString() =>
+      'PageRevisionConflict(page: $pageId, server: $serverRevision, '
+      'editor: $knownRevision)';
+}
+
+/// نتيجة حفظ ناجح: المراجعات الجديدة لكل صفحة، ووقت الحفظ.
+class PageSaveResult {
+  const PageSaveResult({required this.savedRevisions, required this.savedAt});
+
+  final Map<String, int> savedRevisions;
+  final DateTime savedAt;
+}
+
+/// إشارة داخلية: RPC 254 غير موجود في القاعدة — يعود المسار للدمج على
+/// القراءة. toString يطابق كاشف "RPC مفقود" كي يفسره المسار البديل.
+class _MissingAtomicRpc implements Exception {
+  const _MissingAtomicRpc();
+  @override
+  String toString() => 'admin_save_app_design_page does not exist';
 }
 
 /// بيانات إصدار منشور كما تعيد الـ RPCs.
@@ -163,6 +238,11 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   final SupabaseClient? _clientOverride;
 
+  /// هل RPCات 254 الذرية (الحفظ/النشر بفحص مراجعة داخل المعاملة) متوفرة
+  /// في القاعدة؟ null = لم يُختبر بعد، true/false = نتيجة الفحص الأخير.
+  /// غيابها لا يعطّل شيئًا — يعود المسار للدمج على القراءة عبر 226/253.
+  bool? _atomicRpcSupported;
+
   SupabaseClient? get _client {
     try {
       return _clientOverride ?? Supabase.instance.client;
@@ -181,32 +261,193 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
 
   @override
   Future<EditorDraft?> loadDraft() async {
-    final raw = _rpc('admin_get_app_design', {'p_slot': 'draft'});
-    final value = await raw;
-    if (value == null) return null;
-    final document = jsonDecode(jsonEncode(value));
+    final document = await loadDraftDocument() ?? await loadPublishedDocument();
+    if (document == null) return null;
     return EditorDraft(
       componentsByPage: DesignDocumentCodec.parseDocument(document),
       theme: DesignDocumentCodec.themeOf(document),
       savedAt: DateTime.now(),
+      pageRevisions: DesignDocumentMeta.pageRevisions(document),
     );
   }
 
   @override
-  Future<DateTime> saveDraft(
+  Future<Map<String, dynamic>?> loadDraftDocument() async {
+    final raw = _rpc('admin_get_app_design', {'p_slot': 'draft'});
+    final value = await raw;
+    if (value == null) return null;
+    return jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
+  }
+
+  @override
+  Future<Map<String, dynamic>?> loadPublishedDocument() async {
+    final raw = _rpc('admin_get_app_design', {'p_slot': 'published'});
+    final value = await raw;
+    if (value == null) return null;
+    return jsonDecode(jsonEncode(value)) as Map<String, dynamic>;
+  }
+
+  @override
+  Future<PageSaveResult> saveDraft(
     Map<String, List<EditableComponent>> componentsByPage, {
     DesignTheme theme = DesignTheme.none,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
   }) async {
-    final document = DesignDocumentCodec.document(
-      componentsByPage,
+    // المسار الذري أولًا (254): فحص المراجعة والكتابة في معاملة واحدة
+    // بقفل صف — عميل قديم لا يستطيع بدنيًا استبدال مراجعة أحدث.
+    if (_atomicRpcSupported != false && componentsByPage.isNotEmpty && theme.toJson() != null) {
+      try {
+        return await _atomicSavePages(
+          componentsByPage,
+          theme: theme,
+          knownRevisions: knownRevisions,
+          force: force,
+        );
+      } on PostgrestException catch (e) {
+        if (!_isMissingRpcError(e)) rethrow;
+        _atomicRpcSupported = false; // القاعدة بلا 254 — دمج على القراءة.
+      } on Exception catch (e) {
+        if (!_isMissingRpcMessage(e.toString())) {
+          rethrow;
+        }
+        _atomicRpcSupported = false;
+      }
+    }
+    // المسار البديل (226/253): قراءة حية ثم فحص المراجعة في Dart ثم
+    // كتابة المستند المدموج. أضعف من الذرية — تعارض بين جلستين قرأتا
+    // المراجعة نفسها قد ينجو؛ يعالجه 254 فور اعتماده.
+    // قراءة حية أولًا: كتابة الصفحات المدمجة تبني على آخر ما في
+    // القاعدة — لا على لقطة قديمة من ذاكرة المحرّر.
+    final fresh = await loadDraftDocument() ?? await loadPublishedDocument() ?? const <String, dynamic>{};
+    final serverRevisions = DesignDocumentMeta.pageRevisions(fresh);
+    // فحص كل الصفحات قبل أي كتابة: تعارض واحد يرفض الحفظ كله دفعة
+    // واحدة، فلا يدخل الحفظ الجماعي حالة نصف مكتوبة.
+    for (final pageId in componentsByPage.keys) {
+      final server = serverRevisions[pageId] ?? 0;
+      final known = knownRevisions[pageId] ?? 0;
+      if (!force && server > known) {
+        throw PageRevisionConflict(
+          pageId: pageId,
+          serverRevision: server,
+          knownRevision: known,
+        );
+      }
+    }
+    var document = DesignDocumentMerge.withPages(
+      base: fresh,
+      pages: componentsByPage,
       theme: theme,
     );
+    final savedRevisions = <String, int>{};
+    for (final pageId in componentsByPage.keys) {
+      final revision = (serverRevisions[pageId] ?? 0) + 1;
+      document = DesignDocumentMeta.withPageRevision(document, pageId, revision);
+      savedRevisions[pageId] = revision;
+    }
+    final invalid = DesignDocumentCodec.validate(document);
+    if (invalid != null) {
+      throw StateError('المستند غير صالح للحفظ: $invalid');
+    }
     final saved = await _rpc('admin_save_app_design_draft', {
       'p_document': document,
     });
     final savedAt = saved is Map ? saved['saved_at']?.toString() : null;
-    return DateTime.tryParse(savedAt ?? '') ?? DateTime.now();
+    return PageSaveResult(
+      savedRevisions: savedRevisions,
+      savedAt: DateTime.tryParse(savedAt ?? '') ?? DateTime.now(),
+    );
   }
+
+  /// الحفظ الذري صفحةً صفحة عبر `admin_save_app_design_page` (254):
+  /// فحص المراجعة والكتابة في معاملة واحدة بقفل صف داخل القاعدة.
+  /// طبقة الشكل غير الفارغة تُكتب مع كل صفحة؛ شكل محايد (null) يرجع
+  /// للمسار البديل لأن الصفرية هناك تعني مسح الطبقة لا تركها.
+  Future<PageSaveResult> _atomicSavePages(
+    Map<String, List<EditableComponent>> componentsByPage, {
+    required DesignTheme theme,
+    required Map<String, int> knownRevisions,
+    required bool force,
+  }) async {
+    final themeJson = theme.toJson();
+    if (themeJson == null && componentsByPage.isNotEmpty) {
+      // مسح طبقة الشكل لا تعرفه RPC الصفحة — الدمج يفعل ذلك بأمان.
+      throw const _MissingAtomicRpc();
+    }
+    final savedRevisions = <String, int>{};
+    var savedAt = DateTime.now();
+    for (final entry in componentsByPage.entries) {
+      final document = DesignDocumentCodec.document(
+        {entry.key: entry.value},
+      );
+      final pages = document['pages'] as List;
+
+      final saved = await _rpcWithConflict('admin_save_app_design_page', {
+        'p_page': entry.key,
+        'p_page_entry': pages.firstOrNull,
+        'p_theme': themeJson,
+        'p_expected_revision': knownRevisions[entry.key] ?? 0,
+        'p_force': force,
+      });
+      if (saved is Map) {
+        final revision = saved['revision'];
+        if (revision is num) savedRevisions[entry.key] = revision.round();
+        savedAt =
+            DateTime.tryParse(saved['saved_at']?.toString() ?? '') ?? savedAt;
+      }
+    }
+    return PageSaveResult(savedRevisions: savedRevisions, savedAt: savedAt);
+  }
+
+  /// RPC يحوّل خطأ تعارض المراجعة من القاعدة (40001 — رمز قابل للإعادة)
+  /// إلى [PageRevisionConflict] بتفاصيله، ويمرّر ما سواه كما هو.
+  Future<Object?> _rpcWithConflict(
+    String function,
+    Map<String, dynamic> params,
+  ) async {
+    try {
+      return await _rpc(function, params);
+    } on PostgrestException catch (e) {
+      final conflict = _conflictFromMessage(e.message);
+      if (conflict != null) throw conflict;
+      rethrow;
+    }
+  }
+
+  PageRevisionConflict? _conflictFromMessage(String raw) {
+    final marker = 'page revision conflict: ';
+    final index = raw.indexOf(marker);
+    if (index < 0) return null;
+    try {
+      final details = jsonDecode(raw.substring(index + marker.length));
+      if (details is! Map) return null;
+      return PageRevisionConflict(
+        pageId: details['page']?.toString() ?? '',
+        serverRevision: details['server_revision'] is num
+            ? (details['server_revision'] as num).toInt()
+            : 0,
+        knownRevision: details['expected_revision'] is num
+            ? (details['expected_revision'] as num).toInt()
+            : 0,
+      );
+    } on FormatException {
+      return null;
+    }
+  }
+
+  /// هل الخطأ يعني أن RPC غير موجود في القاعدة (لم يُطبّق 254)؟
+  bool _isMissingRpcError(PostgrestException e) {
+    const missingCodes = {'42883', 'PGRST202', '40414'};
+    if (missingCodes.contains(e.code)) return true;
+    return _isMissingRpcMessage(e.message);
+  }
+
+  bool _isMissingRpcMessage(String raw) =>
+      raw.contains('Could not find the function') ||
+      (raw.contains('admin_save_app_design_page') &&
+          raw.contains('does not exist')) ||
+      (raw.contains('admin_publish_app_design_pages') &&
+          raw.contains('does not exist'));
 
   @override
   Future<PublishedVersionInfo> publishDesign(
@@ -224,6 +465,89 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
       throw StateError('إجابة نشر غير مفهومة من admin_publish_app_design');
     }
     return info;
+  }
+
+  @override
+  Future<PublishedVersionInfo> publishPages({
+    required Set<String> pageIds,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
+    String? name,
+    String? note,
+  }) async {
+    // المسار الذري أولًا (254): قفل المسودة والمنشور بترتيب ثابت في
+    // معاملة واحدة، فحص المراجعة لكل صفحة، ثم نسخ مدخل الصفحات المعتمدة
+    // إلى المنشور — لا يمكن لعميل قديم أن يعتمد غير ما رأى.
+    if (_atomicRpcSupported != false) {
+      try {
+        final version = await _rpcWithConflict('admin_publish_app_design_pages', {
+          'p_pages': [
+            for (final pageId in pageIds)
+              {
+                'page': pageId,
+                // الإجبار يمرّر مرجعًا فارغًا: SQL NULL يلغي فحص التعارض
+                // في الـ RPC، وغيره يفعّل الفحص الذري داخل القاعدة.
+                'expected_revision': force
+                    ? null
+                    : knownRevisions[pageId] ?? 0,
+              },
+          ],
+          'p_name': name?.trim(),
+          'p_note': note,
+        });
+        final info = PublishedVersionInfo.fromJson(version);
+        if (info == null) {
+          throw StateError(
+            'إجابة نشر غير مفهومة من admin_publish_app_design_pages',
+          );
+        }
+        return info;
+      } on PostgrestException catch (e) {
+        if (!_isMissingRpcError(e)) rethrow;
+        _atomicRpcSupported = false;
+      } on Exception catch (e) {
+        if (!_isMissingRpcMessage(e.toString())) {
+          rethrow;
+        }
+        _atomicRpcSupported = false;
+      }
+    }
+    // المسار البديل (226/253): تجميع على القراءة — أضعف من الذرية،
+    // يعالجه 254 فور اعتماده.
+    final draft = await loadDraftDocument();
+    if (draft == null) {
+      throw StateError('لا توجد مسودة محفوظة للنشر — احفظ أولًا ثم انشر.');
+    }
+    final serverRevisions = DesignDocumentMeta.pageRevisions(draft);
+    // صفحة بلا مراجعة في المسودة لم تُحفظ قطّ — اعتمادها ليس ممكنًا
+    // (لا يوجد ما يعتمد)؛ تفحَص التعارض فقط للصفحات المرقّمة.
+    for (final pageId in pageIds) {
+      final server = serverRevisions[pageId] ?? 0;
+      final known = knownRevisions[pageId] ?? 0;
+      if (server == 0) {
+        throw StateError(
+          'الصفحة "$pageId" ليست محفوظة في المسودة — احفظ أولًا ثم انشر.',
+        );
+      }
+      if (!force && server > known) {
+        throw PageRevisionConflict(
+          pageId: pageId,
+          serverRevision: server,
+          knownRevision: known,
+        );
+      }
+    }
+    final published = await loadPublishedDocument();
+    final document = DesignDocumentMerge.publishedWithPages(
+      publishedBase: published,
+      draft: draft,
+      pageIds: pageIds,
+    );
+    final invalid = DesignDocumentCodec.validate(document);
+    if (invalid != null) {
+      throw StateError('المستند غير صالح للنشر: $invalid');
+    }
+    return publishDesign(document, name: name, note: note);
   }
 
   @override

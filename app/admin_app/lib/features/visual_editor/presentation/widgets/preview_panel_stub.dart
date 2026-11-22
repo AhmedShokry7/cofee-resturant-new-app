@@ -8,6 +8,10 @@ import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dar
 /// لا إطار حي على المنصات الأصلية بلا WebView2 — الرسم الأصلي هو المعاينة.
 const bool supportsLiveWebview = false;
 
+String defaultPreviewUrl() => 'https://ahmedshokry7.github.io/cofee-resturant-new-app/preview/';
+void disposePreviewView(String viewType) {
+}
+
 void registerPreviewView({
   required String viewType,
   required String url,
@@ -19,7 +23,7 @@ void registerPreviewView({
   required void Function(dynamic) onPropertyUpdated,
   required void Function(dynamic) onTreeUpdated,
   void Function(PreviewConnection connection, String? reason)?
-      onConnectionState,
+  onConnectionState,
 }) {}
 
 Widget buildPreviewView({required String viewType}) => const SizedBox.shrink();
@@ -35,3 +39,11 @@ void sendOutboundMessage({
 
 /// لا إطار على المنصات الأصلية — المعاينة الأصلية ترسم من الحالة مباشرة.
 void reloadPreviewView({required String viewType, required String url}) {}
+
+/// التحجيم يُطبّقه رسم Flutter نفسه هنا — لا عنصر iframe يُعدّل بـCSS.
+void applyPreviewScale({
+  required String viewType,
+  required double scale,
+  required double width,
+  required double height,
+}) {}

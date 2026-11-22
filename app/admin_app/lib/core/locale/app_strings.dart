@@ -5499,6 +5499,10 @@ class S {
       _ar ? 'الشعار الافتراضي' : 'Default logo';
   static String get visualEditorSplashImage =>
       _ar ? 'صورة الافتتاحية' : 'Splash image';
+  static String get visualEditorSplashBackground => _ar ? 'الخلفية' : 'Background';
+  static String get visualEditorSplashText => _ar ? 'النص' : 'Text';
+  static String get visualEditorSplashLayout => _ar ? 'الموضع والمسافات' : 'Position and spacing';
+  static String get visualEditorSaveBeforePublish => _ar ? 'سيتم حفظ تعديلاتك قبل نشر الصفحة المحددة.' : 'Your changes will be saved before publishing the selected page.';
   static String get visualEditorSplashImageSettings =>
       _ar ? 'إعدادات الصورة' : 'Image settings';
   static String get visualEditorSplashNavigationSettings =>
