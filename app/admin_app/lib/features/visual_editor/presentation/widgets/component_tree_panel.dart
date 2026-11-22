@@ -31,6 +31,99 @@ int siblingIndexForFlatReorder({
   }).length;
 }
 
+/// ترجمة إعادة ترتيب محلية (داخل مجموعة نوعية) إلى فهرس شقيق عام.
+///
+/// الشجرة المجمّعة تعرض صفحات الشاشات المدمجة بمجموعات (الخلفية،
+/// المحتوى، الزر…)، وسحب عنصر داخل مجموعته يجب أن يفسَر بموضعه بين كل
+/// إخائه في الصفحة لا داخل المجموعة فقط: المرساة هي العنصر الذي يحتل
+/// الخانة المحلية المستهدفة، والفهرس العام هو فهرسه الشقيق (أو الذي بعده
+/// عند السحب لأسفل).
+int siblingIndexForGroupReorder({
+  required List<EditableComponent> groupRows,
+  required List<EditableComponent> allComponents,
+  required int oldIndex,
+  required int newIndex,
+}) {
+  if (oldIndex < 0 || oldIndex >= groupRows.length) return 0;
+  final moving = groupRows[oldIndex];
+  final siblings = allComponents
+      .where((c) => c.parentId == moving.parentId)
+      .toList();
+  int siblingOf(EditableComponent c) =>
+      siblings.indexWhere((s) => s.componentId == c.componentId);
+  int clamp(int value) => value.clamp(0, siblings.length - 1);
+  final adjusted = newIndex > oldIndex ? newIndex - 1 : newIndex;
+  if (adjusted >= groupRows.length) {
+    return clamp(siblingOf(groupRows.last) + 1);
+  }
+  if (adjusted < 0) return 0;
+  final anchor = siblingOf(groupRows[adjusted]);
+  return newIndex > oldIndex ? clamp(anchor + 1) : clamp(anchor);
+}
+
+/// مجموعات شجرة الطبقات لصفحات الشاشات المدمجة — الشجرة تعكس بنية
+/// الشاشة: خلفية، محتوى، إجراء، ترتيب — بدل قائمة مسطّحة لا تقول شيئًا.
+class TreeLayerGroup {
+  const TreeLayerGroup(this.label, this.icon, this.types);
+
+  final String label;
+  final IconData icon;
+  final List<String> types;
+}
+
+const List<String> _authTextTypes = ['authTitle', 'authSubtitle'];
+
+List<TreeLayerGroup> treeLayerGroupsFor(String pageId) {
+  switch (pageId) {
+    case 'welcome':
+      return const [
+        TreeLayerGroup('الخلفية والصورة', Icons.landscape_outlined, [
+          'welcomeHero',
+        ]),
+        TreeLayerGroup('المحتوى', Icons.notes_outlined, [
+          'welcomeTitle',
+          'welcomeBody',
+        ]),
+        TreeLayerGroup('زر الإجراء', Icons.smart_button_outlined, [
+          'welcomeCta',
+        ]),
+        TreeLayerGroup('الترتيب والمسافات', Icons.space_bar, [
+          'welcomeSpacing',
+        ]),
+      ];
+    case 'onboarding':
+      return const [
+        TreeLayerGroup('الشرائح', Icons.slideshow_outlined, [
+          'onboardingSlide',
+        ]),
+        TreeLayerGroup('الانتقال', Icons.auto_awesome_outlined, [
+          'onboardingTransition',
+        ]),
+      ];
+    case 'splash':
+      return const [
+        TreeLayerGroup('شاشة الافتتاح', Icons.settings_outlined, [
+          'splashSettings',
+        ]),
+      ];
+    case 'auth':
+    case 'sign_up':
+    case 'forget_password':
+    case 'reset_password':
+    case 'phone_auth':
+    case 'email_auth':
+      return const [
+        TreeLayerGroup('النصوص', Icons.notes_outlined, _authTextTypes),
+        TreeLayerGroup('تسجيل الدخول', Icons.login_outlined, ['authSocial']),
+        TreeLayerGroup('الانتقال بين الشاشات', Icons.swap_horiz, [
+          'authSwitchPrompt',
+        ]),
+      ];
+    default:
+      return const [];
+  }
+}
+
 /// أنواع العناصر القابلة للإضافة السريعة من شريط الإضافة
 const _quickAddTypes = [
   ('text', 'نص', Icons.text_fields),
@@ -326,20 +419,33 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
             ),
 
             if (widget.onSplashGroup != null && widget.pageId == 'splash')
-              for (final node in _filtered.where((c) => c.componentType == 'splashSettings'))
+              for (final node in _filtered.where(
+                (c) => c.componentType == 'splashSettings',
+              ))
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   child: Wrap(
                     spacing: AppSpacing.xs,
                     children: [
-                      for (final group in [S.visualEditorSplashImageSettings, S.visualEditorSplashText,
-                        S.visualEditorSplashBackground, S.visualEditorSplashLayout, S.visualEditorSplashNavigationSettings])
-                        ChoiceChip(label: Text(group), selected: widget.splashGroup == group,
-                          onSelected: (_) => widget.onSplashGroup!(node.componentId, group)),
+                      for (final group in [
+                        S.visualEditorSplashImageSettings,
+                        S.visualEditorSplashText,
+                        S.visualEditorSplashBackground,
+                        S.visualEditorSplashLayout,
+                        S.visualEditorSplashNavigationSettings,
+                      ])
+                        ChoiceChip(
+                          label: Text(group),
+                          selected: widget.splashGroup == group,
+                          onSelected: (_) =>
+                              widget.onSplashGroup!(node.componentId, group),
+                        ),
                     ],
                   ),
                 ),
-            // قائمة العناصر
+            // قائمة العناصر: الشاشات المدمجة تُعرض بمجموعات (خلفية،
+            // محتوى، إجراء، ترتيب) تعكس بنية الشاشة، وبقية الصفحات
+            // قائمة هرمية مسطّحة كما هي.
             Expanded(
               child: _filtered.isEmpty
                   ? (_searchQuery.isEmpty
@@ -348,6 +454,9 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                             message: S.visualEditorNoComponents,
                           )
                         : _EmptySearch(query: _searchQuery, dark: dark))
+                  : treeLayerGroupsFor(widget.pageId).isNotEmpty &&
+                        _searchQuery.isEmpty
+                  ? _buildGroupedTree(dark)
                   : _ComponentList(
                       components: _filtered,
                       allComponents: widget.components,
@@ -363,6 +472,148 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  /// الشجرة المجمّعة: ترويسة لكل مجموعة (خلفية، محتوى، إجراء…) وتحتها
+  /// صفوفها بترتيب المستند. العناصر التي لا تغطيها أي مجموعة (مكوّنات
+  /// عامة أضافها الموظف على صفحة مدمجة) تظهر تحت "عناصر أخرى".
+  Widget _buildGroupedTree(bool dark) {
+    final groups = treeLayerGroupsFor(widget.pageId);
+    final sections = <Widget>[];
+    final assigned = <String>{};
+    for (final group in groups) {
+      final rows = _filtered
+          .where((c) => group.types.contains(c.componentType))
+          .toList();
+      if (rows.isEmpty) continue;
+      assigned.addAll(rows.map((c) => c.componentId));
+      sections.add(
+        _GroupHeader(
+          label: group.label,
+          icon: group.icon,
+          count: rows.length,
+          dark: dark,
+        ),
+      );
+      sections.add(
+        _ComponentList(
+          components: rows,
+          allComponents: widget.components,
+          selectedComponentId: widget.selectedComponentId,
+          onSelect: widget.onSelect,
+          onReorder: widget.onReorder,
+          onDelete: widget.onDelete,
+          onDuplicate: widget.onDuplicate,
+          onToggleVisibility: widget.onToggleVisibility,
+          allowReorder: true,
+          dark: dark,
+          shrinkWrap: true,
+          siblingResolver: (rows, oldIndex, newIndex) =>
+              siblingIndexForGroupReorder(
+                groupRows: rows,
+                allComponents: widget.components,
+                oldIndex: oldIndex,
+                newIndex: newIndex,
+              ),
+        ),
+      );
+    }
+    final leftovers = _filtered
+        .where((c) => !assigned.contains(c.componentId))
+        .toList();
+    if (leftovers.isNotEmpty) {
+      sections.add(
+        _GroupHeader(
+          label: S.visualEditorOtherElements,
+          icon: Icons.widgets_outlined,
+          count: leftovers.length,
+          dark: dark,
+        ),
+      );
+      sections.add(
+        _ComponentList(
+          components: leftovers,
+          allComponents: widget.components,
+          selectedComponentId: widget.selectedComponentId,
+          onSelect: widget.onSelect,
+          onReorder: widget.onReorder,
+          onDelete: widget.onDelete,
+          onDuplicate: widget.onDuplicate,
+          onToggleVisibility: widget.onToggleVisibility,
+          allowReorder: true,
+          dark: dark,
+          shrinkWrap: true,
+          siblingResolver: (rows, oldIndex, newIndex) =>
+              siblingIndexForGroupReorder(
+                groupRows: rows,
+                allComponents: widget.components,
+                oldIndex: oldIndex,
+                newIndex: newIndex,
+              ),
+        ),
+      );
+    }
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: sections,
+      ),
+    );
+  }
+}
+
+// --------------------------- ترويسة مجموعة ---------------------------
+
+class _GroupHeader extends StatelessWidget {
+  const _GroupHeader({
+    required this.label,
+    required this.icon,
+    required this.count,
+    required this.dark,
+  });
+
+  final String label;
+  final IconData icon;
+  final int count;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    return Container(
+      margin: const EdgeInsetsDirectional.only(start: 6, end: 6),
+      padding: const EdgeInsetsDirectional.only(
+        start: AppSpacing.sm + 2,
+        end: AppSpacing.sm,
+        top: AppSpacing.sm,
+        bottom: 4,
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: VisualEditorTokens.border(context)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 13, color: muted),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: AppFontWeights.semiBold,
+                color: muted,
+                letterSpacing: 0.2,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Text('$count', style: TextStyle(fontSize: 10, color: muted)),
+        ],
       ),
     );
   }
@@ -636,6 +887,8 @@ class _ComponentList extends StatelessWidget {
     required this.onToggleVisibility,
     required this.allowReorder,
     required this.dark,
+    this.siblingResolver,
+    this.shrinkWrap = false,
   });
 
   final List<EditableComponent> components;
@@ -649,22 +902,34 @@ class _ComponentList extends StatelessWidget {
   final bool allowReorder;
   final bool dark;
 
+  /// في الشجرة المجمّعة: ترجمة الفهرس المحلي (داخل المجموعة) إلى فهرس
+  /// شقيق عام — منطق القائمة المسطّحة لا يصلح لقائمة مقسّمة بمجموعات.
+  final int Function(List<EditableComponent> rows, int oldIndex, int newIndex)?
+  siblingResolver;
+
+  /// داخل تمرير واحد مشترك (الشجرة المجمّعة) — بلا تمرير ذاتي.
+  final bool shrinkWrap;
+
   @override
   Widget build(BuildContext context) {
     return ReorderableListView.builder(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       buildDefaultDragHandles: false,
       itemCount: components.length,
+      shrinkWrap: shrinkWrap,
+      physics: shrinkWrap ? const NeverScrollableScrollPhysics() : null,
       onReorderItem: (oldIndex, newIndex) {
         if (!allowReorder) return;
         final component = components[oldIndex];
-        final siblingIndex = siblingIndexForFlatReorder(
-          components: allComponents,
-          oldIndex: allComponents.indexWhere(
-            (c) => c.componentId == component.componentId,
-          ),
-          newIndex: newIndex,
-        );
+        final siblingIndex = siblingResolver != null
+            ? siblingResolver!(components, oldIndex, newIndex)
+            : siblingIndexForFlatReorder(
+                components: allComponents,
+                oldIndex: allComponents.indexWhere(
+                  (c) => c.componentId == component.componentId,
+                ),
+                newIndex: newIndex,
+              );
         onReorder(component.componentId, siblingIndex);
       },
       itemBuilder: (context, index) {

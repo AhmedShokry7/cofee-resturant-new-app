@@ -5499,10 +5499,14 @@ class S {
       _ar ? 'الشعار الافتراضي' : 'Default logo';
   static String get visualEditorSplashImage =>
       _ar ? 'صورة الافتتاحية' : 'Splash image';
-  static String get visualEditorSplashBackground => _ar ? 'الخلفية' : 'Background';
+  static String get visualEditorSplashBackground =>
+      _ar ? 'الخلفية' : 'Background';
   static String get visualEditorSplashText => _ar ? 'النص' : 'Text';
-  static String get visualEditorSplashLayout => _ar ? 'الموضع والمسافات' : 'Position and spacing';
-  static String get visualEditorSaveBeforePublish => _ar ? 'سيتم حفظ تعديلاتك قبل نشر الصفحة المحددة.' : 'Your changes will be saved before publishing the selected page.';
+  static String get visualEditorSplashLayout =>
+      _ar ? 'الموضع والمسافات' : 'Position and spacing';
+  static String get visualEditorSaveBeforePublish => _ar
+      ? 'سيتم حفظ تعديلاتك قبل نشر الصفحة المحددة.'
+      : 'Your changes will be saved before publishing the selected page.';
   static String get visualEditorSplashImageSettings =>
       _ar ? 'إعدادات الصورة' : 'Image settings';
   static String get visualEditorSplashNavigationSettings =>
@@ -5553,6 +5557,30 @@ class S {
   static String get visualEditorPublishConfirm => _ar
       ? 'سيظهر التصميم لجميع مستخدمي التطبيق فور النشر. هل أنت متأكد؟'
       : 'This design will be visible to all app users immediately. Are you sure?';
+
+  // شجرة الطبقات المجمّعة لصفحات الشاشات المدمجة.
+  static String get visualEditorOtherElements =>
+      _ar ? 'عناصر أخرى' : 'Other elements';
+
+  // نشر على مستوى الصفحة + تعارض مراجعة (عزل الصفحات).
+  static String get visualEditorPublishCurrentPage => _ar
+      ? 'الصفحة الحالية فقط (من آخر مسودة محفوظة)'
+      : 'Current page only (from the last saved draft)';
+  static String get visualEditorPublishAllPages => _ar
+      ? 'كل الصفحات (من آخر مسودة محفوظة)'
+      : 'All pages (from the last saved draft)';
+  static String get visualEditorPublishWholePreview => _ar
+      ? 'المعاينة الحالية كما هي (استبدال كل الصفحات)'
+      : 'Current preview as-is (replaces every page)';
+  static String get visualEditorPublishUnsavedWarning => _ar
+      ? 'لديك تعديلات غير محفوظة على هذه الصفحة — النشر يعتمد آخر مسودة محفوظة؛ احفظ أولًا لتضمينها.'
+      : 'You have unsaved edits on this page — publishing approves the last saved draft; save first to include them.';
+  static String get visualEditorConflictTitle =>
+      _ar ? 'تعارض في مراجعة الصفحة' : 'Page revision conflict';
+  static String get visualEditorConflictLoadServer =>
+      _ar ? 'تحميل نسخة القاعدة' : 'Load the server copy';
+  static String get visualEditorConflictForceSave =>
+      _ar ? 'إجبار الحفظ' : 'Force save';
   static String get visualEditorPreviewConnected =>
       _ar ? 'المعاينة متصلة' : 'Preview connected';
   static String get visualEditorPreviewDisconnected =>

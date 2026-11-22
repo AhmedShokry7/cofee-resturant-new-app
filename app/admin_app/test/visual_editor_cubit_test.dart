@@ -43,8 +43,7 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
   }
 
   @override
-  Future<EditorDraft?> loadDraft() async =>
-      draftGate == null
+  Future<EditorDraft?> loadDraft() async => draftGate == null
       ? (draftDocument == null
             ? null
             : EditorDraft(
@@ -378,25 +377,30 @@ void main() {
     expect(cubit.state.errorMessage, 'preview unavailable');
   });
 
-  test('تبديل الصفحة يمسح التحديد والتراجع يحدّث الخصائص المحددة', () async {
-    await cubit.initialize();
-    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
-    final grid = cubit.state.getComponentsForPage('home').last;
-    cubit.selectComponent(grid.componentId);
-    cubit.updateProperty(
-      componentId: grid.componentId,
-      propertyKey: 'columns',
-      value: 3,
-    );
-    cubit.undo();
-    expect(cubit.state.selectedComponent?.componentId, grid.componentId);
-    expect(cubit.state.selectedComponent?.properties['columns'], 2);
-    // صفحة «سلة» تُبنى بعدة مكوّنات فلا تحديد تلقائي واحد؛ تبديلها يمسح
-    // التحديد. (صفحة التصنيفات أصبحت مكوّنًا واحدًا يُحدد تلقائيًا بالتصميم.)
-    cubit.loadPage('cart');
-    expect(cubit.state.selectedComponentId, isNull);
-    expect(cubit.state.selectedComponent, isNull);
-  });
+  test(
+    'تبديل الصفحة يبني تحديدًا جديدًا خاصًا بها والتراجع يحدّث الخصائص المحددة',
+    () async {
+      await cubit.initialize();
+      cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+      final grid = cubit.state.getComponentsForPage('home').last;
+      cubit.selectComponent(grid.componentId);
+      cubit.updateProperty(
+        componentId: grid.componentId,
+        propertyKey: 'columns',
+        value: 3,
+      );
+      cubit.undo();
+      expect(cubit.state.selectedComponent?.componentId, grid.componentId);
+      expect(cubit.state.selectedComponent?.properties['columns'], 2);
+      // تبديل الصفحة لا يحمل تحديد الصفحة السابقة؛ الصفحات المدمجة تُحدد
+      // أول عنصر محتوى فيها فورًا (لوحة الخصائص لا تفتح فارغة) — وعنصر
+      // «سلة» الأول عنوان، لا شبكة الصفحة الرئيسية.
+      cubit.loadPage('cart');
+      expect(cubit.state.selectedComponentId, isNot(grid.componentId));
+      final cartHeading = cubit.state.getComponentsForPage('cart').first;
+      expect(cubit.state.selectedComponentId, cartHeading.componentId);
+    },
+  );
 
   test('فتح الافتتاحية يحدد إعداداتها فتظهر أدوات الصورة واللون', () async {
     await cubit.initialize();

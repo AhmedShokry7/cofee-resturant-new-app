@@ -123,17 +123,23 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       _themeDirty = false;
       _externalPublishDocument = null;
       final saved = draft?.componentsByPage ?? const {};
-      _savedPages..clear()..addAll(saved.keys)..addAll(_knownDraftRevisions.keys);
+      _savedPages
+        ..clear()
+        ..addAll(saved.keys)
+        ..addAll(_knownDraftRevisions.keys);
       // الصفحات الغائبة عن المسودة تبدأ من «تصميم اليوم»: شاشات مدمجة
       // بعقدها الأصلية، وبقية الصفحات بشجرة فارغة يبني عليها الموظف. صفحة
       // في المسودة تبقى كما كُتبت — لا يعاد خلق عقد محوّل عليها.
       final components = <String, List<EditableComponent>>{
         for (final page in EditorPages.pages)
-          page.pageId: DesignDocumentCodec.withNativeLabels(page.pageId, saved[page.pageId] == null
-              ? DesignDocumentCodec.defaultComponentsFor(page.pageId)
-              : page.pageId == 'welcome'
-              ? DesignDocumentCodec.migrateWelcomeCta(saved[page.pageId]!)
-              : saved[page.pageId]!),
+          page.pageId: DesignDocumentCodec.withNativeLabels(
+            page.pageId,
+            saved[page.pageId] == null
+                ? DesignDocumentCodec.defaultComponentsFor(page.pageId)
+                : page.pageId == 'welcome'
+                ? DesignDocumentCodec.migrateWelcomeCta(saved[page.pageId]!)
+                : saved[page.pageId]!,
+          ),
       };
       emit(
         state.copyWith(
@@ -427,14 +433,41 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     final onlyComponent = pageComponents.length == 1
         ? pageComponents.single
         : null;
+    // صفحات الشاشات المدمجة بعدة عناصر: أول عنصر محتوى يُحدد تلقائيًا —
+    // لوحة الخصائص لا تفتح فارغة والموظف يبدأ من العنوان مباشرة.
+    final autoTarget = onlyComponent ?? _firstContentComponent(pageComponents);
     emit(
       state.copyWith(
-        selectedComponentId: onlyComponent?.componentId,
-        selectedComponent: onlyComponent,
-        clearSelectedComponent: onlyComponent == null,
+        selectedComponentId: autoTarget?.componentId,
+        selectedComponent: autoTarget,
+        clearSelectedComponent: autoTarget == null,
       ),
     );
     _dispatchToPreview(VisualEditorMessageType.loadPage, {'pageId': pageId});
+  }
+
+  /// أول عقدة محتوى قابلة للتحرير في صفحة مدمجة: نتخطى العقد الخلفية
+  /// (الصورة/المسافات/الانتقال) — هي آخر ما يعدّله الموظف.
+  EditableComponent? _firstContentComponent(
+    List<EditableComponent> components,
+  ) {
+    if (!DesignDocumentCodec.defaultPageNodes.containsKey(_previewPageId)) {
+      return null;
+    }
+    const backgroundTypes = {
+      'welcomeHero',
+      'welcomeSpacing',
+      'onboardingTransition',
+      'splashSettings',
+    };
+    final ordered = [...components]..sort((a, b) => a.index.compareTo(b.index));
+    for (final component in ordered) {
+      if (!backgroundTypes.contains(component.componentType) &&
+          component.classification == ComponentClassification.editable) {
+        return component;
+      }
+    }
+    return ordered.isNotEmpty ? ordered.first : null;
   }
 
   // ---------- تحديد المكوّنات ----------
@@ -1085,10 +1118,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
     } catch (e) {
       if (!isClosed) {
         emit(
-          state.copyWith(
-            isDirty: true,
-            errorMessage: 'تعذر حفظ المسودة: $e',
-          ),
+          state.copyWith(isDirty: true, errorMessage: 'تعذر حفظ المسودة: $e'),
         );
       }
       return const {};
@@ -1152,7 +1182,8 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// يكتب نسخة المحرّر ويهمل ما كتبته الجلسة الأخرى على هذه الصفحات.
   Future<void> forceSaveConflicted() async {
     await saveDraft(force: true);
-    if (!isClosed && _conflictedPages.isEmpty) emit(state.copyWith(clearConflict: true));
+    if (!isClosed && _conflictedPages.isEmpty)
+      emit(state.copyWith(clearConflict: true));
   }
 
   /// نشر التصميم.
@@ -1175,7 +1206,9 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       if (external != null) {
         final invalid = DesignDocumentCodec.validate(external);
         if (invalid != null) {
-          emit(state.copyWith(errorMessage: 'المستند غير صالح للنشر: $invalid'));
+          emit(
+            state.copyWith(errorMessage: 'المستند غير صالح للنشر: $invalid'),
+          );
           return null;
         }
         version = await _repository.publishDesign(
@@ -1206,12 +1239,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       if (isClosed) return version;
       _conflictedPages.clear();
       // النشر لا يحفظ المسودة؛ لا تصبح التعديلات محفوظة إلا بطلب الحفظ.
-      emit(
-        state.copyWith(
-          clearError: true,
-          clearConflict: true,
-        ),
-      );
+      emit(state.copyWith(clearError: true, clearConflict: true));
       return version;
     } on PageRevisionConflict catch (e) {
       _conflictedPages.add(e.pageId);
@@ -1518,10 +1546,7 @@ class _Counter {
 
 /// لقطة تراجع: المكوّنات وطبقة الشكل معًا.
 class _EditorSnapshot {
-  const _EditorSnapshot({
-    required this.componentsByPage,
-    required this.theme,
-  });
+  const _EditorSnapshot({required this.componentsByPage, required this.theme});
 
   final Map<String, List<EditableComponent>> componentsByPage;
   final DesignTheme theme;
