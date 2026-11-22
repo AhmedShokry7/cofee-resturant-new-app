@@ -41,7 +41,9 @@ class AdminSidebarBrand extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColor.whiteColor,
+                color: theme.brightness == Brightness.dark
+                    ? AppColor.darkText
+                    : AppColor.whiteColor,
                 fontWeight: AppFontWeights.medium,
                 height: AppDimensions.textHeightTight,
               ),

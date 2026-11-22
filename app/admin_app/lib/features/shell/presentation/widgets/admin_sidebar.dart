@@ -34,6 +34,10 @@ class AdminSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    // في الوضع الداكن يستريح الشريط على سطح داكن بدل الأخضر، فتقرأ
+    // بقية اللوحة بلا جدار ملون يسبقها.
+    //
     // الشريط الجانبي يعرض الصفحات الأساسية فقط + بوابة «المزيد» —
     // باقي الصفحات تُقرأ من صفحة المزيد بأقسامها وكروتها بدل قائمة
     // طويلة لا تنتهي.
@@ -54,7 +58,7 @@ class AdminSidebar extends StatelessWidget {
         .toList();
     return Container(
       width: AppDimensions.sidebarWidth,
-      color: AppColor.primaryColor,
+      color: dark ? AppColor.darkSurface : AppColor.primaryColor,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -109,8 +113,14 @@ class _SidebarFooter extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: AppColor.sidebarMuted)),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColor.darkBorder
+                : AppColor.sidebarMuted,
+          ),
+        ),
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       child: Column(
@@ -139,7 +149,9 @@ class _SidebarFooter extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColor.whiteColor,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColor.darkText
+                            : AppColor.whiteColor,
                         fontWeight: AppFontWeights.semiBold,
                       ),
                     ),
@@ -148,7 +160,9 @@ class _SidebarFooter extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColor.sidebarMuted,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? AppColor.darkTextSecondary
+                            : AppColor.sidebarMuted,
                       ),
                     ),
                   ],
@@ -194,17 +208,22 @@ class _SignOutButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
           child: Row(
             children: [
-              const Icon(
+              Icon(
                 AppIcons.logout01,
                 size: 18,
-                color: AppColor.whiteColor,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColor.darkText
+                    : AppColor.whiteColor,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
                   S.signOut,
-                  style: Theme.of(context).textTheme.bodyMedium
-                      ?.copyWith(color: AppColor.whiteColor),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColor.darkText
+                        : AppColor.whiteColor,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

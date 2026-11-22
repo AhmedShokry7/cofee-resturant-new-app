@@ -26,16 +26,20 @@ class AdminSidebarItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = theme.brightness == Brightness.dark;
     final foreground = isSelected
         ? AppColor.secondaryColor
+        : dark
+        ? AppColor.darkText
         : AppColor.whiteColor;
+    final selectedBackground = dark
+        ? AppColor.primaryColor.withValues(alpha: .24)
+        : AppColor.sidebarActiveBackground;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxs),
       child: Material(
-        color: isSelected
-            ? AppColor.sidebarActiveBackground
-            : AppColor.transparent,
+        color: isSelected ? selectedBackground : AppColor.transparent,
         borderRadius: BorderRadius.circular(AppRadius.md),
         child: InkWell(
           onTap: onTap,
@@ -121,7 +125,9 @@ class AdminSidebarSectionTitle extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: AppColor.secondaryColor,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColor.darkTextSecondary
+              : AppColor.secondaryColor,
           fontSize: AppFontSizes.size15,
         ),
       ),
