@@ -183,10 +183,7 @@ class _StudioSingleRowToolbarState extends State<StudioSingleRowToolbar> {
                           widget.pageId,
                       widget.pageId,
                       widget.onPageChanged,
-                      [
-                        for (final p in EditorPages.pages)
-                          PopupMenuItem(value: p.pageId, child: Text(p.label)),
-                      ],
+                      _categorizedPageItems(),
                     ),
                     const SizedBox(width: 10),
                     // ——— القوالب ———
@@ -285,6 +282,90 @@ class _StudioSingleRowToolbarState extends State<StudioSingleRowToolbar> {
   }
 
   /// قائمة منسدلة على هيئة زرّ كبسولة.
+  /// قائمة الصفحات مصنّفة: ترويسة فئة (أيقونة + اسم) ثم صفوفها —
+  /// ٣٤ صفحة مسطّحة لا يقار بها الموظف.
+  List<PopupMenuEntry<String>> _categorizedPageItems() {
+    final items = <PopupMenuEntry<String>>[];
+    final remaining = {for (final p in EditorPages.pages) p.pageId: p};
+    for (final (categoryLabel, categoryIcon, ids) in editorPageCategories) {
+      final categoryPages = [
+        for (final id in ids)
+          if (remaining.remove(id) != null) EditorPages.findById(id)!,
+      ];
+      if (categoryPages.isEmpty) continue;
+      items.add(
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Row(
+            children: [
+              Icon(
+                categoryIcon,
+                size: 13,
+                color: VisualEditorTokens.textMuted(context),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                categoryLabel,
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: AppFontWeights.semiBold,
+                  color: VisualEditorTokens.textMuted(context),
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+      for (final p in categoryPages) {
+        items.add(
+          PopupMenuItem<String>(
+            height: 34,
+            value: p.pageId,
+            child: Text(
+              p.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12.5),
+            ),
+          ),
+        );
+      }
+      items.add(const PopupMenuDivider());
+    }
+    // صفحات لا تغطيها الفئات (احتياط)
+    if (remaining.isNotEmpty) {
+      items.add(
+        PopupMenuItem<String>(
+          enabled: false,
+          child: Text(
+            'صفحات أخرى',
+            style: TextStyle(
+              fontSize: 10.5,
+              fontWeight: AppFontWeights.semiBold,
+              color: VisualEditorTokens.textMuted(context),
+            ),
+          ),
+        ),
+      );
+      for (final p in remaining.values) {
+        items.add(
+          PopupMenuItem<String>(
+            height: 34,
+            value: p.pageId,
+            child: Text(
+              p.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 12.5),
+            ),
+          ),
+        );
+      }
+    }
+    return items;
+  }
+
   Widget _menu<T>(
     String id,
     IconData icon,

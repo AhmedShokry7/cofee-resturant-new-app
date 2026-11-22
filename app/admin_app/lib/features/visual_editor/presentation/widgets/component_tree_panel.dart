@@ -75,22 +75,6 @@ const List<String> _authTextTypes = ['authTitle', 'authSubtitle'];
 
 List<TreeLayerGroup> treeLayerGroupsFor(String pageId) {
   switch (pageId) {
-    case 'welcome':
-      return const [
-        TreeLayerGroup('الخلفية والصورة', Icons.landscape_outlined, [
-          'welcomeHero',
-        ]),
-        TreeLayerGroup('المحتوى', Icons.notes_outlined, [
-          'welcomeTitle',
-          'welcomeBody',
-        ]),
-        TreeLayerGroup('زر الإجراء', Icons.smart_button_outlined, [
-          'welcomeCta',
-        ]),
-        TreeLayerGroup('الترتيب والمسافات', Icons.space_bar, [
-          'welcomeSpacing',
-        ]),
-      ];
     case 'onboarding':
       return const [
         TreeLayerGroup('الشرائح', Icons.slideshow_outlined, [
@@ -443,9 +427,9 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                     ],
                   ),
                 ),
-            // قائمة العناصر: الشاشات المدمجة تُعرض بمجموعات (خلفية،
-            // محتوى، إجراء، ترتيب) تعكس بنية الشاشة، وبقية الصفحات
-            // قائمة هرمية مسطّحة كما هي.
+            // قائمة العناصر: الترحيب شجرة تشريحية بموضع كل مسافة
+            // الحقيقي، والشاشات المدمجة الأخرى مجموعات (خلفية،
+            // محتوى، إجراء، ترتيب)، وبقية الصفحات قائمة هرمية مسطّحة.
             Expanded(
               child: _filtered.isEmpty
                   ? (_searchQuery.isEmpty
@@ -454,6 +438,8 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
                             message: S.visualEditorNoComponents,
                           )
                         : _EmptySearch(query: _searchQuery, dark: dark))
+                  : widget.pageId == 'welcome' && _searchQuery.isEmpty
+                  ? _buildWelcomeTree(dark)
                   : treeLayerGroupsFor(widget.pageId).isNotEmpty &&
                         _searchQuery.isEmpty
                   ? _buildGroupedTree(dark)
@@ -559,6 +545,81 @@ class _ComponentTreePanelState extends State<ComponentTreePanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: sections,
+      ),
+    );
+  }
+
+  /// شجرة الترحيب التشريحية: تعكس البناء الحقيقي للصفحة في تطبيق
+  /// العميل (welcome_page_body.dart) — الصورة فوق واللوحة المتموّجة
+  /// تحتها، وعقدة «المسافات» ليست فاصلًا في القائمة بل تتحكم في
+  /// موضعين فعليين: الهامش تحت الصورة والمسافة بعد العنوان — لذا
+  /// تظهر بصفّين في موضعهما الصحيح، وكلاهما يفتح نفس المحرّر.
+  Widget _buildWelcomeTree(bool dark) {
+    EditableComponent? byType(String type) {
+      for (final c in widget.components) {
+        if (c.componentType == type) return c;
+      }
+      return null;
+    }
+
+    final hero = byType('welcomeHero');
+    final spacing = byType('welcomeSpacing');
+    final title = byType('welcomeTitle');
+    final body = byType('welcomeBody');
+    final cta = byType('welcomeCta');
+
+    Widget row(
+      EditableComponent? component, {
+      String? label,
+      String? subtitle,
+      bool withActions = true,
+    }) {
+      if (component == null) return const SizedBox.shrink();
+      return _ComponentRow(
+        key: ValueKey('${component.componentId}.$label'),
+        component: component,
+        index: 0,
+        isSelected: widget.selectedComponentId == component.componentId,
+        onTap: () => widget.onSelect(component.componentId),
+        onDelete: withActions && component.canDelete
+            ? () => widget.onDelete(component.componentId)
+            : null,
+        onDuplicate: withActions && component.canDuplicate
+            ? () => widget.onDuplicate(component.componentId)
+            : null,
+        onToggleVisibility: () =>
+            widget.onToggleVisibility(component.componentId),
+        allowReorder: false,
+        dark: dark,
+        labelOverride: label,
+        subtitleOverride: subtitle,
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          row(hero),
+          if (spacing != null) ...[
+            row(
+              spacing,
+              label: 'المسافة تحت الصورة',
+              subtitle: 'الهامش بين الصورة ولوحة المحتوى',
+            ),
+          ],
+          row(title),
+          if (spacing != null)
+            row(
+              spacing,
+              label: 'المسافة بعد العنوان',
+              subtitle: 'المسافة بين العنوان والنص',
+              withActions: false,
+            ),
+          row(body),
+          row(cta),
+        ],
       ),
     );
   }
@@ -969,6 +1030,8 @@ class _ComponentRow extends StatelessWidget {
     required this.onToggleVisibility,
     required this.allowReorder,
     required this.dark,
+    this.labelOverride,
+    this.subtitleOverride,
   });
 
   final EditableComponent component;
@@ -980,6 +1043,13 @@ class _ComponentRow extends StatelessWidget {
   final VoidCallback onToggleVisibility;
   final bool allowReorder;
   final bool dark;
+
+  /// في الشجرة التشريحية (الترحيب): اسم يوصف الدور الحقيقي للصف لا اسم
+  /// السجل — عقدة واحدة (المسافات) تظهر بصفّين بموضعين مختلفين.
+  final String? labelOverride;
+
+  /// بديل نص المعاينة تحت الاسم.
+  final String? subtitleOverride;
 
   @override
   Widget build(BuildContext context) {
@@ -1100,9 +1170,11 @@ class _ComponentRow extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          isSplash
-                              ? S.visualEditorSplashImage
-                              : entry?.displayName ?? component.componentType,
+                          labelOverride ??
+                              (isSplash
+                                  ? S.visualEditorSplashImage
+                                  : entry?.displayName ??
+                                        component.componentType),
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: isSelected
@@ -1115,7 +1187,7 @@ class _ComponentRow extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
-                          previewStr,
+                          subtitleOverride ?? previewStr,
                           style: TextStyle(
                             fontSize: 10,
                             color: muted,

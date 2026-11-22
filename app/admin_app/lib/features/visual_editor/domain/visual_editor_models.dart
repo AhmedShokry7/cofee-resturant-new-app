@@ -4,6 +4,8 @@
 /// iframe renders and never enter a draft, a published document, or the
 /// customer's saved preferences. The enums mirror `PreviewMessageType` in the
 /// customer app; a source-level parity test guards the wire values.
+import 'package:flutter/material.dart';
+
 enum VisualEditorMessageType {
   previewReady('PREVIEW_READY'),
   previewInitialize('PREVIEW_INITIALIZE'),
@@ -235,6 +237,9 @@ class EditorPage {
   final bool isEditable;
   final List<String> allowedComponentTypes;
 
+  /// فئة الصفحة في قائمة الصفحات المنسدلة (مصنّفة لا قائمة مسطّحة).
+  String get category => EditorPages.categoryOf(pageId);
+
   const EditorPage({
     required this.pageId,
     required this.label,
@@ -243,6 +248,65 @@ class EditorPage {
     required this.allowedComponentTypes,
   });
 }
+
+/// فئات قائمة الصفحات — بترتيب العرض في القائمة المنسدلة.
+const List<(String, IconData, List<String>)> editorPageCategories = [
+  (
+    'المتجر',
+    Icons.storefront_outlined,
+    ['home', 'categories', 'search', 'product_details', 'cart', 'favourites'],
+  ),
+  (
+    'الافتتاح والتسجيل',
+    Icons.auto_awesome_outlined,
+    [
+      'splash',
+      'welcome',
+      'onboarding',
+      'auth',
+      'sign_up',
+      'forget_password',
+      'reset_password',
+      'phone_auth',
+      'email_auth',
+    ],
+  ),
+  (
+    'الدفع والطلبات',
+    Icons.receipt_long_outlined,
+    [
+      'checkout',
+      'coupon',
+      'payment_method',
+      'add_card',
+      'shipping_addresses',
+      'add_address',
+      'payment_success',
+      'e_receipt',
+      'orders',
+    ],
+  ),
+  (
+    'الحساب والإعدادات',
+    Icons.tune_outlined,
+    [
+      'settings',
+      'edit_profile',
+      'saved_cards',
+      'addresses',
+      'address_form',
+      'loyalty',
+      'subscription_plans',
+      'subscription_details',
+      'cashier_subscription',
+      'notifications',
+      'notification_settings',
+      'help',
+      'privacy',
+      'assistant_memory',
+    ],
+  ),
+];
 
 /// Predefined pages that can be edited
 class EditorPages {
@@ -861,6 +925,14 @@ class EditorPages {
       if (page.pageId == pageId) return page;
     }
     return null;
+  }
+
+  /// فئة الصفحة كما تظهر كترويسة مجموعة في القائمة المنسدلة.
+  static String categoryOf(String pageId) {
+    for (final (label, _, ids) in editorPageCategories) {
+      if (ids.contains(pageId)) return label;
+    }
+    return 'صفحات أخرى';
   }
 
   static List<EditorPage> get editablePages =>
