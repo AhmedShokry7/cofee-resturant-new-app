@@ -46,7 +46,7 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        title: const Text('تعارض في مراجعة الصفحة'),
+        title: Text(S.visualEditorConflictTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,11 +69,11 @@ class _VisualEditorPageState extends State<VisualEditorPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop('reload'),
-            child: const Text('تحميل نسخة القاعدة'),
+            child: Text(S.visualEditorConflictLoadServer),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop('force'),
-            child: const Text('إجبار الحفظ'),
+            child: Text(S.visualEditorConflictForceSave),
           ),
         ],
       ),

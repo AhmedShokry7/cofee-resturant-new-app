@@ -35,6 +35,8 @@ class DesignDocumentCodec {
     'productGrid': DesignContract.productGrid,
     'column': DesignContract.column,
     'row': DesignContract.row,
+    'nativeBody': 'native.body',
+    'nativeLabel': 'native.label',
     'splashSettings': DesignContract.splashSettings,
     'welcomeHero': DesignContract.welcomeHero,
     'welcomeTitle': DesignContract.welcomeTitle,
@@ -455,6 +457,131 @@ class DesignDocumentCodec {
 
   /// مكوّنات صفحة كما ترسمها مصادر العميل اليوم، فارغة لما لا عقد أصلية
   /// لها — الشاشات الحرّة تبدأ من شجرة فارغة والموظف يبني ما يشاء.
+  static const nativeLabels = <String, Map<String, (String, String)>>{
+    'addresses': {
+      'myAddresses': ('عناويني', 'My Addresses'),
+      'deleteAddress': ('حذف العنوان', 'Delete address'),
+      'deleteAddressConfirm': ('هل تريد حذف هذا العنوان؟', 'Do you want to delete this address?'),
+      'cancel': ('إلغاء', 'Cancel'),
+      'delete': ('حذف', 'Delete'),
+    },
+    'assistant_memory': {
+      'assistantMemoryTitle': ('ذاكرة المساعد', 'Assistant memory'),
+      'assistantMemoryDeleteAll': ('حذف كل ذاكرتي', 'Delete all my memory'),
+      'assistantMemoryOffWarning': ('إيقاف الذاكرة يحذف كل ما حفظه المساعد عنك. لا يمكن التراجع.', 'Turning memory off deletes everything the assistant kept about you. This cannot be undone.'),
+      'cancel': ('إلغاء', 'Cancel'),
+      'confirm': ('تأكيد', 'Confirm'),
+      'assistantMemoryDeletedAll': ('تم حذف كل ما كان المساعد يعرفه عنك.', 'Everything the assistant knew about you has been deleted.'),
+    },
+    'cart': {
+      'cart': ('السلة', 'Cart'),
+    },
+    'categories': {
+      'categories': ('التصنيفات', 'Categories'),
+    },
+    'checkout': {
+      'checkout': ('الدفع', 'Checkout'),
+      'signIn': ('تسجيل الدخول', 'Sign In'),
+    },
+    'e_receipt': {
+      'eReceipt': ('الإيصال', 'E-Receipt'),
+    },
+    'payment_method': {
+      'paymentMethod': ('طريقة الدفع', 'Payment Method'),
+    },
+    'payment_success': {
+      'payment': ('الدفع', 'Payment'),
+    },
+    'shipping_addresses': {
+      'shippingAddress': ('عنوان التوصيل', 'Shipping Address'),
+    },
+    'coupon': {
+      'coupon': ('الكوبون', 'Coupon'),
+      'retry': ('إعادة المحاولة', 'Retry'),
+    },
+    'favourites': {
+      'favorites': ('المفضلة', 'Favorites'),
+    },
+    'loyalty': {
+      'loyaltyPoints': ('نقاط الولاء', 'Loyalty Points'),
+      'couldNotRefreshWallet': ('تعذر تحديث رصيدك. قد تكون النقاط المعروضة قديمة.', 'Your wallet could not be refreshed. These points may be out of date.'),
+      'loyaltyShowAll': ('عرض الكل', 'View all'),
+    },
+    'notifications': {
+      'notificationDeleteAll': ('حذف كل الإشعارات', 'Delete all notifications'),
+      'notificationDeleteAllConfirm': ('هل تريد حذف جميع الإشعارات؟ لا يمكن التراجع عن هذا الإجراء.', 'Delete all notifications? This action cannot be undone.'),
+      'cancel': ('إلغاء', 'Cancel'),
+      'delete': ('حذف', 'Delete'),
+    },
+    'notification_settings': {
+      'notificationPreferences': ('إعدادات الإشعارات', 'Notification settings'),
+      'notificationPreferencesLoadFailed': ('تعذّر تحميل إعدادات الإشعارات من حسابك.', 'Could not load notification settings from your account.'),
+      'tryAgain': ('حاول مجددًا', 'Try again'),
+    },
+    'orders': {
+      'myOrders': ('طلباتي', 'My Orders'),
+    },
+    'add_card': {
+      'cardAdded': ('تمت إضافة البطاقة بنجاح', 'Card added successfully'),
+      'addCard': ('إضافة بطاقة', 'Add Card'),
+    },
+    'saved_cards': {
+      'paymentMethod': ('طريقة الدفع', 'Payment Method'),
+      'deleteCard': ('حذف البطاقة', 'Delete card'),
+      'deleteCardConfirm': ('سيتم حذف هذه البطاقة المحفوظة ولن تستطيع الدفع بها بعد ذلك.', 'This saved card will be removed and cannot be used to pay again.'),
+      'cancel': ('إلغاء', 'Cancel'),
+      'delete': ('حذف', 'Delete'),
+      'retry': ('إعادة المحاولة', 'Retry'),
+    },
+    'search': {
+      'search': ('بحث', 'Search'),
+    },
+    'cashier_subscription': {
+      'consumeSubscription': ('استهلاك اشتراك', 'Consume a subscription'),
+      'deduct': ('خصم', 'Deduct'),
+    },
+    'subscription_details': {
+      'mySubscription': ('اشتراكي', 'My subscription'),
+      'retry': ('إعادة المحاولة', 'Retry'),
+      'noSubscriptionYet': ('لا يوجد اشتراك حالياً', 'No subscription yet'),
+      'browsePlans': ('تصفح الباقات', 'Browse plans'),
+      'autoRenew': ('تجديد تلقائي', 'Auto renew'),
+      'checkPaymentStatus': ('التحقق من حالة الدفع', 'Check payment status'),
+      'showQrCode': ('عرض رمز QR', 'Show QR code'),
+      'renew': ('تجديد', 'Renew'),
+      'cancel': ('إلغاء', 'Cancel'),
+      'couldNotSaveAutoRenew': ('تعذر حفظ خيار التجديد التلقائي.', 'Could not save the auto-renew choice.'),
+      'couldNotShowQr': ('تعذر إنشاء رمز QR. حاول مرة أخرى.', 'Could not create the QR code. Try again.'),
+      'couldNotRenewSubscription': ('تعذر تجديد الاشتراك. حاول مرة أخرى.', 'Could not renew the subscription. Try again.'),
+      'couldNotPriceRenewal': ('تعذر معرفة سعر التجديد. حاول مرة أخرى.', 'The renewal price could not be read. Try again.'),
+      'couldNotCancelSubscription': ('تعذر إلغاء الاشتراك. حاول مرة أخرى.', 'Could not cancel the subscription. Try again.'),
+      'noUsageYet': ('لا توجد عمليات', 'No usage yet'),
+    },
+    'subscription_plans': {
+      'subscriptionPlans': ('باقات اشتراك القهوة', 'Coffee subscription plans'),
+      'retry': ('إعادة المحاولة', 'Retry'),
+      'noPlansAvailable': ('لا توجد باقات متاحة حالياً', 'No plans available'),
+      'couldNotStartSubscription': ('تعذر بدء الاشتراك. حاول مرة أخرى.', 'Could not start the subscription. Try again.'),
+    },
+  };
+
+  static List<EditableComponent> withNativeLabels(String pageId, List<EditableComponent> nodes) {
+    const bodyPages = {'checkout', 'shipping_addresses', 'add_address', 'payment_method', 'add_card', 'payment_success', 'e_receipt', 'coupon', 'loyalty', 'orders', 'edit_profile', 'saved_cards', 'help', 'privacy', 'notifications', 'notification_settings', 'search', 'addresses', 'address_form', 'assistant_memory', 'subscription_plans', 'subscription_details', 'cashier_subscription', 'cart', 'favourites', 'settings', 'product_details', 'auth', 'sign_up', 'forget_password', 'reset_password', 'phone_auth', 'email_auth'};
+    final labels = nativeLabels[pageId] ?? const <String, (String, String)>{};
+    final ids = nodes.map((node) => node.componentId).toSet();
+    return [
+      ...nodes,
+      if (bodyPages.contains(pageId) && !ids.contains('${pageId}_body'))
+        _defaultComponent(('nativeBody', null), nodes.length + labels.length, pageId: pageId)
+          .copyWith(componentId: '${pageId}_body'),
+      for (final (index, entry) in labels.entries.indexed)
+        if (!ids.contains('${pageId}_label_${entry.key}'))
+          _defaultComponent(('nativeLabel', null), nodes.length + index, pageId: pageId)
+            .copyWith(componentId: '${pageId}_label_${entry.key}',
+              properties: {'text_ar': entry.value.$1, 'text_en': entry.value.$2}),
+    ];
+  }
+
   static List<EditableComponent> defaultComponentsFor(String pageId) {
     if (pageId == 'home') return defaultHomeComponents();
     final nodes = defaultPageNodes[pageId];

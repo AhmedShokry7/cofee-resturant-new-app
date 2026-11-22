@@ -272,12 +272,9 @@ class _PublishDetailsDialogState extends State<_PublishDetailsDialog> {
   }
 
   String _scopeLabel(PublishScope scope) => switch (scope) {
-    PublishScope.currentPage =>
-      'الصفحة الحالية فقط (من آخر مسودة محفوظة)',
-    PublishScope.allPages =>
-      'كل الصفحات (من آخر مسودة محفوظة)',
-    PublishScope.wholeDocument =>
-      'المعاينة الحالية كما هي (استبدال كل الصفحات)',
+    PublishScope.currentPage => S.visualEditorPublishCurrentPage,
+    PublishScope.allPages => S.visualEditorPublishAllPages,
+    PublishScope.wholeDocument => S.visualEditorPublishWholePreview,
   };
 
   Widget build(BuildContext context) => AlertDialog(

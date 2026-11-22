@@ -5,6 +5,7 @@ import 'package:admin_app/features/visual_editor/data/visual_editor_repository.d
 import 'package:admin_app/features/visual_editor/domain/design_contract.dart';
 import 'package:admin_app/features/visual_editor/domain/preview_protocol.dart';
 import 'package:admin_app/features/visual_editor/domain/design_document_codec.dart';
+import 'package:admin_app/features/visual_editor/domain/design_document_merge.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
 import 'package:admin_app/features/visual_editor/presentation/manager/visual_editor_cubit.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +19,9 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
 
   Map<String, List<EditableComponent>>? savedDraft;
   DesignTheme? savedTheme;
+
+  /// المسودة الخام على "الخادم" — النشر يجمع منها كما تفعل القاعدة.
+  Map<String, dynamic>? draftDocument;
   Completer<void>? saveGate;
   Completer<EditorDraft?>? draftGate;
   final List<Map<String, List<EditableComponent>>> saveSnapshots = [];
@@ -40,7 +44,23 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
 
   @override
   Future<EditorDraft?> loadDraft() async =>
-      draftGate == null ? null : await draftGate!.future;
+      draftGate == null
+      ? (draftDocument == null
+            ? null
+            : EditorDraft(
+                componentsByPage: DesignDocumentCodec.parseDocument(
+                  draftDocument!,
+                ),
+                theme: DesignDocumentCodec.themeOf(draftDocument!),
+                savedAt: DateTime(2026, 1, 1),
+              ))
+      : await draftGate!.future;
+
+  @override
+  Future<Map<String, dynamic>?> loadDraftDocument() async => draftDocument;
+
+  @override
+  Future<Map<String, dynamic>?> loadPublishedDocument() async => null;
 
   @override
   Future<PageSaveResult> saveDraft(
@@ -57,11 +77,22 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
     await saveGate?.future;
     savedDraft = snapshot;
     savedTheme = theme;
+    // دمج الصفحات في المسودة المحفوظة + رفع مراجعاتها — نظير دلالات
+    // القاعدة فتقرأ publishPages لاحقًا من المستند المدموج نفسه.
+    var document = DesignDocumentMerge.withPages(
+      base: draftDocument,
+      pages: snapshot,
+      theme: theme,
+    );
+    final savedRevisions = <String, int>{};
+    for (var i = 0; i < snapshot.keys.length; i++) {
+      final pageId = snapshot.keys.elementAt(i);
+      savedRevisions[pageId] = i + 1;
+      document = DesignDocumentMeta.withPageRevision(document, pageId, i + 1);
+    }
+    draftDocument = document;
     return PageSaveResult(
-      savedRevisions: {
-        for (var i = 0; i < snapshot.keys.length; i++)
-          snapshot.keys.elementAt(i): i + 1,
-      },
+      savedRevisions: savedRevisions,
       savedAt: DateTime(2026, 1, 1),
     );
   }
@@ -87,6 +118,27 @@ class _FakeVisualEditorRepository extends VisualEditorRepository {
     );
     versions.add(info);
     return info;
+  }
+
+  @override
+  Future<PublishedVersionInfo> publishPages({
+    required Set<String> pageIds,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
+    String? name,
+    String? note,
+  }) async {
+    // نظير تدقيق القاعدة: لا مسودة محفوظة = لا اعتماد.
+    final draft = draftDocument;
+    if (draft == null) {
+      throw StateError('لا توجد مسودة محفوظة للنشر — احفظ أولًا.');
+    }
+    final document = DesignDocumentMerge.publishedWithPages(
+      publishedBase: null,
+      draft: draft,
+      pageIds: pageIds,
+    );
+    return publishDesign(document, name: name, note: note);
   }
 
   @override
@@ -178,6 +230,10 @@ void main() {
 
       confirmPreview(first);
       expect(cubit.state.previewUpdatesPending, 1);
+      // النشر يعتمد آخر مسودة محفوظة — بلا حفظ لا نشر.
+      expect(await cubit.publish(), isNull);
+      expect(repository.publishCalls, 0);
+      await cubit.saveDraft();
       expect(await cubit.publish(), isNotNull);
       expect(repository.publishCalls, 1);
 
@@ -548,19 +604,20 @@ void main() {
     );
   });
 
-  test('النشر ينشر تصميم اليوم ثم يحمل الإضافات', () async {
-    // بلا مسودة يبدأ المحرر من تصميم اليوم (8 أقسام) — النشر الأول ينشره
-    // كما هو، والرأس المحمي يضمن ألا تصبح الصفحة فارغة أبدًا.
+  test('النشر يعتمد آخر مسودة محفوظة ثم يحمل الإضافات بعد حفظها', () async {
+    // بلا مسودة محفوظة لا نشر: الاعتماد من المسودة لا من الحالة المفتوحة.
     await cubit.initialize();
+    expect(await cubit.publish(), isNull);
+    expect(repository.publishCalls, 0);
+    expect(cubit.state.errorMessage, contains('مسودة'));
+
+    // تعديل + حفظ ثم النشر: تصميم اليوم (8) + المضاف (1) كما كتبت.
+    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+    confirmPreview(cubit.pendingMessage!.messageId);
+    await cubit.saveDraft();
     final first = await cubit.publish();
     expect(first, isNotNull);
     expect(repository.publishedDocuments, hasLength(1));
-
-    cubit.addComponent(pageId: 'home', componentType: 'productGrid');
-    confirmPreview(cubit.pendingMessage!.messageId);
-    final version = await cubit.publish();
-    expect(version, isNotNull);
-    expect(repository.publishedDocuments, hasLength(2));
     expect(
       DesignDocumentCodec.validate(repository.publishedDocuments.last),
       isNull,
@@ -578,13 +635,14 @@ void main() {
     );
   });
 
-  test('النشر يمرر المستند عبر تدقيق محلي قبل القاعدة', () async {
-    // ملاحظة: cubit يبني المستند من السجل نفسه، فالرفض المحلي يظهر فقط
-    // لو خرج سجل المكوّنات عن العقد — وهذا الاختبار يثبت أن الرفض يظهر
-    // في الحالة قبل اتصال المستودع.
+  test('النشر يمرر المستند عبر تدقيق قبل القاعدة', () async {
+    // التدقيق انتقل إلى طبقة المستودع/القاعدة (تدقيق المستند المجمّع
+    // من المسودة) — هذا الاختبار يثبت أن مسودة سليمة تعبر بلا رفض
+    // وبرسالة واضحة لو فشلت.
     await cubit.initialize();
     cubit.addComponent(pageId: 'home', componentType: 'bannerCarousel');
     confirmPreview(cubit.pendingMessage!.messageId);
+    await cubit.saveDraft();
     final version = await cubit.publish();
     expect(version, isNotNull);
     expect(repository.failedPublishDocument, isNull);
@@ -867,6 +925,11 @@ void main() {
       cubit.setPreviewLanguage(PreviewLanguage.english);
       cubit.setPreviewThemeMode(PreviewThemeMode.dark);
 
+      // النشر يعتمد المسودة المحفوظة — تعديل وحفظ أولًا لتحصل الصفحة على
+      // مراجعة في المسودة.
+      cubit.addComponent(pageId: 'home', componentType: 'productGrid');
+      confirmPreview(cubit.pendingMessage!.messageId);
+      await cubit.saveDraft();
       final version = await cubit.publish();
 
       expect(version, isNotNull);

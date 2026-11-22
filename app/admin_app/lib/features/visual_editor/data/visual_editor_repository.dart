@@ -152,14 +152,6 @@ class PageSaveResult {
   final DateTime savedAt;
 }
 
-/// إشارة داخلية: RPC 254 غير موجود في القاعدة — يعود المسار للدمج على
-/// القراءة. toString يطابق كاشف "RPC مفقود" كي يفسره المسار البديل.
-class _MissingAtomicRpc implements Exception {
-  const _MissingAtomicRpc();
-  @override
-  String toString() => 'admin_save_app_design_page does not exist';
-}
-
 /// بيانات إصدار منشور كما تعيد الـ RPCs.
 class PublishedVersionInfo {
   const PublishedVersionInfo({
@@ -242,6 +234,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   /// في القاعدة؟ null = لم يُختبر بعد، true/false = نتيجة الفحص الأخير.
   /// غيابها لا يعطّل شيئًا — يعود المسار للدمج على القراءة عبر 226/253.
   bool? _atomicRpcSupported;
+  String _loadedTheme = 'null';
 
   SupabaseClient? get _client {
     try {
@@ -262,6 +255,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   @override
   Future<EditorDraft?> loadDraft() async {
     final document = await loadDraftDocument() ?? await loadPublishedDocument();
+    _loadedTheme = jsonEncode(DesignDocumentCodec.themeOf(document).toJson());
     if (document == null) return null;
     return EditorDraft(
       componentsByPage: DesignDocumentCodec.parseDocument(document),
@@ -296,7 +290,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
   }) async {
     // المسار الذري أولًا (254): فحص المراجعة والكتابة في معاملة واحدة
     // بقفل صف — عميل قديم لا يستطيع بدنيًا استبدال مراجعة أحدث.
-    if (_atomicRpcSupported != false && componentsByPage.isNotEmpty && theme.toJson() != null) {
+    if (_atomicRpcSupported != false) {
       try {
         return await _atomicSavePages(
           componentsByPage,
@@ -337,7 +331,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     var document = DesignDocumentMerge.withPages(
       base: fresh,
       pages: componentsByPage,
-      theme: theme,
+      theme: jsonEncode(theme.toJson()) == _loadedTheme ? null : theme,
     );
     final savedRevisions = <String, int>{};
     for (final pageId in componentsByPage.keys) {
@@ -352,6 +346,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     final saved = await _rpc('admin_save_app_design_draft', {
       'p_document': document,
     });
+    _loadedTheme = jsonEncode(theme.toJson());
     final savedAt = saved is Map ? saved['saved_at']?.toString() : null;
     return PageSaveResult(
       savedRevisions: savedRevisions,
@@ -369,36 +364,27 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     required Map<String, int> knownRevisions,
     required bool force,
   }) async {
-    final themeJson = theme.toJson();
-    if (themeJson == null && componentsByPage.isNotEmpty) {
-      // مسح طبقة الشكل لا تعرفه RPC الصفحة — الدمج يفعل ذلك بأمان.
-      throw const _MissingAtomicRpc();
+    final result = await _rpcWithConflict('admin_save_app_design_pages', {
+      'p_changes': [
+        for (final page in componentsByPage.entries)
+          {
+            'entry': DesignDocumentCodec.pageEntry(page.key, page.value),
+            'expected_revision': knownRevisions[page.key] ?? 0,
+          },
+      ],
+      'p_theme': theme.toJson(),
+      'p_update_theme': jsonEncode(theme.toJson()) != _loadedTheme,
+      'p_force': force,
+    });
+    if (result is! Map || result['revisions'] is! Map) {
+      throw StateError('Missing saved page revisions');
     }
-    final savedRevisions = <String, int>{};
-    var savedAt = DateTime.now();
-    for (final entry in componentsByPage.entries) {
-      final document = DesignDocumentCodec.document(
-        {entry.key: entry.value},
-      );
-      final pages = document['pages'] as List;
-
-      final saved = await _rpcWithConflict('admin_save_app_design_page', {
-        'p_page': entry.key,
-        'p_page_entry': pages.firstOrNull,
-        'p_theme': themeJson,
-        'p_expected_revision': knownRevisions[entry.key] ?? 0,
-        'p_force': force,
-      });
-      if (saved is Map) {
-        final revision = saved['revision'];
-        if (revision is num) savedRevisions[entry.key] = revision.round();
-        savedAt =
-            DateTime.tryParse(saved['saved_at']?.toString() ?? '') ?? savedAt;
-      }
-    }
-    return PageSaveResult(savedRevisions: savedRevisions, savedAt: savedAt);
+    _loadedTheme = jsonEncode(theme.toJson());
+    return PageSaveResult(
+      savedRevisions: Map<String, int>.from(result['revisions'] as Map),
+      savedAt: DateTime.tryParse(result['saved_at'].toString()) ?? DateTime.now(),
+    );
   }
-
   /// RPC يحوّل خطأ تعارض المراجعة من القاعدة (40001 — رمز قابل للإعادة)
   /// إلى [PageRevisionConflict] بتفاصيله، ويمرّر ما سواه كما هو.
   Future<Object?> _rpcWithConflict(
@@ -524,7 +510,7 @@ class SupabaseVisualEditorRepository implements VisualEditorRepository {
     for (final pageId in pageIds) {
       final server = serverRevisions[pageId] ?? 0;
       final known = knownRevisions[pageId] ?? 0;
-      if (server == 0) {
+      if (server == 0 && !(draft['pages'] as List).any((p) => p is Map && p['page'] == pageId)) {
         throw StateError(
           'الصفحة "$pageId" ليست محفوظة في المسودة — احفظ أولًا ثم انشر.',
         );

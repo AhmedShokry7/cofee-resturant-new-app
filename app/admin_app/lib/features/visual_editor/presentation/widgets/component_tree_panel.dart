@@ -135,6 +135,9 @@ String _previewText(EditableComponent c) {
     case 'bundleList':
       return 'قائمة الحزم';
 
+    case 'nativeLabel':
+      return (p['text_ar'] ?? p['text_en'] ?? '').toString();
+
     case 'splashSettings':
       final value = p['durationMs'];
       final duration = value is num

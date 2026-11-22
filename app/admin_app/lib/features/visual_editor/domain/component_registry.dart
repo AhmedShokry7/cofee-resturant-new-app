@@ -223,6 +223,29 @@ class ComponentRegistry {
   /// وأزرارها. كل خاصية فارغة تعني «كما هو»، والإخفاء يُسقط المكوّن الأصلي
   /// (نوع العقدة `visible: false`)، لا يُرسم فراغًا.
   static void _registerNativeScreenComponents() {
+    register(const ComponentRegistryEntry(
+      componentType: 'nativeBody', displayName: 'محتوى الصفحة', description: 'مسافات وحواف واجهة الصفحة الأصلية',
+      category: 'screen', classification: ComponentClassification.editable,
+      properties: {
+        'padTop': ComponentPropertyDefinition(key: 'padTop', label: 'المسافة العلوية', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
+        'padBottom': ComponentPropertyDefinition(key: 'padBottom', label: 'المسافة السفلية', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
+        'padLeft': ComponentPropertyDefinition(key: 'padLeft', label: 'المسافة اليسرى', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
+        'padRight': ComponentPropertyDefinition(key: 'padRight', label: 'المسافة اليمنى', description: '', type: PropertyType.number, validation: {'min': 0, 'max': 96}),
+        'backgroundColor': ComponentPropertyDefinition(key: 'backgroundColor', label: 'لون خلفية الهوامش', description: '', type: PropertyType.color),
+      }, allowedParentTypes: [], allowedChildTypes: [], allowedOperations: ['edit', 'hide'],
+      defaultValues: {}, validationRules: {}, iconName: 'layout', version: 1,
+    ));
+    register(const ComponentRegistryEntry(
+      componentType: 'nativeLabel', displayName: 'نص الصفحة', description: 'نص داخل واجهة التطبيق',
+      category: 'screen', classification: ComponentClassification.editable,
+      properties: {
+        'text_ar': ComponentPropertyDefinition(key: 'text_ar', label: 'النص بالعربية', description: '', type: PropertyType.text),
+        'text_en': ComponentPropertyDefinition(key: 'text_en', label: 'النص بالإنجليزية', description: '', type: PropertyType.text),
+        'textColor': ComponentPropertyDefinition(key: 'textColor', label: 'لون النص', description: '', type: PropertyType.color),
+        'fontSize': ComponentPropertyDefinition(key: 'fontSize', label: 'حجم الخط', description: '', type: PropertyType.number, validation: {'min': 8, 'max': 72}),
+      }, allowedParentTypes: [], allowedChildTypes: [], allowedOperations: ['edit', 'hide'],
+      defaultValues: {}, validationRules: {}, iconName: 'text', version: 1,
+    ));
     // إعدادات شاشة الافتتاحية: مكوّن واحد يملك الشكل والانتقال كله.
     register(
       ComponentRegistryEntry(

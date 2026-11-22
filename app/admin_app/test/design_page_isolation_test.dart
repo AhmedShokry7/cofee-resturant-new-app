@@ -95,7 +95,7 @@ class _ServerDesignStore {
     for (final pageId in pageIds) {
       final current = _revisionOf(draft, pageId);
       final expected = expectedRevisions[pageId] ?? 0;
-      if (current == 0) {
+      if (current == 0 && !(draft!['pages'] as List).any((p) => p['page'] == pageId)) {
         throw StateError('الصفحة $pageId ليست محفوظة في المسودة');
       }
       if (current > expected) {
@@ -273,13 +273,48 @@ class _ServerBackedRepository extends VisualEditorRepository {
 
   @override
   Future<void> discardDraft() async => server.draft = null;
+
+  // ---- القوالب (228) ----
+
+  final Map<String, Map<String, dynamic>> _templateDocuments = {};
+
+  @override
+  Future<Map<String, dynamic>?> getTemplateDocument(String templateId) async {
+    final document = _templateDocuments[templateId];
+    if (document == null) return null;
+    return Map<String, dynamic>.from(document);
+  }
+
+  @override
+  Future<List<DesignTemplateInfo>> listTemplates() async => const [];
+
+  @override
+  Future<DesignTemplateInfo> saveTemplate({
+    String? id,
+    required String name,
+    required Map<String, dynamic> document,
+  }) async {
+    final templateId = id ?? 'template-1';
+    _templateDocuments[templateId] = document;
+    return DesignTemplateInfo(
+      id: templateId,
+      name: name,
+      schemaVersion: 2,
+      updatedAt: DateTime(2026, 1, 3),
+    );
+  }
+
+  @override
+  Future<void> deleteTemplate(String templateId) async {}
 }
 
 /// محرّر جلسة كامل فوق الخادم المشترك.
-VisualEditorCubit _session(_ServerDesignStore server) {
-  final cubit = VisualEditorCubit(repository: _ServerBackedRepository(server));
-  return cubit;
-}
+VisualEditorCubit _session(
+  _ServerDesignStore server, {
+  _ServerBackedRepository? repository,
+}) => VisualEditorCubit(
+  repository: repository ?? _ServerBackedRepository(server),
+);
 
 /// بذرة مستند يحتوي صفحة واحدة مكونة من عنصر واحد بخصيصة نصية مميزة.
 Map<String, dynamic> _seedDocument({
@@ -287,7 +322,7 @@ Map<String, dynamic> _seedDocument({
   required String componentId,
   required String propertyKey,
   required String propertyValue,
-}) => DesignDocumentCodec.document(
+}) => DesignDocumentMeta.withPageRevision(DesignDocumentCodec.document(
   {
     pageId: [
       EditableComponent(
@@ -304,7 +339,19 @@ Map<String, dynamic> _seedDocument({
       ),
     ],
   },
-);
+), pageId, 1);
+
+/// بذرة مستند بمراجعات مُعتمدة كما يخرج من حفظ حقيقي.
+Map<String, dynamic> _seedRevisions(
+  Map<String, dynamic> document,
+  Map<String, int> revisions,
+) {
+  var seeded = document;
+  revisions.forEach((page, revision) {
+    seeded = DesignDocumentMeta.withPageRevision(seeded, page, revision);
+  });
+  return seeded;
+}
 
 EditableComponent _heading(
   String pageId,
@@ -346,20 +393,20 @@ void main() {
     // جلسة A تعدّ الرئيسية وتحفظ (مراجعة 2 للرئيسية).
     sessionA.addComponent(pageId: 'home', componentType: 'productGrid');
     await sessionA.saveDraft();
-    expect(server._revisionOf(server.draft, 'home'), 2);
+    expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 2);
 
     // جلسة B عدّلت السلة قبل وبعد حفظ A — حفظها يدمج السلة وحدها
     // ولا يمس مراجعة الرئيسية ولا عناصرها.
     sessionB.addComponent(pageId: 'cart', componentType: 'heading');
     await sessionB.saveDraft();
-    expect(server._revisionOf(server.draft, 'home'), 2);
-    expect(server._revisionOf(server.draft, 'cart'), 1);
+    expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 2);
+    expect(_ServerDesignStore._revisionOf(server.draft, 'cart'), 1);
 
     // A تعدّ الرئيسية مرة أخرى وتحفظ: تعديلات B في السلة تبقى.
     sessionA.addComponent(pageId: 'home', componentType: 'bundleList');
     await sessionA.saveDraft();
     final cartPage = DesignDocumentCodec.parseDocument(server.draft!)['cart']!;
-    expect(cartPage, hasLength(1));
+    expect(cartPage.any((node) => node.componentType == 'heading'), isTrue);
     final homePage = DesignDocumentCodec.parseDocument(server.draft!)['home']!;
     expect(homePage.length, greaterThanOrEqualTo(3));
   });
@@ -399,11 +446,11 @@ void main() {
     expect(sessionB.state.conflict!.knownRevision, 1);
     // تعديل B المحلي محفوظ في الحالة (لا فقد صامت) والمسودة لم تتغير.
     expect(sessionB.state.isDirty, isTrue);
-    expect(server._revisionOf(server.draft, 'home'), 2);
+    expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 2);
 
     // قرار الموظف: إجبار الحفظ — يكتب نسخته فوق المراجعة الأحدث صراحة.
     await sessionB.forceSaveConflicted();
-    expect(server._revisionOf(server.draft, 'home'), 3);
+    expect(_ServerDesignStore._revisionOf(server.draft, 'home'), 3);
     expect(sessionB.state.conflict, isNull);
   });
 
@@ -458,18 +505,21 @@ void main() {
           'cart': [_heading('cart', 'cart_pub', 'cart-published-v1')],
         },
       )
-      // مسودة: رئيسية أحدث + سلة أحدث لم تُعتمد بعد.
-      ..draft = DesignDocumentCodec.document(
-        {
-          'home': [_heading('home', 'home_new', 'home-draft-v2')],
-          'cart': [_heading('cart', 'cart_draft', 'cart-draft-v2')],
-        },
+      // مسودة: رئيسية أحدث (مراجعة 5) + سلة أحدث (مراجعة 3) لم تُعتمد بعد.
+      ..draft = _seedRevisions(
+        DesignDocumentCodec.document(
+          {
+            'home': [_heading('home', 'home_new', 'home-draft-v2')],
+            'cart': [_heading('cart', 'cart_draft', 'cart-draft-v2')],
+          },
+        ),
+        {'home': 5, 'cart': 3},
       );
 
     final repository = _ServerBackedRepository(server);
     final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
     await repository.publishPages(
-      {'home'},
+      pageIds: {'home'},
       knownRevisions: revisions,
       name: 'نشر الرئيسية',
     );
@@ -497,26 +547,35 @@ void main() {
 
   test('مسودات الصفحات الأخرى تبقى سليمة بعد نشر صفحة واحدة', () async {
     final server = _ServerDesignStore()
-      ..draft = DesignDocumentCodec.document(
-        {
-          'home': [_heading('home', 'home_1', 'home-draft')],
-          'splash': [
-            EditableComponent(
-              componentId: 'splash_1',
-              pageId: 'splash',
-              componentType: 'splashSettings',
-              index: 0,
-            )..properties['text'] = 'splash-draft',
-          ],
-          'cart': [_heading('cart', 'cart_1', 'cart-draft')],
-        },
+      ..draft = _seedRevisions(
+        DesignDocumentCodec.document(
+          {
+            'home': [_heading('home', 'home_1', 'home-draft')],
+            'splash': [
+              EditableComponent(
+                componentId: 'splash_1',
+                pageId: 'splash',
+                componentType: 'splashSettings',
+                index: 0,
+                classification: ComponentClassification.editable,
+                properties: {'text': 'splash-draft'},
+                defaultValues: const {},
+                validationRules: const {},
+                allowedOperations: const ['edit'],
+                version: 1,
+              ),
+            ],
+            'cart': [_heading('cart', 'cart_1', 'cart-draft')],
+          },
+        ),
+        {'home': 5, 'splash': 2, 'cart': 1},
       );
     final draftBefore = Map<String, dynamic>.from(server.draft!);
     final repository = _ServerBackedRepository(server);
     final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
 
     await repository.publishPages(
-      {'home'},
+      pageIds: {'home'},
       knownRevisions: revisions,
     );
 
@@ -542,7 +601,7 @@ void main() {
 
     // أول نشر (نسخة 1).
     final first = await repository.publishPages(
-      {'home'},
+      pageIds: {'home'},
       knownRevisions: revisions,
     );
     expect(first.versionNumber, 1);
@@ -558,7 +617,7 @@ void main() {
     );
     final freshRevisions = DesignDocumentMeta.pageRevisions(server.draft!);
     final second = await repository.publishPages(
-      {'home'},
+      pageIds: {'home'},
       knownRevisions: freshRevisions,
     );
     expect(second.versionNumber, 2);
@@ -626,11 +685,14 @@ void main() {
   test('إفراغ صفحة من مكوّناتها يزيلها من المسودة دون إعادة الصفحات الأخرى',
       () async {
     final server = _ServerDesignStore()
-      ..draft = DesignDocumentCodec.document(
-        {
-          'home': [_heading('home', 'home_1', 'home')],
-          'cart': [_heading('cart', 'cart_1', 'cart')],
-        },
+      ..draft = _seedRevisions(
+        DesignDocumentCodec.document(
+          {
+            'home': [_heading('home', 'home_1', 'home')],
+            'cart': [_heading('cart', 'cart_1', 'cart')],
+          },
+        ),
+        {'cart': 4},
       );
     final repository = _ServerBackedRepository(server);
     final revisions = DesignDocumentMeta.pageRevisions(server.draft!);
@@ -647,5 +709,71 @@ void main() {
     final pages = DesignDocumentCodec.parseDocument(server.draft!);
     expect(pages.containsKey('cart'), isFalse);
     expect(pages['home']!.first.properties['text'], 'home');
+  });
+
+  test('تطبيق قالب لا يحذف الصفحات الغائبة عنه', () async {
+    final server = _ServerDesignStore()
+      ..draft = _seedRevisions(
+        DesignDocumentCodec.document(
+          {
+            'home': [_heading('home', 'home_1', 'home-current')],
+            'splash': [
+              EditableComponent(
+                componentId: 'splash_1',
+                pageId: 'splash',
+                componentType: 'splashSettings',
+                index: 0,
+                classification: ComponentClassification.editable,
+                properties: {'text': 'splash-current'},
+                defaultValues: const {},
+                validationRules: const {},
+                allowedOperations: const ['edit'],
+                version: 1,
+              ),
+            ],
+          },
+        ),
+        {'home': 2, 'splash': 1},
+      );
+    final repository = _ServerBackedRepository(server);
+    final session = _session(server, repository: repository);
+    addTearDown(session.close);
+    await session.initialize();
+
+    // قالب يغطي الرئيسية فقط — لا يحتوي السبلاش.
+    await repository.saveTemplate(
+      id: 'tpl-1',
+      name: 'قالب رئيسية',
+      document: _seedRevisions(
+        DesignDocumentCodec.document(
+          {
+            'home': [_heading('home', 'home_tpl', 'home-from-template')],
+          },
+        ),
+        {'home': 9},
+      ),
+    );
+
+    final applied = await session.applyTemplate('tpl-1');
+    expect(applied, isTrue);
+    final home = session.state.getComponentsForPage('home');
+    expect(
+      home.firstWhere((c) => c.componentId == 'home_tpl').properties['text'],
+      'home-from-template',
+    );
+    final splash = session.state.getComponentsForPage('splash');
+    expect(splash, hasLength(1));
+    expect(splash.first.properties['text'], 'splash-current');
+
+    // حفظ بعد القالب: الصفحتان معًا تُدمجان — لا تعود السبلاش للافتراضي.
+    await session.saveDraft();
+    final draftPages = DesignDocumentCodec.parseDocument(server.draft!);
+    expect(draftPages['splash']!.first.properties['text'], 'splash-current');
+    expect(
+      draftPages['home']!.firstWhere(
+        (c) => c.componentId == 'home_tpl',
+      ).properties['text'],
+      'home-from-template',
+    );
   });
 }

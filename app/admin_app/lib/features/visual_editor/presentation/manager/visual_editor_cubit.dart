@@ -77,6 +77,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// كل حفظ ناجح. مرجع فحص التعارض: صفحة غيّرتها جلسة أخرى منذ التحميل
   /// ترفع تعارضًا بدل الكتابة الصامتة فوق تعديل أحدث.
   Map<String, int> _knownDraftRevisions = const {};
+  final _savedPages = <String>{};
 
   /// الصفحات التي تغيّرت محليًا ولم تُحفظ بعد — الحفظ المدمج يعتمدها
   /// وحدها؛ الصفحات غير المعدّلة لا تُكتب أصلًا.
@@ -122,16 +123,17 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       _themeDirty = false;
       _externalPublishDocument = null;
       final saved = draft?.componentsByPage ?? const {};
+      _savedPages..clear()..addAll(saved.keys)..addAll(_knownDraftRevisions.keys);
       // الصفحات الغائبة عن المسودة تبدأ من «تصميم اليوم»: شاشات مدمجة
       // بعقدها الأصلية، وبقية الصفحات بشجرة فارغة يبني عليها الموظف. صفحة
       // في المسودة تبقى كما كُتبت — لا يعاد خلق عقد محوّل عليها.
       final components = <String, List<EditableComponent>>{
         for (final page in EditorPages.pages)
-          page.pageId: saved[page.pageId] == null
+          page.pageId: DesignDocumentCodec.withNativeLabels(page.pageId, saved[page.pageId] == null
               ? DesignDocumentCodec.defaultComponentsFor(page.pageId)
               : page.pageId == 'welcome'
               ? DesignDocumentCodec.migrateWelcomeCta(saved[page.pageId]!)
-              : saved[page.pageId]!,
+              : saved[page.pageId]!),
       };
       emit(
         state.copyWith(
@@ -1047,6 +1049,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         ..._knownDraftRevisions,
         ...result.savedRevisions,
       };
+      _savedPages.addAll(result.savedRevisions.keys);
       _conflictedPages.removeAll(result.savedRevisions.keys);
       if (revision == _editRevision) {
         _dirtyPages.removeAll(result.savedRevisions.keys);
@@ -1067,7 +1070,6 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         emit(
           state.copyWith(
             isDirty: true,
-            clearConflict: true,
             conflict: PageConflict(
               pageId: e.pageId,
               serverRevision: e.serverRevision,
@@ -1149,9 +1151,8 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
   /// إجبار حفظ الصفحات المتعارضة فوق المراجعات الأحدث — قرار صريح
   /// يكتب نسخة المحرّر ويهمل ما كتبته الجلسة الأخرى على هذه الصفحات.
   Future<void> forceSaveConflicted() async {
-    _conflictedPages.clear();
     await saveDraft(force: true);
-    if (!isClosed) emit(state.copyWith(clearConflict: true));
+    if (!isClosed && _conflictedPages.isEmpty) emit(state.copyWith(clearConflict: true));
   }
 
   /// نشر التصميم.
@@ -1185,7 +1186,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       } else if (scope == PublishScope.wholeDocument) {
         // لا مستند معاينة كامل — رجع إلى التجميع من المسودة لكل الصفحات.
         version = await _repository.publishPages(
-          pageIds: state.componentsByPage.keys.toSet(),
+          pageIds: _savedPages.toSet(),
           knownRevisions: _knownDraftRevisions,
           force: force,
           name: name,
@@ -1195,7 +1196,7 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
         version = await _repository.publishPages(
           pageIds: scope == PublishScope.currentPage
               ? {_previewPageId}
-              : state.componentsByPage.keys.toSet(),
+              : _savedPages.toSet(),
           knownRevisions: _knownDraftRevisions,
           force: force,
           name: name,
@@ -1217,7 +1218,6 @@ class VisualEditorCubit extends Cubit<VisualEditorState> {
       if (!isClosed) {
         emit(
           state.copyWith(
-            clearConflict: true,
             conflict: PageConflict(
               pageId: e.pageId,
               serverRevision: e.serverRevision,

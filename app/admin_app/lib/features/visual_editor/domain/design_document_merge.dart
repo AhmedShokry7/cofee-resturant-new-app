@@ -136,7 +136,17 @@ abstract final class DesignDocumentMerge {
         (page) => page['page'] == pageId,
         orElse: () => const {},
       );
-      if (entry.isEmpty) continue;
+      if (entry.isEmpty) {
+        final revision = draftRevisions[pageId];
+        if (revision != null) {
+          document['pages'] = [
+            for (final page in document['pages'] as List? ?? const [])
+              if (page is! Map || page['page'] != pageId) page,
+          ];
+          document = DesignDocumentMeta.withPageRevision(document, pageId, revision);
+        }
+        continue;
+      }
       final root = entry['root'];
       if (root is! Map) continue;
       // الصفحة في المسودة كما هي — تعاد للمحرّر من مصدرها لا من تحليله
@@ -166,6 +176,7 @@ abstract final class DesignDocumentMerge {
         document.remove('theme');
       }
     }
+    document.putIfAbsent('pages', () => <dynamic>[]);
     document['schema_version'] = DesignContract.readableSchemaVersion;
     return document;
   }

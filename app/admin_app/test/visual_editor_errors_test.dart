@@ -38,6 +38,15 @@ class _RejectingRepository extends VisualEditorRepository {
   }) async => throw StateError('design document cannot be published: $error');
 
   @override
+  Future<PublishedVersionInfo> publishPages({
+    required Set<String> pageIds,
+    Map<String, int> knownRevisions = const {},
+    bool force = false,
+    String? name,
+    String? note,
+  }) async => throw StateError('design document cannot be published: $error');
+
+  @override
   Future<List<PublishedVersionInfo>> listVersions({int limit = 30}) async =>
       const [];
 
