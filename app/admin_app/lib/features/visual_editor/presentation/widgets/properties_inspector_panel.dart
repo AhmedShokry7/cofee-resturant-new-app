@@ -14,6 +14,7 @@ import 'package:admin_app/features/bundles/di/bundles_dependencies.dart';
 import 'package:admin_app/features/visual_editor/data/design_image_upload.dart';
 import 'package:admin_app/features/visual_editor/data/visual_editor_image_asset_repository.dart';
 import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_color_picker.dart';
+import 'package:admin_app/features/visual_editor/presentation/widgets/visual_editor_theme_tokens.dart';
 import 'package:admin_app/features/catalog/di/catalog_dependencies.dart';
 import 'package:admin_app/features/visual_editor/domain/component_registry.dart';
 import 'package:admin_app/features/visual_editor/domain/visual_editor_models.dart';
@@ -997,8 +998,8 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // مفاتيح السلوك داخل كتلة البانرات نفسها: التنقل التلقائي
-          // والنقاط — أقرب قرار للموظف من مجموعة خصائص عامة.
+          // ترويسة المجموعة: أيقونة + عنوان + عدّاد — ثم بطاقة السلوك
+          // بصفّين مفصولين: التنقل التلقائي والنقاط.
           Padding(
             padding: const EdgeInsetsDirectional.only(
               start: AppSpacing.xs,
@@ -1006,46 +1007,87 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
             ),
             child: Row(
               children: [
-                Icon(Icons.motion_photos_on_outlined, size: 13, color: muted),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    AppLocale.instance.isArabic
-                        ? 'التنقل التلقائي'
-                        : 'Autoplay',
-                    style: TextStyle(fontSize: 11, color: muted),
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: VisualEditorTokens.accentSurface(context),
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusSm,
+                    ),
+                  ),
+                  child: Icon(
+                    AppIcons.promotion,
+                    size: 14,
+                    color: AppColor.primaryColor,
                   ),
                 ),
-                Switch(
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    S.banners,
+                    style: TextStyle(
+                      fontSize: 12.5,
+                      fontWeight: AppFontWeights.semiBold,
+                      color: VisualEditorTokens.text(context),
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: VisualEditorTokens.surfaceSecondary(context),
+                    borderRadius: BorderRadius.circular(
+                      VisualEditorTokens.radiusPill,
+                    ),
+                    border: Border.all(
+                      color: VisualEditorTokens.border(context),
+                    ),
+                  ),
+                  child: Text(
+                    '$count/10',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: AppFontWeights.medium,
+                      color: muted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            decoration: BoxDecoration(
+              color: VisualEditorTokens.surface(context),
+              borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+              border: Border.all(color: VisualEditorTokens.border(context)),
+            ),
+            child: Column(
+              children: [
+                _BannerBehaviorRow(
+                  icon: Icons.motion_photos_on_outlined,
+                  label: AppLocale.instance.isArabic
+                      ? 'التنقل التلقائي بين البانرات'
+                      : 'Autoplay',
                   value: flag('autoplay'),
+                  dark: dark,
                   onChanged: (value) => widget.onChanged(
                     componentId: widget.component.componentId,
                     propertyKey: 'autoplay',
                     value: value,
                   ),
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsetsDirectional.only(
-              start: AppSpacing.xs,
-              bottom: AppSpacing.xs,
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.more_horiz_rounded, size: 13, color: muted),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    AppLocale.instance.isArabic
-                        ? 'نقاط عدد البانرات'
-                        : 'Banner count dots',
-                    style: TextStyle(fontSize: 11, color: muted),
-                  ),
-                ),
-                Switch(
+                Divider(height: 1, color: VisualEditorTokens.border(context)),
+                _BannerBehaviorRow(
+                  icon: Icons.more_horiz_rounded,
+                  label: AppLocale.instance.isArabic
+                      ? 'نقاط عدد البانرات'
+                      : 'Banner count dots',
                   value: flag('showDots'),
+                  dark: dark,
                   onChanged: (value) => widget.onChanged(
                     componentId: widget.component.componentId,
                     propertyKey: 'showDots',
@@ -1055,6 +1097,7 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
               ],
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
           if (_loadingBanners && count == 0)
             const Padding(
               padding: EdgeInsets.all(AppSpacing.sm),
@@ -1086,39 +1129,72 @@ class _BannerDraftControlsState extends State<_BannerDraftControls> {
               onTargetUrlChanged: (value) =>
                   _updateBanner(index, 'targetUrl', value),
             ),
-          OutlinedButton.icon(
-            onPressed: count >= 10 || _loadingBanners
-                ? null
-                : () {
-                    final next = count;
-                    final values = <String, dynamic>{};
-                    for (final field in const [
-                      'image',
-                      'targetType',
-                      'targetId',
-                      'targetUrl',
-                    ]) {
-                      values[_key(next, field)] = field == 'targetType'
-                          ? 'none'
-                          : '';
-                    }
-                    values['bannerDraftCount'] = count + 1;
-                    _startDraft(additional: values);
-                  },
-            icon: const Icon(Icons.add, size: 16),
-            label: Text(S.addBanner),
+          // إضافة بانر: زر عرض كامل بحد ناعم مائل للون الأساسي.
+          Material(
+            color: VisualEditorTokens.accentSurface(context),
+            borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+            child: InkWell(
+              onTap: count >= 10 || _loadingBanners
+                  ? null
+                  : () {
+                      final next = count;
+                      final values = <String, dynamic>{};
+                      for (final field in const [
+                        'image',
+                        'targetType',
+                        'targetId',
+                        'targetUrl',
+                      ]) {
+                        values[_key(next, field)] = field == 'targetType'
+                            ? 'none'
+                            : '';
+                      }
+                      values['bannerDraftCount'] = count + 1;
+                      _startDraft(additional: values);
+                    },
+              borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 9),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(
+                    VisualEditorTokens.radiusMd,
+                  ),
+                  border: Border.all(
+                    color: VisualEditorTokens.accentBorder(context),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      AppIcons.add01,
+                      size: 15,
+                      color: count >= 10 ? muted : AppColor.primaryColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      count >= 10
+                          ? (AppLocale.instance.isArabic
+                                ? 'الحد الأقصى 10 بانرات'
+                                : 'Maximum 10 banners')
+                          : S.addBanner,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: AppFontWeights.semiBold,
+                        color: count >= 10 ? muted : AppColor.primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             AppLocale.instance.isArabic
-                ? 'التعديلات تظهر فورًا في المعاينة، وتُحفظ كمسودة في قاعدة البيانات. يراها العملاء بعد نشر التصميم.'
-                : 'Changes appear in preview immediately, save as a database draft, and reach customers when published.',
-            style: TextStyle(
-              fontSize: AppFontSizes.size10,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColor.darkTextSecondary
-                  : AppColor.adminMuted,
-            ),
+                ? 'التعديلات تظهر فورًا في المعاينة، ويظهر للزبون بعد النشر.'
+                : 'Changes show in the preview immediately; customers see them when published.',
+            style: TextStyle(fontSize: AppFontSizes.size10, color: muted),
           ),
         ],
       ),
@@ -1157,42 +1233,119 @@ class _BannerDraftItem extends StatelessWidget {
   final ValueChanged<String> onTargetUrlChanged;
 
   @override
-  Widget build(BuildContext context) => Card(
-    margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-    child: Padding(
+  Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    final body = dark ? AppColor.darkText : AppColor.adminBody;
+    final hasImage = imageUrl.trim().isNotEmpty;
+    const needsTargetId = ['category', 'product', 'bundle'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.xs),
       padding: const EdgeInsets.all(AppSpacing.sm),
+      decoration: BoxDecoration(
+        color: VisualEditorTokens.surface(context),
+        borderRadius: BorderRadius.circular(VisualEditorTokens.radiusMd),
+        border: Border.all(color: VisualEditorTokens.border(context)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(child: Text('${S.banners} ${index + 1}')),
-              IconButton(
-                tooltip: S.delete,
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
+              // الصورة المصغّرة: النقر عليها يرفع صورة جديدة — بلا زر
+              // رفع منفصل يشغل مساحة. عند الرفع طبقة تحميل فوقها.
+              GestureDetector(
+                onTap: uploading ? null : onUpload,
+                child: Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(
+                        VisualEditorTokens.radiusSm,
+                      ),
+                      child: SizedBox(
+                        width: 64,
+                        height: 64,
+                        child: hasImage
+                            ? CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                fit: BoxFit.cover,
+                                errorWidget: (_, _, _) =>
+                                    _uploadPlaceholder(context, dark, muted),
+                              )
+                            : _uploadPlaceholder(context, dark, muted),
+                      ),
+                    ),
+                    if (uploading)
+                      Positioned.fill(
+                        child: ColoredBox(
+                          color: Colors.black.withValues(alpha: 0.4),
+                          child: const Center(
+                            child: SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${S.banners} ${index + 1}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: AppFontWeights.semiBold,
+                              color: body,
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: onDelete,
+                          borderRadius: BorderRadius.circular(
+                            VisualEditorTokens.radiusSm,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(3),
+                            child: Icon(
+                              AppIcons.delete01,
+                              size: 15,
+                              color: muted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasImage
+                          ? (AppLocale.instance.isArabic
+                                ? 'انقر الصورة لتبديلها'
+                                : 'Tap the image to replace it')
+                          : (AppLocale.instance.isArabic
+                                ? 'لا صورة بعد — انقر المربع لرفعها'
+                                : 'No image yet — tap to upload'),
+                      style: TextStyle(fontSize: 10, color: muted),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-          if (imageUrl.isNotEmpty)
-            SizedBox(
-              height: 96,
-              child: CachedNetworkImage(
-                imageUrl: imageUrl,
-                fit: BoxFit.cover,
-                errorWidget: (_, _, _) => const Icon(AppIcons.image01),
-              ),
-            ),
-          OutlinedButton.icon(
-            onPressed: uploading ? null : onUpload,
-            icon: uploading
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.upload_outlined, size: 16),
-            label: Text(S.uploadFromDevice),
-          ),
+          const SizedBox(height: AppSpacing.sm),
+          // الوجهة: قائمة نوع مضغوطة ثم حقلها الخاص إن وجد.
           DropdownButtonFormField<String>(
             key: ValueKey('banner-target-type-$targetType'),
             initialValue:
@@ -1205,7 +1358,9 @@ class _BannerDraftItem extends StatelessWidget {
                 ].contains(targetType)
                 ? targetType
                 : 'none',
-            decoration: InputDecoration(labelText: S.targetType),
+            isDense: true,
+            style: TextStyle(fontSize: 12, color: body),
+            decoration: _targetDecoration(context, S.targetType),
             items: [
               DropdownMenuItem(value: 'none', child: Text(S.none)),
               DropdownMenuItem(
@@ -1220,9 +1375,8 @@ class _BannerDraftItem extends StatelessWidget {
               if (value != null) onTargetTypeChanged(value);
             },
           ),
-          if (targetType == 'category' ||
-              targetType == 'product' ||
-              targetType == 'bundle')
+          if (needsTargetId.contains(targetType)) ...[
+            const SizedBox(height: AppSpacing.xs),
             FutureBuilder<List<VisualEditorImageAsset>>(
               future: targets,
               builder: (context, snapshot) {
@@ -1236,58 +1390,147 @@ class _BannerDraftItem extends StatelessWidget {
                         .where((asset) => asset.kind == kind)
                         .toList(growable: false);
                 final ids = assets.map((asset) => asset.id).toSet();
-                return DropdownButtonFormField<String>(
-                  key: ValueKey('banner-target-choice-$targetType-$targetId'),
-                  initialValue: ids.contains(targetId) ? targetId : null,
-                  decoration: InputDecoration(
-                    labelText: targetType == 'category'
-                        ? S.targetCategory
-                        : targetType == 'product'
-                        ? S.targetProduct
-                        : S.bundles,
-                    hintText: snapshot.hasError ? S.retry : null,
-                  ),
-                  items: [
-                    for (final asset in assets)
-                      DropdownMenuItem(
-                        value: asset.id,
-                        child: Text(
-                          asset.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'banner-target-choice-$targetType-$targetId',
                       ),
+                      initialValue: ids.contains(targetId) ? targetId : null,
+                      isDense: true,
+                      style: TextStyle(fontSize: 12, color: body),
+                      decoration: _targetDecoration(
+                        context,
+                        targetType == 'category'
+                            ? S.targetCategory
+                            : targetType == 'product'
+                            ? S.targetProduct
+                            : S.bundles,
+                      ),
+                      items: [
+                        for (final asset in assets)
+                          DropdownMenuItem(
+                            value: asset.id,
+                            child: Text(
+                              asset.label,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) onTargetIdChanged(value);
+                      },
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    TextFormField(
+                      key: ValueKey('banner-target-id-$targetId'),
+                      initialValue: targetId,
+                      style: const TextStyle(fontSize: 12),
+                      decoration: _targetDecoration(
+                        context,
+                        AppLocale.instance.isArabic
+                            ? 'أو أدخل المعرّف يدويًا'
+                            : 'Or enter the ID manually',
+                      ),
+                      onChanged: onTargetIdChanged,
+                    ),
                   ],
-                  onChanged: (value) {
-                    if (value != null) onTargetIdChanged(value);
-                  },
                 );
               },
             ),
-          if (targetType == 'category' ||
-              targetType == 'product' ||
-              targetType == 'bundle')
-            TextFormField(
-              key: ValueKey('banner-target-id-$targetId'),
-              initialValue: targetId,
-              decoration: InputDecoration(
-                labelText: AppLocale.instance.isArabic
-                    ? 'أو أدخل معرّف الوجهة'
-                    : 'Or enter the destination ID',
-              ),
-              onChanged: onTargetIdChanged,
-            ),
-          if (targetType == 'url')
+          ],
+          if (targetType == 'url') ...[
+            const SizedBox(height: AppSpacing.xs),
             TextFormField(
               key: ValueKey('banner-target-url-$targetUrl'),
               initialValue: targetUrl,
-              decoration: InputDecoration(labelText: S.targetUrl),
+              style: const TextStyle(fontSize: 12),
+              decoration: _targetDecoration(context, S.targetUrl),
               onChanged: onTargetUrlChanged,
             ),
+          ],
         ],
       ),
-    ),
-  );
+    );
+  }
+
+  Widget _uploadPlaceholder(BuildContext context, bool dark, Color muted) =>
+      ColoredBox(
+        color: VisualEditorTokens.surfaceSecondary(context),
+        child: Center(child: Icon(AppIcons.upload01, size: 18, color: muted)),
+      );
+
+  InputDecoration _targetDecoration(BuildContext context, String label) =>
+      InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(
+          fontSize: 11,
+          color: VisualEditorTokens.textMuted(context),
+        ),
+        isDense: true,
+        filled: true,
+        fillColor: VisualEditorTokens.surfaceSecondary(context),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+          borderSide: BorderSide(color: VisualEditorTokens.border(context)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(VisualEditorTokens.radiusSm),
+          borderSide: BorderSide(color: VisualEditorTokens.border(context)),
+        ),
+      );
+}
+
+// صف سلوك داخل بطاقة البانرات: أيقونة + تسمية + مفتاح — بنفس نبرة
+// لوحة المحرر (حدود ناعمة، سطح ثانوي، ودعم داكن).
+class _BannerBehaviorRow extends StatelessWidget {
+  const _BannerBehaviorRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.dark,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String label;
+  final bool value;
+  final bool dark;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = dark ? AppColor.darkTextSecondary : AppColor.adminMuted;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: AppSpacing.sm + 2,
+        end: AppSpacing.xs,
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 13, color: muted),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 11.5, color: muted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          Switch(
+            value: value,
+            activeTrackColor: AppColor.primaryColor,
+            activeThumbColor: Colors.white,
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PropertyGroup extends StatelessWidget {
