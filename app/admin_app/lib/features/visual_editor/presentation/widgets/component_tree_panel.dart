@@ -907,35 +907,6 @@ class _ComponentRow extends StatelessWidget {
                       ),
                     ),
 
-                  // ► مقبض السحب
-                  if (component.canReorder && allowReorder)
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Padding(
-                        padding: const EdgeInsetsDirectional.only(end: 4),
-                        child: Icon(
-                          Icons.drag_indicator,
-                          size: 15,
-                          color: muted,
-                        ),
-                      ),
-                    )
-                  else
-                    SizedBox(width: AppSpacing.sm + 4),
-
-                  // ► شريط اللون الجانبي
-                  Container(
-                    width: 3,
-                    height: 32,
-                    margin: const EdgeInsetsDirectional.only(end: 7),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? typeColor
-                          : typeColor.withValues(alpha: 0.35),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-
                   // ► صورة مصغرة للعناصر ذات الصورة، وأيقونة النوع للباقي
                   if (imagePreviewUrl != null)
                     AdminNetworkThumb(
@@ -1002,6 +973,19 @@ class _ComponentRow extends StatelessWidget {
                     ),
                   ),
 
+                  // ► شريط اللون الجانبي — بجوار النص كما في فيجما
+                  Container(
+                    width: 3,
+                    height: 32,
+                    margin: const EdgeInsetsDirectional.only(start: 7),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? typeColor
+                          : typeColor.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
                   // ► أزرار الإجراءات (تظهر عند التحويم أو التحديد)
                   if (component.allowedOperations.contains('hide'))
                     _ActionButton(
@@ -1048,6 +1032,19 @@ class _ComponentRow extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  // ► مقبض السحب — في نهاية الصف كما في فيجما
+                  if (component.canReorder && allowReorder)
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(start: 4),
+                        child: Icon(
+                          Icons.drag_indicator,
+                          size: 15,
+                          color: muted,
+                        ),
+                      ),
                     ),
                 ],
               ),

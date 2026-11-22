@@ -99,14 +99,82 @@ class PropertiesInspectorPanel extends StatelessWidget {
     // --- خصائص حقيقية موجودة في المكوّن لكن غير مسجلة ---
     // نعرضها كحقول نصية خام حتى يمكن التعديل عليها
     final knownKeys = registryProps.keys.toSet()..add('visible');
-    final extraProps = component.properties.entries
+    final docProps = component.properties;
+    final extraProps = docProps.entries
         .where(
           (e) =>
-              !knownKeys.contains(e.key) && e.value is! Map && e.value is! List,
+              !knownKeys.contains(e.key) &&
+              e.value is! Map &&
+              e.value is! List &&
+              // المفاتيح القديمة أحادية اللغة يغطيها زوج _ar/_en المسجل
+              // في المستند نفسه — لا عرض لها كخصائص إضافية خام.
+              !docProps.containsKey('${e.key}_ar') &&
+              !docProps.containsKey('${e.key}_en'),
         )
         .toList();
 
     final hasContent = editableProps.isNotEmpty || extraProps.isNotEmpty;
+
+    // عائلات الخصائص المتقاربة: كل ما يتعلق بالصورة في قسم واحد بصفوف
+    // ثلاثية، وكذلك النص — بأسلوب فيجما بدل تشتّتها بين المجموعات.
+    final imageFamily = <MapEntry<String, ComponentPropertyDefinition>>[];
+    final textFamily = <MapEntry<String, ComponentPropertyDefinition>>[];
+    final reducedGroups =
+        <String?, List<MapEntry<String, ComponentPropertyDefinition>>>{};
+    for (final entry in grouped.entries) {
+      final kept = <MapEntry<String, ComponentPropertyDefinition>>[];
+      for (final e in entry.value) {
+        final family = _fieldFamily(e.value);
+        if (family == 'image') {
+          imageFamily.add(e);
+        } else if (family == 'text') {
+          textFamily.add(e);
+        } else {
+          kept.add(e);
+        }
+      }
+      if (kept.isNotEmpty) reducedGroups[entry.key] = kept;
+    }
+    _sortFamilyFields(imageFamily, const [
+      'imageFit',
+      'imageShape',
+      'imageAlignment',
+      'imageCornerRadius',
+      'imageWidth',
+      'imageHeight',
+      'imageGap',
+      'imagePadding',
+    ]);
+    _sortFamilyFields(textFamily, const [
+      'size',
+      'textWeight',
+      'alignment',
+      'lineHeight',
+    ]);
+    final familySections = <Widget>[
+      if (imageFamily.isNotEmpty)
+        _PropertySection(
+          groupLabel: 'الصورة',
+          fields: [for (final e in imageFamily) _FieldItem.single(e.value)],
+          fieldsPerRow: 3,
+          component: component,
+          onChanged: onPropertyChanged,
+          onReset: onResetProperty,
+          onPickImage: onPickImage,
+          onBrowseImages: onBrowseImages,
+        ),
+      if (textFamily.isNotEmpty)
+        _PropertySection(
+          groupLabel: 'النص',
+          fields: [for (final e in textFamily) _FieldItem.single(e.value)],
+          fieldsPerRow: 3,
+          component: component,
+          onChanged: onPropertyChanged,
+          onReset: onResetProperty,
+          onPickImage: onPickImage,
+          onBrowseImages: onBrowseImages,
+        ),
+    ];
 
     return Container(
       decoration: BoxDecoration(
@@ -224,13 +292,19 @@ class PropertiesInspectorPanel extends StatelessWidget {
                           pickImage:
                               onPickImage ?? DesignImageUpload.pickAndUpload,
                         ),
-                      // أقسام بأسلوب فيجما: كل المجموعات ظاهرة دائمًا
-                      // بترتيب ثابت (الموضع ← الأبعاد ← المظهر ←
-                      // الانتقال ← المحتوى) — بلا طيّ يخفي الإعدادات.
-                      for (final groupKey in _orderedGroupKeys(grouped.keys))
+                      // أقسام بأسلوب فيجما: عائلات الصورة/النص أولًا
+                      // بصفوف ثلاثية، ثم بقية المجموعات بترتيب ثابت
+                      // (الموضع ← الأبعاد ← المظهر ← الانتقال) — بلا
+                      // طيّ يخفي الإعدادات.
+                      ...familySections,
+                      for (final groupKey in _orderedGroupKeys(
+                        reducedGroups.keys,
+                      ))
                         _PropertySection(
                           groupLabel: groupKey,
-                          fields: _pairBilingualFields(grouped[groupKey]!),
+                          fields: _pairBilingualFields(
+                            reducedGroups[groupKey]!,
+                          ),
                           component: component,
                           onChanged: onPropertyChanged,
                           onReset: onResetProperty,
@@ -323,6 +397,54 @@ List<String?> _orderedGroupKeys(Iterable<String?> keys) {
   return list;
 }
 
+/// تصنيف الخصائص إلى عائلات بصفوف موحدة: الصورة، النص.
+String? _fieldFamily(ComponentPropertyDefinition d) {
+  if (d.type == PropertyType.color ||
+      d.type == PropertyType.boolean ||
+      d.type == PropertyType.imageUrl ||
+      d.type == PropertyType.json) {
+    return null;
+  }
+  if (d.key.startsWith('image') || d.label.contains('الصورة')) {
+    return 'image';
+  }
+  if (d.type == PropertyType.fontSize || d.type == PropertyType.fontWeight) {
+    return 'text';
+  }
+  if (d.type == PropertyType.alignment && d.label.contains('محاذاة')) {
+    return 'text';
+  }
+  const textKeyStems = [
+    'size',
+    'textWeight',
+    'lineHeight',
+    'highlight',
+    'rest',
+    'label',
+    'text',
+    'subtitle',
+    'question',
+  ];
+  if (textKeyStems.any(d.key.startsWith)) {
+    return 'text';
+  }
+  return null;
+}
+
+/// ترتيب حقول العائلة بأولوية ثابتة حتى تتجمع المتقاربات في صفوف
+/// منطقية (طريقة العرض/الشكل/المحاذاة ثم الأبعاد...).
+void _sortFamilyFields(
+  List<MapEntry<String, ComponentPropertyDefinition>> entries,
+  List<String> priority,
+) {
+  int rank(MapEntry<String, ComponentPropertyDefinition> e) {
+    final index = priority.indexOf(e.key);
+    return index < 0 ? priority.length : index;
+  }
+
+  entries.sort((a, b) => rank(a).compareTo(rank(b)));
+}
+
 class _PropertySection extends StatelessWidget {
   const _PropertySection({
     required this.groupLabel,
@@ -332,11 +454,13 @@ class _PropertySection extends StatelessWidget {
     required this.onReset,
     this.onPickImage,
     this.onBrowseImages,
+    this.fieldsPerRow = 0,
   });
 
   final String? groupLabel;
   final List<_FieldItem> fields;
   final EditableComponent component;
+  final int fieldsPerRow;
   final void Function({
     required String componentId,
     required String propertyKey,
@@ -384,6 +508,7 @@ class _PropertySection extends StatelessWidget {
           _PropertyGroup(
             groupLabel: null,
             fields: fields,
+            fieldsPerRow: fieldsPerRow,
             component: component,
             onChanged: onChanged,
             onReset: onReset,
@@ -1483,11 +1608,13 @@ class _PropertyGroup extends StatelessWidget {
     required this.onReset,
     this.onPickImage,
     this.onBrowseImages,
+    this.fieldsPerRow = 0,
   });
 
   final String? groupLabel;
   final List<_FieldItem> fields;
   final EditableComponent component;
+  final int fieldsPerRow;
   final void Function({
     required String componentId,
     required String propertyKey,
@@ -1518,9 +1645,12 @@ class _PropertyGroup extends StatelessWidget {
             child: _GroupLabel(label: groupLabel!),
           ),
         ],
-        // شبكة كثيفة بأسلوب فيجما: الحقول الرقمية الصغيرة والأزواج
-        // ثنائية اللغة تتشارك الصف الواحد، والباقي بعرض كامل.
-        for (final row in _layoutFieldRows(fields))
+        // صفوف الخصائص: عائلة مخصصة (٣ حقول بالصف) أو التزاوج
+        // العام للحقول الرقمية الصغيرة والأزواج ثنائية اللغة.
+        for (final row
+            in fieldsPerRow > 0
+                ? _chunkFields(fields, fieldsPerRow)
+                : _layoutFieldRows(fields))
           if (row.length == 2)
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1548,6 +1678,25 @@ class _PropertyGroup extends StatelessWidget {
                 ),
               ],
             )
+          else if (row.length > 1)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var i = 0; i < row.length; i++) ...[
+                  if (i > 0) const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: _fieldWidget(
+                      component,
+                      row[i],
+                      onChanged,
+                      onReset,
+                      onPickImage,
+                      onBrowseImages,
+                    ),
+                  ),
+                ],
+              ],
+            )
           else
             _fieldWidget(
               component,
@@ -1559,6 +1708,15 @@ class _PropertyGroup extends StatelessWidget {
             ),
       ],
     );
+  }
+
+  /// تقسيم مباشر إلى صفوف ثابتة (للعائلات المتقاربة).
+  List<List<_FieldItem>> _chunkFields(List<_FieldItem> fields, int size) {
+    final rows = <List<_FieldItem>>[];
+    for (var i = 0; i < fields.length; i += size) {
+      rows.add(fields.sublist(i, (i + size).clamp(0, fields.length)));
+    }
+    return rows;
   }
 
   /// تجميع الحقول في صفوف: الحقلان المتتاليان الصغيران (رقم/حجم خط/
@@ -2573,22 +2731,25 @@ class _SplashColorInputState extends State<_SplashColorInput> {
         ),
         const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: TextField(
-            key: ValueKey('${widget.pickerKey}-hex'),
-            controller: _controller,
-            onChanged: (raw) {
-              final normalized = _normalizeSplashColor(raw);
-              if (normalized != null) widget.onChanged(normalized);
-            },
-            style: TextStyle(
-              fontSize: AppFontSizes.size12,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? AppColor.darkText
-                  : AppColor.adminBody,
+          child: SizedBox(
+            height: 38,
+            child: TextField(
+              key: ValueKey('${widget.pickerKey}-hex'),
+              controller: _controller,
+              onChanged: (raw) {
+                final normalized = _normalizeSplashColor(raw);
+                if (normalized != null) widget.onChanged(normalized);
+              },
+              style: TextStyle(
+                fontSize: AppFontSizes.size12,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppColor.darkText
+                    : AppColor.adminBody,
+              ),
+              decoration: _inputDecoration(
+                Theme.of(context).brightness == Brightness.dark,
+              ).copyWith(hintText: S.visualEditorColorHint),
             ),
-            decoration: _inputDecoration(
-              Theme.of(context).brightness == Brightness.dark,
-            ).copyWith(hintText: S.visualEditorColorHint),
           ),
         ),
       ],
