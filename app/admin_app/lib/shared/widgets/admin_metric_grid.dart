@@ -16,13 +16,7 @@ class AdminMetricGrid extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        final columns = width >= 1080
-            ? 4
-            : width >= 740
-            ? 3
-            : width >= 480
-            ? 2
-            : 1;
+        final columns = width >= 1080 ? 4 : width >= 480 ? 2 : 1;
         final cardWidth = (width - _spacing * (columns - 1)) / columns;
         return Wrap(
           spacing: _spacing,
