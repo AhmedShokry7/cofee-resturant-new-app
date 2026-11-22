@@ -302,9 +302,6 @@ class S {
   static String get dashboardVsPreviousPeriod =>
       _ar ? 'مقارنة بالفترة السابقة' : 'vs the previous period';
   static String get dashboardSalesLegend => _ar ? 'المبيعات' : 'Sales';
-
-  /// سطر عدد الطلبات في تلميحة المنحنى.
-  static String get dashboardTooltipOrders => _ar ? 'طلب' : 'orders';
   static String get dashboardSetupTitle =>
       _ar ? 'خطوات البداية' : 'Getting started';
   static String get dashboardSetupSubtitle =>

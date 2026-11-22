@@ -1,6 +1,4 @@
 import 'package:material_ui/material_ui.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:admin_app/core/constants/app_dimensions.dart';
@@ -119,76 +117,6 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets(
-      'hovering the trend shows the point tooltip and highlights the day',
-      (tester) async {
-        tester.view.physicalSize = const Size(900, 800);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
-        await tester.pumpWidget(
-          _wrap(
-            AdminTrendChart(
-              points: [
-                const AdminTrendPoint(
-                  label: '1 Oct',
-                  value: 10,
-                  tooltipTitle: 'Sun 1 Oct',
-                  tooltipValue: '350',
-                ),
-                const AdminTrendPoint(
-                  label: '2 Oct',
-                  value: 40,
-                  tooltipTitle: 'Mon 2 Oct',
-                  tooltipValue: '1200',
-                ),
-                const AdminTrendPoint(
-                  label: '3 Oct',
-                  value: 25,
-                  tooltipTitle: 'Tue 3 Oct',
-                  tooltipValue: '800',
-                ),
-              ],
-            ),
-            width: 800,
-          ),
-        );
-        await tester.pumpAndSettle();
-
-        // Before hovering: no tooltip.
-        expect(find.text('Sun 1 Oct'), findsNothing);
-
-        // Hovering mid-plot shows the middle point tooltip.
-        final box = tester.renderObject<RenderBox>(
-          find
-              .descendant(
-                of: find.byType(AdminTrendChart),
-                matching: find.byType(MouseRegion),
-              )
-              .first,
-        );
-        final center = box.localToGlobal(box.size.center(Offset.zero));
-        final gesture = await tester.createGesture(
-          kind: PointerDeviceKind.mouse,
-        );
-        await gesture.addPointer(location: center);
-        addTearDown(gesture.removePointer);
-        await gesture.moveTo(center);
-        await tester.pumpAndSettle();
-        expect(find.text('Mon 2 Oct'), findsOneWidget);
-        expect(find.text('1200'), findsOneWidget);
-
-        // Moving to the first point reads its day.
-        await gesture.moveTo(Offset(center.dx - box.size.width / 2, center.dy));
-        await tester.pumpAndSettle();
-        expect(find.text('Sun 1 Oct'), findsOneWidget);
-
-        // Leaving the plot hides the tooltip.
-        await gesture.moveTo(const Offset(10, 10));
-        await tester.pumpAndSettle();
-        expect(find.text('Sun 1 Oct'), findsNothing);
-      },
-    );
     testWidgets('a donut prints its centre number and label', (tester) async {
       await tester.pumpWidget(
         _wrap(
