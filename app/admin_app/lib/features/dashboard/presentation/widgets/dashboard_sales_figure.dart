@@ -3,6 +3,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:admin_app/core/constants/app_dimensions.dart';
 import 'package:admin_app/core/locale/app_strings.dart';
 import 'package:admin_app/core/theme/app_color.dart';
+import 'package:admin_app/core/utils/formatters.dart';
+import 'package:admin_app/core/utils/localized_date.dart';
+import 'package:admin_app/core/utils/localized_digits.dart';
 import 'package:admin_app/features/dashboard/domain/entities/admin_dashboard_metrics.dart';
 import 'package:admin_app/features/dashboard/domain/entities/dashboard_insights.dart';
 import 'package:admin_app/features/dashboard/presentation/utils/dashboard_display.dart';
@@ -16,7 +19,7 @@ import 'package:admin_app/shared/widgets/admin_trend_chart.dart';
 /// المال مجموع أيام أرسلتها القاعدة كاملة، والنسبة من رقمي القاعدة (المدى وما
 /// قبله) فتُحسب هنا وتُطبع في `DashboardSalesAmount` وحده. والمحور الرأسي يُقسَم
 /// على قمة النافذة نفسها لا على رقم مريح للعين، وإلا بدت أعلى ليلة في منتصف
-/// اللوحة.
+/// اللوحة. وكل نقطة تحمل تلميحتها: يومها ومالها وطلباتها.
 class DashboardSalesFigure extends StatelessWidget {
   const DashboardSalesFigure({
     super.key,
@@ -29,7 +32,16 @@ class DashboardSalesFigure extends StatelessWidget {
 
   List<AdminTrendPoint> get _points => [
     for (final day in metrics.salesWindow(rangeDays))
-      AdminTrendPoint(label: dashboardDayLabel(day.date), value: day.revenue),
+      AdminTrendPoint(
+        label: dashboardDayLabel(day.date),
+        value: day.revenue,
+        shortLabel: localizeDigits('${day.date.day}'),
+        tooltipTitle:
+            '${localizedWeekdayName(day.date.weekday)} ${dashboardDayLabel(day.date)}',
+        tooltipValue: localizeDigits(formatAmount(day.revenue)),
+        tooltipDetail:
+            '${localizeDigits('${day.orders}')} ${S.dashboardTooltipOrders}',
+      ),
   ];
 
   /// النسبة من رقمي القاعدة، و`null` حين لا أساس: لا مقارنة تُخترع.

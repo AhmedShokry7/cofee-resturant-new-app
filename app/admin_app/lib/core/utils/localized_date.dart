@@ -38,6 +38,32 @@ const _englishMonths = <String>[
 String localizedMonthName(int month) =>
     (AppLocale.instance.isArabic ? _arabicMonths : _englishMonths)[month - 1];
 
+const _arabicWeekdays = <String>[
+  'الأحد',
+  'الاثنين',
+  'الثلاثاء',
+  'الأربعاء',
+  'الخميس',
+  'الجمعة',
+  'السبت',
+];
+
+const _englishWeekdays = <String>[
+  'Sun',
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+];
+
+/// اسم اليوم من أيام الأسبوع باللغة المعروضة، و[weekday] رقم `DateTime`
+/// (الأحد = 1 حتى السبت = 7).
+String localizedWeekdayName(int weekday) => (AppLocale.instance.isArabic
+    ? _arabicWeekdays
+    : _englishWeekdays)[(weekday - 1) % 7];
+
 /// A calendar date such as `12 Mar 2024` or `١٢ مارس ٢٠٢٤`.
 String localizedDate(DateTime? value) {
   if (value == null) return '—';
